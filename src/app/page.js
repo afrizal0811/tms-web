@@ -46,89 +46,119 @@ export default function Home() {
     setIsLoading(false); 
   }, []); 
 
-  // === UPDATE DI SINI: useEffect untuk mengambil DATA DRIVER ===
+  // === UPDATE BESAR DI SINI: useEffect untuk mengambil DATA DRIVER & VEHICLE ===
   useEffect(() => {
     // Hanya fetch jika:
     // 1. Kita di langkah 2 (isLocationSaved, !selectedUser)
     // 2. Data driver di state KOSONG (dari cache)
     if (isLocationSaved && !selectedUser && selectedLocation && driverData.data.length === 0) {
       
-      async function fetchDrivers() {
-        console.log("Cache driver kosong. Mengambil data driver dari API...");
+      async function fetchDriverAndVehicleData() {
+        console.log("Cache driver kosong. Mengambil data driver & vehicle dari API...");
         setDriverData({ loading: true, data: [], error: null });
         
-        // --- LOGIKA BARU UNTUK MULTI-ROLE ---
         const hubId = selectedLocation;
         
-        // Definisikan role
+        // --- 1. Siapkan semua promise ---
         const driverRoleId = '6703410af6be892f3208ecde';
         const driverJktRoleId = '68f74e1cff7fa2efdd0f6a38';
-        
-        // Definisikan hub spesial
         const specialHubs = [
           '6895a281bc530d4a4908f5ef', // Cikarang
           '68b8038b1aa98343380e3ab2'  // Daan Mogot
         ];
 
-        // Tentukan role apa saja yang akan di-fetch
-        const rolesToFetch = [driverRoleId]; // Selalu fetch role driver utama
+        // Buat daftar promise untuk fetch driver
+        const driverRolesToFetch = [driverRoleId];
         if (specialHubs.includes(hubId)) {
-          rolesToFetch.push(driverJktRoleId); // Tambah driverJkt jika hub spesial
-          console.log("Hub spesial terdeteksi. Menambahkan driverJkt...");
+          driverRolesToFetch.push(driverJktRoleId);
         }
+        
+        const driverPromises = driverRolesToFetch.map(roleId => {
+          const apiUrl = `/api/get-users?hubId=${hubId}&roleId=${roleId}&status=active`;
+          return fetch(apiUrl);
+        });
+
+        // Buat promise untuk fetch vehicle
+        const vehicleApiUrl = `/api/get-vehicles?hubId=${hubId}&limit=500`;
+        const vehiclePromise = fetch(vehicleApiUrl);
+        // --- Selesai siapkan promise ---
 
         try {
-          // Buat array berisi "promise" untuk setiap API call
-          const fetchPromises = rolesToFetch.map(roleId => {
-            const apiUrl = `/api/get-users?hubId=${hubId}&roleId=${roleId}&status=active`;
-            return fetch(apiUrl);
-          });
-
-          // Jalankan semua API call secara paralel
-          const responses = await Promise.all(fetchPromises);
-
-          // Cek apakah SEMUA respons berhasil
-          for (const res of responses) {
+          // --- 2. Jalankan semua promise secara paralel ---
+          const driverResponses = await Promise.all(driverPromises);
+          const vehicleResponse = await vehiclePromise; // Tunggu vehicle
+          
+          // --- 3. Proses Response Driver ---
+          // Cek error driver
+          for (const res of driverResponses) {
             if (!res.ok) {
               const errorData = await res.json();
-              throw new Error(errorData.error || `Gagal mengambil data driver (status: ${res.status})`);
+              throw new Error(errorData.error || `Gagal mengambil data driver`);
             }
           }
+          // Ambil JSON driver
+          const driverJsonPromises = driverResponses.map(res => res.json());
+          const driverResults = await Promise.all(driverJsonPromises);
+          // Gabungkan data driver (dari 'driver' dan 'driverJkt')
+          const rawDrivers = driverResults.flatMap(result => result.data);
+          // Proses data driver (ambil yg perlu saja)
+          const processedDrivers = rawDrivers.map(driver => ({
+            _id: driver._id,
+            name: driver.name,
+            email: driver.email
+          }));
 
-          // Ubah semua respons menjadi JSON
-          const jsonPromises = responses.map(res => res.json());
-          const results = await Promise.all(jsonPromises);
-
-          // Gabungkan data dari semua hasil (results adalah array dari [{data: [...]}, {data: [...]}])
-          // Gunakan flatMap untuk menggabungkan array 'data' dari setiap hasil
-          const allDriversArray = results.flatMap(result => result.data);
-
-          if (!Array.isArray(allDriversArray)) {
-            throw new Error("Data driver yang diterima bukanlah array.");
+          // --- 4. Proses Response Vehicle ---
+          if (!vehicleResponse.ok) {
+            const errorData = await vehicleResponse.json();
+            throw new Error(errorData.error || `Gagal mengambil data vehicle`);
+          }
+          // Ambil JSON vehicle
+          const vehicleResult = await vehicleResponse.json();
+          const rawVehicles = vehicleResult.data; // Berdasarkan hasil.json
+          
+          if (!Array.isArray(rawVehicles)) {
+            throw new Error("Data vehicle yang diterima bukanlah array.");
           }
           
-          // Proses data gabungan (hanya nama, email, id)
-          const processedDrivers = allDriversArray.map(driver => ({
-            name: driver.name,
-            email: driver.email,
-            _id: driver._id
-          }));
+          // Buat "Lookup Map" dari data vehicle untuk penggabungan yg cepat
+          // Key: email (assignee), Value: { plat, type }
+          const vehicleMap = rawVehicles.reduce((acc, vehicle) => {
+            if (vehicle.assignee) { // Hanya proses jika ada assignee
+              acc[vehicle.assignee] = {
+                plat: vehicle.name, // 'name' diubah jadi 'plat'
+                type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null // 'tags[0]' diubah jadi 'type'
+              };
+            }
+            return acc;
+          }, {});
+
+          // --- 5. Gabungkan Data Driver dan Vehicle ---
+          const mergedDriverData = processedDrivers.map(driver => {
+            const vehicleInfo = vehicleMap[driver.email]; // Cocokkan email
+            
+            return {
+              email: driver.email,
+              name: driver.name,
+              plat: vehicleInfo ? vehicleInfo.plat : null, // Ambil plat jika ada
+              type: vehicleInfo ? vehicleInfo.type : null  // Ambil type jika ada
+            };
+          });
+
+          console.log(`Data driver & vehicle (total ${mergedDriverData.length}) berhasil digabung.`);
           
-          console.log(`Data driver (total ${processedDrivers.length}) berhasil diambil dari API.`);
-          
-          // Simpan ke state
+          // --- 6. Simpan ke State dan localStorage ---
           setDriverData({
             loading: false,
-            data: processedDrivers,
+            data: mergedDriverData,
             error: null
           });
           
-          // Simpan ke localStorage
-          localStorage.setItem('driverData', JSON.stringify(processedDrivers));
-          console.log('Data driver gabungan disimpan ke cache localStorage.');
+          localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+          console.log('Data gabungan disimpan ke cache localStorage.');
 
         } catch (err) {
-          console.error('Error fetching drivers:', err);
+          console.error('Error fetching data:', err);
           setDriverData({
             loading: false,
             data: [],
@@ -137,11 +167,11 @@ export default function Home() {
         }
       }
       
-      fetchDrivers();
+      fetchDriverAndVehicleData();
     }
   }, [isLocationSaved, selectedUser, selectedLocation, driverData.data.length]);
 
-  // === FUNGSI HANDLER (Tetap sama) ===
+  // === FUNGSI HANDLER (Tidak berubah) ===
   const handleSaveLocation = () => {
     if (!selectedLocation) {
       alert('Silakan pilih lokasi cabang terlebih dahulu.');
@@ -154,14 +184,13 @@ export default function Home() {
   const handleUserSelect = (user) => {
     const dataToSave = {
       name: user.name,
-      _id: user._id, // Ambil _id dari user yg dipilih
+      _id: user._id, 
       hubId: user.hubId 
     };
     localStorage.setItem('selectedUser', JSON.stringify(dataToSave));
     setSelectedUser(dataToSave);
   };
 
-  // ... (handleReset... tetap sama) ...
   const handleReset = () => {
     localStorage.removeItem('userLocation');
     localStorage.removeItem('selectedUser');
@@ -173,8 +202,7 @@ export default function Home() {
     setDriverData({ loading: false, data: [], error: null }); 
   };
 
-  // === TAMPILAN (RENDER) (Tetap sama) ===
-  // ... (Tampilan 'isPageLoading') ...
+  // === TAMPILAN (RENDER) (Tidak berubah) ===
   if (isPageLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -199,7 +227,7 @@ export default function Home() {
             User: {selectedUser.name}
           </p>
           <p className="mt-2 text-sm text-gray-400">
-            (Berhasil memuat {driverData.data.length} data driver dari cache)
+            (Berhasil memuat {driverData.data.length} data driver gabungan dari cache)
           </p>
           <button
             onClick={handleReset}
@@ -227,12 +255,12 @@ export default function Home() {
           
           {driverData.loading && (
             <p className="mt-4 text-sm text-yellow-500">
-              Memuat data driver...
+              Memuat data driver & vehicle...
             </p>
           )}
           {driverData.error && (
             <p className="mt-4 text-sm text-red-500">
-              Gagal memuat data driver: {driverData.error}
+              Gagal memuat data: {driverData.error}
             </p>
           )}
           

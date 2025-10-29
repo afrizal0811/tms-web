@@ -1,28 +1,43 @@
 {
+    "current_page": 1,
     "data": [{
-        "name": "Azizah",
-        "email": "jobbazizah@gmail.com",
-        "hubId": [
-            "6895a281bc530d4a4908f5ef",
-            "683924970c29c079e30d862f",
-            "67a41cb1480d2d3b580fc61c",
-            "670369a8a5d2d4b5ee0b020d",
-            "68b8038b1aa98343380e3ab2"
+        "name": "B 9624 FCG KFC",
+        "assignee": "kendaraan.plck07@panganlestari.com",
+        "speed": null,
+        "fixedCost": 0,
+        "tags": [
+            "FROZEN-KFC"
         ],
-        "organizationId": "6703410af6be892f3208ecda",
-        "status": "active",
-        "isDeleted": false,
-        "lastLogin": "2025-10-16T07:51:09+00:00",
-        "roleId": "6703410af6be892f3208ecde",
-        "activationCode": "Jmo76DnCQIjul9PenrAZ",
-        "teamId": [],
-        "language": "en",
-        "verifiedTime": "2024-10-07T04:55:05+00:00",
-        "firstLogin": false,
-        "role": {
-            "name": "Driver",
-            "_id": "6703410af6be892f3208ecde"
+        "capacity": {
+            "weight": {
+                "min": 0,
+                "max": "10800"
+            },
+            "volume": {
+                "min": 0,
+                "max": "37.38834"
+            }
         },
-        "_id": "67060fc00859bcf75d04df56"
+        "oddEven": "even",
+        "workingTime": {
+            "startTime": "08:00",
+            "endTime": "17:00",
+            "multiday": 0
+        },
+        "breakTime": {
+            "startTime": null,
+            "endTime": null
+        },
+        "hubId": "6895a281bc530d4a4908f5ef",
+        "isOddEven": true,
+        "organizationId": "6703410af6be892f3208ecda",
+        "updatedTime": "2025-10-27T11:21:14.028000Z",
+        "createdTime": "2025-10-27T11:20:59.498000Z",
+        "_id": "68ff559b9546dc8a3609dc72",
+        "hubs": {
+            "name": "Hub Cikarang",
+            "address": "Jl. Jati Raya No.10b Blok J1, RW.11, Serang, Kec. Cikarang Selatan, Kabupaten Bekasi, Jawa Barat 17530",
+            "_id": "6895a281bc530d4a4908f5ef"
+        }
     }]
 }
