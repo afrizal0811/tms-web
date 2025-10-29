@@ -1,0 +1,26 @@
+{
+    "data": [{
+        "name": "Ermina Ariqoh",
+        "email": "adminekspedisi@panganlestari.com",
+        "hubId": [
+            "67a41cb1480d2d3b580fc61c"
+        ],
+        "organizationId": "6703410af6be892f3208ecda",
+        "status": "active",
+        "isDeleted": false,
+        "lastLogin": "2025-09-21T13:52:04+00:00",
+        "roleId": "6703410af6be892f3208ecdd",
+        "activationCode": "YfqAHawwORGNx8w3OEgw",
+        "teamId": [],
+        "language": "id",
+        "verifiedTime": "2024-10-07T04:55:05+00:00",
+        "firstLogin": false,
+        "role": {
+            "name": "planner",
+            "_id": "6703410af6be892f3208ecdd"
+        },
+        "_id": "67e26513e2474dfef50b2b6f"
+    }],
+    "status": true,
+    "dataVersion": "1761722681"
+}
