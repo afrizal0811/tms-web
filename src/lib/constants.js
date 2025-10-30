@@ -9,3 +9,16 @@ export const ROLE_ID = {
     "superadmin": "677c940ee491a8634b09defe",
     "adminPlanner": "68dba1298b550457520dd5a2"
 };
+
+export const VEHICLE_TYPES = [
+    "L300",
+    "CDE",
+    "CDE-LONG",
+    "CDD",
+    "CDD-LONG",
+    "FUSO",
+    "FUSO-LONG"
+];
+
+// Kunci localStorage untuk menyimpan pemetaan
+export const TAG_MAP_KEY = 'vehicleTagMap';

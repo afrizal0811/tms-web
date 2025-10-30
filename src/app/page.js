@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import LocationDropdown from '@/components/LocationDropdown';
 import UserSelectionGrid from '@/components/UserSelectionGrid';
+import TmsSummary from '@/components/TmsSummary'
 import { ROLE_ID } from '@/lib/constants'; 
 
 export default function Home() {
@@ -203,7 +204,7 @@ export default function Home() {
   };
 
   // === TAMPILAN (RENDER) (Tidak berubah) ===
-  if (isPageLoading) {
+if (isPageLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <p>Loading...</p>
@@ -214,31 +215,27 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
       
-      {/* LANGKAH 3: SUKSES */}
+      {/* --- BAGIAN INI YANG BERUBAH --- */}
+      {/* LANGKAH 3: TAMPILKAN KOMPONEN TMS SUMMARY */}
       {isLocationSaved && selectedUser ? (
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-green-500">
-            Kamu berhasil!
-          </h1>
-          <p className="mt-4 text-lg">
-            Lokasi: {selectedLocation}
-          </p>
-          <p className="mt-2 text-lg">
-            User: {selectedUser.name}
-          </p>
-          <p className="mt-2 text-sm text-gray-400">
-            (Berhasil memuat {driverData.data.length} data driver gabungan dari cache)
-          </p>
+        <>
+          <TmsSummary 
+            selectedLocation={selectedLocation}
+            selectedUser={selectedUser}
+            driverData={driverData.data} // Kirim data driver (tanpa loading/error)
+          />
+          {/* Tombol Reset tetap ada di bawahnya */}
           <button
             onClick={handleReset}
-            className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            className="mt-8 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
           >
-            Reset Pilihan
+            Reset Pilihan Awal
           </button>
-        </div>
+        </>
       
       /* LANGKAH 2: PILIH USER */
       ) : isLocationSaved && !selectedUser ? (
+        // ... (Tampilan Pilih User tetap sama) ...
         <div className="text-center w-full">
           <h1 className="text-3xl font-bold">
             PILIH USER
@@ -274,6 +271,7 @@ export default function Home() {
 
       /* LANGKAH 1: PILIH LOKASI */
       ) : (
+        // ... (Tampilan Pilih Lokasi tetap sama) ...
         <div className="text-center">
           <h1 className="text-4xl font-bold">
             SELAMAT DATANG!
