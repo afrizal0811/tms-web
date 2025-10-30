@@ -8,10 +8,11 @@ import TmsSummary from '@/components/TmsSummary'
 import { ROLE_ID } from '@/lib/constants'; 
 
 export default function Home() {
-  // ... (State kamu yang lain tetap sama) ...
+  // === STATE UNTUK ALUR ===
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedLocationName, setSelectedLocationName] = useState(''); // <-- TAMBAHKAN STATE INI
   const [isLocationSaved, setIsLocationSaved] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null); 
+  const [selectedUser, setSelectedUser] = useState(null);
   const [isPageLoading, setIsLoading] = useState(true);
   const [dropdownStatus, setDropdownStatus] = useState({
     loading: true,
@@ -19,33 +20,35 @@ export default function Home() {
   });
   const [driverData, setDriverData] = useState({
     loading: false,
-    data: [], 
+    data: [],
     error: null,
   });
-
-  // ... (useEffect untuk cek localStorage di awal... tetap sama) ...
+  // === EFEK SAAT HALAMAN DIBUKA ===
   useEffect(() => {
+    // Cek semua data yang tersimpan
     const storedLocation = localStorage.getItem('userLocation');
+    const storedLocationName = localStorage.getItem('userLocationName'); 
     const storedUser = localStorage.getItem('selectedUser');
-    const storedDrivers = localStorage.getItem('driverData'); 
-
+    const storedDrivers = localStorage.getItem('driverData');
     if (storedLocation) {
       setSelectedLocation(storedLocation);
       setIsLocationSaved(true);
+    }
+    if (storedLocationName) { // <-- TAMBAHKAN INI
+      setSelectedLocationName(storedLocationName);
     }
     if (storedUser) {
       setSelectedUser(JSON.parse(storedUser));
     }
     if (storedDrivers) {
-      console.log("Memuat data driver dari cache localStorage...");
-      setDriverData({ 
-        loading: false, 
-        data: JSON.parse(storedDrivers), 
-        error: null 
+      setDriverData({
+        loading: false,
+        data: JSON.parse(storedDrivers),
+        error: null
       });
     }
-    setIsLoading(false); 
-  }, []); 
+    setIsLoading(false);
+  }, []);
 
   // === UPDATE BESAR DI SINI: useEffect untuk mengambil DATA DRIVER & VEHICLE ===
   useEffect(() => {
@@ -55,7 +58,6 @@ export default function Home() {
     if (isLocationSaved && !selectedUser && selectedLocation && driverData.data.length === 0) {
       
       async function fetchDriverAndVehicleData() {
-        console.log("Cache driver kosong. Mengambil data driver & vehicle dari API...");
         setDriverData({ loading: true, data: [], error: null });
         
         const hubId = selectedLocation;
@@ -145,8 +147,6 @@ export default function Home() {
               type: vehicleInfo ? vehicleInfo.type : null  // Ambil type jika ada
             };
           });
-
-          console.log(`Data driver & vehicle (total ${mergedDriverData.length}) berhasil digabung.`);
           
           // --- 6. Simpan ke State dan localStorage ---
           setDriverData({
@@ -156,7 +156,6 @@ export default function Home() {
           });
           
           localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
-          console.log('Data gabungan disimpan ke cache localStorage.');
 
         } catch (err) {
           console.error('Error fetching data:', err);
@@ -174,11 +173,12 @@ export default function Home() {
 
   // === FUNGSI HANDLER (Tidak berubah) ===
   const handleSaveLocation = () => {
-    if (!selectedLocation) {
+    if (!selectedLocation || !selectedLocationName) { // <-- Perbarui cek
       alert('Silakan pilih lokasi cabang terlebih dahulu.');
       return;
     }
     localStorage.setItem('userLocation', selectedLocation);
+    localStorage.setItem('userLocationName', selectedLocationName); // <-- TAMBAHKAN INI
     setIsLocationSaved(true);
   };
   
@@ -194,11 +194,13 @@ export default function Home() {
 
   const handleReset = () => {
     localStorage.removeItem('userLocation');
+    localStorage.removeItem('userLocationName');
     localStorage.removeItem('selectedUser');
     localStorage.removeItem('driverData'); 
     
     setIsLocationSaved(false);
     setSelectedLocation('');
+    setSelectedLocationName('');
     setSelectedUser(null);
     setDriverData({ loading: false, data: [], error: null }); 
   };
@@ -221,6 +223,7 @@ if (isPageLoading) {
         <>
           <TmsSummary 
             selectedLocation={selectedLocation}
+            selectedLocationName={selectedLocationName}
             selectedUser={selectedUser}
             driverData={driverData.data} // Kirim data driver (tanpa loading/error)
           />
@@ -282,7 +285,12 @@ if (isPageLoading) {
           
           <LocationDropdown 
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
+            onChange = {
+              (id, name) => {
+                setSelectedLocation(id);
+                setSelectedLocationName(name);
+              }
+            }
             onStatusChange={setDropdownStatus}
           />
           

@@ -28,7 +28,6 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     const handleKeyDown = (e) => {
       if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault();
-        console.log("MODE RAHASIA AKTIF!");
         setShowAll(true);
       }
     };

@@ -83,7 +83,15 @@ export default function LocationDropdown({ value, onChange, onStatusChange }) {
     <>
       <select 
         value={value} // Gunakan 'value' dari props
-        onChange={onChange} // Gunakan 'onChange' dari props
+        onChange = {
+          (e) => {
+            // Ambil ID dan Teks/Nama dari opsi yang dipilih
+            const id = e.target.value;
+            const name = e.target.value ? e.target.options[e.target.selectedIndex].text : '';
+            // Kirimkan keduanya ke parent (app/page.js)
+            onChange(id, name);
+          }
+        }
         disabled={hubsData.loading || !!hubsData.error} // '!!' mengubah error (string) menjadi boolean (true)
         className="mt-6 p-2 rounded border border-gray-300 text-black w-64"
       >

@@ -11,8 +11,12 @@ import RoutingSummary from '@/components/RoutingSummary';
 import DeliverySummary from '@/components/DeliverySummary';
 import StartFinishSummary from '@/components/StartFinishSummary';
 
-export default function TmsSummary({ selectedLocation, selectedUser, driverData }) {
-  // State tunggal di sini hanya untuk tanggal
+export default function TmsSummary({
+  selectedLocation,
+  selectedLocationName,
+  selectedUser,
+  driverData
+}) {
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
 
   // (SEMUA LOGIKA BERAT SUDAH DIPINDAH)
@@ -46,22 +50,23 @@ export default function TmsSummary({ selectedLocation, selectedUser, driverData 
         <RoutingSummary
           selectedDate={selectedDate}
           selectedLocation={selectedLocation}
+          selectedLocationName={selectedLocationName}
           selectedUser={selectedUser}
           driverData={driverData}
         />
         
-        {/* Render Komponen Delivery */}
         <DeliverySummary
           selectedDate={selectedDate}
           selectedLocation={selectedLocation}
+          selectedLocationName={selectedLocationName} 
           selectedUser={selectedUser}
           driverData={driverData}
         />
         
-        {/* Render Komponen Start-Finish */}
         <StartFinishSummary
           selectedDate={selectedDate}
           selectedLocation={selectedLocation}
+          selectedLocationName={selectedLocationName}
           selectedUser={selectedUser}
           driverData={driverData}
         />

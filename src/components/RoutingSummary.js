@@ -44,8 +44,13 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
 
 // Komponen utama file ini
 // Menerima props dari TmsSummary.js
-export default function RoutingSummary({ selectedLocation, selectedUser, driverData, selectedDate }) {
-  
+export default function RoutingSummary({
+  selectedLocation,
+  selectedUser,
+  driverData,
+  selectedDate,
+  selectedLocationName
+}) {
   // SEMUA STATE DAN LOGIKA PINDAH KE SINI
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -68,8 +73,9 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
     localStorage.setItem(TAG_MAP_KEY, JSON.stringify(updatedTagMap));
     
     try {
-      processAndDownloadExcel(pendingData.results, updatedTagMap, pendingData.date);
-    } catch (err) {
+      processAndDownloadExcel(pendingData.results, updatedTagMap, pendingData.date, selectedLocationName);
+    }
+    catch (err) {
       console.error("Error saat proses Excel setelah mapping:", err);
       setError(err.message);
     }
@@ -80,9 +86,7 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
   };
 
   
-  const processAndDownloadExcel = (filteredResults, tagMap, dateFrom) => {
-    console.log("Memulai proses Excel (Routing)...");
-
+  const processAndDownloadExcel = (filteredResults, tagMap, dateForFile, hubName) => {
     const driverMap = driverData.reduce((acc, driver) => {
       if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
       return acc;
@@ -246,9 +250,8 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
     
     XLSX.utils.book_append_sheet(wb, wsTruckUsage, "Truck Usage");
     
-    const excelFileName = `TMS_Summary_${dateFrom}.xlsx`;
+    const excelFileName = `Routing Summary - ${dateForFile} - ${hubName}.xlsx`;
     XLSX.writeFile(wb, excelFileName);
-    console.log(`File Excel ${excelFileName} berhasil dibuat.`);
   }
 
   
@@ -326,13 +329,11 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
       if (newUnmappedTags.size > 0) {
         // HENTIKAN PROSES, TAMPILKAN UI MAPPING
         console.warn("Ditemukan tag tidak dikenal, meminta input user:", newUnmappedTags);
-        setPendingData({ results: filteredResults, date: dateFrom }); 
+        setPendingData({ results: filteredResults, date: selectedDate }); 
         setUnmappedTags(Array.from(newUnmappedTags.values())); 
         setIsLoading(false);
       } else {
-        // SEMUA TAG DIKENAL, LANGSUNG PROSES
-        console.log("Semua tag dikenal, langsung proses Excel.");
-        processAndDownloadExcel(filteredResults, tagMap, dateFrom); 
+        processAndDownloadExcel(filteredResults, tagMap, selectedDate, selectedLocationName);
         setIsLoading(false);
       }
 

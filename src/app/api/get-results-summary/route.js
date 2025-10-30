@@ -36,8 +36,6 @@ export async function GET(request) {
         externalUrl.searchParams.append('limit', limit);
         externalUrl.searchParams.append('hubId', hubId);
 
-        // ... (kode fetch dan response handling selanjutnya tetap sama) ...
-        console.log(`Calling external API: ${externalUrl.toString()}`);
         const externalResponse = await fetch(externalUrl.toString(), {
             headers: {
                 'Authorization': `Bearer ${apiToken}`,
