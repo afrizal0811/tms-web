@@ -22,3 +22,4 @@ export const VEHICLE_TYPES = [
 
 // Kunci localStorage untuk menyimpan pemetaan
 export const TAG_MAP_KEY = 'vehicleTagMap';
+

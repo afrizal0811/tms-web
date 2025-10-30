@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { calculateTargetDates, formatMinutesToHHMM, parseAndRoundPercentage } from '@/lib/utils';
 import { VEHICLE_TYPES, TAG_MAP_KEY } from '@/lib/constants'; 
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 // Komponen kecil untuk baris pemetaan (mapping)
 function TagMappingRow({ unmappedInfo, onMapChange }) {
