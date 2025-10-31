@@ -197,3 +197,87 @@ export function extractTempFromDriverName(driverName) {
 
     return null; // Default jika tidak ada yg cocok
 }
+
+/**
+ * Mengekstrak Location ID (kata terakhir) dari string " - "
+ * @param {string} customerName - misal: "Mamdibakes - C0204437 - MAIN"
+ * @returns {string | null}
+ */
+export function extractLocationId(customerName) {
+    if (typeof customerName !== 'string') return null;
+    const parts = customerName.split(' - ');
+    if (parts.length > 0) {
+        return parts[parts.length - 1].trim(); // Ambil bagian terakhir
+    }
+    return null;
+}
+
+/**
+ * Memformat objek koordinat {lat, long} menjadi string
+ * @param {object | null} coords - { lat: ..., long: ... }
+ * @returns {string | null}
+ */
+/**
+ * Memformat string koordinat "lat,long" menjadi string "lat, long" (dibulatkan)
+ * @param {string | null} coordsString - String "lat,long"
+ * @returns {string | null}
+ */
+export function formatCoordinates(coordsString) {
+    if (typeof coordsString !== 'string' || !coordsString.includes(',')) {
+        return null;
+    }
+    try {
+        const parts = coordsString.split(',');
+        const lat = parseFloat(parts[0]).toFixed(6); // 6 angka desimal
+        const long = parseFloat(parts[1]).toFixed(6);
+        if (isNaN(lat) || isNaN(long)) return null;
+        return `${lat}, ${long}`; // Format baru "lat, long"
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Menghitung jarak Haversine antara dua string koordinat.
+ * @param {string | null} coordsString1 - "lat,long"
+ * @param {string | null} coordsString2 - "lat,long"
+ * @returns {number | null} - Jarak dalam METER
+ */
+export function calculateHaversineDistance(coordsString1, coordsString2) {
+    if (typeof coordsString1 !== 'string' || !coordsString1.includes(',') ||
+        typeof coordsString2 !== 'string' || !coordsString2.includes(',')) {
+        return null;
+    }
+
+    const toRad = (value) => (Number(value) * Math.PI) / 180;
+    const R = 6371000; // Radius Bumi dalam meter
+
+    try {
+        // Urai string "lat,long"
+        const parts1 = coordsString1.split(',');
+        const lat1 = parseFloat(parts1[0]);
+        const lon1 = parseFloat(parts1[1]);
+
+        const parts2 = coordsString2.split(',');
+        const lat2 = parseFloat(parts2[0]);
+        const lon2 = parseFloat(parts2[1]);
+
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+            return null;
+        }
+
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const rLat1 = toRad(lat1);
+        const rLat2 = toRad(lat2);
+
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        return Math.round(distance); // Bulatkan ke meter terdekat
+    } catch (e) {
+        return null;
+    }
+}
