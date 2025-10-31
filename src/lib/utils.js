@@ -281,3 +281,160 @@ export function calculateHaversineDistance(coordsString1, coordsString2) {
         return null;
     }
 }
+
+/**
+ * Fungsi helper untuk membersihkan/menormalisasi email
+ * @param {string} email
+ * @returns {string | null}
+ */
+export const normalizeEmail = (email) => {
+    if (typeof email !== 'string' || !email) {
+        return null;
+    }
+    return email.toLowerCase().trim();
+};
+
+/**
+ * Helper untuk menambah jam ke Date object
+ * @param {Date} date
+ * @param {number} hours
+ * @returns {Date}
+ */
+function addHours(date, hours) {
+    const newDate = new Date(date);
+    newDate.setTime(newDate.getTime() + hours * 60 * 60 * 1000);
+    return newDate;
+}
+
+/**
+ * Helper untuk memformat Date object ke "YYYY-MM-DD HH:mm:ss"
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatFullDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * Menghitung rentang tanggal untuk Start-Finish Summary.
+ * timeFrom = H-1 (atau H-2 jika Senin) @ 00:00:00
+ * timeTo = H @ 23:59:59
+ * @param {string} selectedDateStr - "YYYY-MM-DD"
+ * @returns {{ timeFrom: string, timeTo: string }}
+ */
+export function calculateStartFinishDates(selectedDateStr) {
+    const selectedDate = new Date(selectedDateStr + "T12:00:00"); // Gunakan siang hari
+
+    // 1. Hitung timeTo (Akhir hari yang dipilih)
+    const timeToEnd = new Date(selectedDate);
+    timeToEnd.setHours(23, 59, 59, 999);
+    const timeTo = formatFullDateTime(timeToEnd);
+
+    // 2. Hitung timeFrom (Awal H-1 atau H-2)
+    const timeFromStart = new Date(selectedDate);
+    timeFromStart.setDate(timeFromStart.getDate() - 1); // H-1
+    if (timeFromStart.getDay() === 0) { // Cek jika H-1 adalah Minggu
+        timeFromStart.setDate(timeFromStart.getDate() - 2); // Mundur ke Sabtu (H-2 dari Senin)
+    }
+    timeFromStart.setHours(0, 0, 0, 0);
+    const timeFrom = formatFullDateTime(timeFromStart);
+
+    return {
+        timeFrom,
+        timeTo
+    };
+}
+
+/**
+ * Mem-parsing string "YYYY-MM-DD HH:mm:ss" (diasumsikan UTC) dan geser ke UTC+7
+ * @param {string} timestampStr 
+ * @returns {Date | null} Objek Date dalam UTC+7
+ */
+function parseAndShiftToUTC7(timestampStr) {
+    if (!timestampStr) return null;
+    try {
+        // 1. Paksa parsing sebagai UTC
+        const utcTimestamp = timestampStr.replace(" ", "T") + "Z";
+        const utcDate = new Date(utcTimestamp);
+        if (isNaN(utcDate.getTime())) return null;
+
+        // 2. Tambah 7 jam untuk konversi ke UTC+7
+        return addHours(utcDate, 7);
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Format "YYYY-MM-DD HH:mm:ss" (UTC) -> "DD-MM-YYYY" (UTC+7)
+ * @param {string} timestampStr 
+ * @returns {string | null}
+ */
+export function formatTimestampToDDMMYYYY_UTC7(timestampStr) {
+    const date = parseAndShiftToUTC7(timestampStr); // Ini masih benar (menghasilkan Date object +7 jam)
+    if (!date) return null;
+
+    // --- PERBAIKAN DI SINI ---
+    // Gunakan getUTC... untuk membaca tanggal apa adanya (yang sudah +7 jam)
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // getUTCMonth() juga 0-11
+    const year = date.getUTCFullYear();
+    // --- SELESAI PERBAIKAN ---
+
+    return `${day}-${month}-${year}`;
+}
+
+/**
+ * Format "YYYY-MM-DD HH:mm:ss" (UTC) -> "'HH:mm" (UTC+7)
+ * @param {string} timestampStr 
+ * @returns {string | null}
+ */
+export function formatTimestampToQuotedHHMM_UTC7(timestampStr) {
+    const date = parseAndShiftToUTC7(timestampStr); // Ini masih benar
+    if (!date) return null;
+
+    // --- PERBAIKAN DI SINI ---
+    // Gunakan getUTC... untuk membaca waktu apa adanya (yang sudah +7 jam)
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    // --- SELESAI PERBAIKAN ---
+
+    return `'${hours}:${minutes}`;
+}
+
+/**
+ * Menghitung durasi antara 2 timestamp (UTC) dan format ke 'HH:mm
+ * @param {string} startTimeStr 
+ * @param {string} finishTimeStr 
+ * @returns {string | null}
+ */
+export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
+    if (!startTimeStr || !finishTimeStr) return null;
+    try {
+        // Tidak perlu geser UTC+7, karena kita hanya butuh selisihnya
+        const startDate = new Date(startTimeStr.replace(" ", "T") + "Z");
+        const finishDate = new Date(finishTimeStr.replace(" ", "T") + "Z");
+        if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) return null;
+
+        let diffMs = finishDate.getTime() - startDate.getTime();
+        if (diffMs < 0) diffMs = 0; // Durasi tidak bisa negatif
+
+        const totalMinutes = Math.round(diffMs / 60000);
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        const formattedHours = String(hours).padStart(2, '0');
+        const formattedMinutes = String(minutes).padStart(2, '0');
+        return `'${formattedHours}:${formattedMinutes}`;
+
+    } catch (e) {
+        return null;
+    }
+}
