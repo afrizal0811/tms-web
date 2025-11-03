@@ -1,19 +1,17 @@
 // File: src/components/RoutingSummary.js
-// INI ADALAH KOMPONEN BARU UNTUK LOGIKA ROUTING
-
 'use client';
 
 import { useState } from 'react';
-import {
-  calculateTargetDates,
-  formatMinutesToHHMM,
+import { 
+  calculateTargetDates, 
+  formatMinutesToHHMM, 
   parseAndRoundPercentage,
   formatYYYYMMDDToDDMMYYYY
 } from '@/lib/utils';
 import { VEHICLE_TYPES, TAG_MAP_KEY } from '@/lib/constants'; 
 import * as XLSX from 'xlsx-js-style';
 
-// Komponen kecil untuk baris pemetaan (mapping)
+// ... (Komponen TagMappingRow tetap sama) ...
 function TagMappingRow({ unmappedInfo, onMapChange }) {
   const { tag, plat, fullTag } = unmappedInfo;
   return (
@@ -47,16 +45,9 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
   );
 }
 
-// Komponen utama file ini
-// Menerima props dari TmsSummary.js
-export default function RoutingSummary({
-  selectedLocation,
-  selectedUser,
-  driverData,
-  selectedDate,
-  selectedLocationName
-}) {
-  // SEMUA STATE DAN LOGIKA PINDAH KE SINI
+
+export default function RoutingSummary({ selectedLocation, selectedUser, driverData, selectedDate, selectedLocationName }) {
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pendingData, setPendingData] = useState(null); 
@@ -64,6 +55,7 @@ export default function RoutingSummary({
   const [newMappings, setNewMappings] = useState({});
 
   
+  // ... (handleSaveMappingAndProcess tetap sama) ...
   const handleSaveMappingAndProcess = () => {
     setIsLoading(true);
     setError(null);
@@ -73,15 +65,15 @@ export default function RoutingSummary({
       setIsLoading(false);
       return;
     }
-    const currentTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
-    const updatedTagMap = { ...currentTagMap, ...newMappings };
-    localStorage.setItem(TAG_MAP_KEY, JSON.stringify(updatedTagMap));
+    const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+    const hubTagMap = fullTagMap[selectedLocation] || {};
+    const updatedHubMap = { ...hubTagMap, ...newMappings };
+    const updatedFullMap = { ...fullTagMap, [selectedLocation]: updatedHubMap };
+    localStorage.setItem(TAG_MAP_KEY, JSON.stringify(updatedFullMap));
     
     try {
-      processAndDownloadExcel(pendingData.results, updatedTagMap, pendingData.date, selectedLocationName);
-    }
-    catch (err) {
-      console.error("Error saat proses Excel setelah mapping:", err);
+      processAndDownloadExcel(pendingData.results, updatedHubMap, pendingData.date, selectedLocationName);
+    } catch (err) {
       setError(err.message);
     }
     setPendingData(null);
@@ -91,13 +83,17 @@ export default function RoutingSummary({
   };
 
   
+  /**
+   * Fungsi ini adalah inti logika: memproses data dan membuat Excel
+   */
   const processAndDownloadExcel = (filteredResults, tagMap, dateForFile, hubName) => {
+
     const driverMap = driverData.reduce((acc, driver) => {
       if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
       return acc;
     }, {});
 
-    let processedDataRows = [];
+    let processedDataRows = []; 
     let totalDryDistance = 0;
     let totalFrozenDistance = 0;
     
@@ -109,102 +105,133 @@ export default function RoutingSummary({
     filteredResults.forEach(resultItem => {
       if (resultItem.result && Array.isArray(resultItem.result.routing)) {
         resultItem.result.routing.forEach(route => {
-          const assigneeEmail = route.assignee;
-          const driverInfo = driverMap[assigneeEmail];
-          const weightPercent = parseAndRoundPercentage(route.weightPercentage);
-          const volumePercent = parseAndRoundPercentage(route.volumePercentage);
-          processedDataRows.push({
-            plat: driverInfo ? driverInfo.plat : null,
-            driver: driverInfo ? driverInfo.name : assigneeEmail,
-            weightPercentage: weightPercent,
-            volumePercentage: volumePercent,
-            totalDistance: route.totalDistance,
-            totalVisits: null,
-            totalDelivered: null,
-            shipDurationRaw: route.totalSpentTime
-          });
-          const tags = route.vehicleTags;
-          const distance = route.totalDistance || 0; 
-          if (Array.isArray(tags) && tags.length > 0) {
-            const firstTag = String(tags[0]); 
-            const parts = firstTag.split('-');
-            if (parts.length >= 2) {
-              const generalType = parts[0].toUpperCase();
-              if (generalType === 'FROZEN') totalFrozenDistance += distance;
-              else if (generalType === 'DRY') totalDryDistance += distance;
-              let specificType = parts[1].toUpperCase(); 
-              if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
-                if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
-                  specificType = `${specificType}-LONG`;
+           // --- Logika Filter trips (POIN 2) dipindah ke bawah ---
+           
+           const assigneeEmail = route.assignee;
+           const driverInfo = driverMap[assigneeEmail];
+           const driverName = driverInfo ? driverInfo.name : assigneeEmail;
+           const weightPercent = parseAndRoundPercentage(route.weightPercentage);
+           const volumePercent = parseAndRoundPercentage(route.volumePercentage);
+
+           // Cek apakah rute ini punya trips
+           const hasTrips = (Array.isArray(route.trips) && route.trips.length > 0);
+
+           // 1. Kumpulkan data mentah (termasuk yang trips: [])
+           processedDataRows.push({
+             plat: driverInfo ? driverInfo.plat : null,
+             driver: driverName,
+             weightPercentage: weightPercent || 0,
+             volumePercentage: volumePercent || 0,
+             totalDistance: route.totalDistance || 0,
+             totalVisits: null,
+             totalDelivered: null,
+             shipDurationRaw: route.totalSpentTime || 0,
+             hasTrips: hasTrips // <-- Simpan status trips
+           });
+           
+           const tags = route.vehicleTags;
+           const distance = route.totalDistance || 0; 
+           if (hasTrips && Array.isArray(tags) && tags.length > 0) {
+              const firstTag = String(tags[0]); 
+              const parts = firstTag.split('-'); 
+              if (parts.length >= 2) {
+                const generalType = parts[0].toUpperCase(); 
+                if (generalType === 'FROZEN') totalFrozenDistance += distance;
+                else if (generalType === 'DRY') totalDryDistance += distance;
+                
+                let specificType = parts[1].toUpperCase();
+                if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
+                    if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
+                        specificType = `${specificType}-LONG`;
+                    }
                 }
+                let category = "Lainnya"; 
+                if (VEHICLE_TYPES.includes(specificType)) category = specificType;
+                else if (tagMap[specificType]) category = tagMap[specificType];
+                
+                if (generalType === 'FROZEN') truckUsageCount[category]["Frozen"] += 1;
+                else if (generalType === 'DRY') truckUsageCount[category]["Dry"] += 1;
               }
-              let category = "Lainnya"; 
-              if (VEHICLE_TYPES.includes(specificType)) {
-                category = specificType;
-              } else if (tagMap[specificType]) {
-                category = tagMap[specificType];
-              } 
-              if (generalType === 'FROZEN') {
-                truckUsageCount[category]["Frozen"] += 1;
-              } else if (generalType === 'DRY') {
-                truckUsageCount[category]["Dry"] += 1;
-              }
-            }
-          }
+           }
         });
       }
     });
-
+    
+    // Urutkan berdasarkan Driver (ini penting agar merge mengambil plat yg konsisten)
     processedDataRows.sort((a, b) => (a.driver || '').localeCompare(b.driver || ''));
+
+    // --- 1. GABUNGKAN DATA (MERGE) UNTUK SHEET "TRUCK DETAIL" ---
+    const mergedTruckDetailMap = new Map();
+    for (const row of processedDataRows) {
+      const key = row.driver; // Kunci: Nama Driver
+      if (!mergedTruckDetailMap.has(key)) {
+        mergedTruckDetailMap.set(key, { ...row });
+      } else {
+        const existing = mergedTruckDetailMap.get(key);
+        mergedTruckDetailMap.set(key, {
+          plat: existing.plat || row.plat, // Ambil plat pertama yg non-null
+          driver: existing.driver,
+          weightPercentage: Math.max(existing.weightPercentage, row.weightPercentage),
+          volumePercentage: Math.max(existing.volumePercentage, row.volumePercentage),
+          totalDistance: Math.max(existing.totalDistance, row.totalDistance),
+          shipDurationRaw: Math.max(existing.shipDurationRaw, row.shipDurationRaw),
+          hasTrips: existing.hasTrips || row.hasTrips // <-- PENTING
+        });
+      }
+    }
+    
+    // --- 2. FILTER SETELAH MERGE ---
+    // Ubah Map kembali ke Array DAN filter yang 'hasTrips: true'
+    const finalFilteredData = Array.from(mergedTruckDetailMap.values())
+                                    .filter(row => row.hasTrips);
+    // --- SELESAI PERUBAHAN ---
+
 
     // --- PEMBUATAN EXCEL ---
     const wb = XLSX.utils.book_new();
-
-    // Sheet 1: Truck Detail
-    const headers = ["Plat", "Driver", "Weight Percentage", "Volume Percentage", "Total Distance (m)", "Total Visits", "Total Delivered", "Ship Duration"];
-    const finalSheetData = [headers, ...processedDataRows.map(row => [
-      row.plat, row.driver,
-      row.weightPercentage !== null ? `${row.weightPercentage}%` : null,
-      row.volumePercentage !== null ? `${row.volumePercentage}%` : null,
-      row.totalDistance, row.totalVisits, row.totalDelivered,
-      formatMinutesToHHMM(row.shipDurationRaw)
-    ])];
-    const wsTruckDetail = XLSX.utils.aoa_to_sheet(finalSheetData);
-    // ... (Styling sheet 1) ...
     const headerStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
     const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
-    const range = XLSX.utils.decode_range(wsTruckDetail['!ref']);
-    const headerRowIndex = 0;
-    const centerAlignedDataColumns = [2, 3, 4, 7];
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cellRef = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
-      let cell = wsTruckDetail[cellRef];
-      if (!cell) { wsTruckDetail[cellRef] = { t: 's', v: headers[C] }; cell = wsTruckDetail[cellRef]; }
-      cell.s = headerStyle;
-    }
-    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-      for (let C of centerAlignedDataColumns) {
-         if (C > range.e.c) continue;
-         const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-         let cell = wsTruckDetail[cellRef];
-         if (!cell) {
-            let cellValue = finalSheetData[R][C];
-            let cellType = (typeof cellValue === 'number') ? 'n' : 's';
-            wsTruckDetail[cellRef] = { t: cellType, v: cellValue };
-            cell = wsTruckDetail[cellRef];
-         }
-         if (!cell.s) cell.s = {};
-         cell.s.alignment = centerStyle.alignment;
+
+    // --- Sheet 1: Truck Detail ---
+    const headers1 = [
+      "Plat", "Driver", "Weight Percentage", "Volume Percentage",
+      "Total Distance (m)", "Total Visits", "Total Delivered", "Ship Duration"
+    ];
+    // --- Gunakan 'finalFilteredData' ---
+    const finalSheetData1 = [headers1, ...finalFilteredData.map(row => [
+        row.plat, row.driver,
+        row.weightPercentage > 0 ? `${row.weightPercentage}%` : null, 
+        row.volumePercentage > 0 ? `${row.volumePercentage}%` : null, 
+        row.totalDistance > 0 ? row.totalDistance : null, 
+        row.totalVisits, row.totalDelivered,
+        formatMinutesToHHMM(row.shipDurationRaw)
+    ])];
+    const wsTruckDetail = XLSX.utils.aoa_to_sheet(finalSheetData1);
+    // (Styling Sheet 1)
+    const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
+    const centerAlignedDataColumns1 = [2, 3, 4, 7];
+    for (let R = range1.s.r; R <= range1.e.r; ++R) {
+      for (let C = range1.s.c; C <= range1.e.c; ++C) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!wsTruckDetail[cellRef]) continue;
+        if (R === 0) {
+          wsTruckDetail[cellRef].s = headerStyle;
+        } else if (centerAlignedDataColumns1.includes(C)) {
+          wsTruckDetail[cellRef].s = centerStyle;
+        }
       }
     }
-    const colWidths = headers.map((_, i) => ({ wch: finalSheetData.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0) + 2 }));
-    wsTruckDetail['!cols'] = colWidths;
+    const colWidths1 = headers1.map((_, i) => ({ wch: finalSheetData1.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0) + 2 }));
+    wsTruckDetail['!cols'] = colWidths1;
     XLSX.utils.book_append_sheet(wb, wsTruckDetail, "Truck Detail");
 
-    // Sheet 2: Total Distance Summary
+    // --- Sheet 2: Total Distance Summary (Tidak berubah) ---
     const totalDryKm = totalDryDistance / 1000;
     const totalFrozenKm = totalFrozenDistance / 1000;
-    const distanceSummaryData = [["DRY (km)", "FROZEN (km)"], [totalDryKm, totalFrozenKm]];
+    const distanceSummaryData = [
+      ["DRY (km)", "FROZEN (km)"],
+      [totalDryKm, totalFrozenKm]
+    ];
     const wsDistanceSummary = XLSX.utils.aoa_to_sheet(distanceSummaryData);
     const distanceHeaderStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
     const distanceDataStyle = { alignment: { horizontal: "center", vertical: "center" }, t: 'n', z: '0.00' }; 
@@ -215,7 +242,7 @@ export default function RoutingSummary({
     wsDistanceSummary['!cols'] = [{ wch: 15 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(wb, wsDistanceSummary, "Total Distance Summary");
 
-    // Sheet 3: Truck Usage
+    // --- Sheet 3: Truck Usage (Tidak berubah) ---
     const usageHeader = ["Tipe Kendaraan", "Jumlah (Dry)", "Jumlah (Frozen)"];
     const usageDataRows = VEHICLE_TYPES.map(type => {
       const dryCount = truckUsageCount[type]["Dry"];
@@ -237,7 +264,7 @@ export default function RoutingSummary({
     }
     const finalUsageData = [usageHeader, ...usageDataRows];
     const wsTruckUsage = XLSX.utils.aoa_to_sheet(finalUsageData);
-    // ... (Styling sheet 3) ...
+    // (Styling Sheet 3)
     const usageHeaderStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
     const usageDataNumStyle = { alignment: { horizontal: "center", vertical: "center" }, t: 'n' };
     const usageDataLabelStyle = { alignment: { horizontal: "left", vertical: "center" } };
@@ -252,16 +279,18 @@ export default function RoutingSummary({
       if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
     });
     wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
-    
     XLSX.utils.book_append_sheet(wb, wsTruckUsage, "Truck Usage");
     
+    // --- Download File ---
     const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
     const excelFileName = `Routing Summary - ${formattedDate} - ${hubName}.xlsx`;
     XLSX.writeFile(wb, excelFileName);
   }
 
   
-  // Ini adalah fungsi UTAMA yang dipanggil tombol "Routing Summary"
+  /**
+   * Ini adalah fungsi UTAMA yang dipanggil tombol "Routing Summary"
+   */
   const handleRoutingSummary = async () => {
     setIsLoading(true);
     setError(null);
@@ -270,13 +299,13 @@ export default function RoutingSummary({
     setNewMappings({});
 
     try {
-      // 1. Fetch data (Gunakan props 'selectedLocation' dan 'selectedDate')
+      // 1. Fetch data
       const hubId = selectedLocation; 
       if (!hubId || !Array.isArray(driverData)) {
         throw new Error("Data Hub atau Driver tidak valid.");
       }
       
-      const { dateFrom, dateTo } = calculateTargetDates(selectedDate); // <-- Gunakan props 'selectedDate'
+      const { dateFrom, dateTo } = calculateTargetDates(selectedDate); 
       
       const apiUrl = `/api/get-results-summary?dateFrom=${dateFrom}&dateTo=${dateTo}&limit=500&hubId=${hubId}`;
       const response = await fetch(apiUrl);
@@ -291,17 +320,24 @@ export default function RoutingSummary({
         return;
       }
 
-      // 2. VALIDASI TAG
+      // 2. Logika Validasi (Read)
+      const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+      const hubTagMap = fullTagMap[hubId] || {};
+
       const driverMap = driverData.reduce((acc, driver) => {
         if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
         return acc;
       }, {});
-      const tagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+      
       const newUnmappedTags = new Map(); 
 
       for (const resultItem of filteredResults) {
         if (resultItem.result && Array.isArray(resultItem.result.routing)) {
           for (const route of resultItem.result.routing) {
+            
+            // --- Logika Filter trips (POIN 2) dipindah ke processAndDownloadExcel ---
+            // Kita HANYA cek tag di sini
+            
             const tags = route.vehicleTags;
             if (Array.isArray(tags) && tags.length > 0) {
               const firstTag = String(tags[0]); 
@@ -314,7 +350,8 @@ export default function RoutingSummary({
                   }
                 }
                 const isKnown = VEHICLE_TYPES.includes(specificType);
-                const isMapped = tagMap[specificType];
+                const isMapped = hubTagMap[specificType];
+                
                 if (!isKnown && !isMapped) {
                   if (!newUnmappedTags.has(specificType)) {
                     const driverInfo = driverMap[route.assignee];
@@ -333,30 +370,24 @@ export default function RoutingSummary({
       
       // 3. Putuskan Alur
       if (newUnmappedTags.size > 0) {
-        // HENTIKAN PROSES, TAMPILKAN UI MAPPING
-        console.warn("Ditemukan tag tidak dikenal, meminta input user:", newUnmappedTags);
-        setPendingData({ results: filteredResults, date: selectedDate }); 
+        setPendingData({ results: filteredResults, date: dateFrom }); 
         setUnmappedTags(Array.from(newUnmappedTags.values())); 
         setIsLoading(false);
       } else {
-        processAndDownloadExcel(filteredResults, tagMap, dateFrom, selectedLocationName);
+        processAndDownloadExcel(filteredResults, hubTagMap, dateFrom, selectedLocationName); 
         setIsLoading(false);
       }
 
     } catch (err) {
-      console.error('Error saat proses Routing Summary:', err);
       setError(err.message);
       setIsLoading(false);
     } 
   };
 
-
   // --- RENDER UTAMA ---
-  // UI untuk komponen ini sekarang hanya berisi tombol aksinya sendiri
-  // dan UI mapping jika diperlukan
 
+  // Tampilan 1: Mode Pemetaan (Mapping Mode)
   if (unmappedTags.length > 0) {
-    // Tampilan 1: Mode Pemetaan (Mapping Mode)
     return (
       <div className="flex flex-col items-center w-full max-w-4xl p-4">
         <h2 className="text-2xl font-bold mb-4 text-yellow-400">Peringatan (Routing)</h2>
@@ -392,21 +423,18 @@ export default function RoutingSummary({
   }
 
   // Tampilan 2: Tombol Aksi Normal
-    return (
-    // HAPUS "w-full" dari div ini, dan tambahkan "flex flex-col"
+  return (
     <div className="flex flex-col">
       <button
         onClick={handleRoutingSummary}
         disabled={isLoading}
-        // Pastikan w-full hanya berlaku di mobile (bawaan), dan sm:w-auto untuk desktop
         className="px-6 py-3 rounded w-full sm:w-auto text-white
                    bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500"
       >
         {isLoading ? 'Memproses Routing...' : '1. Generate Routing Summary'}
       </button>
       {error && (
-        // Tampilkan error di bawah tombolnya sendiri
-        <p className="mt-2 text-red-500 text-xs text-center w-full max-w-xs">{error}</p>
+        <p className="mt-4 text-red-500 text-xs text-center">{error}</p>
       )}
     </div>
   );
