@@ -20,14 +20,41 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
         Plat <strong>{plat || 'N/A'}</strong> (tag: <strong>{fullTag}</strong>) memiliki tipe <strong>`{tag}`</strong> yg tidak dikenal.
       </p>
       <p className="mb-2 font-semibold">Petakan tipe `{tag}` ke tipe standar:</p>
-      {/* ... (sisa JSX radio button tetap sama) ... */}
+      <div className="flex flex-wrap gap-2">
+        {VEHICLE_TYPES.map(type => (
+          <div key={type}>
+            <input 
+              type="radio" 
+              name={`map-${tag}`} 
+              id={`map-${tag}-${type}`} 
+              value={type} 
+              onChange={(e) => onMapChange(tag, e.target.value)}
+              className="sr-only peer"
+            />
+            <label
+              htmlFor={`map-${tag}-${type}`}
+              className="px-3 py-1.5 border border-gray-500 rounded-md cursor-pointer text-sm 
+                         hover:bg-gray-700 peer-checked:bg-blue-600 peer-checked:border-blue-500"
+            >
+              {type}
+            </label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 // --- SELESAI PERBAIKAN ---
 
 
-export default function RoutingSummary({ selectedLocation, selectedUser, driverData, selectedDate, selectedLocationName }) {
+export default function RoutingSummary({
+  selectedLocation,
+  selectedUser,
+  driverData,
+  selectedDate,
+  selectedLocationName,
+  onMappingModeChange
+}) {
   
   // ... (state tetap sama) ...
   const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +88,7 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
     setUnmappedTags([]);
     setNewMappings({});
     setIsLoading(false);
+    if (onMappingModeChange) onMappingModeChange(false);
   };
 
   
@@ -319,6 +347,7 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
     setPendingData(null);
     setNewMappings({});
 
+    if (onMappingModeChange) onMappingModeChange(false);
     try {
       // 1. Fetch data
       const hubId = selectedLocation; 
@@ -391,6 +420,7 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
         setPendingData({ results: filteredResults, date: dateFrom }); 
         setUnmappedTags(Array.from(newUnmappedTags.values())); 
         setIsLoading(false);
+        if (onMappingModeChange) onMappingModeChange(true);
       } else {
         processAndDownloadExcel(filteredResults, hubTagMap, dateFrom, selectedLocationName); 
         setIsLoading(false);
@@ -399,6 +429,7 @@ export default function RoutingSummary({ selectedLocation, selectedUser, driverD
     } catch (err) {
       setError(err.message);
       setIsLoading(false);
+      if (onMappingModeChange) onMappingModeChange(false);
     } 
   };
 
