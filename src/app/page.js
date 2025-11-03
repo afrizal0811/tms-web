@@ -6,7 +6,7 @@ import LocationDropdown from '@/components/LocationDropdown';
 import UserSelectionGrid from '@/components/UserSelectionGrid';
 import TmsSummary from '@/components/TmsSummary';
 import { ROLE_ID } from '@/lib/constants'; 
-import { normalizeEmail, formatCoordinates, calculateHaversineDistance } from '@/lib/utils'; // <-- Pastikan ini diimpor
+import { normalizeEmail } from '@/lib/utils'; // Kita butuh ini
 
 export default function Home() {
   // === STATE UNTUK DATA ===
@@ -28,10 +28,8 @@ export default function Home() {
       setIsLoading(true);
       setPageError(null);
 
-      // --- PERBAIKAN: Deklarasi di scope yang lebih tinggi ---
       let hubs = [];
       let processedHubs = [];
-      // --- SELESAI PERBAIKAN ---
 
       // 1. Fetch SEMUA hubs
       try {
@@ -52,7 +50,6 @@ export default function Home() {
            throw new Error("Format data hubs tidak dikenal.");
         }
         
-        // Hapus "Hub Demo" dan bersihkan nama
         processedHubs = hubs
           .filter(hub => hub.name !== "Hub Demo")
           .map(hub => ({
@@ -60,11 +57,7 @@ export default function Home() {
             name: hub.name.replace("Hub ", "")
           }));
         
-        setAllHubsList(processedHubs); // Simpan daftar LENGKAP
-        // Set view awal (jika user belum login/reset)
-        if (!localStorage.getItem('selectedUser')) {
-            setCurrentHubListView(processedHubs);
-        }
+        setAllHubsList(processedHubs);
 
       } catch (e) {
         setPageError(e.message); 
@@ -76,40 +69,38 @@ export default function Home() {
       const storedLocation = localStorage.getItem('userLocation');
       const storedLocationName = localStorage.getItem('userLocationName');
       const storedUser = localStorage.getItem('selectedUser');
-      const storedDrivers = localStorage.getItem('driverData'); // Cek cache driver
+      const storedDrivers = localStorage.getItem('driverData');
 
       if (storedUser) {
+        // --- User Sudah Ada ---
         const user = JSON.parse(storedUser);
         setSelectedUser(user);
         
         const userHubIds = user.hubId || [];
 
-        // Atur daftar hub yang diizinkan untuk 'Ganti Lokasi'
-        if (userHubIds.length > 1) {
-           // --- PERBAIKAN: 'processedHubs' sekarang bisa diakses ---
-           const allowed = processedHubs.filter(h => userHubIds.includes(h._id));
-           setCurrentHubListView(allowed); 
-           // --- SELESAI PERBAIKAN ---
-        }
+        // Tentukan daftar hub yang boleh dipilih
+        const allowed = (userHubIds.length > 1) 
+          ? processedHubs.filter(h => userHubIds.includes(h._id))
+          : processedHubs; // Jika user hubId = 1, biarkan (akan disembunyikan nanti)
+          
+        setCurrentHubListView(allowed);
 
         // Cek lokasi
         if (storedLocation && storedLocationName) {
-            if (userHubIds.includes(storedLocation)) {
+            // Validasi: Apakah lokasi yg disimpan masih ada di hubId user?
+            if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
               setSelectedLocation(storedLocation);
               setSelectedLocationName(storedLocationName);
-            } else if (userHubIds.length === 1) {
-              // Auto-fix
-              const hubId = user.hubId[0]; // <-- Perbaikan bug: user.hubId, bukan user.hubIds
-              const hubName = hubs.find(h => h._id === hubId)?.name || hubId;
-              setSelectedLocation(hubId); setSelectedLocationName(hubName);
-              localStorage.setItem('userLocation', hubId);
-              localStorage.setItem('userLocationName', hubName);
             } else {
-              // Lokasi salah, paksa pilih ulang
+              // Lokasi disimpan salah (misal data user berubah), paksa pilih ulang
               localStorage.removeItem('userLocation');
               localStorage.removeItem('userLocationName');
             }
         }
+      } else {
+        // --- User Belum Ada (Pertama Kali Buka) ---
+        // Tampilkan semua hub
+        setCurrentHubListView(processedHubs);
       }
       
       // Muat driver jika ada
@@ -123,8 +114,10 @@ export default function Home() {
     initializeApp();
   }, []); // [] = Hanya jalan sekali saat halaman dimuat
 
-  // --- [BARU] EFEK UNTUK MENGAMBIL DATA DRIVER ---
+  // --- EFEK UNTUK MENGAMBIL DATA DRIVER ---
   useEffect(() => {
+    // Fungsi ini akan berjalan SETELAH Langkah 1 selesai
+    // (saat 'selectedLocation' diisi)
     async function fetchDriverData() {
       // 1. Cek cache dulu
       const storedDrivers = localStorage.getItem('driverData');
@@ -135,7 +128,6 @@ export default function Home() {
 
       // 2. Jika cache tidak ada, fetch
       try {
-        // --- Siapkan semua promise ---
         const driverRoleId = '6703410af6be892f3208ecde';
         const driverJktRoleId = '68f74e1cff7fa2efdd0f6a38';
         const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
@@ -154,16 +146,14 @@ export default function Home() {
         const vehicleApiUrl = `/api/get-vehicles?hubId=${selectedLocation}&limit=500`;
         const vehiclePromise = fetch(vehicleApiUrl);
 
-        // --- Jalankan paralel ---
         const driverResponses = await Promise.all(driverPromises);
         const vehicleResponse = await vehiclePromise;
 
-        // --- Proses Driver ---
         let rawDrivers = [];
         for (const res of driverResponses) {
           if (!res.ok) throw new Error('Gagal mengambil data users (driver).');
           const data = await res.json();
-          if (data && Array.isArray(data.data)) { // <-- Cek data.data
+          if (data && Array.isArray(data.data)) {
             rawDrivers = rawDrivers.concat(data.data);
           }
         }
@@ -173,10 +163,8 @@ export default function Home() {
           email: driver.email
         }));
 
-        // --- Proses Vehicle ---
         if (!vehicleResponse.ok) throw new Error('Gagal mengambil data vehicles.');
         const vehicleResult = await vehicleResponse.json();
-        // Cek vehicleResult.data (sesuai API /vehicles)
         if (!vehicleResult || !Array.isArray(vehicleResult.data)) {
            throw new Error("Data vehicle tidak sesuai.");
         }
@@ -191,7 +179,6 @@ export default function Home() {
           return acc;
         }, {});
 
-        // --- Gabungkan Data ---
         const mergedDriverData = processedDrivers.map(driver => {
           const vehicleInfo = vehicleMap[driver.email];
           return {
@@ -202,7 +189,6 @@ export default function Home() {
           };
         });
 
-        // --- Simpan ke State dan Cache ---
         setDriverData({ data: mergedDriverData });
         localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
 
@@ -211,7 +197,6 @@ export default function Home() {
       }
     }
 
-    // Hanya jalankan jika LOKASI sudah dipilih
     if (selectedLocation) {
       fetchDriverData();
     }
@@ -240,10 +225,9 @@ export default function Home() {
     // Simpan lokasi baru
     localStorage.setItem('userLocation', selectedLocation);
     localStorage.setItem('userLocationName', selectedLocationName);
-    // (re-render akan memicu useEffect fetch driver baru)
   };
 
-  // Dipanggil dari UserSelectionGrid di Langkah 2
+  // Dipanggil dari UserSelectionGrid di Langkah 2 (POIN 1: HANYA SEKALI)
   const handleUserSelect = (user) => {
     localStorage.setItem('selectedUser', JSON.stringify(user));
     setSelectedUser(user);
@@ -260,24 +244,28 @@ export default function Home() {
     setSelectedLocation('');
     setSelectedLocationName('');
     setDriverData({ data: [] });
-    setCurrentHubListView(allHubsList); // Tampilkan SEMUA hub lagi
+    setCurrentHubListView(allHubsList); 
   };
   
-  // Reset HANYA lokasi (untuk multi-hub user)
+  // (POIN 5 & 6) Reset HANYA lokasi (untuk multi-hub user)
   const handleResetLocation = () => {
      localStorage.removeItem('userLocation');
      localStorage.removeItem('userLocationName');
-     localStorage.removeItem('selectedUser'); // Paksa pilih user lagi
-     localStorage.removeItem('driverData');
+     localStorage.removeItem('driverData'); // Driver data tergantung lokasi
      
      setSelectedLocation('');
      setSelectedLocationName('');
-     setSelectedUser(null);
      setDriverData({ data: [] });
      
      // Siapkan dropdown HANYA untuk hub user
      const allowed = allHubsList.filter(h => selectedUser.hubId.includes(h._id));
-     setCurrentHubListView(allowed);
+     // Poin 6: Jika nama tidak ada, tampilkan ID-nya
+     const allowedWithNames = allowed.map(hub => ({
+       _id: hub._id,
+       name: hub.name ? hub.name : hub._id // Fallback ke ID
+     }));
+     
+     setCurrentHubListView(allowedWithNames);
   };
 
   // --- TAMPILAN (RENDER) ---
@@ -334,15 +322,6 @@ export default function Home() {
               Lanjutkan
             </button>
           </div>
-          {/* Jika user sudah login (multi-hub) tapi ganti lokasi, tampilkan tombol Ganti User */}
-          {selectedUser && (
-             <button 
-              onClick={handleResetAll}
-              className="mt-8 text-sm text-gray-400 hover:text-white"
-             >
-              Ganti User
-             </button>
-          )}
         </div>
       </main>
     );
@@ -396,13 +375,7 @@ export default function Home() {
           </button>
         )}
 
-        {/* (POIN 1 & 7) Tombol Ganti User tidak ada, hanya reset semua */}
-        <button
-          onClick={handleResetAll}
-          className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-        >
-          Reset (Ganti Lokasi & User)
-        </button>
+        {/* (POIN 1 & 7) Tombol Ganti User tidak ada */}
       </>
     </main>
   );
