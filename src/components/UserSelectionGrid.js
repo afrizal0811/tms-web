@@ -3,17 +3,17 @@
 
 import { useState, useEffect } from 'react';
 
-// 3x3 grid
-const ITEMS_PER_PAGE = 9;
-
-// Fungsi untuk Capitalize Each Word
+// Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
   if (!str) return "";
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+// Atur berapa item per halaman untuk 3x3 grid
+const ITEMS_PER_PAGE = 9;
+
 export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
-  // ... (State: usersData, selectedId, currentPage, showAll... tetap sama) ...
+  // ... (State: usersData, selectedId, currentPage... tetap sama) ...
   const [usersData, setUsersData] = useState({
     loading: true,
     data: [],
@@ -21,7 +21,7 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
   });
   const [selectedId, setSelectedId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(false); // State untuk mode rahasia
 
   // ... (useEffect untuk hotkey CTRL+ALT+A... tetap sama) ...
   useEffect(() => {
@@ -37,15 +37,23 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     };
   }, []);
 
-  // useEffect untuk mengambil data users (INI YANG BERUBAH)
+  // --- FUNGSI useEffect (DENGAN PERUBAHAN) ---
   useEffect(() => {
+    // Jangan fetch jika hubId belum dipilih
+    if (!hubId) {
+      setUsersData({ loading: true, data: [], error: null });
+      return;
+    }
+
     async function fetchUsers() {
       setUsersData({ loading: true, data: [], error: null });
       
       let apiUrl = `/api/get-users?hubId=${hubId}&status=active`;
+      // JIKA BUKAN mode rahasia, tambahkan filter roleId (Planner)
       if (!showAll) {
         apiUrl += `&roleId=${roleId}`; 
       }
+      // Jika mode rahasia (showAll), kita panggil TANPA roleId (ambil semua)
       
       try {
         const response = await fetch(apiUrl);
@@ -55,12 +63,13 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
           throw new Error(responseData.error || 'Gagal mengambil data users');
         }
 
-        const usersArray = responseData.data;
+        // Asumsi data ada di responseData.data (sesuai hasil.json user)
+        const usersArray = responseData.data; 
         if (!Array.isArray(usersArray)) {
           throw new Error("Data user yang diterima bukanlah array.");
         }
         
-        // --- INI BAGIAN BARU UNTUK FILTER TAMBAHAN ---
+        // --- PERUBAHAN LOGIKA FILTER DI SINI ---
 
         // 0. Definisikan ID Driver yang dilarang
         const forbiddenRoleIds = [
@@ -68,38 +77,33 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
           '68f74e1cff7fa2efdd0f6a38'  // Driver JKT
         ];
 
-        // 1. Mulai dengan data mentah
         let processedData = usersArray;
 
-        // 2. Terapkan filter rahasia JIKA mode 'showAll' aktif
+        // 1. Terapkan filter rahasia JIKA mode 'showAll' aktif
         if (showAll) {
           processedData = processedData.filter(user => 
             !forbiddenRoleIds.includes(user.roleId)
           );
         }
 
-        // 3. Terapkan filter & map & sort (yang sudah ada sebelumnya)
+        // 2. Terapkan filter & map & sort
         processedData = processedData
-          // Filter "Hub Demo" (selalu)
-          .filter(user => user.name !== "Hub Demo")
-          // Ubah nama (Capitalize & replace)
+          .filter(user => user.name !== "Hub Demo") // Filter demo (jaga-jaga)
           .map(user => ({
             ...user,
             name: capitalizeWords(user.name.replace("Hub ", ""))
           }))
-          // Urutkan nama (selalu)
           .sort((a, b) => a.name.localeCompare(b.name));
         
         // --- SELESAI PERUBAHAN ---
-        
+
         setUsersData({
           loading: false,
-          data: processedData, // Simpan data yang sudah diproses
+          data: processedData,
           error: null,
         });
 
       } catch (err) {
-        console.error('Error fetching users:', err);
         setUsersData({
           loading: false,
           data: [],
@@ -109,11 +113,11 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     }
 
     fetchUsers();
-  }, [hubId, roleId, showAll]); 
+  }, [hubId, roleId, showAll]); // <-- 'hubId' dan 'showAll' jadi dependency
 
-  // --- SISA KOMPONEN (TETAP SAMA) ---
-
-  // ... (Logic Pagination: totalPages, paginatedUsers, handleNextPage, handlePrevPage) ...
+  // ... (Sisa logika: pagination, handleChange, render... tetap sama) ...
+  
+  // --- LOGIC PAGINATION ---
   const totalPages = Math.ceil(usersData.data.length / ITEMS_PER_PAGE);
   const paginatedUsers = usersData.data.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -126,24 +130,26 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   };
 
-  // ... (handleChange) ...
+  // Handle saat radio button (user) dipilih
   const handleChange = (user) => {
     setSelectedId(user._id);
     onUserSelect(user);
   };
 
-  // ... (Render: loading, error, empty) ...
+  // Tampilan Loading
   if (usersData.loading) {
     return <p className="mt-6 text-gray-400">Mencari user...</p>;
   }
+  // Tampilan Error
   if (usersData.error) {
     return <p className="mt-6 text-red-500">{usersData.error}</p>;
   }
+  // Tampilan jika tidak ada user
   if (usersData.data.length === 0) {
-    return <p className="mt-6 text-gray-400">Tidak ada user ditemukan.</p>;
+    return <p className="mt-6 text-gray-400">Tidak ada user ditemukan di lokasi ini.</p>;
   }
 
-  // ... (Return JSX) ...
+  // Tampilan Grid
   return (
     <div className="w-full max-w-2xl mt-6 mx-auto"> 
       
