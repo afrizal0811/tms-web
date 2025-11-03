@@ -12,7 +12,8 @@ import {
   extractLocationId,
   formatCoordinates,
   calculateHaversineDistance,
-  calculateTargetDates
+  calculateTargetDates,
+  formatYYYYMMDDToDDMMYYYY
 } from '@/lib/utils';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE, normalizeEmail tetap sama) ...
@@ -24,7 +25,13 @@ const normalizeEmail = (email) => {
 };
 
 
-export default function DeliverySummary({ selectedLocation, selectedUser, driverData, selectedDate }) {
+export default function DeliverySummary({
+  selectedLocation,
+  selectedUser,
+  driverData,
+  selectedDate,
+  selectedLocationName
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -246,6 +253,42 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       
       // --- PERUBAHAN DI SINI: Ganti fill merah menjadi text merah ---
       const redTextStyle = { font: { color: { rgb: "FF0000" } } }; // Style Teks Merah
+      // --- SELESAI PERUBAHAN ---
+
+      // --- PERUBAHAN DI SINI: Sheet 1 (BARU) ---
+      // --- Sheet "Routing Date" ---
+      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom); // 'dateFrom' dari calculateTargetDates
+      
+      // Buat data dengan 1 baris, 7 kolom (A-G). Hanya A1 yg berisi data
+      const routingDateData = [
+        [routingDate, null, null, null, null, null, null]
+      ];
+      const wsRoutingDate = XLSX.utils.aoa_to_sheet(routingDateData);
+      
+      // Terapkan style (Bold, 60pt, Center) ke sel A1
+      wsRoutingDate['A1'].s = {
+        font: { bold: true, sz: 60 },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+      
+      // Terapkan merge A1-G1
+      wsRoutingDate['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } } // Merge A1 (0,0) sampai G1 (0,6)
+      ];
+
+      // Atur lebar kolom A-G
+      wsRoutingDate['!cols'] = [
+        { wch: 15 }, // A
+        { wch: 15 }, // B
+        { wch: 15 }, // C
+        { wch: 15 }, // D
+        { wch: 15 }, // E
+        { wch: 15 }, // F
+        { wch: 15 }  // G
+      ];
+      
+      // Tambahkan ke workbook (PALING PERTAMA)
+      XLSX.utils.book_append_sheet(wb, wsRoutingDate, "Routing Date");
       // --- SELESAI PERUBAHAN ---
 
       // --- Sheet 1: Total Delivered (Tidak berubah) ---
@@ -494,7 +537,8 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, "Update Longlat");
 
       // --- 9. Download File ---
-      const excelFileName = `Delivery_Summary_${selectedDate}.xlsx`;
+      const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
+      const excelFileName = `Delivery Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
 
     } catch (err) {

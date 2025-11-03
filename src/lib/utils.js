@@ -438,3 +438,22 @@ export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
         return null;
     }
 }
+
+
+/**
+ * [BARU] Mengubah "YYYY-MM-DD" menjadi "DD-MM-YYYY"
+ * @param {string} yyyyMmDd - String tanggal "YYYY-MM-DD"
+ * @returns {string | null}
+ */
+export function formatYYYYMMDDToDDMMYYYY(yyyyMmDd) {
+    if (typeof yyyyMmDd !== 'string' || !yyyyMmDd.includes('-')) {
+        return yyyyMmDd; // Kembalikan aslinya jika format salah
+    }
+    try {
+        const [y, m, d] = yyyyMmDd.split('-');
+        if (!y || !m || !d) return yyyyMmDd;
+        return `${d}.${m}.${y}`;
+    } catch (e) {
+        return yyyyMmDd; // Gagal parsing
+    }
+}

@@ -8,10 +8,17 @@ import {
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
   calculateDurationAsQuotedHHMM,
-  normalizeEmail
+  normalizeEmail,
+  formatYYYYMMDDToDDMMYYYY
 } from '@/lib/utils';
 
-export default function StartFinishSummary({ selectedLocation, selectedUser, driverData, selectedDate }) {
+export default function StartFinishSummary({
+  selectedLocation,
+  selectedUser,
+  driverData,
+  selectedDate,
+  selectedLocationName
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null); 
 
@@ -178,7 +185,8 @@ export default function StartFinishSummary({ selectedLocation, selectedUser, dri
       XLSX.utils.book_append_sheet(wb, ws, "Start-Finish Summary");
       
       // 10. Download
-      const excelFileName = `Start_Finish_Summary_${selectedDate}.xlsx`;
+      const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
+      const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
 
     } catch (err) {

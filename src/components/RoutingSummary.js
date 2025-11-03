@@ -4,7 +4,12 @@
 'use client';
 
 import { useState } from 'react';
-import { calculateTargetDates, formatMinutesToHHMM, parseAndRoundPercentage } from '@/lib/utils';
+import {
+  calculateTargetDates,
+  formatMinutesToHHMM,
+  parseAndRoundPercentage,
+  formatYYYYMMDDToDDMMYYYY
+} from '@/lib/utils';
 import { VEHICLE_TYPES, TAG_MAP_KEY } from '@/lib/constants'; 
 import * as XLSX from 'xlsx-js-style';
 
@@ -250,7 +255,8 @@ export default function RoutingSummary({
     
     XLSX.utils.book_append_sheet(wb, wsTruckUsage, "Truck Usage");
     
-    const excelFileName = `Routing Summary - ${dateForFile} - ${hubName}.xlsx`;
+    const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
+    const excelFileName = `Routing Summary - ${formattedDate} - ${hubName}.xlsx`;
     XLSX.writeFile(wb, excelFileName);
   }
 
@@ -333,7 +339,7 @@ export default function RoutingSummary({
         setUnmappedTags(Array.from(newUnmappedTags.values())); 
         setIsLoading(false);
       } else {
-        processAndDownloadExcel(filteredResults, tagMap, selectedDate, selectedLocationName);
+        processAndDownloadExcel(filteredResults, tagMap, dateFrom, selectedLocationName);
         setIsLoading(false);
       }
 
