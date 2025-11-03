@@ -12,6 +12,8 @@ export default function Home() {
   // === STATE UNTUK DATA ===
   const [selectedUser, setSelectedUser] = useState(null); 
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [tempSelectedLocation, setTempSelectedLocation] = useState('');
+  const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [driverData, setDriverData] = useState({ data: [] }); 
   
@@ -87,11 +89,15 @@ export default function Home() {
 
         // Cek lokasi
         if (storedLocation && storedLocationName) {
-            // Validasi: Apakah lokasi yg disimpan masih ada di hubId user?
-            if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
-              setSelectedLocation(storedLocation);
-              setSelectedLocationName(storedLocationName);
-            } else {
+          // Validasi: Apakah lokasi yg disimpan masih ada di hubId user?
+          if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
+            setSelectedLocation(storedLocation);
+            setSelectedLocationName(storedLocationName);
+            // --- TAMBAHKAN INI ---
+            setTempSelectedLocation(storedLocation);
+            setTempSelectedLocationName(storedLocationName);
+            // --- SELESAI TAMBAHAN ---
+          } else {
               // Lokasi disimpan salah (misal data user berubah), paksa pilih ulang
               localStorage.removeItem('userLocation');
               localStorage.removeItem('userLocationName');
@@ -206,27 +212,42 @@ export default function Home() {
 
   // Dipanggil dari LocationDropdown
   const handleLocationChange = (id, name) => {
-    setSelectedLocation(id);
-    setSelectedLocationName(name);
+    setTempSelectedLocation(id);
+    setTempSelectedLocationName(name);
   };
   
   // Dipanggil dari tombol "Save" di Langkah 1 (Lokasi)
   const handleSaveLocation = () => {
-    if (!selectedLocation) {
+    if (!tempSelectedLocation) { // Cek state sementara
       alert('Silakan pilih lokasi cabang.');
       return;
     }
-    // Hapus data lama (user & driver) saat ganti lokasi
-    localStorage.removeItem('selectedUser');
-    localStorage.removeItem('driverData');
-    setSelectedUser(null);
-    setDriverData({ data: [] });
-    
-    // Simpan lokasi baru
-    localStorage.setItem('userLocation', selectedLocation);
-    localStorage.setItem('userLocationName', selectedLocationName);
-  };
 
+    // --- PERUBAHAN LOGIKA DI SINI ---
+    // HANYA reset user JIKA user-nya belum ada di state
+    // (Ini adalah alur pertama kali)
+    if (!selectedUser) {
+      localStorage.removeItem('selectedUser');
+      setSelectedUser(null);
+    }
+    // Jika selectedUser SUDAH ADA (kasus ganti lokasi),
+    // kita lewati bagian 'if' di atas dan user-nya tetap tersimpan.
+    // --- SELESAI PERUBAHAN ---
+
+    // Kita selalu reset driver & data lokasi
+    localStorage.removeItem('driverData');
+    setDriverData({
+      data: []
+    }); // Pastikan state driver juga bersih
+
+    // Simpan lokasi baru dari state sementara
+    localStorage.setItem('userLocation', tempSelectedLocation);
+    localStorage.setItem('userLocationName', tempSelectedLocationName);
+
+    // Set state utama
+    setSelectedLocation(tempSelectedLocation);
+    setSelectedLocationName(tempSelectedLocationName);
+  };
   // Dipanggil dari UserSelectionGrid di Langkah 2 (POIN 1: HANYA SEKALI)
   const handleUserSelect = (user) => {
     localStorage.setItem('selectedUser', JSON.stringify(user));
@@ -307,7 +328,7 @@ export default function Home() {
           </h2>
           
           <LocationDropdown 
-            value={selectedLocation}
+            value={tempSelectedLocation}
             onChange={handleLocationChange}
             onStatusChange={() => {}} 
             hubsToShow={currentHubListView} 
@@ -316,8 +337,8 @@ export default function Home() {
           <div className="mt-4">
             <button
               onClick={handleSaveLocation}
-              disabled={!selectedLocation}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+              disabled={!tempSelectedLocation}
+              className="px-6 py-2 bg-blue-600 text-white rounded hovef:bg-blue-700 disabled:bg-gray-400"
             >
               Lanjutkan
             </button>
