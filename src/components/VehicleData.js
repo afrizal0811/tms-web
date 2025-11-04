@@ -1,10 +1,11 @@
 // File: src/components/VehicleData.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import Spinner from '@/components/Spinner';
+import SelectionLayout from '@/components/SelectionLayout';
 import { normalizeEmail } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-
 // --- Styling Tema Putih ---
 function TabButton({ children, isActive, onClick }) {
   return (
@@ -101,6 +102,7 @@ export default function VehicleData() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -152,6 +154,7 @@ export default function VehicleData() {
   // Fungsi Download Excel
   const handleDownloadExcel = () => {
     try {
+      setIsDownloading(true);
       const wb = XLSX.utils.book_new();
       const headerStyle = { font: { bold: true } };
 
@@ -222,6 +225,8 @@ export default function VehicleData() {
     } catch (err) {
       console.error('Gagal membuat file excel:', err);
       alert('Gagal mengunduh file Excel: ' + err.message);
+    } finally {
+      setIsDownloading(false); // <-- TAMBAHKAN DI SINI
     }
   };
 
@@ -254,7 +259,11 @@ export default function VehicleData() {
 
   // Tampilan loading dan error
   if (isLoading) {
-    return <p className="text-lg text-gray-500 text-center w-full">Memuat Data Kendaraan...</p>;
+    return (
+      <SelectionLayout>
+        <Spinner />
+      </SelectionLayout>
+    );
   }
   if (error) {
     return <p className="text-lg text-red-500 text-center w-full">Error: {error}</p>;
@@ -276,9 +285,17 @@ export default function VehicleData() {
         />
         <button
           onClick={handleDownloadExcel}
+          disabled={isDownloading}
           className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700"
         >
-          Download Excel
+          {isDownloading ? (
+            <div className="flex justify-center items-center">
+              {/* Spinner kecil */}
+              <div className="w-5 h-5 border-2 border-green-300 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : (
+            'Download Excel'
+          )}
         </button>
       </div>
 

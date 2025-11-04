@@ -6,11 +6,10 @@ import LocationDropdown from '@/components/LocationDropdown';
 import UserSelectionGrid from '@/components/UserSelectionGrid';
 import TmsSummary from '@/components/TmsSummary';
 import { ROLE_ID } from '@/lib/constants';
-import { normalizeEmail } from '@/lib/utils';
 // --- Impor Layout Baru ---
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
-
+import Spinner from '@/components/Spinner';
 export default function Home() {
   // === STATE UNTUK DATA ===
   const [selectedUser, setSelectedUser] = useState(null);
@@ -225,7 +224,7 @@ export default function Home() {
   if (isPageLoading || allHubsList === null) {
     return (
       <SelectionLayout>
-        <p className="text-xl text-gray-700">Loading Aplikasi...</p>
+        <Spinner />
       </SelectionLayout>
     );
   }
