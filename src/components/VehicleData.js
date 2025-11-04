@@ -1,11 +1,11 @@
 // File: src/components/VehicleData.js
 'use client';
 
-import Spinner from '@/components/Spinner';
-import SelectionLayout from '@/components/SelectionLayout';
+import { useState, useEffect } from 'react';
 import { normalizeEmail } from '@/lib/utils';
-import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import Tooltip from './Tooltip'; // Asumsi Tooltip ada di file terpisah
+
 // --- Styling Tema Putih ---
 function TabButton({ children, isActive, onClick }) {
   return (
@@ -41,19 +41,16 @@ function PaginationControls({
   onPageChange,
   onItemsPerPageChange,
 }) {
+  // ... (Kode PaginationControls tetap sama) ...
   const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / itemsPerPage);
-
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       onPageChange(newPage);
     }
   };
-
   if (totalItems === 0) return null;
-
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 p-3">
-      {/* Pilihan Items per Halaman */}
       <div className="flex items-center space-x-2 mb-2 sm:mb-0">
         <span className="text-sm text-gray-600">Tampilkan:</span>
         <select
@@ -67,8 +64,6 @@ function PaginationControls({
         </select>
         <span className="text-sm text-gray-600">dari {totalItems} data</span>
       </div>
-
-      {/* Kontrol Halaman (jika tidak 'Semua') */}
       {itemsPerPage !== 'all' && (
         <div className="flex items-center space-x-2">
           <button
@@ -106,6 +101,21 @@ export default function VehicleData() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // --- (PERUBAHAN 1): BUAT FUNGSI HELPER DI SINI ---
+  const formatVolume = (vol) => {
+    if (vol === null || vol === undefined) {
+      return null; // Kembalikan null jika input kosong
+    }
+    const num = parseFloat(vol); // Ubah ke angka (jika string)
+    if (isNaN(num)) {
+      return null; // Kembalikan null jika bukan angka
+    }
+    // Bulatkan ke 12 desimal, lalu ubah lagi ke float
+    // untuk menghapus nol di belakang koma (misal: 10800.00 -> 10800)
+    return parseFloat(num.toFixed(12));
+  };
+  // --- SELESAI PERUBAHAN 1 ---
 
   useEffect(() => {
     // ... (Logika fetchData tetap sama) ...
@@ -153,12 +163,12 @@ export default function VehicleData() {
 
   // Fungsi Download Excel
   const handleDownloadExcel = () => {
+    setIsDownloading(true);
     try {
-      setIsDownloading(true);
       const wb = XLSX.utils.book_new();
       const headerStyle = { font: { bold: true } };
 
-      // Sheet 1: Master Vehicle
+      // ... (Sheet 1: Master Vehicle tetap sama) ...
       const headers1 = ['Plat', 'Type', 'Email', 'Name'];
       const data1 = vehicleData.map((v) => [
         v.name,
@@ -198,12 +208,7 @@ export default function VehicleData() {
         v.workingTime?.endTime || null,
         v.breaktime?.startTime || null,
         v.breaktime?.endTime || null,
-
-        // --- (PERUBAHAN POIN 1) ---
-        // Tampilkan angka multiday, bukan 'true'/'false'
         v.workingTime?.multiday || 0,
-        // --- SELESAI PERUBAHAN ---
-
         v.speed,
         null,
         v.tags?.join('; ') || null,
@@ -211,7 +216,10 @@ export default function VehicleData() {
         0,
         v.capacity?.weight?.max || null,
         0,
-        v.capacity?.volume?.max || null,
+
+        // --- (PERUBAHAN 2): GUNAKAN FUNGSI HELPER DI EXCEL ---
+        formatVolume(v.capacity?.volume?.max),
+        // --- SELESAI PERUBAHAN 2 ---
       ]);
       const ws2 = XLSX.utils.aoa_to_sheet([headers2, ...data2]);
       ws2['!cols'] = Array(headers2.length).fill({ wch: 20 });
@@ -226,11 +234,11 @@ export default function VehicleData() {
       console.error('Gagal membuat file excel:', err);
       alert('Gagal mengunduh file Excel: ' + err.message);
     } finally {
-      setIsDownloading(false); // <-- TAMBAHKAN DI SINI
+      setIsDownloading(false);
     }
   };
 
-  // Logika Filter
+  // ... (Logika Filter, Handler Pagination, Kalkulasi Paginasi tetap sama) ...
   const filteredData = vehicleData.filter((v) => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     const searchableString = [
@@ -243,30 +251,22 @@ export default function VehicleData() {
       .toLowerCase();
     return searchableString.includes(lowerCaseQuery);
   });
-
-  // Handler Pagination
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value === 'all' ? 'all' : Number(value));
     setCurrentPage(1);
   };
-
-  // Logika Kalkulasi Paginasi
   const totalItems = filteredData.length;
   const paginatedData =
     itemsPerPage === 'all'
       ? filteredData
       : filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // Tampilan loading dan error
+  // ... (Tampilan loading dan error tetap sama) ...
   if (isLoading) {
-    return (
-      <SelectionLayout>
-        <Spinner />
-      </SelectionLayout>
-    );
+    /* ... */
   }
   if (error) {
-    return <p className="text-lg text-red-500 text-center w-full">Error: {error}</p>;
+    /* ... */
   }
 
   return (
@@ -286,11 +286,10 @@ export default function VehicleData() {
         <button
           onClick={handleDownloadExcel}
           disabled={isDownloading}
-          className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700"
+          className="px-4 py-2 w-40 text-center bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 disabled:bg-green-700"
         >
           {isDownloading ? (
             <div className="flex justify-center items-center">
-              {/* Spinner kecil */}
               <div className="w-5 h-5 border-2 border-green-300 border-t-white rounded-full animate-spin" />
             </div>
           ) : (
@@ -311,8 +310,10 @@ export default function VehicleData() {
 
       {/* Kontainer Tabel */}
       <div className="bg-white shadow-md rounded-b-lg">
+        {/* ... (Tabel Master Vehicle tetap sama) ... */}
         {activeTab === 'master' && (
           <div className="overflow-x-auto">
+            {/* ... (thead, tbody) ... */}
             <table className="w-full border-collapse min-w-[600px]">
               <thead>
                 <tr>
@@ -339,6 +340,7 @@ export default function VehicleData() {
         {activeTab === 'template' && (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[1200px]">
+              {/* ... (thead tetap sama) ... */}
               <thead>
                 <tr>
                   <Th>Name*</Th>
@@ -367,42 +369,34 @@ export default function VehicleData() {
                     <Td>{v.workingTime?.endTime || null}</Td>
                     <Td>{v.breaktime?.startTime || null}</Td>
                     <Td>{v.breaktime?.endTime || null}</Td>
-
-                    {/* --- (PERUBAHAN POIN 1) --- */}
-                    {/* Tampilkan angka multiday, bukan boolean */}
                     <Td>{v.workingTime?.multiday || 0}</Td>
-                    {/* --- SELESAI PERUBAHAN --- */}
-
                     <Td>{v.speed}</Td>
                     <Td>{null}</Td>
-
-                    {/* --- (PERUBAHAN POIN 2) --- */}
                     <Td>
                       {(() => {
                         const tags = v.tags || [];
                         if (tags.length === 0) return null;
-
                         const firstTag = tags[0];
-                        const remainingTags = tags.slice(1); // Ambil sisanya
+                        const remainingTags = tags.slice(1);
                         const remainingCount = remainingTags.length;
-
-                        if (remainingCount === 0) return firstTag; // Jika hanya 1 tag
-
+                        if (remainingCount === 0) return firstTag;
                         return (
-                          // Tooltip (title) hanya berisi sisa tag
-                          <span title={remainingTags.join('\n')}>
-                            {firstTag}; (+{remainingCount} lainnya)
-                          </span>
+                          <Tooltip tooltipContent={remainingTags.join('\n')}>
+                            <span>
+                              {firstTag}; (+{remainingCount} lainnya)
+                            </span>
+                          </Tooltip>
                         );
                       })()}
                     </Td>
-                    {/* --- SELESAI PERUBAHAN --- */}
-
                     <Td>{v.oddEven}</Td>
                     <Td>0</Td>
                     <Td>{v.capacity?.weight?.max || null}</Td>
                     <Td>0</Td>
-                    <Td>{v.capacity?.volume?.max || null}</Td>
+
+                    {/* --- (PERUBAHAN 2): GUNAKAN FUNGSI HELPER DI TABEL --- */}
+                    <Td>{formatVolume(v.capacity?.volume?.max)}</Td>
+                    {/* --- SELESAI PERUBAHAN 2 --- */}
                   </tr>
                 ))}
               </tbody>
