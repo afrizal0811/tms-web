@@ -35,7 +35,7 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
             <label
               htmlFor={`map-${tag}-${type}`}
               className="px-3 py-1.5 border border-gray-500 rounded-md cursor-pointer text-sm 
-                         hover:bg-gray-700 peer-checked:bg-blue-600 peer-checked:border-blue-500"
+                         hover:bg-gray-300 peer-checked:bg-green-600 peer-checked:border-green-500 peer-checked:text-white"
             >
               {type}
             </label>
