@@ -1,15 +1,21 @@
 // File: src/components/AppLayout.js
 'use client';
 
-export default function AppLayout({ children }) {
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+
+export default function AppLayout({ children, mainClassName }) {
   return (
-    <main className="flex min-h-screen flex-col items-center p-6 sm:p-24">
-      <div className="flex flex-col justify-center items-center grow w-full">
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      {/* - Layout ini mengizinkan scrolling. 
+        - 'py-6 sm:py-12': Padding vertikal global
+        - 'mainClassName': Untuk kustomisasi (misal: padding horizontal)
+      */}
+      <main className={`grow flex flex-col w-full py-6 sm:py-12 ${mainClassName || ''}`}>
         {children}
-      </div>
-      <footer className="w-full text-center text-slate-500 text-xs py-6">
-        Dibuat oleh: Afrizal Maulana - EDP © 2025
-      </footer>
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }

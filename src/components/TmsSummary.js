@@ -40,7 +40,7 @@ export default function TmsSummary({
               id="shippingDate"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="p-2 rounded border border-gray-600 bg-gray-700 text-white disabled:bg-slate-700 disabled:text-slate-500 disabled:opacity-100"
+              className="p-2 rounded border border-gray-300 bg-gray-50 text-slate-900 disabled:bg-gray-200 disabled:text-gray-400"
             />
           </div>
         </>
