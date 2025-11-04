@@ -16,7 +16,8 @@ export default function Home() {
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [driverData, setDriverData] = useState({ data: [] }); 
-  
+  const [isAnyLoading, setIsAnyLoading] = useState(false);
+  const [isMapping, setIsMapping] = useState(false);
   // === STATE UNTUK KONTROL ===
   const [isPageLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState(null); 
@@ -379,18 +380,23 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
       <>
-        <TmsSummary 
+        <TmsSummary
           selectedLocation={selectedLocation}
           selectedLocationName={selectedLocationName}
           selectedUser={selectedUser}
           driverData={driverData.data}
+          isAnyLoading={isAnyLoading}
+          setIsAnyLoading={setIsAnyLoading}
+          isMapping={isMapping}
+          setIsMapping={setIsMapping}
         />
-        
+
         {/* (POIN 5) Tombol Ganti Lokasi HANYA muncul jika hubId > 1 */}
         {selectedUser.hubId && selectedUser.hubId.length > 1 && (
           <button
             onClick={handleResetLocation}
-            className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+            className="mt-4 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
+            disabled={isAnyLoading || isMapping}
           >
             Ganti Lokasi
           </button>

@@ -1,49 +1,55 @@
 // File: src/components/DeliverySummary.js
 'use client';
 
-import { useState } from 'react';
-import * as XLSX from 'xlsx-js-style'; 
-import { 
-  formatTimestampToHHMM, 
-  calculateMinuteDifference, 
-  extractCustomerId,
-  formatSimpleTime,
-  extractTempFromDriverName,
-  extractLocationId,
-  formatCoordinates,
+import {
   calculateHaversineDistance,
+  calculateMinuteDifference,
   calculateTargetDates,
+  extractCustomerId,
+  extractLocationId,
+  extractTempFromDriverName,
+  formatCoordinates,
+  formatSimpleTime,
+  formatTimestampToHHMM,
   formatYYYYMMDDToDDMMYYYY,
-  normalizeEmail
+  normalizeEmail,
 } from '@/lib/utils';
+import { useState } from 'react';
+import * as XLSX from 'xlsx-js-style';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
-const FAILED_STATUSES = ["PENDING", "BATAL", "TERIMA SEBAGIAN"];
-const PENDING_SHEET_STATUSES_BASE = ["PENDING", "BATAL", "TERIMA SEBAGIAN"];
+const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
-
-export default function DeliverySummary({ selectedLocation, selectedUser, driverData, selectedDate, selectedLocationName }) {
-  const [isLoading, setIsLoading] = useState(false);
+export default function DeliverySummary({
+  selectedLocation,
+  selectedUser,
+  driverData,
+  selectedDate,
+  selectedLocationName,
+  disabled,
+  onLoadingChange,
+}) {
   const [error, setError] = useState(null);
 
   const handleDeliverySummary = async () => {
-    setIsLoading(true);
+    if (onLoadingChange) onLoadingChange(true);
     setError(null);
 
     try {
       // --- 1. Persiapan Parameter & Cek Hub Spesial ---
       if (!selectedLocation || !Array.isArray(driverData)) {
-        throw new Error("Data Hub atau Driver tidak valid.");
+        throw new Error('Data Hub atau Driver tidak valid.');
       }
       const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
       const isSpecialHub = specialHubs.includes(selectedLocation);
-      let migrationOccurred = false; 
+      let migrationOccurred = false;
       const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
-      if (isSpecialHub) PENDING_SHEET_STATUSES.push("PENDING GR");
+      if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
 
       const timeFrom = `${selectedDate} 00:00:00`;
       const timeTo = `${selectedDate} 23:59:59`;
-      
+
       // Buat Peta Lookup Driver (Email -> Info)
       const emailToDriverMap = driverData.reduce((acc, driver) => {
         const normalizedEmail = normalizeEmail(driver.email);
@@ -56,11 +62,11 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       // --- 2. PERSIAPAN PANGGILAN DUA API ---
       const tasksParams = new URLSearchParams({
         hubId: selectedLocation,
-        status: "DONE",
+        status: 'DONE',
         timeFrom: timeFrom,
         timeTo: timeTo,
-        timeBy: "doneTime",
-        limit: 1000
+        timeBy: 'doneTime',
+        limit: 1000,
       });
       const tasksApiUrl = `/api/get-tasks?${tasksParams.toString()}`;
       const tasksPromise = fetch(tasksApiUrl);
@@ -70,128 +76,159 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         dateFrom: dateFrom,
         dateTo: resultsDateTo,
         limit: 500,
-        hubId: selectedLocation
+        hubId: selectedLocation,
       });
       const resultsApiUrl = `/api/get-results-summary?${resultsParams.toString()}`;
       const resultsPromise = fetch(resultsApiUrl);
-      
+
       const [tasksResponse, resultsResponse] = await Promise.all([tasksPromise, resultsPromise]);
 
       // --- 3. Proses Response /tasks ---
       const tasksResponseData = await tasksResponse.json();
-      if (!tasksResponse.ok) throw new Error(tasksResponseData.error || 'Gagal mengambil data tasks');
+      if (!tasksResponse.ok)
+        throw new Error(tasksResponseData.error || 'Gagal mengambil data tasks');
       if (!tasksResponseData.tasks || !Array.isArray(tasksResponseData.tasks.data)) {
-         throw new Error("Format data tasks tidak sesuai (tasks.data tidak ditemukan).");
+        throw new Error('Format data tasks tidak sesuai (tasks.data tidak ditemukan).');
       }
-      const allTasks = tasksResponseData.tasks.data; 
+      const allTasks = tasksResponseData.tasks.data;
       if (allTasks.length === 0) {
         alert('Tidak ada data task yang ditemukan untuk tanggal ini.');
-        setIsLoading(false);
+        if (onLoadingChange) onLoadingChange(false);
         return;
       }
-      
+
       // --- 4. Proses Response /results (Hanya untuk Map Waktu HUB) ---
       const resultsResponseData = await resultsResponse.json();
-      const hubTimesMap = new Map(); 
-      if (resultsResponse.ok && resultsResponseData.data && Array.isArray(resultsResponseData.data.data)) {
-        const filteredResults = resultsResponseData.data.data.filter(item => item.dispatchStatus === 'done');
+      const hubTimesMap = new Map();
+      if (
+        resultsResponse.ok &&
+        resultsResponseData.data &&
+        Array.isArray(resultsResponseData.data.data)
+      ) {
+        const filteredResults = resultsResponseData.data.data.filter(
+          (item) => item.dispatchStatus === 'done'
+        );
         for (const result of filteredResults) {
           if (result.result && Array.isArray(result.result.routing)) {
             for (const route of result.result.routing) {
               const driverEmail = normalizeEmail(route.assignee);
               const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-              const driverName = driverInfo ? driverInfo.name : (driverEmail || 'N/A');
+              const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
               if (!driverName || !Array.isArray(route.trips) || route.trips.length === 0) continue;
-              
-              const hubTrips = route.trips.filter(trip => trip.isHub === true);
+
+              const hubTrips = route.trips.filter((trip) => trip.isHub === true);
               if (hubTrips.length > 0) {
-                const hubETD = hubTrips[0].etd; 
-                const hubETA = hubTrips[hubTrips.length - 1].eta; 
-                hubTimesMap.set(driverName, { // Simpan berdasarkan NAMA
+                const hubETD = hubTrips[0].etd;
+                const hubETA = hubTrips[hubTrips.length - 1].eta;
+                hubTimesMap.set(driverName, {
+                  // Simpan berdasarkan NAMA
                   hubETD: formatSimpleTime(hubETD),
-                  hubETA: formatSimpleTime(hubETA)
+                  hubETA: formatSimpleTime(hubETA),
                 });
               }
             }
           }
         }
       } else {
-        console.warn("Gagal mengambil data /results, data ETA/ETD HUB akan kosong.");
+        console.warn('Gagal mengambil data /results, data ETA/ETD HUB akan kosong.');
       }
-      
+
       // --- 5. Proses Data Utama (Gabungan) ---
-      
+
       // Peta agregasi: Nama Driver -> { totalOutlet, failedCount, plat, driverEmail }
-      const driverStats = new Map(); 
-      let allTaskDataForSequence = []; 
-      let updateLonglatData = []; 
+      const driverStats = new Map();
+      let allTaskDataForSequence = [];
+      let updateLonglatData = [];
 
       for (const task of allTasks) {
-        const emailString = (Array.isArray(task.assignee) && task.assignee.length > 0) ? task.assignee[0] : null;
+        const emailString =
+          Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
         const driverEmail = normalizeEmail(emailString);
         const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-        const driverName = driverInfo ? driverInfo.name : (driverEmail || 'N/A');
-        const statusLabel = (task.label && task.label.length > 0) ? task.label[0].toUpperCase() : null;
+        const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
+        const statusLabel =
+          task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
         const customerName = task.customerName || '';
         const flow = task.flow;
 
         // --- Proses untuk Sheet 1 (Total Delivered) ---
-        if (driverName !== 'N/A') { 
-          const stats = driverStats.get(driverName) || { 
-            totalOutlet: 0, 
-            failedCount: 0, 
-            plat: null, 
-            driverEmail: driverEmail
+        if (driverName !== 'N/A') {
+          const stats = driverStats.get(driverName) || {
+            totalOutlet: 0,
+            failedCount: 0,
+            plat: null,
+            driverEmail: driverEmail,
           };
           stats.totalOutlet += 1;
           if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
           if (!stats.plat && driverInfo && driverInfo.plat) {
-             stats.plat = driverInfo.plat;
+            stats.plat = driverInfo.plat;
           }
           driverStats.set(driverName, stats);
         }
 
         let actualArrival, actualDeparture;
-        if (flow && flow.toUpperCase().includes('GR')) { 
+        if (flow && flow.toUpperCase().includes('GR')) {
           actualArrival = task.page1DoneTime;
           actualDeparture = task.page1DoneTime;
         } else {
           actualArrival = task.klikJikaSudahSampai;
           actualDeparture = task.page3DoneTime;
         }
-        
-        let fakturBatal = null, terkirimSebagian = null, pending = null, pendingGR = null;
-        let isMigrated = false; 
-        if (statusLabel === "BATAL") fakturBatal = customerName;
-        else if (statusLabel === "TERIMA SEBAGIAN") terkirimSebagian = customerName;
-        else if (statusLabel === "PENDING") pending = customerName;
-        else if (statusLabel === "PENDING GR") {
-          if (isSpecialHub) pendingGR = customerName; 
-          else { pending = customerName; isMigrated = true; migrationOccurred = true; }
+
+        let fakturBatal = null,
+          terkirimSebagian = null,
+          pending = null,
+          pendingGR = null;
+        let isMigrated = false;
+        if (statusLabel === 'BATAL') fakturBatal = customerName;
+        else if (statusLabel === 'TERIMA SEBAGIAN') terkirimSebagian = customerName;
+        else if (statusLabel === 'PENDING') pending = customerName;
+        else if (statusLabel === 'PENDING GR') {
+          if (isSpecialHub) pendingGR = customerName;
+          else {
+            pending = customerName;
+            isMigrated = true;
+            migrationOccurred = true;
+          }
         }
 
         allTaskDataForSequence.push({
-          driverEmail: driverEmail, driver: driverName, plat: driverInfo ? driverInfo.plat : null,
+          driverEmail: driverEmail,
+          driver: driverName,
+          plat: driverInfo ? driverInfo.plat : null,
           actualArrivalTimestamp: actualArrival ? new Date(actualArrival).getTime() : null,
-          roSequence: task.routePlannedOrder || 0, statusLabel: statusLabel, isMigrated: isMigrated, 
-          flow: flow, customerName: customerName, fakturBatal: fakturBatal,
-          terkirimSebagian: terkirimSebagian, pending: pending, pendingGR: pendingGR,
-          reason: task.alasan, openTime: formatSimpleTime(task.openTime),
-          closeTime: formatSimpleTime(task.closeTime), eta: formatSimpleTime(task.eta), 
-          etd: formatSimpleTime(task.etd), actualArrival: formatTimestampToHHMM(actualArrival),
-          actualDeparture: formatTimestampToHHMM(actualDeparture), visitTime: task.visitTime,
+          roSequence: task.routePlannedOrder || 0,
+          statusLabel: statusLabel,
+          isMigrated: isMigrated,
+          flow: flow,
+          customerName: customerName,
+          fakturBatal: fakturBatal,
+          terkirimSebagian: terkirimSebagian,
+          pending: pending,
+          pendingGR: pendingGR,
+          reason: task.alasan,
+          openTime: formatSimpleTime(task.openTime),
+          closeTime: formatSimpleTime(task.closeTime),
+          eta: formatSimpleTime(task.eta),
+          etd: formatSimpleTime(task.etd),
+          actualArrival: formatTimestampToHHMM(actualArrival),
+          actualDeparture: formatTimestampToHHMM(actualDeparture),
+          visitTime: task.visitTime,
           actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
           customerId: extractCustomerId(customerName),
-          temperature: extractTempFromDriverName(driverName), realSequence: 0 
+          temperature: extractTempFromDriverName(driverName),
+          realSequence: 0,
         });
 
         // (Sheet 4)
         if (task.klikLokasiClient) {
           updateLonglatData.push({
-            customerName: customerName, customerId: extractCustomerId(customerName),
+            customerName: customerName,
+            customerId: extractCustomerId(customerName),
             locationId: extractLocationId(customerName),
             newLonglat: formatCoordinates(task.klikLokasiClient),
-            bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient)
+            bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient),
           });
         }
       }
@@ -209,47 +246,55 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       for (const row of allTaskDataForSequence) {
         if (row.driver !== currentDriver) {
           currentDriver = row.driver;
-          rankCounter = 1; 
+          rankCounter = 1;
         }
         if (row.actualArrivalTimestamp !== null) {
           row.realSequence = rankCounter;
           rankCounter++;
         } else {
-          row.realSequence = null; 
+          row.realSequence = null;
         }
       }
 
       // --- 7. Filter & Sortir data "Hasil Pending SO" ---
-      const pendingSOData = allTaskDataForSequence.filter(row => 
-        PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
+      const pendingSOData = allTaskDataForSequence.filter(
+        (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
       );
       pendingSOData.sort((a, b) => {
         const driverCompare = a.driver.localeCompare(b.driver);
         if (driverCompare !== 0) return driverCompare;
         return a.roSequence - b.roSequence;
       });
-      
+
       // --- 8. Siapkan Data Excel ---
       const wb = XLSX.utils.book_new();
-      const headerStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
-      const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
-      const redTextStyle = { font: { color: { rgb: "FF0000" } } };
-      const redFillStyle = { fill: { patternType: "solid", fgColor: { rgb: "FF0000" } } };
-      const yellowFillStyle = { fill: { patternType: "solid", fgColor: { rgb: "ffe19c" } } };
-      
+      const headerStyle = {
+        font: { bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
+      const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+      const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
+      const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
+      const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
+
       // --- Sheet 1: Routing Date ---
-      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom); 
-      const wsRoutingDate = XLSX.utils.aoa_to_sheet([[routingDate, null, null, null, null, null, null]]);
-      wsRoutingDate['A1'].s = { font: { bold: true, sz: 60 }, alignment: { horizontal: "center", vertical: "center" } };
+      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom);
+      const wsRoutingDate = XLSX.utils.aoa_to_sheet([
+        [routingDate, null, null, null, null, null, null],
+      ]);
+      wsRoutingDate['A1'].s = {
+        font: { bold: true, sz: 60 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
       wsRoutingDate['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
       wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
-      XLSX.utils.book_append_sheet(wb, wsRoutingDate, "Routing Date");
+      XLSX.utils.book_append_sheet(wb, wsRoutingDate, 'Routing Date');
 
       // --- Sheet 2: Total Delivered ---
-      const headers1 = ["Plat", "Driver", "Total Outlet", "Total Delivery"];
-      
+      const headers1 = ['Plat', 'Driver', 'Total Outlet', 'Total Delivery'];
+
       // 1. Filter master driverData
-      const validDriverData = driverData.filter(driver => {
+      const validDriverData = driverData.filter((driver) => {
         const plat = driver.plat || '';
         if (plat === '') return false;
         if (plat.toUpperCase().includes('DEMO')) return false;
@@ -257,20 +302,20 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       });
 
       // 2. Buat data Excel dari 'validDriverData' (Master List)
-      let sheetData1Objects = validDriverData.map(driver => {
+      let sheetData1Objects = validDriverData.map((driver) => {
         const driverName = driver.name;
         const driverPlat = driver.plat;
         const driverEmail = normalizeEmail(driver.email);
         const stats = driverStats.get(driverName);
-        
+
         if (stats) {
           const totalDelivery = stats.totalOutlet - stats.failedCount;
           return {
-            plat: stats.plat || driverPlat, 
+            plat: stats.plat || driverPlat,
             driver: driverName,
             totalOutlet: stats.totalOutlet,
             totalDelivery: totalDelivery,
-            driverEmail: stats.driverEmail 
+            driverEmail: stats.driverEmail,
           };
         } else {
           return {
@@ -278,11 +323,11 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
             driver: driverName,
             totalOutlet: null,
             totalDelivery: null,
-            driverEmail: driverEmail 
+            driverEmail: driverEmail,
           };
         }
       });
-      
+
       // 3. Terapkan Sorting 3-Tingkat
       const getSortGroup = (platStr) => {
         if (!platStr) return 1;
@@ -295,62 +340,143 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         const groupA = getSortGroup(a.plat);
         const groupB = getSortGroup(b.plat);
         if (groupA !== groupB) {
-            return groupA - groupB; 
+          return groupA - groupB;
         }
-        return (a.driver || '').localeCompare(b.driver || ''); 
+        return (a.driver || '').localeCompare(b.driver || '');
       });
-      
-      const finalSheetData1 = [headers1, ...sheetData1Objects.map(row => [
-          row.plat, row.driver, row.totalOutlet, row.totalDelivery
-      ])];
+
+      const finalSheetData1 = [
+        headers1,
+        ...sheetData1Objects.map((row) => [
+          row.plat,
+          row.driver,
+          row.totalOutlet,
+          row.totalDelivery,
+        ]),
+      ];
 
       const wsDelivered = XLSX.utils.aoa_to_sheet(finalSheetData1);
       // (Styling Sheet 2)
       wsDelivered['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
-      ['A1','B1','C1','D1'].forEach(cell => { if(wsDelivered[cell]) wsDelivered[cell].s = headerStyle; });
-      if(wsDelivered['D1']) wsDelivered['D1'].c = [{ a: 'Info', t: 'Total Outlet - (Pending + Batal + Terima Sebagian)', h: true }];
+      ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
+        if (wsDelivered[cell]) wsDelivered[cell].s = headerStyle;
+      });
+      if (wsDelivered['D1'])
+        wsDelivered['D1'].c = [
+          { a: 'Info', t: 'Total Outlet - (Pending + Batal + Terima Sebagian)', h: true },
+        ];
       finalSheetData1.forEach((row, R) => {
         if (R === 0) return;
-        if (wsDelivered[`A${R+1}`]) wsDelivered[`A${R+1}`].s = centerStyle;
-        if (wsDelivered[`B${R+1}`]) wsDelivered[`B${R+1}`].s = { alignment: { horizontal: "left", vertical: "center" } };
-        if (wsDelivered[`C${R+1}`]) wsDelivered[`C${R+1}`].s = centerStyle;
-        if (wsDelivered[`D${R+1}`]) wsDelivered[`D${R+1}`].s = centerStyle;
+        if (wsDelivered[`A${R + 1}`]) wsDelivered[`A${R + 1}`].s = centerStyle;
+        if (wsDelivered[`B${R + 1}`])
+          wsDelivered[`B${R + 1}`].s = { alignment: { horizontal: 'left', vertical: 'center' } };
+        if (wsDelivered[`C${R + 1}`]) wsDelivered[`C${R + 1}`].s = centerStyle;
+        if (wsDelivered[`D${R + 1}`]) wsDelivered[`D${R + 1}`].s = centerStyle;
       });
-      XLSX.utils.book_append_sheet(wb, wsDelivered, "Total Delivered");
+      XLSX.utils.book_append_sheet(wb, wsDelivered, 'Total Delivered');
 
       // --- Sheet 3: Hasil Pending SO ---
-      const headers2 = ["Flow", "Plat", "Driver", "Faktur Batal/ Tolakan SO", "Terkirim Sebagian", "Pending"];
-      if (isSpecialHub) headers2.push("Pending GR");
-      headers2.push("Reason", "", "Open Time", "Close Time", "ETA", "ETD", "Actual Arrival", "Actual Departure", "Visit Time", "Actual Visit Time", "Customer ID", "RO Sequence", "Real Sequence", "Temperature");
-      const finalSheetData2 = [headers2, ...pendingSOData.map(row => {
-          const dataRow = [row.flow, row.plat, row.driver, row.fakturBatal, row.terkirimSebagian, row.pending];
+      const headers2 = [
+        'Flow',
+        'Plat',
+        'Driver',
+        'Faktur Batal/ Tolakan SO',
+        'Terkirim Sebagian',
+        'Pending',
+      ];
+      if (isSpecialHub) headers2.push('Pending GR');
+      headers2.push(
+        'Reason',
+        '',
+        'Open Time',
+        'Close Time',
+        'ETA',
+        'ETD',
+        'Actual Arrival',
+        'Actual Departure',
+        'Visit Time',
+        'Actual Visit Time',
+        'Customer ID',
+        'RO Sequence',
+        'Real Sequence',
+        'Temperature'
+      );
+      const finalSheetData2 = [
+        headers2,
+        ...pendingSOData.map((row) => {
+          const dataRow = [
+            row.flow,
+            row.plat,
+            row.driver,
+            row.fakturBatal,
+            row.terkirimSebagian,
+            row.pending,
+          ];
           if (isSpecialHub) dataRow.push(row.pendingGR);
-          dataRow.push(row.reason, null, row.openTime, row.closeTime, row.eta, row.etd, row.actualArrival, row.actualDeparture, row.visitTime, row.actualVisitTime, row.customerId, row.roSequence, row.realSequence === 0 ? null : row.realSequence, row.temperature);
+          dataRow.push(
+            row.reason,
+            null,
+            row.openTime,
+            row.closeTime,
+            row.eta,
+            row.etd,
+            row.actualArrival,
+            row.actualDeparture,
+            row.visitTime,
+            row.actualVisitTime,
+            row.customerId,
+            row.roSequence,
+            row.realSequence === 0 ? null : row.realSequence,
+            row.temperature
+          );
           return dataRow;
-      })];
+        }),
+      ];
       const wsPendingSO = XLSX.utils.aoa_to_sheet(finalSheetData2);
       wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
       const separatorColIndex = isSpecialHub ? 8 : 7;
-      const centerAlignedIndices = ['Open Time', 'Close Time', 'ETA', 'ETD', 'Actual Arrival', 'Actual Departure', 'Visit Time', 'Actual Visit Time', 'Customer ID', 'RO Sequence', 'Real Sequence', 'Temperature'];
-      const centerAlignedSOColumns = centerAlignedIndices.map(header => headers2.indexOf(header));
+      const centerAlignedIndices = [
+        'Open Time',
+        'Close Time',
+        'ETA',
+        'ETD',
+        'Actual Arrival',
+        'Actual Departure',
+        'Visit Time',
+        'Actual Visit Time',
+        'Customer ID',
+        'RO Sequence',
+        'Real Sequence',
+        'Temperature',
+      ];
+      const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
       const colWidthsSO = headers2.map((header, i) => {
-        if (i === separatorColIndex) return { wch: 3 }; 
-        const maxLength = finalSheetData2.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0);
-        return { wch: Math.min(maxLength + 2, 50) }; 
+        if (i === separatorColIndex) return { wch: 3 };
+        const maxLength = finalSheetData2.reduce(
+          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
+          0
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
       });
       wsPendingSO['!cols'] = colWidthsSO;
-      const separatorStyle = { fill: { patternType: "solid", fgColor: { rgb: "FA9D9D" } } };
+      const separatorStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } } };
       const pendingColIndex = 5;
       const rangeSO = XLSX.utils.decode_range(wsPendingSO['!ref']);
-      for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) { 
-        for (let C = rangeSO.s.c; C <= rangeSO.e.c; ++C) { 
+      for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) {
+        for (let C = rangeSO.s.c; C <= rangeSO.e.c; ++C) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!wsPendingSO[cellRef]) wsPendingSO[cellRef] = { t: 's', v: '' }; 
+          if (!wsPendingSO[cellRef]) wsPendingSO[cellRef] = { t: 's', v: '' };
           const cell = wsPendingSO[cellRef];
           if (R === 0) {
-            cell.s = (C === separatorColIndex) ? { ...headerStyle, ...separatorStyle } : headerStyle;
+            cell.s = C === separatorColIndex ? { ...headerStyle, ...separatorStyle } : headerStyle;
             if (migrationOccurred && C === pendingColIndex) {
-              cell.c = [{ a: 'Info', t: 'Warna merah menandakan harusnya pilih "Pending" bukan "Pending GR"', h: true }];
+              cell.c = [
+                {
+                  a: 'Info',
+                  t: 'Warna merah menandakan harusnya pilih "Pending" bukan "Pending GR"',
+                  h: true,
+                },
+              ];
             }
           } else {
             if (C === separatorColIndex) {
@@ -360,7 +486,7 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
               cell.s.alignment = centerStyle.alignment;
               if (typeof cell.v === 'number') cell.t = 'n';
             }
-            const rowData = pendingSOData[R - 1]; 
+            const rowData = pendingSOData[R - 1];
             if (rowData && rowData.isMigrated && C === pendingColIndex) {
               if (!cell.s) cell.s = {};
               cell.s.fill = redFillStyle.fill;
@@ -368,17 +494,30 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
           }
         }
       }
-      XLSX.utils.book_append_sheet(wb, wsPendingSO, "Hasil Pending SO");
-      
+      XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Hasil Pending SO');
+
       // --- Sheet 4: Hasil RO vs Real (PERUBAHAN DI SINI) ---
       const headers3 = [
-        "Flow", "Plat", "Driver", "Customer", "Status Delivery", 
-        "Open Time", "Close Time", "ETA", "Actual Arrival", "ETD", "Actual Departure", 
-        "Visit Time", "Actual Visit Time", "RO Sequence", "Real Sequence", "Is Same Sequence"
+        'Flow',
+        'Plat',
+        'Driver',
+        'Customer',
+        'Status Delivery',
+        'Open Time',
+        'Close Time',
+        'ETA',
+        'Actual Arrival',
+        'ETD',
+        'Actual Departure',
+        'Visit Time',
+        'Actual Visit Time',
+        'RO Sequence',
+        'Real Sequence',
+        'Is Same Sequence',
       ];
-      
+
       let finalSheetData3 = [headers3];
-      
+
       // Buat Map (Nama Driver -> Array Tasks)
       const tasksByNameMap = new Map();
       for (const task of allTaskDataForSequence) {
@@ -387,13 +526,13 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         }
         tasksByNameMap.get(task.driver).push(task);
       }
-      
+
       // --- PERUBAHAN: Gunakan 'roVsRealDriverList' (hanya dari API) ---
       let roVsRealDriverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
         return {
           plat: stats.plat,
           driver: driverName,
-          driverEmail: stats.driverEmail
+          driverEmail: stats.driverEmail,
         };
       });
 
@@ -402,73 +541,109 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         const groupA = getSortGroup(a.plat);
         const groupB = getSortGroup(b.plat);
         if (groupA !== groupB) {
-            return groupA - groupB; 
+          return groupA - groupB;
         }
         return (a.driver || '').localeCompare(b.driver || '');
       });
       // --- SELESAI PERUBAHAN ---
 
       // Loop berdasarkan 'roVsRealDriverList' (API-Only list)
-      for (const driverRow of roVsRealDriverList) { 
+      for (const driverRow of roVsRealDriverList) {
         const driverName = driverRow.driver;
         const driverPlat = driverRow.plat;
-        
+
         const tasks = tasksByNameMap.get(driverName) || [];
-        
+
         // Ambil data hub berdasarkan NAMA
         const hubTimes = hubTimesMap.get(driverName) || { hubETD: null, hubETA: null };
-        
+
         // --- 1. Tambah Baris HUB Start (Kolom dikosongkan) ---
         finalSheetData3.push([
-          null, null, null, "HUB", null, 
-          null, null, null, null, 
-          hubTimes.hubETD, null, 
-          null, null, 
-          null, null, null // <-- POIN 1: Kosongkan
+          null,
+          null,
+          null,
+          'HUB',
+          null,
+          null,
+          null,
+          null,
+          null,
+          hubTimes.hubETD,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null, // <-- POIN 1: Kosongkan
         ]);
-        
+
         // 2. Tambah Baris Task
         tasks.sort((a, b) => a.roSequence - b.roSequence);
         for (const task of tasks) {
           const ro = task.roSequence;
           const real = task.realSequence;
-          const isSame = (ro == real) ? "SAMA" : "TIDAK SAMA";
-          
+          const isSame = ro == real ? 'SAMA' : 'TIDAK SAMA';
+
           finalSheetData3.push([
-            task.flow, task.plat, task.driver, task.customerName, task.statusLabel,
-            task.openTime, task.closeTime, task.eta, task.actualArrival,
-            task.etd, task.actualDeparture,
-            task.visitTime, task.actualVisitTime,
-            ro, real, isSame
+            task.flow,
+            task.plat,
+            task.driver,
+            task.customerName,
+            task.statusLabel,
+            task.openTime,
+            task.closeTime,
+            task.eta,
+            task.actualArrival,
+            task.etd,
+            task.actualDeparture,
+            task.visitTime,
+            task.actualVisitTime,
+            ro,
+            real,
+            isSame,
           ]);
         }
-        
+
         // 3. Tambah Baris HUB End (Kolom dikosongkan)
         finalSheetData3.push([
-          null, null, null, "HUB", null, 
-          null, null, hubTimes.hubETA, null, 
-          null, null, 
-          null, null, 
-          null, null, null // <-- POIN 1: Kosongkan
+          null,
+          null,
+          null,
+          'HUB',
+          null,
+          null,
+          null,
+          hubTimes.hubETA,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null, // <-- POIN 1: Kosongkan
         ]);
-        
+
         // 4. Tambah Baris Separator Kosong
         finalSheetData3.push(Array(headers3.length).fill(null));
       }
-      
+
       const wsRoVsReal = XLSX.utils.aoa_to_sheet(finalSheetData3);
-      
+
       // Styling Sheet 3
       wsRoVsReal['!view'] = { state: 'frozen', ySplit: 1 };
       const colWidths3 = headers3.map((header, i) => {
-        const maxLength = finalSheetData3.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0);
-        return { wch: Math.min(maxLength + 2, 50) }; 
+        const maxLength = finalSheetData3.reduce(
+          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
+          0
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
       });
       wsRoVsReal['!cols'] = colWidths3;
-      
-      const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; 
+
+      const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
       const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
-      
+
       // Index kolom untuk Poin 2
       const etaColIndex = 7;
       const etdColIndex = 9;
@@ -478,7 +653,7 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
       for (let R = range3.s.r; R <= range3.e.r; ++R) {
         const customerCellRef = XLSX.utils.encode_cell({
           r: R,
-          c: 3
+          c: 3,
         });
         const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
 
@@ -486,25 +661,37 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         let isMissingEtaEtd = false;
         if (R > 0 && !isHubRow) {
           // Ambil nilai ETA dan ETD
-          const etaValue = wsRoVsReal[XLSX.utils.encode_cell({
-            r: R,
-            c: etaColIndex
-          })] ?.v;
-          const etdValue = wsRoVsReal[XLSX.utils.encode_cell({
-            r: R,
-            c: etdColIndex
-          })] ?.v;
+          const etaValue =
+            wsRoVsReal[
+              XLSX.utils.encode_cell({
+                r: R,
+                c: etaColIndex,
+              })
+            ]?.v;
+          const etdValue =
+            wsRoVsReal[
+              XLSX.utils.encode_cell({
+                r: R,
+                c: etdColIndex,
+              })
+            ]?.v;
 
           // --- PERUBAHAN DI SINI ---
           // Ambil juga nilai Plat dan Driver untuk memastikan ini baris data, bukan separator
-          const platValue = wsRoVsReal[XLSX.utils.encode_cell({
-            r: R,
-            c: platColIndex
-          })] ?.v;
-          const driverValue = wsRoVsReal[XLSX.utils.encode_cell({
-            r: R,
-            c: driverColIndex
-          })] ?.v;
+          const platValue =
+            wsRoVsReal[
+              XLSX.utils.encode_cell({
+                r: R,
+                c: platColIndex,
+              })
+            ]?.v;
+          const driverValue =
+            wsRoVsReal[
+              XLSX.utils.encode_cell({
+                r: R,
+                c: driverColIndex,
+              })
+            ]?.v;
 
           // Kondisi: ETA/ETD kosong DAN (Plat ADA Serta Driver ADA)
           if (!etaValue && !etdValue && platValue && driverValue) {
@@ -517,22 +704,24 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
         for (let C = range3.s.c; C <= range3.e.c; ++C) {
           const cellRef = XLSX.utils.encode_cell({
             r: R,
-            c: C
+            c: C,
           });
 
           // Jika sel tidak ada (karena kosong), BUAT sel baru agar bisa di-style
           if (!wsRoVsReal[cellRef]) {
             wsRoVsReal[cellRef] = {
               t: 's',
-              v: ''
+              v: '',
             }; // Buat sel string kosong
           }
 
           const cell = wsRoVsReal[cellRef]; // Sekarang 'cell' dijamin ada
 
-          if (R === 0) { // Header
+          if (R === 0) {
+            // Header
             cell.s = headerStyle;
-          } else if (isHubRow) { // Baris HUB
+          } else if (isHubRow) {
+            // Baris HUB
             cell.s = redTextStyle;
             if (C === 3) {
               cell.s = {
@@ -540,16 +729,17 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
                 ...centerStyle,
                 font: {
                   ...redTextStyle.font,
-                  bold: true
-                }
+                  bold: true,
+                },
               };
             } else if ([7, 9].includes(C)) {
               cell.s = {
                 ...redTextStyle,
-                ...centerStyle
+                ...centerStyle,
               };
             }
-          } else { // Ini adalah Baris Data (atau separator)
+          } else {
+            // Ini adalah Baris Data (atau separator)
 
             // 1. Terapkan styling default (misal: alignment)
             if (centerAlignedROColumns.includes(C)) {
@@ -567,26 +757,42 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
           }
         }
       }
-      XLSX.utils.book_append_sheet(wb, wsRoVsReal, "Hasil RO vs Real");
-      
+      XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
+
       // --- Sheet 5: Update Longlat ---
-      const headers4 = ["Customer Name", "Customer ID", "Location ID", "New Longlat", "Beda Jarak (m)"];
+      const headers4 = [
+        'Customer Name',
+        'Customer ID',
+        'Location ID',
+        'New Longlat',
+        'Beda Jarak (m)',
+      ];
       updateLonglatData.sort((a, b) => {
         const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
         const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
         return distA - distB;
       });
-      const finalSheetData4 = [headers4, ...updateLonglatData.map(row => [
-        row.customerName, row.customerId, row.locationId, row.newLonglat, row.bedaJarak
-      ])];
+      const finalSheetData4 = [
+        headers4,
+        ...updateLonglatData.map((row) => [
+          row.customerName,
+          row.customerId,
+          row.locationId,
+          row.newLonglat,
+          row.bedaJarak,
+        ]),
+      ];
       const wsUpdateLonglat = XLSX.utils.aoa_to_sheet(finalSheetData4);
       wsUpdateLonglat['!view'] = { state: 'frozen', ySplit: 1 };
       const colWidths4 = headers4.map((header, i) => {
-        const maxLength = finalSheetData4.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0);
-        return { wch: Math.min(maxLength + 2, 50) }; 
+        const maxLength = finalSheetData4.reduce(
+          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
+          0
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
       });
       wsUpdateLonglat['!cols'] = colWidths4;
-      const centerAlignedLonglat = [1, 2, 3, 4]; 
+      const centerAlignedLonglat = [1, 2, 3, 4];
       const range4 = XLSX.utils.decode_range(wsUpdateLonglat['!ref']);
       for (let R = range4.s.r; R <= range4.e.r; ++R) {
         for (let C = range4.s.c; C <= range4.e.c; ++C) {
@@ -595,9 +801,7 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
           if (R === 0) {
             wsUpdateLonglat[cellRef].s = headerStyle;
             if (C === 4) {
-               wsUpdateLonglat[cellRef].c = [
-                 { a: 'Info', t: 'Jarak secara garis lurus', h: true }
-               ];
+              wsUpdateLonglat[cellRef].c = [{ a: 'Info', t: 'Jarak secara garis lurus', h: true }];
             }
           } else if (centerAlignedLonglat.includes(C)) {
             wsUpdateLonglat[cellRef].s = centerStyle;
@@ -607,16 +811,15 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
           }
         }
       }
-      XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, "Update Longlat");
+      XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
 
       // --- 9. Download File ---
       const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
-
     } catch (err) {
       setError(err.message);
     } finally {
-      setIsLoading(false);
+      if (onLoadingChange) onLoadingChange(false);
     }
   };
 
@@ -624,15 +827,15 @@ export default function DeliverySummary({ selectedLocation, selectedUser, driver
     <div className="flex flex-col">
       <button
         onClick={handleDeliverySummary}
-        disabled={isLoading}
-        className="px-6 py-3 rounded w-full sm:w-auto text-white
-                   bg-green-600 hover:bg-green-700 disabled:bg-gray-500"
+        disabled={disabled} // (Pastikan ini 'disabled' dari prop, bukan 'isLoading' lokal)
+        className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
+           bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500
+           font-bold text-lg"
       >
-        {isLoading ? 'Memproses...' : '2. Generate Delivery Summary'}
+        {/* UBAH TEKS INI */}
+        {disabled ? 'Memproses...' : 'Delivery Summary'}
       </button>
-      {error && (
-        <p className="mt-2 text-red-500 text-xs text-center w-full max-w-xs">{error}</p>
-      )}
+      {error && <p className="mt-2 text-red-500 text-xs text-center w-full max-w-xs">{error}</p>}
     </div>
   );
 }

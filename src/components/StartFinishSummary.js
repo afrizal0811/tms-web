@@ -1,36 +1,37 @@
 // File: src/components/StartFinishSummary.js
 'use client';
 
-import { useState } from 'react';
-import * as XLSX from 'xlsx-js-style'; 
 import {
+  calculateDurationAsQuotedHHMM,
   calculateStartFinishDates,
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
-  calculateDurationAsQuotedHHMM,
+  formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
-  formatYYYYMMDDToDDMMYYYY
 } from '@/lib/utils';
+import { useState } from 'react';
+import * as XLSX from 'xlsx-js-style';
 
 export default function StartFinishSummary({
   selectedLocation,
   selectedUser,
   driverData,
   selectedDate,
-  selectedLocationName
+  selectedLocationName,
+  disabled,
+  onLoadingChange,
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState(null);
 
   const handleStartFinishSummary = async () => {
-    setIsLoading(true);
+    if (onLoadingChange) onLoadingChange(true);
     setError(null);
     try {
       // 1. Cek driverData
       if (!Array.isArray(driverData)) {
-        throw new Error("Data Driver tidak valid.");
+        throw new Error('Data Driver tidak valid.');
       }
-      
+
       // 2. Hitung tanggal
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDate);
 
@@ -39,25 +40,26 @@ export default function StartFinishSummary({
         timeFrom: timeFrom,
         timeTo: timeTo,
         limit: 1000,
-        startFinish: "true",
-        fields: "finish,startTime,email,trackedTime,totalDistance",
-        timeBy: "createdTime"
+        startFinish: 'true',
+        fields: 'finish,startTime,email,trackedTime,totalDistance',
+        timeBy: 'createdTime',
       });
       const apiUrl = `/api/get-location-histories?${params.toString()}`;
-      
+
       const response = await fetch(apiUrl);
       const responseData = await response.json();
 
-      if (!response.ok) throw new Error(responseData.error || 'Gagal mengambil data location histories');
-      
+      if (!response.ok)
+        throw new Error(responseData.error || 'Gagal mengambil data location histories');
+
       if (!responseData.tasks || !Array.isArray(responseData.tasks.data)) {
-         throw new Error("Format data tidak sesuai (tasks.data tidak ditemukan).");
+        throw new Error('Format data tidak sesuai (tasks.data tidak ditemukan).');
       }
       const allApiData = responseData.tasks.data;
 
       // 4. Buat Map Driver (Email -> Info)
       const emailToDriverMap = driverData.reduce((acc, driver) => {
-        const normalizedEmail = normalizeEmail(driver.email); 
+        const normalizedEmail = normalizeEmail(driver.email);
         if (normalizedEmail) {
           acc[normalizedEmail] = { plat: driver.plat || null, name: driver.name };
         }
@@ -69,13 +71,13 @@ export default function StartFinishSummary({
       const formattedSelectedDate = `${d}-${m}-${y}`;
 
       // 6. Proses Data API dan Filter (Hasilnya dimasukkan ke Map)
-      const processedApiData = allApiData.map(item => {
+      const processedApiData = allApiData.map((item) => {
         const email = normalizeEmail(item.email);
         const driverInfo = emailToDriverMap[email];
         const startTime = item.startTime;
         const finishTime = item.finish?.finishTime;
         const startDate = formatTimestampToDDMMYYYY_UTC7(startTime);
-        
+
         return {
           // Kriteria Filter
           email: email, // Penting untuk mapping
@@ -83,26 +85,26 @@ export default function StartFinishSummary({
           totalDistance: item.finish?.totalDistance || 0,
           emailExists: !!driverInfo,
           startDate: startDate,
-          
+
           // Data Tampilan
           plat: driverInfo?.plat || null,
           driver: driverInfo?.name || email,
           startTimeFormatted: formatTimestampToQuotedHHMM_UTC7(startTime),
           finishDate: formatTimestampToDDMMYYYY_UTC7(finishTime),
           finishTimeFormatted: formatTimestampToQuotedHHMM_UTC7(finishTime),
-          duration: calculateDurationAsQuotedHHMM(startTime, finishTime)
+          duration: calculateDurationAsQuotedHHMM(startTime, finishTime),
         };
       });
 
       // Filter data API
-      const filteredApiData = processedApiData.filter(item => {
+      const filteredApiData = processedApiData.filter((item) => {
         const criteriaMet = item.trackedTime >= 10 && item.totalDistance > 5;
         const emailExists = item.emailExists;
-        const dateMatches = item.startDate === formattedSelectedDate; 
-        
+        const dateMatches = item.startDate === formattedSelectedDate;
+
         return criteriaMet && emailExists && dateMatches;
       });
-      
+
       // Buat Map (Email -> Data API yang sudah difilter) untuk lookup
       const apiDataMap = filteredApiData.reduce((acc, item) => {
         if (item.email) {
@@ -111,31 +113,32 @@ export default function StartFinishSummary({
         return acc;
       }, new Map());
 
-
       // --- PERUBAHAN LOGIKA UTAMA DIMULAI DARI SINI ---
 
       // 7. Filter Master List (driverData) sesuai Poin 1
-      const masterDriverList = driverData.filter(driver => {
+      const masterDriverList = driverData.filter((driver) => {
         const plat = driver.plat || '';
         if (plat === '') return false; // Poin 1: Exclude jika plat null
         if (plat.toUpperCase().includes('DEMO')) return false; // Poin 1: Exclude "Demo"
         return true;
       });
-      
+
       if (masterDriverList.length === 0) {
-        alert('Tidak ada data driver di master list yang memenuhi kriteria (bukan Demo / plat tidak null).');
-        setIsLoading(false);
+        alert(
+          'Tidak ada data driver di master list yang memenuhi kriteria (bukan Demo / plat tidak null).'
+        );
+        if (onLoadingChange) onLoadingChange(false);
         return;
       }
 
       // 8. Buat data Excel dari masterDriverList, diperkaya dengan apiDataMap
-      let excelDataObjects = masterDriverList.map(driver => {
+      let excelDataObjects = masterDriverList.map((driver) => {
         const normalizedEmail = normalizeEmail(driver.email);
         const apiData = apiDataMap.get(normalizedEmail);
 
         if (apiData) {
           // Driver ada di master list DAN punya data di API
-          return apiData; 
+          return apiData;
         } else {
           // Driver ada di master list TAPI TIDAK punya data di API
           return {
@@ -150,7 +153,7 @@ export default function StartFinishSummary({
           };
         }
       });
-      
+
       // 9. Terapkan Sorting 3-Tingkat (Poin 2 & 3)
       const getSortGroup = (platStr) => {
         if (!platStr) return 1; // Asli
@@ -163,88 +166,113 @@ export default function StartFinishSummary({
       excelDataObjects.sort((a, b) => {
         const groupA = getSortGroup(a.plat);
         const groupB = getSortGroup(b.plat);
-        
+
         if (groupA !== groupB) {
-            return groupA - groupB; // Urutkan berdasarkan grup (Asli, Sewa, DM)
+          return groupA - groupB; // Urutkan berdasarkan grup (Asli, Sewa, DM)
         }
-        
+
         // Jika grup sama, urutkan berdasarkan nama driver
-        return (a.driver || '').localeCompare(b.driver || ''); 
+        return (a.driver || '').localeCompare(b.driver || '');
       });
 
       // 10. Proses Data untuk Excel
       const wb = XLSX.utils.book_new();
-      const headers = ["Plat", "Driver", "Start Date", "Start Time", "Finish Date", "Finish Time", "Duration"];
-      
-      const finalSheetData = [headers, ...excelDataObjects.map(item => [
-        item.plat,
-        item.driver,
-        item.startDate,
-        item.startTimeFormatted,
-        item.finishDate,
-        item.finishTimeFormatted,
-        item.duration 
-      ])];
+      const headers = [
+        'Plat',
+        'Driver',
+        'Start Date',
+        'Start Time',
+        'Finish Date',
+        'Finish Time',
+        'Duration',
+      ];
+
+      const finalSheetData = [
+        headers,
+        ...excelDataObjects.map((item) => [
+          item.plat,
+          item.driver,
+          item.startDate,
+          item.startTimeFormatted,
+          item.finishDate,
+          item.finishTimeFormatted,
+          item.duration,
+        ]),
+      ];
 
       const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
 
       // 11. Styling
       ws['!view'] = { state: 'frozen', ySplit: 1 };
       const colWidths = headers.map((header, i) => {
-        const maxLength = finalSheetData.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0);
+        const maxLength = finalSheetData.reduce(
+          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
+          0
+        );
         return { wch: Math.min(maxLength + 2, 50) };
       });
       ws['!cols'] = colWidths;
-      
-      const headerStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
-      const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
-      const leftStyle = { alignment: { horizontal: "left", vertical: "center" } };
-      const redFillStyle = { fill: { patternType: "solid", fgColor: { rgb: "FF0000" } } };
+
+      const headerStyle = {
+        font: { bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
+      const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+      const leftStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
+      const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
 
       const range = XLSX.utils.decode_range(ws['!ref']);
       for (let R = range.s.r; R <= range.e.r; ++R) {
         for (let C = range.s.c; C <= range.e.c; ++C) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellRef]) continue;
-          
+
           if (R === 0) {
             ws[cellRef].s = headerStyle;
           } else {
             // Gunakan excelDataObjects (data yg sudah di-sort) untuk cek styling
-            const rowData = excelDataObjects[R - 1]; 
-            
+            const rowData = excelDataObjects[R - 1];
+
             // Default styling
-            if (C === 0 || C === 1) { // Plat, Driver
-               ws[cellRef].s = leftStyle;
-            } else { // Dates, Times, Duration
-               ws[cellRef].s = centerStyle;
+            if (C === 0 || C === 1) {
+              // Plat, Driver
+              ws[cellRef].s = leftStyle;
+            } else {
+              // Dates, Times, Duration
+              ws[cellRef].s = centerStyle;
             }
 
             // Cek jika Start Date != Finish Date
             // (Jika rowData.startDate null, perbandingan null !== null akan false, jadi aman)
-            if (rowData && rowData.startDate !== rowData.finishDate && rowData.startDate && rowData.finishDate) {
-              if (C === 2) { // Kolom Start Date (index 2)
+            if (
+              rowData &&
+              rowData.startDate !== rowData.finishDate &&
+              rowData.startDate &&
+              rowData.finishDate
+            ) {
+              if (C === 2) {
+                // Kolom Start Date (index 2)
                 ws[cellRef].s = { ...ws[cellRef].s, ...redFillStyle };
               }
-              if (C === 4) { // Kolom Finish Date (index 4)
+              if (C === 4) {
+                // Kolom Finish Date (index 4)
                 ws[cellRef].s = { ...ws[cellRef].s, ...redFillStyle };
               }
             }
           }
         }
       }
-      
-      XLSX.utils.book_append_sheet(wb, ws, "Start-Finish Summary");
-      
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Start-Finish Summary');
+
       // 12. Download
       const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
       const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
-
     } catch (err) {
       setError(err.message);
     } finally {
-      setIsLoading(false);
+      if (onLoadingChange) onLoadingChange(false);
     }
   };
 
@@ -252,15 +280,15 @@ export default function StartFinishSummary({
     <div className="flex flex-col">
       <button
         onClick={handleStartFinishSummary}
-        disabled={isLoading}
-        className="px-6 py-3 rounded w-full sm:w-auto text-white
-                   bg-purple-600 hover:bg-purple-700 disabled:bg-gray-500"
+        disabled={disabled} // (Pastikan ini 'disabled' dari prop, bukan 'isLoading' lokal)
+        className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
+           bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500
+           font-bold text-lg"
       >
-        {isLoading ? 'Memproses...' : '3. Generate Start-Finish'}
+        {/* UBAH TEKS INI */}
+        {disabled ? 'Memproses...' : 'Time Summary'}
       </button>
-      {error && (
-        <p className="mt-2 text-red-500 text-xs text-center w-full max-w-xs">{error}</p>
-      )}
+      {error && <p className="mt-2 text-red-500 text-xs text-center w-full max-w-xs">{error}</p>}
     </div>
   );
 }
