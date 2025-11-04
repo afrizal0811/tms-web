@@ -1,28 +1,28 @@
 // File: app/page.js
-'use client'; 
+'use client';
 
-import { useState, useEffect } from 'react';
 import LocationDropdown from '@/components/LocationDropdown';
-import UserSelectionGrid from '@/components/UserSelectionGrid';
 import TmsSummary from '@/components/TmsSummary';
-import { ROLE_ID } from '@/lib/constants'; 
-import { normalizeEmail } from '@/lib/utils'; // Kita butuh ini
+import UserSelectionGrid from '@/components/UserSelectionGrid';
+import { ROLE_ID } from '@/lib/constants';
+import { useEffect, useState } from 'react';
+import AppLayout from '@/components/AppLayout';
 
 export default function Home() {
   // === STATE UNTUK DATA ===
-  const [selectedUser, setSelectedUser] = useState(null); 
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [tempSelectedLocation, setTempSelectedLocation] = useState('');
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
-  const [driverData, setDriverData] = useState({ data: [] }); 
+  const [driverData, setDriverData] = useState({ data: [] });
   const [isAnyLoading, setIsAnyLoading] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
   // === STATE UNTUK KONTROL ===
   const [isPageLoading, setIsLoading] = useState(true);
-  const [pageError, setPageError] = useState(null); 
-  
-  const [allHubsList, setAllHubsList] = useState(null); 
+  const [pageError, setPageError] = useState(null);
+
+  const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
   // --- EFEK SAAT HALAMAN DIBUKA (Inisialisasi Awal) ---
@@ -38,9 +38,9 @@ export default function Home() {
       try {
         const response = await fetch('/api/get-hubs');
         const data = await response.json();
-        
+
         if (!response.ok) {
-           throw new Error(data.error || 'Gagal mengambil data hubs dari server');
+          throw new Error(data.error || 'Gagal mengambil data hubs dari server');
         }
 
         if (Array.isArray(data)) {
@@ -50,22 +50,21 @@ export default function Home() {
         } else if (data && Array.isArray(data.results)) {
           hubs = data.results;
         } else {
-           throw new Error("Format data hubs tidak dikenal.");
+          throw new Error('Format data hubs tidak dikenal.');
         }
-        
-        processedHubs = hubs
-          .filter(hub => hub.name !== "Hub Demo")
-          .map(hub => ({
-            ...hub,
-            name: hub.name.replace("Hub ", "")
-          }));
-        
-        setAllHubsList(processedHubs);
 
+        processedHubs = hubs
+          .filter((hub) => hub.name !== 'Hub Demo')
+          .map((hub) => ({
+            ...hub,
+            name: hub.name.replace('Hub ', ''),
+          }));
+
+        setAllHubsList(processedHubs);
       } catch (e) {
-        setPageError(e.message); 
+        setPageError(e.message);
         setIsLoading(false);
-        return; 
+        return;
       }
 
       // 2. Cek localStorage
@@ -78,14 +77,15 @@ export default function Home() {
         // --- User Sudah Ada ---
         const user = JSON.parse(storedUser);
         setSelectedUser(user);
-        
+
         const userHubIds = user.hubId || [];
 
         // Tentukan daftar hub yang boleh dipilih
-        const allowed = (userHubIds.length > 1) 
-          ? processedHubs.filter(h => userHubIds.includes(h._id))
-          : processedHubs; // Jika user hubId = 1, biarkan (akan disembunyikan nanti)
-          
+        const allowed =
+          userHubIds.length > 1
+            ? processedHubs.filter((h) => userHubIds.includes(h._id))
+            : processedHubs; // Jika user hubId = 1, biarkan (akan disembunyikan nanti)
+
         setCurrentHubListView(allowed);
 
         // Cek lokasi
@@ -99,17 +99,17 @@ export default function Home() {
             setTempSelectedLocationName(storedLocationName);
             // --- SELESAI TAMBAHAN ---
           } else {
-              // Lokasi disimpan salah (misal data user berubah), paksa pilih ulang
-              localStorage.removeItem('userLocation');
-              localStorage.removeItem('userLocationName');
-            }
+            // Lokasi disimpan salah (misal data user berubah), paksa pilih ulang
+            localStorage.removeItem('userLocation');
+            localStorage.removeItem('userLocationName');
+          }
         }
       } else {
         // --- User Belum Ada (Pertama Kali Buka) ---
         // Tampilkan semua hub
         setCurrentHubListView(processedHubs);
       }
-      
+
       // Muat driver jika ada
       if (storedLocation && storedDrivers) {
         setDriverData({ data: JSON.parse(storedDrivers) });
@@ -117,7 +117,7 @@ export default function Home() {
 
       setIsLoading(false);
     }
-    
+
     initializeApp();
   }, []); // [] = Hanya jalan sekali saat halaman dimuat
 
@@ -130,7 +130,7 @@ export default function Home() {
       const storedDrivers = localStorage.getItem('driverData');
       if (storedDrivers) {
         setDriverData({ data: JSON.parse(storedDrivers) });
-        return; 
+        return;
       }
 
       // 2. Jika cache tidak ada, fetch
@@ -144,8 +144,8 @@ export default function Home() {
         if (isSpecialHub) {
           rolesToFetch.push(driverJktRoleId);
         }
-        
-        const driverPromises = rolesToFetch.map(roleId => {
+
+        const driverPromises = rolesToFetch.map((roleId) => {
           const apiUrl = `/api/get-users?hubId=${selectedLocation}&roleId=${roleId}&status=active`;
           return fetch(apiUrl);
         });
@@ -164,43 +164,42 @@ export default function Home() {
             rawDrivers = rawDrivers.concat(data.data);
           }
         }
-        const processedDrivers = rawDrivers.map(driver => ({
+        const processedDrivers = rawDrivers.map((driver) => ({
           _id: driver._id,
           name: driver.name,
-          email: driver.email
+          email: driver.email,
         }));
 
         if (!vehicleResponse.ok) throw new Error('Gagal mengambil data vehicles.');
         const vehicleResult = await vehicleResponse.json();
         if (!vehicleResult || !Array.isArray(vehicleResult.data)) {
-           throw new Error("Data vehicle tidak sesuai.");
+          throw new Error('Data vehicle tidak sesuai.');
         }
-        
+
         const vehicleMap = vehicleResult.data.reduce((acc, vehicle) => {
-          if (vehicle.assignee) { 
+          if (vehicle.assignee) {
             acc[vehicle.assignee] = {
-              plat: vehicle.name, 
-              type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null
+              plat: vehicle.name,
+              type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
             };
           }
           return acc;
         }, {});
 
-        const mergedDriverData = processedDrivers.map(driver => {
+        const mergedDriverData = processedDrivers.map((driver) => {
           const vehicleInfo = vehicleMap[driver.email];
           return {
             email: driver.email,
             name: driver.name,
             plat: vehicleInfo ? vehicleInfo.plat : null,
-            type: vehicleInfo ? vehicleInfo.type : null
+            type: vehicleInfo ? vehicleInfo.type : null,
           };
         });
 
         setDriverData({ data: mergedDriverData });
         localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
-
       } catch (err) {
-        setPageError(err.message); 
+        setPageError(err.message);
       }
     }
 
@@ -216,10 +215,11 @@ export default function Home() {
     setTempSelectedLocation(id);
     setTempSelectedLocationName(name);
   };
-  
+
   // Dipanggil dari tombol "Save" di Langkah 1 (Lokasi)
   const handleSaveLocation = () => {
-    if (!tempSelectedLocation) { // Cek state sementara
+    if (!tempSelectedLocation) {
+      // Cek state sementara
       alert('Silakan pilih lokasi cabang.');
       return;
     }
@@ -238,7 +238,7 @@ export default function Home() {
     // Kita selalu reset driver & data lokasi
     localStorage.removeItem('driverData');
     setDriverData({
-      data: []
+      data: [],
     }); // Pastikan state driver juga bersih
 
     // Simpan lokasi baru dari state sementara
@@ -260,57 +260,57 @@ export default function Home() {
     localStorage.removeItem('userLocation');
     localStorage.removeItem('userLocationName');
     localStorage.removeItem('selectedUser');
-    localStorage.removeItem('driverData'); 
-    
+    localStorage.removeItem('driverData');
+
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');
     setDriverData({ data: [] });
-    setCurrentHubListView(allHubsList); 
+    setCurrentHubListView(allHubsList);
   };
-  
+
   // (POIN 5 & 6) Reset HANYA lokasi (untuk multi-hub user)
   const handleResetLocation = () => {
-     localStorage.removeItem('userLocation');
-     localStorage.removeItem('userLocationName');
-     localStorage.removeItem('driverData'); // Driver data tergantung lokasi
-     
-     setSelectedLocation('');
-     setSelectedLocationName('');
-     setDriverData({ data: [] });
-     
-     // Siapkan dropdown HANYA untuk hub user
-     const allowed = allHubsList.filter(h => selectedUser.hubId.includes(h._id));
-     // Poin 6: Jika nama tidak ada, tampilkan ID-nya
-     const allowedWithNames = allowed.map(hub => ({
-       _id: hub._id,
-       name: hub.name ? hub.name : hub._id // Fallback ke ID
-     }));
-     
-     setCurrentHubListView(allowedWithNames);
+    localStorage.removeItem('userLocation');
+    localStorage.removeItem('userLocationName');
+    localStorage.removeItem('driverData'); // Driver data tergantung lokasi
+
+    setSelectedLocation('');
+    setSelectedLocationName('');
+    setDriverData({ data: [] });
+
+    // Siapkan dropdown HANYA untuk hub user
+    const allowed = allHubsList.filter((h) => selectedUser.hubId.includes(h._id));
+    // Poin 6: Jika nama tidak ada, tampilkan ID-nya
+    const allowedWithNames = allowed.map((hub) => ({
+      _id: hub._id,
+      name: hub.name ? hub.name : hub._id, // Fallback ke ID
+    }));
+
+    setCurrentHubListView(allowedWithNames);
   };
 
   // --- TAMPILAN (RENDER) ---
-  
+
   if (isPageLoading || allHubsList === null) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <AppLayout className="flex min-h-screen flex-col items-center justify-center p-24">
         <p className="text-xl text-white">Loading Aplikasi...</p>
-      </main>
+      </AppLayout>
     );
   }
   if (pageError) {
-     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+    return (
+      <AppLayout className="flex min-h-screen flex-col items-center justify-center p-24">
         <p className="text-xl text-red-500">Gagal Memuat Aplikasi</p>
         <p className="text-gray-400 mt-2 text-sm">{pageError}</p>
-        <button 
+        <button
           onClick={() => window.location.reload()}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Refresh Halaman
         </button>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -319,22 +319,18 @@ export default function Home() {
   // 1. (POIN 3) Jika LOKASI belum dipilih
   if (!selectedLocation) {
     return (
-       <main className="flex min-h-screen flex-col items-center justify-center p-24">
-         <div className="text-center">
-          <h1 className="text-4xl font-bold">
-            SELAMAT DATANG!
-          </h1>
-          <h2 className="text-xl mt-2 text-gray-400">
-            Silakan pilih lokasi cabang
-          </h2>
-          
-          <LocationDropdown 
+      <AppLayout className="flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">SELAMAT DATANG!</h1>
+          <h2 className="text-xl mt-2 text-gray-400">Silakan pilih lokasi cabang</h2>
+
+          <LocationDropdown
             value={tempSelectedLocation}
             onChange={handleLocationChange}
-            onStatusChange={() => {}} 
-            hubsToShow={currentHubListView} 
+            onStatusChange={() => {}}
+            hubsToShow={currentHubListView}
           />
-          
+
           <div className="mt-4">
             <button
               onClick={handleSaveLocation}
@@ -345,40 +341,35 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
   // 2. (POIN 1 & 7) Jika LOKASI ada, tapi USER belum dipilih
   if (selectedLocation && !selectedUser) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
+      <AppLayout className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
         <div className="text-center w-full">
-            <h1 className="text-3xl font-bold">
-              PILIH USER
-            </h1>
-            <h2 className="text-lg mt-2 text-gray-400">
-              Lokasi: <strong>{selectedLocationName}</strong>
-            </h2>
-            <UserSelectionGrid
-              hubId={selectedLocation}
-              roleId={ROLE_ID.planner} 
-              onUserSelect={handleUserSelect}
-            />
-            <button 
-              onClick={handleResetAll}
-              className="mt-8 text-sm text-gray-400 hover:text-white"
-            >
-              Kembali (ganti lokasi)
-            </button>
-          </div>
-      </main>
+          <h1 className="text-3xl font-bold">PILIH USER</h1>
+          <h2 className="text-lg mt-2 text-gray-400">
+            Lokasi: <strong>{selectedLocationName}</strong>
+          </h2>
+          <UserSelectionGrid
+            hubId={selectedLocation}
+            roleId={ROLE_ID.planner}
+            onUserSelect={handleUserSelect}
+          />
+          <button onClick={handleResetAll} className="mt-8 text-sm text-gray-400 hover:text-white">
+            Kembali (ganti lokasi)
+          </button>
+        </div>
+      </AppLayout>
     );
   }
 
   // 3. (POIN 5 & 6) Jika LOKASI dan USER ada
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
+    <AppLayout className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-24">
       <>
         <TmsSummary
           selectedLocation={selectedLocation}
@@ -401,9 +392,7 @@ export default function Home() {
             Ganti Lokasi
           </button>
         )}
-
-        {/* (POIN 1 & 7) Tombol Ganti User tidak ada */}
       </>
-    </main>
+    </AppLayout>
   );
 }
