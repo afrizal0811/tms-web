@@ -2,12 +2,7 @@
 'use client';
 
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
-import {
-  calculateTargetDates,
-  formatMinutesToHHMM,
-  formatYYYYMMDDToDDMMYYYY, // <-- 3. Nama impor diubah
-  parseAndRoundPercentage,
-} from '@/lib/utils';
+import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
@@ -77,18 +72,25 @@ export default function RoutingSummary({
     localStorage.setItem(TAG_MAP_KEY, JSON.stringify(updatedFullMap));
 
     try {
-      processAndDownloadExcel(
+      const missingTimes = processAndDownloadExcel(
         pendingData.results,
         updatedHubMap,
         pendingData.date,
         selectedLocationName
       );
+      if (missingTimes) {
+        toast('Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.', {
+          icon: '⚠️',
+        });
+      }
     } catch (err) {
-      toast.error(e.message);
+      toast.error(err.message); // (e.message diganti err.message)
     }
+
     setPendingData(null);
     setUnmappedTags([]);
     setNewMappings({});
+    
     if (onLoadingChange) onLoadingChange(false);
     if (onMappingModeChange) onMappingModeChange(false);
   };
@@ -110,23 +112,34 @@ export default function RoutingSummary({
     filteredResults.forEach((resultItem) => {
       if (resultItem.result && Array.isArray(resultItem.result.routing)) {
         resultItem.result.routing.forEach((route) => {
-          // ... (logika pengisian processedDataRows dan sheet 2 & 3 tetap sama) ...
           const assigneeEmail = route.assignee;
           const driverInfo = driverMap[assigneeEmail];
           const driverName = driverInfo ? driverInfo.name : assigneeEmail;
-          const weightPercent = parseAndRoundPercentage(route.weightPercentage);
-          const volumePercent = parseAndRoundPercentage(route.volumePercentage);
+          const manualWeightPercentage = (
+            (route.totalWeight / route.vehicleMaxWeight) *
+            100
+          ).toFixed(1);
+          const manualVolumePercentage = (
+            (route.totalVolume / route.vehicleMaxVolume) *
+            100
+          ).toFixed(1);
+          const totalTravelTime = route.totalTravelTime || 0;
+          const totalVisitTime = route.totalVisitTime || 0;
+          const totalWaitingTime = route.totalWaitingTime || 0;
+          const manualSpentTime = totalTravelTime + totalVisitTime + totalWaitingTime;
           const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
           processedDataRows.push({
             plat: driverInfo ? driverInfo.plat : null,
             driver: driverName,
-            weightPercentage: weightPercent || 0,
-            volumePercentage: volumePercent || 0,
+            weightPercentage: manualWeightPercentage || 0,
+            volumePercentage: manualVolumePercentage || 0,
             totalDistance: route.totalDistance || 0,
             totalVisits: null,
             totalDelivered: null,
-            shipDurationRaw: route.totalSpentTime || 0,
+            shipDurationRaw: manualSpentTime || route.totalSpentTime || 0,
             hasTrips: hasTrips,
+            totalTravelTime: totalTravelTime,
+            totalVisitTime: totalVisitTime,
           });
           const tags = route.vehicleTags;
           const distance = route.totalDistance || 0;
@@ -170,6 +183,8 @@ export default function RoutingSummary({
           totalDistance: Math.max(existing.totalDistance, row.totalDistance),
           shipDurationRaw: Math.max(existing.shipDurationRaw, row.shipDurationRaw),
           hasTrips: existing.hasTrips || row.hasTrips,
+          totalTravelTime: existing.totalTravelTime && row.totalTravelTime,
+          totalVisitTime: existing.totalVisitTime && row.totalVisitTime,
         });
       }
     }
@@ -181,7 +196,10 @@ export default function RoutingSummary({
       alignment: { horizontal: 'center', vertical: 'center' },
     };
     const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
-
+    const redFillStyle = {
+      fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } },
+      alignment: { horizontal: 'center', vertical: 'center' }, // pastikan tetap di tengah
+    };
     // --- Sheet 1: Truck Detail (LOGIKA BARU) ---
     const headers1 = [
       'Plat',
@@ -209,6 +227,7 @@ export default function RoutingSummary({
       const mergedRow = mergedTruckDetailMap.get(driverName);
 
       if (mergedRow && mergedRow.hasTrips) {
+        const hasMissingTimes = mergedRow.totalTravelTime === 0 || mergedRow.totalVisitTime === 0;
         return {
           Plat: mergedRow.plat,
           Driver: mergedRow.driver,
@@ -220,6 +239,7 @@ export default function RoutingSummary({
           TotalVisits: null,
           TotalDelivered: null,
           ShipDuration: formatMinutesToHHMM(mergedRow.shipDurationRaw),
+          hasMissingTimes: hasMissingTimes,
         };
       } else {
         return {
@@ -231,6 +251,7 @@ export default function RoutingSummary({
           TotalVisits: null,
           TotalDelivered: null,
           ShipDuration: null,
+          hasMissingTimes: false,
         };
       }
     });
@@ -261,7 +282,7 @@ export default function RoutingSummary({
       return driverA.localeCompare(driverB);
     });
     // --- Selesai Sorting ---
-
+    const missingTimesFound = excelDataRows.some(row => row.hasMissingTimes);
     // Konversi object ke array of arrays
     const finalSheetData1 = [
       headers1,
@@ -281,14 +302,30 @@ export default function RoutingSummary({
     // (Styling Sheet 1)
     const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
     const centerAlignedDataColumns1 = [2, 3, 4, 7];
+    const shipDurationColIndex = 7;
     for (let R = range1.s.r; R <= range1.e.r; ++R) {
       for (let C = range1.s.c; C <= range1.e.c; ++C) {
         const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
         if (!wsTruckDetail[cellRef]) continue;
+
         if (R === 0) {
           wsTruckDetail[cellRef].s = headerStyle;
+
+          if (C === shipDurationColIndex) {
+            if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
+            wsTruckDetail[cellRef].c.push({
+              a: 'Info',
+              t: 'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.',
+              h: true,
+            });
+          }
         } else if (centerAlignedDataColumns1.includes(C)) {
           wsTruckDetail[cellRef].s = centerStyle;
+        }
+
+        const rowData = excelDataRows[R - 1];
+        if (rowData && rowData.hasMissingTimes && C === shipDurationColIndex) {
+          wsTruckDetail[cellRef].s = redFillStyle; // Terapkan style merah
         }
       }
     }
@@ -371,6 +408,7 @@ export default function RoutingSummary({
     const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
     const excelFileName = `Routing Summary - ${formattedDate} - ${hubName}.xlsx`;
     XLSX.writeFile(wb, excelFileName);
+    return missingTimesFound;
   };
 
   /**
@@ -462,10 +500,16 @@ export default function RoutingSummary({
         if (onLoadingChange) onLoadingChange(false);
         if (onMappingModeChange) onMappingModeChange(true);
       } else {
-        processAndDownloadExcel(filteredResults, hubTagMap, dateFrom, selectedLocationName);
+        const missingTimes = processAndDownloadExcel(filteredResults, hubTagMap, dateFrom, selectedLocationName);
+        if (missingTimes) {
+          toast('Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.', {
+            icon: '⚠️',
+          });
+        }
+  
         if (onLoadingChange) onLoadingChange(false);
       }
-    } catch (err) {
+    } catch (e) {
       toast.error(e.message);
       if (onLoadingChange) onLoadingChange(false);
       if (onMappingModeChange) onMappingModeChange(false);
