@@ -1,11 +1,11 @@
 // File: src/components/EstimasiDelivery.js
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { getTodayDateString, formatSimpleTime } from '@/lib/utils';
+import SelectionLayout from '@/components/SelectionLayout';
+import { formatSimpleTime, getTodayDateString } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import Spinner from './Spinner';
-import SelectionLayout from '@/components/SelectionLayout';
 
 // --- (Komponen Styling: Th, Td, TabButton - TIDAK BERUBAH) ---
 function Th({ children, widthClass = '' }) {
@@ -31,7 +31,7 @@ function TabButton({ children, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-3 font-semibold text-sm truncate w-40 flex-shrink-0 ${
+      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
         isActive ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'
       }`}
     >
@@ -289,9 +289,9 @@ export default function EstimasiDelivery() {
   const activeRoute = filteredVehicleRoutes[activeTab];
 
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 flex flex-col flex-grow h-full">
+    <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       {/* 1. Kontrol Atas (Statis) (TIDAK BERUBAH) */}
-      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center flex-shrink-0">
+      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center shrink-0">
         <div className="flex items-center space-x-2 mb-2 sm:mb-0">
           <label htmlFor="estimasiDate" className="text-sm font-medium text-gray-600">
             Tanggal:
@@ -349,7 +349,7 @@ export default function EstimasiDelivery() {
       </div>
 
       {/* 2. Kontrol Tab dengan Paginasi (TIDAK BERUBAH) */}
-      <div className="flex items-center border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center border-b border-gray-200 shrink-0">
         <button
           onClick={handlePrevTabs}
           disabled={!canGoPrevTabs}
@@ -367,7 +367,7 @@ export default function EstimasiDelivery() {
           </svg>
         </button>
 
-        <div className="flex flex-nowrap overflow-hidden flex-grow">
+        <div className="flex flex-nowrap overflow-hidden grow">
           {visibleVehicleRoutes.map((route, localIndex) => {
             const globalIndex = tabSliceStart + localIndex;
             return (
@@ -401,8 +401,8 @@ export default function EstimasiDelivery() {
       </div>
 
       {/* 3. Kontainer Tabel (Scrollable) */}
-      <div className="bg-white shadow-md rounded-b-lg flex flex-col flex-grow overflow-hidden min-h-0">
-        <div className="overflow-y-auto flex-grow">
+      <div className="bg-white shadow-md rounded-b-lg flex flex-col grow overflow-hidden min-h-0">
+        <div className="overflow-y-auto grow">
           {isLoading && (
             <SelectionLayout>
               <Spinner />
@@ -440,7 +440,9 @@ export default function EstimasiDelivery() {
 
                   return (
                     <tr key={`${trip.visitId}-${trip.order}`} className="hover:bg-gray-50">
-                      <Td>{trip.order}</Td>
+                      <Td>
+                        <p className={redText}>{trip.order}</p>
+                      </Td>
                       <Td>
                         {isHub ? (
                           <strong className={redText}>HUB</strong>
