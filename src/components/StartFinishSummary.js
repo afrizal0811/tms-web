@@ -9,23 +9,18 @@ import {
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
 } from '@/lib/utils';
-import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import toast from 'react-hot-toast';
 
 export default function StartFinishSummary({
-  selectedLocation,
-  selectedUser,
   driverData,
   selectedDate,
   selectedLocationName,
   disabled,
   onLoadingChange,
 }) {
-  const [error, setError] = useState(null);
-
   const handleStartFinishSummary = async () => {
     if (onLoadingChange) onLoadingChange(true);
-    setError(null);
     try {
       // 1. Cek driverData
       if (!Array.isArray(driverData)) {
@@ -56,7 +51,11 @@ export default function StartFinishSummary({
         throw new Error('Format data tidak sesuai (tasks.data tidak ditemukan).');
       }
       const allApiData = responseData.tasks.data;
-
+      if (allApiData.length === 0) {
+        toast.error('Tidak ada data task yang ditemukan untuk tanggal ini.');
+        if (onLoadingChange) onLoadingChange(false);
+        return;
+      }
       // 4. Buat Map Driver (Email -> Info)
       const emailToDriverMap = driverData.reduce((acc, driver) => {
         const normalizedEmail = normalizeEmail(driver.email);
@@ -270,7 +269,7 @@ export default function StartFinishSummary({
       const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
     } catch (err) {
-      setError(err.message);
+      toast.error(e.message);
     } finally {
       if (onLoadingChange) onLoadingChange(false);
     }
@@ -297,7 +296,6 @@ return (
       )}
       {/* --- SELESAI PERUBAHAN --- */}
     </button>
-    {error && <p className="mt-4 text-red-500 text-xs text-center">{error}</p>}
   </div>
 );
 }

@@ -14,7 +14,7 @@ import {
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
 } from '@/lib/utils';
-import { useState } from 'react';
+import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
@@ -23,19 +23,14 @@ const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 export default function DeliverySummary({
   selectedLocation,
-  selectedUser,
   driverData,
   selectedDate,
   selectedLocationName,
   disabled,
   onLoadingChange,
 }) {
-  const [error, setError] = useState(null);
-
   const handleDeliverySummary = async () => {
     if (onLoadingChange) onLoadingChange(true);
-    setError(null);
-
     try {
       // --- 1. Persiapan Parameter & Cek Hub Spesial ---
       if (!selectedLocation || !Array.isArray(driverData)) {
@@ -92,7 +87,7 @@ export default function DeliverySummary({
       }
       const allTasks = tasksResponseData.tasks.data;
       if (allTasks.length === 0) {
-        alert('Tidak ada data task yang ditemukan untuk tanggal ini.');
+        toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
         return;
       }
@@ -130,7 +125,7 @@ export default function DeliverySummary({
           }
         }
       } else {
-        console.warn('Gagal mengambil data /results, data ETA/ETD HUB akan kosong.');
+        toast.error('Gagal mengambil data');
       }
 
       // --- 5. Proses Data Utama (Gabungan) ---
@@ -589,7 +584,7 @@ export default function DeliverySummary({
         }
       }
       XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
-      
+
       // --- Sheet 4: Hasil RO vs Real (PERUBAHAN DI SINI) ---
       const headers3 = [
         'Flow',
@@ -857,34 +852,33 @@ export default function DeliverySummary({
       const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       if (onLoadingChange) onLoadingChange(false);
     }
   };
 
-return (
-  <div className="flex flex-col">
-    <button
-      onClick={handleDeliverySummary}
-      disabled={disabled}
-      className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={handleDeliverySummary}
+        disabled={disabled}
+        className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
                    bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600
                    font-bold text-lg" // Ganti 'disabled:bg-gray-500'
-    >
-      {/* --- GANTI LOGIKA INI --- */}
-      {disabled ? (
-        // Ini adalah spinner kecil yang dibuat inline
-        // 'border-t-white' membuatnya serasi dengan teks
-        <div className="flex justify-center items-center">
-          <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
-        </div>
-      ) : (
-        'Delivery Summary'
-      )}
-      {/* --- SELESAI PERUBAHAN --- */}
-    </button>
-    {error && <p className="mt-4 text-red-500 text-xs text-center">{error}</p>}
-  </div>
-);
+      >
+        {/* --- GANTI LOGIKA INI --- */}
+        {disabled ? (
+          // Ini adalah spinner kecil yang dibuat inline
+          // 'border-t-white' membuatnya serasi dengan teks
+          <div className="flex justify-center items-center">
+            <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
+          </div>
+        ) : (
+          'Delivery Summary'
+        )}
+        {/* --- SELESAI PERUBAHAN --- */}
+      </button>
+    </div>
+  );
 }

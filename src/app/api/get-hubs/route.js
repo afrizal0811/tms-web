@@ -3,6 +3,7 @@
 import {
     NextResponse
 } from 'next/server';
+import toast from 'react-hot-toast';
 
 export async function GET() {
     // Ambil variabel rahasia dari server

@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import Tooltip from './Tooltip';
+import toast from 'react-hot-toast';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
@@ -91,7 +92,6 @@ export default function VehicleData() {
   const [activeTab, setActiveTab] = useState('master');
   const [driverMap, setDriverMap] = useState(new Map());
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,7 +122,6 @@ export default function VehicleData() {
     // ... (Logika fetch data, pemisahan master/conditional/template - TIDAK BERUBAH) ...
     async function fetchData() {
       setIsLoading(true);
-      setError(null);
       try {
         const userLocation = localStorage.getItem('userLocation');
         const driverDataString = localStorage.getItem('driverData');
@@ -144,6 +143,9 @@ export default function VehicleData() {
         if (!data || !Array.isArray(data.data)) throw new Error('Format data API tidak sesuai.');
 
         const rawApiData = data.data;
+        if (rawApiData.length === 0) {
+          throw new Error('Tidak ada data yang ditemukan untuk tanggal ini.');
+        }
         const emailToVehiclesMap = new Map();
         for (const vehicle of rawApiData) {
           const email = vehicle.assignee;
@@ -183,7 +185,7 @@ export default function VehicleData() {
         setConditionalData(conditionalList.sort(sortByEmail));
         setTemplateData(rawApiData.sort(sortByEmail));
       } catch (err) {
-        setError(err.message);
+        toast.error(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -305,8 +307,7 @@ export default function VehicleData() {
         // --- SELESAI PERUBAHAN 1 ---
       }
     } catch (err) {
-      console.error('Gagal membuat file excel:', err);
-      alert('Gagal mengunduh file Excel: ' + err.message);
+      toast.error(err.message);
     } finally {
       setIsDownloading(false);
       setIsDownloadDropdownOpen(false);
@@ -358,15 +359,6 @@ export default function VehicleData() {
     }
     return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
-  // --- SELESAI LOGIKA ---
-
-  // Tampilan loading dan error
-  if (isLoading) {
-    /* ... */
-  }
-  if (error) {
-    /* ... */
-  }
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6">

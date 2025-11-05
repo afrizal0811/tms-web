@@ -10,6 +10,8 @@ import { ROLE_ID } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
+import toast from 'react-hot-toast';
+
 export default function Home() {
   // === STATE UNTUK DATA ===
   const [selectedUser, setSelectedUser] = useState(null);
@@ -60,6 +62,7 @@ export default function Home() {
         setAllHubsList(processedHubs);
       } catch (e) {
         setPageError(e.message);
+        toast.error(e.message);
         setIsLoading(false);
         return;
       }
@@ -160,7 +163,7 @@ export default function Home() {
         setDriverData({ data: mergedDriverData });
         localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
       } catch (err) {
-        setPageError(err.message);
+        toast.error(e.message);
       }
     }
     if (selectedLocation) {
@@ -234,7 +237,6 @@ export default function Home() {
       <SelectionLayout>
         <div className="text-center">
           <p className="text-xl text-red-500">Gagal Memuat Aplikasi</p>
-          <p className="text-gray-600 mt-2 text-sm">{pageError}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

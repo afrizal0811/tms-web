@@ -4,6 +4,7 @@
 import SelectionLayout from '@/components/SelectionLayout';
 import { formatSimpleTime, getTodayDateString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
 import Spinner from './Spinner';
 
@@ -112,13 +113,11 @@ export default function EstimasiDelivery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [error, setError] = useState(null);
   const [tabPageIndex, setTabPageIndex] = useState(0);
   const TABS_PER_PAGE = 10;
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      setError(null);
       setActiveTab(0);
       setAllRoutes([]);
       try {
@@ -147,7 +146,7 @@ export default function EstimasiDelivery() {
           .flatMap((item) => item.result.routing);
         setAllRoutes(allDoneRoutings);
       } catch (err) {
-        setError(err.message);
+        toast.error(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -249,15 +248,15 @@ export default function EstimasiDelivery() {
       });
 
       if (wb.SheetNames.length === 0) {
-        alert('Tidak ada data untuk di-download.');
+        toast.error('Tidak ada data untuk di-download.');
+        return
       } else {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
       }
-    } catch (err) {
-      console.error('Gagal membuat file excel:', err);
-      alert('Gagal mengunduh file Excel: ' + err.message);
+    } catch (e) {
+      toast.error(e.message);
     } finally {
       setIsDownloading(false);
     }
@@ -408,13 +407,6 @@ export default function EstimasiDelivery() {
               <Spinner />
             </SelectionLayout>
           )}
-          {error && <p className="p-6 text-center text-red-500">{error}</p>}
-          {!isLoading && !error && !activeRoute && (
-            <p className="p-6 text-center text-gray-500">
-              Tidak ada data ditemukan untuk tanggal atau filter ini.
-            </p>
-          )}
-
           {activeRoute && (
             <table className="w-full table-fixed border-collapse">
               <thead>

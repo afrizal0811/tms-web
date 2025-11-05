@@ -9,6 +9,7 @@ import {
   parseAndRoundPercentage,
 } from '@/lib/utils';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
 
 // --- 5. PERBAIKAN TYPO JSX ---
@@ -49,7 +50,6 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
 
 export default function RoutingSummary({
   selectedLocation,
-  selectedUser,
   driverData,
   selectedDate,
   selectedLocationName,
@@ -57,7 +57,6 @@ export default function RoutingSummary({
   disabled,
   onLoadingChange,
 }) {
-  const [error, setError] = useState(null);
   const [pendingData, setPendingData] = useState(null);
   const [unmappedTags, setUnmappedTags] = useState([]);
   const [newMappings, setNewMappings] = useState({});
@@ -65,10 +64,9 @@ export default function RoutingSummary({
   // ... (handleSaveMappingAndProcess tetap sama) ...
   const handleSaveMappingAndProcess = () => {
     if (onLoadingChange) onLoadingChange(true);
-    setError(null);
     const allTagsMapped = unmappedTags.every((item) => newMappings[item.tag]);
     if (!allTagsMapped) {
-      setError('Harap petakan semua tipe kendaraan.');
+      toast.error('Harap petakan semua tipe kendaraan.');
       if (onLoadingChange) onLoadingChange(false);
       return;
     }
@@ -86,7 +84,7 @@ export default function RoutingSummary({
         selectedLocationName
       );
     } catch (err) {
-      setError(err.message);
+      toast.error(e.message);
     }
     setPendingData(null);
     setUnmappedTags([]);
@@ -380,7 +378,6 @@ export default function RoutingSummary({
    */
   const handleRoutingSummary = async () => {
     if (onLoadingChange) onLoadingChange(true);
-    setError(null);
     setUnmappedTags([]);
     setPendingData(null);
     setNewMappings({});
@@ -407,10 +404,11 @@ export default function RoutingSummary({
         (item) => item.dispatchStatus === 'done'
       );
       if (filteredResults.length === 0) {
-        // JIKA API KOSONG, kita tetap lanjutkan untuk generate file KOSONG
-        console.warn(
-          'Tidak ada data routing berstatus "done" ditemukan. File akan berisi daftar driver saja.'
-        );
+        if (filteredResults.length === 0) {
+          toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
+          if (onLoadingChange) onLoadingChange(false);
+          return;
+        }
       }
 
       // 2. Logika Validasi (Read)
@@ -468,7 +466,7 @@ export default function RoutingSummary({
         if (onLoadingChange) onLoadingChange(false);
       }
     } catch (err) {
-      setError(err.message);
+      toast.error(e.message);
       if (onLoadingChange) onLoadingChange(false);
       if (onMappingModeChange) onMappingModeChange(false);
     }
@@ -511,8 +509,6 @@ export default function RoutingSummary({
             'Simpan Pemetaan' // Teks disingkat agar konsisten
           )}
         </button>
-
-        {error && <p className="mt-6 text-red-500 text-center">{error}</p>}
       </div>
     );
   }
@@ -539,7 +535,6 @@ export default function RoutingSummary({
         )}
         {/* --- SELESAI PERUBAHAN --- */}
       </button>
-      {error && <p className="mt-4 text-red-500 text-xs text-center">{error}</p>}
     </div>
   );
 }
