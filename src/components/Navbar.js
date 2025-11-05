@@ -3,10 +3,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// --- (PERUBAHAN 1): Impor useState dan useEffect ---
-import { useState, useEffect } from 'react';
+// --- (PERUBAHAN 1): Impor 'useRef' ---
+import { useState, useEffect, useRef } from 'react';
+import HelpDropdown from './HelpDropdown';
 
-// NavLink untuk Desktop (Tidak Berubah)
+// ... (Komponen NavLink - TIDAK BERUBAH) ...
 function NavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -23,8 +24,7 @@ function NavLink({ href, children }) {
   );
 }
 
-// --- (PERUBAHAN 2): Komponen NavLink baru untuk Mobile ---
-// Dibuat terpisah karena styling-nya berbeda (full-width, padding lebih besar)
+// ... (Komponen MobileNavLink - TIDAK BERUBAH) ...
 function MobileNavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -39,40 +39,69 @@ function MobileNavLink({ href, children }) {
     </Link>
   );
 }
-// --- SELESAI PERUBAHAN 2 ---
 
 export default function Navbar() {
-  // --- (PERUBAHAN 3): State untuk menu mobile ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // (Bonus UX) Tutup menu mobile saat link diklik/navigasi
   const pathname = usePathname();
+
+  // --- (PERUBAHAN 2): Buat 'ref' untuk <nav> ---
+  const navRef = useRef(null);
+
+  // Efek untuk menutup saat ganti link/halaman (Tidak Berubah)
   useEffect(() => {
     //eslint-disable-next-line
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // --- (PERUBAHAN 3): 'useEffect' baru untuk 'Click Outside' ---
+  useEffect(() => {
+    // Fungsi yang akan dijalankan saat ada klik
+    function handleClickOutside(event) {
+      // Cek jika 'ref' ada DAN 'event.target' (tempat klik)
+      // BUKANLAH turunan (contains) dari 'ref'
+      if (navRef.current && !navRef.current.contains(event.target)) {
+        setIsMobileMenuOpen(false); // Tutup menu
+      }
+    }
+
+    // Hanya tambahkan listener jika menu terbuka
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup: Hapus listener saat komponen unmount ATAU
+    // saat 'isMobileMenuOpen' berubah (menjadi false)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]); // <-- Jalankan ulang efek ini saat 'isMobileMenuOpen' berubah
   // --- SELESAI PERUBAHAN 3 ---
 
+  // Ambil URL (untuk menu mobile)
+  const plannerUrl = process.env.NEXT_PUBLIC_HELP_URL_PLANNER || '#';
+  const driverUrl = process.env.NEXT_PUBLIC_HELP_URL_DRIVER || '#';
+
   return (
-    // 'relative' diperlukan untuk memposisikan dropdown menu mobile
-    <nav className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm">
+    // --- (PERUBAHAN 2): Terapkan 'ref' ke <nav> ---
+    <nav
+      ref={navRef}
+      className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm"
+    >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Logo (Tidak Berubah) */}
         <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
           TMS-WEB
         </Link>
 
-        {/* --- (PERUBAHAN 4): Tautan Navigasi Desktop --- */}
-        {/* 'hidden' di mobile, 'flex' (terlihat) di 'md' (medium screen) ke atas */}
-        <div className="hidden md:flex space-x-4 sm:space-x-6">
+        {/* Link Desktop (Tidak Berubah) */}
+        <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
           <NavLink href="/">Home</NavLink>
           <NavLink href="/vehicles">Data Kendaraan</NavLink>
           <NavLink href="/estimasi">Estimasi Delivery</NavLink>
+          <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
+          <HelpDropdown />
         </div>
-        {/* --- SELESAI PERUBAHAN 4 --- */}
 
-        {/* --- (PERUBAHAN 5): Tombol Burger (Hanya Mobile) --- */}
-        {/* 'md:hidden' berarti tombol ini akan disembunyikan di 'md' ke atas */}
+        {/* Tombol Burger (Tidak Berubah) */}
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -80,7 +109,6 @@ export default function Navbar() {
             className="p-2 rounded-md text-slate-700 hover:bg-gray-100"
           >
             {isMobileMenuOpen ? (
-              // Ikon 'X' (Close)
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -92,7 +120,6 @@ export default function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              // Ikon 'Burger' (Menu)
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -110,21 +137,37 @@ export default function Navbar() {
             )}
           </button>
         </div>
-        {/* --- SELESAI PERUBAHAN 5 --- */}
       </div>
 
-      {/* --- (PERUBAHAN 6): Menu Dropdown Mobile --- */}
-      {/* Tampil/Sembunyi berdasarkan state 'isMobileMenuOpen' */}
+      {/* Menu Dropdown Mobile (Tidak Berubah) */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/">Home</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
+            <div className="pt-2 pb-1 px-3">
+              <div className="border-t border-gray-200"></div>
+            </div>
+            <a
+              href={plannerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+            >
+              Panduan - Planner
+            </a>
+            <a
+              href={driverUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+            >
+              Panduan - Driver
+            </a>
           </div>
         </div>
       )}
-      {/* --- SELESAI PERUBAHAN 6 --- */}
     </nav>
   );
 }
