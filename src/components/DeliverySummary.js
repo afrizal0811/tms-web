@@ -276,17 +276,39 @@ export default function DeliverySummary({
       const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
       const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
       const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
-
+      const greenHeaderStyle = {
+        font: { bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
+      };
       // --- Sheet 1: Routing Date ---
-      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom);
+      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom); // <-- [BARIS 255]
+
+      // --- MODIFIKASI BLOK INI ---
       const wsRoutingDate = XLSX.utils.aoa_to_sheet([
+        ['ROUTING DATE'], // <-- POIN 1: Tambah baris judul
         [routingDate, null, null, null, null, null, null],
       ]);
+
+      // Style Judul (Baris 1)
       wsRoutingDate['A1'].s = {
+        font: { bold: true, sz: 24, color: { rgb: 'FF0000' } }, // (Saya buat merah agar menonjol)
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
+
+      // Style Tanggal (Baris 2)
+      wsRoutingDate['A2'].s = {
         font: { bold: true, sz: 60 },
         alignment: { horizontal: 'center', vertical: 'center' },
       };
-      wsRoutingDate['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+
+      // Merge sel
+      wsRoutingDate['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Merge Judul
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Merge Tanggal
+      ];
+      // --- SELESAI MODIFIKASI ---
+
       wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
       XLSX.utils.book_append_sheet(wb, wsRoutingDate, 'Routing Date');
 
@@ -378,6 +400,7 @@ export default function DeliverySummary({
       // --- Sheet 3: Hasil Pending SO ---
       const headers2 = [
         'Flow',
+        'Date RO',
         'Plat',
         'Driver',
         'Faktur Batal/ Tolakan SO',
@@ -406,6 +429,7 @@ export default function DeliverySummary({
         ...pendingSOData.map((row) => {
           const dataRow = [
             row.flow,
+            routingDate.replace(/\./g, '/'),
             row.plat,
             row.driver,
             row.fakturBatal,
@@ -434,7 +458,7 @@ export default function DeliverySummary({
       ];
       const wsPendingSO = XLSX.utils.aoa_to_sheet(finalSheetData2);
       wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
-      const separatorColIndex = isSpecialHub ? 8 : 7;
+      const separatorColIndex = isSpecialHub ? 9 : 8;
       const centerAlignedIndices = [
         'Open Time',
         'Close Time',
@@ -462,13 +486,28 @@ export default function DeliverySummary({
       const separatorStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } } };
       const pendingColIndex = 5;
       const rangeSO = XLSX.utils.decode_range(wsPendingSO['!ref']);
+      const flowColIndex = 0; // Kolom "Flow"
+
       for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) {
         for (let C = rangeSO.s.c; C <= rangeSO.e.c; ++C) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!wsPendingSO[cellRef]) wsPendingSO[cellRef] = { t: 's', v: '' };
           const cell = wsPendingSO[cellRef];
+
           if (R === 0) {
-            cell.s = C === separatorColIndex ? { ...headerStyle, ...separatorStyle } : headerStyle;
+            // Hanya baris Header
+            if (C === separatorColIndex) {
+              // Style Separator (Pink)
+              cell.s = { ...headerStyle, ...separatorStyle };
+            } else if (C === flowColIndex) {
+              // Style Kolom Flow (Bawaan)
+              cell.s = headerStyle;
+            } else {
+              // (Poin 3) Style Hijau untuk sisanya
+              cell.s = greenHeaderStyle;
+            }
+
+            // Tooltip migrasi (tetap sama)
             if (migrationOccurred && C === pendingColIndex) {
               cell.c = [
                 {
@@ -479,6 +518,7 @@ export default function DeliverySummary({
               ];
             }
           } else {
+            // Baris Data (Logika tetap sama)
             if (C === separatorColIndex) {
               cell.s = separatorStyle;
             } else if (centerAlignedSOColumns.includes(C)) {
@@ -496,6 +536,60 @@ export default function DeliverySummary({
       }
       XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Hasil Pending SO');
 
+      // --- Sheet 5: Update Longlat ---
+      const headers4 = [
+        'Customer Name',
+        'Customer ID',
+        'Location ID',
+        'New Longlat',
+        'Beda Jarak (m)',
+      ];
+      updateLonglatData.sort((a, b) => {
+        const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
+        const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
+        return distA - distB;
+      });
+      const finalSheetData4 = [
+        headers4,
+        ...updateLonglatData.map((row) => [
+          row.customerName,
+          row.customerId,
+          row.locationId,
+          row.newLonglat,
+          row.bedaJarak,
+        ]),
+      ];
+      const wsUpdateLonglat = XLSX.utils.aoa_to_sheet(finalSheetData4);
+      wsUpdateLonglat['!view'] = { state: 'frozen', ySplit: 1 };
+      const colWidths4 = headers4.map((header, i) => {
+        const maxLength = finalSheetData4.reduce(
+          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
+          0
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      wsUpdateLonglat['!cols'] = colWidths4;
+      const centerAlignedLonglat = [1, 2, 3, 4];
+      const range4 = XLSX.utils.decode_range(wsUpdateLonglat['!ref']);
+      for (let R = range4.s.r; R <= range4.e.r; ++R) {
+        for (let C = range4.s.c; C <= range4.e.c; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsUpdateLonglat[cellRef]) continue;
+          if (R === 0) {
+            wsUpdateLonglat[cellRef].s = headerStyle;
+            if (C === 4) {
+              wsUpdateLonglat[cellRef].c = [{ a: 'Info', t: 'Jarak secara garis lurus', h: true }];
+            }
+          } else if (centerAlignedLonglat.includes(C)) {
+            wsUpdateLonglat[cellRef].s = centerStyle;
+            if (typeof wsUpdateLonglat[cellRef].v === 'number') {
+              wsUpdateLonglat[cellRef].t = 'n';
+            }
+          }
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
+      
       // --- Sheet 4: Hasil RO vs Real (PERUBAHAN DI SINI) ---
       const headers3 = [
         'Flow',
@@ -758,60 +852,6 @@ export default function DeliverySummary({
         }
       }
       XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
-
-      // --- Sheet 5: Update Longlat ---
-      const headers4 = [
-        'Customer Name',
-        'Customer ID',
-        'Location ID',
-        'New Longlat',
-        'Beda Jarak (m)',
-      ];
-      updateLonglatData.sort((a, b) => {
-        const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
-        const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
-        return distA - distB;
-      });
-      const finalSheetData4 = [
-        headers4,
-        ...updateLonglatData.map((row) => [
-          row.customerName,
-          row.customerId,
-          row.locationId,
-          row.newLonglat,
-          row.bedaJarak,
-        ]),
-      ];
-      const wsUpdateLonglat = XLSX.utils.aoa_to_sheet(finalSheetData4);
-      wsUpdateLonglat['!view'] = { state: 'frozen', ySplit: 1 };
-      const colWidths4 = headers4.map((header, i) => {
-        const maxLength = finalSheetData4.reduce(
-          (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
-          0
-        );
-        return { wch: Math.min(maxLength + 2, 50) };
-      });
-      wsUpdateLonglat['!cols'] = colWidths4;
-      const centerAlignedLonglat = [1, 2, 3, 4];
-      const range4 = XLSX.utils.decode_range(wsUpdateLonglat['!ref']);
-      for (let R = range4.s.r; R <= range4.e.r; ++R) {
-        for (let C = range4.s.c; C <= range4.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!wsUpdateLonglat[cellRef]) continue;
-          if (R === 0) {
-            wsUpdateLonglat[cellRef].s = headerStyle;
-            if (C === 4) {
-              wsUpdateLonglat[cellRef].c = [{ a: 'Info', t: 'Jarak secara garis lurus', h: true }];
-            }
-          } else if (centerAlignedLonglat.includes(C)) {
-            wsUpdateLonglat[cellRef].s = centerStyle;
-            if (typeof wsUpdateLonglat[cellRef].v === 'number') {
-              wsUpdateLonglat[cellRef].t = 'n';
-            }
-          }
-        }
-      }
-      XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
 
       // --- 9. Download File ---
       const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
