@@ -9,15 +9,16 @@ import {
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
 } from '@/lib/utils';
-import * as XLSX from 'xlsx-js-style';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx-js-style';
 
 export default function StartFinishSummary({
   driverData,
+  isInputInvalid,
+  isLoading,
+  onLoadingChange,
   selectedDate,
   selectedLocationName,
-  disabled,
-  onLoadingChange,
 }) {
   const handleStartFinishSummary = async () => {
     if (onLoadingChange) onLoadingChange(true);
@@ -275,27 +276,30 @@ export default function StartFinishSummary({
     }
   };
 
-return (
-  <div className="flex flex-col">
-    <button
-      onClick={handleStartFinishSummary}
-      disabled={disabled}
-      className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
-                   bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600
-                   font-bold text-lg" // Ganti 'disabled:bg-gray-500'
-    >
-      {/* --- GANTI LOGIKA INI --- */}
-      {disabled ? (
-        // Ini adalah spinner kecil yang dibuat inline
-        // 'border-t-white' membuatnya serasi dengan teks
-        <div className="flex justify-center items-center">
-          <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
-        </div>
-      ) : (
-        'Time Summary'
-      )}
-      {/* --- SELESAI PERUBAHAN --- */}
-    </button>
-  </div>
-);
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={handleStartFinishSummary}
+        disabled={isLoading || isInputInvalid}
+        className={`
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          ${
+            isInputInvalid
+              ? 'bg-gray-400 cursor-not-allowed'
+              : isLoading
+                ? 'bg-blue-600'
+                : 'bg-blue-600 hover:bg-blue-700'
+          }
+        `}
+      >
+        {isLoading ? (
+          <div className="flex justify-center items-center">
+            <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
+          </div>
+        ) : (
+          'Time Summary'
+        )}
+      </button>
+    </div>
+  );
 }

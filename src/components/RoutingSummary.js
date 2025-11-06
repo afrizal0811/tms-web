@@ -1,11 +1,11 @@
 // File: src/components/RoutingSummary.js
 'use client';
 
+import * as XLSX from 'xlsx-js-style';
+import toast from 'react-hot-toast';
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
 import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
-import * as XLSX from 'xlsx-js-style';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -44,13 +44,14 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
 // --- SELESAI PERBAIKAN ---
 
 export default function RoutingSummary({
-  selectedLocation,
   driverData,
-  selectedDate,
-  selectedLocationName,
-  onMappingModeChange,
-  disabled,
+  isInputInvalid,
+  isLoading,
   onLoadingChange,
+  onMappingModeChange,
+  selectedDate,
+  selectedLocation,
+  selectedLocationName,
 }) {
   const [pendingData, setPendingData] = useState(null);
   const [unmappedTags, setUnmappedTags] = useState([]);
@@ -90,7 +91,7 @@ export default function RoutingSummary({
     setPendingData(null);
     setUnmappedTags([]);
     setNewMappings({});
-    
+
     if (onLoadingChange) onLoadingChange(false);
     if (onMappingModeChange) onMappingModeChange(false);
   };
@@ -282,7 +283,7 @@ export default function RoutingSummary({
       return driverA.localeCompare(driverB);
     });
     // --- Selesai Sorting ---
-    const missingTimesFound = excelDataRows.some(row => row.hasMissingTimes);
+    const missingTimesFound = excelDataRows.some((row) => row.hasMissingTimes);
     // Konversi object ke array of arrays
     const finalSheetData1 = [
       headers1,
@@ -500,13 +501,18 @@ export default function RoutingSummary({
         if (onLoadingChange) onLoadingChange(false);
         if (onMappingModeChange) onMappingModeChange(true);
       } else {
-        const missingTimes = processAndDownloadExcel(filteredResults, hubTagMap, dateFrom, selectedLocationName);
+        const missingTimes = processAndDownloadExcel(
+          filteredResults,
+          hubTagMap,
+          dateFrom,
+          selectedLocationName
+        );
         if (missingTimes) {
           toast('Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.', {
             icon: '⚠️',
           });
         }
-  
+
         if (onLoadingChange) onLoadingChange(false);
       }
     } catch (e) {
@@ -541,7 +547,7 @@ export default function RoutingSummary({
 
         <button
           onClick={handleSaveMappingAndProcess}
-          disabled={disabled}
+          disabled={isLoading}
           className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-500 w-full sm:w-64 text-center"
         >
           {disabled ? (
@@ -560,25 +566,32 @@ export default function RoutingSummary({
   // Tampilan 2: Tombol Aksi Normal
   return (
     <div className="flex flex-col">
-      <button
-        onClick={handleRoutingSummary}
-        disabled={disabled}
-        className="px-6 py-3 rounded w-full sm:w-64 text-center text-white
-                   bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600
-                   font-bold text-lg" // Ganti 'disabled:bg-gray-500'
-      >
-        {/* --- GANTI LOGIKA INI --- */}
-        {disabled ? (
-          // Ini adalah spinner kecil yang dibuat inline
-          // 'border-t-white' membuatnya serasi dengan teks
-          <div className="flex justify-center items-center">
-            <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
-          </div>
-        ) : (
-          'Routing Summary'
-        )}
+      <div className="flex flex-col">
+        {/* --- GANTI SELURUH TOMBOL INI --- */}
+        <button
+          onClick={handleRoutingSummary}
+          disabled={isLoading || isInputInvalid}
+          className={`
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          ${
+            isInputInvalid
+              ? 'bg-gray-400 cursor-not-allowed' // <-- Style jika tanggal tidak valid
+              : isLoading
+                ? 'bg-blue-600'
+                : 'bg-blue-600 hover:bg-blue-700' // Style normal/loading
+          }
+        `}
+        >
+          {isLoading ? (
+            <div className="flex justify-center items-center">
+              <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : (
+            'Routing Summary' // <-- Teks tetap ada
+          )}
+        </button>
         {/* --- SELESAI PERUBAHAN --- */}
-      </button>
+      </div>
     </div>
   );
 }
