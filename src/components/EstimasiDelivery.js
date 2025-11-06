@@ -51,6 +51,7 @@ function parseSONumber(visitName) {
   const matches = visitName.match(/(SO|SS)\d{4}-\d+/g);
   return matches ? matches.join(', ') : null;
 }
+
 function PaginationControls({
   totalItems,
   itemsPerPage,
@@ -115,7 +116,27 @@ export default function EstimasiDelivery() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [tabPageIndex, setTabPageIndex] = useState(0);
   const TABS_PER_PAGE = 10;
+
+  
+const handleDateChange = (e) => {
+  const newDateStr = e.target.value;
+
+  const date = new Date(newDateStr.replace(/-/g, '/'));
+
+  if (date.getDay() === 0) {
+    toast.error('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+  }
+  setSelectedDate(newDateStr); // Selalu update state
+};
+
   useEffect(() => {
+    const date = new Date(selectedDate.replace(/-/g, '/'));
+    if (date.getDay() === 0) {
+      setAllRoutes([]); // Kosongkan data
+      setIsLoading(false); // Pastikan loading berhenti
+      return; // Stop, jangan fetch
+    }
+
     async function fetchData() {
       setIsLoading(true);
       setActiveTab(0);
@@ -299,7 +320,7 @@ export default function EstimasiDelivery() {
             type="date"
             id="estimasiDate"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={handleDateChange}
             disabled={isLoading}
             className="p-2 border border-gray-300 rounded-md text-gray-900"
           />
@@ -401,13 +422,24 @@ export default function EstimasiDelivery() {
 
       {/* 3. Kontainer Tabel (Scrollable) */}
       <div className="bg-white shadow-md rounded-b-lg flex flex-col grow overflow-hidden min-h-0">
+        {/* --- 3. GANTI BLOK DIV INI --- */}
         <div className="overflow-y-auto grow">
           {isLoading && (
-            <SelectionLayout>
-              <Spinner />
-            </SelectionLayout>
+            // Ganti SelectionLayout dengan spinner inline
+            <div className="w-full flex justify-center items-center p-20">
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+            </div>
           )}
-          {activeRoute && (
+
+          {/* Tampilkan jika TIDAK loading DAN (data kosong ATAU tidak ada tab aktif) */}
+          {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
+            <p className="p-10 text-center text-gray-500">
+              Tidak ada data ditemukan untuk tanggal atau filter ini.
+            </p>
+          )}
+
+          {/* Tampilkan tabel HANYA jika TIDAK loading DAN ADA tab aktif */}
+          {!isLoading && activeRoute && (
             <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr>
@@ -421,13 +453,10 @@ export default function EstimasiDelivery() {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {/* --- (PERUBAHAN 2): Menggunakan logika pewarnaan Anda --- */}
                 {activeRoute.trips.map((trip, tripIndex) => {
                   const isHub = trip.isHub;
                   const isFirstHub = isHub && trip.order === 0;
                   const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
-
-                  // Logika pewarnaan merah Anda
                   const redText = isHub ? 'text-red-600' : '';
 
                   return (
@@ -449,13 +478,11 @@ export default function EstimasiDelivery() {
                         <p className={redText}>{isFirstHub ? '' : formatSimpleTime(trip.eta)}</p>
                       </Td>
                       <Td>
-                        {/* (Perbaikan bug: gunakan trip.etd) */}
                         <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
                       </Td>
                     </tr>
                   );
                 })}
-                {/* --- SELESAI PERUBAHAN 2 --- */}
               </tbody>
             </table>
           )}
