@@ -89,7 +89,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
-          TMS-WEB
+          TMS PROCESSING
         </Link>
 
         {/* Link Desktop (Tidak Berubah) */}
