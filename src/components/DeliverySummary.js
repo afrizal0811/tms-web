@@ -250,15 +250,37 @@ export default function DeliverySummary({
           row.realSequence = null;
         }
       }
-
+      const getSortGroup = (platStr) => {
+        if (!platStr) return 1; // Anggap sebagai master jika plat null
+        const platUpper = platStr.toUpperCase();
+        if (platUpper.includes('DM')) return 3;
+        if (platUpper.includes('SEWA')) return 2;
+        return 1; // Master
+      };
       // --- 7. Filter & Sortir data "Hasil Pending SO" ---
       const pendingSOData = allTaskDataForSequence.filter(
         (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
       );
+
       pendingSOData.sort((a, b) => {
-        const driverCompare = a.driver.localeCompare(b.driver);
-        if (driverCompare !== 0) return driverCompare;
-        return a.roSequence - b.roSequence;
+        const platA = a.plat || '';
+        const platB = b.plat || '';
+        const groupA = getSortGroup(platA);
+        const groupB = getSortGroup(platB);
+
+        // 1. Urutkan berdasarkan Grup (Master, Sewa, DM)
+        if (groupA !== groupB) {
+          return groupA - groupB;
+        }
+
+        // 2. Jika grup sama, urutkan berdasarkan Driver
+        const driverCompare = (a.driver || '').localeCompare(b.driver || '');
+        if (driverCompare !== 0) {
+          return driverCompare;
+        }
+
+        // 3. Jika driver sama, urutkan berdasarkan RO Sequence
+        return (a.roSequence || 0) - (b.roSequence || 0);
       });
 
       // --- 8. Siapkan Data Excel ---
@@ -276,6 +298,7 @@ export default function DeliverySummary({
         alignment: { horizontal: 'center', vertical: 'center' },
         fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
       };
+
       // --- Sheet 1: Routing Date ---
       const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom); // <-- [BARIS 255]
 
@@ -345,14 +368,6 @@ export default function DeliverySummary({
         }
       });
 
-      // 3. Terapkan Sorting 3-Tingkat
-      const getSortGroup = (platStr) => {
-        if (!platStr) return 1;
-        const platUpper = platStr.toUpperCase();
-        if (platUpper.includes('DM')) return 3;
-        if (platUpper.includes('SEWA')) return 2;
-        return 1;
-      };
       sheetData1Objects.sort((a, b) => {
         const groupA = getSortGroup(a.plat);
         const groupB = getSortGroup(b.plat);
@@ -437,8 +452,8 @@ export default function DeliverySummary({
             null,
             row.openTime,
             row.closeTime,
-            row.eta,
-            row.etd,
+            row.eta || '-',
+            row.etd || '-',
             row.actualArrival,
             row.actualDeparture,
             row.visitTime,
