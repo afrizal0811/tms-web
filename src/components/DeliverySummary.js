@@ -89,7 +89,7 @@ export default function DeliverySummary({
       }
       const allTasks = tasksResponseData.tasks.data;
       if (allTasks.length === 0) {
-        toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
+        toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
         return;
       }
@@ -127,7 +127,7 @@ export default function DeliverySummary({
           }
         }
       } else {
-        toast.error('Gagal mengambil data');
+        toastError('Gagal mengambil data');
       }
 
       // --- 5. Proses Data Utama (Gabungan) ---
@@ -936,7 +936,7 @@ export default function DeliverySummary({
       const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
     } catch (err) {
-      toast.error(err.message);
+      toastError(err.message);
     } finally {
       if (onLoadingChange) onLoadingChange(false);
     }

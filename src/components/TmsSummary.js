@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'; // <-- 1. Pastikan toast di-impor
 import RoutingSummary from '@/components/RoutingSummary';
 import DeliverySummary from '@/components/DeliverySummary';
 import StartFinishSummary from '@/components/StartFinishSummary';
-// (Hapus impor Alert jika ada)
+import { toastError } from '../lib/toastHelper';
 
 // --- 2. Fungsi helper untuk Cek Hari Minggu ---
 const isDateSunday = (dateStr) => {
@@ -42,7 +42,7 @@ export default function TmsSummary({
 
     if (isDateSunday(newDateStr)) {
       setIsDateInvalid(true); // Tetap disable tombol
-      toast.error('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain'); // Tampilkan toast
+      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain'); // Tampilkan toast
     } else {
       setIsDateInvalid(false); // Hapus disable
     }

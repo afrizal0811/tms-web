@@ -471,3 +471,4 @@ export function parseOutletName(visitName) {
   const parts = visitName.split(' - C0');
   return parts[0].trim();
 }
+

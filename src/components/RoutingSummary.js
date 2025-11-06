@@ -6,6 +6,7 @@ import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } f
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
+import { toastWarning, toastError } from '../lib/toastHelper';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -69,7 +70,7 @@ export default function RoutingSummary({
     );
 
     if (!allTagsMapped) {
-      toast.error('Harap petakan semua tipe kendaraan.');
+      toastError('Harap petakan semua tipe kendaraan.');
       if (onLoadingChange) onLoadingChange(false);
       return;
     }
@@ -101,12 +102,12 @@ export default function RoutingSummary({
         selectedLocationName
       );
       if (missingTimes) {
-        toast('Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.', {
-          icon: '⚠️',
-        });
+        toastWarning(
+          'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!'
+        );
       }
     } catch (err) {
-      toast.error(err.message);
+      toastError(err.message);
     }
 
     setPendingData(null);
@@ -352,7 +353,7 @@ export default function RoutingSummary({
             if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
             wsTruckDetail[cellRef].c.push({
               a: 'Info',
-              t: 'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.',
+              t: 'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!',
               h: true,
             });
           }
@@ -476,7 +477,7 @@ export default function RoutingSummary({
         (item) => item.dispatchStatus === 'done'
       );
       if (filteredResults.length === 0) {
-        toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
+        toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
         return;
       }
@@ -545,14 +546,14 @@ export default function RoutingSummary({
           selectedLocationName
         );
         if (missingTimes) {
-          toast('Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing.', {
-            icon: '⚠️',
-          });
+          toastWarning(
+            'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!'
+          );
         }
         if (onLoadingChange) onLoadingChange(false);
       }
     } catch (e) {
-      toast.error(e.message);
+      toastError(e.message);
       if (onLoadingChange) onLoadingChange(false);
       if (onMappingModeChange) onMappingModeChange(false);
     }
@@ -578,7 +579,7 @@ export default function RoutingSummary({
                 setNewMappings((prev) => ({
                   ...prev,
                   [plat]: {
-                    ...(prev[plat] || {}), 
+                    ...(prev[plat] || {}),
                     [tag]: selectedType,
                   },
                 }));

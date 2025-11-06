@@ -9,8 +9,9 @@ import {
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
 } from '@/lib/utils';
-import toast from 'react-hot-toast';
+import { toastError } from '../lib/toastHelper';
 import * as XLSX from 'xlsx-js-style';
+
 
 export default function StartFinishSummary({
   driverData,
@@ -53,7 +54,7 @@ export default function StartFinishSummary({
       }
       const allApiData = responseData.tasks.data;
       if (allApiData.length === 0) {
-        toast.error('Tidak ada data task yang ditemukan untuk tanggal ini.');
+        toastError('Tidak ada data task yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
         return;
       }
@@ -270,7 +271,7 @@ export default function StartFinishSummary({
       const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
     } catch (err) {
-      toast.error(e.message);
+      toastError(e.message);
     } finally {
       if (onLoadingChange) onLoadingChange(false);
     }

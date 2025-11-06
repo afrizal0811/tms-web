@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import Tooltip from './Tooltip';
-import toast from 'react-hot-toast';
+import { toastError } from '../lib/toastHelper';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
@@ -185,7 +185,7 @@ export default function VehicleData() {
         setConditionalData(conditionalList.sort(sortByEmail));
         setTemplateData(rawApiData.sort(sortByEmail));
       } catch (err) {
-        toast.error(err.message);
+        toastError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -307,7 +307,7 @@ export default function VehicleData() {
         // --- SELESAI PERUBAHAN 1 ---
       }
     } catch (err) {
-      toast.error(err.message);
+      toastError(err.message);
     } finally {
       setIsDownloading(false);
       setIsDownloadDropdownOpen(false);

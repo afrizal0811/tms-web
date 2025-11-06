@@ -5,7 +5,7 @@ import { formatSimpleTime, getTodayDateString, parseOutletName } from '@/lib/uti
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
-
+import { toastError } from '../lib/toastHelper';
 // --- (Komponen Styling: Th, Td, TabButton - TIDAK BERUBAH) ---
 function Th({ children, widthClass = '' }) {
   return (
@@ -117,7 +117,7 @@ export default function EstimasiDelivery() {
     const date = new Date(newDateStr.replace(/-/g, '/'));
 
     if (date.getDay() === 0) {
-      toast.error('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
     }
     setSelectedDate(newDateStr); // Selalu update state
   };
@@ -160,7 +160,7 @@ export default function EstimasiDelivery() {
           .flatMap((item) => item.result.routing);
         setAllRoutes(allDoneRoutings);
       } catch (err) {
-        toast.error(err.message);
+        toastError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -262,7 +262,7 @@ export default function EstimasiDelivery() {
       });
 
       if (wb.SheetNames.length === 0) {
-        toast.error('Tidak ada data untuk di-download.');
+        toastError('Tidak ada data untuk di-download.');
         return;
       } else {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
@@ -270,7 +270,7 @@ export default function EstimasiDelivery() {
         XLSX.writeFile(wb, fileName);
       }
     } catch (e) {
-      toast.error(e.message);
+      toastError(e.message);
     } finally {
       setIsDownloading(false);
     }

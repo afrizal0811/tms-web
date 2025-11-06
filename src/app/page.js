@@ -10,7 +10,7 @@ import { ROLE_ID } from '@/lib/constants';
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import toast from 'react-hot-toast';
+import { toastError } from '../lib/toastHelper';
 
 export default function Home() {
   // === STATE UNTUK DATA ===
@@ -62,7 +62,7 @@ export default function Home() {
         setAllHubsList(processedHubs);
       } catch (e) {
         setPageError(e.message);
-        toast.error(e.message);
+        toastError(e.message);
         setIsLoading(false);
         return;
       }
@@ -163,7 +163,7 @@ export default function Home() {
         setDriverData({ data: mergedDriverData });
         localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
       } catch (err) {
-        toast.error(e.message);
+        toastError(e.message);
       }
     }
     if (selectedLocation) {
