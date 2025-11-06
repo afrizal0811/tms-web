@@ -505,7 +505,7 @@ export default function RoutingSummary({
         const missingTimes = processAndDownloadExcel(
           filteredResults,
           hubTagMap,
-          dateFrom,
+          selectedDate,
           selectedLocationName
         );
         if (missingTimes) {
