@@ -443,3 +443,31 @@ export function formatYYYYMMDDToDDMMYYYY(yyyyMmDd) {
     return yyyyMmDd; // Gagal parsing
   }
 }
+
+export const getUTC7DateString = (timestamp) => {
+  if (!timestamp) return null;
+  try {
+    // 1. Buat Date object dari timestamp
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return null;
+
+    // 2. Tambah 7 jam untuk UTC+7
+    date.setTime(date.getTime() + 7 * 60 * 60 * 1000);
+
+    // 3. Ambil YYYY, MM, DD dari tanggal yang sudah digeser
+    //    (getUTC... digunakan agar timezone lokal tidak mengacaukan)
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return null;
+  }
+};
+
+export function parseOutletName(visitName) {
+  if (!visitName) return '';
+  const parts = visitName.split(' - C0');
+  return parts[0].trim();
+}

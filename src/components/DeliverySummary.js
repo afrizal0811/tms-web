@@ -12,10 +12,11 @@ import {
   formatSimpleTime,
   formatTimestampToHHMM,
   formatYYYYMMDDToDDMMYYYY,
+  getUTC7DateString,
   normalizeEmail,
 } from '@/lib/utils';
-import * as XLSX from 'xlsx-js-style';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx-js-style';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -154,11 +155,22 @@ export default function DeliverySummary({
             failedCount: 0,
             plat: null,
             driverEmail: driverEmail,
+            // --- TAMBAHKAN PROPERTI INI ---
+            mismatchCustomers: [],
+            // --- SELESAI PENAMBAHAN ---
           };
           stats.totalOutlet += 1;
           if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
           if (!stats.plat && driverInfo && driverInfo.plat) {
             stats.plat = driverInfo.plat;
+          }
+          const startDate = getUTC7DateString(task.startTime);
+          const doneDate = getUTC7DateString(task.doneTime);
+          if (startDate && doneDate && startDate !== doneDate) {
+            stats.mismatchCustomers.push({
+              name: customerName,
+              date: startDate, // Simpan tanggal mulai
+            });
           }
           driverStats.set(driverName, stats);
         }
@@ -351,12 +363,17 @@ export default function DeliverySummary({
 
         if (stats) {
           const totalDelivery = stats.totalOutlet - stats.failedCount;
+
           return {
             plat: stats.plat || driverPlat,
             driver: driverName,
             totalOutlet: stats.totalOutlet,
             totalDelivery: totalDelivery,
             driverEmail: stats.driverEmail,
+            // --- GANTI INI ---
+            highlightRow: stats.mismatchCustomers.length > 0, // Cek apakah array > 0
+            mismatchCustomers: stats.mismatchCustomers, // Teruskan array
+            // --- SELESAI ---
           };
         } else {
           return {
@@ -365,6 +382,10 @@ export default function DeliverySummary({
             totalOutlet: null,
             totalDelivery: null,
             driverEmail: driverEmail,
+            // --- GANTI INI ---
+            highlightRow: false,
+            mismatchCustomers: [], // Kirim array kosong
+            // --- SELESAI ---
           };
         }
       });
@@ -399,12 +420,59 @@ export default function DeliverySummary({
           { a: 'Info', t: 'Total Outlet - (Pending + Batal + Terima Sebagian)', h: true },
         ];
       finalSheetData1.forEach((row, R) => {
-        if (R === 0) return;
-        if (wsDelivered[`A${R + 1}`]) wsDelivered[`A${R + 1}`].s = centerStyle;
-        if (wsDelivered[`B${R + 1}`])
-          wsDelivered[`B${R + 1}`].s = { alignment: { horizontal: 'left', vertical: 'center' } };
-        if (wsDelivered[`C${R + 1}`]) wsDelivered[`C${R + 1}`].s = centerStyle;
-        if (wsDelivered[`D${R + 1}`]) wsDelivered[`D${R + 1}`].s = centerStyle;
+        if (R === 0) return; // Skip header
+
+        // --- GANTI LOGIKA STYLING ---
+        const rowData = sheetData1Objects[R - 1]; // Ambil data objek
+        const cellRefA = `A${R + 1}`; // Plat
+        const cellRefB = `B${R + 1}`; // Driver
+        const cellRefC = `C${R + 1}`; // Total Outlet
+        const cellRefD = `D${R + 1}`; // Total Delivery
+
+        // Style Default
+        if (wsDelivered[cellRefA]) wsDelivered[cellRefA].s = centerStyle;
+        if (wsDelivered[cellRefB])
+          wsDelivered[cellRefB].s = { alignment: { horizontal: 'left', vertical: 'center' } };
+        if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = centerStyle;
+        if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = centerStyle;
+
+        // (Poin 1 & 2) Terapkan style kuning dan komen JIKA highlightRow true
+        if (rowData.highlightRow) {
+          // Kolom Total Outlet
+          if (wsDelivered[cellRefC]) {
+            wsDelivered[cellRefC].s = { ...centerStyle, fill: yellowFillStyle.fill };
+
+            // --- PERUBAHAN KOMEN DI SINI (Poin 2) ---
+            // Gabungkan semua customer name dengan newline
+            const commentText = rowData.mismatchCustomers
+              .map((task) => {
+                let formattedDate = task.date; // default YYYY-MM-DD
+
+                // Konversi YYYY-MM-DD ke DD-MM-YYYY (format permintaan)
+                if (task.date) {
+                  const [y, m, d] = task.date.split('-');
+                  if (y && m && d) formattedDate = `${d}-${m}-${y}`;
+                }
+                // Format: + Customer Name (DD-MM-YYYY)
+                return `+ ${task.name} (${formattedDate})`;
+              })
+              .join('\n'); // Gabungkan dengan newline
+
+            if (!wsDelivered[cellRefC].c) wsDelivered[cellRefC].c = [];
+            wsDelivered[cellRefC].c.push({
+              a: 'Info',
+              t: commentText, // Terapkan komen baru (hanya nama customer)
+              h: true,
+            });
+            // --- SELESAI PERUBAHAN ---
+          }
+
+          // Kolom Total Delivery
+          if (wsDelivered[cellRefD]) {
+            wsDelivered[cellRefD].s = { ...centerStyle, fill: yellowFillStyle.fill };
+          }
+        }
+        // --- SELESAI GANTI LOGIKA ---
       });
       XLSX.utils.book_append_sheet(wb, wsDelivered, 'Total Delivered');
 

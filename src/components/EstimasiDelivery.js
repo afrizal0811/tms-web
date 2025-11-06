@@ -1,12 +1,10 @@
 // File: src/components/EstimasiDelivery.js
 'use client';
 
-import SelectionLayout from '@/components/SelectionLayout';
-import { formatSimpleTime, getTodayDateString } from '@/lib/utils';
+import { formatSimpleTime, getTodayDateString, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
-import Spinner from './Spinner';
 
 // --- (Komponen Styling: Th, Td, TabButton - TIDAK BERUBAH) ---
 function Th({ children, widthClass = '' }) {
@@ -41,11 +39,7 @@ function TabButton({ children, isActive, onClick }) {
   );
 }
 // --- (Helper Functions & Komponen Styling Lainnya - TIDAK BERUBAH) ---
-function parseOutletName(visitName) {
-  if (!visitName) return '';
-  const parts = visitName.split(' - C0');
-  return parts[0].trim();
-}
+
 function parseSONumber(visitName) {
   if (!visitName) return '';
   const matches = visitName.match(/(SO|SS)\d{4}-\d+/g);
@@ -117,17 +111,16 @@ export default function EstimasiDelivery() {
   const [tabPageIndex, setTabPageIndex] = useState(0);
   const TABS_PER_PAGE = 10;
 
-  
-const handleDateChange = (e) => {
-  const newDateStr = e.target.value;
+  const handleDateChange = (e) => {
+    const newDateStr = e.target.value;
 
-  const date = new Date(newDateStr.replace(/-/g, '/'));
+    const date = new Date(newDateStr.replace(/-/g, '/'));
 
-  if (date.getDay() === 0) {
-    toast.error('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
-  }
-  setSelectedDate(newDateStr); // Selalu update state
-};
+    if (date.getDay() === 0) {
+      toast.error('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+    }
+    setSelectedDate(newDateStr); // Selalu update state
+  };
 
   useEffect(() => {
     const date = new Date(selectedDate.replace(/-/g, '/'));
@@ -270,7 +263,7 @@ const handleDateChange = (e) => {
 
       if (wb.SheetNames.length === 0) {
         toast.error('Tidak ada data untuk di-download.');
-        return
+        return;
       } else {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
