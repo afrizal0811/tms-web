@@ -22,9 +22,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.className} bg-white text-slate-900`}>
         <Toaster
-          position="top-right" // Anda bisa ubah ke 'top-center' atau 'bottom-right'
+          position="top-right" 
           toastOptions={{
-            duration: 5000, // Tampil selama 5 detik
+            duration: 4000, 
           }}
         />
         {children}

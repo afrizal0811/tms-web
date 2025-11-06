@@ -348,7 +348,7 @@ export default function RoutingSummary({
         if (R === 0) {
           wsTruckDetail[cellRef].s = headerStyle;
 
-          if (C === shipDurationColIndex) {
+          if (C === shipDurationColIndex && missingTimesFound) {
             if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
             wsTruckDetail[cellRef].c.push({
               a: 'Info',
