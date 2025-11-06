@@ -16,20 +16,21 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
         Plat <strong>{plat || 'N/A'}</strong> memiliki tag yang tidak standar (
         <strong>{fullTag}</strong>).
       </p>
-      <p className="mb-2 font-semibold">Petakan tag `{tag}` ke tipe standar:</p>
+      <p className="mb-2 font-semibold">Petakan tag `{fullTag}` untuk plat ini:</p>
       <div className="flex flex-wrap gap-2">
         {VEHICLE_TYPES.map((type) => (
           <div key={type}>
             <input
               type="radio"
-              name={`map-${tag}`}
-              id={`map-${tag}-${type}`}
+              name={`map-${plat}-${tag}`} // Buat 'name' unik per plat & tag
+              id={`map-${plat}-${tag}-${type}`}
               value={type}
-              onChange={(e) => onMapChange(tag, e.target.value)}
+              // Kirim 'plat', 'tag', dan 'type'
+              onChange={(e) => onMapChange(plat, tag, e.target.value)}
               className="sr-only peer"
             />
             <label
-              htmlFor={`map-${tag}-${type}`}
+              htmlFor={`map-${plat}-${tag}-${type}`}
               className="px-3 py-1.5 border border-gray-500 rounded-md cursor-pointer text-sm 
                          hover:bg-gray-300 peer-checked:bg-green-600 peer-checked:border-green-500 peer-checked:text-white"
             >
@@ -61,22 +62,41 @@ export default function RoutingSummary({
   // ... (handleSaveMappingAndProcess tetap sama) ...
   const handleSaveMappingAndProcess = () => {
     if (onLoadingChange) onLoadingChange(true);
-    const allTagsMapped = unmappedTags.every((item) => newMappings[item.tag]);
+
+    // Validasi struktur 'newMappings' yang baru
+    const allTagsMapped = unmappedTags.every(
+      (item) => newMappings[item.plat] && newMappings[item.plat][item.tag]
+    );
+
     if (!allTagsMapped) {
       toast.error('Harap petakan semua tipe kendaraan.');
       if (onLoadingChange) onLoadingChange(false);
       return;
     }
+
+    // Ambil Peta Lama
     const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
     const hubTagMap = fullTagMap[selectedLocation] || {};
-    const updatedHubMap = { ...hubTagMap, ...newMappings };
+
+    // Lakukan DEEP MERGE untuk Peta Baru
+    // (Penting: Salin hubTagMap agar tidak mengubah state sebelumnya)
+    const updatedHubMap = JSON.parse(JSON.stringify(hubTagMap));
+    for (const [plat, tags] of Object.entries(newMappings)) {
+      if (!updatedHubMap[plat]) {
+        updatedHubMap[plat] = {};
+      }
+      // Gabungkan tag baru ke plat yang ada
+      updatedHubMap[plat] = { ...updatedHubMap[plat], ...tags };
+    }
+
+    // Simpan Peta
     const updatedFullMap = { ...fullTagMap, [selectedLocation]: updatedHubMap };
     localStorage.setItem(TAG_MAP_KEY, JSON.stringify(updatedFullMap));
 
     try {
       const missingTimes = processAndDownloadExcel(
         pendingData.results,
-        updatedHubMap,
+        updatedHubMap, // Kirim peta baru ke Excel
         pendingData.date,
         selectedLocationName
       );
@@ -86,7 +106,7 @@ export default function RoutingSummary({
         });
       }
     } catch (err) {
-      toast.error(err.message); // (e.message diganti err.message)
+      toast.error(err.message);
     }
 
     setPendingData(null);
@@ -145,22 +165,37 @@ export default function RoutingSummary({
           });
           const tags = route.vehicleTags;
           const distance = route.totalDistance || 0;
+
+          // Tentukan 'vehiclePlat' sebagai kunci mapping
+          const vehiclePlat = driverInfo && driverInfo.plat ? driverInfo.plat : 'N/A';
+
           if (hasTrips && Array.isArray(tags) && tags.length > 0) {
             const firstTag = String(tags[0]);
             const parts = firstTag.split('-');
+
             if (parts.length >= 2) {
               const generalType = parts[0].toUpperCase();
               if (generalType === 'FROZEN') totalFrozenDistance += distance;
               else if (generalType === 'DRY') totalDryDistance += distance;
+
               let specificType = parts[1].toUpperCase();
               if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
                 if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
                   specificType = `${specificType}-LONG`;
                 }
               }
+
               let category = 'Lainnya';
-              if (VEHICLE_TYPES.includes(specificType)) category = specificType;
-              else if (tagMap[specificType]) category = tagMap[specificType];
+              if (VEHICLE_TYPES.includes(specificType)) {
+                category = specificType;
+              }
+              // --- PERUBAHAN DI SINI ---
+              // Baca dari 'tagMap' menggunakan [plat][tag]
+              else if (tagMap[vehiclePlat] && tagMap[vehiclePlat][specificType]) {
+                category = tagMap[vehiclePlat][specificType];
+              }
+              // --- SELESAI PERUBAHAN ---
+
               if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
               else if (generalType === 'DRY') truckUsageCount[category]['Dry'] += 1;
             }
@@ -426,13 +461,10 @@ export default function RoutingSummary({
     try {
       // 1. Fetch data
       const hubId = selectedLocation;
-      // --- Poin 1: Pastikan driverData ada ---
       if (!hubId || !Array.isArray(driverData) || driverData.length === 0) {
         throw new Error('Data Hub atau Driver (driverData) tidak valid atau belum dimuat.');
       }
-
       const { dateFrom, dateTo } = calculateTargetDates(selectedDate);
-
       const apiUrl = `/api/get-results-summary?dateFrom=${dateFrom}&dateTo=${dateTo}&limit=500&hubId=${hubId}`;
       const response = await fetch(apiUrl);
       const responseData = await response.json();
@@ -444,16 +476,14 @@ export default function RoutingSummary({
         (item) => item.dispatchStatus === 'done'
       );
       if (filteredResults.length === 0) {
-        if (filteredResults.length === 0) {
-          toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
-          if (onLoadingChange) onLoadingChange(false);
-          return;
-        }
+        toast.error('Tidak ada data yang ditemukan untuk tanggal ini.');
+        if (onLoadingChange) onLoadingChange(false);
+        return;
       }
 
-      // 2. Logika Validasi (Read)
+      // 2. Logika Validasi (Read) - Di-update
       const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
-      const hubTagMap = fullTagMap[hubId] || {};
+      const hubTagMap = fullTagMap[hubId] || {}; // hubTagMap = { [plat]: { [tag]: newType } }
 
       const driverMap = driverData.reduce((acc, driver) => {
         if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
@@ -466,6 +496,9 @@ export default function RoutingSummary({
         if (resultItem.result && Array.isArray(resultItem.result.routing)) {
           for (const route of resultItem.result.routing) {
             const tags = route.vehicleTags;
+            const driverInfo = driverMap[route.assignee];
+            const vehiclePlat = driverInfo && driverInfo.plat ? driverInfo.plat : 'N/A';
+
             if (Array.isArray(tags) && tags.length > 0) {
               const firstTag = String(tags[0]);
               const parts = firstTag.split('-');
@@ -477,14 +510,17 @@ export default function RoutingSummary({
                   }
                 }
                 const isKnown = VEHICLE_TYPES.includes(specificType);
-                const isMapped = hubTagMap[specificType];
+
+                // Cek mapping baru: hubTagMap[plat][tag]
+                const isMapped = hubTagMap[vehiclePlat] && hubTagMap[vehiclePlat][specificType];
 
                 if (!isKnown && !isMapped) {
-                  if (!newUnmappedTags.has(specificType)) {
-                    const driverInfo = driverMap[route.assignee];
-                    newUnmappedTags.set(specificType, {
+                  // Buat key unik per plat dan per tag
+                  const uniqueMapKey = `${vehiclePlat}-${specificType}`;
+                  if (!newUnmappedTags.has(uniqueMapKey)) {
+                    newUnmappedTags.set(uniqueMapKey, {
                       tag: specificType,
-                      plat: driverInfo ? driverInfo.plat : 'N/A',
+                      plat: vehiclePlat, // Kirim plat ke UI
                       fullTag: firstTag,
                     });
                   }
@@ -495,7 +531,7 @@ export default function RoutingSummary({
         }
       }
 
-      // 3. Putuskan Alur
+      // 3. Putuskan Alur (Tidak berubah)
       if (newUnmappedTags.size > 0) {
         setPendingData({ results: filteredResults, date: dateFrom });
         setUnmappedTags(Array.from(newUnmappedTags.values()));
@@ -504,7 +540,7 @@ export default function RoutingSummary({
       } else {
         const missingTimes = processAndDownloadExcel(
           filteredResults,
-          hubTagMap,
+          hubTagMap, // Kirim peta baru
           selectedDate,
           selectedLocationName
         );
@@ -513,7 +549,6 @@ export default function RoutingSummary({
             icon: '⚠️',
           });
         }
-
         if (onLoadingChange) onLoadingChange(false);
       }
     } catch (e) {
@@ -537,10 +572,16 @@ export default function RoutingSummary({
         <div className="w-full max-w-2xl mb-6">
           {unmappedTags.map((info) => (
             <TagMappingRow
-              key={info.tag}
+              key={`${info.plat}-${info.tag}`} // Key harus unik
               unmappedInfo={info}
-              onMapChange={(tag, selectedType) => {
-                setNewMappings((prev) => ({ ...prev, [tag]: selectedType }));
+              onMapChange={(plat, tag, selectedType) => {
+                setNewMappings((prev) => ({
+                  ...prev,
+                  [plat]: {
+                    ...(prev[plat] || {}), 
+                    [tag]: selectedType,
+                  },
+                }));
               }}
             />
           ))}
