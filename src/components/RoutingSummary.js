@@ -1,11 +1,11 @@
 // File: src/components/RoutingSummary.js
 'use client';
 
-import * as XLSX from 'xlsx-js-style';
-import toast from 'react-hot-toast';
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
 import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx-js-style';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -13,10 +13,10 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
   return (
     <div className="p-4 border border-gray-600 rounded-lg mb-4 text-left w-full">
       <p className="mb-3">
-        Plat <strong>{plat || 'N/A'}</strong> (tag: <strong>{fullTag}</strong>) memiliki tipe{' '}
-        <strong>`{tag}`</strong> yg tidak dikenal.
+        Plat <strong>{plat || 'N/A'}</strong> memiliki tag yang tidak standar (
+        <strong>{fullTag}</strong>).
       </p>
-      <p className="mb-2 font-semibold">Petakan tipe `{tag}` ke tipe standar:</p>
+      <p className="mb-2 font-semibold">Petakan tag `{tag}` ke tipe standar:</p>
       <div className="flex flex-wrap gap-2">
         {VEHICLE_TYPES.map((type) => (
           <div key={type}>
@@ -56,6 +56,7 @@ export default function RoutingSummary({
   const [pendingData, setPendingData] = useState(null);
   const [unmappedTags, setUnmappedTags] = useState([]);
   const [newMappings, setNewMappings] = useState({});
+  const isNewMappingNull = newMappings === null || Object.keys(newMappings).length === 0;
 
   // ... (handleSaveMappingAndProcess tetap sama) ...
   const handleSaveMappingAndProcess = () => {
@@ -528,8 +529,8 @@ export default function RoutingSummary({
   if (unmappedTags.length > 0) {
     return (
       <div className="flex flex-col items-center w-full max-w-4xl p-4">
-        <h2 className="text-2xl font-bold mb-4 text-yellow-400">Peringatan (Routing)</h2>
-        <h3 className="text-lg mt-2 text-gray-300 mb-6">
+        <h2 className="text-2xl font-bold mb-4 text-red-400">Peringatan!</h2>
+        <h3 className="text-lg mt-2 text-gray-600 mb-6">
           Ditemukan {unmappedTags.length} tipe kendaraan baru yang tidak dikenal.
         </h3>
 
@@ -547,17 +548,10 @@ export default function RoutingSummary({
 
         <button
           onClick={handleSaveMappingAndProcess}
-          disabled={isLoading}
+          disabled={isNewMappingNull ? true : false}
           className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-500 w-full sm:w-64 text-center"
         >
-          {disabled ? (
-            <div className="flex justify-center items-center">
-              {/* Spinner besar, samakan dengan tombol lain */}
-              <div className="w-6 h-6 border-4 border-green-400 border-t-white rounded-full animate-spin" />
-            </div>
-          ) : (
-            'Simpan Pemetaan' // Teks disingkat agar konsisten
-          )}
+          <div className="flex justify-center items-center">Simpan Pemetaan</div>
         </button>
       </div>
     );
