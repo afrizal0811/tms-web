@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function Tooltip({ children, tooltipContent }) {
@@ -70,7 +70,7 @@ export default function Tooltip({ children, tooltipContent }) {
             whitespace-pre-line 
             px-3 py-1.5 
             text-xs font-medium text-white 
-            bg-slate-800 
+            bg-sky-800 
             rounded-md shadow-lg
           "
             // --- PERUBAHAN STYLE POSISI ---
@@ -93,7 +93,7 @@ export default function Tooltip({ children, tooltipContent }) {
               absolute left-1/2 top-full -translate-x-1/2 
               w-0 h-0 
               border-x-4 border-x-transparent 
-              border-t-4 border-t-slate-800
+              border-t-4 border-t-sky-800
             "
             />
             {/* --- AKHIR PERUBAHAN --- */}

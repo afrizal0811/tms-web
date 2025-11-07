@@ -1,11 +1,11 @@
 // File: app/page.js
 'use client';
 
-import { useState, useEffect } from 'react';
 import LocationDropdown from '@/components/LocationDropdown';
-import UserSelectionGrid from '@/components/UserSelectionGrid';
 import TmsSummary from '@/components/TmsSummary';
+import UserSelectionGrid from '@/components/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
+import { useEffect, useState } from 'react';
 // --- Impor Layout Baru ---
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
@@ -239,7 +239,7 @@ export default function Home() {
           <p className="text-xl text-red-500">Gagal Memuat Aplikasi</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700"
           >
             Refresh Halaman
           </button>
@@ -268,7 +268,7 @@ export default function Home() {
             <button
               onClick={handleSaveLocation}
               disabled={!tempSelectedLocation}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
             >
               Lanjutkan
             </button>
@@ -294,9 +294,9 @@ export default function Home() {
           />
           <button
             onClick={handleResetAll}
-            className="mt-8 text-sm text-gray-500 hover:text-gray-800"
+            className="mt-4 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
           >
-            Kembali (ganti lokasi)
+            Kembali
           </button>
         </div>
       </SelectionLayout>
@@ -325,7 +325,7 @@ export default function Home() {
         {selectedUser.hubId && selectedUser.hubId.length > 1 && (
           <button
             onClick={handleResetLocation}
-            className="mt-4 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
+            className="mt-4 px-4 py-2 cursor-pointer bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
             disabled={isAnyLoading || isMapping}
           >
             Ganti Lokasi

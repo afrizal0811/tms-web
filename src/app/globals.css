@@ -11,3 +11,9 @@
   background: #DC2626 !important; /* Merah (Red 600) */
   color: #FFFFFF !important;      /* Teks putih */
 }
+
+.my-toast-success {
+  background: #22C55E !important; /* Merah (Red 600) */
+  color: #000000 !important;      /* Teks putih */
+}
+

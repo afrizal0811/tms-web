@@ -2,7 +2,7 @@
 'use client';
 
 import { formatSimpleTime, parseOutletName } from '@/lib/utils';
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { toastError } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
@@ -56,8 +56,8 @@ function TabButton({ children, isActive, onClick }) {
     <button
       ref={buttonRef} // Pasang ref ke tombol
       onClick={onClick}
-      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'
+      className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
+        isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
       }`}
     >
       {children}
@@ -356,7 +356,7 @@ export default function EstimasiDelivery() {
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-center shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2 sm:mb-0 w-full sm:w-auto">
           <label htmlFor="estimasiDate" className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">
-            Tanggal:
+            Tanggal Routing:
           </label>
           <input
             type="date"
@@ -398,11 +398,11 @@ export default function EstimasiDelivery() {
         <button
           onClick={handleDownloadExcel}
           disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-          className="px-4 py-2 w-40 text-center bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 disabled:bg-gray-400"
+          className="px-4 py-2 w-40 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-400"
         >
           {isDownloading ? (
             <div className="flex justify-center items-center">
-              <div className="w-5 h-5 border-2 border-green-300 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-sky-300 border-t-white rounded-full animate-spin" />
             </div>
           ) : (
             'Download Excel'
@@ -434,7 +434,7 @@ export default function EstimasiDelivery() {
           {isLoading && (
             // Ganti SelectionLayout dengan spinner inline
             <div className="w-full flex justify-center items-center p-20">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+              <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
             </div>
           )}
 

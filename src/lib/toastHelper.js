@@ -14,3 +14,10 @@ export const toastError = (message) => {
     className: 'my-toast-error',
   });
 };
+
+export const toastSuccess = (message) => {
+  toast.success(message, {
+    icon: '✔️',
+    className: 'my-toast-success',
+  });
+};

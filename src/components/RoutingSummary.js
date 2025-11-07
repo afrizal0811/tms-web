@@ -4,9 +4,8 @@
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
 import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
-import { toastWarning, toastError } from '../lib/toastHelper';
+import { toastError, toastWarning } from '../lib/toastHelper';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -33,7 +32,7 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
             <label
               htmlFor={`map-${plat}-${tag}-${type}`}
               className="px-3 py-1.5 border border-gray-500 rounded-md cursor-pointer text-sm 
-                         hover:bg-gray-300 peer-checked:bg-green-600 peer-checked:border-green-500 peer-checked:text-white"
+                         hover:bg-gray-300 peer-checked:bg-sky-600 peer-checked:border-sky-500 peer-checked:text-white"
             >
               {type}
             </label>
@@ -591,7 +590,7 @@ export default function RoutingSummary({
         <button
           onClick={handleSaveMappingAndProcess}
           disabled={isNewMappingNull ? true : false}
-          className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-500 w-full sm:w-64 text-center"
+          className="px-6 py-3 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-500 w-full sm:w-64 text-center"
         >
           <div className="flex justify-center items-center">Simpan Pemetaan</div>
         </button>
@@ -608,19 +607,19 @@ export default function RoutingSummary({
           onClick={handleRoutingSummary}
           disabled={isLoading || isInputInvalid}
           className={`
-          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
           ${
             isInputInvalid
               ? 'bg-gray-400 cursor-not-allowed' // <-- Style jika tanggal tidak valid
               : isLoading
-                ? 'bg-blue-600'
-                : 'bg-blue-600 hover:bg-blue-700' // Style normal/loading
+                ? 'bg-sky-600'
+                : 'bg-sky-600 hover:bg-sky-700' // Style normal/loading
           }
         `}
         >
           {isLoading ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
+              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
             </div>
           ) : (
             'Routing Summary' // <-- Teks tetap ada

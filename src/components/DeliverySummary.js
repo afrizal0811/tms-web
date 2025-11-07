@@ -15,7 +15,6 @@ import {
   getUTC7DateString,
   normalizeEmail,
 } from '@/lib/utils';
-import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx-js-style';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
@@ -948,19 +947,19 @@ export default function DeliverySummary({
         onClick={handleDeliverySummary}
         disabled={isLoading || isInputInvalid}
         className={`
-          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
           ${
             isInputInvalid
               ? 'bg-gray-400 cursor-not-allowed'
               : isLoading
-                ? 'bg-blue-600'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-sky-600'
+                : 'bg-sky-600 hover:bg-sky-700'
           }
         `}
       >
         {isLoading ? (
           <div className="flex justify-center items-center">
-            <div className="w-6 h-6 border-4 border-blue-400 border-t-white rounded-full animate-spin" />
+            <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
           </div>
         ) : (
           'Delivery Summary'

@@ -2,25 +2,56 @@
 'use client';
 
 import { normalizeEmail } from '@/lib/utils';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { toastError } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
-  return (
+  // 1. State untuk melacak apakah teks terpotong
+  const [isTruncated, setIsTruncated] = useState(false);
+  // 2. Ref untuk menunjuk ke elemen button
+  const buttonRef = useRef(null);
+
+  // 3. Gunakan useLayoutEffect untuk mengukur DOM setelah render
+  useLayoutEffect(() => {
+    const element = buttonRef.current;
+    if (element) {
+      // 4. Cek apakah lebar konten (scrollWidth) > lebar elemen (clientWidth)
+      const isTextTruncated = element.scrollWidth > element.clientWidth;
+
+      // 5. Update state
+      if (isTextTruncated !== isTruncated) {
+        setIsTruncated(isTextTruncated);
+      }
+    }
+    // Jalankan pengecekan ini setiap kali 'children' (teks) berubah
+  }, [children, isTruncated]);
+
+  // 6. Buat elemen tombol
+  const buttonElement = (
     <button
+      ref={buttonRef} // Pasang ref ke tombol
       onClick={onClick}
-      title={children} // <-- DITAMBAHKAN: Ini akan menampilkan tooltip saat hover
-      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'
+      className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
+        isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
       }`}
     >
       {children}
     </button>
   );
+
+  // 7. Logika Kondisional:
+  // HANYA jika terpotong, bungkus tombol dengan Tooltip
+  if (isTruncated) {
+    return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
+  }
+
+  // 8. Jika tidak terpotong, kembalikan tombol biasa
+  return buttonElement;
 }
+
 function Th({ children }) {
   return (
     <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase bg-gray-100 border-b border-gray-200">
@@ -267,10 +298,10 @@ export default function VehicleData() {
           'Cost Factor',
           'Vehicle Tags',
           'Odd Even',
-          'Weight Min',
-          'Weight Max',
-          'Volume Min',
-          'Volume Max',
+          'weight Min',
+          'weight Max',
+          'volume Min',
+          'volume Max',
         ];
         const data2 = templateData.map((v) => [
           v.name,
@@ -405,8 +436,8 @@ export default function VehicleData() {
         <div className="relative" ref={downloadDropdownRef}>
           <button
             onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-            disabled={isDownloading}
-            className="px-4 py-2 w-40 text-center bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 disabled:bg-gray-400"
+            disabled={isDownloading || isLoading}
+            className="px-4 py-2 w-40 text-center cursor-pointer bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-400"
           >
             Download Excel
           </button>
@@ -422,7 +453,7 @@ export default function VehicleData() {
                     name="master"
                     checked={sheetSelection.master}
                     onChange={handleToggleChange}
-                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                    className="form-checkbox h-4 w-4 text-sky-600 rounded"
                   />
                   <span className="text-sm text-gray-800">Master Vehicle</span>
                 </label>
@@ -433,7 +464,7 @@ export default function VehicleData() {
                       name="conditional"
                       checked={sheetSelection.conditional}
                       onChange={handleToggleChange}
-                      className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                      className="form-checkbox h-4 w-4 text-sky-600 rounded"
                     />
                     <span className="text-sm text-gray-800">Conditional Vehicle</span>
                   </label>
@@ -444,7 +475,7 @@ export default function VehicleData() {
                     name="template"
                     checked={sheetSelection.template}
                     onChange={handleToggleChange}
-                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                    className="form-checkbox h-4 w-4 text-sky-600 rounded"
                   />
                   <span className="text-sm text-gray-800">Template Vehicle</span>
                 </label>
@@ -453,11 +484,11 @@ export default function VehicleData() {
                 <button
                   onClick={handleConfirmDownload}
                   disabled={isDownloading}
-                  className="w-full px-4 py-2 text-center bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-700"
+                  className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-sky-700"
                 >
                   {isDownloading ? (
                     <div className="flex justify-center items-center">
-                      <div className="w-5 h-5 border-2 border-blue-300 border-t-white rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-sky-300 border-t-white rounded-full animate-spin" />
                     </div>
                   ) : (
                     'Download'
@@ -471,7 +502,7 @@ export default function VehicleData() {
       <div className="overflow-y-auto grow">
         {isLoading && (
           <div className="w-full flex justify-center items-center p-20">
-            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
           </div>
         )}
         {!isLoading && (

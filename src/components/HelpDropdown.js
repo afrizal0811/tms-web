@@ -1,7 +1,7 @@
 // File: src/components/HelpDropdown.js
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function HelpDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +29,7 @@ export default function HelpDropdown() {
       {/* Tombol Pemicu Dropdown */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors flex items-center"
+        className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors flex items-center cursor-pointer"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >

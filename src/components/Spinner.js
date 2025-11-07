@@ -2,7 +2,7 @@
 'use client';
 
 // Komponen spinner sederhana menggunakan utilitas Tailwind
-export default function Spinner({ size = 'w-12 h-12', colorClass = 'border-t-blue-600' }) {
+export default function Spinner({ size = 'w-12 h-12', colorClass = 'border-t-sky-600' }) {
   return (
     <div
       className={`

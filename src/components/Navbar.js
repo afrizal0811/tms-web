@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 // --- (PERUBAHAN 1): Impor 'useRef' ---
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import HelpDropdown from './HelpDropdown';
 
 // ... (Komponen NavLink - TIDAK BERUBAH) ...
@@ -16,7 +16,7 @@ function NavLink({ href, children }) {
     <Link
       href={href}
       className={`text-sm font-medium transition-colors ${
-        isActive ? 'text-blue-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
+        isActive ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
       }`}
     >
       {children}
@@ -32,7 +32,7 @@ function MobileNavLink({ href, children }) {
     <Link
       href={href}
       className={`block w-full p-3 text-base font-medium ${
-        isActive ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-gray-100'
+        isActive ? 'text-sky-600 bg-sky-50' : 'text-slate-700 hover:bg-gray-100'
       }`}
     >
       {children}

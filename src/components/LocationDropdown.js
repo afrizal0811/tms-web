@@ -1,12 +1,11 @@
 // File: src/components/LocationDropdown.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Komponen ini menerima 'hubsToShow' (data yang sudah difilter)
 // dan tidak lagi fetch data sendiri.
 export default function LocationDropdown({ value, onChange, onStatusChange, hubsToShow }) {
-  
   const [hubsData, setHubsData] = useState({
     loading: true,
     data: [],
@@ -26,12 +25,14 @@ export default function LocationDropdown({ value, onChange, onStatusChange, hubs
       if (onStatusChange) {
         onStatusChange({ loading: false, error: null });
       }
-    } else if (hubsToShow) { // Jika hubsToShow ada tapi kosong
-       setHubsData({ loading: false, data: [], error: null });
-       if (onStatusChange) {
+    } else if (hubsToShow) {
+      // Jika hubsToShow ada tapi kosong
+      setHubsData({ loading: false, data: [], error: null });
+      if (onStatusChange) {
         onStatusChange({ loading: false, error: null });
       }
-    } else { // Jika hubsToShow masih null (sedang di-fetch oleh parent)
+    } else {
+      // Jika hubsToShow masih null (sedang di-fetch oleh parent)
       setHubsData({ loading: true, data: [], error: null });
       if (onStatusChange) {
         onStatusChange({ loading: true, error: null });
@@ -41,25 +42,21 @@ export default function LocationDropdown({ value, onChange, onStatusChange, hubs
 
   return (
     <>
-      <select 
+      <select
         value={value}
         onChange={(e) => {
           // Kirim ID dan NAMA
           const id = e.target.value;
           const name = e.target.value ? e.target.options[e.target.selectedIndex].text : '';
-          onChange(id, name); 
+          onChange(id, name);
         }}
         disabled={hubsData.loading || !!hubsData.error}
-        className="mt-6 p-2 rounded border border-gray-300 text-black w-64"
+        className="mt-6 p-2 rounded border border-gray-300 text-black w-64 cursor-pointer"
       >
-        {hubsData.loading && (
-          <option value="">Memuat lokasi...</option>
-        )}
-        
-        {hubsData.error && (
-          <option value="">Gagal memuat lokasi</option>
-        )}
-        
+        {hubsData.loading && <option value="">Memuat lokasi...</option>}
+
+        {hubsData.error && <option value="">Gagal memuat lokasi</option>}
+
         {!hubsData.loading && !hubsData.error && (
           <>
             <option value="">-- Pilih Lokasi --</option>
@@ -72,10 +69,8 @@ export default function LocationDropdown({ value, onChange, onStatusChange, hubs
           </>
         )}
       </select>
-      
-      {hubsData.error && (
-        <p className="text-red-500 text-sm mt-2">{hubsData.error}</p>
-      )}
+
+      {hubsData.error && <p className="text-red-500 text-sm mt-2">{hubsData.error}</p>}
     </>
   );
 }
