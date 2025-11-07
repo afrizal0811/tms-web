@@ -1,14 +1,12 @@
-// File: src/components/Tooltip.js
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom'; // 1. Impor createPortal
+import { createPortal } from 'react-dom';
 
 export default function Tooltip({ children, tooltipContent }) {
   const [isVisible, setIsVisible] = useState(false);
-  // State baru untuk menyimpan posisi X dan Y
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef(null); // Ref untuk elemen pemicu
+  const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
 
   const clearTimer = () => {
@@ -21,20 +19,20 @@ export default function Tooltip({ children, tooltipContent }) {
   const handleMouseEnter = () => {
     clearTimer();
     timeoutRef.current = setTimeout(() => {
-      // 2. Ambil posisi elemen pemicu di layar
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
 
-      // 3. Atur posisi tooltip
+      // --- PERUBAHAN LOGIKA POSISI ---
       setPosition({
-        // Pusatkan secara vertikal: posisi atas + setengah tinggi elemen
-        top: rect.top + rect.height / 2,
-        // Posisikan di kanan: posisi kanan + 8px margin
-        left: rect.right + 8,
+        // Posisikan 8px di ATAS elemen
+        top: rect.top - 8,
+        // Posisikan di TENGAH horizontal elemen
+        left: rect.left + rect.width / 2,
       });
+      // --- AKHIR PERUBAHAN ---
 
       setIsVisible(true);
-    }, 150); // Delay 150ms
+    }, 150);
   };
 
   const handleMouseLeave = () => {
@@ -42,33 +40,27 @@ export default function Tooltip({ children, tooltipContent }) {
     setIsVisible(false);
   };
 
-  // 4. Sembunyikan tooltip jika pengguna scroll atau resize
   useEffect(() => {
     const hideTooltip = () => setIsVisible(false);
-    // 'true' (mode capture) penting untuk mendeteksi scroll di dalam container
     window.addEventListener('scroll', hideTooltip, true);
     window.addEventListener('resize', hideTooltip, true);
 
-    // Cleanup
     return () => {
       window.removeEventListener('scroll', hideTooltip, true);
       window.removeEventListener('resize', hideTooltip, true);
-      clearTimer(); // Hapus timer saat komponen unmount
+      clearTimer();
     };
   }, []);
 
   return (
-    // 5. Elemen pemicu (span, div, dll.) sekarang mendapat ref
     <div
       ref={triggerRef}
-      className="relative inline-block" // 'relative' tidak lagi wajib, tapi tidak masalah
+      className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Ini adalah elemen pemicu Anda (misal: "FROZEN-CDE...") */}
       {children}
 
-      {/* 6. Gunakan Portal untuk merender tooltip di <body> */}
       {isVisible &&
         createPortal(
           <div
@@ -81,18 +73,32 @@ export default function Tooltip({ children, tooltipContent }) {
             bg-slate-800 
             rounded-md shadow-lg
           "
-            // 7. Terapkan posisi dari state menggunakan 'style'
+            // --- PERUBAHAN STYLE POSISI ---
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
-              transform: 'translateY(-50%)', // Trik CSS untuk memusatkan vertikal
+              // Trik CSS:
+              // 1. Geser ke kiri 50% dari LEBAR TOOLTIP (untuk center)
+              // 2. Geser ke atas 100% dari TINGGI TOOLTIP (untuk menempatkan di atas)
+              transform: 'translate(-50%, -100%)',
             }}
+            // --- AKHIR PERUBAHAN ---
           >
             {tooltipContent}
-            {/* Segitiga kecil di kiri (tetap sama) */}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-y-4 border-y-transparent border-r-4 border-r-slate-800" />
+
+            {/* --- PERUBAHAN SEGITIGA (Arrow) --- */}
+            {/* Sekarang di bawah, menunjuk ke bawah */}
+            <div
+              className="
+              absolute left-1/2 top-full -translate-x-1/2 
+              w-0 h-0 
+              border-x-4 border-x-transparent 
+              border-t-4 border-t-slate-800
+            "
+            />
+            {/* --- AKHIR PERUBAHAN --- */}
           </div>,
-          document.body // Teleportasi ke <body>
+          document.body
         )}
     </div>
   );

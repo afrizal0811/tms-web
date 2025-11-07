@@ -12,7 +12,8 @@ function TabButton({ children, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-3 font-semibold text-sm ${
+      title={children} // <-- DITAMBAHKAN: Ini akan menampilkan tooltip saat hover
+      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
         isActive ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'
       }`}
     >
@@ -473,22 +474,25 @@ export default function VehicleData() {
             <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
           </div>
         )}
-        <div className="flex space-x-1 border-b border-gray-200">
-          <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
-            Master Vehicle
-          </TabButton>
-          {conditionalData.length > 0 && (
-            <TabButton
-              isActive={activeTab === 'conditional'}
-              onClick={() => setActiveTab('conditional')}
-            >
-              Conditional Vehicle
+        {!isLoading && (
+          <div className="flex space-x-1 border-b border-gray-200">
+            <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
+              Master Vehicle
             </TabButton>
-          )}
-          <TabButton isActive={activeTab === 'template'} onClick={() => setActiveTab('template')}>
-            Template Vehicle
-          </TabButton>
-        </div>
+            {conditionalData.length > 0 && (
+              <TabButton
+                isActive={activeTab === 'conditional'}
+                onClick={() => setActiveTab('conditional')}
+              >
+                Conditional Vehicle
+              </TabButton>
+            )}
+            <TabButton isActive={activeTab === 'template'} onClick={() => setActiveTab('template')}>
+              Template Vehicle
+            </TabButton>
+          </div>
+        )}
+
         {!isLoading && totalItems === 0 && (
           <p className="p-10 text-center text-gray-500">
             Tidak ada data ditemukan untuk filter ini.
