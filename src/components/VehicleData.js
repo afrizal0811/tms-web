@@ -1,11 +1,11 @@
 // File: src/components/VehicleData.js
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
 import { normalizeEmail } from '@/lib/utils';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import Tooltip from './Tooltip';
 import { toastError } from '../lib/toastHelper';
+import Tooltip from './Tooltip';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
@@ -144,7 +144,7 @@ export default function VehicleData() {
 
         const rawApiData = data.data;
         if (rawApiData.length === 0) {
-          throw new Error('Tidak ada data yang ditemukan untuk tanggal ini.');
+          throw new Error('Tidak ada data yang ditemukan.');
         }
         const emailToVehiclesMap = new Map();
         for (const vehicle of rawApiData) {
@@ -467,122 +467,132 @@ export default function VehicleData() {
           )}
         </div>
       </div>
-
-      {/* Kontrol Tab (Tidak berubah) */}
-      <div className="flex space-x-1 border-b border-gray-200">
-        <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
-          Master Vehicle
-        </TabButton>
-        {conditionalData.length > 0 && (
-          <TabButton
-            isActive={activeTab === 'conditional'}
-            onClick={() => setActiveTab('conditional')}
-          >
-            Conditional Vehicle
+      <div className="overflow-y-auto grow">
+        {isLoading && (
+          <div className="w-full flex justify-center items-center p-20">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+          </div>
+        )}
+        <div className="flex space-x-1 border-b border-gray-200">
+          <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
+            Master Vehicle
           </TabButton>
+          {conditionalData.length > 0 && (
+            <TabButton
+              isActive={activeTab === 'conditional'}
+              onClick={() => setActiveTab('conditional')}
+            >
+              Conditional Vehicle
+            </TabButton>
+          )}
+          <TabButton isActive={activeTab === 'template'} onClick={() => setActiveTab('template')}>
+            Template Vehicle
+          </TabButton>
+        </div>
+        {!isLoading && totalItems === 0 && (
+          <p className="p-10 text-center text-gray-500">
+            Tidak ada data ditemukan untuk filter ini.
+          </p>
         )}
-        <TabButton isActive={activeTab === 'template'} onClick={() => setActiveTab('template')}>
-          Template Vehicle
-        </TabButton>
-      </div>
+        {!isLoading && totalItems > 0 && (
+          <div className="bg-white shadow-md rounded-b-lg">
+            {(activeTab === 'master' || activeTab === 'conditional') && (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[600px]">
+                  <thead>
+                    <tr>
+                      <Th>Plat</Th>
+                      <Th>Type</Th>
+                      <Th>Email</Th>
+                      <Th>Name</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedData.map((v) => (
+                      <tr key={v._id} className="hover:bg-gray-50">
+                        <Td>{v.name}</Td>
+                        <Td>{v.tags?.[0] || null}</Td>
+                        <Td>{v.assignee}</Td>
+                        <Td>{driverMap.get(normalizeEmail(v.assignee)) || null}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {activeTab === 'template' && (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[1200px]">
+                  <thead>
+                    <tr>
+                      <Th>Name*</Th>
+                      <Th>Assignee</Th>
+                      <Th>Start Time</Th>
+                      <Th>End Time</Th>
+                      <Th>Break Start</Th>
+                      <Th>Break End</Th>
+                      <Th>Multiday</Th>
+                      <Th>Speed Km/h</Th>
+                      <Th>Cost Factor</Th>
+                      <Th>Vehicle Tags</Th>
+                      <Th>Odd Even</Th>
+                      <Th>Weight Min</Th>
+                      <Th>Weight Max</Th>
+                      <Th>Volume Min</Th>
+                      <Th>Volume Max</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedData.map((v) => (
+                      <tr key={v._id} className="hover:bg-gray-50">
+                        <Td>{v.name}</Td>
+                        <Td>{v.assignee}</Td>
+                        <Td>{v.workingTime?.startTime || null}</Td>
+                        <Td>{v.workingTime?.endTime || null}</Td>
+                        <Td>{v.breaktime?.startTime || null}</Td>
+                        <Td>{v.breaktime?.endTime || null}</Td>
+                        <Td>{v.workingTime?.multiday || 0}</Td>
+                        <Td>{v.speed}</Td>
+                        <Td>{null}</Td>
+                        <Td>
+                          {(() => {
+                            const tags = v.tags || [];
+                            if (tags.length === 0) return null;
+                            const firstTag = tags[0];
+                            const remainingTags = tags.slice(1);
+                            const remainingCount = remainingTags.length;
+                            if (remainingCount === 0) return firstTag;
+                            return (
+                              <Tooltip tooltipContent={remainingTags.join('\n')}>
+                                <span>
+                                  {firstTag}; (+{remainingCount} lainnya)
+                                </span>
+                              </Tooltip>
+                            );
+                          })()}
+                        </Td>
+                        <Td>{v.oddEven}</Td>
+                        <Td>0</Td>
+                        <Td>{v.capacity?.weight?.max || null}</Td>
+                        <Td>0</Td>
+                        <Td>{formatVolume(v.capacity?.volume?.max)}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-      {/* Kontainer Tabel (Tidak berubah) */}
-      <div className="bg-white shadow-md rounded-b-lg">
-        {(activeTab === 'master' || activeTab === 'conditional') && (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[600px]">
-              <thead>
-                <tr>
-                  <Th>Plat</Th>
-                  <Th>Type</Th>
-                  <Th>Email</Th>
-                  <Th>Name</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((v) => (
-                  <tr key={v._id} className="hover:bg-gray-50">
-                    <Td>{v.name}</Td>
-                    <Td>{v.tags?.[0] || null}</Td>
-                    <Td>{v.assignee}</Td>
-                    <Td>{driverMap.get(normalizeEmail(v.assignee)) || null}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Kontrol Paginasi (Tidak berubah) */}
+            <PaginationControls
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
           </div>
         )}
-        {activeTab === 'template' && (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[1200px]">
-              <thead>
-                <tr>
-                  <Th>Name*</Th>
-                  <Th>Assignee</Th>
-                  <Th>Start Time</Th>
-                  <Th>End Time</Th>
-                  <Th>Break Start</Th>
-                  <Th>Break End</Th>
-                  <Th>Multiday</Th>
-                  <Th>Speed Km/h</Th>
-                  <Th>Cost Factor</Th>
-                  <Th>Vehicle Tags</Th>
-                  <Th>Odd Even</Th>
-                  <Th>Weight Min</Th>
-                  <Th>Weight Max</Th>
-                  <Th>Volume Min</Th>
-                  <Th>Volume Max</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((v) => (
-                  <tr key={v._id} className="hover:bg-gray-50">
-                    <Td>{v.name}</Td>
-                    <Td>{v.assignee}</Td>
-                    <Td>{v.workingTime?.startTime || null}</Td>
-                    <Td>{v.workingTime?.endTime || null}</Td>
-                    <Td>{v.breaktime?.startTime || null}</Td>
-                    <Td>{v.breaktime?.endTime || null}</Td>
-                    <Td>{v.workingTime?.multiday || 0}</Td>
-                    <Td>{v.speed}</Td>
-                    <Td>{null}</Td>
-                    <Td>
-                      {(() => {
-                        const tags = v.tags || [];
-                        if (tags.length === 0) return null;
-                        const firstTag = tags[0];
-                        const remainingTags = tags.slice(1);
-                        const remainingCount = remainingTags.length;
-                        if (remainingCount === 0) return firstTag;
-                        return (
-                          <Tooltip tooltipContent={remainingTags.join('\n')}>
-                            <span>
-                              {firstTag}; (+{remainingCount} lainnya)
-                            </span>
-                          </Tooltip>
-                        );
-                      })()}
-                    </Td>
-                    <Td>{v.oddEven}</Td>
-                    <Td>0</Td>
-                    <Td>{v.capacity?.weight?.max || null}</Td>
-                    <Td>0</Td>
-                    <Td>{formatVolume(v.capacity?.volume?.max)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Kontrol Paginasi (Tidak berubah) */}
-        <PaginationControls
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={handleItemsPerPageChange}
-        />
       </div>
     </div>
   );
