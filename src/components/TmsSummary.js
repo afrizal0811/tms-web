@@ -57,10 +57,6 @@ export default function TmsSummary({
             TMS Processing Summary
           </h1>
 
-          {/* --- 5. PERUBAHAN WARNA SUBTITLE --- */}
-          <h2 className="text-2xl mt-1 mb-6 text-sky-800 font-semibold">{selectedLocationName}</h2>
-          {/* --- Selesai Perubahan 5 --- */}
-
           <div className="mb-8 text-center w-full max-w-xs">
             <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
               Pilih Tanggal Pengiriman

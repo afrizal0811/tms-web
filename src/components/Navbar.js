@@ -3,9 +3,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// --- (PERUBAHAN 1): Impor 'useRef' ---
 import { useEffect, useRef, useState } from 'react';
 import HelpDropdown from './HelpDropdown';
+import LocationSwitcher from './LocationSwitcher';
 
 // ... (Komponen NavLink - TIDAK BERUBAH) ...
 function NavLink({ href, children }) {
@@ -97,8 +97,9 @@ export default function Navbar() {
           <NavLink href="/">Home</NavLink>
           <NavLink href="/vehicles">Data Kendaraan</NavLink>
           <NavLink href="/estimasi">Estimasi Delivery</NavLink>
-          <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
           <HelpDropdown />
+          <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
+          <LocationSwitcher />
         </div>
 
         {/* Tombol Burger (Tidak Berubah) */}
@@ -165,6 +166,12 @@ export default function Navbar() {
             >
               Panduan - Driver
             </a>
+            <div className="pt-2 pb-1 px-3">
+              <div className="border-t border-gray-200"></div>
+            </div>
+            <div className="p-3">
+              <LocationSwitcher />
+            </div>
           </div>
         </div>
       )}

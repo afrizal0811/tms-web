@@ -60,6 +60,7 @@ export default function Home() {
             name: hub.name.replace('Hub ', ''),
           }));
         setAllHubsList(processedHubs);
+        localStorage.setItem('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
         setPageError(e.message);
         toastError(e.message);
@@ -263,6 +264,7 @@ export default function Home() {
             onChange={handleLocationChange}
             onStatusChange={() => {}}
             hubsToShow={currentHubListView}
+            className="mt-6 p-2 rounded border border-gray-300 w-64"
           />
           <div className="mt-4">
             <button
@@ -306,32 +308,18 @@ export default function Home() {
   // 3. Jika LOKASI dan USER ada -> Tampilkan Layout APLIKASI UTAMA (Dengan Navbar)
   return (
     <AppLayout mainClassName="items-center justify-center px-6">
-      {/* 'items-center justify-center': Memusatkan konten TmsSummary (Poin 2)
-        'px-6': Menambahkan padding horizontal yang dihapus dari layout
-      */}
-      <>
-        <TmsSummary
-          selectedLocation={selectedLocation}
-          selectedLocationName={selectedLocationName}
-          selectedUser={selectedUser}
-          driverData={driverData.data}
-          // Teruskan state loading/mapping
-          isAnyLoading={isAnyLoading}
-          setIsAnyLoading={setIsAnyLoading}
-          isMapping={isMapping}
-          setIsMapping={setIsMapping}
-        />
-
-        {selectedUser.hubId && selectedUser.hubId.length > 1 && (
-          <button
-            onClick={handleResetLocation}
-            className="mt-4 px-4 py-2 cursor-pointer bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
-            disabled={isAnyLoading || isMapping}
-          >
-            Ganti Lokasi
-          </button>
-        )}
-      </>
+      {/* Tombol "Ganti Lokasi" telah dihapus dari sini */}
+      <TmsSummary
+        selectedLocation={selectedLocation}
+        selectedLocationName={selectedLocationName}
+        selectedUser={selectedUser}
+        driverData={driverData.data}
+        // Teruskan state loading/mapping
+        isAnyLoading={isAnyLoading}
+        setIsAnyLoading={setIsAnyLoading}
+        isMapping={isMapping}
+        setIsMapping={setIsMapping}
+      />
     </AppLayout>
   );
 }

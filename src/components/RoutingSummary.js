@@ -592,7 +592,7 @@ export default function RoutingSummary({
         <button
           onClick={handleSaveMappingAndProcess}
           disabled={isNewMappingNull ? true : false}
-          className="px-6 py-3 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-500 w-full sm:w-64 text-center"
+          className="px-6 py-3 bg-sky-600 cursor-pointer text-white rounded hover:bg-sky-700 disabled:bg-gray-500 w-full sm:w-64 text-center disabled:cursor-not-allowed"
         >
           <div className="flex justify-center items-center">Simpan Pemetaan</div>
         </button>

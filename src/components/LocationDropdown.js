@@ -5,7 +5,15 @@ import { useEffect, useState } from 'react';
 
 // Komponen ini menerima 'hubsToShow' (data yang sudah difilter)
 // dan tidak lagi fetch data sendiri.
-export default function LocationDropdown({ value, onChange, onStatusChange, hubsToShow }) {
+export default function LocationDropdown({
+  value,
+  onChange,
+  onStatusChange,
+  hubsToShow,
+  className = '',
+  showPlaceholder = true,
+  ...props 
+}) {
   const [hubsData, setHubsData] = useState({
     loading: true,
     data: [],
@@ -40,27 +48,30 @@ export default function LocationDropdown({ value, onChange, onStatusChange, hubs
     }
   }, [hubsToShow, onStatusChange]); // Bereaksi jika hubsToShow berubah
 
+  const defaultClasses = 'text-black cursor-pointer';
+  const combinedClassName = `${defaultClasses} ${className}`;
+
   return (
     <>
       <select
         value={value}
         onChange={(e) => {
-          // Kirim ID dan NAMA
           const id = e.target.value;
           const name = e.target.value ? e.target.options[e.target.selectedIndex].text : '';
           onChange(id, name);
         }}
-        disabled={hubsData.loading || !!hubsData.error}
-        className="mt-6 p-2 rounded border border-gray-300 text-black w-64 cursor-pointer"
+        disabled={hubsData.loading || !!hubsData.error || props.disabled}
+        // Terapkan class gabungan
+        className={combinedClassName}
       >
-        {hubsData.loading && <option value="">Memuat lokasi...</option>}
-
-        {hubsData.error && <option value="">Gagal memuat lokasi</option>}
+        {hubsData.loading && <option value="">Memuat...</option>}
+        {hubsData.error && <option value="">Error</option>}
 
         {!hubsData.loading && !hubsData.error && (
           <>
-            <option value="">-- Pilih Lokasi --</option>
-            {/* Loop dari hubsData.data (DAFTAR SEMUA HUB) */}
+            {/* 2. Tampilkan placeholder HANYA jika diminta */}
+            {showPlaceholder && <option value="">-- Pilih Lokasi --</option>}
+
             {hubsData.data.map((hub) => (
               <option key={hub._id} value={hub._id}>
                 {hub.name}
