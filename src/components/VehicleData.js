@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
+import { getOrFetchDriverData } from '../lib/driverDataHelper';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
@@ -156,10 +157,13 @@ export default function VehicleData() {
       setIsLoading(true);
       try {
         const userLocation = localStorage.getItem('userLocation');
-        const driverDataString = localStorage.getItem('driverData');
-        if (!userLocation || !driverDataString) throw new Error('Data user tidak ditemukan.');
-
-        const drivers = JSON.parse(driverDataString);
+        if (!userLocation) {
+          throw new Error('Lokasi user tidak ditemukan. Harap kembali ke Halaman Utama.');
+        }
+        const drivers = await getOrFetchDriverData(userLocation);
+        if (!drivers) {
+          throw new Error('Gagal memuat data driver.');
+        }
         const map = new Map();
         drivers.forEach((driver) => {
           const normalizedEmail = normalizeEmail(driver.email);

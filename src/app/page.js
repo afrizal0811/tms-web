@@ -6,11 +6,11 @@ import TmsSummary from '@/components/TmsSummary';
 import UserSelectionGrid from '@/components/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
 import { useEffect, useState } from 'react';
-// --- Impor Layout Baru ---
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { toastError } from '../lib/toastHelper';
+import { getOrFetchDriverData } from '../lib/driverDataHelper';
 
 export default function Home() {
   // === STATE UNTUK DATA ===
@@ -109,60 +109,8 @@ export default function Home() {
         return;
       }
       try {
-        const driverRoleId = '6703410af6be892f3208ecde';
-        const driverJktRoleId = '68f74e1cff7fa2efdd0f6a38';
-        const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
-        const isSpecialHub = specialHubs.includes(selectedLocation);
-        const rolesToFetch = [driverRoleId];
-        if (isSpecialHub) {
-          rolesToFetch.push(driverJktRoleId);
-        }
-        const driverPromises = rolesToFetch.map((roleId) => {
-          const apiUrl = `/api/get-users?hubId=${selectedLocation}&roleId=${roleId}&status=active`;
-          return fetch(apiUrl);
-        });
-        const vehicleApiUrl = `/api/get-vehicles?hubId=${selectedLocation}&limit=500`;
-        const vehiclePromise = fetch(vehicleApiUrl);
-        const driverResponses = await Promise.all(driverPromises);
-        const vehicleResponse = await vehiclePromise;
-        let rawDrivers = [];
-        for (const res of driverResponses) {
-          if (!res.ok) throw new Error('Gagal mengambil data users (driver).');
-          const data = await res.json();
-          if (data && Array.isArray(data.data)) {
-            rawDrivers = rawDrivers.concat(data.data);
-          }
-        }
-        const processedDrivers = rawDrivers.map((driver) => ({
-          _id: driver._id,
-          name: driver.name,
-          email: driver.email,
-        }));
-        if (!vehicleResponse.ok) throw new Error('Gagal mengambil data vehicles.');
-        const vehicleResult = await vehicleResponse.json();
-        if (!vehicleResult || !Array.isArray(vehicleResult.data)) {
-          throw new Error('Data vehicle tidak sesuai.');
-        }
-        const vehicleMap = vehicleResult.data.reduce((acc, vehicle) => {
-          if (vehicle.assignee) {
-            acc[vehicle.assignee] = {
-              plat: vehicle.name,
-              type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
-            };
-          }
-          return acc;
-        }, {});
-        const mergedDriverData = processedDrivers.map((driver) => {
-          const vehicleInfo = vehicleMap[driver.email];
-          return {
-            email: driver.email,
-            name: driver.name,
-            plat: vehicleInfo ? vehicleInfo.plat : null,
-            type: vehicleInfo ? vehicleInfo.type : null,
-          };
-        });
-        setDriverData({ data: mergedDriverData });
-        localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+        const data = await getOrFetchDriverData(selectedLocation);
+        setDriverData({ data: data });
       } catch (err) {
         toastError(e.message);
       }
