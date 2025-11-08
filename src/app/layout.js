@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'TMS Processing',
-  description: 'TMS Processing'
+  title: 'TMS Processing Summary',
+  description: 'TMS Processing Summary',
 };
 
 export default function RootLayout({ children }) {

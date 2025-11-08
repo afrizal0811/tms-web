@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import HelpDropdown from './HelpDropdown';
-import LocationSwitcher from './LocationSwitcher';
+import LocationSwitcher from './LocationSwitcher'; // <-- Komponen Lokasi
+import UserDisplay from './UserDisplay'; // <-- Komponen User BARU
 
-// ... (Komponen NavLink - TIDAK BERUBAH) ...
+// Komponen NavLink (Tidak Berubah)
 function NavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -24,7 +25,7 @@ function NavLink({ href, children }) {
   );
 }
 
-// ... (Komponen MobileNavLink - TIDAK BERUBAH) ...
+// Komponen MobileNavLink (Tidak Berubah)
 function MobileNavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -43,66 +44,62 @@ function MobileNavLink({ href, children }) {
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  // --- (PERUBAHAN 2): Buat 'ref' untuk <nav> ---
   const navRef = useRef(null);
 
-  // Efek untuk menutup saat ganti link/halaman (Tidak Berubah)
+  // ... (useEffect untuk pathname & click outside - TIDAK BERUBAH) ...
   useEffect(() => {
     //eslint-disable-next-line
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // --- (PERUBAHAN 3): 'useEffect' baru untuk 'Click Outside' ---
   useEffect(() => {
-    // Fungsi yang akan dijalankan saat ada klik
     function handleClickOutside(event) {
-      // Cek jika 'ref' ada DAN 'event.target' (tempat klik)
-      // BUKANLAH turunan (contains) dari 'ref'
       if (navRef.current && !navRef.current.contains(event.target)) {
-        setIsMobileMenuOpen(false); // Tutup menu
+        setIsMobileMenuOpen(false);
       }
     }
-
-    // Hanya tambahkan listener jika menu terbuka
     if (isMobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
-    // Cleanup: Hapus listener saat komponen unmount ATAU
-    // saat 'isMobileMenuOpen' berubah (menjadi false)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMobileMenuOpen]); // <-- Jalankan ulang efek ini saat 'isMobileMenuOpen' berubah
-  // --- SELESAI PERUBAHAN 3 ---
+  }, [isMobileMenuOpen]);
 
-  // Ambil URL (untuk menu mobile)
   const plannerUrl = process.env.NEXT_PUBLIC_HELP_URL_PLANNER || '#';
   const driverUrl = process.env.NEXT_PUBLIC_HELP_URL_DRIVER || '#';
 
   return (
-    // --- (PERUBAHAN 2): Terapkan 'ref' ke <nav> ---
     <nav
       ref={navRef}
       className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm"
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
-          TMS PROCESSING
-        </Link>
+        {/* --- PERUBAHAN: SISI KIRI (Logo + Navigasi) --- */}
+        <div className="flex items-center space-x-4 sm:space-x-6">
+          <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
+            TMS
+          </Link>
 
-        {/* Link Desktop (Tidak Berubah) */}
-        <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
-          <NavLink href="/">Home</NavLink>
-          <NavLink href="/vehicles">Data Kendaraan</NavLink>
-          <NavLink href="/estimasi">Estimasi Delivery</NavLink>
-          <HelpDropdown />
-          <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
-          <LocationSwitcher />
+          {/* Navigasi Desktop dipindah ke sini */}
+          <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
+            <NavLink href="/">Home</NavLink>
+            <NavLink href="/vehicles">Data Kendaraan</NavLink>
+            <NavLink href="/estimasi">Estimasi Delivery</NavLink>
+            <HelpDropdown />
+          </div>
         </div>
+        {/* --- SELESAI PERUBAHAN SISI KIRI --- */}
 
-        {/* Tombol Burger (Tidak Berubah) */}
+        {/* --- PERUBAHAN: SISI KANAN (Lokasi + User) --- */}
+        <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
+          <LocationSwitcher />
+          <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
+          <UserDisplay />
+        </div>
+        {/* --- SELESAI PERUBAHAN SISI KANAN --- */}
+
+        {/* Tombol Burger (Mobile) - Tidak berubah */}
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -140,13 +137,14 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu Dropdown Mobile (Tidak Berubah) */}
+      {/* Menu Dropdown Mobile */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/">Home</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
+            {/* Panduan */}
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
@@ -166,12 +164,18 @@ export default function Navbar() {
             >
               Panduan - Driver
             </a>
+
+            {/* --- PERUBAHAN: Info User & Lokasi di Mobile --- */}
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
             <div className="p-3">
+              <UserDisplay />
+            </div>
+            <div className="p-3 pt-0">
               <LocationSwitcher />
             </div>
+            {/* --- SELESAI PERUBAHAN --- */}
           </div>
         </div>
       )}

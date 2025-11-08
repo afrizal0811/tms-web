@@ -308,13 +308,11 @@ export default function Home() {
   // 3. Jika LOKASI dan USER ada -> Tampilkan Layout APLIKASI UTAMA (Dengan Navbar)
   return (
     <AppLayout mainClassName="items-center justify-center px-6">
-      {/* Tombol "Ganti Lokasi" telah dihapus dari sini */}
       <TmsSummary
         selectedLocation={selectedLocation}
         selectedLocationName={selectedLocationName}
         selectedUser={selectedUser}
         driverData={driverData.data}
-        // Teruskan state loading/mapping
         isAnyLoading={isAnyLoading}
         setIsAnyLoading={setIsAnyLoading}
         isMapping={isMapping}
