@@ -16,6 +16,7 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import { toastSuccess } from '@/lib/toastHelper';
 
 // ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -934,6 +935,7 @@ export default function DeliverySummary({
       // --- 9. Download File ---
       const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
+      toastSuccess('File Delivery Summary berhasil di-download!');
     } catch (err) {
       toastError(err.message);
     } finally {

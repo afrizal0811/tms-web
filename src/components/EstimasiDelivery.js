@@ -4,7 +4,7 @@
 import { formatSimpleTime, parseOutletName } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError } from '../lib/toastHelper';
+import { toastError, toastSuccess } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
 
 function Th({ children, widthClass = '' }) {
@@ -314,6 +314,7 @@ export default function EstimasiDelivery() {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
+        toastSuccess('File Estimasi Delivery berhasil di-download!');
       }
     } catch (e) {
       toastError(e.message);

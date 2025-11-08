@@ -17,7 +17,6 @@ export const toastError = (message) => {
 
 export const toastSuccess = (message) => {
   toast.success(message, {
-    icon: '✔️',
     className: 'my-toast-success',
   });
 };

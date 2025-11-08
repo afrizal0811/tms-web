@@ -4,7 +4,7 @@
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError } from '../lib/toastHelper';
+import { toastError, toastSuccess } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
@@ -336,7 +336,7 @@ export default function VehicleData() {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Data Kendaraan - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
-        // --- SELESAI PERUBAHAN 1 ---
+        toastSuccess('File Data Kendaraan berhasil di-download!');
       }
     } catch (err) {
       toastError(err.message);

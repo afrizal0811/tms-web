@@ -10,7 +10,7 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { toastError } from '../lib/toastHelper';
+import { toastError, toastSuccess } from '../lib/toastHelper';
 
 export default function StartFinishSummary({
   driverData,
@@ -269,6 +269,7 @@ export default function StartFinishSummary({
       const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
       const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
+      toastSuccess('File Time Summary berhasil di-download!');
     } catch (err) {
       toastError(e.message);
     } finally {

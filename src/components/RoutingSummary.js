@@ -5,7 +5,7 @@ import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
 import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError, toastWarning } from '../lib/toastHelper';
+import { toastError, toastWarning, toastSuccess } from '../lib/toastHelper';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -445,6 +445,7 @@ export default function RoutingSummary({
     const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
     const excelFileName = `Routing Summary - ${formattedDate} - ${hubName}.xlsx`;
     XLSX.writeFile(wb, excelFileName);
+    toastSuccess('File Routing Summary berhasil di-download!');
     return missingTimesFound;
   };
 
@@ -550,6 +551,7 @@ export default function RoutingSummary({
           );
         }
         if (onLoadingChange) onLoadingChange(false);
+        
       }
     } catch (e) {
       toastError(e.message);
