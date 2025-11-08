@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { toastSuccess } from '../lib/toastHelper';
 import ConfirmModal from './ConfirmModal';
+import { getUsers } from '../lib/apiService';
 
 // Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
@@ -53,23 +54,18 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     async function fetchUsers() {
       setUsersData({ loading: true, data: [], error: null });
 
-      let apiUrl = `/api/get-users?hubId=${hubId}&status=active`;
-      // JIKA BUKAN mode rahasia, tambahkan filter roleId (Planner)
+      // 2. Siapkan parameter
+      const params = {
+        hubId: hubId,
+        status: 'active',
+      };
       if (!showAll) {
-        apiUrl += `&roleId=${roleId}`;
+        params.roleId = roleId;
       }
-      // Jika mode rahasia (showAll), kita panggil TANPA roleId (ambil semua)
 
       try {
-        const response = await fetch(apiUrl);
-        const responseData = await response.json();
-
-        if (!response.ok) {
-          throw new Error(responseData.error || 'Gagal mengambil data users');
-        }
-
-        // Asumsi data ada di responseData.data (sesuai hasil.json user)
-        const usersArray = responseData.data;
+        // 3. Panggil service
+        const usersArray = await getUsers(params);
         if (!Array.isArray(usersArray)) {
           throw new Error('Data user yang diterima bukanlah array.');
         }

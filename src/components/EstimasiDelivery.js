@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
+import { getResultsSummary } from '../lib/apiService';
 
 function Th({ children, widthClass = '' }) {
   return (
@@ -162,21 +163,14 @@ export default function EstimasiDelivery() {
         }
         const dateFrom = `${selectedDate} 00:00:00`;
         const dateTo = `${selectedDate} 23:59:59`;
-        const params = new URLSearchParams({
+        const resultsData = await getResultsSummary({
           hubId: userLocation,
           limit: 100,
           dateFrom: dateFrom,
           dateTo: dateTo,
         });
-        const response = await fetch(`/api/get-results-summary?${params.toString()}`);
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Gagal mengambil data results');
-        }
-        if (!data || !data.data || !Array.isArray(data.data.data)) {
-          throw new Error('Format data API tidak sesuai.');
-        }
-        const allDoneRoutingsRaw = data.data.data
+
+        const allDoneRoutingsRaw = resultsData
           .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
           .flatMap((item) => item.result.routing);
 

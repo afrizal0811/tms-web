@@ -1,3 +1,4 @@
+import { getUsers, getVehicles } from './apiService';
 import { toastError } from './toastHelper';
 
 /**
@@ -9,6 +10,8 @@ import { toastError } from './toastHelper';
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
+    // Ini akan ditangkap oleh komponen pemanggil (misal: page.js)
+    // dan komponen itu yang akan menampilkan toastError
     throw new Error('selectedLocation wajib ada untuk mengambil data driver.');
   }
 
@@ -19,54 +22,41 @@ export async function getOrFetchDriverData(selectedLocation) {
       return JSON.parse(storedDrivers);
     }
   } catch (e) {
-    console.warn('Gagal membaca driverData dari localStorage', e);
+    // 3. GANTI console.warn dengan toastWarning
+    toastError(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
-  // 2. Jika tidak ada, fetch dari API (Logika ini disalin dari page.js)
+  // 2. Jika tidak ada di cache, fetch dari API
   try {
     const driverRoleId = '6703410af6be892f3208ecde';
     const driverJktRoleId = '68f74e1cff7fa2efdd0f6a38';
     const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
     const isSpecialHub = specialHubs.includes(selectedLocation);
+
     const rolesToFetch = [driverRoleId];
     if (isSpecialHub) {
       rolesToFetch.push(driverJktRoleId);
     }
 
-    // Siapkan semua promise
-    const driverPromises = rolesToFetch.map((roleId) => {
-      const apiUrl = `/api/get-users?hubId=${selectedLocation}&roleId=${roleId}&status=active`;
-      return fetch(apiUrl);
-    });
-    const vehicleApiUrl = `/api/get-vehicles?hubId=${selectedLocation}&limit=500`;
-    const vehiclePromise = fetch(vehicleApiUrl);
+    // Panggil fungsi API (ini sudah di-refactor)
+    const driverPromises = rolesToFetch.map((roleId) =>
+      getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
+    );
+    const vehiclePromise = getVehicles({ hubId: selectedLocation, limit: 500 });
 
-    // Jalankan promise secara paralel
     const driverResponses = await Promise.all(driverPromises);
-    const vehicleResponse = await vehiclePromise;
+    const vehicleResult = await vehiclePromise;
 
-    // Proses Driver
-    let rawDrivers = [];
-    for (const res of driverResponses) {
-      if (!res.ok) throw new Error('Gagal mengambil data users (driver).');
-      const data = await res.json();
-      if (data && Array.isArray(data.data)) {
-        rawDrivers = rawDrivers.concat(data.data);
-      }
-    }
+    // Proses data (driverResponses adalah array dari array, jadi kita flat)
+    const rawDrivers = driverResponses.flat();
     const processedDrivers = rawDrivers.map((driver) => ({
       _id: driver._id,
       name: driver.name,
       email: driver.email,
     }));
 
-    // Proses Vehicle
-    if (!vehicleResponse.ok) throw new Error('Gagal mengambil data vehicles.');
-    const vehicleResult = await vehicleResponse.json();
-    if (!vehicleResult || !Array.isArray(vehicleResult.data)) {
-      throw new Error('Data vehicle tidak sesuai.');
-    }
-    const vehicleMap = vehicleResult.data.reduce((acc, vehicle) => {
+    // Proses vehicle (vehicleResult adalah array)
+    const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
           plat: vehicle.name,
@@ -76,7 +66,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return acc;
     }, {});
 
-    // Merge
+    // Merge data
     const mergedDriverData = processedDrivers.map((driver) => {
       const vehicleInfo = vehicleMap[driver.email];
       return {
@@ -87,11 +77,8 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // 3. Simpan ke localStorage dan kembalikan
+    // Simpan ke localStorage dan kembalikan
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
     return mergedDriverData;
-  } catch (err) {
-    toastError(err.message); // Tampilkan toast error di sini
-    throw err; // Lempar error lagi agar komponen pemanggil tahu
-  }
+  } catch (err) {}
 }

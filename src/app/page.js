@@ -1,16 +1,17 @@
 // File: app/page.js
 'use client';
 
+import AppLayout from '@/components/AppLayout';
 import LocationDropdown from '@/components/LocationDropdown';
+import SelectionLayout from '@/components/SelectionLayout';
+import Spinner from '@/components/Spinner';
 import TmsSummary from '@/components/TmsSummary';
 import UserSelectionGrid from '@/components/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
 import { useEffect, useState } from 'react';
-import AppLayout from '@/components/AppLayout';
-import SelectionLayout from '@/components/SelectionLayout';
-import Spinner from '@/components/Spinner';
-import { toastError } from '../lib/toastHelper';
+import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
+import { toastError } from '../lib/toastHelper';
 
 export default function Home() {
   // === STATE UNTUK DATA ===
@@ -36,71 +37,80 @@ export default function Home() {
     async function initializeApp() {
       setIsLoading(true);
       setPageError(null);
-      let hubs = [];
+
+      // --- PERBAIKAN: Deklarasikan 'processedHubs' di sini ---
       let processedHubs = [];
+      // ---------------------------------------------------
+
       try {
-        const response = await fetch('/api/get-hubs');
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Gagal mengambil data hubs dari server');
-        }
-        if (Array.isArray(data)) {
-          hubs = data;
-        } else if (data && Array.isArray(data.data)) {
-          hubs = data.data;
-        } else if (data && Array.isArray(data.results)) {
-          hubs = data.results;
-        } else {
-          throw new Error('Format data hubs tidak dikenal.');
-        }
-        processedHubs = hubs
+        // 1. Ambil data hubs
+        const hubs = await getHubs();
+
+        processedHubs = hubs // <-- Assign nilai, jangan deklarasi ulang
           .filter((hub) => hub.name !== 'Hub Demo')
           .map((hub) => ({
             ...hub,
             name: hub.name.replace('Hub ', ''),
           }));
+
         setAllHubsList(processedHubs);
         localStorage.setItem('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
+        // toastError sudah di-handle oleh apiService
+        setPageError(e.message);
+        setIsLoading(false);
+        return; // Hentikan eksekusi jika hubs gagal dimuat
+      }
+
+      // --- LOGIKA SISA (sekarang bisa akses 'processedHubs') ---
+      try {
+        const storedLocation = localStorage.getItem('userLocation');
+        const storedLocationName = localStorage.getItem('userLocationName');
+        const storedUser = localStorage.getItem('selectedUser');
+        const storedDrivers = localStorage.getItem('driverData');
+
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setSelectedUser(user);
+          const userHubIds = user.hubId || [];
+
+          // 'processedHubs' sekarang bisa diakses di sini
+          const allowed =
+            userHubIds.length > 1
+              ? processedHubs.filter((h) => userHubIds.includes(h._id))
+              : processedHubs;
+          setCurrentHubListView(allowed);
+
+          if (storedLocation && storedLocationName) {
+            if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
+              setSelectedLocation(storedLocation);
+              setSelectedLocationName(storedLocationName);
+              setTempSelectedLocation(storedLocation);
+              setTempSelectedLocationName(storedLocationName);
+            } else {
+              localStorage.removeItem('userLocation');
+              localStorage.removeItem('userLocationName');
+            }
+          }
+        } else {
+          // 'processedHubs' juga bisa diakses di sini
+          setCurrentHubListView(processedHubs);
+        }
+
+        if (storedLocation && storedDrivers) {
+          setDriverData({ data: JSON.parse(storedDrivers) });
+        }
+      } catch (e) {
+        // Tangani error jika JSON.parse atau localStorage gagal
         setPageError(e.message);
         toastError(e.message);
+      } finally {
         setIsLoading(false);
-        return;
       }
-      const storedLocation = localStorage.getItem('userLocation');
-      const storedLocationName = localStorage.getItem('userLocationName');
-      const storedUser = localStorage.getItem('selectedUser');
-      const storedDrivers = localStorage.getItem('driverData');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setSelectedUser(user);
-        const userHubIds = user.hubId || [];
-        const allowed =
-          userHubIds.length > 1
-            ? processedHubs.filter((h) => userHubIds.includes(h._id))
-            : processedHubs;
-        setCurrentHubListView(allowed);
-        if (storedLocation && storedLocationName) {
-          if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
-            setSelectedLocation(storedLocation);
-            setSelectedLocationName(storedLocationName);
-            setTempSelectedLocation(storedLocation);
-            setTempSelectedLocationName(storedLocationName);
-          } else {
-            localStorage.removeItem('userLocation');
-            localStorage.removeItem('userLocationName');
-          }
-        }
-      } else {
-        setCurrentHubListView(processedHubs);
-      }
-      if (storedLocation && storedDrivers) {
-        setDriverData({ data: JSON.parse(storedDrivers) });
-      }
-      setIsLoading(false);
     }
     initializeApp();
   }, []);
+
   useEffect(() => {
     async function fetchDriverData() {
       const storedDrivers = localStorage.getItem('driverData');

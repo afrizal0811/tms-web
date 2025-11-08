@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../lib/toastHelper';
 import Tooltip from './Tooltip';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
+import { getVehicles } from '../lib/apiService';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
@@ -171,14 +172,12 @@ export default function VehicleData() {
         });
         setDriverMap(map);
 
-        const params = new URLSearchParams({ limit: 500, hubId: userLocation });
-        const apiUrl = `/api/get-vehicles?${params.toString()}`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Gagal mengambil data');
-        if (!data || !Array.isArray(data.data)) throw new Error('Format data API tidak sesuai.');
+        const rawApiData = await getVehicles({
+          limit: 500,
+          hubId: userLocation,
+        });
 
-        const rawApiData = data.data;
+        // 'rawApiData' dijamin berupa array (data.data)
         if (rawApiData.length === 0) {
           throw new Error('Tidak ada data yang ditemukan.');
         }

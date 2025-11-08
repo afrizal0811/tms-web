@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../lib/toastHelper';
+import { getLocationHistories } from '../lib/apiService';
 
 export default function StartFinishSummary({
   driverData,
@@ -32,7 +33,7 @@ export default function StartFinishSummary({
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDate);
 
       // 3. Panggil API (Tetap sama)
-      const params = new URLSearchParams({
+      const allApiData = await getLocationHistories({
         timeFrom: timeFrom,
         timeTo: timeTo,
         limit: 1000,
@@ -40,18 +41,8 @@ export default function StartFinishSummary({
         fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       });
-      const apiUrl = `/api/get-location-histories?${params.toString()}`;
 
-      const response = await fetch(apiUrl);
-      const responseData = await response.json();
-
-      if (!response.ok)
-        throw new Error(responseData.error || 'Gagal mengambil data location histories');
-
-      if (!responseData.tasks || !Array.isArray(responseData.tasks.data)) {
-        throw new Error('Format data tidak sesuai (tasks.data tidak ditemukan).');
-      }
-      const allApiData = responseData.tasks.data;
+      // 'allApiData' dijamin berupa array (tasks.data)
       if (allApiData.length === 0) {
         toastError('Tidak ada data task yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);

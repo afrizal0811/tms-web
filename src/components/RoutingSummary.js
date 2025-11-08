@@ -6,6 +6,7 @@ import { calculateTargetDates, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } f
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastWarning, toastSuccess } from '../lib/toastHelper';
+import { getResultsSummary } from '../lib/apiService';
 
 // --- 5. PERBAIKAN TYPO JSX ---
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -466,16 +467,16 @@ export default function RoutingSummary({
         throw new Error('Data Hub atau Driver (driverData) tidak valid atau belum dimuat.');
       }
       const { dateFrom, dateTo } = calculateTargetDates(selectedDate);
-      const apiUrl = `/api/get-results-summary?dateFrom=${dateFrom}&dateTo=${dateTo}&limit=500&hubId=${hubId}`;
-      const response = await fetch(apiUrl);
-      const responseData = await response.json();
-      if (!response.ok) throw new Error(responseData.error || 'Gagal mengambil data hasil routing');
-      if (!responseData.data || !Array.isArray(responseData.data.data))
-        throw new Error('Format data tidak sesuai.');
 
-      const filteredResults = responseData.data.data.filter(
-        (item) => item.dispatchStatus === 'done'
-      );
+      const resultsData = await getResultsSummary({
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        limit: 500,
+        hubId: hubId,
+      });
+
+      // 'resultsData' dijamin berupa array
+      const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
       if (filteredResults.length === 0) {
         toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);

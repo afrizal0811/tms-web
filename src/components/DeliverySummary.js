@@ -17,8 +17,8 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastSuccess } from '@/lib/toastHelper';
+import { getTasks, getResultsSummary } from '../lib/apiService';
 
-// ... (konstanta FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE tetap sama) ...
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
@@ -56,8 +56,7 @@ export default function DeliverySummary({
         return acc;
       }, {});
 
-      // --- 2. PERSIAPAN PANGGILAN DUA API ---
-      const tasksParams = new URLSearchParams({
+      const tasksPromise = getTasks({
         hubId: selectedLocation,
         status: 'DONE',
         timeFrom: timeFrom,
@@ -65,29 +64,20 @@ export default function DeliverySummary({
         timeBy: 'doneTime',
         limit: 1000,
       });
-      const tasksApiUrl = `/api/get-tasks?${tasksParams.toString()}`;
-      const tasksPromise = fetch(tasksApiUrl);
 
       const { dateFrom, dateTo: resultsDateTo } = calculateTargetDates(selectedDate);
-      const resultsParams = new URLSearchParams({
+      const resultsPromise = getResultsSummary({
         dateFrom: dateFrom,
         dateTo: resultsDateTo,
         limit: 500,
         hubId: selectedLocation,
       });
-      const resultsApiUrl = `/api/get-results-summary?${resultsParams.toString()}`;
-      const resultsPromise = fetch(resultsApiUrl);
 
-      const [tasksResponse, resultsResponse] = await Promise.all([tasksPromise, resultsPromise]);
+      // Panggil promise (apiService sudah menangani .json() dan .ok)
+      const [allTasks, resultsData] = await Promise.all([tasksPromise, resultsPromise]);
 
       // --- 3. Proses Response /tasks ---
-      const tasksResponseData = await tasksResponse.json();
-      if (!tasksResponse.ok)
-        throw new Error(tasksResponseData.error || 'Gagal mengambil data tasks');
-      if (!tasksResponseData.tasks || !Array.isArray(tasksResponseData.tasks.data)) {
-        throw new Error('Format data tasks tidak sesuai (tasks.data tidak ditemukan).');
-      }
-      const allTasks = tasksResponseData.tasks.data;
+      // 'allTasks' dijamin berupa array
       if (allTasks.length === 0) {
         toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
@@ -95,16 +85,11 @@ export default function DeliverySummary({
       }
 
       // --- 4. Proses Response /results (Hanya untuk Map Waktu HUB) ---
-      const resultsResponseData = await resultsResponse.json();
+      // 'resultsData' dijamin berupa array
       const hubTimesMap = new Map();
-      if (
-        resultsResponse.ok &&
-        resultsResponseData.data &&
-        Array.isArray(resultsResponseData.data.data)
-      ) {
-        const filteredResults = resultsResponseData.data.data.filter(
-          (item) => item.dispatchStatus === 'done'
-        );
+      if (resultsData) {
+        // Cek jika resultsData ada (meski promise.all, bisa jadi satu gagal)
+        const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
         for (const result of filteredResults) {
           if (result.result && Array.isArray(result.result.routing)) {
             for (const route of result.result.routing) {
