@@ -3,7 +3,7 @@
 
 // Impor layout utama
 import AppLayout from '@/components/AppLayout';
-import VehicleData from '@/components/VehicleData';
+import VehicleData from '@/features/vehicleData/VehicleData';
 
 export default function VehiclesPage() {
   return (

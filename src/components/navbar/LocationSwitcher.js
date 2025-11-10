@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import LocationDropdown from './LocationDropdown';
-import { toastError } from '../lib/toastHelper';
+import { toastError } from '../../lib/toastHelper';
+import LocationDropdown from '../LocationDropdown';
 
 export default function LocationSwitcher() {
   const [currentUser, setCurrentUser] = useState(null);

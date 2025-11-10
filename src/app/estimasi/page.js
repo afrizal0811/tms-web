@@ -2,7 +2,7 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import EstimasiDelivery from '@/components/EstimasiDelivery';
+import EstimasiDelivery from '@/features/estimasiDelivery/EstimasiDelivery';
 
 export default function EstimasiPage() {
   return (

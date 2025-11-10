@@ -1,10 +1,8 @@
-// File: src/components/LocationDropdown.js
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toastError } from '@/lib/toastHelper'; // <-- Import ini sekarang akan kita gunakan
 
-// Komponen ini menerima 'hubsToShow' (data yang sudah difilter)
-// dan tidak lagi fetch data sendiri.
 export default function LocationDropdown({
   value,
   onChange,
@@ -12,22 +10,21 @@ export default function LocationDropdown({
   hubsToShow,
   className = '',
   showPlaceholder = true,
-  ...props 
+  ...props
 }) {
   const [hubsData, setHubsData] = useState({
     loading: true,
     data: [],
-    error: null,
+    error: null, // Kita tetap simpan error di state
   });
 
-  // useEffect sekarang hanya merespons perubahan props
   useEffect(() => {
     // hubsToShow adalah daftar SEMUA hub yang di-pass dari page.js
     if (hubsToShow && hubsToShow.length > 0) {
       //eslint-disable-next-line
       setHubsData({
         loading: false,
-        data: hubsToShow, // Langsung gunakan data dari props
+        data: hubsToShow,
         error: null,
       });
       if (onStatusChange) {
@@ -35,18 +32,25 @@ export default function LocationDropdown({
       }
     } else if (hubsToShow) {
       // Jika hubsToShow ada tapi kosong
+      // Ini BUKAN error, ini hanya tidak ada data
       setHubsData({ loading: false, data: [], error: null });
       if (onStatusChange) {
         onStatusChange({ loading: false, error: null });
       }
     } else {
       // Jika hubsToShow masih null (sedang di-fetch oleh parent)
+      // Ini juga BUKAN error, ini loading
       setHubsData({ loading: true, data: [], error: null });
       if (onStatusChange) {
         onStatusChange({ loading: true, error: null });
       }
     }
-  }, [hubsToShow, onStatusChange]); // Bereaksi jika hubsToShow berubah
+
+    if (hubsData.error) {
+      toastError(hubsData.error);
+    }
+    // --- SELESAI PERBAIKAN ---
+  }, [hubsToShow, onStatusChange, hubsData.error]); // <-- Tambahkan hubsData.error
 
   const defaultClasses = 'text-black cursor-pointer';
   const combinedClassName = `${defaultClasses} ${className}`;
@@ -61,15 +65,13 @@ export default function LocationDropdown({
           onChange(id, name);
         }}
         disabled={hubsData.loading || !!hubsData.error || props.disabled}
-        // Terapkan class gabungan
         className={combinedClassName}
       >
         {hubsData.loading && <option value="">Memuat...</option>}
-        {hubsData.error && <option value="">Error</option>}
+        {hubsData.error && <option value="">Gagal memuat</option>}
 
         {!hubsData.loading && !hubsData.error && (
           <>
-            {/* 2. Tampilkan placeholder HANYA jika diminta */}
             {showPlaceholder && <option value="">-- Pilih Lokasi --</option>}
 
             {hubsData.data.map((hub) => (
@@ -77,11 +79,15 @@ export default function LocationDropdown({
                 {hub.name}
               </option>
             ))}
+
+            {hubsData.data.length === 0 && (
+              <option value="" disabled>
+                -- Tidak ada lokasi --
+              </option>
+            )}
           </>
         )}
       </select>
-
-      {hubsData.error && <p className="text-red-500 text-sm mt-2">{hubsData.error}</p>}
     </>
   );
 }

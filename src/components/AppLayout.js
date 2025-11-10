@@ -1,8 +1,8 @@
 // File: src/components/AppLayout.js
 'use client';
 
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Navbar from '@/components/navbar/Navbar';
 
 export default function AppLayout({ children, mainClassName }) {
   return (

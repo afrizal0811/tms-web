@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { toastSuccess } from '../lib/toastHelper';
-import ConfirmModal from './ConfirmModal';
-import { getUsers } from '../lib/apiService';
+import ConfirmModal from '../../components/ConfirmModal';
+import { getUsers } from '../../lib/apiService';
+import { toastSuccess } from '../../lib/toastHelper';
 
 // Fungsi helper untuk Capitalize
 function capitalizeWords(str) {

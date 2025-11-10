@@ -4,9 +4,9 @@
 import { formatSimpleTime, parseOutletName } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError, toastSuccess } from '../lib/toastHelper';
-import Tooltip from './Tooltip';
-import { getResultsSummary } from '../lib/apiService';
+import { toastError, toastSuccess } from '../../lib/toastHelper';
+import Tooltip from '@/components/Tooltip';
+import { getResultsSummary } from '../../lib/apiService';
 
 function Th({ children, widthClass = '' }) {
   return (
