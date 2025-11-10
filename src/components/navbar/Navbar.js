@@ -83,7 +83,6 @@ export default function Navbar() {
 
           {/* Navigasi Desktop dipindah ke sini */}
           <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
-            <NavLink href="/">Home</NavLink>
             <NavLink href="/laporan">Laporan</NavLink>
             <NavLink href="/vehicles">Data Kendaraan</NavLink>
             <NavLink href="/estimasi">Estimasi Delivery</NavLink>
@@ -142,7 +141,6 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
-            <MobileNavLink href="/">Home</MobileNavLink>
             <MobileNavLink href="/laporan">Laporan</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
