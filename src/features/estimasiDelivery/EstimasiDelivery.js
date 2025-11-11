@@ -1,4 +1,4 @@
-// File: src/components/EstimasiDelivery.js
+// File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
 import Tooltip from '@/components/Tooltip';
@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 
+// ... (Komponen Th, Td, TabButton, HighlightText, parseSONumber - TIDAK BERUBAH) ...
 function Th({ children, widthClass = '' }) {
   return (
     <th
@@ -30,32 +31,20 @@ function Td({ children }) {
 }
 
 function TabButton({ children, isActive, onClick }) {
-  // 1. State untuk melacak apakah teks terpotong
   const [isTruncated, setIsTruncated] = useState(false);
-  // 2. Ref untuk menunjuk ke elemen button
   const buttonRef = useRef(null);
-
-  // 3. Gunakan useLayoutEffect untuk mengukur DOM setelah render
-  //    (children = teks di dalam tombol, misal: "B 1234 ABC...")
   useLayoutEffect(() => {
     const element = buttonRef.current;
     if (element) {
-      // 4. Cek apakah lebar konten (scrollWidth) > lebar elemen (clientWidth)
       const isTextTruncated = element.scrollWidth > element.clientWidth;
-
-      // 5. Update state
-      //    (Kita cek 'isTruncated' agar tidak re-render jika nilainya sama)
       if (isTextTruncated !== isTruncated) {
         setIsTruncated(isTextTruncated);
       }
     }
-    // Jalankan pengecekan ini setiap kali 'children' (teks) berubah
   }, [children, isTruncated]);
-
-  // 6. Buat elemen tombol
   const buttonElement = (
     <button
-      ref={buttonRef} // Pasang ref ke tombol
+      ref={buttonRef}
       onClick={onClick}
       className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
         isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
@@ -64,41 +53,22 @@ function TabButton({ children, isActive, onClick }) {
       {children}
     </button>
   );
-
-  // 7. Logika Kondisional:
-  // HANYA jika terpotong, bungkus tombol dengan Tooltip
   if (isTruncated) {
     return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
   }
-
-  // 8. Jika tidak terpotong, kembalikan tombol biasa
   return buttonElement;
 }
-// --- (Helper Functions & Komponen Styling Lainnya - TIDAK BERUBAH) ---
-
 function escapeRegExp(string) {
   if (!string) return '';
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
-/**
- * Komponen untuk menyorot (highlight) teks yang cocok dengan query.
- */
 function HighlightText({ text, highlight }) {
-  // Jika tidak ada 'highlight' atau 'text', kembalikan teks asli
   if (!highlight || !text) {
     return text;
   }
-
-  // Buat string pencarian yang aman untuk RegExp
   const safeHighlight = escapeRegExp(highlight);
-
-  // Buat RegExp yang case-insensitive (gi = global, insensitive)
   const regex = new RegExp(`(${safeHighlight})`, 'gi');
-
-  // Pisahkan teks berdasarkan bagian yang cocok
   const parts = text.split(regex);
-
   return (
     <span>
       {parts.map((part, i) =>
@@ -113,19 +83,18 @@ function HighlightText({ text, highlight }) {
     </span>
   );
 }
-
 function parseSONumber(visitName) {
   if (!visitName) return '';
   const matches = visitName.match(/(SO|SS)\d{4}-\d+/g);
   return matches ? matches.join(', ') : null;
 }
+// --- (Selesai Helper) ---
 
 export default function EstimasiDelivery() {
-  // ... (Semua state dan useEffect - TIDAK BERUBAH) ...
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    return yesterday.toISOString().split('T')[0];
   });
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
@@ -133,21 +102,24 @@ export default function EstimasiDelivery() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // (Handler handleDateChange - TIDAK BERUBAH)
   const handleDateChange = (e) => {
     const newDateStr = e.target.value;
     if (isDateSunday(newDateStr)) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
     }
-    setSelectedDate(newDateStr); // Selalu update state
+    setSelectedDate(newDateStr);
   };
 
+  // --- (PERUBAHAN DI useEffect INI) ---
+  // --- (GANTI SELURUH useEffect INI) ---
   useEffect(() => {
     const date = new Date(selectedDate.replace(/-/g, '/'));
     if (date.getDay() === 0) {
-      setAllRoutes([]); // Kosongkan data
-      setIsLoading(false); // Pastikan loading berhenti
-      return; // Stop, jangan fetch
+      setAllRoutes([]);
+      setIsLoading(false);
+      return;
     }
 
     async function fetchData() {
@@ -161,6 +133,7 @@ export default function EstimasiDelivery() {
         }
         const dateFrom = `${selectedDate} 00:00:00`;
         const dateTo = `${selectedDate} 23:59:59`;
+
         const resultsData = await getResultsSummary({
           hubId: userLocation,
           limit: 100,
@@ -172,26 +145,57 @@ export default function EstimasiDelivery() {
           .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
           .flatMap((item) => item.result.routing);
 
-        // 2. Buat Map untuk menampung rute unik
         const uniqueRoutesMap = new Map();
-
-        // 3. Loop data mentah dan masukkan ke Map.
-        // Kunci Map adalah vehicleId.
-        // Jika ada ID duplikat, Map akan otomatis menimpanya.
         allDoneRoutingsRaw.forEach((route) => {
           if (route.vehicleId) {
-            // Pastikan vehicleId ada
             uniqueRoutesMap.set(route.vehicleId, route);
           }
         });
-
-        // 4. Ubah Map kembali menjadi Array
         const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
-        // 5. Simpan data yang sudah bersih ke state
+        // --- (PERUBAHAN UTAMA ADA DI FUNGSI INI) ---
+
+        // Helper function untuk mencari ETD HUB pertama (order 0)
+        const getHubEtd = (route) => {
+          if (!route.trips || route.trips.length === 0) {
+            return Infinity; // Taruh di akhir jika tidak ada trip
+          }
+          const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
+
+          // Cek jika hubTrip ada, dan ETD-nya adalah string yang valid
+          // (Contoh: "14:00:00")
+          if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
+            // --- PERBAIKAN KUNCI ---
+            // Gabungkan tanggal dari datepicker dengan jam dari ETD
+            // Misal: selectedDate = "2025-11-09", hubTrip.etd = "14:00:00"
+            // Hasil: "2025-11-09T14:00:00"
+            const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
+            // --- SELESAI PERBAIKAN ---
+
+            const etdTime = new Date(fullEtdString).getTime();
+
+            // Cek apakah hasilnya BUKAN NaN (Not a Number)
+            if (!isNaN(etdTime)) {
+              return etdTime; // Kembalikan timestamp yang valid
+            }
+          }
+
+          // Jika tidak ada trip, tidak ada ETD, atau ETD tidak valid,
+          // kirim ke paling akhir.
+          return Infinity;
+        };
+        // --- (SELESAI PERUBAHAN FUNGSI) ---
+
+        // Terapkan sorting (ascending)
+        allDoneRoutings.sort((routeA, routeB) => {
+          return getHubEtd(routeA) - getHubEtd(routeB);
+        });
+        // --- (SELESAI PERUBAHAN) ---
+
+        // Simpan data yang sudah bersih DAN terurut
         setAllRoutes(allDoneRoutings);
 
-        // Atur tab aktif pertama berdasarkan ID (logika ini tetap sama)
+        // Atur tab aktif (tidak berubah)
         if (allDoneRoutings.length > 0) {
           setActiveVehicleId(allDoneRoutings[0].vehicleId);
         } else {
@@ -205,6 +209,7 @@ export default function EstimasiDelivery() {
     }
     fetchData();
   }, [selectedDate]);
+
   const filteredVehicleRoutes = useMemo(() => {
     if (!searchQuery) {
       return allRoutes;
@@ -223,24 +228,20 @@ export default function EstimasiDelivery() {
     });
   }, [allRoutes, searchQuery]);
 
-  // --- (PERUBAHAN KUNCI): Logika Download Excel ---
+  // ... (handleDownloadExcel - TIDAK BERUBAH) ...
   const handleDownloadExcel = () => {
     setIsDownloading(true);
     try {
       const wb = XLSX.utils.book_new();
-
-      // Definisikan style
       const headerStyle = { font: { bold: true } };
-      const redStyle = { font: { color: { rgb: 'FF0000' }, bold: true } }; // Style merah & bold
-      const redStyleNoBold = { font: { color: { rgb: 'FF0000' } } }; // Style merah saja
-
+      const redStyle = { font: { color: { rgb: 'FF0000' }, bold: true } };
+      const redStyleNoBold = { font: { color: { rgb: 'FF0000' } } };
       filteredVehicleRoutes.forEach((route, index) => {
         let sheetName = route.vehicleName.replace(/['"]/g, '');
         sheetName = sheetName.substring(0, 31);
         if (wb.SheetNames.includes(sheetName)) {
           sheetName = `${sheetName.substring(0, 28)} (${index})`;
         }
-
         const headers = [
           'No.',
           'Outlet',
@@ -250,24 +251,14 @@ export default function EstimasiDelivery() {
           'Estimasi Sampai',
           'Estimasi Berangkat',
         ];
-
-        // Kita tidak bisa lagi menggunakan 'data.map' sederhana
-        // Kita perlu membuat array of arrays yang berisi OBJEK SEL
         const dataForSheet = [];
-
-        // 1. Tambahkan Header
         dataForSheet.push(headers.map((h) => ({ v: h, s: headerStyle })));
-
-        // 2. Tambahkan Data Baris
         route.trips.forEach((trip, tripIndex) => {
           const isHub = trip.isHub;
           const isFirstHub = isHub && trip.order === 0;
           const isLastHub = isHub && tripIndex === route.trips.length - 1;
-
-          // Tentukan style untuk baris ini
           const style = isHub ? redStyleNoBold : undefined;
-          const hubStyle = isHub ? redStyle : undefined; // Bold untuk kata "HUB"
-
+          const hubStyle = isHub ? redStyle : undefined;
           const row = [
             { v: trip.order, s: style },
             { v: isHub ? 'HUB' : parseOutletName(trip.visitName), s: hubStyle || style },
@@ -275,13 +266,10 @@ export default function EstimasiDelivery() {
             { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime), s: style },
             { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime), s: style },
             { v: isFirstHub ? '' : formatSimpleTime(trip.eta), s: style },
-            // (Perbaikan bug: gunakan trip.etd untuk Estimasi Berangkat)
             { v: isLastHub ? '' : formatSimpleTime(trip.etd), s: style },
           ];
           dataForSheet.push(row);
         });
-
-        // Buat sheet dari array of cell objects
         const ws = XLSX.utils.aoa_to_sheet(dataForSheet, { cellStyles: true });
         ws['!cols'] = [
           { wch: 5 },
@@ -292,13 +280,8 @@ export default function EstimasiDelivery() {
           { wch: 18 },
           { wch: 20 },
         ];
-
-        // (Header style sudah diterapkan saat push, jadi baris ini tidak perlu lagi)
-        // headers.forEach((h, i) => { ... });
-
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
-
       if (wb.SheetNames.length === 0) {
         toastError('Tidak ada data untuk di-download.');
         return;
@@ -314,35 +297,30 @@ export default function EstimasiDelivery() {
       setIsDownloading(false);
     }
   };
-  // --- SELESAI PERUBAHAN ---
 
+  // ... (useEffect untuk reset tab - TIDAK BERUBAH) ...
   useEffect(() => {
-    // Jika kita punya ID kendaraan yang aktif
     if (activeVehicleId) {
-      // Cek apakah ID itu MASIH ADA di daftar yang sudah difilter
       const isActiveVehicleStillPresent = filteredVehicleRoutes.some(
         (route) => route.vehicleId === activeVehicleId
       );
-
-      // Jika TIDAK ADA, reset ke item pertama dari daftar baru
       if (!isActiveVehicleStillPresent) {
         setActiveVehicleId(
-          filteredVehicleRoutes.length > 0
-            ? filteredVehicleRoutes[0].vehicleId // ID item pertama
-            : null // atau null jika daftar baru kosong
+          filteredVehicleRoutes.length > 0 ? filteredVehicleRoutes[0].vehicleId : null
         );
       }
     } else if (filteredVehicleRoutes.length > 0) {
-      // Jika belum ada ID aktif (misal load awal), atur ke item pertama
       setActiveVehicleId(filteredVehicleRoutes[0].vehicleId);
     }
   }, [filteredVehicleRoutes, activeVehicleId]);
 
+  // ... (useMemo untuk activeRoute - TIDAK BERUBAH) ...
   const activeRoute = useMemo(() => {
     if (!activeVehicleId) return null;
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
+  // ... (Return JSX - TIDAK BERUBAH) ...
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       {/* 1. Kontrol Atas (Statis) (TIDAK BERUBAH) */}
@@ -360,7 +338,6 @@ export default function EstimasiDelivery() {
             className="p-2 border border-gray-300 rounded-md text-gray-900 w-full sm:w-auto"
           />
         </div>
-
         <div className="relative w-full max-w-sm mb-2 sm:mb-0">
           <input
             type="text"
@@ -387,7 +364,6 @@ export default function EstimasiDelivery() {
             </button>
           )}
         </div>
-
         <button
           onClick={handleDownloadExcel}
           disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
@@ -402,7 +378,6 @@ export default function EstimasiDelivery() {
           )}
         </button>
       </div>
-
       <div className="flex items-center border-b border-gray-200 shrink-0">
         <div className="flex flex-nowrap overflow-x-auto grow">
           {filteredVehicleRoutes.map((route, index) => {
@@ -413,32 +388,24 @@ export default function EstimasiDelivery() {
                 isActive={activeVehicleId === id}
                 onClick={() => setActiveVehicleId(id)}
               >
-                {route.vehicleName} {/* <--- INI AKAN MENJADI 'children' */}
+                {route.vehicleName}
               </TabButton>
             );
           })}
         </div>
       </div>
-
-      {/* 3. Kontainer Tabel (Scrollable) */}
       <div className="bg-white shadow-md rounded-b-lg flex flex-col grow overflow-hidden min-h-0">
-        {/* --- 3. GANTI BLOK DIV INI --- */}
         <div className="overflow-y-auto grow">
           {isLoading && (
-            // Ganti SelectionLayout dengan spinner inline
             <div className="w-full flex justify-center items-center p-20">
               <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
             </div>
           )}
-
-          {/* Tampilkan jika TIDAK loading DAN (data kosong ATAU tidak ada tab aktif) */}
           {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
             <p className="p-10 text-center text-gray-500">
               Tidak ada data ditemukan untuk tanggal atau filter ini.
             </p>
           )}
-
-          {/* Tampilkan tabel HANYA jika TIDAK loading DAN ADA tab aktif */}
           {!isLoading && activeRoute && (
             <table className="w-full table-fixed border-collapse">
               <thead>
@@ -460,10 +427,7 @@ export default function EstimasiDelivery() {
                   const redText = isHub ? 'text-red-600' : '';
                   const outletName = isHub ? null : parseOutletName(trip.visitName);
                   const soNumber = isHub ? null : parseSONumber(trip.visitName);
-
-                  // --- TAMBAHKAN LOGIKA INI ---
                   let isMatch = false;
-                  // Hanya cek jika ada query dan bukan HUB
                   if (searchQuery && !isHub) {
                     const lowerQuery = searchQuery.toLowerCase();
                     if (outletName && outletName.toLowerCase().includes(lowerQuery)) {
@@ -473,12 +437,7 @@ export default function EstimasiDelivery() {
                       isMatch = true;
                     }
                   }
-
-                  // Tentukan class untuk baris
-                  const rowClass = isMatch
-                    ? 'bg-yellow-100' // Warna highlight baris
-                    : '';
-
+                  const rowClass = isMatch ? 'bg-yellow-100' : '';
                   return (
                     <tr
                       key={`${trip.visitId}-${trip.order}`}
@@ -491,17 +450,11 @@ export default function EstimasiDelivery() {
                         {isHub ? (
                           <strong className={redText}>HUB</strong>
                         ) : (
-                          // Gunakan komponen HighlightText di sini
                           <HighlightText text={outletName} highlight={searchQuery} />
                         )}
                       </Td>
                       <Td>
-                        {isHub ? (
-                          ''
-                        ) : (
-                          // Gunakan komponen HighlightText di sini
-                          <HighlightText text={soNumber} highlight={searchQuery} />
-                        )}
+                        {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
                       </Td>
                       <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
                       <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
