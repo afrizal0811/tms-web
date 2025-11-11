@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
+import { toastError } from '@/lib/toastHelper';
+import { useEffect, useState } from 'react';
 export default function UserDisplay() {
   const [userName, setUserName] = useState('');
 
@@ -15,7 +15,7 @@ export default function UserDisplay() {
         setUserName(user.name);
       }
     } catch (e) {
-      console.error('Gagal memuat data user dari localStorage', e);
+      toastError('Gagal memuat data user');
     }
   }, []); // Array dependensi kosong berarti ini hanya berjalan sekali
 

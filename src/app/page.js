@@ -5,7 +5,7 @@ import AppLayout from '@/components/AppLayout';
 import LocationDropdown from '@/components/LocationDropdown';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import TmsSummary from '@/features/reportData/TmsSummary';
+import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserSelectionGrid from '@/features/userSelection/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
 import { useEffect, useState } from 'react';
@@ -265,20 +265,10 @@ export default function Home() {
 
   // 3. Jika LOKASI dan USER ada -> Tampilkan Layout APLIKASI UTAMA (Dengan Navbar)
   return (
+    // Gunakan <AppLayout> agar Navbar muncul
     <AppLayout mainClassName="items-center justify-center px-6">
-      <div className="text-center w-full">
-        <h1 className="text-4xl font-bold">Selamat Datang, {selectedUser.name}!</h1>
-        <p className="text-xl mt-2 text-gray-500">
-          Anda dapat memulai dengan memilih menu di atas.
-        </p>
-
-        <button
-          onClick={handleResetAll}
-          className="mt-6 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 text-sm"
-        >
-          Pilih User/Lokasi Lain
-        </button>
-      </div>
+      {/* Render komponen Dashboard baru */}
+      <DashboardSummary driverData={driverData.data} />
     </AppLayout>
   );
 }

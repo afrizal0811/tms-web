@@ -47,7 +47,6 @@ function TagMappingRow({ unmappedInfo, onMapChange }) {
 
 export default function RoutingSummary({
   driverData,
-  isInputInvalid,
   isLoading,
   onLoadingChange,
   onMappingModeChange,
@@ -607,15 +606,13 @@ export default function RoutingSummary({
         {/* --- GANTI SELURUH TOMBOL INI --- */}
         <button
           onClick={handleRoutingSummary}
-          disabled={isLoading || isInputInvalid}
+          disabled={isLoading}
           className={`
-          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
           ${
-            isInputInvalid
-              ? 'bg-gray-400 cursor-not-allowed' // <-- Style jika tanggal tidak valid
-              : isLoading
-                ? 'bg-sky-600'
-                : 'bg-sky-600 hover:bg-sky-700' // Style normal/loading
+            isLoading
+              ? 'bg-sky-600 cursor-not-allowed'
+              : 'bg-sky-600 hover:bg-sky-700 cursor-pointer' // Style normal/loading
           }
         `}
         >

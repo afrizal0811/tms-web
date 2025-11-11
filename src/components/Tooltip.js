@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+// 1. Impor 'cloneElement' dan 'Children' dari React
+import { Children, cloneElement, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+// 'children' sekarang kembali menjadi elemen JSX (bukan fungsi)
 export default function Tooltip({ children, tooltipContent }) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef(null);
+  const triggerRef = useRef(null); // Ref ini akan kita "suntikkan"
   const timeoutRef = useRef(null);
 
   const clearTimer = () => {
@@ -19,18 +21,14 @@ export default function Tooltip({ children, tooltipContent }) {
   const handleMouseEnter = () => {
     clearTimer();
     timeoutRef.current = setTimeout(() => {
+      // Mengakses .current di dalam event handler (SETELAH render)
+      // ini 100% aman dan tidak akan menyebabkan error
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-
-      // --- PERUBAHAN LOGIKA POSISI ---
       setPosition({
-        // Posisikan 8px di ATAS elemen
         top: rect.top - 8,
-        // Posisikan di TENGAH horizontal elemen
         left: rect.left + rect.width / 2,
       });
-      // --- AKHIR PERUBAHAN ---
-
       setIsVisible(true);
     }, 150);
   };
@@ -40,11 +38,11 @@ export default function Tooltip({ children, tooltipContent }) {
     setIsVisible(false);
   };
 
+  // useEffect untuk scroll/resize (tidak berubah)
   useEffect(() => {
     const hideTooltip = () => setIsVisible(false);
     window.addEventListener('scroll', hideTooltip, true);
     window.addEventListener('resize', hideTooltip, true);
-
     return () => {
       window.removeEventListener('scroll', hideTooltip, true);
       window.removeEventListener('resize', hideTooltip, true);
@@ -52,15 +50,23 @@ export default function Tooltip({ children, tooltipContent }) {
     };
   }, []);
 
-  return (
-    <div
-      ref={triggerRef}
-      className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
+  // 2. Siapkan props yang akan "disuntikkan"
+  const triggerProps = {
+    onMouseEnter: handleMouseEnter,
+    onMouseLeave: handleMouseLeave,
+    ref: triggerRef, // Teruskan ref
+  };
 
+  // 3. Render
+  return (
+    <>
+      {/* cloneElement mengambil 'children' (hanya 1) 
+        dan menambahkan 'triggerProps' ke dalamnya.
+        Ini akan berhasil untuk <tr>, <div>, <button>, dll.
+      */}
+      {cloneElement(Children.only(children), triggerProps)}
+
+      {/* Portal (tidak berubah) */}
       {isVisible &&
         createPortal(
           <div
@@ -70,36 +76,28 @@ export default function Tooltip({ children, tooltipContent }) {
             whitespace-pre-line 
             px-3 py-1.5 
             text-xs font-medium text-white 
-            bg-sky-800 
+            bg-slate-800 
             rounded-md shadow-lg
           "
-            // --- PERUBAHAN STYLE POSISI ---
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
-              // Trik CSS:
-              // 1. Geser ke kiri 50% dari LEBAR TOOLTIP (untuk center)
-              // 2. Geser ke atas 100% dari TINGGI TOOLTIP (untuk menempatkan di atas)
               transform: 'translate(-50%, -100%)',
             }}
-            // --- AKHIR PERUBAHAN ---
           >
             {tooltipContent}
-
-            {/* --- PERUBAHAN SEGITIGA (Arrow) --- */}
-            {/* Sekarang di bawah, menunjuk ke bawah */}
+            {/* Segitiga */}
             <div
               className="
               absolute left-1/2 top-full -translate-x-1/2 
               w-0 h-0 
               border-x-4 border-x-transparent 
-              border-t-4 border-t-sky-800
+              border-t-4 border-t-slate-800
             "
             />
-            {/* --- AKHIR PERUBAHAN --- */}
           </div>,
           document.body
         )}
-    </div>
+    </>
   );
 }

@@ -1,12 +1,12 @@
 // File: src/components/EstimasiDelivery.js
 'use client';
 
-import { formatSimpleTime, parseOutletName } from '@/lib/utils';
+import Tooltip from '@/components/Tooltip';
+import { formatSimpleTime, isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
-import Tooltip from '@/components/Tooltip';
 import { getResultsSummary } from '../../lib/apiService';
+import { toastError, toastSuccess } from '../../lib/toastHelper';
 
 function Th({ children, widthClass = '' }) {
   return (
@@ -135,11 +135,9 @@ export default function EstimasiDelivery() {
 
   const handleDateChange = (e) => {
     const newDateStr = e.target.value;
-
-    const date = new Date(newDateStr.replace(/-/g, '/'));
-
-    if (date.getDay() === 0) {
+    if (isDateSunday(newDateStr)) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      return;
     }
     setSelectedDate(newDateStr); // Selalu update state
   };

@@ -1,23 +1,12 @@
 // File: src/components/TmsSummary.js
 'use client';
 
-import { getTodayDateString } from '@/lib/utils';
-import { useState } from 'react';
-
-// Impor komponen-komponen
 import DeliverySummary from '@/features/reportData/DeliverySummary';
 import RoutingSummary from '@/features/reportData/RoutingSummary';
 import StartFinishSummary from '@/features/reportData/StartFinishSummary';
+import { getTodayDateString, isDateSunday } from '@/lib/utils';
+import { useState } from 'react';
 import { toastError } from '../../lib/toastHelper';
-
-// --- 2. Fungsi helper untuk Cek Hari Minggu ---
-const isDateSunday = (dateStr) => {
-  // 'YYYY-MM-DD' diperlakukan sebagai UTC, jadi ganti ke '/'
-  // agar diperlakukan sebagai waktu lokal & .getDay() konsisten
-  const date = new Date(dateStr.replace(/-/g, '/'));
-  return date.getDay() === 0; // 0 = Minggu
-};
-// --- Selesai Perubahan 2 ---
 
 export default function TmsSummary({
   driverData,
@@ -32,19 +21,15 @@ export default function TmsSummary({
   // --- 3. State untuk melacak validitas tanggal ---
   const initialDate = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [isDateInvalid, setIsDateInvalid] = useState(() => isDateSunday(initialDate));
   // --- Selesai Perubahan 3 ---
 
   // --- 4. Handler Tanggal dengan Toast ---
   const handleDateChange = (e) => {
     const newDateStr = e.target.value;
-
     if (isDateSunday(newDateStr)) {
-      setIsDateInvalid(true); // Tetap disable tombol
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain'); // Tampilkan toast
-    } else {
-      setIsDateInvalid(false); // Hapus disable
-    }
+      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      return;
+    } 
     setSelectedDate(newDateStr); // Selalu update tanggal yang dipilih
   };
   // --- Selesai Perubahan 4 ---
@@ -81,7 +66,6 @@ export default function TmsSummary({
       >
         <RoutingSummary
           driverData={driverData}
-          isInputInvalid={isDateInvalid}
           isLoading={isAnyLoading || isMapping}
           onLoadingChange={setIsAnyLoading}
           onMappingModeChange={setIsMapping}
@@ -95,7 +79,6 @@ export default function TmsSummary({
           <>
             <DeliverySummary
               driverData={driverData}
-              isInputInvalid={isDateInvalid}
               isLoading={isAnyLoading || isMapping}
               onLoadingChange={setIsAnyLoading}
               selectedDate={selectedDate}
@@ -106,7 +89,6 @@ export default function TmsSummary({
 
             <StartFinishSummary
               driverData={driverData}
-              isInputInvalid={isDateInvalid}
               isLoading={isAnyLoading || isMapping}
               onLoadingChange={setIsAnyLoading}
               selectedDate={selectedDate}

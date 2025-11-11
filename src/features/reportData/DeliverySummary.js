@@ -24,7 +24,6 @@ const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 export default function DeliverySummary({
   driverData,
-  isInputInvalid,
   isLoading,
   onLoadingChange,
   selectedDate,
@@ -932,15 +931,13 @@ export default function DeliverySummary({
     <div className="flex flex-col">
       <button
         onClick={handleDeliverySummary}
-        disabled={isLoading || isInputInvalid}
+        disabled={isLoading}
         className={`
-          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
           ${
-            isInputInvalid
-              ? 'bg-gray-400 cursor-not-allowed'
-              : isLoading
-                ? 'bg-sky-600'
-                : 'bg-sky-600 hover:bg-sky-700'
+            isLoading
+              ? 'bg-sky-600 cursor-not-allowed'
+              : 'bg-sky-600 hover:bg-sky-700 cursor-pointer' // Style normal/loading
           }
         `}
       >

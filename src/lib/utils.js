@@ -472,3 +472,11 @@ export function parseOutletName(visitName) {
   return parts[0].trim();
 }
 
+
+// --- 2. Fungsi helper untuk Cek Hari Minggu ---
+export const isDateSunday = (dateStr) => {
+  // 'YYYY-MM-DD' diperlakukan sebagai UTC, jadi ganti ke '/'
+  // agar diperlakukan sebagai waktu lokal & .getDay() konsisten
+  const date = new Date(dateStr.replace(/-/g, '/'));
+  return date.getDay() === 0; // 0 = Minggu
+};
