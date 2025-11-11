@@ -465,6 +465,8 @@ export default function RoutingSummary({
       if (!hubId || !Array.isArray(driverData) || driverData.length === 0) {
         throw new Error('Data Hub atau Driver (driverData) tidak valid atau belum dimuat.');
       }
+      if (selectedDate === '') throw new Error('Tanggal belum dipilih.');
+      
       const { dateFrom, dateTo } = calculateTargetDates(selectedDate);
 
       const resultsData = await getResultsSummary({

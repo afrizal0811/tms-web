@@ -28,7 +28,8 @@ export default function StartFinishSummary({
         throw new Error('Data Driver tidak valid.');
       }
 
-      // 2. Hitung tanggal
+      if (selectedDate === '') throw new Error('Tanggal belum dipilih.');
+
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDate);
 
       // 3. Panggil API (Tetap sama)
@@ -260,7 +261,7 @@ export default function StartFinishSummary({
       const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
       XLSX.writeFile(wb, excelFileName);
       toastSuccess('File Time Summary berhasil di-download!');
-    } catch (err) {
+    } catch (e) {
       toastError(e.message);
     } finally {
       if (onLoadingChange) onLoadingChange(false);

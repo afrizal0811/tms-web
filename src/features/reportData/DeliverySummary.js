@@ -18,6 +18,7 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary, getTasks } from '../../lib/apiService';
+import { toastError } from '../../lib/toastHelper';
 
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -42,6 +43,8 @@ export default function DeliverySummary({
       let migrationOccurred = false;
       const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
       if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
+
+      if (selectedDate === '') throw new Error('Tanggal belum dipilih.');
 
       const timeFrom = `${selectedDate} 00:00:00`;
       const timeTo = `${selectedDate} 23:59:59`;

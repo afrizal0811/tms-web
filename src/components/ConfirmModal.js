@@ -62,13 +62,13 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
         <div className="flex justify-center gap-4">
           <button
             onClick={onCancel}
-            className="px-6 py-2 rounded-md font-semibold text-white bg-gray-600 hover:bg-gray-700"
+            className="px-6 py-2 rounded-md font-semibold cursor-pointer text-white bg-gray-600 hover:bg-gray-700"
           >
             Batal
           </button>
           <button
             onClick={onConfirm}
-            className="px-6 py-2 rounded-md font-semibold text-white bg-sky-600 hover:bg-sky-700"
+            className="px-6 py-2 rounded-md  cursor-pointer font-semibold text-white bg-sky-600 hover:bg-sky-700"
           >
             Ya, Yakin
           </button>
