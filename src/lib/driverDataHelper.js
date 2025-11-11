@@ -1,5 +1,6 @@
 import { getUsers, getVehicles } from './apiService';
-import { toastError } from './toastHelper';
+import { ROLE_ID } from './constants';
+import { toastError, toastWarning } from './toastHelper';
 
 /**
  * Fungsi "pintar" untuk mengambil data driver.
@@ -10,35 +11,58 @@ import { toastError } from './toastHelper';
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
-    // Ini akan ditangkap oleh komponen pemanggil (misal: page.js)
-    // dan komponen itu yang akan menampilkan toastError
     throw new Error('selectedLocation wajib ada untuk mengambil data driver.');
   }
 
-  // 1. Cek localStorage dulu
+  // 1. Cek localStorage dulu (tidak berubah)
   try {
     const storedDrivers = localStorage.getItem('driverData');
     if (storedDrivers) {
       return JSON.parse(storedDrivers);
     }
   } catch (e) {
-    // 3. GANTI console.warn dengan toastWarning
     toastError(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
-  // 2. Jika tidak ada di cache, fetch dari API
   try {
-    const driverRoleId = '6703410af6be892f3208ecde';
-    const driverJktRoleId = '68f74e1cff7fa2efdd0f6a38';
-    const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
-    const isSpecialHub = specialHubs.includes(selectedLocation);
+    // --- (PERUBAHAN 2): Logika specialHubs dibuat Dinamis ---
+    let specialHubs = [];
+    //const hardcodedSpecialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
 
-    const rolesToFetch = [driverRoleId];
-    if (isSpecialHub) {
-      rolesToFetch.push(driverJktRoleId);
+    try {
+      const allHubsStr = localStorage.getItem('allHubsList');
+      if (allHubsStr) {
+        const allHubs = JSON.parse(allHubsStr);
+        if (Array.isArray(allHubs)) {
+          // Cari ID berdasarkan nama (case-insensitive)
+          const cikarangId = allHubs.find(
+            (h) => h.name && h.name.toLowerCase() === 'cikarang'
+          )?._id;
+          const daanMogotId = allHubs.find(
+            (h) => h.name && h.name.toLowerCase() === 'daan mogot'
+          )?._id;
+
+          if (cikarangId) specialHubs.push(cikarangId);
+          if (daanMogotId) specialHubs.push(daanMogotId);
+        }
+      }
+    } catch (parseError) {
+      // Tangani jika JSON.parse(allHubsStr) gagal
+      toastError(`Gagal memproses daftar hub: ${parseError.message}`);
     }
 
-    // Panggil fungsi API (ini sudah di-refactor)
+    if (specialHubs.length === 0) {
+      toastWarning('Daftar hub tidak ditemukan di cache. Hubungi admin.');
+    }
+
+    const isSpecialHub = specialHubs.includes(selectedLocation);
+
+    const rolesToFetch = [ROLE_ID.driver];
+    if (isSpecialHub) {
+      rolesToFetch.push(ROLE_ID.driverJkt);
+    }
+
+    // Panggil fungsi API (tidak berubah)
     const driverPromises = rolesToFetch.map((roleId) =>
       getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
     );
@@ -47,7 +71,7 @@ export async function getOrFetchDriverData(selectedLocation) {
     const driverResponses = await Promise.all(driverPromises);
     const vehicleResult = await vehiclePromise;
 
-    // Proses data (driverResponses adalah array dari array, jadi kita flat)
+    // Proses data (tidak berubah)
     const rawDrivers = driverResponses.flat();
     const processedDrivers = rawDrivers.map((driver) => ({
       _id: driver._id,
@@ -55,7 +79,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       email: driver.email,
     }));
 
-    // Proses vehicle (vehicleResult adalah array)
+    // Proses vehicle (tidak berubah)
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
@@ -66,7 +90,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return acc;
     }, {});
 
-    // Merge data
+    // Merge data (tidak berubah)
     const mergedDriverData = processedDrivers.map((driver) => {
       const vehicleInfo = vehicleMap[driver.email];
       return {
@@ -77,8 +101,15 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan ke localStorage dan kembalikan
+    // Simpan ke localStorage dan kembalikan (tidak berubah)
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
     return mergedDriverData;
-  } catch (err) {}
+  } catch (err) {
+    // --- (PERUBAHAN 3): Jangan "telan" error ---
+    // 'apiService' sudah menampilkan toastError.
+    // Kita lempar error lagi agar komponen pemanggil (page.js, dll)
+    // tahu bahwa fetch gagal dan bisa menghentikan spinner-nya.
+    throw err;
+    // --- (SELESAI PERUBAHAN 3) ---
+  }
 }
