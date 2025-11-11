@@ -249,7 +249,7 @@ export default function Home() {
           </h2>
           <UserSelectionGrid
             hubId={selectedLocation}
-            roleId={ROLE_ID.planner}
+            roleIds={[ROLE_ID.planner, ROLE_ID.adminPlanner]}
             onUserSelect={handleUserSelect}
           />
           <button

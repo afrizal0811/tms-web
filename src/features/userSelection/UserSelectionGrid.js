@@ -1,4 +1,3 @@
-// File: src/components/UserSelectionGrid.js
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,7 +14,8 @@ function capitalizeWords(str) {
 // Atur berapa item per halaman untuk 3x3 grid
 const ITEMS_PER_PAGE = 9;
 
-export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
+// --- (PERUBAHAN 1): Terima 'roleIds' (array) ---
+export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
   // ... (State: usersData, selectedId, currentPage... tetap sama) ...
   const [usersData, setUsersData] = useState({
     loading: true,
@@ -43,9 +43,7 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     };
   }, []);
 
-  // --- FUNGSI useEffect (DENGAN PERUBAHAN) ---
   useEffect(() => {
-    // Jangan fetch jika hubId belum dipilih
     if (!hubId) {
       setUsersData({ loading: true, data: [], error: null });
       return;
@@ -54,25 +52,40 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     async function fetchUsers() {
       setUsersData({ loading: true, data: [], error: null });
 
-      // 2. Siapkan parameter
-      const params = {
-        hubId: hubId,
-        status: 'active',
-      };
-      if (!showAll) {
-        params.roleId = roleId;
-      }
-
       try {
-        // 3. Panggil service
-        const usersArray = await getUsers(params);
+        let usersArray = [];
+
+        if (showAll) {
+          // --- Mode Rahasia: Ambil SEMUA user (tanpa filter role) ---
+          usersArray = await getUsers({ hubId: hubId, status: 'active' });
+        
+        } else {
+          // --- Mode Normal: Ambil SEMUA roleIds yang diminta ---
+          if (!Array.isArray(roleIds) || roleIds.length === 0) {
+            throw new Error('Role tidak disediakan atau kosong.');
+          }
+
+          // Buat array berisi promise untuk setiap roleId
+          const fetchPromises = roleIds.map(roleId => 
+            getUsers({ 
+              hubId: hubId, 
+              status: 'active', 
+              roleId: roleId 
+            })
+          );
+          
+          // Jalankan semua promise secara paralel
+          const results = await Promise.all(fetchPromises);
+          
+          // Gabungkan hasil dari semua panggilan API (results adalah array dari array)
+          usersArray = results.flat();
+        }
+
+        // --- Logika Filter (tidak berubah) ---
         if (!Array.isArray(usersArray)) {
           throw new Error('Data user yang diterima bukanlah array.');
         }
 
-        // --- PERUBAHAN LOGIKA FILTER DI SINI ---
-
-        // 0. Definisikan ID Driver yang dilarang
         const forbiddenRoleIds = [
           '6703410af6be892f3208ecde', // Driver
           '68f74e1cff7fa2efdd0f6a38', // Driver JKT
@@ -80,21 +93,17 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
 
         let processedData = usersArray;
 
-        // 1. Terapkan filter rahasia JIKA mode 'showAll' aktif
         if (showAll) {
           processedData = processedData.filter((user) => !forbiddenRoleIds.includes(user.roleId));
         }
 
-        // 2. Terapkan filter & map & sort
         processedData = processedData
-          .filter((user) => user.name !== 'Hub Demo') // Filter demo (jaga-jaga)
+          .filter((user) => user.name !== 'Hub Demo')
           .map((user) => ({
             ...user,
             name: capitalizeWords(user.name.replace('Hub ', '')),
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
-
-        // --- SELESAI PERUBAHAN ---
 
         setUsersData({
           loading: false,
@@ -111,7 +120,9 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
     }
 
     fetchUsers();
-  }, [hubId, roleId, showAll]); // <-- 'hubId' dan 'showAll' jadi dependency
+  }, [hubId, roleIds, showAll]); // <-- 'roleId' diganti 'roleIds'
+  // --- (SELESAI PERUBAHAN 2) ---
+
 
   // ... (Sisa logika: pagination, handleChange, render... tetap sama) ...
 
@@ -130,32 +141,24 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
 
   // Handle saat radio button (user) dipilih
   const handleUserClick = (user) => {
-    // Jika user mengklik tombol yang sudah aktif, jangan lakukan apa-apa
     if (user._id === selectedId) {
       return;
     }
-
-    // Simpan data user dan BUKA MODAL
     setUserToConfirm(user);
     setIsConfirmOpen(true);
   };
 
-  // 2. Fungsi ini akan dipanggil jika user menekan "Ya, Yakin"
   const handleConfirmSelection = () => {
     if (userToConfirm) {
       setSelectedId(userToConfirm._id);
       onUserSelect(userToConfirm);
       toastSuccess(`Data berhasil disimpan!`);
     }
-
-    // Tutup modal
     setIsConfirmOpen(false);
     setUserToConfirm(null);
   };
 
-  // 3. Fungsi ini akan dipanggil jika user menekan "Batal"
   const handleCancelSelection = () => {
-    // Tutup modal
     setIsConfirmOpen(false);
     setUserToConfirm(null);
   };
@@ -207,19 +210,11 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
               className={`
                 flex items-center justify-center w-full p-4 h-24
                 text-center border rounded-lg cursor-pointer
-                
-                /* --- STATE TIDAK TERPILIH (GHOST) --- */
                 bg-white border-gray-300 text-gray-700
-                
-                /* --- STATE HOVER --- */
                 hover:border-sky-500 hover:text-sky-600
-                
-                /* --- STATE TERPILIH (SOLID) --- */
                 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600
-                
                 truncate transition-colors
               `}
-              // --- AKHIR PERUBAHAN WARNA ---
             >
               {user.name}
             </label>
@@ -232,7 +227,7 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
           <button
             onClick={handlePrevPage}
             disabled={currentPage === 1}
-            className="px-6 py-3 rounded text-center text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Sebelumnya
           </button>
@@ -242,7 +237,7 @@ export default function UserSelectionGrid({ hubId, roleId, onUserSelect }) {
           <button
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
-            className="px-6 py-3 rounded text-center text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Selanjutnya
           </button>
