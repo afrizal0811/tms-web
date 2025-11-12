@@ -234,9 +234,9 @@ export default function DashboardSummary({ driverData }) {
               tooltip: orderInfo.tooltip,
             });
           }
-
+          const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
           // Cek Manual Assign
-          if (!task.routingResultId && task.status !== 'UNASSIGNED') {
+          if (manualCategory && task.status !== 'UNASSIGNED') {
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
             const normalizedAssignee = normalizeEmail(rawAssignee);
@@ -245,7 +245,7 @@ export default function DashboardSummary({ driverData }) {
 
             manualAssignList.push({
               customer: task.customerName || 'N/A',
-              assignee: finalAssignee,
+              driver: finalAssignee,
               flow: flow,
               copyValue: orderInfo.copyValue,
               tooltip: orderInfo.tooltip,
@@ -296,6 +296,10 @@ export default function DashboardSummary({ driverData }) {
             // --- (SELESAI POIN 3) ---
           }
         }
+
+        unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+        manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+        crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
 
         setSummaryData({
           totalTasks: tasksData.length,
@@ -450,7 +454,7 @@ export default function DashboardSummary({ driverData }) {
                           flex flex-col h-64"
           >
             <h3 className="text-lg font-semibold text-gray-900 p-4 border-b shrink-0">
-              Daftar Task Belum Assign
+              Daftar Belum Assign
             </h3>
 
             {loading ? (
@@ -498,7 +502,7 @@ export default function DashboardSummary({ driverData }) {
                           flex flex-col h-64"
           >
             <h3 className="text-lg font-semibold text-gray-900 p-4 border-b shrink-0">
-              Daftar Task Manual
+              Daftar Manual Assign
             </h3>
 
             {loading ? (
@@ -517,7 +521,7 @@ export default function DashboardSummary({ driverData }) {
                         Customer Name
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Assignee
+                        Driver
                       </th>
                     </tr>
                   </thead>
@@ -530,7 +534,7 @@ export default function DashboardSummary({ driverData }) {
                         >
                           <td className="p-3 text-sm text-gray-800">{task.flow}</td>
                           <td className="p-3 text-sm text-gray-800">{task.customer}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.assignee}</td>
+                          <td className="p-3 text-sm text-gray-800">{task.driver}</td>
                         </tr>
                       </Tooltip>
                     ))}
