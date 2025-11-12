@@ -103,14 +103,14 @@ export default function DashboardSummary({ driverData }) {
   const [summaryData, setSummaryData] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleCopy = (textToCopy) => {
-    if (!textToCopy) {
+  const handleCopy = (task) => {
+    if (!task.copyValue) {
       toastWarning('Tidak ada nomor SO untuk disalin');
       return;
     }
-    navigator.clipboard.writeText(textToCopy).then(
+    navigator.clipboard.writeText(task.copyValue).then(
       () => {
-        toastSuccess(`Disalin: ${textToCopy}`);
+        toastSuccess(`Salin: ${task.tooltip}`);
       },
       (err) => {
         toastError('Gagal menyalin ke clipboard');
@@ -475,7 +475,7 @@ export default function DashboardSummary({ driverData }) {
                       <Tooltip key={index} tooltipContent={task.tooltip}>
                         <tr
                           className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task.copyValue)}
+                          onClick={() => handleCopy(task)}
                         >
                           <td className="p-3 text-sm text-gray-800">{task.flow}</td>
                           <td className="p-3 text-sm text-gray-800">{task.customer}</td>
@@ -526,7 +526,7 @@ export default function DashboardSummary({ driverData }) {
                       <Tooltip key={index} tooltipContent={task.tooltip}>
                         <tr
                           className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task.copyValue)}
+                          onClick={() => handleCopy(task)}
                         >
                           <td className="p-3 text-sm text-gray-800">{task.flow}</td>
                           <td className="p-3 text-sm text-gray-800">{task.customer}</td>
@@ -578,7 +578,7 @@ export default function DashboardSummary({ driverData }) {
                       <Tooltip key={index} tooltipContent={task.tooltip}>
                         <tr
                           className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task.copyValue)}
+                          onClick={() => handleCopy(task)}
                         >
                           <td className="p-3 text-sm text-gray-800">{task.customer}</td>
                           <td className="p-3 text-sm text-gray-800">{task.doneDateDisplay}</td>
