@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
           }}
         />
         <SessionGuard>
-          <main className="p-4 sm:p-6">{children}</main>
+          <main className="p-0">{children}</main>
         </SessionGuard>
       </body>
     </html>
