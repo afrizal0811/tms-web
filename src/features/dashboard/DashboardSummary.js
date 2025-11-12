@@ -372,7 +372,7 @@ export default function DashboardSummary({ driverData }) {
           {/* Datepicker Card */}
           <div className="bg-white shadow-md rounded-lg p-6">
             <label htmlFor="dashboardDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Pilih Tanggal Laporan
+              Pilih Tanggal Pengiriman
             </label>
             <input
               type="date"
