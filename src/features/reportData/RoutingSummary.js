@@ -134,37 +134,111 @@ export default function RoutingSummary({
     filteredResults.forEach((resultItem) => {
       if (resultItem.result && Array.isArray(resultItem.result.routing)) {
         resultItem.result.routing.forEach((route) => {
+          let initialTotalWeight = route.totalWeight || 0;
+          let initialTotalVolume = route.totalVolume || 0;
+          let initialTotalDistance = route.totalDistance || 0;
+          let initialTotalTravelTime = route.totalTravelTime || 0;
+          let initialTotalVisitTime = route.totalVisitTime || 0;
+          let initialTotalWaitingTime = route.totalWaitingTime || 0;
+
+          const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
+
+          // 2. Tentukan field mana yang perlu dihitung ulang (karena nilainya 0)
+          const needsManualWeight = hasTrips && initialTotalWeight === 0;
+          const needsManualVolume = hasTrips && initialTotalVolume === 0;
+          const needsManualDistance = hasTrips && initialTotalDistance === 0;
+          const needsManualTravelTime = hasTrips && initialTotalTravelTime === 0;
+          const needsManualVisitTime = hasTrips && initialTotalVisitTime === 0;
+          const needsManualWaitingTime = hasTrips && initialTotalWaitingTime === 0;
+
+          // 3. Lakukan kalkulasi manual dalam satu kali iterasi 'reduce'
+          let manualCalcs = {
+            weight: 0,
+            volume: 0,
+            distance: 0,
+            travelTime: 0,
+            visitTime: 0,
+            waitingTime: 0,
+          };
+
+          if (
+            hasTrips &&
+            (needsManualWeight ||
+              needsManualVolume ||
+              needsManualDistance ||
+              needsManualTravelTime ||
+              needsManualVisitTime ||
+              needsManualWaitingTime)
+          ) {
+            manualCalcs = route.trips.reduce(
+              (acc, trip) => {
+                // Hanya hitung jika bukan Hub (sesuai permintaan)
+                if (!trip.isHub) {
+                  if (needsManualWeight) acc.weight += trip.weight || 0;
+                  if (needsManualVolume) acc.volume += trip.volume || 0;
+                  if (needsManualDistance) acc.distance += trip.distance || 0;
+                  if (needsManualTravelTime) acc.travelTime += trip.travelTime || 0;
+                  if (needsManualVisitTime) acc.visitTime += trip.visitTime || 0;
+                  if (needsManualWaitingTime) acc.waitingTime += trip.waitingTime || 0;
+                }
+                return acc;
+              },
+              manualCalcs // Mulai dengan objek manualCalcs yang sudah di-nol-kan
+            );
+          }
+
+          // 4. Tentukan nilai final: gunakan nilai manual jika dihitung, jika tidak, gunakan nilai awal
+          const finalTotalWeight = needsManualWeight ? manualCalcs.weight : initialTotalWeight;
+          const finalTotalVolume = needsManualVolume ? manualCalcs.volume : initialTotalVolume;
+          const finalTotalDistance = needsManualDistance
+            ? manualCalcs.distance
+            : initialTotalDistance;
+          const finalTotalTravelTime = needsManualTravelTime
+            ? manualCalcs.travelTime
+            : initialTotalTravelTime;
+          const finalTotalVisitTime = needsManualVisitTime
+            ? manualCalcs.visitTime
+            : initialTotalVisitTime;
+          const finalTotalWaitingTime = needsManualWaitingTime
+            ? manualCalcs.waitingTime
+            : initialTotalWaitingTime;
+
           const assigneeEmail = route.assignee;
           const driverInfo = driverMap[assigneeEmail];
           const driverName = driverInfo ? driverInfo.name : assigneeEmail;
+          
+          // Gunakan 'finalTotalWeight' dan 'finalTotalVolume'
           const manualWeightPercentage = (
-            (route.totalWeight / route.vehicleMaxWeight) *
+            (finalTotalWeight / route.vehicleMaxWeight) * // <-- BARU
             100
           ).toFixed(1);
           const manualVolumePercentage = (
-            (route.totalVolume / route.vehicleMaxVolume) *
+            (finalTotalVolume / route.vehicleMaxVolume) * // <-- BARU
             100
           ).toFixed(1);
-          const totalTravelTime = route.totalTravelTime || 0;
-          const totalVisitTime = route.totalVisitTime || 0;
-          const totalWaitingTime = route.totalWaitingTime || 0;
+            
+          // Gunakan 'finalTotalTravelTime', 'finalTotalVisitTime', 'finalTotalWaitingTime'
+          const totalTravelTime = finalTotalTravelTime; // <-- BARU
+          const totalVisitTime = finalTotalVisitTime; // <-- BARU
+          const totalWaitingTime = finalTotalWaitingTime; // <-- BARU
           const manualSpentTime = totalTravelTime + totalVisitTime + totalWaitingTime;
-          const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
+
           processedDataRows.push({
             plat: driverInfo ? driverInfo.plat : null,
             driver: driverName,
             weightPercentage: manualWeightPercentage || 0,
             volumePercentage: manualVolumePercentage || 0,
-            totalDistance: route.totalDistance || 0,
+            totalDistance: finalTotalDistance || 0, // <-- BARU
             totalVisits: null,
             totalDelivered: null,
             shipDurationRaw: manualSpentTime || route.totalSpentTime || 0,
             hasTrips: hasTrips,
-            totalTravelTime: totalTravelTime,
-            totalVisitTime: totalVisitTime,
+            totalTravelTime: totalTravelTime, // <-- BARU
+            totalVisitTime: totalVisitTime, // <-- BARU
           });
+          
           const tags = route.vehicleTags;
-          const distance = route.totalDistance || 0;
+          const distance = finalTotalDistance || 0; // <-- BARU
 
           // Tentukan 'vehiclePlat' sebagai kunci mapping
           const vehiclePlat = driverInfo && driverInfo.plat ? driverInfo.plat : 'N/A';
@@ -478,6 +552,7 @@ export default function RoutingSummary({
 
       // 'resultsData' dijamin berupa array
       const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
+      console.log('filteredResults', filteredResults);
       if (filteredResults.length === 0) {
         toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
