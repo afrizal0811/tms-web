@@ -16,7 +16,6 @@ const ITEMS_PER_PAGE = 9;
 
 // --- (PERUBAHAN 1): Terima 'roleIds' (array) ---
 export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
-  // ... (State: usersData, selectedId, currentPage... tetap sama) ...
   const [usersData, setUsersData] = useState({
     loading: true,
     data: [],
@@ -120,7 +119,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     }
 
     fetchUsers();
-  }, [hubId, roleIds, showAll]); // <-- 'roleId' diganti 'roleIds'
+    //eslint-disable-next-line
+  }, [hubId, showAll]); // <-- 'roleId' diganti 'roleIds'
   // --- (SELESAI PERUBAHAN 2) ---
 
 
