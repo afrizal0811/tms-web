@@ -1,4 +1,4 @@
-// File: src/components/DeliverySummary.js
+// File: src/features/reportData/DeliverySummary.js
 'use client';
 
 import { toastSuccess } from '@/lib/toastHelper';
@@ -25,6 +25,7 @@ const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 export default function DeliverySummary({
   driverData,
+  isInputInvalid,
   isLoading,
   onLoadingChange,
   selectedDate,
@@ -75,11 +76,10 @@ export default function DeliverySummary({
         hubId: selectedLocation,
       });
 
-      // Panggil promise (apiService sudah menangani .json() dan .ok)
+      // Panggil promise
       const [allTasks, resultsData] = await Promise.all([tasksPromise, resultsPromise]);
 
       // --- 3. Proses Response /tasks ---
-      // 'allTasks' dijamin berupa array
       if (allTasks.length === 0) {
         toastError('Tidak ada data yang ditemukan untuk tanggal ini.');
         if (onLoadingChange) onLoadingChange(false);
@@ -87,10 +87,8 @@ export default function DeliverySummary({
       }
 
       // --- 4. Proses Response /results (Hanya untuk Map Waktu HUB) ---
-      // 'resultsData' dijamin berupa array
       const hubTimesMap = new Map();
       if (resultsData) {
-        // Cek jika resultsData ada (meski promise.all, bisa jadi satu gagal)
         const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
         for (const result of filteredResults) {
           if (result.result && Array.isArray(result.result.routing)) {
@@ -105,7 +103,6 @@ export default function DeliverySummary({
                 const hubETD = hubTrips[0].etd;
                 const hubETA = hubTrips[hubTrips.length - 1].eta;
                 hubTimesMap.set(driverName, {
-                  // Simpan berdasarkan NAMA
                   hubETD: formatSimpleTime(hubETD),
                   hubETA: formatSimpleTime(hubETA),
                 });
@@ -118,8 +115,6 @@ export default function DeliverySummary({
       }
 
       // --- 5. Proses Data Utama (Gabungan) ---
-
-      // Peta agregasi: Nama Driver -> { totalOutlet, failedCount, plat, driverEmail }
       const driverStats = new Map();
       let allTaskDataForSequence = [];
       let updateLonglatData = [];
@@ -142,23 +137,33 @@ export default function DeliverySummary({
             failedCount: 0,
             plat: null,
             driverEmail: driverEmail,
-            // --- TAMBAHKAN PROPERTI INI ---
             mismatchCustomers: [],
-            // --- SELESAI PENAMBAHAN ---
+            missingDataCustomers: [],
           };
+
           stats.totalOutlet += 1;
           if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
           if (!stats.plat && driverInfo && driverInfo.plat) {
             stats.plat = driverInfo.plat;
           }
+
+          // Cek Beda Hari
           const startDate = getUTC7DateString(task.startTime);
           const doneDate = getUTC7DateString(task.doneTime);
           if (startDate && doneDate && startDate !== doneDate) {
             stats.mismatchCustomers.push({
               name: customerName,
-              date: startDate, // Simpan tanggal mulai
+              date: startDate,
             });
           }
+
+          // Cek Data Hilang
+          if (!task.eta || !task.etd || !task.routePlannedOrder) {
+            stats.missingDataCustomers.push({
+              name: customerName,
+            });
+          }
+
           driverStats.set(driverName, stats);
         }
 
@@ -216,7 +221,6 @@ export default function DeliverySummary({
           realSequence: 0,
         });
 
-        // (Sheet 4)
         if (task.klikLokasiClient) {
           updateLonglatData.push({
             customerName: customerName,
@@ -251,12 +255,13 @@ export default function DeliverySummary({
         }
       }
       const getSortGroup = (platStr) => {
-        if (!platStr) return 1; // Anggap sebagai master jika plat null
+        if (!platStr) return 1;
         const platUpper = platStr.toUpperCase();
         if (platUpper.includes('DM')) return 3;
         if (platUpper.includes('SEWA')) return 2;
-        return 1; // Master
+        return 1;
       };
+
       // --- 7. Filter & Sortir data "Hasil Pending SO" ---
       const pendingSOData = allTaskDataForSequence.filter(
         (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
@@ -264,22 +269,12 @@ export default function DeliverySummary({
 
       pendingSOData.sort((a, b) => {
         const platA = a.plat || '';
-        const platB = b.plat || '';
+        const platB = a.plat || '';
         const groupA = getSortGroup(platA);
         const groupB = getSortGroup(platB);
-
-        // 1. Urutkan berdasarkan Grup (Master, Sewa, DM)
-        if (groupA !== groupB) {
-          return groupA - groupB;
-        }
-
-        // 2. Jika grup sama, urutkan berdasarkan Driver
+        if (groupA !== groupB) return groupA - groupB;
         const driverCompare = (a.driver || '').localeCompare(b.driver || '');
-        if (driverCompare !== 0) {
-          return driverCompare;
-        }
-
-        // 3. Jika driver sama, urutkan berdasarkan RO Sequence
+        if (driverCompare !== 0) return driverCompare;
         return (a.roSequence || 0) - (b.roSequence || 0);
       });
 
@@ -290,9 +285,17 @@ export default function DeliverySummary({
         alignment: { horizontal: 'center', vertical: 'center' },
       };
       const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
+      const wrapTextStyle = {
+        alignment: { wrapText: true, vertical: 'center', horizontal: 'left' },
+      };
       const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
-      const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
-      const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
+
+      // --- (PERUBAHAN 1): Definisikan style warna baru ---
+      const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } }; // Biru
+      const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } }; // Kuning
+      const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } }; // Hijau
+      // --- (SELESAI PERUBAHAN 1) ---
+
       const greenHeaderStyle = {
         font: { bold: true },
         alignment: { horizontal: 'center', vertical: 'center' },
@@ -300,40 +303,39 @@ export default function DeliverySummary({
       };
 
       // --- Sheet 1: Routing Date ---
-      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom); // <-- [BARIS 255]
-
-      // --- MODIFIKASI BLOK INI ---
+      // (Tidak ada perubahan)
+      const routingDate = formatYYYYMMDDToDDMMYYYY(dateFrom);
       const wsRoutingDate = XLSX.utils.aoa_to_sheet([
-        ['ROUTING DATE'], // <-- POIN 1: Tambah baris judul
+        ['ROUTING DATE'],
         [routingDate, null, null, null, null, null, null],
       ]);
-
-      // Style Judul (Baris 1)
       wsRoutingDate['A1'].s = {
-        font: { bold: true, sz: 24, color: { rgb: 'FF0000' } }, // (Saya buat merah agar menonjol)
+        font: { bold: true, sz: 24, color: { rgb: 'FF0000' } },
         alignment: { horizontal: 'center', vertical: 'center' },
       };
-
-      // Style Tanggal (Baris 2)
       wsRoutingDate['A2'].s = {
         font: { bold: true, sz: 60 },
         alignment: { horizontal: 'center', vertical: 'center' },
       };
-
-      // Merge sel
       wsRoutingDate['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Merge Judul
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Merge Tanggal
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
       ];
-      // --- SELESAI MODIFIKASI ---
-
       wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
       XLSX.utils.book_append_sheet(wb, wsRoutingDate, 'Routing Date');
 
-      // --- Sheet 2: Total Delivered ---
-      const headers1 = ['Plat', 'Driver', 'Total Outlet', 'Total Delivery'];
+      // --- Sheet 2: Total Delivered (DENGAN PERUBAHAN) ---
 
-      // 1. Filter master driverData
+      // (PERUBAHAN 2: Ubah nama header)
+      const headers1 = [
+        'Plat',
+        'Driver',
+        'Total Outlet',
+        'Total Delivery',
+        'Info Manual Assign',
+        'Info Beda Hari',
+      ];
+
       const validDriverData = driverData.filter((driver) => {
         const plat = driver.plat || '';
         if (plat === '') return false;
@@ -341,7 +343,6 @@ export default function DeliverySummary({
         return true;
       });
 
-      // 2. Buat data Excel dari 'validDriverData' (Master List)
       let sheetData1Objects = validDriverData.map((driver) => {
         const driverName = driver.name;
         const driverPlat = driver.plat;
@@ -351,16 +352,44 @@ export default function DeliverySummary({
         if (stats) {
           const totalDelivery = stats.totalOutlet - stats.failedCount;
 
+          const mismatchText = stats.mismatchCustomers
+            .map((task) => {
+              let formattedDate = task.date;
+              if (task.date) {
+                const [y, m, d] = task.date.split('-');
+                if (y && m && d) formattedDate = `${d}-${m}-${y}`;
+              }
+              return `• ${task.name} (${formattedDate})`;
+            })
+            .join('\n');
+
+          const missingDataText = stats.missingDataCustomers
+            .map((task) => `• ${task.name}`)
+            .join('\n');
+
+          // --- (PERUBAHAN 3): Ubah flag boolean menjadi string 'highlightType' ---
+          const hasManualError = stats.missingDataCustomers.length > 0;
+          const hasBedaHariError = stats.mismatchCustomers.length > 0;
+          let highlightType = 'none';
+
+          if (hasManualError && hasBedaHariError) {
+            highlightType = 'green'; // Manual + Beda Hari
+          } else if (hasManualError) {
+            highlightType = 'blue'; // Hanya Manual
+          } else if (hasBedaHariError) {
+            highlightType = 'yellow'; // Hanya Beda Hari
+          }
+          // --- (SELESAI PERUBAHAN 3) ---
+
           return {
             plat: stats.plat || driverPlat,
             driver: driverName,
             totalOutlet: stats.totalOutlet,
             totalDelivery: totalDelivery,
             driverEmail: stats.driverEmail,
-            // --- GANTI INI ---
-            highlightRow: stats.mismatchCustomers.length > 0, // Cek apakah array > 0
-            mismatchCustomers: stats.mismatchCustomers, // Teruskan array
-            // --- SELESAI ---
+            highlightType: highlightType, // <-- Simpan flag baru
+            mismatchText: mismatchText,
+            missingDataText: missingDataText,
           };
         } else {
           return {
@@ -369,10 +398,9 @@ export default function DeliverySummary({
             totalOutlet: null,
             totalDelivery: null,
             driverEmail: driverEmail,
-            // --- GANTI INI ---
-            highlightRow: false,
-            mismatchCustomers: [], // Kirim array kosong
-            // --- SELESAI ---
+            highlightType: 'none',
+            mismatchText: '',
+            missingDataText: '',
           };
         }
       });
@@ -393,77 +421,71 @@ export default function DeliverySummary({
           row.driver,
           row.totalOutlet,
           row.totalDelivery,
+          row.missingDataText,
+          row.mismatchText,
         ]),
       ];
 
       const wsDelivered = XLSX.utils.aoa_to_sheet(finalSheetData1);
-      // (Styling Sheet 2)
-      wsDelivered['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
-      ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
+
+      wsDelivered['!cols'] = [
+        { wch: 15 },
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 50 },
+        { wch: 50 },
+      ];
+
+      ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach((cell) => {
         if (wsDelivered[cell]) wsDelivered[cell].s = headerStyle;
       });
-      if (wsDelivered['D1'])
-        wsDelivered['D1'].c = [
-          { a: 'Info', t: 'Total Outlet - (Pending + Batal + Terima Sebagian)', h: true },
-        ];
+
+      // (Komen di header D1 dihapus)
+
+      // --- (PERUBAHAN 4): Loop Styling ---
       finalSheetData1.forEach((row, R) => {
-        if (R === 0) return; // Skip header
+        if (R === 0) return;
 
-        // --- GANTI LOGIKA STYLING ---
-        const rowData = sheetData1Objects[R - 1]; // Ambil data objek
-        const cellRefA = `A${R + 1}`; // Plat
-        const cellRefB = `B${R + 1}`; // Driver
-        const cellRefC = `C${R + 1}`; // Total Outlet
-        const cellRefD = `D${R + 1}`; // Total Delivery
+        const rowData = sheetData1Objects[R - 1];
+        const cellRefC = `C${R + 1}`; // Kolom Total Outlet
+        const cellRefD = `D${R + 1}`; // Kolom Total Delivery
 
-        // Style Default
-        if (wsDelivered[cellRefA]) wsDelivered[cellRefA].s = centerStyle;
-        if (wsDelivered[cellRefB])
-          wsDelivered[cellRefB].s = { alignment: { horizontal: 'left', vertical: 'center' } };
-        if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = centerStyle;
-        if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = centerStyle;
-
-        // (Poin 1 & 2) Terapkan style kuning dan komen JIKA highlightRow true
-        if (rowData.highlightRow) {
-          // Kolom Total Outlet
-          if (wsDelivered[cellRefC]) {
-            wsDelivered[cellRefC].s = { ...centerStyle, fill: yellowFillStyle.fill };
-
-            // --- PERUBAHAN KOMEN DI SINI (Poin 2) ---
-            // Gabungkan semua customer name dengan newline
-            const commentText = rowData.mismatchCustomers
-              .map((task) => {
-                let formattedDate = task.date; // default YYYY-MM-DD
-
-                // Konversi YYYY-MM-DD ke DD-MM-YYYY (format permintaan)
-                if (task.date) {
-                  const [y, m, d] = task.date.split('-');
-                  if (y && m && d) formattedDate = `${d}-${m}-${y}`;
-                }
-                // Format: + Customer Name (DD-MM-YYYY)
-                return `+ ${task.name} (${formattedDate})`;
-              })
-              .join('\n'); // Gabungkan dengan newline
-
-            if (!wsDelivered[cellRefC].c) wsDelivered[cellRefC].c = [];
-            wsDelivered[cellRefC].c.push({
-              a: 'Info',
-              t: commentText, // Terapkan komen baru (hanya nama customer)
-              h: true,
-            });
-            // --- SELESAI PERUBAHAN ---
+        // Terapkan style default (termasuk wrap text)
+        ['A', 'B', 'C', 'D', 'E', 'F'].forEach((col, C) => {
+          const cellRef = `${col}${R + 1}`;
+          if (wsDelivered[cellRef]) {
+            if (col === 'A' || col === 'C' || col === 'D') {
+              wsDelivered[cellRef].s = centerStyle; // Plat, Total, Total
+            } else if (col === 'B') {
+              wsDelivered[cellRef].s = { alignment: { horizontal: 'left', vertical: 'center' } }; // Driver
+            } else if (col === 'E' || col === 'F') {
+              wsDelivered[cellRef].s = wrapTextStyle; // Info
+            }
           }
+        });
 
-          // Kolom Total Delivery
-          if (wsDelivered[cellRefD]) {
-            wsDelivered[cellRefD].s = { ...centerStyle, fill: yellowFillStyle.fill };
-          }
+        // Terapkan highlight (kuning dulu)
+        if (rowData.highlightType === 'green') {
+          const style = { ...centerStyle, fill: greenFillStyle.fill };
+          if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
+          if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
+        } else if (rowData.highlightType === 'blue') {
+          const style = { ...centerStyle, fill: blueFillStyle.fill };
+          if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
+          if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
+        } else if (rowData.highlightType === 'yellow') {
+          const style = { ...centerStyle, fill: yellowFillStyle.fill };
+          if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
+          if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
         }
-        // --- SELESAI GANTI LOGIKA ---
       });
+      // --- (SELESAI PERUBAHAN 4) ---
+
       XLSX.utils.book_append_sheet(wb, wsDelivered, 'Total Delivered');
 
       // --- Sheet 3: Hasil Pending SO ---
+      // (Tidak ada perubahan di sheet ini)
       const headers2 = [
         'Flow',
         'Date RO',
@@ -552,28 +574,20 @@ export default function DeliverySummary({
       const separatorStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } } };
       const pendingColIndex = 5;
       const rangeSO = XLSX.utils.decode_range(wsPendingSO['!ref']);
-      const flowColIndex = 0; // Kolom "Flow"
-
+      const flowColIndex = 0;
       for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) {
         for (let C = rangeSO.s.c; C <= rangeSO.e.c; ++C) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!wsPendingSO[cellRef]) wsPendingSO[cellRef] = { t: 's', v: '' };
           const cell = wsPendingSO[cellRef];
-
           if (R === 0) {
-            // Hanya baris Header
             if (C === separatorColIndex) {
-              // Style Separator (Pink)
               cell.s = { ...headerStyle, ...separatorStyle };
             } else if (C === flowColIndex) {
-              // Style Kolom Flow (Bawaan)
               cell.s = headerStyle;
             } else {
-              // (Poin 3) Style Hijau untuk sisanya
               cell.s = greenHeaderStyle;
             }
-
-            // Tooltip migrasi (tetap sama)
             if (migrationOccurred && C === pendingColIndex) {
               cell.c = [
                 {
@@ -584,7 +598,6 @@ export default function DeliverySummary({
               ];
             }
           } else {
-            // Baris Data (Logika tetap sama)
             if (C === separatorColIndex) {
               cell.s = separatorStyle;
             } else if (centerAlignedSOColumns.includes(C)) {
@@ -595,7 +608,7 @@ export default function DeliverySummary({
             const rowData = pendingSOData[R - 1];
             if (rowData && rowData.isMigrated && C === pendingColIndex) {
               if (!cell.s) cell.s = {};
-              cell.s.fill = redFillStyle.fill;
+              cell.s.fill = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
             }
           }
         }
@@ -603,6 +616,7 @@ export default function DeliverySummary({
       XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Hasil Pending SO');
 
       // --- Sheet 5: Update Longlat ---
+      // (Tidak ada perubahan di sheet ini)
       const headers4 = [
         'Customer Name',
         'Customer ID',
@@ -656,7 +670,8 @@ export default function DeliverySummary({
       }
       XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
 
-      // --- Sheet 4: Hasil RO vs Real (PERUBAHAN DI SINI) ---
+      // --- Sheet 4: Hasil RO vs Real ---
+      // (Tidak ada perubahan di sheet ini)
       const headers3 = [
         'Flow',
         'Plat',
@@ -675,10 +690,7 @@ export default function DeliverySummary({
         'Real Sequence',
         'Is Same Sequence',
       ];
-
       let finalSheetData3 = [headers3];
-
-      // Buat Map (Nama Driver -> Array Tasks)
       const tasksByNameMap = new Map();
       for (const task of allTaskDataForSequence) {
         if (!tasksByNameMap.has(task.driver)) {
@@ -686,8 +698,6 @@ export default function DeliverySummary({
         }
         tasksByNameMap.get(task.driver).push(task);
       }
-
-      // --- PERUBAHAN: Gunakan 'roVsRealDriverList' (hanya dari API) ---
       let roVsRealDriverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
         return {
           plat: stats.plat,
@@ -695,8 +705,6 @@ export default function DeliverySummary({
           driverEmail: stats.driverEmail,
         };
       });
-
-      // Terapkan Sorting 3-Tingkat
       roVsRealDriverList.sort((a, b) => {
         const groupA = getSortGroup(a.plat);
         const groupB = getSortGroup(b.plat);
@@ -705,19 +713,11 @@ export default function DeliverySummary({
         }
         return (a.driver || '').localeCompare(b.driver || '');
       });
-      // --- SELESAI PERUBAHAN ---
-
-      // Loop berdasarkan 'roVsRealDriverList' (API-Only list)
       for (const driverRow of roVsRealDriverList) {
         const driverName = driverRow.driver;
         const driverPlat = driverRow.plat;
-
         const tasks = tasksByNameMap.get(driverName) || [];
-
-        // Ambil data hub berdasarkan NAMA
         const hubTimes = hubTimesMap.get(driverName) || { hubETD: null, hubETA: null };
-
-        // --- 1. Tambah Baris HUB Start (Kolom dikosongkan) ---
         finalSheetData3.push([
           null,
           null,
@@ -734,16 +734,13 @@ export default function DeliverySummary({
           null,
           null,
           null,
-          null, // <-- POIN 1: Kosongkan
+          null,
         ]);
-
-        // 2. Tambah Baris Task
         tasks.sort((a, b) => a.roSequence - b.roSequence);
         for (const task of tasks) {
           const ro = task.roSequence;
           const real = task.realSequence;
           const isSame = ro == real ? 'SAMA' : 'TIDAK SAMA';
-
           finalSheetData3.push([
             task.flow,
             task.plat,
@@ -763,8 +760,6 @@ export default function DeliverySummary({
             isSame,
           ]);
         }
-
-        // 3. Tambah Baris HUB End (Kolom dikosongkan)
         finalSheetData3.push([
           null,
           null,
@@ -781,16 +776,11 @@ export default function DeliverySummary({
           null,
           null,
           null,
-          null, // <-- POIN 1: Kosongkan
+          null,
         ]);
-
-        // 4. Tambah Baris Separator Kosong
         finalSheetData3.push(Array(headers3.length).fill(null));
       }
-
       const wsRoVsReal = XLSX.utils.aoa_to_sheet(finalSheetData3);
-
-      // Styling Sheet 3
       wsRoVsReal['!view'] = { state: 'frozen', ySplit: 1 };
       const colWidths3 = headers3.map((header, i) => {
         const maxLength = finalSheetData3.reduce(
@@ -800,120 +790,56 @@ export default function DeliverySummary({
         return { wch: Math.min(maxLength + 2, 50) };
       });
       wsRoVsReal['!cols'] = colWidths3;
-
       const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
       const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
-
-      // Index kolom untuk Poin 2
       const etaColIndex = 7;
       const etdColIndex = 9;
-      const platColIndex = 1; // <-- BARU: Index kolom "Plat"
-      const driverColIndex = 2; // <-- BARU: Index kolom "Driver"
-
+      const platColIndex = 1;
+      const driverColIndex = 2;
+      const roColIndex = 13;
       for (let R = range3.s.r; R <= range3.e.r; ++R) {
-        const customerCellRef = XLSX.utils.encode_cell({
-          r: R,
-          c: 3,
-        });
+        const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
         const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
-
-        // --- Cek ETA/ETD Kosong (Hanya untuk baris data TUGAS) ---
-        let isMissingEtaEtd = false;
+        let isMissingRequiredData = false;
         if (R > 0 && !isHubRow) {
-          // Ambil nilai ETA dan ETD
-          const etaValue =
-            wsRoVsReal[
-              XLSX.utils.encode_cell({
-                r: R,
-                c: etaColIndex,
-              })
-            ]?.v;
-          const etdValue =
-            wsRoVsReal[
-              XLSX.utils.encode_cell({
-                r: R,
-                c: etdColIndex,
-              })
-            ]?.v;
-
-          // --- PERUBAHAN DI SINI ---
-          // Ambil juga nilai Plat dan Driver untuk memastikan ini baris data, bukan separator
-          const platValue =
-            wsRoVsReal[
-              XLSX.utils.encode_cell({
-                r: R,
-                c: platColIndex,
-              })
-            ]?.v;
-          const driverValue =
-            wsRoVsReal[
-              XLSX.utils.encode_cell({
-                r: R,
-                c: driverColIndex,
-              })
-            ]?.v;
-
-          // Kondisi: ETA/ETD kosong DAN (Plat ADA Serta Driver ADA)
-          if (!etaValue && !etdValue && platValue && driverValue) {
-            isMissingEtaEtd = true; // Tandai baris ini untuk diwarnai
+          const platValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: platColIndex })]?.v;
+          const driverValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: driverColIndex })]?.v;
+          if (platValue && driverValue) {
+            const etaValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etaColIndex })]?.v;
+            const etdValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etdColIndex })]?.v;
+            const roValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: roColIndex })]?.v;
+            if (!etaValue || !etdValue || !roValue) {
+              isMissingRequiredData = true;
+            }
           }
-          // --- SELESAI PERUBAHAN ---
         }
-        // --- SELESAI CEK ---
-
         for (let C = range3.s.c; C <= range3.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({
-            r: R,
-            c: C,
-          });
-
-          // Jika sel tidak ada (karena kosong), BUAT sel baru agar bisa di-style
-          if (!wsRoVsReal[cellRef]) {
-            wsRoVsReal[cellRef] = {
-              t: 's',
-              v: '',
-            }; // Buat sel string kosong
-          }
-
-          const cell = wsRoVsReal[cellRef]; // Sekarang 'cell' dijamin ada
-
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!wsRoVsReal[cellRef]) wsRoVsReal[cellRef] = { t: 's', v: '' };
+          const cell = wsRoVsReal[cellRef];
           if (R === 0) {
-            // Header
             cell.s = headerStyle;
           } else if (isHubRow) {
-            // Baris HUB
             cell.s = redTextStyle;
             if (C === 3) {
               cell.s = {
                 ...redTextStyle,
                 ...centerStyle,
-                font: {
-                  ...redTextStyle.font,
-                  bold: true,
-                },
+                font: { ...redTextStyle.font, bold: true },
               };
             } else if ([7, 9].includes(C)) {
-              cell.s = {
-                ...redTextStyle,
-                ...centerStyle,
-              };
+              cell.s = { ...redTextStyle, ...centerStyle };
             }
           } else {
-            // Ini adalah Baris Data (atau separator)
-
-            // 1. Terapkan styling default (misal: alignment)
             if (centerAlignedROColumns.includes(C)) {
               if (!cell.s) cell.s = {};
               cell.s.alignment = centerStyle.alignment;
               if (typeof cell.v === 'number') cell.t = 'n';
             }
-
-            // 2. Terapkan Fill Kuning (HANYA jika flag 'isMissingEtaEtd' true)
-            if (isMissingEtaEtd) {
+            if (isMissingRequiredData) {
               if (!cell.s) cell.s = {};
-              cell.s.fill = yellowFillStyle.fill; // Terapkan fill kuning
+              cell.s.fill = { fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } } };
             }
-            // (Jika 'isMissingEtaEtd' false, seperti pada baris separator, tidak ada fill yg diterapkan)
           }
         }
       }
@@ -934,13 +860,15 @@ export default function DeliverySummary({
     <div className="flex flex-col">
       <button
         onClick={handleDeliverySummary}
-        disabled={isLoading}
+        disabled={isLoading || isInputInvalid}
         className={`
-          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
+          px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
           ${
-            isLoading
-              ? 'bg-sky-600 cursor-not-allowed'
-              : 'bg-sky-600 hover:bg-sky-700 cursor-pointer' // Style normal/loading
+            isInputInvalid
+              ? 'bg-gray-400 cursor-not-allowed'
+              : isLoading
+                ? 'bg-sky-600'
+                : 'bg-sky-600 hover:bg-sky-700'
           }
         `}
       >
