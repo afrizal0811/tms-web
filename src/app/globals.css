@@ -1,3 +1,4 @@
+@import 'react-datepicker/dist/react-datepicker.css';
 @import "tailwindcss";
 
 /* Style untuk warning kustom Anda */
@@ -17,3 +18,28 @@
   color: #FFFFFF !important;      /* Teks putih */
 }
 
+.my-toast-info {
+  background: #2196F3 !important;
+  color: #FFFFFF !important;      /* Teks putih */
+}
+
+.react-datepicker {
+  font-family: 'Inter', sans-serif !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+.react-datepicker__header {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--in-range,
+.react-datepicker__day--in-selecting-range {
+  background-color: #0ea5e9 !important; /* Warna sky-500 */
+  color: white !important;
+}
+.react-datepicker__day--keyboard-selected {
+  background-color: #f0f9ff !important;
+  color: black !important;
+}

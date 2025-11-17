@@ -8,6 +8,13 @@ export const toastWarning = (message) => {
   });
 };
 
+export const toastInfo = (message) => {
+  toast(message, {
+    icon: 'ℹ️',
+    className: 'my-toast-info', // Gunakan className agar rapi
+  });
+};
+
 // Anda juga bisa buat untuk error di sini agar konsisten
 export const toastError = (message) => {
   toast.error(message, {
