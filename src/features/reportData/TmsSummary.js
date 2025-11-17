@@ -15,7 +15,6 @@ export default function TmsSummary({
   isMapping,
   selectedLocation,
   selectedLocationName,
-  selectedUser,
   setIsAnyLoading,
   setIsMapping,
 }) {

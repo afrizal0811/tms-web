@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError, toastSuccess, toastWarning } from '../../lib/toastHelper';
 // (PERUBAHAN 1): Impor 'helper' baru
-import { generateRoutingWorkbook } from '../../lib/reportGenerators';
+import { generateRoutingWorkbook } from '../../lib/reportGenerators/routingReport'; // <-- Path diubah
 
 // ... (Komponen TagMappingRow - TIDAK BERUBAH) ...
 function TagMappingRow({ unmappedInfo, onMapChange }) {
@@ -50,12 +50,10 @@ export default function RoutingSummary({
   isLoading,
   onLoadingChange,
   onMappingModeChange,
-  // (Hapus prop onProcessComplete)
   selectedDate,
   selectedLocation,
   selectedLocationName,
 }) {
-  // selectedUser dihapus karena tidak terpakai
   const [pendingData, setPendingData] = useState(null);
   const [unmappedTags, setUnmappedTags] = useState([]);
   const [newMappings, setNewMappings] = useState({});
@@ -94,7 +92,7 @@ export default function RoutingSummary({
         driverData,
         pendingData.results,
         updatedHubMap,
-        pendingData.date,
+        pendingData.date, // Gunakan tanggal dari pendingData (H-1)
         selectedLocationName
       );
 
@@ -135,11 +133,14 @@ export default function RoutingSummary({
       }
       if (selectedDate === '') throw new Error('Tanggal belum dipilih.');
 
+      // Gunakan H-1 logic
       const { dateFrom, dateTo } = calculateTargetDates(selectedDate);
+      const apiDateFrom = `${dateFrom} 00:00:00`;
+      const apiDateTo = `${dateTo} 23:59:59`;
 
       const resultsData = await getResultsSummary({
-        dateFrom: dateFrom,
-        dateTo: dateTo,
+        dateFrom: apiDateFrom,
+        dateTo: apiDateTo,
         limit: 500,
         hubId: hubId,
       });
@@ -199,7 +200,7 @@ export default function RoutingSummary({
       // 3. Putuskan Alur
       if (newUnmappedTags.size > 0) {
         // Mode Mapping
-        setPendingData({ results: filteredResults, date: dateFrom });
+        setPendingData({ results: filteredResults, date: dateFrom }); // Kirim H-1
         setUnmappedTags(Array.from(newUnmappedTags.values()));
         if (onLoadingChange) onLoadingChange(false);
         if (onMappingModeChange) onMappingModeChange(true);
@@ -210,7 +211,7 @@ export default function RoutingSummary({
           driverData,
           filteredResults,
           hubTagMap,
-          selectedDate,
+          selectedDate, // <-- Kirim tanggal ASLI (pilihan user) untuk penamaan
           selectedLocationName
         );
 
