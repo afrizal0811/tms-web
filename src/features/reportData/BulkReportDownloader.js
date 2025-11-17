@@ -1,28 +1,19 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { TAG_MAP_KEY } from '@/lib/constants';
+import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
+import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
+import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { calculateTargetDates, formatDate, getTodayDateString, isDateSunday } from '@/lib/utils';
+import { format } from 'date-fns';
+import JSZip from 'jszip';
+import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import {
-  getTodayDateString,
-  isDateSunday,
-  calculateTargetDates,
-  formatDate,
-  formatYYYYMMDDToDDMMYYYY,
-} from '@/lib/utils';
-import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { getResultsSummary, getTasks, getLocationHistories } from '@/lib/apiService';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
-import { TAG_MAP_KEY } from '@/lib/constants';
 import * as XLSX from 'xlsx-js-style';
-import JSZip from 'jszip';
-import { format } from 'date-fns';
-// (PERUBAHAN 1): Hapus impor Tooltip
-// import Tooltip from '@/components/Tooltip';
 
-// ... (Helper: getDatesInRange, formatDate, parseDate - TIDAK BERUBAH) ...
 function getDatesInRange(startDate, endDate) {
   const dates = [];
   let currentDate = new Date(startDate);
@@ -327,17 +318,15 @@ export default function BulkReportDownloader({ driverData }) {
   // --- (SELESAI HANDLER) ---
 
   return (
-    <div className="w-full max-w-6xl p-4 mt-10">
-      <h2 className="text-2xl font-bold text-gray-700 mb-6 text-center">
-        Laporan Bulk (Multi-Tanggal)
-      </h2>
-
-      {/* --- (Date Picker - tidak berubah) --- */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 p-6">
-        <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-500 mb-1 text-center">
+    <div className="w-full max-w-6xl p-4">
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">TMS Multi Report</h1>
+      <div className="flex flex-col sm:flex-row justify-center items-center">
+        <div className="mb-8 text-center w-full max-w-xs">
+          <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
             Pilih Rentang Tanggal
           </label>
+
+          {/* --- (PERUBAHAN 7): Ganti <input> dengan <DatePicker> --- */}
           <DatePicker
             selectsRange={true}
             startDate={startDate}
@@ -347,11 +336,12 @@ export default function BulkReportDownloader({ driverData }) {
             dateFormat="dd/MM/yyyy"
             className="w-64 p-2 rounded border border-gray-300 text-slate-900 bg-white text-center"
           />
+          {/* --- (SELESAI PERUBAHAN 7) --- */}
         </div>
       </div>
 
       {/* --- (PERUBAHAN 3): Hapus <Tooltip> & tambahkan 'disabled:cursor-not-allowed' --- */}
-      <div className="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
+      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
         {/* Tombol Routing Summary */}
         <button
           onClick={handleBulkRoutingSummary}
