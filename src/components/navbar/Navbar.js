@@ -5,11 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import HelpDropdown from './HelpDropdown';
-import LocationSwitcher from './LocationSwitcher'; // <-- Komponen Lokasi
-import UserDisplay from './UserDisplay'; // <-- Komponen User BARU
+import LocationSwitcher from './LocationSwitcher';
+import UserDisplay from './UserDisplay';
 import LaporanDropdown from './LaporanDropdown';
 
-// Komponen NavLink (Tidak Berubah)
 function NavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -26,7 +25,6 @@ function NavLink({ href, children }) {
   );
 }
 
-// Komponen MobileNavLink (Tidak Berubah)
 function MobileNavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -47,7 +45,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const navRef = useRef(null);
 
-  // ... (useEffect untuk pathname & click outside - TIDAK BERUBAH) ...
   useEffect(() => {
     //eslint-disable-next-line
     setIsMobileMenuOpen(false);
@@ -76,31 +73,29 @@ export default function Navbar() {
       className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm"
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* --- PERUBAHAN: SISI KIRI (Logo + Navigasi) --- */}
         <div className="flex items-center space-x-4 sm:space-x-6">
           <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
             TMS
           </Link>
 
-          {/* Navigasi Desktop dipindah ke sini */}
+          {/* Navigasi Desktop */}
           <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
             <LaporanDropdown />
+            {/* MENU BARU: Rangkuman */}
+            <NavLink href="/rangkuman">Rangkuman</NavLink>
+
             <NavLink href="/estimasi">Estimasi Delivery</NavLink>
             <NavLink href="/vehicles">Data Kendaraan</NavLink>
             <HelpDropdown />
           </div>
         </div>
-        {/* --- SELESAI PERUBAHAN SISI KIRI --- */}
 
-        {/* --- PERUBAHAN: SISI KANAN (Lokasi + User) --- */}
         <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
           <LocationSwitcher />
           <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
           <UserDisplay />
         </div>
-        {/* --- SELESAI PERUBAHAN SISI KANAN --- */}
 
-        {/* Tombol Burger (Mobile) - Tidak berubah */}
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -138,15 +133,15 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu Dropdown Mobile */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/laporan">Laporan (Satuan)</MobileNavLink>
+            <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>
             <MobileNavLink href="/laporan/bulk">Laporan (Bulk)</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
-            {/* Panduan */}
+
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
@@ -167,7 +162,6 @@ export default function Navbar() {
               Panduan - Driver
             </a>
 
-            {/* --- PERUBAHAN: Info User & Lokasi di Mobile --- */}
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
@@ -177,7 +171,6 @@ export default function Navbar() {
             <div className="p-3 pt-0">
               <LocationSwitcher />
             </div>
-            {/* --- SELESAI PERUBAHAN --- */}
           </div>
         </div>
       )}

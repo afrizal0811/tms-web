@@ -24,22 +24,73 @@
 }
 
 .react-datepicker {
-  font-family: 'Inter', sans-serif !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  font-family: inherit;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  padding: 1.2rem !important; /* Padding diperbesar sedikit */
+  background-color: white !important;
+  width: max-content !important; /* INI KUNCINYA: Lebar mengikuti isi */
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
 }
+
+/* 2. Header (Tahun) */
 .react-datepicker__header {
-  background-color: #f8fafc !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  background-color: white !important;
+  border-bottom: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 1rem !important;
+  width: 100% !important;
 }
-.react-datepicker__day--selected,
-.react-datepicker__day--in-range,
-.react-datepicker__day--in-selecting-range {
-  background-color: #0ea5e9 !important; /* Warna sky-500 */
+
+.react-datepicker-year-header {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-top: 0 !important;
+}
+
+/* 3. Area Bulan */
+.react-datepicker__month {
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Jarak vertikal antar baris */
+}
+
+/* 4. Tombol Bulan (Jan, Feb): PERBESAR DI SINI */
+.react-datepicker__month-text {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 5rem !important; /* Diperlebar agar kotak besar */
+  height: 3rem !important; /* Dipertinggi */
+  margin: 0.4rem !important; /* Jarak antar tombol */
+  border-radius: 0.5rem !important;
+  font-size: 1rem !important; /* Font diperbesar */
+  font-weight: 500 !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Efek Hover */
+.react-datepicker__month-text:hover {
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
+  transform: scale(1.05); /* Efek zoom sedikit saat hover */
+}
+
+/* Bulan Terpilih */
+.react-datepicker__month-text--keyboard-selected,
+.react-datepicker__month-text--selected {
+  background-color: #0284c7 !important;
   color: white !important;
+  font-weight: bold !important;
+  box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3); /* Shadow biru */
 }
-.react-datepicker__day--keyboard-selected {
-  background-color: #f0f9ff !important;
-  color: black !important;
+
+/* Panah Navigasi */
+.react-datepicker__navigation {
+  top: 1.3rem !important;
 }

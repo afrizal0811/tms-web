@@ -1,85 +1,69 @@
 import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID } from './constants';
-import { toastError, toastWarning } from './toastHelper';
+import { toastError } from './toastHelper';
 
 /**
  * Fungsi "pintar" untuk mengambil data driver.
- * 1. Cek localStorage.
- * 2. Jika tidak ada, fetch baru, simpan ke localStorage, lalu kembalikan.
- * @param {string} selectedLocation - ID Hub yang dipilih.
- * @returns {Promise<Array>} - Array data driver yang sudah di-merge.
+ * DINAMIS: Mengambil SEMUA role driver relevan untuk hub manapun.
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
     throw new Error('selectedLocation wajib ada untuk mengambil data driver.');
   }
 
-  // 1. Cek localStorage dulu (tidak berubah)
+  // 1. Cek localStorage dulu (Cache)
   try {
     const storedDrivers = localStorage.getItem('driverData');
+    // Validasi tambahan: pastikan data di cache bukan array kosong jika kita mengharapkan data
     if (storedDrivers) {
-      return JSON.parse(storedDrivers);
+      const parsed = JSON.parse(storedDrivers);
+      // Opsional: Bisa tambah logika untuk force refresh jika data kosong tapi harusnya ada
+      return parsed;
     }
   } catch (e) {
-    toastError(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
+    console.warn(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
   try {
-    // --- (PERUBAHAN 2): Logika specialHubs dibuat Dinamis ---
-    let specialHubs = [];
-    //const hardcodedSpecialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
+    // --- PERUBAHAN DINAMIS ---
+    // Daripada mengecek nama hub (Cikarang/Sidoarjo/dll), kita asumsikan
+    // setiap hub MUNGKIN memiliki driver dengan role 'driver' ATAU 'driverJkt'.
+    // Kita fetch saja semuanya. API akan mengembalikan [] jika tidak ada user dengan role itu.
 
-    try {
-      const allHubsStr = localStorage.getItem('allHubsList');
-      if (allHubsStr) {
-        const allHubs = JSON.parse(allHubsStr);
-        if (Array.isArray(allHubs)) {
-          // Cari ID berdasarkan nama (case-insensitive)
-          const cikarangId = allHubs.find(
-            (h) => h.name && h.name.toLowerCase() === 'cikarang'
-          )?._id;
-          const daanMogotId = allHubs.find(
-            (h) => h.name && h.name.toLowerCase() === 'daan mogot'
-          )?._id;
+    const rolesToFetch = [
+      ROLE_ID.driver,
+      ROLE_ID.driverJkt,
+      // Tambahkan ROLE_ID lain di sini jika ada role baru di masa depan
+    ];
 
-          if (cikarangId) specialHubs.push(cikarangId);
-          if (daanMogotId) specialHubs.push(daanMogotId);
-        }
-      }
-    } catch (parseError) {
-      // Tangani jika JSON.parse(allHubsStr) gagal
-      toastError(`Gagal memproses daftar hub: ${parseError.message}`);
-    }
-
-    if (specialHubs.length === 0) {
-      toastWarning('Daftar hub tidak ditemukan di cache. Hubungi admin.');
-    }
-
-    const isSpecialHub = specialHubs.includes(selectedLocation);
-
-    const rolesToFetch = [ROLE_ID.driver];
-    if (isSpecialHub) {
-      rolesToFetch.push(ROLE_ID.driverJkt);
-    }
-
-    // Panggil fungsi API (tidak berubah)
+    // Panggil fungsi API secara paralel untuk setiap role
     const driverPromises = rolesToFetch.map((roleId) =>
       getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
     );
+
+    // Ambil data vehicle juga
     const vehiclePromise = getVehicles({ hubId: selectedLocation, limit: 500 });
 
-    const driverResponses = await Promise.all(driverPromises);
-    const vehicleResult = await vehiclePromise;
+    // Tunggu semua selesai
+    const [driverResponses, vehicleResult] = await Promise.all([
+      Promise.all(driverPromises),
+      vehiclePromise,
+    ]);
 
-    // Proses data (tidak berubah)
+    // Proses data Driver (Flat array dari berbagai role)
+    // driverResponses adalah array of arrays (hasil per role)
     const rawDrivers = driverResponses.flat();
-    const processedDrivers = rawDrivers.map((driver) => ({
+
+    // Hapus duplikat jika ada user yang punya double role (jarang, tapi untuk safety)
+    const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
+
+    const processedDrivers = uniqueDrivers.map((driver) => ({
       _id: driver._id,
       name: driver.name,
       email: driver.email,
     }));
 
-    // Proses vehicle (tidak berubah)
+    // Proses Vehicle Map
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
@@ -90,7 +74,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return acc;
     }, {});
 
-    // Merge data (tidak berubah)
+    // Merge Driver + Vehicle
     const mergedDriverData = processedDrivers.map((driver) => {
       const vehicleInfo = vehicleMap[driver.email];
       return {
@@ -101,15 +85,12 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan ke localStorage dan kembalikan (tidak berubah)
+    // Simpan ke localStorage
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+
     return mergedDriverData;
   } catch (err) {
-    // --- (PERUBAHAN 3): Jangan "telan" error ---
-    // 'apiService' sudah menampilkan toastError.
-    // Kita lempar error lagi agar komponen pemanggil (page.js, dll)
-    // tahu bahwa fetch gagal dan bisa menghentikan spinner-nya.
+    // Lempar error agar UI tau fetch gagal
     throw err;
-    // --- (SELESAI PERUBAHAN 3) ---
   }
 }
