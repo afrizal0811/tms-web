@@ -13,7 +13,6 @@ import { formatDate } from '@/lib/utils';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import * as XLSX from 'xlsx-js-style';
-import JSZip from 'jszip';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -31,7 +30,6 @@ export default function RangkumanSummary() {
   const [reportPreview, setReportPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('Task Summary');
 
-  // 1. Load Lokasi saat mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLocation = localStorage.getItem('userLocation');
@@ -41,7 +39,6 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // 2. Fetch Driver Data otomatis
   useEffect(() => {
     const fetchDrivers = async () => {
       if (selectedLocation) {
@@ -56,7 +53,6 @@ export default function RangkumanSummary() {
     fetchDrivers();
   }, [selectedLocation]);
 
-  // --- LOGIKA FETCH DATA ---
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedMonth) return;
 
@@ -72,7 +68,6 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
-      // --- LOGIKA H-1 UNTUK ROUTING ---
       const routingStartDate = new Date(startDate);
       routingStartDate.setDate(routingStartDate.getDate() - 1);
       const routingEndDate = new Date(endDate);
@@ -169,55 +164,6 @@ export default function RangkumanSummary() {
     }
   };
 
-  const handleDownloadDebugJson = async () => {
-    if (
-      !reportPreview ||
-      !reportPreview.filteredRawResults ||
-      reportPreview.filteredRawResults.length === 0
-    ) {
-      toastError('Data tidak tersedia untuk di-download');
-      return;
-    }
-
-    try {
-      const zip = new JSZip();
-      const rawData = reportPreview.filteredRawResults;
-      const groupedData = {};
-
-      rawData.forEach((item) => {
-        let dateKey = item.createdTime ? item.createdTime.substring(0, 10) : 'unknown-date';
-        if (!groupedData[dateKey]) groupedData[dateKey] = [];
-        groupedData[dateKey].push(item);
-      });
-
-      Object.keys(groupedData)
-        .sort()
-        .forEach((date) => {
-          const fileName = `Debug_Data_RoutingDate_${date}.json`;
-          const fileContent = JSON.stringify(groupedData[date], null, 2);
-          zip.file(fileName, fileContent);
-        });
-
-      const zipContent = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `Debug_Logs_${selectedLocationName}_${formatDate(selectedMonth)}.zip`;
-
-      const url = window.URL.createObjectURL(zipContent);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = zipFileName;
-      document.body.appendChild(a);
-      a.click();
-
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toastSuccess(`Berhasil download ZIP berisi ${Object.keys(groupedData).length} file JSON.`);
-    } catch (error) {
-      console.error('Gagal membuat ZIP:', error);
-      toastError('Gagal membuat file ZIP: ' + error.message);
-    }
-  };
-
   const tabs = [
     { id: 'Task Summary', label: 'Task Summary' },
     { id: 'Pending Reasons', label: 'Pending Reasons' },
@@ -247,35 +193,69 @@ export default function RangkumanSummary() {
 
     if (activeTab === 'Average KM') {
       const data = reportPreview.averageKmData || [];
+      const monthTotals = reportPreview.monthTotals || {};
 
       if (data.length === 0)
         return <div className="p-6 text-center text-gray-400">Tidak ada data routing.</div>;
 
       return (
-        <div className="w-full overflow-auto max-h-[600px]">
-          <div className="mb-4 flex justify-end">
-            <button
-              onClick={handleDownloadDebugJson}
-              className="text-xs bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded flex items-center gap-2 shadow-sm transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-3 h-3"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
-                />
-              </svg>
-              Download Debug JSON (ZIP)
-            </button>
-          </div>
+        <div className="w-full overflow-auto max-h-[650px]">
+          {/* --- TABEL 1: MONTHLY SUMMARY (CLEAN) --- */}
+          <table className="min-w-full border-collapse border border-gray-300 text-sm mb-8 shadow-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th
+                  rowSpan="2"
+                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-white"
+                >
+                  Date (Month)
+                </th>
+                <th
+                  colSpan="2"
+                  className="border border-gray-300 px-4 py-2 text-center font-bold text-slate-700 bg-white"
+                >
+                  KM Routing (Month)
+                </th>
+                <th
+                  rowSpan="2"
+                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-sky-50"
+                >
+                  Total KM Routing (Month)
+                </th>
+                <th
+                  rowSpan="2"
+                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-white"
+                >
+                  Average KM (Month)
+                </th>
+              </tr>
+              <tr>
+                <th className="border border-gray-300 px-4 py-2 text-center bg-white">Dry</th>
+                <th className="border border-gray-300 px-4 py-2 text-center bg-white">Frozen</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
+              <tr>
+                <td className="border border-gray-300 px-4 py-3 text-center font-medium">
+                  {monthTotals.range}
+                </td>
+                <td className="border border-gray-300 px-4 py-3 text-center">
+                  {monthTotals.dryKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                </td>
+                <td className="border border-gray-300 px-4 py-3 text-center">
+                  {monthTotals.frozenKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                </td>
+                <td className="border border-gray-300 px-4 py-3 text-center font-bold bg-sky-50">
+                  {monthTotals.totalKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                </td>
+                <td className="border border-gray-300 px-4 py-3 text-center">
+                  {monthTotals.avgKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
+          {/* --- TABEL 2: DAILY DETAILS --- */}
           <table className="min-w-full border-collapse border border-gray-300 text-sm">
             <thead className="sticky top-0 bg-sky-600 text-white z-10">
               <tr>
@@ -296,12 +276,6 @@ export default function RangkumanSummary() {
                 </th>
                 <th rowSpan="2" className="border border-sky-700 px-4 py-2">
                   Average KM
-                </th>
-                <th
-                  rowSpan="2"
-                  className="border border-sky-700 px-4 py-2 bg-gray-700 text-gray-200 min-w-[300px]"
-                >
-                  Vehicle Details (Debug Source)
                 </th>
               </tr>
               <tr>
@@ -325,7 +299,6 @@ export default function RangkumanSummary() {
                       >
                         Libur (Minggu)
                       </td>
-                      <td className="border border-gray-300 px-4 py-2"></td>
                     </>
                   ) : (
                     <>
@@ -359,29 +332,6 @@ export default function RangkumanSummary() {
                           maximumFractionDigits: 2,
                         })}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-xs text-gray-600">
-                        {row.vehicleList && row.vehicleList.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-1">
-                            {row.vehicleList.map((v, i) => (
-                              <li
-                                key={i}
-                                className={
-                                  v.type === 'FROZEN' ? 'text-blue-600' : 'text-orange-700'
-                                }
-                              >
-                                <span className="font-semibold">{v.name}</span>
-                                <span className="text-gray-500 mx-1">|</span>
-                                {v.type}
-                                <span className="text-gray-500 mx-1">|</span>
-                                {v.km.toFixed(1)} km
-                                <span className="text-gray-400 ml-1 text-[10px]">({v.source})</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
                     </>
                   )}
                 </tr>
@@ -408,14 +358,11 @@ export default function RangkumanSummary() {
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
         <div>
-          {/* PERBAIKAN 1: HAPUS TEXT LOKASI & DRIVER */}
           <h1 className="text-2xl font-bold text-slate-800">Rangkuman Laporan</h1>
         </div>
 
-        {/* PERBAIKAN 2: Gunakan items-end agar input dan tombol sejajar di bawah */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 items-end w-full md:w-auto">
           <div className="w-full sm:w-auto relative z-30">
-            <label className="block text-xs text-gray-500 mb-1 ml-1 font-medium">Pilih Bulan</label>
             <DatePicker
               selected={selectedMonth}
               onChange={(date) => setSelectedMonth(date)}

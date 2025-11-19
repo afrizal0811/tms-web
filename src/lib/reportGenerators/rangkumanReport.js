@@ -3,8 +3,6 @@
 
 import * as XLSX from 'xlsx-js-style';
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
-
-// Import Generators
 import { generateAverageKmSheet, calculateAverageKmData } from './rangkumanSheets/averageKmSheet';
 import {
   generateTaskSummarySheet,
@@ -14,9 +12,6 @@ import {
   generateTruckUsageSheet,
 } from './rangkumanSheets/otherSheets';
 
-/**
- * Fungsi untuk Preview Web & Debugging
- */
 export function generateRangkumanDataPreview(
   driverData,
   allTasks,
@@ -25,20 +20,18 @@ export function generateRangkumanDataPreview(
   startDateStr,
   endDateStr
 ) {
-  // Panggil kalkulator Average KM
-  const { summaryData, filteredRawData } = calculateAverageKmData(
+  // Ambil data lengkap (summary + monthTotals)
+  const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr
   );
 
   return {
-    // Data tabel
     averageKmData: summaryData,
-    // Data mentah hasil filter (untuk Save JSON)
-    filteredRawResults: filteredRawData,
+    monthTotals: monthTotals, // <-- Return data bulanan untuk UI
 
-    // Placeholder sheet lain
+    // Placeholder
     taskSummaryData: [],
     pendingReasonsData: [],
     timeDriverData: [],
@@ -47,9 +40,6 @@ export function generateRangkumanDataPreview(
   };
 }
 
-/**
- * Generator Excel (Tidak Berubah, hanya import yg menyesuaikan)
- */
 export function generateRangkumanWorkbook(
   driverData,
   allTasks,
@@ -66,6 +56,8 @@ export function generateRangkumanWorkbook(
   generateTimeDriverSheet(wb);
   generateTruckDetailSheet(wb);
   generateTruckUsageSheet(wb);
+
+  // Sheet Average KM (Updated with Month Summary Table)
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr);
 
   const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);

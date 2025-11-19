@@ -11,81 +11,55 @@ function formatLongDate(dateObj) {
   });
 }
 
-// --- LOGIKA TANGGAL BARU (Senin Delivery = Sabtu Routing) ---
-// Input: UTC String (createdTime dari API)
-// Output: YYYY-MM-DD (Tanggal Delivery)
+// Helper: Format "1-30 November 2025"
+function formatMonthRange(startDateStr, endDateStr) {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  const monthYear = start.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  return `${start.getDate()}-${end.getDate()} ${monthYear}`;
+}
+
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
-    // 1. Ambil Waktu Asli (UTC)
     const date = new Date(isoString);
-
-    // 2. Geser ke WIB (UTC+7) secara manual untuk pengecekan hari
-    // Kita memanipulasi epoch time agar fungsi getUTCDay() mengembalikan hari sesuai WIB
     const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
     const dateWIB = new Date(wibTimestamp);
-
-    // 3. Cek Hari Routing (0=Minggu, 1=Senin, ..., 6=Sabtu)
     const routingDay = dateWIB.getUTCDay();
-
-    let offsetDays = 1; // Default H-1 (Routing Senin -> Kirim Selasa)
-
-    // Jika Routing dilakukan hari SABTU (6), maka Pengiriman hari SENIN (+2 hari)
-    if (routingDay === 6) {
-      offsetDays = 2;
-    }
-
-    // 4. Hitung Tanggal Delivery
-    // (WIB Timestamp + Offset Hari)
+    let offsetDays = 1;
+    if (routingDay === 6) offsetDays = 2;
     const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
-    const deliveryDate = new Date(deliveryTimestamp);
-
-    // Kembalikan YYYY-MM-DD
-    return deliveryDate.toISOString().split('T')[0];
+    return new Date(deliveryTimestamp).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
 }
 
+/**
+ * BAGIAN 1: LOGIKA PERHITUNGAN (CLEAN)
+ */
 export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const dailyVehicleMap = {};
-  const filteredRawData = [];
 
+  // A. Processing Data
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
-      // 1. Mandatory Filter
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
       const hasResult = dispatch.result && Array.isArray(dispatch.result.routing);
 
       if (isDone && hasResult) {
-        // 2. Ambil Tanggal DELIVERY (Menggunakan logika baru Sabtu->Senin)
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
-
         const dispatchTimestamp = new Date(dispatch.createdTime).getTime();
 
         if (dateKey) {
-          filteredRawData.push({
-            ...dispatch,
-            _debugDeliveryDate: dateKey,
-          });
-
           if (!dailyVehicleMap[dateKey]) {
             dailyVehicleMap[dateKey] = new Map();
           }
-
           dispatch.result.routing.forEach((route) => {
             const vehicleId = route.vehicleId || route.vehicleName;
-
             const existingEntry = dailyVehicleMap[dateKey].get(vehicleId);
-
-            // Deduplikasi: Ambil data terbaru
             if (!existingEntry || dispatchTimestamp > existingEntry.dispatchTimestamp) {
-              dailyVehicleMap[dateKey].set(vehicleId, {
-                ...route,
-                dispatchTimestamp: dispatchTimestamp,
-                parentDispatchName: dispatch.name,
-                routingCreatedTime: dispatch.createdTime,
-              });
+              dailyVehicleMap[dateKey].set(vehicleId, route);
             }
           });
         }
@@ -97,6 +71,17 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
 
+  // Variabel Akumulasi Bulanan
+  let monthTotals = {
+    range: formatMonthRange(startDateStr, endDateStr),
+    dryKm: 0,
+    frozenKm: 0,
+    totalKm: 0,
+    totalVehicle: 0,
+    avgKm: 0,
+  };
+
+  // B. Looping & Calculation
   while (currentIterDate <= endDateObj) {
     const currentDateString = formatDate(currentIterDate);
     const displayDate = formatLongDate(currentIterDate);
@@ -104,7 +89,6 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 
     let rowData = {
       date: displayDate,
-      dateStr: currentDateString,
       isSunday: isSunday,
       dryCount: 0,
       frozenCount: 0,
@@ -112,7 +96,6 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
       frozenKm: 0,
       totalKm: 0,
       avgKm: 0,
-      vehicleList: [],
     };
 
     if (!isSunday) {
@@ -120,17 +103,14 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 
       if (vehiclesMap) {
         vehiclesMap.forEach((route) => {
-          // 3. Mandatory Filter: Hanya hitung jika ada TRIP
           const hasTrips = route.trips && route.trips.length > 0;
 
           if (hasTrips) {
             const tags = route.vehicleTags || [];
             const distMeter = route.totalDistance || 0;
-
             const isFrozen = tags.some(
               (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
             );
-            const typeLabel = isFrozen ? 'FROZEN' : 'DRY';
 
             if (isFrozen) {
               rowData.frozenCount++;
@@ -139,37 +119,61 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
               rowData.dryCount++;
               rowData.dryKm += distMeter / 1000;
             }
-
-            const routingTimeDebug = route.routingCreatedTime
-              ? route.routingCreatedTime.substring(11, 16)
-              : '?';
-
-            rowData.vehicleList.push({
-              name: route.vehicleName || 'Unknown',
-              type: typeLabel,
-              km: distMeter / 1000,
-              source: `${route.parentDispatchName} (@${routingTimeDebug} UTC)`,
-            });
           }
         });
       }
 
       rowData.totalKm = rowData.dryKm + rowData.frozenKm;
-      const totalVehicle = rowData.dryCount + rowData.frozenCount;
-      rowData.avgKm = totalVehicle > 0 ? rowData.totalKm / totalVehicle : 0;
+      const dailyTotalVehicle = rowData.dryCount + rowData.frozenCount;
+      rowData.avgKm = dailyTotalVehicle > 0 ? rowData.totalKm / dailyTotalVehicle : 0;
+
+      // Akumulasi ke Bulanan
+      monthTotals.dryKm += rowData.dryKm;
+      monthTotals.frozenKm += rowData.frozenKm;
+      monthTotals.totalVehicle += dailyTotalVehicle;
     }
 
     summaryData.push(rowData);
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
 
-  return { summaryData, filteredRawData };
+  // Hitung Total Akhir Bulan
+  monthTotals.totalKm = monthTotals.dryKm + monthTotals.frozenKm;
+  monthTotals.avgKm =
+    monthTotals.totalVehicle > 0 ? monthTotals.totalKm / monthTotals.totalVehicle : 0;
+
+  return { summaryData, monthTotals };
 }
 
+/**
+ * BAGIAN 2: GENERATOR EXCEL (2 Tabel)
+ */
 export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr) {
-  const { summaryData } = calculateAverageKmData(resultsData, startDateStr, endDateStr);
+  const { summaryData, monthTotals } = calculateAverageKmData(
+    resultsData,
+    startDateStr,
+    endDateStr
+  );
 
-  const avgHeader1 = [
+  // --- TABEL 1: MONTH SUMMARY ---
+  const monthHeader1 = [
+    'Date (Month)',
+    'KM Routing (Month)',
+    '',
+    'Total KM Routing (Month)',
+    'Average KM (Month)',
+  ];
+  const monthHeader2 = ['', 'Dry', 'Frozen', '', ''];
+  const monthDataRow = [
+    monthTotals.range,
+    monthTotals.dryKm,
+    monthTotals.frozenKm,
+    monthTotals.totalKm,
+    monthTotals.avgKm,
+  ];
+
+  // --- TABEL 2: DAILY DETAILS ---
+  const dailyHeader1 = [
     'Date',
     'Total Vehicle',
     '',
@@ -178,9 +182,17 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     'Total KM Routing',
     'Average KM',
   ];
-  const avgHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
+  const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
-  const excelRows = [avgHeader1, avgHeader2];
+  // Gabungkan semua baris
+  const excelRows = [
+    monthHeader1,
+    monthHeader2,
+    monthDataRow,
+    [''], // Spasi antar tabel
+    dailyHeader1,
+    dailyHeader2,
+  ];
 
   summaryData.forEach((row) => {
     if (row.isSunday) {
@@ -200,14 +212,23 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
 
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
+  // --- MERGING ---
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
-    { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
-    { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } },
-    { s: { r: 0, c: 5 }, e: { r: 1, c: 5 } },
-    { s: { r: 0, c: 6 }, e: { r: 1, c: 6 } },
+    // Tabel Atas (Month)
+    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // Date
+    { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, // KM Routing Header
+    { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } }, // Total KM
+    { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } }, // Avg KM
+
+    // Tabel Bawah (Daily) - Start Row 4 (Index 4)
+    { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }, // Date
+    { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } }, // Total Vehicle
+    { s: { r: 4, c: 3 }, e: { r: 4, c: 4 } }, // KM Routing
+    { s: { r: 4, c: 5 }, e: { r: 5, c: 5 } }, // Total KM
+    { s: { r: 4, c: 6 }, e: { r: 5, c: 6 } }, // Avg KM
   ];
 
+  // --- STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -215,37 +236,69 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      if (R === 0 || R === 1) {
-        cell.s = { ...styles.header };
-        if (C === 3 || C === 4) {
-          cell.s.fill = styles.yellowHeader;
-          cell.s.font = { bold: true, color: { rgb: '000000' } };
-        }
-      } else {
-        const dataIndex = R - 2;
-        const rowData = summaryData[dataIndex];
+      // === TABEL 1: MONTHLY (Row 0-2) ===
+      if (R < 3) {
+        cell.s = {
+          border: styles.header.border,
+          alignment: { vertical: 'center', horizontal: 'center' },
+        };
 
-        if (rowData && rowData.isSunday) {
-          cell.s = { fill: styles.pinkFill, border: styles.header.border };
-        } else {
-          cell.s = { border: styles.header.border, alignment: { vertical: 'center' } };
+        // Header
+        if (R === 0 || R === 1) {
+          cell.s = { ...cell.s, font: { bold: true } };
+        }
+        // Data
+        if (R === 2) {
           if (C >= 1) {
+            // Kolom Angka
             cell.t = 'n';
-            if (C === 1 || C === 2) {
-              cell.s = { ...cell.s, alignment: styles.center.alignment, numFmt: '0' };
-            } else {
-              if (C === 3 || C === 4) {
-                cell.s = {
-                  ...styles.numberFormat,
-                  ...styles.yellowData,
-                  border: styles.header.border,
-                };
-              } else {
-                cell.s = { ...styles.numberFormat, border: styles.header.border };
-              }
-            }
+            cell.s = { ...cell.s, numFmt: '#,##0.000' }; // 3 desimal sesuai gambar
+          }
+        }
+      }
+
+      // === GAP (Row 3) ===
+      else if (R === 3) {
+        // No style
+      }
+
+      // === TABEL 2: DAILY (Row 4+) ===
+      else {
+        // Header Daily (Row 4 & 5)
+        if (R === 4 || R === 5) {
+          cell.s = { ...styles.header };
+          if (C === 3 || C === 4) {
+            cell.s.fill = styles.yellowHeader;
+            cell.s.font = { bold: true, color: { rgb: '000000' } };
+          }
+        }
+        // Data Daily
+        else {
+          const dataIndex = R - 6; // Offset row
+          const rowData = summaryData[dataIndex];
+
+          if (rowData && rowData.isSunday) {
+            cell.s = { fill: styles.pinkFill, border: styles.header.border };
           } else {
-            cell.s.alignment = { horizontal: 'center', vertical: 'center' };
+            cell.s = { border: styles.header.border, alignment: { vertical: 'center' } };
+            if (C >= 1) {
+              cell.t = 'n';
+              if (C === 1 || C === 2) {
+                cell.s = { ...cell.s, alignment: styles.center.alignment, numFmt: '0' };
+              } else {
+                if (C === 3 || C === 4) {
+                  cell.s = {
+                    ...styles.numberFormat,
+                    ...styles.yellowData,
+                    border: styles.header.border,
+                  };
+                } else {
+                  cell.s = { ...styles.numberFormat, border: styles.header.border };
+                }
+              }
+            } else {
+              cell.s.alignment = { horizontal: 'center', vertical: 'center' };
+            }
           }
         }
       }
