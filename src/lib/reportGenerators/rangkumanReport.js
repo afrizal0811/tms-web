@@ -1,16 +1,21 @@
 // File: src/lib/reportGenerators/rangkumanReport.js
 'use client';
 
-import * as XLSX from 'xlsx-js-style';
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
-import { generateAverageKmSheet, calculateAverageKmData } from './rangkumanSheets/averageKmSheet';
+import * as XLSX from 'xlsx-js-style';
+
+// Import Generators
+import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
 import {
-  generateTaskSummarySheet,
   generatePendingReasonsSheet,
+  generateTaskSummarySheet,
   generateTimeDriverSheet,
   generateTruckDetailSheet,
-  generateTruckUsageSheet,
 } from './rangkumanSheets/otherSheets';
+import {
+  calculateTruckUsageData,
+  generateTruckUsageSheet,
+} from './rangkumanSheets/truckUsageSheet'; // <-- Import Baru
 
 export function generateRangkumanDataPreview(
   driverData,
@@ -18,25 +23,28 @@ export function generateRangkumanDataPreview(
   resultsData,
   locationHistoryData,
   startDateStr,
-  endDateStr
+  endDateStr,
+  hubId // <-- Tambahkan Parameter Hub ID
 ) {
-  // Ambil data lengkap (summary + monthTotals)
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr
   );
 
+  // Hitung data Truck Usage untuk preview web
+  const truckUsageData = calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
+
   return {
     averageKmData: summaryData,
-    monthTotals: monthTotals, // <-- Return data bulanan untuk UI
+    monthTotals: monthTotals,
+    truckUsageData: truckUsageData, // <-- Kirim ke UI
 
     // Placeholder
     taskSummaryData: [],
     pendingReasonsData: [],
     timeDriverData: [],
     truckDetailData: [],
-    truckUsageData: [],
   };
 }
 
@@ -47,7 +55,8 @@ export function generateRangkumanWorkbook(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  hubName
+  hubName,
+  hubId // <-- Tambahkan Parameter Hub ID
 ) {
   const wb = XLSX.utils.book_new();
 
@@ -55,9 +64,10 @@ export function generateRangkumanWorkbook(
   generatePendingReasonsSheet(wb);
   generateTimeDriverSheet(wb);
   generateTruckDetailSheet(wb);
-  generateTruckUsageSheet(wb);
 
-  // Sheet Average KM (Updated with Month Summary Table)
+  // Panggil Generator Truck Usage yang baru
+  generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId);
+
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr);
 
   const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);

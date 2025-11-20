@@ -1,17 +1,17 @@
 // File: src/features/reportData/RangkumanSummary.js
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import {
+  generateRangkumanDataPreview,
+  generateRangkumanWorkbook,
+} from '@/lib/reportGenerators/rangkumanReport';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { formatDate } from '@/lib/utils';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getTasks, getResultsSummary, getLocationHistories } from '@/lib/apiService';
-import {
-  generateRangkumanWorkbook,
-  generateRangkumanDataPreview,
-} from '@/lib/reportGenerators/rangkumanReport';
-import { formatDate } from '@/lib/utils';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import * as XLSX from 'xlsx-js-style';
 
 export default function RangkumanSummary() {
@@ -21,12 +21,7 @@ export default function RangkumanSummary() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
 
-  const [rawData, setRawData] = useState({
-    tasks: [],
-    results: [],
-    locations: [],
-  });
-
+  const [rawData, setRawData] = useState({ tasks: [], results: [], locations: [] });
   const [reportPreview, setReportPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('Task Summary');
 
@@ -116,7 +111,8 @@ export default function RangkumanSummary() {
         newRawData.results,
         newRawData.locations,
         startStr,
-        endStr
+        endStr,
+        selectedLocation
       );
       setReportPreview(preview);
     } catch (err) {
@@ -153,9 +149,9 @@ export default function RangkumanSummary() {
         rawData.locations,
         formatDate(startDate),
         formatDate(endDate),
-        selectedLocationName
+        selectedLocationName,
+        selectedLocation
       );
-
       XLSX.writeFile(wb, excelFileName);
       toastSuccess('Rangkuman berhasil di-download!');
     } catch (err) {
@@ -191,157 +187,328 @@ export default function RangkumanSummary() {
       );
     }
 
-    if (activeTab === 'Average KM') {
-      const data = reportPreview.averageKmData || [];
-      const monthTotals = reportPreview.monthTotals || {};
+    // --- RENDER TRUCK USAGE ---
+    if (activeTab === 'Truck Usage') {
+      const { dateMap, dateKeys, vehicleTypes } = reportPreview.truckUsageData || {};
 
-      if (data.length === 0)
-        return <div className="p-6 text-center text-gray-400">Tidak ada data routing.</div>;
+      if (!dateMap) return <div className="p-6 text-center text-gray-400">Tidak ada data.</div>;
+
+      // Colors
+      const colorHeader = '#d9d2e9';
+      const colorDry = '#fae2d5';
+      const colorDryTotal = '#f9cb9c';
+      const colorFrozen = '#dbe9f7';
+      const colorFrozenTotal = '#c9daf8';
+      const colorOTV = '#d9f2d0';
+      const colorSunday = '#ffc7ce';
+
+      // Styles Header (Tetap pakai border lengkap untuk header agar rapi)
+      const thClass =
+        'border border-gray-400 px-2 py-2 text-center min-w-[60px] text-xs font-bold text-slate-700';
+
+      // Styles Data Body:
+      // 1. border-b border-gray-200: Garis tipis antar baris.
+      // 2. border-r-0: Hapus garis vertikal default (agar bersih).
+      const tdClass =
+        'border-b border-gray-200 border-r-0 px-2 py-1 text-center text-xs text-slate-700';
+
+      // Class Border Tebal Kanan (Pemisah Tanggal)
+      const thickBorderClass = 'border-r-[3px] border-r-slate-400';
+
+      const getBgStyle = (baseColor, isSunday) => ({
+        backgroundColor: isSunday ? colorSunday : baseColor,
+      });
+
+      // Helper khusus untuk cell data agar border tebal tetap muncul
+      const getCellClass = (isLastCol) => {
+        return isLastCol
+          ? `${tdClass} ${thickBorderClass}` // Pakai border tebal di kanan
+          : tdClass; // Tanpa border vertikal
+      };
 
       return (
         <div className="w-full overflow-auto max-h-[650px]">
-          {/* --- TABEL 1: MONTHLY SUMMARY (CLEAN) --- */}
-          <table className="min-w-full border-collapse border border-gray-300 text-sm mb-8 shadow-sm">
-            <thead className="bg-gray-50">
+          <table className="border-collapse border border-gray-300 text-sm whitespace-nowrap">
+            {/* HEADER */}
+            <thead className="sticky top-0 z-30" style={{ backgroundColor: colorHeader }}>
               <tr>
                 <th
                   rowSpan="2"
-                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-white"
+                  className={`${thClass} w-[100px] sticky left-0 z-40`}
+                  style={{ backgroundColor: colorHeader }}
                 >
-                  Date (Month)
-                </th>
-                <th
-                  colSpan="2"
-                  className="border border-gray-300 px-4 py-2 text-center font-bold text-slate-700 bg-white"
-                >
-                  KM Routing (Month)
+                  Vehicle Storage
                 </th>
                 <th
                   rowSpan="2"
-                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-sky-50"
+                  className={`${thClass} w-[150px] sticky left-[100px] z-40`}
+                  style={{ backgroundColor: colorHeader }}
                 >
-                  Total KM Routing (Month)
+                  Vehicle Types
                 </th>
-                <th
-                  rowSpan="2"
-                  className="border border-gray-300 px-4 py-3 text-center font-bold text-slate-700 bg-white"
-                >
-                  Average KM (Month)
-                </th>
+                {dateKeys.map((d, i) => (
+                  <th
+                    key={i}
+                    colSpan="3"
+                    className={`${thClass} ${thickBorderClass}`}
+                    style={getBgStyle(colorHeader, d.isSunday)}
+                  >
+                    {d.day}
+                  </th>
+                ))}
               </tr>
               <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center bg-white">Dry</th>
-                <th className="border border-gray-300 px-4 py-2 text-center bg-white">Frozen</th>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <th className={thClass} style={getBgStyle(colorHeader, d.isSunday)}>
+                      TMS
+                    </th>
+                    <th className={thClass} style={getBgStyle(colorHeader, d.isSunday)}>
+                      Non TMS
+                    </th>
+                    <th
+                      className={`${thClass} ${thickBorderClass}`}
+                      style={getBgStyle(colorHeader, d.isSunday)}
+                    >
+                      TVU
+                    </th>
+                  </Fragment>
+                ))}
               </tr>
             </thead>
-            <tbody className="bg-white">
-              <tr>
-                <td className="border border-gray-300 px-4 py-3 text-center font-medium">
-                  {monthTotals.range}
-                </td>
-                <td className="border border-gray-300 px-4 py-3 text-center">
-                  {monthTotals.dryKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
-                <td className="border border-gray-300 px-4 py-3 text-center">
-                  {monthTotals.frozenKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
-                <td className="border border-gray-300 px-4 py-3 text-center font-bold bg-sky-50">
-                  {monthTotals.totalKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
-                <td className="border border-gray-300 px-4 py-3 text-center">
-                  {monthTotals.avgKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
-              </tr>
-            </tbody>
-          </table>
 
-          {/* --- TABEL 2: DAILY DETAILS --- */}
-          <table className="min-w-full border-collapse border border-gray-300 text-sm">
-            <thead className="sticky top-0 bg-sky-600 text-white z-10">
-              <tr>
-                <th rowSpan="2" className="border border-sky-700 px-4 py-2">
-                  Delivery Date
-                </th>
-                <th colSpan="2" className="border border-sky-700 px-4 py-2 text-center">
-                  Total Vehicle
-                </th>
-                <th
-                  colSpan="2"
-                  className="border border-sky-700 px-4 py-2 text-center bg-yellow-200 text-black font-bold"
-                >
-                  KM Routing
-                </th>
-                <th rowSpan="2" className="border border-sky-700 px-4 py-2">
-                  Total KM Routing
-                </th>
-                <th rowSpan="2" className="border border-sky-700 px-4 py-2">
-                  Average KM
-                </th>
-              </tr>
-              <tr>
-                <th className="border border-sky-700 px-4 py-2">Dry</th>
-                <th className="border border-sky-700 px-4 py-2">Frozen</th>
-                <th className="border border-sky-700 px-4 py-2 bg-yellow-200 text-black">Dry</th>
-                <th className="border border-sky-700 px-4 py-2 bg-yellow-200 text-black">Frozen</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {data.map((row, idx) => (
-                <tr key={idx} className={`hover:bg-gray-50 ${row.isSunday ? 'bg-red-100' : ''}`}>
-                  <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap font-medium">
-                    {row.date}
+            <tbody>
+              {/* 1. DRY SECTION */}
+              {vehicleTypes.map((type, idx) => (
+                <tr key={`dry-${type}`}>
+                  {idx === 0 ? (
+                    <td
+                      rowSpan={vehicleTypes.length}
+                      className={`${tdClass} font-bold align-middle sticky left-0 z-20 border-r border-gray-300`}
+                      style={{ backgroundColor: colorDry }}
+                    >
+                      Dry
+                    </td>
+                  ) : null}
+                  <td
+                    className={`${tdClass} text-left sticky left-[100px] z-20 border-r border-gray-300`}
+                    style={{ backgroundColor: colorDry }}
+                  >
+                    {type}
                   </td>
-                  {row.isSunday ? (
-                    <>
+
+                  {dateKeys.map((d, i) => (
+                    <Fragment key={i}>
+                      <td className={getCellClass(false)} style={getBgStyle(colorDry, d.isSunday)}>
+                        {dateMap[d.str].Dry[type] || ''}
+                      </td>
                       <td
-                        colSpan="6"
-                        className="border border-gray-300 px-4 py-2 bg-red-50 text-center text-gray-400 text-xs"
-                      >
-                        Libur (Minggu)
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        {row.dryCount}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        {row.frozenCount}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center bg-yellow-50">
-                        {row.dryKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center bg-yellow-50">
-                        {row.frozenKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-medium">
-                        {row.totalKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        {row.avgKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                    </>
-                  )}
+                        className={getCellClass(false)}
+                        style={getBgStyle(colorDry, d.isSunday)}
+                      ></td>
+                      <td
+                        className={getCellClass(true)}
+                        style={getBgStyle(colorDry, d.isSunday)}
+                      ></td>
+                    </Fragment>
+                  ))}
                 </tr>
               ))}
+
+              {/* Interbranch Dry (MERGED & LEFT ALIGNED) */}
+              <tr>
+                {/* colSpan 2 menggabungkan kolom Storage & Type */}
+                <td
+                  colSpan="2"
+                  className={`${tdClass} text-left font-bold sticky left-0 z-20 border-r border-gray-300 pl-4`}
+                  style={{ backgroundColor: colorDry }}
+                >
+                  Interbranch
+                </td>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorDry, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorDry, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(true)}
+                      style={getBgStyle(colorDry, d.isSunday)}
+                    ></td>
+                  </Fragment>
+                ))}
+              </tr>
+
+              {/* Total Dry */}
+              <tr className="font-bold">
+                {/* Kita biarkan cell pertama kosong untuk alignment, atau merge juga jika mau */}
+                <td
+                  className={`${tdClass} sticky left-0 z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorDryTotal }}
+                ></td>
+                <td
+                  className={`${tdClass} text-left sticky left-[100px] z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorDryTotal }}
+                >
+                  Total Used
+                </td>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorDryTotal, d.isSunday)}
+                    >
+                      {dateMap[d.str].DryTotal || ''}
+                    </td>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorDryTotal, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(true)}
+                      style={getBgStyle(colorDryTotal, d.isSunday)}
+                    ></td>
+                  </Fragment>
+                ))}
+              </tr>
+
+              {/* 2. FROZEN SECTION */}
+              {vehicleTypes.map((type, idx) => (
+                <tr key={`frz-${type}`}>
+                  {idx === 0 ? (
+                    <td
+                      rowSpan={vehicleTypes.length}
+                      className={`${tdClass} font-bold align-middle sticky left-0 z-20 border-r border-gray-300`}
+                      style={{ backgroundColor: colorFrozen }}
+                    >
+                      Frozen
+                    </td>
+                  ) : null}
+                  <td
+                    className={`${tdClass} text-left sticky left-[100px] z-20 border-r border-gray-300`}
+                    style={{ backgroundColor: colorFrozen }}
+                  >
+                    {type}
+                  </td>
+                  {dateKeys.map((d, i) => (
+                    <Fragment key={i}>
+                      <td
+                        className={getCellClass(false)}
+                        style={getBgStyle(colorFrozen, d.isSunday)}
+                      >
+                        {dateMap[d.str].Frozen[type] || ''}
+                      </td>
+                      <td
+                        className={getCellClass(false)}
+                        style={getBgStyle(colorFrozen, d.isSunday)}
+                      ></td>
+                      <td
+                        className={getCellClass(true)}
+                        style={getBgStyle(colorFrozen, d.isSunday)}
+                      ></td>
+                    </Fragment>
+                  ))}
+                </tr>
+              ))}
+
+              {/* Interbranch Frozen (MERGED & LEFT ALIGNED) */}
+              <tr>
+                <td
+                  colSpan="2"
+                  className={`${tdClass} text-left font-bold sticky left-0 z-20 border-r border-gray-300 pl-4`}
+                  style={{ backgroundColor: colorFrozen }}
+                >
+                  Interbranch
+                </td>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorFrozen, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorFrozen, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(true)}
+                      style={getBgStyle(colorFrozen, d.isSunday)}
+                    ></td>
+                  </Fragment>
+                ))}
+              </tr>
+
+              {/* Total Frozen */}
+              <tr className="font-bold">
+                <td
+                  className={`${tdClass} sticky left-0 z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorFrozenTotal }}
+                ></td>
+                <td
+                  className={`${tdClass} text-left sticky left-[100px] z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorFrozenTotal }}
+                >
+                  Total Used
+                </td>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorFrozenTotal, d.isSunday)}
+                    >
+                      {dateMap[d.str].FrozenTotal || ''}
+                    </td>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorFrozenTotal, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(true)}
+                      style={getBgStyle(colorFrozenTotal, d.isSunday)}
+                    ></td>
+                  </Fragment>
+                ))}
+              </tr>
+
+              {/* 3. OTV */}
+              <tr className="font-bold">
+                <td
+                  className={`${tdClass} sticky left-0 z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorOTV }}
+                ></td>
+                <td
+                  className={`${tdClass} text-left sticky left-[100px] z-20 border-r border-gray-300`}
+                  style={{ backgroundColor: colorOTV }}
+                >
+                  OTV
+                </td>
+                {dateKeys.map((d, i) => (
+                  <Fragment key={i}>
+                    <td className={getCellClass(false)} style={getBgStyle(colorOTV, d.isSunday)}>
+                      {dateMap[d.str].OTV || ''}
+                    </td>
+                    <td
+                      className={getCellClass(false)}
+                      style={getBgStyle(colorOTV, d.isSunday)}
+                    ></td>
+                    <td
+                      className={getCellClass(true)}
+                      style={getBgStyle(colorOTV, d.isSunday)}
+                    ></td>
+                  </Fragment>
+                ))}
+              </tr>
             </tbody>
           </table>
         </div>
       );
     }
 
+    // Default View
     return (
       <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white p-8 text-center">
         <p className="text-gray-500 italic">
