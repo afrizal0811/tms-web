@@ -1,5 +1,5 @@
 // File: src/app/rangkuman/page.js
-import RangkumanSummary from '@/features/reportData/RangkumanSummary';
+import RangkumanSummary from '@/features/rangkuman/RangkumanSummary';
 import AppLayout from '@/components/AppLayout'; // Import AppLayout
 
 export const metadata = {
