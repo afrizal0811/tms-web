@@ -4,8 +4,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
-// --- IMPORTS (Path menyesuaikan lokasi baru) ---
 import { getTasks, getResultsSummary, getLocationHistories } from '@/lib/apiService';
 import {
   generateRangkumanWorkbook,
@@ -15,10 +13,12 @@ import { formatDate } from '@/lib/utils';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import * as XLSX from 'xlsx-js-style';
+import JSZip from 'jszip';
 
 // --- IMPORT TABS ---
 import TruckUsageTab from './tabs/TruckUsageTab';
 import AverageKmTab from './tabs/AverageKmTab';
+import TruckDetailTab from './tabs/TruckDetailTab'; // <-- IMPORT BARU
 import PlaceholderTab from './tabs/PlaceholderTab';
 
 export default function RangkumanSummary() {
@@ -73,6 +73,7 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
+      // Logika H-1 untuk Routing
       const routingStartDate = new Date(startDate);
       routingStartDate.setDate(routingStartDate.getDate() - 1);
       const routingEndDate = new Date(endDate);
@@ -172,16 +173,62 @@ export default function RangkumanSummary() {
     }
   };
 
+  // --- DEBUG DOWNLOAD (Opsional) ---
+  const handleDownloadDebugJson = async () => {
+    if (
+      !reportPreview ||
+      !reportPreview.filteredRawResults ||
+      reportPreview.filteredRawResults.length === 0
+    ) {
+      toastError('Data tidak tersedia untuk di-download');
+      return;
+    }
+    try {
+      const zip = new JSZip();
+      const rawData = reportPreview.filteredRawResults;
+      const groupedData = {};
+
+      rawData.forEach((item) => {
+        let dateKey = item._debugDeliveryDate || 'unknown';
+        if (!groupedData[dateKey]) groupedData[dateKey] = [];
+        groupedData[dateKey].push(item);
+      });
+
+      Object.keys(groupedData)
+        .sort()
+        .forEach((date) => {
+          zip.file(
+            `Debug_Routing_Delivery_${date}.json`,
+            JSON.stringify(groupedData[date], null, 2)
+          );
+        });
+
+      const zipContent = await zip.generateAsync({ type: 'blob' });
+      const zipFileName = `Debug_Logs_${selectedLocationName}_${formatDate(selectedMonth)}.zip`;
+
+      const url = window.URL.createObjectURL(zipContent);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipFileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const tabs = [
     { id: 'Task Summary', label: 'Task Summary' },
     { id: 'Pending Reasons', label: 'Pending Reasons' },
     { id: 'Time Driver', label: 'Time Driver' },
-    { id: 'Truck Detail', label: 'Truck Detail' },
+    { id: 'Truck Detail', label: 'Truck Detail' }, // <-- TAB BARU
     { id: 'Truck Usage', label: 'Truck Usage' },
     { id: 'Average KM', label: 'Average KM of Routing' },
   ];
 
-  // --- RENDER CONTENT (Clean Switch Logic) ---
+  // --- RENDER CONTENT ---
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -200,6 +247,7 @@ export default function RangkumanSummary() {
       );
     }
 
+    // RENDER SESUAI TAB AKTIF
     switch (activeTab) {
       case 'Truck Usage':
         return <TruckUsageTab data={reportPreview.truckUsageData} />;
@@ -210,12 +258,13 @@ export default function RangkumanSummary() {
             monthTotals={reportPreview.monthTotals}
           />
         );
+      case 'Truck Detail': // <-- RENDER TAB BARU
+        return <TruckDetailTab data={reportPreview.truckDetailData} />;
       default:
         return <PlaceholderTab tabName={activeTab} />;
     }
   };
 
-  // --- JSX ---
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
