@@ -1,7 +1,6 @@
-// File: src/features/rangkuman/RangkumanSummary.js
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getTasks, getResultsSummary, getLocationHistories } from '@/lib/apiService';
@@ -13,26 +12,35 @@ import { formatDate } from '@/lib/utils';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import * as XLSX from 'xlsx-js-style';
-import JSZip from 'jszip';
 
 // --- IMPORT TABS ---
 import TruckUsageTab from './tabs/TruckUsageTab';
 import AverageKmTab from './tabs/AverageKmTab';
-import TruckDetailTab from './tabs/TruckDetailTab'; // <-- IMPORT BARU
+import TruckDetailTab from './tabs/TruckDetailTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
+
+  // State Data
   const [driverData, setDriverData] = useState([]);
+  const [rawData, setRawData] = useState({
+    tasks: [],
+    results: [],
+    locations: [],
+  });
+
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
-
-  const [rawData, setRawData] = useState({ tasks: [], results: [], locations: [] });
   const [reportPreview, setReportPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('Task Summary');
 
-  // 1. Load Lokasi
+  // --- LOADING UX STATES ---
+  const [elapsedTime, setElapsedTime] = useState(0); // Timer detik
+  const [pendingEndpoints, setPendingEndpoints] = useState([]); // List endpoint yg pending
+
+  // 1. Load Lokasi dari LocalStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLocation = localStorage.getItem('userLocation');
@@ -42,26 +50,48 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // 2. Fetch Driver
+  // 2. Timer Logic
   useEffect(() => {
-    const fetchDrivers = async () => {
-      if (selectedLocation) {
-        try {
-          const drivers = await getOrFetchDriverData(selectedLocation);
-          setDriverData(drivers || []);
-        } catch (error) {
-          console.error('Gagal memuat driver data:', error);
-        }
-      }
+    let interval = null;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
     };
-    fetchDrivers();
-  }, [selectedLocation]);
+  }, [isLoading]);
 
-  // --- LOGIKA FETCH DATA ---
+  // Helper: Format Detik ke MM:SS
+  const formatTimer = (seconds) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // 3. Helper Wrapper untuk Tracking Promise
+  const fetchWithTracker = async (promise, label) => {
+    setPendingEndpoints((prev) => [...prev, label]);
+    try {
+      const result = await promise;
+      return result;
+    } finally {
+      setPendingEndpoints((prev) => prev.filter((item) => item !== label));
+    }
+  };
+
+  // 4. Fetch Data (Gabungan API & Driver)
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedMonth) return;
 
     setIsLoading(true);
+    setPendingEndpoints([]); // Reset pending
+
     try {
       const year = selectedMonth.getFullYear();
       const month = selectedMonth.getMonth();
@@ -84,40 +114,62 @@ export default function RangkumanSummary() {
       const routingTimeFrom = `${routingStartStr} 00:00:00`;
       const routingTimeTo = `${routingEndStr} 23:59:59`;
 
-      const [tasksRes, resultsRes, locRes] = await Promise.all([
-        getTasks({
-          hubId: selectedLocation,
-          status: 'DONE',
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-          timeBy: 'doneTime',
-          limit: 3000,
-        }),
-        getResultsSummary({
-          hubId: selectedLocation,
-          dateFrom: routingTimeFrom,
-          dateTo: routingTimeTo,
-          limit: 2000,
-        }),
-        getLocationHistories({
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-          limit: 3000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        }),
+      // --- PARALLEL FETCHING DENGAN TRACKER ---
+      const [tasksRes, resultsRes, locRes, driversRes] = await Promise.all([
+        fetchWithTracker(
+          getTasks({
+            hubId: selectedLocation,
+            status: 'DONE',
+            timeFrom: timeFrom,
+            timeTo: timeTo,
+            timeBy: 'doneTime',
+            limit: 10000,
+          }),
+          'Task' // Label untuk /tasks
+        ),
+        fetchWithTracker(
+          getResultsSummary({
+            hubId: selectedLocation,
+            dateFrom: routingTimeFrom,
+            dateTo: routingTimeTo,
+            limit: 10000,
+          }),
+          'Routing' // Label untuk /results
+        ),
+        fetchWithTracker(
+          getLocationHistories({
+            timeFrom: timeFrom,
+            timeTo: timeTo,
+            limit: 10000,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
+          }),
+          'History' // Label untuk /location-histories
+        ),
+        getOrFetchDriverData(selectedLocation), // Driver biasanya cepat, opsional dilacak
       ]);
 
+      // 1. Proses Driver
+      const drivers = driversRes || [];
+      setDriverData(drivers);
+
+      // 2. Proses Results (Filter Done)
+      const filteredResults = (resultsRes || []).filter(
+        (item) => item.dispatchStatus && item.dispatchStatus.toLowerCase() === 'done'
+      );
+
+      // 3. Simpan Raw Data
       const newRawData = {
         tasks: tasksRes || [],
-        results: resultsRes || [],
+        results: filteredResults,
         locations: locRes || [],
       };
       setRawData(newRawData);
 
+      // 4. Generate Preview Langsung
       const preview = generateRangkumanDataPreview(
-        driverData,
+        drivers,
         newRawData.tasks,
         newRawData.results,
         newRawData.locations,
@@ -129,13 +181,16 @@ export default function RangkumanSummary() {
     } catch (err) {
       console.error(err);
       toastError('Gagal mengambil data: ' + err.message);
+      // Reset jika error
       setRawData({ tasks: [], results: [], locations: [] });
+      setDriverData([]);
       setReportPreview(null);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedLocation, selectedMonth, driverData]);
+  }, [selectedLocation, selectedMonth]);
 
+  // Trigger Fetch saat Lokasi/Bulan berubah
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -144,8 +199,7 @@ export default function RangkumanSummary() {
   const handleDownloadExcel = () => {
     if (!selectedMonth) return;
     if (driverData.length === 0) {
-      toastError('Data Driver belum siap. Coba refresh halaman.');
-      return;
+      toastError('Data Driver belum siap atau kosong.');
     }
 
     const year = selectedMonth.getFullYear();
@@ -173,57 +227,11 @@ export default function RangkumanSummary() {
     }
   };
 
-  // --- DEBUG DOWNLOAD (Opsional) ---
-  const handleDownloadDebugJson = async () => {
-    if (
-      !reportPreview ||
-      !reportPreview.filteredRawResults ||
-      reportPreview.filteredRawResults.length === 0
-    ) {
-      toastError('Data tidak tersedia untuk di-download');
-      return;
-    }
-    try {
-      const zip = new JSZip();
-      const rawData = reportPreview.filteredRawResults;
-      const groupedData = {};
-
-      rawData.forEach((item) => {
-        let dateKey = item._debugDeliveryDate || 'unknown';
-        if (!groupedData[dateKey]) groupedData[dateKey] = [];
-        groupedData[dateKey].push(item);
-      });
-
-      Object.keys(groupedData)
-        .sort()
-        .forEach((date) => {
-          zip.file(
-            `Debug_Routing_Delivery_${date}.json`,
-            JSON.stringify(groupedData[date], null, 2)
-          );
-        });
-
-      const zipContent = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `Debug_Logs_${selectedLocationName}_${formatDate(selectedMonth)}.zip`;
-
-      const url = window.URL.createObjectURL(zipContent);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = zipFileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const tabs = [
     { id: 'Task Summary', label: 'Task Summary' },
     { id: 'Pending Reasons', label: 'Pending Reasons' },
     { id: 'Time Driver', label: 'Time Driver' },
-    { id: 'Truck Detail', label: 'Truck Detail' }, // <-- TAB BARU
+    { id: 'Truck Detail', label: 'Truck Detail' },
     { id: 'Truck Usage', label: 'Truck Usage' },
     { id: 'Average KM', label: 'Average KM of Routing' },
   ];
@@ -231,10 +239,25 @@ export default function RangkumanSummary() {
   // --- RENDER CONTENT ---
   const renderContent = () => {
     if (isLoading) {
+      // LOGIKA PESAN LOADING
+      const showLongLoadingMsg = elapsedTime > 120; // > 2 menit
+      const pendingText = pendingEndpoints.join(', ');
+
       return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
-          <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-          <p>Sedang mengambil data bulan ini...</p>
+        <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
+          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+
+          <div className="text-center space-y-1">
+            <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
+            <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
+          </div>
+
+          {showLongLoadingMsg && pendingEndpoints.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md max-w-md text-center text-sm animate-pulse">
+              <p className="font-semibold">Memproses banyak data di {pendingText}.</p>
+              <p>Mohon tunggu.</p>
+            </div>
+          )}
         </div>
       );
     }
@@ -247,19 +270,22 @@ export default function RangkumanSummary() {
       );
     }
 
-    // RENDER SESUAI TAB AKTIF
+    const renderTabContent = (Component, props) => (
+      <div className="w-full h-[calc(100vh-240px)] flex flex-col">
+        <Component {...props} />
+      </div>
+    );
+
     switch (activeTab) {
       case 'Truck Usage':
-        return <TruckUsageTab data={reportPreview.truckUsageData} />;
+        return renderTabContent(TruckUsageTab, { data: reportPreview.truckUsageData });
       case 'Average KM':
-        return (
-          <AverageKmTab
-            data={reportPreview.averageKmData}
-            monthTotals={reportPreview.monthTotals}
-          />
-        );
-      case 'Truck Detail': // <-- RENDER TAB BARU
-        return <TruckDetailTab data={reportPreview.truckDetailData} />;
+        return renderTabContent(AverageKmTab, {
+          data: reportPreview.averageKmData,
+          monthTotals: reportPreview.monthTotals,
+        });
+      case 'Truck Detail':
+        return renderTabContent(TruckDetailTab, { data: reportPreview.truckDetailData });
       default:
         return <PlaceholderTab tabName={activeTab} />;
     }
@@ -273,7 +299,8 @@ export default function RangkumanSummary() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 items-end w-full md:w-auto">
-          <div className="w-full sm:w-auto relative z-30">
+          <div className="w-full sm:w-auto relative z-50">
+            <label className="block text-xs text-gray-400 mb-1 ml-1">Pilih Bulan</label>
             <DatePicker
               selected={selectedMonth}
               onChange={(date) => setSelectedMonth(date)}
