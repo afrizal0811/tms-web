@@ -70,7 +70,7 @@ export default function Navbar() {
   return (
     <nav
       ref={navRef}
-      className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm"
+      className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm"
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-4 sm:space-x-6">
@@ -137,8 +137,8 @@ export default function Navbar() {
         <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/laporan">Laporan (Satuan)</MobileNavLink>
-            <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>
             <MobileNavLink href="/laporan/bulk">Laporan (Bulk)</MobileNavLink>
+            <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
 

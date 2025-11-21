@@ -21,29 +21,37 @@ export default function TimeDriverTab({ data }) {
   const tdClass =
     'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700 whitespace-nowrap';
 
-  // Sticky Columns
+  // --- UPDATE Z-INDEX ---
+  // Menggunakan z-10 dan z-20 agar header tetap di atas body,
+  // tapi tidak menutupi komponen lain yang lebih penting (seperti Navbar App / Dropdown)
   const stickyType = 'sticky left-0 z-20 border-r';
   const stickyPlate = 'sticky left-[80px] z-20 border-r';
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
+  const stickyHeaderRow = 'sticky top-0 z-10 bg-gray-100'; // Turunkan ke z-10
+  const stickyHeaderCol = 'sticky z-30'; // Header + Kolom Kiri (20+10)
 
   return (
     <div className="w-full overflow-auto h-full">
       <table className="border-collapse border-0 text-sm whitespace-nowrap">
-        <thead className="sticky top-0 z-30 bg-gray-100">
+        <thead className={stickyHeaderRow}>
           {/* Row 1: Headers */}
           <tr>
-            <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
+            {/* Area Sticky Kiri Atas (Corner) - z-30 agar paling atas */}
+            <th
+              rowSpan="2"
+              className={`${thClass} min-w-20 left-0 ${stickyHeaderCol} ${COLOR_A}`}
+            >
               Type
             </th>
             <th
               rowSpan="2"
-              className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}
+              className={`${thClass} min-w-[100px] left-20 ${stickyHeaderCol} ${COLOR_A}`}
             >
               Licence No.
             </th>
             <th
               rowSpan="2"
-              className={`${thClass} min-w-[200px] sticky left-[180px] z-40 ${COLOR_A} border-r-2 border-slate-400`}
+              className={`${thClass} min-w-[200px] left-[180px] ${stickyHeaderCol} ${COLOR_A} border-r-2 border-slate-400`}
             >
               Driver
             </th>
@@ -83,7 +91,7 @@ export default function TimeDriverTab({ data }) {
             const driver = driverMap[email];
             return (
               <tr key={email} className="hover:bg-gray-50">
-                {/* Info Driver */}
+                {/* Info Driver - Sticky Left (z-20) */}
                 <td className={`${tdClass} ${stickyType} bg-white`}>{driver.type}</td>
                 <td className={`${tdClass} ${stickyPlate} bg-white`}>{driver.plat}</td>
                 <td
@@ -99,7 +107,6 @@ export default function TimeDriverTab({ data }) {
                   const cellBg = isSun ? COLOR_C : '';
                   const emptyBg = isSun ? COLOR_C : 'bg-gray-50';
 
-                  // Jika tidak ada data
                   if (!metrics || !metrics.hasData) {
                     return (
                       <Fragment key={i}>
@@ -110,9 +117,6 @@ export default function TimeDriverTab({ data }) {
                     );
                   }
 
-                  // --- UPDATE UTAMA DI SINI ---
-                  // Kita langsung ambil data yang sudah diformat (startDisplay, dll)
-                  // Tidak perlu extractTime() lagi karena sudah dilakukan di calculation logic
                   const { startDisplay, finishDisplay, durationDisplay, dayDiff } = metrics;
 
                   return (
@@ -122,7 +126,6 @@ export default function TimeDriverTab({ data }) {
                       </td>
                       <td className={`${tdClass} ${cellBg}`}>
                         {finishDisplay}
-                        {/* Tampilkan indikator +1 jika beda hari */}
                         {dayDiff > 0 && (
                           <span className="text-red-600 text-[10px] ml-1 font-bold">
                             (+{dayDiff})

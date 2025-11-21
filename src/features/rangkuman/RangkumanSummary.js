@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import {
+  generateRangkumanDataPreview,
+  generateRangkumanWorkbook,
+} from '@/lib/reportGenerators/rangkumanReport';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { formatDate } from '@/lib/utils';
+import { useCallback, useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getTasks, getResultsSummary, getLocationHistories } from '@/lib/apiService';
-import {
-  generateRangkumanWorkbook,
-  generateRangkumanDataPreview,
-} from '@/lib/reportGenerators/rangkumanReport';
-import { formatDate } from '@/lib/utils';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import * as XLSX from 'xlsx-js-style';
 
 // --- IMPORT TABS ---
-import TruckUsageTab from './tabs/TruckUsageTab';
 import AverageKmTab from './tabs/AverageKmTab';
-import TruckDetailTab from './tabs/TruckDetailTab';
-import TimeDriverTab from './tabs/TimeDriverTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
+import TimeDriverTab from './tabs/TimeDriverTab';
+import TruckDetailTab from './tabs/TruckDetailTab';
+import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -103,6 +103,13 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
+      // --- LOGIKA KHUSUS LOCATION HISTORY (H-1 Jam 23:00:00) ---
+      const locStartDate = new Date(startDate);
+      locStartDate.setDate(locStartDate.getDate() - 1); // Mundur 1 hari
+      const locStartStr = formatDate(locStartDate);
+      const locTimeFrom = `${locStartStr} 23:00:00`; // Set start jam 23:00
+
+      // Logika H-1 untuk Routing (Existing)
       const routingStartDate = new Date(startDate);
       routingStartDate.setDate(routingStartDate.getDate() - 1);
       const routingEndDate = new Date(endDate);
@@ -118,7 +125,7 @@ export default function RangkumanSummary() {
           getTasks({
             hubId: selectedLocation,
             status: 'DONE',
-            timeFrom: timeFrom,
+            timeFrom: timeFrom, // Tetap normal (00:00:00)
             timeTo: timeTo,
             timeBy: 'doneTime',
             limit: 10000,
@@ -136,8 +143,8 @@ export default function RangkumanSummary() {
         ),
         fetchWithTracker(
           getLocationHistories({
-            timeFrom: timeFrom,
-            timeTo: timeTo,
+            timeFrom: locTimeFrom, // <--- MENGGUNAKAN WAKTU H-1 JAM 23:00
+            timeTo: timeTo, // End time tetap akhir bulan 23:59
             limit: 10000,
             startFinish: 'true',
             fields: 'finish,startTime,email,trackedTime,totalDistance',
