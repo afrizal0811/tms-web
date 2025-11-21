@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  calculateStartFinishDates, // <-- Logic H-1
-  formatYYYYMMDDToDDMMYYYY,
-} from '@/lib/utils';
+import { calculateStartFinishDates } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getLocationHistories } from '../../lib/apiService';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
