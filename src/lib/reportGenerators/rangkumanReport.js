@@ -1,24 +1,26 @@
+// File: lib/reportGenerators/rangkumanReport.js
 'use client';
 
 import * as XLSX from 'xlsx-js-style';
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 
-// Import Generators per-Sheet
 import { generateAverageKmSheet, calculateAverageKmData } from './rangkumanSheets/averageKmSheet';
 import {
   generateTruckUsageSheet,
   calculateTruckUsageData,
 } from './rangkumanSheets/truckUsageSheet';
-// (PENTING) Import logika Truck Detail yang akan kita buat selanjutnya
 import {
   generateTruckDetailSheet,
   calculateTruckDetailData,
 } from './rangkumanSheets/truckDetailSheet';
+import {
+  generateTimeDriverSheet,
+  calculateTimeDriverData,
+} from './rangkumanSheets/timeDriverSheet';
 
 import {
   generateTaskSummarySheet,
   generatePendingReasonsSheet,
-  generateTimeDriverSheet,
 } from './rangkumanSheets/otherSheets';
 
 /**
@@ -28,22 +30,22 @@ export function generateRangkumanDataPreview(
   driverData,
   allTasks,
   resultsData,
-  locationHistoryData,
+  locationHistoryData, // Pastikan ini digunakan
   startDateStr,
   endDateStr,
   hubId
 ) {
-  // 1. Hitung Average KM
+  // 1. Average KM
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr
   );
 
-  // 2. Hitung Truck Usage
+  // 2. Truck Usage
   const truckUsageData = calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
 
-  // 3. Hitung Truck Detail (NEW)
+  // 3. Truck Detail
   const truckDetailRaw = calculateTruckDetailData(
     driverData,
     resultsData,
@@ -52,22 +54,33 @@ export function generateRangkumanDataPreview(
     endDateStr
   );
 
-  // Konversi Map ke Object agar bisa disimpan di State React (Map tidak serializable)
+  // 4. Time Driver (MENGGUNAKAN LOCATION HISTORY)
+  const timeDriverRaw = calculateTimeDriverData(
+    driverData,
+    locationHistoryData, // <-- Menggunakan Data Location
+    startDateStr,
+    endDateStr
+  );
+
   const truckDetailData = {
     ...truckDetailRaw,
     driverMap: Object.fromEntries(truckDetailRaw.driverMap),
+  };
+
+  const timeDriverData = {
+    ...timeDriverRaw,
+    driverMap: Object.fromEntries(timeDriverRaw.driverMap),
   };
 
   return {
     averageKmData: summaryData,
     monthTotals: monthTotals,
     truckUsageData: truckUsageData,
-    truckDetailData: truckDetailData, // <-- Data baru dikirim ke UI
+    truckDetailData: truckDetailData,
+    timeDriverData: timeDriverData,
 
-    // Placeholder untuk tab lain
     taskSummaryData: [],
     pendingReasonsData: [],
-    timeDriverData: [],
   };
 }
 
@@ -78,7 +91,7 @@ export function generateRangkumanWorkbook(
   driverData,
   allTasks,
   resultsData,
-  locationHistoryData,
+  locationHistoryData, // Pastikan ini digunakan
   startDateStr,
   endDateStr,
   hubName,
@@ -86,18 +99,14 @@ export function generateRangkumanWorkbook(
 ) {
   const wb = XLSX.utils.book_new();
 
-  // 1. Sheet-sheet Placeholder
   generateTaskSummarySheet(wb);
   generatePendingReasonsSheet(wb);
-  generateTimeDriverSheet(wb);
 
-  // 2. Sheet Truck Detail (NEW)
+  // MENGGUNAKAN LOCATION HISTORY
+  generateTimeDriverSheet(wb, driverData, locationHistoryData, startDateStr, endDateStr);
+
   generateTruckDetailSheet(wb, driverData, resultsData, allTasks, startDateStr, endDateStr);
-
-  // 3. Sheet Truck Usage
   generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId);
-
-  // 4. Sheet Average KM
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr);
 
   const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getTasks, getResultsSummary, getLocationHistories } from '@/lib/apiService';
@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx-js-style';
 import TruckUsageTab from './tabs/TruckUsageTab';
 import AverageKmTab from './tabs/AverageKmTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
+import TimeDriverTab from './tabs/TimeDriverTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 
 export default function RangkumanSummary() {
@@ -37,10 +38,10 @@ export default function RangkumanSummary() {
   const [activeTab, setActiveTab] = useState('Task Summary');
 
   // --- LOADING UX STATES ---
-  const [elapsedTime, setElapsedTime] = useState(0); // Timer detik
-  const [pendingEndpoints, setPendingEndpoints] = useState([]); // List endpoint yg pending
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [pendingEndpoints, setPendingEndpoints] = useState([]);
 
-  // 1. Load Lokasi dari LocalStorage
+  // 1. Load Lokasi
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLocation = localStorage.getItem('userLocation');
@@ -65,7 +66,6 @@ export default function RangkumanSummary() {
     };
   }, [isLoading]);
 
-  // Helper: Format Detik ke MM:SS
   const formatTimer = (seconds) => {
     const m = Math.floor(seconds / 60)
       .toString()
@@ -74,7 +74,7 @@ export default function RangkumanSummary() {
     return `${m}:${s}`;
   };
 
-  // 3. Helper Wrapper untuk Tracking Promise
+  // 3. Helper Wrapper
   const fetchWithTracker = async (promise, label) => {
     setPendingEndpoints((prev) => [...prev, label]);
     try {
@@ -85,12 +85,12 @@ export default function RangkumanSummary() {
     }
   };
 
-  // 4. Fetch Data (Gabungan API & Driver)
+  // 4. Fetch Data
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedMonth) return;
 
     setIsLoading(true);
-    setPendingEndpoints([]); // Reset pending
+    setPendingEndpoints([]);
 
     try {
       const year = selectedMonth.getFullYear();
@@ -103,7 +103,6 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
-      // Logika H-1 untuk Routing
       const routingStartDate = new Date(startDate);
       routingStartDate.setDate(routingStartDate.getDate() - 1);
       const routingEndDate = new Date(endDate);
@@ -114,7 +113,6 @@ export default function RangkumanSummary() {
       const routingTimeFrom = `${routingStartStr} 00:00:00`;
       const routingTimeTo = `${routingEndStr} 23:59:59`;
 
-      // --- PARALLEL FETCHING DENGAN TRACKER ---
       const [tasksRes, resultsRes, locRes, driversRes] = await Promise.all([
         fetchWithTracker(
           getTasks({
@@ -125,7 +123,7 @@ export default function RangkumanSummary() {
             timeBy: 'doneTime',
             limit: 10000,
           }),
-          'Task' // Label untuk /tasks
+          'Task'
         ),
         fetchWithTracker(
           getResultsSummary({
@@ -134,7 +132,7 @@ export default function RangkumanSummary() {
             dateTo: routingTimeTo,
             limit: 10000,
           }),
-          'Routing' // Label untuk /results
+          'Routing'
         ),
         fetchWithTracker(
           getLocationHistories({
@@ -145,21 +143,18 @@ export default function RangkumanSummary() {
             fields: 'finish,startTime,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
           }),
-          'History' // Label untuk /location-histories
+          'History'
         ),
-        getOrFetchDriverData(selectedLocation), // Driver biasanya cepat, opsional dilacak
+        getOrFetchDriverData(selectedLocation),
       ]);
 
-      // 1. Proses Driver
       const drivers = driversRes || [];
       setDriverData(drivers);
 
-      // 2. Proses Results (Filter Done)
       const filteredResults = (resultsRes || []).filter(
         (item) => item.dispatchStatus && item.dispatchStatus.toLowerCase() === 'done'
       );
 
-      // 3. Simpan Raw Data
       const newRawData = {
         tasks: tasksRes || [],
         results: filteredResults,
@@ -167,7 +162,6 @@ export default function RangkumanSummary() {
       };
       setRawData(newRawData);
 
-      // 4. Generate Preview Langsung
       const preview = generateRangkumanDataPreview(
         drivers,
         newRawData.tasks,
@@ -181,7 +175,6 @@ export default function RangkumanSummary() {
     } catch (err) {
       console.error(err);
       toastError('Gagal mengambil data: ' + err.message);
-      // Reset jika error
       setRawData({ tasks: [], results: [], locations: [] });
       setDriverData([]);
       setReportPreview(null);
@@ -190,7 +183,6 @@ export default function RangkumanSummary() {
     }
   }, [selectedLocation, selectedMonth]);
 
-  // Trigger Fetch saat Lokasi/Bulan berubah
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -199,7 +191,7 @@ export default function RangkumanSummary() {
   const handleDownloadExcel = () => {
     if (!selectedMonth) return;
     if (driverData.length === 0) {
-      toastError('Data Driver belum siap atau kosong.');
+      toastError('Data Driver belum siap/kosong.');
     }
 
     const year = selectedMonth.getFullYear();
@@ -239,8 +231,7 @@ export default function RangkumanSummary() {
   // --- RENDER CONTENT ---
   const renderContent = () => {
     if (isLoading) {
-      // LOGIKA PESAN LOADING
-      const showLongLoadingMsg = elapsedTime > 120; // > 2 menit
+      const showLongLoadingMsg = elapsedTime > 120;
       const pendingText = pendingEndpoints.join(', ');
 
       return (
@@ -286,6 +277,8 @@ export default function RangkumanSummary() {
         });
       case 'Truck Detail':
         return renderTabContent(TruckDetailTab, { data: reportPreview.truckDetailData });
+      case 'Time Driver':
+        return renderTabContent(TimeDriverTab, { data: reportPreview.timeDriverData });
       default:
         return <PlaceholderTab tabName={activeTab} />;
     }
