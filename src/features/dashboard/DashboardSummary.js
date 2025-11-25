@@ -415,7 +415,7 @@ export default function DashboardSummary({ driverData }) {
               title="Manual Assign"
               value={summaryData?.manualAssignList?.length}
               isLoading={loading}
-              tooltipContent="Jumlah task yang di-assign secara manual tanpa melalui proses routing"
+              tooltipContent="Jumlah task yang di-assign secara manual tanpa melalui proses routing."
             />
             <StatCard
               title="Beda Hari"

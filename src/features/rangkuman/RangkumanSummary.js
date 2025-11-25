@@ -304,9 +304,11 @@ export default function RangkumanSummary() {
           <h1 className="text-2xl font-bold text-slate-800">Rangkuman Laporan</h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-end w-full md:w-auto">
+        {/* --- FIX UI HEADER --- */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          {/* 1. DATE PICKER WRAPPER */}
           <div className="w-full sm:w-auto relative z-50">
-            <label className="block text-xs text-gray-400 mb-1 ml-1">Pilih Bulan</label>
+            <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Pilih Bulan</label>
             <DatePicker
               selected={selectedMonth}
               onChange={(date) => setSelectedMonth(date)}
@@ -314,7 +316,8 @@ export default function RangkumanSummary() {
               showMonthYearPicker
               wrapperClassName="w-full"
               disabled={isLoading}
-              className={`w-full sm:w-48 px-4 py-2.5 rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors
+              // Tambahkan h-[42px] agar tinggi fix sama dengan button
+              className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors
                         ${
                           isLoading
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
@@ -324,31 +327,37 @@ export default function RangkumanSummary() {
             />
           </div>
 
-          <button
-            onClick={handleDownloadExcel}
-            disabled={isLoading || rawData.tasks.length === 0}
-            className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm h-[42px]"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-            )}
-            <span>Download Excel</span>
-          </button>
+          {/* 2. BUTTON WRAPPER (Dengan Dummy Label agar sejajar) */}
+          <div className="w-full sm:w-auto relative z-0">
+            <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
+              ActionPlaceholder
+            </label>
+            <button
+              onClick={handleDownloadExcel}
+              disabled={isLoading || rawData.tasks.length === 0}
+              className="w-full sm:w-auto px-6 h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm hover:cursor-pointer"
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+              )}
+              <span>Download Excel</span>
+            </button>
+          </div>
         </div>
       </div>
 

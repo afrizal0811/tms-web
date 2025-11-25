@@ -2,7 +2,7 @@
 import * as XLSX from 'xlsx-js-style';
 import { formatDate, formatMinutesToHHMM } from '@/lib/utils';
 
-const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN', 'PENDING GR'];
+const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;

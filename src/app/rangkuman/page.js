@@ -9,7 +9,7 @@ export const metadata = {
 export default function RangkumanPage() {
   return (
     // --- PERUBAHAN 3: Bungkus dengan AppLayout agar Navbar muncul ---
-    <AppLayout mainClassName="bg-gray-50">
+    <AppLayout>
       <div className="w-full">
         <RangkumanSummary />
       </div>

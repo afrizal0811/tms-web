@@ -1,6 +1,40 @@
 import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID } from './constants';
-import { toastError } from './toastHelper';
+
+// --- HELPER BARU: Hitung & Simpan Master Truck ---
+// Fungsi ini dijalankan otomatis setiap kali data driver didapatkan (baik dari cache maupun API)
+const updateMasterTruckStorage = (drivers) => {
+  if (typeof window === 'undefined' || !Array.isArray(drivers)) return;
+
+  let dryCount = 0;
+  let frozenCount = 0;
+
+  drivers.forEach((d) => {
+    const plat = d.plat || '';
+    const name = (d.name || '').toUpperCase();
+    const platUpper = plat.toUpperCase();
+
+    // 1. Skip jika plat kosong, plat 'DEMO', atau plat 'SEWA'
+    if (!plat || plat.trim() === '' || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
+      return;
+    }
+
+    // 2. Hitung DRY (Cek nama mengandung 'DRY')
+    if (name.includes('DRY')) {
+      dryCount++;
+    }
+    // 3. Hitung FROZEN (Cek nama mengandung 'FRZ')
+    else if (name.includes('FRZ')) {
+      frozenCount++;
+    }
+  });
+
+  // Simpan ke Local Storage key 'masterTruck'
+  const masterData = { dry: dryCount, frozen: frozenCount };
+  localStorage.setItem('masterTruck', JSON.stringify(masterData));
+
+  // console.log("🚚 Auto-calculated Master Truck:", masterData);
+};
 
 /**
  * Fungsi "pintar" untuk mengambil data driver.
@@ -17,7 +51,11 @@ export async function getOrFetchDriverData(selectedLocation) {
     // Validasi tambahan: pastikan data di cache bukan array kosong jika kita mengharapkan data
     if (storedDrivers) {
       const parsed = JSON.parse(storedDrivers);
-      // Opsional: Bisa tambah logika untuk force refresh jika data kosong tapi harusnya ada
+
+      // --- UPDATE MASTER TRUCK DARI CACHE ---
+      // Kita tetap jalankan ini agar jika user refresh page, masterTruck ter-refresh juga
+      updateMasterTruckStorage(parsed);
+
       return parsed;
     }
   } catch (e) {
@@ -26,10 +64,7 @@ export async function getOrFetchDriverData(selectedLocation) {
 
   try {
     // --- PERUBAHAN DINAMIS ---
-    // Daripada mengecek nama hub (Cikarang/Sidoarjo/dll), kita asumsikan
-    // setiap hub MUNGKIN memiliki driver dengan role 'driver' ATAU 'driverJkt'.
-    // Kita fetch saja semuanya. API akan mengembalikan [] jika tidak ada user dengan role itu.
-
+    // Fetch semua role yang relevan
     const rolesToFetch = [
       ROLE_ID.driver,
       ROLE_ID.driverJkt,
@@ -51,10 +86,9 @@ export async function getOrFetchDriverData(selectedLocation) {
     ]);
 
     // Proses data Driver (Flat array dari berbagai role)
-    // driverResponses adalah array of arrays (hasil per role)
     const rawDrivers = driverResponses.flat();
 
-    // Hapus duplikat jika ada user yang punya double role (jarang, tapi untuk safety)
+    // Hapus duplikat jika ada user yang punya double role
     const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
 
     const processedDrivers = uniqueDrivers.map((driver) => ({
@@ -85,8 +119,11 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan ke localStorage
+    // Simpan driverData ke localStorage
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+
+    // --- UPDATE MASTER TRUCK DARI DATA BARU ---
+    updateMasterTruckStorage(mergedDriverData);
 
     return mergedDriverData;
   } catch (err) {
