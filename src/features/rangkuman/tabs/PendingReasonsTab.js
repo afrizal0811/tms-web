@@ -39,7 +39,7 @@ const ReasonCell = ({ text, className }) => {
   );
 };
 
-// --- 2. SO CELL (Updated for Error Handling) ---
+// --- 2. SO CELL ---
 const SOCell = ({ text, content, className, isError, errorMessage }) => {
   if (!text) return <td className={className}></td>;
 
@@ -52,15 +52,14 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
   const firstRef = refs[0] || '';
   const count = refs.length > 1 ? refs.length - 1 : 0;
 
-  // Default Tooltip (SO Count)
+  // Default Tooltip
   let tooltipText = count > 0 ? `${firstRef} (+${count})` : firstRef;
 
-  // Jika Error (Salah Pilih Status), Override Tooltip & Style
+  // Jika Error, gunakan pesan error JSX/String
   if (isError && errorMessage) {
     tooltipText = errorMessage;
   }
 
-  // Style Text: Merah Tebal jika Error
   const textStyle = isError
     ? 'text-[#FF0000] font-bold border-b border-dotted border-red-500'
     : 'border-b border-dotted border-slate-400 group-hover:border-blue-500';
@@ -78,7 +77,6 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
       className={`${className} cursor-pointer hover:bg-blue-50 transition-colors relative group`}
       onClick={handleCopy}
     >
-      {/* Selalu gunakan tooltip jika ada refs ATAU jika ada error */}
       {refs.length > 0 || isError ? (
         <Tooltip tooltipContent={tooltipText}>
           <span className={textStyle}>{text}</span>
@@ -101,9 +99,10 @@ export default function PendingReasonsTab({ data, locationName }) {
 
   const getCustId = (name) => {
     if (!name) return '-';
-    const parts = name.split('-');
-    if (parts.length >= 2 && parts[1].trim().startsWith('C0')) return parts[1].trim();
-    return '-';
+
+    // Cari langsung pola C0 diikuti angka
+    const match = name.match(/C0\d+/);
+    return match ? match[0] : '-';
   };
 
   const thClass =
@@ -158,18 +157,22 @@ export default function PendingReasonsTab({ data, locationName }) {
             const tdClass = `${baseTdClass} ${borderBottomClass}`;
 
             // --- DETEKSI SALAH STATUS ---
-            // Status aslinya PENDING GR, tapi lokasi ini tidak mendukung GR (hidden)
             const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
-            const errorMsg =
-              'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR.';
+
+            // --- UPDATE: PESAN ERROR MENGGUNAKAN JSX (UNDERLINE) ---
+            const errorMsg = (
+              <span>
+                Driver memilih status yang salah. Seharusnya memilih <u>Pending</u>, bukan{' '}
+                <u>Pending GR</u>.
+              </span>
+            );
 
             const textBatal = item.status === 'BATAL' ? item.customerName : '';
             const textParsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
 
-            // Logic Pending: PENDING asli ATAU Salah Status GR
             let textPending = item.status === 'PENDING' ? item.customerName : '';
             if (isWrongGR) {
-              textPending = item.customerName; // Pindahkan nilai ke sini
+              textPending = item.customerName;
             }
 
             const textPendingGR = item.status === 'PENDING GR' ? item.customerName : '';
@@ -184,13 +187,13 @@ export default function PendingReasonsTab({ data, locationName }) {
                 <SOCell text={textBatal} content={item.content} className={tdClass} />
                 <SOCell text={textParsial} content={item.content} className={tdClass} />
 
-                {/* CELL PENDING (Special Handling for Error) */}
+                {/* CELL PENDING (Pass JSX errorMsg) */}
                 <SOCell
                   text={textPending}
                   content={item.content}
                   className={tdClass}
                   isError={isWrongGR}
-                  errorMessage={errorMsg}
+                  errorMessage={errorMsg} // Passing JSX
                 />
 
                 {shouldShowPendingGR && (

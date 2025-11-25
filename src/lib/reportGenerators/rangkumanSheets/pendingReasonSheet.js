@@ -1,6 +1,7 @@
 // File: lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
 import * as XLSX from 'xlsx-js-style';
 
+// --- CONFIGURATION ---
 const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
 // --- CONSTANTS & HELPERS ---
@@ -10,6 +11,7 @@ function normalizeEmail(email) {
   return email ? email.toLowerCase().trim() : '';
 }
 
+// Parsing String API (UTC) ke Date Object
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -20,11 +22,13 @@ function parseApiDateString(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Helper: Format String Waktu Sederhana (Ambil HH:mm dari string)
 function formatSimpleTimeString(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return null;
   return timeStr.substring(0, 5);
 }
 
+// Format Date ke DD-MM-YYYY (WIB)
 function formatDateDDMMYYYY(dateObj) {
   if (!dateObj) return '-';
   return new Intl.DateTimeFormat('en-GB', {
@@ -38,6 +42,7 @@ function formatDateDDMMYYYY(dateObj) {
     .join('-');
 }
 
+// Format Jam ke HH:mm (WIB)
 function formatTimeHHMM(dateObj) {
   if (!dateObj) return null;
   return dateObj.toLocaleTimeString('en-GB', {
@@ -50,14 +55,11 @@ function formatTimeHHMM(dateObj) {
 
 function getCustomerID(customerName) {
   if (!customerName) return '-';
-  const parts = customerName.split('-');
-  if (parts.length >= 2) {
-    const potentialId = parts[1].trim();
-    if (potentialId.toUpperCase().startsWith('C0')) {
-      return potentialId;
-    }
-  }
+
+  // Regex: Cari huruf 'C' diikuti angka '0', lalu diikuti digit angka lainnya
+  // match(/C0\d+/) akan menangkap "C012345" di posisi manapun
   const match = customerName.match(/C0\d+/);
+
   return match ? match[0] : '-';
 }
 
@@ -74,7 +76,7 @@ function getDriverStorageType(driver) {
 }
 
 /**
- * BAGIAN 1: LOGIKA PERHITUNGAN
+ * BAGIAN 1: LOGIKA PERHITUNGAN & FORMATTING DATA
  */
 export function calculatePendingReasonData(driverData, allTasks) {
   const processedData = [];
@@ -97,7 +99,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   }
 
-  // 2. Filter Data
+  // 2. Filter & Prepare Data Awal
   const rawTasks = [];
 
   if (allTasks && Array.isArray(allTasks)) {
@@ -115,11 +117,12 @@ export function calculatePendingReasonData(driverData, allTasks) {
         const isGR = flow.toUpperCase().includes('GR');
 
         let arrivalSource, departureSource;
+
         if (isGR) {
           arrivalSource = task.page1DoneTime;
           departureSource = task.doneTime;
         } else {
-          arrivalSource = task.klikJikaSudahSampai;
+          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
           departureSource = task.page3DoneTime;
         }
 
@@ -127,12 +130,32 @@ export function calculatePendingReasonData(driverData, allTasks) {
         const arrObj = parseApiDateString(arrivalSource);
         const depObj = parseApiDateString(departureSource);
 
+        // --- UPDATE PERHITUNGAN ACTUAL VISIT TIME (ABAIKAN DETIK) ---
         let actualVisitMins = 0;
         if (arrObj && depObj) {
-          const diff = depObj.getTime() - arrObj.getTime();
-          if (diff > 0) actualVisitMins = Math.floor(diff / (1000 * 60));
-        }
+          // Clone object agar tidak merusak aslinya
+          const tArr = new Date(arrObj);
+          const tDep = new Date(depObj);
 
+          // Set detik dan milidetik ke 0 agar hitungan murni menit
+          tArr.setSeconds(0, 0);
+          tDep.setSeconds(0, 0);
+
+          const diff = tDep.getTime() - tArr.getTime();
+
+          if (diff > 0) {
+            actualVisitMins = Math.floor(diff / (1000 * 60));
+          } else if (diff === 0) {
+            // Jika menitnya sama persis, durasi 0
+            actualVisitMins = 0;
+          } else {
+            // Jika dep < arr, anggap 0
+            actualVisitMins = 0;
+          }
+        }
+        // -----------------------------------------------------------
+
+        // Sorting Date Helper (YYYYMMDD Integer)
         let sortDateNum = 0;
         if (dateObj) {
           const wibTime = dateObj.getTime() + 7 * 60 * 60 * 1000;
@@ -166,7 +189,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   }
 
-  // 3. Ranking
+  // 3. Hitung Real Sequence
   const groupedByDriverDate = {};
   rawTasks.forEach((item) => {
     const key = `${item.email}_${item.dateStr}`;
@@ -182,7 +205,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   });
 
-  // 4. Sorting
+  // 4. Sorting Final
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -211,7 +234,6 @@ export function calculatePendingReasonData(driverData, allTasks) {
 export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName) {
   const data = calculatePendingReasonData(driverData, allTasks);
 
-  // Logic Hide Column
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
     (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
   );
@@ -244,18 +266,11 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     font: { color: { rgb: '9C0006' } },
   };
 
-  // Style ERROR (Teks Merah Terang)
-  const errorTextStyle = {
-    ...cellStyle,
-    font: { color: { rgb: 'FF0000' }, bold: true },
-  };
-
   const yellowFillStyle = {
     ...cellStyle,
     fill: { patternType: 'solid', fgColor: { rgb: 'FFFF00' } },
   };
 
-  // Headers
   let headers = [
     'Flow',
     'Date RO',
@@ -287,25 +302,16 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
   );
 
   const excelData = [headers];
-  const errorRows = new Set(); // Simpan indeks baris yang salah status
 
-  data.forEach((item, idx) => {
-    // LOGIC DETEKSI SALAH STATUS
-    // Jika status asli "PENDING GR" tapi lokasi ini menyembunyikan GR (!shouldShowPendingGR)
-    const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
-
-    if (isWrongGR) {
-      // Tandai baris ini (offset +1 karena header)
-      errorRows.add(idx + 1);
-    }
-
+  data.forEach((item) => {
     const batal = item.status === 'BATAL' ? item.customerName : '';
     const parsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
-
-    // Logic Pending: Jika status PENDING OR (Salah Status GR), masukkan ke sini
     let pending = '';
-    if (item.status === 'PENDING') pending = item.customerName;
-    if (isWrongGR) pending = item.customerName; // Pindahkan ke sini
+
+    const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+    if (item.status === 'PENDING' || isWrongGR) {
+      pending = item.customerName;
+    }
 
     const pendingGR = item.status === 'PENDING GR' ? item.customerName : '';
 
@@ -344,9 +350,8 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
-  // --- STYLING ---
+  // Styling Logic
   const shift = shouldShowPendingGR ? 0 : -1;
-  const idxPending = 6; // Index kolom Pending selalu 6
   const idxETA = 11 + shift;
   const idxETD = 12 + shift;
   const idxVisitTime = 16 + shift;
@@ -366,19 +371,12 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
         let currentStyle = { ...cellStyle };
         const val = cell.v;
 
-        // 1. Error Style (Red Text) untuk kolom Pending jika baris ini salah status
-        if (C === idxPending && errorRows.has(R)) {
-          currentStyle = errorTextStyle;
-        }
-
-        // 2. Red Fill (Empty Values)
         if ([idxETA, idxETD, idxRO].includes(C)) {
           if (!val || val === '-' || val === '') {
             currentStyle = redFillStyle;
           }
         }
 
-        // 3. Yellow Fill (Visit 0)
         if (C === idxVisitTime) {
           if (val === 0 || val === '0') {
             currentStyle = yellowFillStyle;
