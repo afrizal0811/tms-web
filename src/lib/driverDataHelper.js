@@ -1,44 +1,106 @@
 import { getUsers, getVehicles } from './apiService';
-import { ROLE_ID } from './constants';
+import { ROLE_ID, VEHICLE_TYPES } from './constants';
 
-// --- HELPER BARU: Hitung & Simpan Master Truck ---
-// Fungsi ini dijalankan otomatis setiap kali data driver didapatkan (baik dari cache maupun API)
-const updateMasterTruckStorage = (drivers) => {
+// --- HELPER: Resolve Tipe Kendaraan (Mapping & Parsing) ---
+// Mengadaptasi logika yang sama dengan Truck Usage Report
+const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
+  if (!rawTag) return null;
+
+  // 1. Parsing Standar (Asumsi format: CABANG-TIPE-BOX, misal SUB-CDE-BOX)
+  const parts = rawTag.split('-');
+  // Ambil bagian ke-2 (index 1) sebagai tipe dasar, atau ambil raw jika tidak ada dash
+  let typeCandidate = parts.length > 1 ? parts[1].toUpperCase() : rawTag.toUpperCase();
+
+  // 2. Cek Suffix "LONG" (Khusus CDE/CDD/FUSO)
+  if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
+    if (['CDE', 'CDD', 'FUSO'].includes(typeCandidate)) {
+      typeCandidate = `${typeCandidate}-LONG`;
+    }
+  }
+
+  // 3. Cek Mapping Konfigurasi (vehicleTagMap)
+  // Struktur: tagMap[hubId][plate][typeCandidate] = "HASIL_KONVERSI"
+  if (tagMap && hubId && plate) {
+    const hubMap = tagMap[hubId];
+    if (hubMap && hubMap[plate]) {
+      const mappedValue = hubMap[plate][typeCandidate];
+      if (mappedValue) {
+        return mappedValue; // Gunakan hasil konversi jika ada
+      }
+    }
+  }
+
+  return typeCandidate; // Gunakan tipe dasar jika tidak ada mapping
+};
+
+// --- HELPER BARU: Hitung & Simpan Master Truck Detail ---
+const updateMasterTruckStorage = (drivers, hubId) => {
   if (typeof window === 'undefined' || !Array.isArray(drivers)) return;
 
-  let dryCount = 0;
-  let frozenCount = 0;
+  // 1. Load Vehicle Tag Map dari Local Storage
+  let tagMap = {};
+  try {
+    const storedMap = localStorage.getItem('vehicleTagMap'); // Key sesuai request
+    if (storedMap) tagMap = JSON.parse(storedMap);
+  } catch (e) {
+    console.error('Gagal load vehicleTagMap', e);
+  }
 
+  // 2. Inisialisasi Struktur Data
+  const masterData = {
+    Dry: { Total: 0 },
+    Frozen: { Total: 0 },
+  };
+
+  // Siapkan key default (0)
+  VEHICLE_TYPES.forEach((type) => {
+    masterData.Dry[type] = 0;
+    masterData.Frozen[type] = 0;
+  });
+
+  // 3. Iterasi Data Driver
   drivers.forEach((d) => {
     const plat = d.plat || '';
     const name = (d.name || '').toUpperCase();
+    const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
 
-    // 1. Skip jika plat kosong, plat 'DEMO', atau plat 'SEWA'
+    // --- FILTER EXCLUDE ---
     if (!plat || plat.trim() === '' || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
       return;
     }
 
-    // 2. Hitung DRY (Cek nama mengandung 'DRY')
+    // --- TENTUKAN KATEGORI STORAGE (Dry/Frozen) ---
+    let storageCategory = null;
     if (name.includes('DRY')) {
-      dryCount++;
+      storageCategory = 'Dry';
+    } else if (name.includes('FRZ')) {
+      storageCategory = 'Frozen';
     }
-    // 3. Hitung FROZEN (Cek nama mengandung 'FRZ')
-    else if (name.includes('FRZ')) {
-      frozenCount++;
+
+    if (!storageCategory) return;
+
+    // --- TENTUKAN TIPE KENDARAAN (DENGAN MAPPING) ---
+    // Gunakan fungsi resolveVehicleType agar memperhitungkan vehicleTagMap
+    const resolvedType = resolveVehicleType(rawTag, plat, hubId, tagMap);
+
+    // Cocokkan dengan daftar tipe resmi (VEHICLE_TYPES)
+    const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
+
+    if (matchedType) {
+      masterData[storageCategory][matchedType]++;
+      masterData[storageCategory].Total++;
     }
   });
 
-  // Simpan ke Local Storage key 'masterTruck'
-  const masterData = { dry: dryCount, frozen: frozenCount };
+  // 4. Simpan ke Local Storage
   localStorage.setItem('masterTruck', JSON.stringify(masterData));
 
-  // console.log("🚚 Auto-calculated Master Truck:", masterData);
+  // console.log("🚚 Master Truck Updated (With Mapping):", masterData);
 };
 
 /**
  * Fungsi "pintar" untuk mengambil data driver.
- * DINAMIS: Mengambil SEMUA role driver relevan untuk hub manapun.
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
@@ -48,13 +110,12 @@ export async function getOrFetchDriverData(selectedLocation) {
   // 1. Cek localStorage dulu (Cache)
   try {
     const storedDrivers = localStorage.getItem('driverData');
-    // Validasi tambahan: pastikan data di cache bukan array kosong jika kita mengharapkan data
+
     if (storedDrivers) {
       const parsed = JSON.parse(storedDrivers);
 
-      // --- UPDATE MASTER TRUCK DARI CACHE ---
-      // Kita tetap jalankan ini agar jika user refresh page, masterTruck ter-refresh juga
-      updateMasterTruckStorage(parsed);
+      // --- UPDATE MASTER TRUCK (Pass selectedLocation sebagai hubId) ---
+      updateMasterTruckStorage(parsed, selectedLocation);
 
       return parsed;
     }
@@ -63,32 +124,21 @@ export async function getOrFetchDriverData(selectedLocation) {
   }
 
   try {
-    // --- PERUBAHAN DINAMIS ---
-    // Fetch semua role yang relevan
-    const rolesToFetch = [
-      ROLE_ID.driver,
-      ROLE_ID.driverJkt,
-      // Tambahkan ROLE_ID lain di sini jika ada role baru di masa depan
-    ];
+    // --- FETCH DATA BARU ---
+    const rolesToFetch = [ROLE_ID.driver, ROLE_ID.driverJkt];
 
-    // Panggil fungsi API secara paralel untuk setiap role
     const driverPromises = rolesToFetch.map((roleId) =>
       getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
     );
-
-    // Ambil data vehicle juga
     const vehiclePromise = getVehicles({ hubId: selectedLocation, limit: 500 });
 
-    // Tunggu semua selesai
     const [driverResponses, vehicleResult] = await Promise.all([
       Promise.all(driverPromises),
       vehiclePromise,
     ]);
 
-    // Proses data Driver (Flat array dari berbagai role)
+    // Process Drivers
     const rawDrivers = driverResponses.flat();
-
-    // Hapus duplikat jika ada user yang punya double role
     const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
 
     const processedDrivers = uniqueDrivers.map((driver) => ({
@@ -97,7 +147,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       email: driver.email,
     }));
 
-    // Proses Vehicle Map
+    // Process Vehicles Map
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
@@ -108,7 +158,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return acc;
     }, {});
 
-    // Merge Driver + Vehicle
+    // Merge
     const mergedDriverData = processedDrivers.map((driver) => {
       const vehicleInfo = vehicleMap[driver.email];
       return {
@@ -119,15 +169,14 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan driverData ke localStorage
+    // Simpan Cache
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
 
     // --- UPDATE MASTER TRUCK DARI DATA BARU ---
-    updateMasterTruckStorage(mergedDriverData);
+    updateMasterTruckStorage(mergedDriverData, selectedLocation);
 
     return mergedDriverData;
   } catch (err) {
-    // Lempar error agar UI tau fetch gagal
     throw err;
   }
 }
