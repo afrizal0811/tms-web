@@ -1,7 +1,7 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
 import * as XLSX from 'xlsx-js-style';
 import { formatDate } from '@/lib/utils';
-import { styles } from './reportStyles';
+import { BORDERS, BASE_STYLES, HEADER_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
 function formatLongDate(dateObj) {
   return dateObj.toLocaleDateString('en-GB', {
@@ -11,7 +11,6 @@ function formatLongDate(dateObj) {
   });
 }
 
-// Helper: Format "1-30 November 2025"
 function formatMonthRange(startDateStr, endDateStr) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
@@ -36,12 +35,11 @@ function getDeliveryDateFromRouting(isoString) {
 }
 
 /**
- * BAGIAN 1: LOGIKA PERHITUNGAN (CLEAN)
+ * BAGIAN 1: LOGIKA PERHITUNGAN (Sama seperti sebelumnya)
  */
 export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const dailyVehicleMap = {};
 
-  // A. Processing Data
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
@@ -71,7 +69,6 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
 
-  // Variabel Akumulasi Bulanan
   let monthTotals = {
     range: formatMonthRange(startDateStr, endDateStr),
     dryKm: 0,
@@ -81,7 +78,6 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
     avgKm: 0,
   };
 
-  // B. Looping & Calculation
   while (currentIterDate <= endDateObj) {
     const currentDateString = formatDate(currentIterDate);
     const displayDate = formatLongDate(currentIterDate);
@@ -100,11 +96,9 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 
     if (!isSunday) {
       const vehiclesMap = dailyVehicleMap[currentDateString];
-
       if (vehiclesMap) {
         vehiclesMap.forEach((route) => {
           const hasTrips = route.trips && route.trips.length > 0;
-
           if (hasTrips) {
             const tags = route.vehicleTags || [];
             const distMeter = route.totalDistance || 0;
@@ -122,12 +116,10 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
           }
         });
       }
-
       rowData.totalKm = rowData.dryKm + rowData.frozenKm;
       const dailyTotalVehicle = rowData.dryCount + rowData.frozenCount;
       rowData.avgKm = dailyTotalVehicle > 0 ? rowData.totalKm / dailyTotalVehicle : 0;
 
-      // Akumulasi ke Bulanan
       monthTotals.dryKm += rowData.dryKm;
       monthTotals.frozenKm += rowData.frozenKm;
       monthTotals.totalVehicle += dailyTotalVehicle;
@@ -137,7 +129,6 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
 
-  // Hitung Total Akhir Bulan
   monthTotals.totalKm = monthTotals.dryKm + monthTotals.frozenKm;
   monthTotals.avgKm =
     monthTotals.totalVehicle > 0 ? monthTotals.totalKm / monthTotals.totalVehicle : 0;
@@ -146,7 +137,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 }
 
 /**
- * BAGIAN 2: GENERATOR EXCEL (2 Tabel)
+ * BAGIAN 2: GENERATOR EXCEL (Updated Styling)
  */
 export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr) {
   const { summaryData, monthTotals } = calculateAverageKmData(
@@ -155,7 +146,7 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     endDateStr
   );
 
-  // --- TABEL 1: MONTH SUMMARY ---
+  // --- CONTENT ---
   const monthHeader1 = [
     'Date (Month)',
     'KM Routing (Month)',
@@ -172,7 +163,6 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     monthTotals.avgKm,
   ];
 
-  // --- TABEL 2: DAILY DETAILS ---
   const dailyHeader1 = [
     'Date',
     'Total Vehicle',
@@ -184,12 +174,11 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
-  // Gabungkan semua baris
-  const excelRows = [
+  const excelData = [
     monthHeader1,
     monthHeader2,
     monthDataRow,
-    [''], // Spasi antar tabel
+    [''], // Spacer
     dailyHeader1,
     dailyHeader2,
   ];
@@ -210,25 +199,28 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     }
   });
 
+  // Gunakan variable lokal agar tidak conflict
+  const excelRows = excelData;
+  // *Note: Di atas saya push ke excelRows yg sebenarnya reference ke excelData array yg sama.
+
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
   // --- MERGING ---
   ws['!merges'] = [
-    // Tabel Atas (Month)
-    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // Date
-    { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }, // KM Routing Header
-    { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } }, // Total KM
-    { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } }, // Avg KM
-
-    // Tabel Bawah (Daily) - Start Row 4 (Index 4)
-    { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }, // Date
-    { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } }, // Total Vehicle
-    { s: { r: 4, c: 3 }, e: { r: 4, c: 4 } }, // KM Routing
-    { s: { r: 4, c: 5 }, e: { r: 5, c: 5 } }, // Total KM
-    { s: { r: 4, c: 6 }, e: { r: 5, c: 6 } }, // Avg KM
+    // Table 1
+    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+    { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
+    { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
+    { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
+    // Table 2 (Start Row 4)
+    { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } },
+    { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } },
+    { s: { r: 4, c: 3 }, e: { r: 4, c: 4 } },
+    { s: { r: 4, c: 5 }, e: { r: 5, c: 5 } },
+    { s: { r: 4, c: 6 }, e: { r: 5, c: 6 } },
   ];
 
-  // --- STYLING ---
+  // --- STYLING (USING REPORTSTYLES) ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -236,68 +228,57 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // === TABEL 1: MONTHLY (Row 0-2) ===
+      // 1. TABLE 1 (MONTHLY) - Rows 0-2
       if (R < 3) {
-        cell.s = {
-          border: styles.header.border,
-          alignment: { vertical: 'center', horizontal: 'center' },
-        };
+        cell.s = { ...BASE_STYLES.cellCenter }; // Default Border
 
-        // Header
         if (R === 0 || R === 1) {
-          cell.s = { ...cell.s, font: { bold: true } };
+          cell.s = { ...HEADER_STYLES.main };
         }
-        // Data
-        if (R === 2) {
-          if (C >= 1) {
-            // Kolom Angka
-            cell.t = 'n';
-            cell.s = { ...cell.s, numFmt: '#,##0.000' }; // 3 desimal sesuai gambar
-          }
+
+        // Data Row (Row 2)
+        if (R === 2 && C >= 1) {
+          cell.t = 'n';
+          cell.s = { ...cell.s, numFmt: '#,##0.000' };
+
+          // Konsistensi warna: Dry (Col 1), Frozen (Col 2)
+          if (C === 1) cell.s.fill = FILL_STYLES.dry;
+          if (C === 2) cell.s.fill = FILL_STYLES.frozen;
         }
       }
 
-      // === GAP (Row 3) ===
-      else if (R === 3) {
-        // No style
-      }
-
-      // === TABEL 2: DAILY (Row 4+) ===
-      else {
-        // Header Daily (Row 4 & 5)
+      // 2. TABLE 2 (DAILY) - Rows 4+
+      else if (R >= 4) {
+        // Headers (Row 4 & 5)
         if (R === 4 || R === 5) {
-          cell.s = { ...styles.header };
-          if (C === 3 || C === 4) {
-            cell.s.fill = styles.yellowHeader;
-            cell.s.font = { bold: true, color: { rgb: '000000' } };
-          }
+          cell.s = { ...HEADER_STYLES.main };
         }
-        // Data Daily
+        // Data Rows (Row 6+)
         else {
-          const dataIndex = R - 6; // Offset row
+          const dataIndex = R - 6;
           const rowData = summaryData[dataIndex];
 
+          cell.s = { ...BASE_STYLES.cellCenter }; // Base style
+
           if (rowData && rowData.isSunday) {
-            cell.s = { fill: styles.pinkFill, border: styles.header.border };
+            cell.s.fill = FILL_STYLES.red; // Minggu
           } else {
-            cell.s = { border: styles.header.border, alignment: { vertical: 'center' } };
+            // Format Angka
             if (C >= 1) {
               cell.t = 'n';
+              // Count (Col 1, 2) -> Int
               if (C === 1 || C === 2) {
-                cell.s = { ...cell.s, alignment: styles.center.alignment, numFmt: '0' };
+                cell.s.numFmt = '0';
               } else {
-                if (C === 3 || C === 4) {
-                  cell.s = {
-                    ...styles.numberFormat,
-                    ...styles.yellowData,
-                    border: styles.header.border,
-                  };
-                } else {
-                  cell.s = { ...styles.numberFormat, border: styles.header.border };
-                }
+                // KM (Col 3+) -> Decimal
+                cell.s.numFmt = '#,##0.000';
               }
-            } else {
-              cell.s.alignment = { horizontal: 'center', vertical: 'center' };
+
+              // Warna Kolom Spesifik (Agar sama dengan Truck Usage)
+              // Col 3 = Dry KM -> Peach
+              if (C === 3) cell.s.fill = FILL_STYLES.dry;
+              // Col 4 = Frozen KM -> Blue
+              if (C === 4) cell.s.fill = FILL_STYLES.frozen;
             }
           }
         }

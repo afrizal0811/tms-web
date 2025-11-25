@@ -1,33 +1,28 @@
 // File: lib/reportGenerators/rangkumanReport.js
 'use client';
 
-import * as XLSX from 'xlsx-js-style';
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
+import * as XLSX from 'xlsx-js-style';
 
-import { generateAverageKmSheet, calculateAverageKmData } from './rangkumanSheets/averageKmSheet';
+import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
 import {
-  generateTruckUsageSheet,
-  calculateTruckUsageData,
-} from './rangkumanSheets/truckUsageSheet';
+  calculateTimeDriverData,
+  generateTimeDriverSheet,
+} from './rangkumanSheets/timeDriverSheet';
 import {
-  generateTruckDetailSheet,
   calculateTruckDetailData,
+  generateTruckDetailSheet,
 } from './rangkumanSheets/truckDetailSheet';
 import {
-  generateTimeDriverSheet,
-  calculateTimeDriverData,
-} from './rangkumanSheets/timeDriverSheet';
+  calculateTruckUsageData,
+  generateTruckUsageSheet,
+} from './rangkumanSheets/truckUsageSheet';
 
 // IMPORT BARU
 import {
-  generatePendingReasonSheet,
   calculatePendingReasonData,
+  generatePendingReasonSheet,
 } from './rangkumanSheets/pendingReasonSheet';
-
-import {
-  generateTaskSummarySheet,
-  // generatePendingReasonsSheet, // <-- HAPUS/COMMENT IMPORT LAMA
-} from './rangkumanSheets/otherSheets';
 
 export function generateRangkumanDataPreview(
   driverData,
@@ -89,8 +84,6 @@ export function generateRangkumanWorkbook(
   hubId
 ) {
   const wb = XLSX.utils.book_new();
-
-  generateTaskSummarySheet(wb);
 
   // GANTI PLACEHOLDER DENGAN SHEET BARU
   generatePendingReasonSheet(wb, driverData, allTasks, hubName);
