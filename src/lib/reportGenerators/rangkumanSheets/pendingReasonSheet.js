@@ -1,6 +1,8 @@
 // File: lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
 import * as XLSX from 'xlsx-js-style';
 
+const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
+
 // --- CONSTANTS & HELPERS ---
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 
@@ -8,7 +10,6 @@ function normalizeEmail(email) {
   return email ? email.toLowerCase().trim() : '';
 }
 
-// Parsing String API (UTC) ke Date Object
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -19,13 +20,11 @@ function parseApiDateString(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// Helper: Format String Waktu Sederhana
 function formatSimpleTimeString(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return null;
   return timeStr.substring(0, 5);
 }
 
-// Format Date ke DD-MM-YYYY (WIB)
 function formatDateDDMMYYYY(dateObj) {
   if (!dateObj) return '-';
   return new Intl.DateTimeFormat('en-GB', {
@@ -39,7 +38,6 @@ function formatDateDDMMYYYY(dateObj) {
     .join('-');
 }
 
-// Format Jam ke HH:mm (WIB)
 function formatTimeHHMM(dateObj) {
   if (!dateObj) return null;
   return dateObj.toLocaleTimeString('en-GB', {
@@ -76,7 +74,7 @@ function getDriverStorageType(driver) {
 }
 
 /**
- * BAGIAN 1: LOGIKA PERHITUNGAN & FORMATTING DATA
+ * BAGIAN 1: LOGIKA PERHITUNGAN
  */
 export function calculatePendingReasonData(driverData, allTasks) {
   const processedData = [];
@@ -99,7 +97,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   }
 
-  // 2. Filter & Prepare Data Awal
+  // 2. Filter Data
   const rawTasks = [];
 
   if (allTasks && Array.isArray(allTasks)) {
@@ -113,9 +111,21 @@ export function calculatePendingReasonData(driverData, allTasks) {
         if (!driverMap.has(email)) return;
         const driverInfo = driverMap.get(email);
 
+        const flow = task.flow || '';
+        const isGR = flow.toUpperCase().includes('GR');
+
+        let arrivalSource, departureSource;
+        if (isGR) {
+          arrivalSource = task.page1DoneTime;
+          departureSource = task.doneTime;
+        } else {
+          arrivalSource = task.klikJikaSudahSampai;
+          departureSource = task.page3DoneTime;
+        }
+
         const dateObj = parseApiDateString(task.doneTime || task.createdTime);
-        const arrObj = parseApiDateString(task.klikJikaSudahSampai);
-        const depObj = parseApiDateString(task.page3DoneTime);
+        const arrObj = parseApiDateString(arrivalSource);
+        const depObj = parseApiDateString(departureSource);
 
         let actualVisitMins = 0;
         if (arrObj && depObj) {
@@ -123,7 +133,6 @@ export function calculatePendingReasonData(driverData, allTasks) {
           if (diff > 0) actualVisitMins = Math.floor(diff / (1000 * 60));
         }
 
-        // Sorting Date Helper
         let sortDateNum = 0;
         if (dateObj) {
           const wibTime = dateObj.getTime() + 7 * 60 * 60 * 1000;
@@ -138,17 +147,12 @@ export function calculatePendingReasonData(driverData, allTasks) {
           licensePlate: driverInfo.plat,
           temp: driverInfo.type,
           status: status,
-          flow: task.flow,
-
-          // --- UPDATE: GUNAKAN KEY CONTENT (SEBELUMNYA REFID) ---
+          flow: flow,
           content: task.content,
-          // ------------------------------------------------------
 
-          // Sorting Keys
           sortDateNum: sortDateNum,
           sortArrTimestamp: arrObj ? arrObj.getTime() : 9999999999999,
 
-          // Display Values
           dateStr: formatDateDDMMYYYY(dateObj),
           openStr: formatSimpleTimeString(task.openTime),
           closeStr: formatSimpleTimeString(task.closeTime),
@@ -162,7 +166,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   }
 
-  // 3. Hitung Real Sequence
+  // 3. Ranking
   const groupedByDriverDate = {};
   rawTasks.forEach((item) => {
     const key = `${item.email}_${item.dateStr}`;
@@ -178,7 +182,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
     });
   });
 
-  // 4. Sorting Final
+  // 4. Sorting
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -204,8 +208,13 @@ export function calculatePendingReasonData(driverData, allTasks) {
 /**
  * BAGIAN 2: GENERATOR EXCEL
  */
-export function generatePendingReasonSheet(wb, driverData, allTasks) {
+export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName) {
   const data = calculatePendingReasonData(driverData, allTasks);
+
+  // Logic Hide Column
+  const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
+    (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
+  );
 
   const headerStyle = {
     font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -235,12 +244,19 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     font: { color: { rgb: '9C0006' } },
   };
 
+  // Style ERROR (Teks Merah Terang)
+  const errorTextStyle = {
+    ...cellStyle,
+    font: { color: { rgb: 'FF0000' }, bold: true },
+  };
+
   const yellowFillStyle = {
     ...cellStyle,
     fill: { patternType: 'solid', fgColor: { rgb: 'FFFF00' } },
   };
 
-  const headers = [
+  // Headers
+  let headers = [
     'Flow',
     'Date RO',
     'License Plat',
@@ -248,7 +264,13 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     'Faktur Batal/ Tolakan SO',
     'Terkirim Sebagian',
     'Pending',
-    'Pending GR',
+  ];
+
+  if (shouldShowPendingGR) {
+    headers.push('Pending GR');
+  }
+
+  headers.push(
     'Reason',
     'Open Time',
     'Close Time',
@@ -261,15 +283,30 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     'Customer ID',
     'RO Sequence',
     'Real Sequence',
-    'Temperature',
-  ];
+    'Temperature'
+  );
 
   const excelData = [headers];
+  const errorRows = new Set(); // Simpan indeks baris yang salah status
 
-  data.forEach((item) => {
+  data.forEach((item, idx) => {
+    // LOGIC DETEKSI SALAH STATUS
+    // Jika status asli "PENDING GR" tapi lokasi ini menyembunyikan GR (!shouldShowPendingGR)
+    const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+
+    if (isWrongGR) {
+      // Tandai baris ini (offset +1 karena header)
+      errorRows.add(idx + 1);
+    }
+
     const batal = item.status === 'BATAL' ? item.customerName : '';
     const parsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
-    const pending = item.status === 'PENDING' ? item.customerName : '';
+
+    // Logic Pending: Jika status PENDING OR (Salah Status GR), masukkan ke sini
+    let pending = '';
+    if (item.status === 'PENDING') pending = item.customerName;
+    if (isWrongGR) pending = item.customerName; // Pindahkan ke sini
+
     const pendingGR = item.status === 'PENDING GR' ? item.customerName : '';
 
     const row = [
@@ -280,7 +317,13 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
       batal,
       parsial,
       pending,
-      pendingGR,
+    ];
+
+    if (shouldShowPendingGR) {
+      row.push(pendingGR);
+    }
+
+    row.push(
       item.alasan || '-',
       item.openStr || '-',
       item.closeStr || '-',
@@ -293,12 +336,21 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
       getCustomerID(item.customerName),
       item.routePlannedOrder || '-',
       item.realSequence || '-',
-      item.temp,
-    ];
+      item.temp
+    );
+
     excelData.push(row);
   });
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+  // --- STYLING ---
+  const shift = shouldShowPendingGR ? 0 : -1;
+  const idxPending = 6; // Index kolom Pending selalu 6
+  const idxETA = 11 + shift;
+  const idxETD = 12 + shift;
+  const idxVisitTime = 16 + shift;
+  const idxRO = 18 + shift;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
 
@@ -314,13 +366,20 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
         let currentStyle = { ...cellStyle };
         const val = cell.v;
 
-        if ([11, 12, 18].includes(C)) {
+        // 1. Error Style (Red Text) untuk kolom Pending jika baris ini salah status
+        if (C === idxPending && errorRows.has(R)) {
+          currentStyle = errorTextStyle;
+        }
+
+        // 2. Red Fill (Empty Values)
+        if ([idxETA, idxETD, idxRO].includes(C)) {
           if (!val || val === '-' || val === '') {
             currentStyle = redFillStyle;
           }
         }
 
-        if (C === 16) {
+        // 3. Yellow Fill (Visit 0)
+        if (C === idxVisitTime) {
           if (val === 0 || val === '0') {
             currentStyle = yellowFillStyle;
           }
@@ -331,7 +390,7 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     }
   }
 
-  ws['!cols'] = [
+  const colWidths = [
     { wch: 10 },
     { wch: 12 },
     { wch: 12 },
@@ -339,7 +398,13 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     { wch: 20 },
     { wch: 20 },
     { wch: 20 },
-    { wch: 20 },
+  ];
+
+  if (shouldShowPendingGR) {
+    colWidths.push({ wch: 20 });
+  }
+
+  colWidths.push(
     { wch: 25 },
     { wch: 10 },
     { wch: 10 },
@@ -352,8 +417,10 @@ export function generatePendingReasonSheet(wb, driverData, allTasks) {
     { wch: 15 },
     { wch: 10 },
     { wch: 10 },
-    { wch: 10 },
-  ];
+    { wch: 10 }
+  );
+
+  ws['!cols'] = colWidths;
 
   XLSX.utils.book_append_sheet(wb, ws, 'Pending Reasons');
 }

@@ -93,7 +93,7 @@ export function generateRangkumanWorkbook(
   generateTaskSummarySheet(wb);
 
   // GANTI PLACEHOLDER DENGAN SHEET BARU
-  generatePendingReasonSheet(wb, driverData, allTasks);
+  generatePendingReasonSheet(wb, driverData, allTasks, hubName);
 
   generateTimeDriverSheet(wb, driverData, locationHistoryData, startDateStr, endDateStr);
   generateTruckDetailSheet(wb, driverData, resultsData, allTasks, startDateStr, endDateStr);

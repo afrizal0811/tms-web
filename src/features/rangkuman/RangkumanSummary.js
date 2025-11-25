@@ -15,11 +15,11 @@ import * as XLSX from 'xlsx-js-style';
 
 // --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
+import PendingReasonsTab from './tabs/PendingReasonsTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
-import PendingReasonsTab from './tabs/PendingReasonsTab';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -287,8 +287,11 @@ export default function RangkumanSummary() {
         return renderTabContent(TruckDetailTab, { data: reportPreview.truckDetailData });
       case 'Time Driver':
         return renderTabContent(TimeDriverTab, { data: reportPreview.timeDriverData });
-      case 'Pending Reasons': 
-        return renderTabContent(PendingReasonsTab, { data: reportPreview.pendingReasonsData });
+      case 'Pending Reasons':
+        return renderTabContent(PendingReasonsTab, {
+          data: reportPreview.pendingReasonsData,
+          locationName: selectedLocationName, // <-- KIRIM PROP INI
+        });
       default:
         return <PlaceholderTab tabName={activeTab} />;
     }

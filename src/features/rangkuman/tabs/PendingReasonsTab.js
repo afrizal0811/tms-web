@@ -3,7 +3,10 @@ import { useState, useRef } from 'react';
 import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
 
-// --- 1. SUB-COMPONENT: REASON CELL ---
+// --- KONFIGURASI DINAMIS ---
+const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
+
+// --- 1. REASON CELL ---
 const ReasonCell = ({ text, className }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const textRef = useRef(null);
@@ -36,11 +39,10 @@ const ReasonCell = ({ text, className }) => {
   );
 };
 
-// --- 2. SUB-COMPONENT: SO CELL (Update: gunakan prop content) ---
-const SOCell = ({ text, content, className }) => {
+// --- 2. SO CELL (Updated for Error Handling) ---
+const SOCell = ({ text, content, className, isError, errorMessage }) => {
   if (!text) return <td className={className}></td>;
 
-  // Parse Content: Split koma
   const refs = content
     ? content
         .split(',')
@@ -50,15 +52,23 @@ const SOCell = ({ text, content, className }) => {
   const firstRef = refs[0] || '';
   const count = refs.length > 1 ? refs.length - 1 : 0;
 
-  // Tooltip Text
-  const tooltipText = count > 0 ? `${firstRef} (+${count})` : firstRef;
+  // Default Tooltip (SO Count)
+  let tooltipText = count > 0 ? `${firstRef} (+${count})` : firstRef;
 
-  // Logic Copy (Ambil setelah dash)
+  // Jika Error (Salah Pilih Status), Override Tooltip & Style
+  if (isError && errorMessage) {
+    tooltipText = errorMessage;
+  }
+
+  // Style Text: Merah Tebal jika Error
+  const textStyle = isError
+    ? 'text-[#FF0000] font-bold border-b border-dotted border-red-500'
+    : 'border-b border-dotted border-slate-400 group-hover:border-blue-500';
+
   const handleCopy = () => {
     if (!firstRef) return;
     const parts = firstRef.split('-');
     const copyText = parts.length > 1 ? parts[1] : firstRef;
-
     navigator.clipboard.writeText(copyText);
     toastSuccess(`Copied: ${firstRef}`);
   };
@@ -68,11 +78,10 @@ const SOCell = ({ text, content, className }) => {
       className={`${className} cursor-pointer hover:bg-blue-50 transition-colors relative group`}
       onClick={handleCopy}
     >
-      {refs.length > 0 ? (
+      {/* Selalu gunakan tooltip jika ada refs ATAU jika ada error */}
+      {refs.length > 0 || isError ? (
         <Tooltip tooltipContent={tooltipText}>
-          <span className="border-b border-dotted border-slate-400 group-hover:border-blue-500">
-            {text}
-          </span>
+          <span className={textStyle}>{text}</span>
         </Tooltip>
       ) : (
         text
@@ -81,10 +90,14 @@ const SOCell = ({ text, content, className }) => {
   );
 };
 
-export default function PendingReasonsTab({ data }) {
+export default function PendingReasonsTab({ data, locationName }) {
   if (!data || data.length === 0) {
     return <div className="p-6 text-center text-gray-400">Tidak ada data Pending Reason.</div>;
   }
+
+  const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
+    (locationName || '').toLowerCase().includes(loc.toLowerCase())
+  );
 
   const getCustId = (name) => {
     if (!name) return '-';
@@ -120,7 +133,7 @@ export default function PendingReasonsTab({ data }) {
             <th className={thClass}>Faktur Batal</th>
             <th className={thClass}>Terkirim Sebagian</th>
             <th className={thClass}>Pending</th>
-            <th className={thClass}>Pending GR</th>
+            {shouldShowPendingGR && <th className={thClass}>Pending GR</th>}
             <th className={thClass}>Reason</th>
             <th className={thClass}>Open Time</th>
             <th className={thClass}>Close Time</th>
@@ -144,10 +157,21 @@ export default function PendingReasonsTab({ data }) {
               : 'border-b border-b-gray-200';
             const tdClass = `${baseTdClass} ${borderBottomClass}`;
 
-            // Text Status
+            // --- DETEKSI SALAH STATUS ---
+            // Status aslinya PENDING GR, tapi lokasi ini tidak mendukung GR (hidden)
+            const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+            const errorMsg =
+              'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR.';
+
             const textBatal = item.status === 'BATAL' ? item.customerName : '';
             const textParsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
-            const textPending = item.status === 'PENDING' ? item.customerName : '';
+
+            // Logic Pending: PENDING asli ATAU Salah Status GR
+            let textPending = item.status === 'PENDING' ? item.customerName : '';
+            if (isWrongGR) {
+              textPending = item.customerName; // Pindahkan nilai ke sini
+            }
+
             const textPendingGR = item.status === 'PENDING GR' ? item.customerName : '';
 
             return (
@@ -157,12 +181,21 @@ export default function PendingReasonsTab({ data }) {
                 <td className={tdClass}>{item.licensePlate}</td>
                 <td className={`${tdClass} text-left`}>{item.driverName}</td>
 
-                {/* --- Pass item.content ke prop content --- */}
                 <SOCell text={textBatal} content={item.content} className={tdClass} />
                 <SOCell text={textParsial} content={item.content} className={tdClass} />
-                <SOCell text={textPending} content={item.content} className={tdClass} />
-                <SOCell text={textPendingGR} content={item.content} className={tdClass} />
-                {/* ----------------------------------------- */}
+
+                {/* CELL PENDING (Special Handling for Error) */}
+                <SOCell
+                  text={textPending}
+                  content={item.content}
+                  className={tdClass}
+                  isError={isWrongGR}
+                  errorMessage={errorMsg}
+                />
+
+                {shouldShowPendingGR && (
+                  <SOCell text={textPendingGR} content={item.content} className={tdClass} />
+                )}
 
                 <ReasonCell text={item.alasan} className={tdClass} />
                 <td className={tdClass}>{item.openStr || '-'}</td>
