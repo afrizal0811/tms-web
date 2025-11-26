@@ -78,9 +78,9 @@ export default function TruckUsageTable({
     if (isPercentage) {
       if (isSunday) return { backgroundColor: colorSunday };
 
-      // REVERT: Tambahkan kembali && valNum > 0
-      // Agar nilai 0/kosong TIDAK diberi warna merah muda, tapi warna base
-      if (isDetailRow && maxNum > 0 && valNum > 0) {
+      // UPDATE: Hapus syarat 'isDetailRow' agar baris TOTAL juga kena warna
+      // Tetap pakai 'valNum > 0' agar yang kosong tidak berwarna
+      if (maxNum > 0 && valNum > 0) {
         const pct = (valNum / maxNum) * 100;
 
         if (pct > 100) return { backgroundColor: colorPctOver, fontWeight: 'bold', color: 'white' };
@@ -92,7 +92,8 @@ export default function TruckUsageTable({
       return { backgroundColor: baseColor };
     }
 
-    // === B. LOGIKA TABLE COUNT ===
+    // === B. LOGIKA TABLE COUNT (ASLI) ===
+    // Di sini kita tetap pakai 'isDetailRow' agar TOTAL tidak merah jika overlimit (sesuai request sebelumnya)
     let isOverLimit = false;
     if (isDetailRow && maxNum > 0 && valNum > maxNum) {
       isOverLimit = true;
@@ -273,9 +274,10 @@ export default function TruckUsageTable({
               const masterTotal = getMasterVal('DryTotal');
               return (
                 <Fragment key={i}>
+                  {/* UPDATE: isDetailRow = false, tapi di logic atas 'isPercentage' akan mengabaikannya */}
                   <td
                     className={getCellClass(false)}
-                    style={getDataStyle(colorDryTotal, d.isSunday, val, 0, false)}
+                    style={getDataStyle(colorDryTotal, d.isSunday, val, masterTotal, false)}
                   >
                     {formatValue(val, masterTotal)}
                   </td>
@@ -396,7 +398,7 @@ export default function TruckUsageTable({
                 <Fragment key={i}>
                   <td
                     className={getCellClass(false)}
-                    style={getDataStyle(colorFrozenTotal, d.isSunday, val, 0, false)}
+                    style={getDataStyle(colorFrozenTotal, d.isSunday, val, masterTotal, false)}
                   >
                     {formatValue(val, masterTotal)}
                   </td>
@@ -435,7 +437,7 @@ export default function TruckUsageTable({
                 <Fragment key={i}>
                   <td
                     className={getCellClass(false)}
-                    style={getDataStyle(colorOTV, d.isSunday, val, 0, false)}
+                    style={getDataStyle(colorOTV, d.isSunday, val, masterTotal, false)}
                   >
                     {formatValue(val, masterTotal)}
                   </td>
