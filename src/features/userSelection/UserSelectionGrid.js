@@ -5,6 +5,11 @@ import ConfirmModal from '../../components/ConfirmModal';
 import { getUsers } from '../../lib/apiService';
 import { toastSuccess } from '../../lib/toastHelper';
 
+// <-- IMPORT HOOK & UI -->
+import Spinner from '@/components/Spinner';
+import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
+
 // Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
   if (!str) return '';
@@ -27,6 +32,10 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToConfirm, setUserToConfirm] = useState(null);
+
+  // HOOK untuk cek tag/kendaraan (sesuai API asumsi di atas)
+  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
+    useVehicleTagCheck();
 
   // ... (useEffect untuk hotkey CTRL+ALT+A... tetap sama) ...
   useEffect(() => {
@@ -57,7 +66,6 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
         if (showAll) {
           // --- Mode Rahasia: Ambil SEMUA user (tanpa filter role) ---
           usersArray = await getUsers({ hubId: hubId, status: 'active' });
-        
         } else {
           // --- Mode Normal: Ambil SEMUA roleIds yang diminta ---
           if (!Array.isArray(roleIds) || roleIds.length === 0) {
@@ -65,18 +73,14 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
           }
 
           // Buat array berisi promise untuk setiap roleId
-          const fetchPromises = roleIds.map(roleId => 
-            getUsers({ 
-              hubId: hubId, 
-              status: 'active', 
-              roleId: roleId 
+          const fetchPromises = roleIds.map((roleId) =>
+            getUsers({
+              hubId: hubId,
+              status: 'active',
+              roleId: roleId,
             })
           );
-          
-          // Jalankan semua promise secara paralel
           const results = await Promise.all(fetchPromises);
-          
-          // Gabungkan hasil dari semua panggilan API (results adalah array dari array)
           usersArray = results.flat();
         }
 
@@ -123,7 +127,6 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
   }, [hubId, showAll]); // <-- 'roleId' diganti 'roleIds'
   // --- (SELESAI PERUBAHAN 2) ---
 
-
   // ... (Sisa logika: pagination, handleChange, render... tetap sama) ...
 
   // --- LOGIC PAGINATION ---
@@ -148,14 +151,23 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     setIsConfirmOpen(true);
   };
 
-  const handleConfirmSelection = () => {
-    if (userToConfirm) {
+  const handleConfirmSelection = async () => {
+    if (!userToConfirm) {
+      setIsConfirmOpen(false);
+      return;
+    }
+
+    // Tutup modal konfirmasi UI
+    setIsConfirmOpen(false);
+
+    // Gunakan hook: triggerCheck menerima hubId dan callback success
+    triggerCheck(hubId, () => {
+      // finalize selection jika check berhasil (atau hook memutuskan safe)
       setSelectedId(userToConfirm._id);
       onUserSelect(userToConfirm);
       toastSuccess(`Data berhasil disimpan!`);
-    }
-    setIsConfirmOpen(false);
-    setUserToConfirm(null);
+      setUserToConfirm(null);
+    });
   };
 
   const handleCancelSelection = () => {
@@ -178,12 +190,23 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
 
   // Tampilan Grid
   return (
-    <div className="w-full max-w-2xl mt-6 mx-auto">
+    <div className="w-full max-w-2xl mt-6 mx-auto relative">
       {showAll && (
         <p className="text-center text-red-500 text-sm mb-4">
           Mode Rahasia: Menampilkan semua user
         </p>
       )}
+
+      {/* Spinner overlay saat hook sedang cek */}
+      {isChecking && (
+        <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-sm flex items-center justify-center rounded-lg">
+          <div className="flex flex-col items-center">
+            <Spinner />
+            <p className="mt-3 text-sm text-slate-600">Memeriksa konfigurasi kendaraan...</p>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={isConfirmOpen}
         title="Konfirmasi Pilihan User"
@@ -242,6 +265,11 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
             Selanjutnya
           </button>
         </div>
+      )}
+
+      {/* Modal mapping kalau hook memutuskan perlu mapping */}
+      {showModal && (
+        <VehicleTagMappingModal unmappedData={unmappedData} onCompleted={handleMappingCompleted} />
       )}
     </div>
   );

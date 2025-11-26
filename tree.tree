@@ -1,0 +1,93 @@
+├── app
+│   ├── api
+│   │   ├── get-hubs
+│   │   │   └── route.js
+│   │   ├── get-location-histories
+│   │   │   └── route.js
+│   │   ├── get-results-summary
+│   │   │   └── route.js
+│   │   ├── get-tasks
+│   │   │   └── route.js
+│   │   ├── get-users
+│   │   │   └── route.js
+│   │   └── get-vehicles
+│   │       └── route.js
+│   ├── estimasi
+│   │   └── page.js
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── laporan
+│   │   ├── bulk
+│   │   │   └── page.js
+│   │   └── page.js
+│   ├── layout.js
+│   ├── old.ico
+│   ├── page.js
+│   ├── rangkuman
+│   │   └── page.js
+│   └── vehicles
+│       └── page.js
+├── components
+│   ├── AppLayout.js
+│   ├── ConfirmModal.js
+│   ├── Footer.js
+│   ├── LocationDropdown.js
+│   ├── navbar
+│   │   ├── HelpDropdown.js
+│   │   ├── LaporanDropdown.js
+│   │   ├── LocationSwitcher.js
+│   │   ├── Navbar.js
+│   │   └── UserDisplay.js
+│   ├── SelectionLayout.js
+│   ├── SessionGuard.js
+│   ├── Spinner.js
+│   ├── Tooltip.js
+│   └── VehicleTagMappingModal.js
+├── features
+│   ├── dashboard
+│   │   └── DashboardSummary.js
+│   ├── estimasiDelivery
+│   │   └── EstimasiDelivery.js
+│   ├── rangkuman
+│   │   ├── RangkumanSummary.js
+│   │   └── tabs
+│   │       ├── AverageKmTab.js
+│   │       ├── components
+│   │       │   ├── TruckUsageSummaryTable.js
+│   │       │   └── TruckUsageTable.js
+│   │       ├── PendingReasonsTab.js
+│   │       ├── PlaceholderTab.js
+│   │       ├── TimeDriverTab.js
+│   │       ├── TruckDetailTab.js
+│   │       └── TruckUsageTab.js
+│   ├── reportData
+│   │   ├── BulkReportDownloader.js
+│   │   ├── DeliverySummary.js
+│   │   ├── RoutingSummary.js
+│   │   ├── StartFinishSummary.js
+│   │   └── TmsSummary.js
+│   ├── userSelection
+│   │   └── UserSelectionGrid.js
+│   └── vehicleData
+│       └── VehicleData.js
+└── lib
+    ├── apiService.js
+    ├── constants.js
+    ├── driverDataHelper.js
+    ├── hooks
+    │   └── useVehicleTagCheck.js
+    ├── masterTruckHelper.js
+    ├── reportGenerators
+    │   ├── deliveryReport.js
+    │   ├── rangkumanReport.js
+    │   ├── rangkumanSheets
+    │   │   ├── averageKmSheet.js
+    │   │   ├── pendingReasonSheet.js
+    │   │   ├── reportStyles.js
+    │   │   ├── timeDriverSheet.js
+    │   │   ├── truckDetailSheet.js
+    │   │   └── truckUsageSheet.js
+    │   ├── routingReport.js
+    │   └── timeReport.js
+    ├── toastHelper.js
+    └── utils.js
