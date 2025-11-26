@@ -182,7 +182,8 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     dailyHeader1,
     dailyHeader2,
   ];
-
+  
+  const excelRows = excelData;
   summaryData.forEach((row) => {
     if (row.isSunday) {
       excelRows.push([row.date, null, null, null, null, null, null]);
@@ -200,7 +201,7 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   });
 
   // Gunakan variable lokal agar tidak conflict
-  const excelRows = excelData;
+  
   // *Note: Di atas saya push ke excelRows yg sebenarnya reference ke excelData array yg sama.
 
   const ws = XLSX.utils.aoa_to_sheet(excelRows);

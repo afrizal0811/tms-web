@@ -12,12 +12,12 @@ import {
   FONT_STYLES,
 } from './reportStyles';
 
-// ... (Helper Functions: formatMonthName, getDeliveryDateFromRouting, getVehicleType TETAP SAMA, TIDAK PERLU DIUBAH) ...
+// --- HELPER FUNCTIONS ---
 function formatMonthName(dateObj) {
   return dateObj.toLocaleDateString('en-GB', { month: 'long' });
 }
 function getDeliveryDateFromRouting(isoString) {
-  /* ...kode lama... */ if (!isoString) return null;
+  if (!isoString) return null;
   try {
     const date = new Date(isoString);
     const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ function getDeliveryDateFromRouting(isoString) {
   }
 }
 function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
-  /* ...kode lama... */ if (!firstTag) return 'Lainnya';
+  if (!firstTag) return 'Lainnya';
   const parts = firstTag.split('-');
   if (parts.length < 2) return 'Lainnya';
   let specificType = parts[1].toUpperCase();
@@ -52,9 +52,8 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
   return specificType;
 }
 
-// ... (Fungsi calculateTruckUsageData TETAP SAMA, TIDAK PERLU DIUBAH) ...
 export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
-  /* ...kode lama... */ let tagMap = {};
+  let tagMap = {};
   if (typeof window !== 'undefined') {
     try {
       const storedMap = localStorage.getItem(TAG_MAP_KEY);
@@ -63,7 +62,10 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       console.error(e);
     }
   }
+
+  // FIX: Ambil data master langsung
   const hubMasterData = getMasterTruckData() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+
   const dateMap = {};
   const dateKeys = [];
   const currentIterDate = new Date(startDateStr);
@@ -123,7 +125,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     hubId
   );
 
-  // Indeks Baris (Tetap Sama)
   const headerRowsCount = 2;
   const startDry = headerRowsCount;
   const dryTypesCount = vehicleTypes.length;
@@ -137,108 +138,192 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
 
   // --- BUILD EXCEL DATA ---
   const monthName = formatMonthName(new Date(startDateStr));
-  const row1 = [monthName, 'Date', 'Total'];
-  const row2 = ['Vehicle Storage', 'Vehicle Types', ''];
+  const excelData = [];
+  const merges = [];
 
-  dateKeys.forEach((d) => {
-    row1.push(d.day, '', '');
-    row2.push('TMS', 'Non TMS', 'TVU');
-  });
-  const excelData = [row1, row2];
+  const buildTableData = (isPercentage, startRowIndex) => {
+    const tableRows = [];
+    const row1 = [isPercentage ? `${monthName} (%)` : monthName, 'Date', 'Total'];
+    dateKeys.forEach((d) => row1.push(d.day, '', ''));
+    tableRows.push(row1);
 
-  // Logic Data & Master Total (Tetap Sama)
-  const masterTotalsByRow = {};
-  const createRow = (label1, label2, category, rowIdx) => {
-    const row = [label1, label2];
-    let totalVal = null;
-    if (category === 'Dry') totalVal = hubMasterData?.Dry?.[label2];
-    else if (category === 'Frozen') totalVal = hubMasterData?.Frozen?.[label2];
-    else if (category === 'DryTotal') totalVal = hubMasterData?.Dry?.Total;
-    else if (category === 'FrozenTotal') totalVal = hubMasterData?.Frozen?.Total;
-    else if (category === 'OTV')
-      totalVal = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
+    const row2 = ['Vehicle Storage', 'Vehicle Types', ''];
+    dateKeys.forEach(() => row2.push('TMS', 'Non TMS', 'TVU'));
+    tableRows.push(row2);
 
-    masterTotalsByRow[rowIdx] = totalVal || 0;
-    row.push(totalVal || null);
+    const rowMasterTotals = {};
 
-    dateKeys.forEach((d) => {
-      let val = null;
-      if (category === 'Dry' || category === 'Frozen') val = dateMap[d.str][category][label2];
-      else if (category === 'DryTotal') val = dateMap[d.str].DryTotal;
-      else if (category === 'FrozenTotal') val = dateMap[d.str].FrozenTotal;
-      else if (category === 'OTV') val = dateMap[d.str].OTV;
+    const createRow = (label1, label2, category, relativeRowIdx) => {
+      const row = [label1, label2];
+      let totalVal = null;
+      if (category === 'Dry') totalVal = hubMasterData?.Dry?.[label2];
+      else if (category === 'Frozen') totalVal = hubMasterData?.Frozen?.[label2];
+      else if (category === 'DryTotal') totalVal = hubMasterData?.Dry?.Total;
+      else if (category === 'FrozenTotal') totalVal = hubMasterData?.Frozen?.Total;
+      else if (category === 'OTV')
+        totalVal = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
 
-      row.push(val === 0 ? null : val);
-      row.push(null);
-      row.push(null);
+      rowMasterTotals[relativeRowIdx] = totalVal || 0;
+      row.push(totalVal || null);
+
+      dateKeys.forEach((d) => {
+        let valRaw = 0;
+        if (category === 'Dry' || category === 'Frozen') valRaw = dateMap[d.str][category][label2];
+        else if (category === 'DryTotal') valRaw = dateMap[d.str].DryTotal;
+        else if (category === 'FrozenTotal') valRaw = dateMap[d.str].FrozenTotal;
+        else if (category === 'OTV') valRaw = dateMap[d.str].OTV;
+        valRaw = valRaw || 0;
+
+        const nonTmsRaw = 0;
+        const tmsDisp = valRaw > 0 ? valRaw : null;
+        const nonTmsDisp = null;
+
+        let tvuDisp = null;
+        const sumVal = valRaw + nonTmsRaw;
+        if (sumVal > 0) tvuDisp = sumVal;
+
+        if (isPercentage) {
+          if (totalVal > 0) {
+            const tmsPct = tmsDisp !== null ? tmsDisp / totalVal : null;
+            const nonTmsPct = null;
+            const tvuPct = tvuDisp !== null ? tvuDisp / totalVal : null;
+            row.push(tmsPct, nonTmsPct, tvuPct);
+          } else {
+            row.push(null, null, null);
+          }
+        } else {
+          row.push(tmsDisp, nonTmsDisp, tvuDisp);
+        }
+      });
+      return row;
+    };
+
+    let rIdx = 2;
+    vehicleTypes.forEach((type, idx) =>
+      tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
+    );
+    tableRows.push(createRow('Interbranch', '', 'Dry', rIdx++));
+    tableRows.push(createRow('Total Used', '', 'DryTotal', rIdx++));
+    vehicleTypes.forEach((type, idx) =>
+      tableRows.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', rIdx++))
+    );
+    tableRows.push(createRow('Interbranch', '', 'Frozen', rIdx++));
+    tableRows.push(createRow('Total Used', '', 'FrozenTotal', rIdx++));
+    tableRows.push(createRow('OTV', '', 'OTV', rIdx++));
+
+    // Merges
+    const H1 = startRowIndex;
+    const H2 = startRowIndex + 1;
+    let colIdx = 3;
+    dateKeys.forEach(() => {
+      merges.push({ s: { r: H1, c: colIdx }, e: { r: H1, c: colIdx + 2 } });
+      colIdx += 3;
     });
-    return row;
+    merges.push({ s: { r: H1, c: 2 }, e: { r: H2, c: 2 } });
+
+    const dryStart = startRowIndex + 2;
+    const dryInter = dryStart + vehicleTypes.length;
+    const dryTot = dryInter + 1;
+    const frzStart = dryTot + 1;
+    const frzInter = frzStart + vehicleTypes.length;
+    const frzTot = frzInter + 1;
+    const otvRow = frzTot + 1;
+
+    merges.push({ s: { r: dryStart, c: 0 }, e: { r: dryInter - 1, c: 0 } });
+    merges.push({ s: { r: frzStart, c: 0 }, e: { r: frzInter - 1, c: 0 } });
+    merges.push({ s: { r: dryInter, c: 0 }, e: { r: dryInter, c: 1 } });
+    merges.push({ s: { r: dryTot, c: 0 }, e: { r: dryTot, c: 1 } });
+    merges.push({ s: { r: frzInter, c: 0 }, e: { r: frzInter, c: 1 } });
+    merges.push({ s: { r: frzTot, c: 0 }, e: { r: frzTot, c: 1 } });
+    merges.push({ s: { r: otvRow, c: 0 }, e: { r: otvRow, c: 1 } });
+
+    return { tableRows, rowMasterTotals };
   };
 
-  // Generate Rows (Tetap Sama)
-  let currentRowIdx = 2;
-  vehicleTypes.forEach((type, idx) => {
-    excelData.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', currentRowIdx++));
-  });
-  excelData.push(createRow('Interbranch', '', 'Dry', currentRowIdx++));
-  excelData.push(createRow('Total Used', '', 'DryTotal', currentRowIdx++));
-  vehicleTypes.forEach((type, idx) => {
-    excelData.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', currentRowIdx++));
-  });
-  excelData.push(createRow('Interbranch', '', 'Frozen', currentRowIdx++));
-  excelData.push(createRow('Total Used', '', 'FrozenTotal', currentRowIdx++));
-  excelData.push(createRow('OTV', '', 'OTV', currentRowIdx++));
+  const table1 = buildTableData(false, 0);
+  excelData.push(...table1.tableRows);
+  excelData.push([]);
+  const table2StartRow = excelData.length;
+  const table2 = buildTableData(true, table2StartRow);
+  excelData.push(...table2.tableRows);
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
-
-  // Merges & Freeze (Tetap Sama)
-  const merges = [];
-  let colIdx = 3;
-  dateKeys.forEach(() => {
-    merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 2 } });
-    colIdx += 3;
-  });
-  merges.push({ s: { r: 0, c: 2 }, e: { r: 1, c: 2 } });
-  merges.push({ s: { r: startDry, c: 0 }, e: { r: dryInterbranchRow - 1, c: 0 } });
-  merges.push({ s: { r: frozenStartRow, c: 0 }, e: { r: frozenInterbranchRow - 1, c: 0 } });
-  merges.push({ s: { r: dryInterbranchRow, c: 0 }, e: { r: dryInterbranchRow, c: 1 } });
-  merges.push({ s: { r: dryTotalRow, c: 0 }, e: { r: dryTotalRow, c: 1 } });
-  merges.push({ s: { r: frozenInterbranchRow, c: 0 }, e: { r: frozenInterbranchRow, c: 1 } });
-  merges.push({ s: { r: frozenTotalRow, c: 0 }, e: { r: frozenTotalRow, c: 1 } });
-  merges.push({ s: { r: otvRow, c: 0 }, e: { r: otvRow, c: 1 } });
   ws['!merges'] = merges;
   ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: 2 }];
 
-  // --- 6. STYLING (MENGGUNAKAN REPORTSTYLES) ---
+  // --- 6. STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
+  const tableHeight = 2 + vehicleTypes.length + 1 + 1 + vehicleTypes.length + 1 + 1 + 1;
+  const getRelativeRowInfo = (R) => {
+    let isTable1 = false,
+      isTable2 = false,
+      relR = -1;
+    if (R < tableHeight) {
+      isTable1 = true;
+      relR = R;
+    } else if (R >= table2StartRow && R < table2StartRow + tableHeight) {
+      isTable2 = true;
+      relR = R - table2StartRow;
+    }
+    if (relR === -1) return null;
+    const startDry = 2;
+    const dryInter = startDry + vehicleTypes.length;
+    const dryTot = dryInter + 1;
+    const frzStart = dryTot + 1;
+    const frzInter = frzStart + vehicleTypes.length;
+    const frzTot = frzInter + 1;
+    const otvRow = frzTot + 1;
+    return {
+      isTable1,
+      isTable2,
+      relR,
+      startDry,
+      dryInter,
+      dryTot,
+      frzStart,
+      frzInter,
+      frzTot,
+      otvRow,
+    };
+  };
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
+    const info = getRelativeRowInfo(R);
+    if (!info) continue;
+
+    const {
+      isTable1,
+      isTable2,
+      relR,
+      startDry,
+      dryInter,
+      dryTot,
+      frzStart,
+      frzInter,
+      frzTot,
+      otvRow,
+    } = info;
+    const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2.rowMasterTotals;
+
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // A. HEADER
-      if (R === 0 || R === 1) {
-        cell.s = { ...HEADER_STYLES.main }; // Pakai Style Terpusat
-
-        // Border Override
+      if (relR === 0 || relR === 1) {
+        cell.s = { ...HEADER_STYLES.main };
         if (C === 3) cell.s.border.left = BORDERS.medium;
         if (C > 2 && (C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
         if (C === 2) cell.s.border.right = BORDERS.medium;
-      }
-      // B. DATA
-      else {
-        // Tentukan Warna Dasar Baris dari PRESETS
+      } else {
         let rowFill = null;
-        if (R >= startDry && R <= dryInterbranchRow) rowFill = FILL_STYLES.dry;
-        else if (R === dryTotalRow) rowFill = FILL_STYLES.dryTotal;
-        else if (R >= frozenStartRow && R <= frozenInterbranchRow) rowFill = FILL_STYLES.frozen;
-        else if (R === frozenTotalRow) rowFill = FILL_STYLES.frozenTotal;
-        else if (R === otvRow) rowFill = FILL_STYLES.otv;
+        if (relR >= startDry && relR <= dryInter) rowFill = FILL_STYLES.dry;
+        else if (relR === dryTot) rowFill = FILL_STYLES.dryTotal;
+        else if (relR >= frzStart && relR <= frzInter) rowFill = FILL_STYLES.frozen;
+        else if (relR === frzTot) rowFill = FILL_STYLES.frozenTotal;
+        else if (relR === otvRow) rowFill = FILL_STYLES.otv;
 
         if (C <= 1) {
-          // Labels
           const isMergedRow = [
             dryInterbranchRow,
             dryTotalRow,
@@ -246,66 +331,80 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
             frozenTotalRow,
             otvRow,
           ].includes(R);
-
           if (isMergedRow && C === 0) cell.s = { ...BASE_STYLES.left };
           else if (C === 0) cell.s = { ...BASE_STYLES.center };
           else cell.s = { ...BASE_STYLES.left };
-
           if (rowFill) cell.s.fill = rowFill;
           cell.s.border = undefined;
         } else {
-          // Data
-          cell.s = { ...BASE_STYLES.center }; // Base
+          cell.s = { ...BASE_STYLES.center };
+
+          // --- FIX: Apply Percentage Format First ---
+          if (isTable2 && C > 2) {
+            if (typeof cell.v === 'number') {
+              cell.t = 'n';
+              cell.s.numFmt = '0%'; // Format "7%"
+            }
+          }
 
           if (C === 2) {
-            // Col Total
             cell.s.border = { left: BORDERS.thin, right: BORDERS.medium };
             if (rowFill) cell.s.fill = rowFill;
             cell.s.font = FONT_STYLES.bold;
           } else {
             if (C === 3) cell.s.border = { left: BORDERS.medium };
-            else cell.s.border = {}; // Reset borders
-
+            else cell.s.border = {};
             if ((C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
 
             let isSundayCol = false;
             let isTMSCol = false;
+            let isTVUCol = false;
             if (C > 2) {
               const relativeIdx = (C - 3) % 3;
               if (relativeIdx === 0) isTMSCol = true;
+              if (relativeIdx === 2) isTVUCol = true; // TVU Check
               const dateIndex = Math.floor((C - 3) / 3);
               if (dateKeys[dateIndex] && dateKeys[dateIndex].isSunday) isSundayCol = true;
             }
 
-            // Logic Alert
-            let isOverLimit = false;
-            const isTotalOrInterbranchRow = [
-              dryInterbranchRow,
-              dryTotalRow,
-              frozenInterbranchRow,
-              frozenTotalRow,
-              otvRow,
-            ].includes(R);
+            let finalFill = rowFill;
+            const isDetailRow = ![dryInter, dryTot, frzInter, frzTot, otvRow].includes(relR);
+            const masterTotal = currentMasterTotals[relR] || 0;
+            const val = cell.v;
 
-            if (isTMSCol && !isTotalOrInterbranchRow) {
-              const tmsVal = cell.v || 0;
-              const masterTotal = masterTotalsByRow[R] || 0;
-              if (tmsVal > masterTotal) isOverLimit = true;
+            if (isTable1) {
+              // COUNT
+              if (isTMSCol && isDetailRow && val > masterTotal) {
+                finalFill = FILL_STYLES.alertRed;
+              } else if (isSundayCol) {
+                finalFill = FILL_STYLES.red;
+              }
+            } else {
+              // PERCENTAGE (TMS OR TVU)
+              if (isSundayCol) {
+                finalFill = FILL_STYLES.red;
+              } else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
+                if (val > 1) finalFill = FILL_STYLES.alertRed;
+                else if (val >= 0.75)
+                  finalFill = { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };
+                else if (val >= 0.5)
+                  finalFill = { patternType: 'solid', fgColor: { rgb: 'F1C232' } };
+                else finalFill = { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
+              }
             }
 
-            if (isOverLimit) {
-              cell.s.fill = FILL_STYLES.alertRed;
-              // Optional: cell.s.font = FONT_STYLES.whiteBold;
-            } else if (isSundayCol) {
-              cell.s.fill = FILL_STYLES.red;
-            } else {
-              if (rowFill) cell.s.fill = rowFill;
+            if (finalFill) cell.s.fill = finalFill;
+
+            if (isTable2 && finalFill === FILL_STYLES.alertRed) {
+              cell.s.font = FONT_STYLES.whiteBold;
             }
           }
         }
 
         if (
-          [dryInterbranchRow, dryTotalRow, frozenInterbranchRow, frozenTotalRow, otvRow].includes(R)
+          [dryInterbranchRow, dryTotalRow, frozenInterbranchRow, frozenTotalRow, otvRow].includes(
+            relR
+          )
         ) {
           cell.s.font = FONT_STYLES.bold;
         }

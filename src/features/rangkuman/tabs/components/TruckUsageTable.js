@@ -78,8 +78,8 @@ export default function TruckUsageTable({
     if (isPercentage) {
       if (isSunday) return { backgroundColor: colorSunday };
 
-      // UPDATE: Hapus syarat 'isDetailRow' agar baris TOTAL juga kena warna
-      // Tetap pakai 'valNum > 0' agar yang kosong tidak berwarna
+      // UPDATE: Hapus syarat 'isDetailRow'
+      // Sekarang TVU (yang isDetailRow=false) juga akan diwarnai jika nilainya > 0
       if (maxNum > 0 && valNum > 0) {
         const pct = (valNum / maxNum) * 100;
 
@@ -92,8 +92,8 @@ export default function TruckUsageTable({
       return { backgroundColor: baseColor };
     }
 
-    // === B. LOGIKA TABLE COUNT (ASLI) ===
-    // Di sini kita tetap pakai 'isDetailRow' agar TOTAL tidak merah jika overlimit (sesuai request sebelumnya)
+    // === B. LOGIKA TABLE COUNT ===
+    // Tetap gunakan isDetailRow agar baris Total tidak merah jika overlimit
     let isOverLimit = false;
     if (isDetailRow && maxNum > 0 && valNum > maxNum) {
       isOverLimit = true;
@@ -106,6 +106,129 @@ export default function TruckUsageTable({
       return { backgroundColor: colorSunday };
     }
     return { backgroundColor: baseColor };
+  };
+
+  const getRowValues = (d, category, label2) => {
+    let tmsRaw = 0;
+    if (category === 'Dry' || category === 'Frozen') tmsRaw = dateMap[d.str][category][label2];
+    else if (category === 'DryTotal') tmsRaw = dateMap[d.str].DryTotal;
+    else if (category === 'FrozenTotal') tmsRaw = dateMap[d.str].FrozenTotal;
+    else if (category === 'OTV') tmsRaw = dateMap[d.str].OTV;
+    tmsRaw = tmsRaw || 0;
+
+    const nonTmsRaw = 0;
+
+    const tmsDisp = tmsRaw === 0 ? null : tmsRaw;
+    const nonTmsDisp = nonTmsRaw === 0 ? null : nonTmsRaw;
+
+    const totalSum = tmsRaw + nonTmsRaw;
+    const tvuDisp = totalSum > 0 ? totalSum : null;
+
+    return { tmsDisp, nonTmsDisp, tvuDisp };
+  };
+
+  // Render Section Rows (Dry/Frozen Types)
+  const renderSectionRows = (cat, bgColor, types) => {
+    return types.map((type, idx) => {
+      const masterTotal = getMasterVal(cat, type);
+      return (
+        <tr key={`${cat}-${type}`}>
+          {idx === 0 && (
+            <td
+              rowSpan={types.length}
+              className={`${tdClass} ${colStorageClass} font-bold align-middle sticky left-0 z-30 border-r border-gray-300`}
+              style={{ backgroundColor: bgColor }}
+            >
+              {cat}
+            </td>
+          )}
+          <td
+            className={`${tdClass} ${colTypeClass} text-left sticky left-[100px] z-30 border-r border-gray-300`}
+            style={{ backgroundColor: bgColor }}
+          >
+            {type}
+          </td>
+          <td
+            className={`${tdClass} ${colTotalClass} font-bold sticky left-[250px] z-30 ${thickBorderClass}`}
+            style={{ backgroundColor: bgColor }}
+          >
+            {masterTotal}
+          </td>
+          {dateKeys.map((d, i) => {
+            const { tmsDisp, nonTmsDisp, tvuDisp } = getRowValues(d, cat, type);
+            return (
+              <Fragment key={i}>
+                <td
+                  className={getCellClass(false)}
+                  style={getDataStyle(bgColor, d.isSunday, tmsDisp, masterTotal, true)}
+                >
+                  {formatValue(tmsDisp, masterTotal)}
+                </td>
+                <td
+                  className={getCellClass(false)}
+                  style={getDataStyle(bgColor, d.isSunday, nonTmsDisp, 0, false)}
+                >
+                  {formatValue(nonTmsDisp, masterTotal)}
+                </td>
+                <td
+                  className={getCellClass(true)}
+                  style={getDataStyle(bgColor, d.isSunday, tvuDisp, masterTotal, false)}
+                >
+                  {formatValue(tvuDisp, masterTotal)}
+                </td>
+              </Fragment>
+            );
+          })}
+        </tr>
+      );
+    });
+  };
+
+  // Render Special Row (Total/Interbranch/OTV)
+  const renderSpecialRow = (label, cat, bgColor, isBold = false) => {
+    const masterTotal = getMasterVal(cat);
+    return (
+      <tr className={isBold ? 'font-bold' : ''}>
+        <td
+          colSpan="2"
+          className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
+          style={{ backgroundColor: bgColor }}
+        >
+          {label}
+        </td>
+        <td
+          className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
+          style={{ backgroundColor: bgColor }}
+        >
+          {masterTotal}
+        </td>
+        {dateKeys.map((d, i) => {
+          const { tmsDisp, nonTmsDisp, tvuDisp } = getRowValues(d, cat, '');
+          return (
+            <Fragment key={i}>
+              <td
+                className={getCellClass(false)}
+                style={getDataStyle(bgColor, d.isSunday, tmsDisp, masterTotal, false)}
+              >
+                {formatValue(tmsDisp, masterTotal)}
+              </td>
+              <td
+                className={getCellClass(false)}
+                style={getDataStyle(bgColor, d.isSunday, nonTmsDisp, 0, false)}
+              >
+                {formatValue(nonTmsDisp, masterTotal)}
+              </td>
+              <td
+                className={getCellClass(true)}
+                style={getDataStyle(bgColor, d.isSunday, tvuDisp, masterTotal, false)}
+              >
+                {formatValue(tvuDisp, masterTotal)}
+              </td>
+            </Fragment>
+          );
+        })}
+      </tr>
+    );
   };
 
   return (
@@ -170,289 +293,19 @@ export default function TruckUsageTable({
             ))}
           </tr>
         </thead>
-
         <tbody>
-          {/* 1. DRY SECTION */}
-          {vehicleTypes.map((type, idx) => {
-            const masterTotal = getMasterVal('Dry', type);
-            return (
-              <tr key={`dry-${type}`}>
-                {idx === 0 ? (
-                  <td
-                    rowSpan={vehicleTypes.length}
-                    className={`${tdClass} ${colStorageClass} font-bold align-middle sticky left-0 z-30 border-r border-gray-300`}
-                    style={{ backgroundColor: colorDry }}
-                  >
-                    Dry
-                  </td>
-                ) : null}
-                <td
-                  className={`${tdClass} ${colTypeClass} text-left sticky left-[100px] z-30 border-r border-gray-300`}
-                  style={{ backgroundColor: colorDry }}
-                >
-                  {type}
-                </td>
-                <td
-                  className={`${tdClass} ${colTotalClass} font-bold sticky left-[250px] z-30 ${thickBorderClass}`}
-                  style={{ backgroundColor: colorDry }}
-                >
-                  {masterTotal}
-                </td>
-                {dateKeys.map((d, i) => {
-                  const val = dateMap[d.str].Dry[type];
-                  return (
-                    <Fragment key={i}>
-                      <td
-                        className={getCellClass(false)}
-                        style={getDataStyle(colorDry, d.isSunday, val, masterTotal, true)}
-                      >
-                        {formatValue(val, masterTotal)}
-                      </td>
-                      <td
-                        className={getCellClass(false)}
-                        style={getDataStyle(colorDry, d.isSunday, 0, 9999)}
-                      ></td>
-                      <td
-                        className={getCellClass(true)}
-                        style={getDataStyle(colorDry, d.isSunday, 0, 9999)}
-                      ></td>
-                    </Fragment>
-                  );
-                })}
-              </tr>
-            );
-          })}
+          {/* DRY */}
+          {renderSectionRows('Dry', colorDry, vehicleTypes)}
+          {renderSpecialRow('Interbranch', 'Dry', colorDry)}
+          {renderSpecialRow('Total Used', 'DryTotal', colorDryTotal, true)}
 
-          {/* Interbranch Dry */}
-          <tr>
-            <td
-              colSpan="2"
-              className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
-              style={{ backgroundColor: colorDry }}
-            >
-              Interbranch
-            </td>
-            <td
-              className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
-              style={{ backgroundColor: colorDry }}
-            ></td>
-            {dateKeys.map((d, i) => (
-              <Fragment key={i}>
-                <td
-                  className={getCellClass(false)}
-                  style={getDataStyle(colorDry, d.isSunday, 0, 0, false)}
-                ></td>
-                <td
-                  className={getCellClass(false)}
-                  style={getDataStyle(colorDry, d.isSunday, 0, 0, false)}
-                ></td>
-                <td
-                  className={getCellClass(true)}
-                  style={getDataStyle(colorDry, d.isSunday, 0, 0, false)}
-                ></td>
-              </Fragment>
-            ))}
-          </tr>
+          {/* FROZEN */}
+          {renderSectionRows('Frozen', colorFrozen, vehicleTypes)}
+          {renderSpecialRow('Interbranch', 'Frozen', colorFrozen)}
+          {renderSpecialRow('Total Used', 'FrozenTotal', colorFrozenTotal, true)}
 
-          {/* Total Dry */}
-          <tr className="font-bold">
-            <td
-              colSpan="2"
-              className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left sticky left-0 z-30 border-r border-gray-300 pl-4`}
-              style={{ backgroundColor: colorDryTotal }}
-            >
-              Total Used
-            </td>
-            <td
-              className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
-              style={{ backgroundColor: colorDryTotal }}
-            >
-              {getMasterVal('DryTotal')}
-            </td>
-            {dateKeys.map((d, i) => {
-              const val = dateMap[d.str].DryTotal;
-              const masterTotal = getMasterVal('DryTotal');
-              return (
-                <Fragment key={i}>
-                  {/* UPDATE: isDetailRow = false, tapi di logic atas 'isPercentage' akan mengabaikannya */}
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorDryTotal, d.isSunday, val, masterTotal, false)}
-                  >
-                    {formatValue(val, masterTotal)}
-                  </td>
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorDryTotal, d.isSunday, 0, 0, false)}
-                  ></td>
-                  <td
-                    className={getCellClass(true)}
-                    style={getDataStyle(colorDryTotal, d.isSunday, 0, 0, false)}
-                  ></td>
-                </Fragment>
-              );
-            })}
-          </tr>
-
-          {/* 2. FROZEN SECTION */}
-          {vehicleTypes.map((type, idx) => {
-            const masterTotal = getMasterVal('Frozen', type);
-            return (
-              <tr key={`frz-${type}`}>
-                {idx === 0 ? (
-                  <td
-                    rowSpan={vehicleTypes.length}
-                    className={`${tdClass} ${colStorageClass} font-bold align-middle sticky left-0 z-30 border-r border-gray-300`}
-                    style={{ backgroundColor: colorFrozen }}
-                  >
-                    Frozen
-                  </td>
-                ) : null}
-                <td
-                  className={`${tdClass} ${colTypeClass} text-left sticky left-[100px] z-30 border-r border-gray-300`}
-                  style={{ backgroundColor: colorFrozen }}
-                >
-                  {type}
-                </td>
-                <td
-                  className={`${tdClass} ${colTotalClass} font-bold sticky left-[250px] z-30 ${thickBorderClass}`}
-                  style={{ backgroundColor: colorFrozen }}
-                >
-                  {masterTotal}
-                </td>
-                {dateKeys.map((d, i) => {
-                  const val = dateMap[d.str].Frozen[type];
-                  return (
-                    <Fragment key={i}>
-                      <td
-                        className={getCellClass(false)}
-                        style={getDataStyle(colorFrozen, d.isSunday, val, masterTotal, true)}
-                      >
-                        {formatValue(val, masterTotal)}
-                      </td>
-                      <td
-                        className={getCellClass(false)}
-                        style={getDataStyle(colorFrozen, d.isSunday, 0, 9999)}
-                      ></td>
-                      <td
-                        className={getCellClass(true)}
-                        style={getDataStyle(colorFrozen, d.isSunday, 0, 9999)}
-                      ></td>
-                    </Fragment>
-                  );
-                })}
-              </tr>
-            );
-          })}
-
-          {/* Interbranch Frozen */}
-          <tr>
-            <td
-              colSpan="2"
-              className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
-              style={{ backgroundColor: colorFrozen }}
-            >
-              Interbranch
-            </td>
-            <td
-              className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
-              style={{ backgroundColor: colorFrozen }}
-            ></td>
-            {dateKeys.map((d, i) => (
-              <Fragment key={i}>
-                <td
-                  className={getCellClass(false)}
-                  style={getDataStyle(colorFrozen, d.isSunday, 0, 0, false)}
-                ></td>
-                <td
-                  className={getCellClass(false)}
-                  style={getDataStyle(colorFrozen, d.isSunday, 0, 0, false)}
-                ></td>
-                <td
-                  className={getCellClass(true)}
-                  style={getDataStyle(colorFrozen, d.isSunday, 0, 0, false)}
-                ></td>
-              </Fragment>
-            ))}
-          </tr>
-
-          {/* Total Frozen */}
-          <tr className="font-bold">
-            <td
-              colSpan="2"
-              className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left sticky left-0 z-30 border-r border-gray-300 pl-4`}
-              style={{ backgroundColor: colorFrozenTotal }}
-            >
-              Total Used
-            </td>
-            <td
-              className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
-              style={{ backgroundColor: colorFrozenTotal }}
-            >
-              {getMasterVal('FrozenTotal')}
-            </td>
-            {dateKeys.map((d, i) => {
-              const val = dateMap[d.str].FrozenTotal;
-              const masterTotal = getMasterVal('FrozenTotal');
-              return (
-                <Fragment key={i}>
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorFrozenTotal, d.isSunday, val, masterTotal, false)}
-                  >
-                    {formatValue(val, masterTotal)}
-                  </td>
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorFrozenTotal, d.isSunday, 0, 0, false)}
-                  ></td>
-                  <td
-                    className={getCellClass(true)}
-                    style={getDataStyle(colorFrozenTotal, d.isSunday, 0, 0, false)}
-                  ></td>
-                </Fragment>
-              );
-            })}
-          </tr>
-
-          {/* 3. OTV */}
-          <tr className="font-bold">
-            <td
-              colSpan="2"
-              className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left sticky left-0 z-30 border-r border-gray-300 pl-4`}
-              style={{ backgroundColor: colorOTV }}
-            >
-              OTV
-            </td>
-            <td
-              className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
-              style={{ backgroundColor: colorOTV }}
-            >
-              {getMasterVal('OTV')}
-            </td>
-            {dateKeys.map((d, i) => {
-              const val = dateMap[d.str].OTV;
-              const masterTotal = getMasterVal('OTV');
-              return (
-                <Fragment key={i}>
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorOTV, d.isSunday, val, masterTotal, false)}
-                  >
-                    {formatValue(val, masterTotal)}
-                  </td>
-                  <td
-                    className={getCellClass(false)}
-                    style={getDataStyle(colorOTV, d.isSunday, 0, 9999)}
-                  ></td>
-                  <td
-                    className={getCellClass(true)}
-                    style={getDataStyle(colorOTV, d.isSunday, 0, 9999)}
-                  ></td>
-                </Fragment>
-              );
-            })}
-          </tr>
+          {/* OTV */}
+          {renderSpecialRow('OTV', 'OTV', colorOTV, true)}
         </tbody>
       </table>
     </div>

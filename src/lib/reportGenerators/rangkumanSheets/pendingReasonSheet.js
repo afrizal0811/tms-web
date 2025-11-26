@@ -178,12 +178,12 @@ export function calculatePendingReasonData(driverData, allTasks) {
 
 export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName) {
   const data = calculatePendingReasonData(driverData, allTasks);
+  const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
     (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
   );
 
-  const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
   // Headers
   let headers = [
