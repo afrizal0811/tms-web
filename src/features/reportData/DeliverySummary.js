@@ -1,7 +1,7 @@
 'use client';
 
 import { toastSuccess } from '@/lib/toastHelper';
-import { calculateTargetDates, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
+import { calculateTargetDates } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary, getTasks } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
@@ -30,9 +30,9 @@ export default function DeliverySummary({
       }
 
       // 2. Tentukan parameter API (menggunakan H-1)
-      const { dateFrom: apiDate, dateTo: apiDateTo } = calculateTargetDates(selectedDate);
-      const timeFrom = `${apiDate} 00:00:00`;
-      const timeTo = `${apiDateTo} 23:59:59`;
+      const { dateFrom: apiDate } = calculateTargetDates(selectedDate);
+      const timeFrom = `${selectedDate} 00:00:00`;
+      const timeTo = `${selectedDate} 23:59:59`;
 
       // 3. Fetch Data
       const tasksPromise = getTasks({
@@ -67,7 +67,7 @@ export default function DeliverySummary({
         driverData,
         allTasks,
         resultsData,
-        selectedDate, // Kirim tanggal ASLI (pilihan user) untuk penamaan
+        selectedDate,
         apiDate,
         selectedLocation,
         selectedLocationName
