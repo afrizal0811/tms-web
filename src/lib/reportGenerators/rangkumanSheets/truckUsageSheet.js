@@ -1,18 +1,11 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckUsageSheet.js
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
-import { formatDate } from '@/lib/utils';
 import { getMasterTruckData } from '@/lib/masterTruckHelper';
+import { formatDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import {
-  COLORS,
-  BORDERS,
-  BASE_STYLES,
-  HEADER_STYLES,
-  FILL_STYLES,
-  FONT_STYLES,
-} from './reportStyles';
+import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
-// --- HELPER FUNCTIONS ---
+// --- HELPER FUNCTIONS (TIDAK BERUBAH) ---
 function formatMonthName(dateObj) {
   return dateObj.toLocaleDateString('en-GB', { month: 'long' });
 }
@@ -52,6 +45,92 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
   return specificType;
 }
 
+// --- LOGIKA HITUNG RANGKUMAN (TIDAK BERUBAH) ---
+function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
+  const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
+  const workingDays = dateKeys.filter((d) => !d.isSunday).length;
+  const categories = ['Dry', 'Frozen'];
+
+  categories.forEach((cat) => {
+    let grpTMS = 0;
+    let grpNonTMS = 0;
+    VEHICLE_TYPES.forEach((type) => {
+      let totalTMS = 0;
+      dateKeys.forEach((d) => {
+        totalTMS += dateMap[d.str][cat][type] || 0;
+      });
+      const TVU = totalTMS;
+      const V_Type = hubMasterData?.[cat]?.[type] || 0;
+      const TV = V_Type * workingDays;
+      const PctTVU = TV > 0 ? TVU / TV : 0;
+      const VU = Math.ceil(PctTVU * V_Type);
+      const IV = Math.max(0, V_Type - VU);
+      const PctIV = V_Type > 0 ? IV / V_Type : 0;
+      summary[cat].types[type] = {
+        TMS: totalTMS,
+        NonTMS: 0,
+        TVU,
+        TV,
+        PctTVU,
+        PctTMS: TV > 0 ? totalTMS / TV : 0,
+        PctNonTMS: 0,
+        PctIV,
+        V: V_Type,
+        VU,
+        IV,
+      };
+      grpTMS += totalTMS;
+    });
+    const V_Total = hubMasterData?.[cat]?.Total || 0;
+    const TV_Total = V_Total * workingDays;
+    const TVU_Total = grpTMS;
+    const PctTVU_Total = TV_Total > 0 ? TVU_Total / TV_Total : 0;
+    const PctTMS_Total = TV_Total > 0 ? grpTMS / TV_Total : 0;
+    const PctNonTMS_Total = 0;
+    const VU_Total = Math.ceil(PctTVU_Total * V_Total);
+    const IV_Total = Math.max(0, V_Total - VU_Total);
+    const PctIV_Total = V_Total > 0 ? IV_Total / V_Total : 0;
+    summary[cat].total = {
+      TMS: grpTMS,
+      NonTMS: 0,
+      TVU: TVU_Total,
+      TV: TV_Total,
+      PctTVU: PctTVU_Total,
+      PctTMS: PctTMS_Total,
+      PctNonTMS: PctNonTMS_Total,
+      PctIV: PctIV_Total,
+      V: V_Total,
+      VU: VU_Total,
+      IV: IV_Total,
+    };
+  });
+  let otvTMS = 0;
+  dateKeys.forEach((d) => (otvTMS += dateMap[d.str].OTV || 0));
+  const V_OTV = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
+  const TV_OTV = V_OTV * workingDays;
+  const TVU_OTV = otvTMS;
+  const PctTVU_OTV = TV_OTV > 0 ? TVU_OTV / TV_OTV : 0;
+  const PctTMS_OTV = TV_OTV > 0 ? otvTMS / TV_OTV : 0;
+  const PctNonTMS_OTV = 0;
+  const VU_OTV = Math.ceil(PctTVU_OTV * V_OTV);
+  const IV_OTV = Math.max(0, V_OTV - VU_OTV);
+  const PctIV_OTV = V_OTV > 0 ? IV_OTV / V_OTV : 0;
+  summary.OTV = {
+    TMS: otvTMS,
+    NonTMS: 0,
+    TVU: TVU_OTV,
+    TV: TV_OTV,
+    PctTVU: PctTVU_OTV,
+    PctTMS: PctTMS_OTV,
+    PctNonTMS: PctNonTMS_OTV,
+    PctIV: PctIV_OTV,
+    V: V_OTV,
+    VU: VU_OTV,
+    IV: IV_OTV,
+  };
+  return summary;
+}
+
 export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
   let tagMap = {};
   if (typeof window !== 'undefined') {
@@ -62,10 +141,7 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       console.error(e);
     }
   }
-
-  // FIX: Ambil data master langsung
   const hubMasterData = getMasterTruckData() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
-
   const dateMap = {};
   const dateKeys = [];
   const currentIterDate = new Date(startDateStr);
@@ -114,45 +190,106 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       }
     });
   }
-  return { dateMap, dateKeys, vehicleTypes: VEHICLE_TYPES, hubMasterData };
+  const summaryData = calculateUsageSummary(dateMap, dateKeys, hubMasterData);
+  return { dateMap, dateKeys, vehicleTypes: VEHICLE_TYPES, hubMasterData, summaryData };
 }
 
+/**
+ * BAGIAN 2: GENERATOR EXCEL
+ */
 export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId) {
-  const { dateMap, dateKeys, vehicleTypes, hubMasterData } = calculateTruckUsageData(
+  const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } = calculateTruckUsageData(
     resultsData,
     startDateStr,
     endDateStr,
     hubId
   );
 
-  const headerRowsCount = 2;
-  const startDry = headerRowsCount;
-  const dryTypesCount = vehicleTypes.length;
-  const dryInterbranchRow = startDry + dryTypesCount;
-  const dryTotalRow = dryInterbranchRow + 1;
-  const frozenStartRow = dryTotalRow + 1;
-  const frozenTypesCount = vehicleTypes.length;
-  const frozenInterbranchRow = frozenStartRow + frozenTypesCount;
-  const frozenTotalRow = frozenInterbranchRow + 1;
-  const otvRow = frozenTotalRow + 1;
-
-  // --- BUILD EXCEL DATA ---
   const monthName = formatMonthName(new Date(startDateStr));
   const excelData = [];
   const merges = [];
+
+  // --- Helper Colors ---
+  const getPctFill = (val) => {
+    if (val > 1) return FILL_STYLES.alertRed;
+    if (val >= 0.75) return { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };
+    if (val >= 0.5) return { patternType: 'solid', fgColor: { rgb: 'F1C232' } };
+    return { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
+  };
+
+  // ==========================================
+  // 1. SUMMARY COUNT TABLE (FULL)
+  // ==========================================
+  excelData.push(['SUMMARY (COUNT) - ' + monthName, '', '', '', '', '', '', '', '']);
+  excelData.push(['Vehicle Types', 'TMS', 'Non TMS', 'TVU', 'TV', '% TVU', 'V', 'VU', 'IV']);
+
+  const addSummarySection = (cat, isPercentage = false) => {
+    vehicleTypes.forEach((type) => {
+      const d = summaryData[cat].types[type];
+      if (isPercentage) {
+        // SHORT TABLE: Only 4 Columns
+        excelData.push([type, d.PctTMS, d.PctNonTMS, d.PctTVU]);
+      } else {
+        // FULL TABLE
+        excelData.push([
+          type,
+          d.TMS || 0,
+          d.NonTMS || 0,
+          d.TVU || 0,
+          d.TV || 0,
+          d.PctTVU,
+          null,
+          null,
+          null,
+        ]);
+      }
+    });
+    const t = summaryData[cat].total;
+    if (isPercentage) {
+      excelData.push(['Total Used', t.PctTMS, t.PctNonTMS, t.PctTVU]);
+    } else {
+      excelData.push(['Total Used', t.TMS, t.NonTMS, t.TVU, t.TV, t.PctTVU, t.V, t.VU, t.IV]);
+    }
+  };
+
+  addSummarySection('Dry', false);
+  addSummarySection('Frozen', false);
+
+  const otv = summaryData.OTV;
+  excelData.push(['OTV', otv.TMS, otv.NonTMS, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
+
+  const summaryCountEndRow = excelData.length;
+  excelData.push([]); // Spacer
+
+  // ==========================================
+  // 2. SUMMARY PERCENTAGE TABLE (SHORT)
+  // ==========================================
+  const summaryPctStartRow = excelData.length;
+
+  excelData.push([`SUMMARY (%) - ${monthName}`, '', '', '']);
+  excelData.push(['Vehicle Types', 'TMS', 'Non TMS', 'TVU']);
+
+  addSummarySection('Dry', true);
+  addSummarySection('Frozen', true);
+  excelData.push(['OTV', otv.PctTMS, otv.PctNonTMS, otv.PctTVU]);
+
+  const summaryPctEndRow = excelData.length;
+  excelData.push([]); // Spacer
+
+  // ==========================================
+  // 3. DAILY TABLES (COUNT & PERCENT)
+  // ==========================================
+  const table1StartRow = summaryPctEndRow + 1;
 
   const buildTableData = (isPercentage, startRowIndex) => {
     const tableRows = [];
     const row1 = [isPercentage ? `${monthName} (%)` : monthName, 'Date', 'Total'];
     dateKeys.forEach((d) => row1.push(d.day, '', ''));
     tableRows.push(row1);
-
     const row2 = ['Vehicle Storage', 'Vehicle Types', ''];
     dateKeys.forEach(() => row2.push('TMS', 'Non TMS', 'TVU'));
     tableRows.push(row2);
-
     const rowMasterTotals = {};
-
     const createRow = (label1, label2, category, relativeRowIdx) => {
       const row = [label1, label2];
       let totalVal = null;
@@ -162,10 +299,8 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       else if (category === 'FrozenTotal') totalVal = hubMasterData?.Frozen?.Total;
       else if (category === 'OTV')
         totalVal = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
-
       rowMasterTotals[relativeRowIdx] = totalVal || 0;
       row.push(totalVal || null);
-
       dateKeys.forEach((d) => {
         let valRaw = 0;
         if (category === 'Dry' || category === 'Frozen') valRaw = dateMap[d.str][category][label2];
@@ -173,11 +308,9 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
         else if (category === 'FrozenTotal') valRaw = dateMap[d.str].FrozenTotal;
         else if (category === 'OTV') valRaw = dateMap[d.str].OTV;
         valRaw = valRaw || 0;
-
         const nonTmsRaw = 0;
         const tmsDisp = valRaw > 0 ? valRaw : null;
         const nonTmsDisp = null;
-
         let tvuDisp = null;
         const sumVal = valRaw + nonTmsRaw;
         if (sumVal > 0) tvuDisp = sumVal;
@@ -197,7 +330,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       });
       return row;
     };
-
     let rIdx = 2;
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
@@ -210,8 +342,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     tableRows.push(createRow('Interbranch', '', 'Frozen', rIdx++));
     tableRows.push(createRow('Total Used', '', 'FrozenTotal', rIdx++));
     tableRows.push(createRow('OTV', '', 'OTV', rIdx++));
-
-    // Merges
     const H1 = startRowIndex;
     const H2 = startRowIndex + 1;
     let colIdx = 3;
@@ -220,7 +350,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       colIdx += 3;
     });
     merges.push({ s: { r: H1, c: 2 }, e: { r: H2, c: 2 } });
-
     const dryStart = startRowIndex + 2;
     const dryInter = dryStart + vehicleTypes.length;
     const dryTot = dryInter + 1;
@@ -228,7 +357,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     const frzInter = frzStart + vehicleTypes.length;
     const frzTot = frzInter + 1;
     const otvRow = frzTot + 1;
-
     merges.push({ s: { r: dryStart, c: 0 }, e: { r: dryInter - 1, c: 0 } });
     merges.push({ s: { r: frzStart, c: 0 }, e: { r: frzInter - 1, c: 0 } });
     merges.push({ s: { r: dryInter, c: 0 }, e: { r: dryInter, c: 1 } });
@@ -236,11 +364,10 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     merges.push({ s: { r: frzInter, c: 0 }, e: { r: frzInter, c: 1 } });
     merges.push({ s: { r: frzTot, c: 0 }, e: { r: frzTot, c: 1 } });
     merges.push({ s: { r: otvRow, c: 0 }, e: { r: otvRow, c: 1 } });
-
     return { tableRows, rowMasterTotals };
   };
 
-  const table1 = buildTableData(false, 0);
+  const table1 = buildTableData(false, table1StartRow);
   excelData.push(...table1.tableRows);
   excelData.push([]);
   const table2StartRow = excelData.length;
@@ -248,110 +375,157 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   excelData.push(...table2.tableRows);
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
-  ws['!merges'] = merges;
-  ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: 2 }];
 
-  // --- 6. STYLING ---
+  // --- MERGES SUMMARY 1 ---
+  merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
+  merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+  // --- MERGES SUMMARY 2 ---
+  merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
+  merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
+
+  ws['!merges'] = merges;
+  ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: table1StartRow + 2 }];
+
+  // --- STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   const tableHeight = 2 + vehicleTypes.length + 1 + 1 + vehicleTypes.length + 1 + 1 + 1;
-  const getRelativeRowInfo = (R) => {
-    let isTable1 = false,
-      isTable2 = false,
-      relR = -1;
-    if (R < tableHeight) {
-      isTable1 = true;
-      relR = R;
-    } else if (R >= table2StartRow && R < table2StartRow + tableHeight) {
-      isTable2 = true;
-      relR = R - table2StartRow;
-    }
-    if (relR === -1) return null;
-    const startDry = 2;
-    const dryInter = startDry + vehicleTypes.length;
-    const dryTot = dryInter + 1;
-    const frzStart = dryTot + 1;
-    const frzInter = frzStart + vehicleTypes.length;
-    const frzTot = frzInter + 1;
-    const otvRow = frzTot + 1;
-    return {
-      isTable1,
-      isTable2,
-      relR,
-      startDry,
-      dryInter,
-      dryTot,
-      frzStart,
-      frzInter,
-      frzTot,
-      otvRow,
-    };
-  };
+
+  // Row Indices for Summary (Relative)
+  const sumDryEnd = 2 + vehicleTypes.length;
+  const sumDryTot = sumDryEnd;
+  const sumFrzStart = sumDryTot + 1;
+  const sumFrzEnd = sumFrzStart + vehicleTypes.length;
+  const sumFrzTot = sumFrzEnd;
+  const sumOTV = sumFrzTot + 1;
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
-    const info = getRelativeRowInfo(R);
-    if (!info) continue;
-
-    const {
-      isTable1,
-      isTable2,
-      relR,
-      startDry,
-      dryInter,
-      dryTot,
-      frzStart,
-      frzInter,
-      frzTot,
-      otvRow,
-    } = info;
-    const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2.rowMasterTotals;
-
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      if (relR === 0 || relR === 1) {
-        cell.s = { ...HEADER_STYLES.main };
-        if (C === 3) cell.s.border.left = BORDERS.medium;
-        if (C > 2 && (C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
-        if (C === 2) cell.s.border.right = BORDERS.medium;
-      } else {
-        let rowFill = null;
-        if (relR >= startDry && relR <= dryInter) rowFill = FILL_STYLES.dry;
-        else if (relR === dryTot) rowFill = FILL_STYLES.dryTotal;
-        else if (relR >= frzStart && relR <= frzInter) rowFill = FILL_STYLES.frozen;
-        else if (relR === frzTot) rowFill = FILL_STYLES.frozenTotal;
-        else if (relR === otvRow) rowFill = FILL_STYLES.otv;
+      // === A. SUMMARY TABLES STYLING ===
+      const isSum1 = R < summaryCountEndRow;
+      const isSum2 = R >= summaryPctStartRow && R < summaryPctEndRow;
 
-        if (C <= 1) {
-          const isMergedRow = [
-            dryInterbranchRow,
-            dryTotalRow,
-            frozenInterbranchRow,
-            frozenTotalRow,
-            otvRow,
-          ].includes(R);
-          if (isMergedRow && C === 0) cell.s = { ...BASE_STYLES.left };
-          else if (C === 0) cell.s = { ...BASE_STYLES.center };
-          else cell.s = { ...BASE_STYLES.left };
-          if (rowFill) cell.s.fill = rowFill;
-          cell.s.border = undefined;
+      if (isSum1 || isSum2) {
+        const startRow = isSum1 ? 0 : summaryPctStartRow;
+        const relR = R - startRow;
+
+        // --- UPDATE MULAI ---
+        // Tentukan batas kolom maksimal
+        // Summary 1 (Count): Sampai kolom IV (Index 8)
+        // Summary 2 (Percent): Sampai kolom TVU (Index 3)
+        const maxCol = isSum1 ? 8 : 3;
+
+        // Jika kolom melebihi batas, kosongkan dan skip
+        if (C > maxCol) {
+          cell.v = '';
+          cell.s = {};
+          continue;
+        }
+        // --- UPDATE SELESAI ---
+
+        if (relR === 0 || relR === 1) {
+          cell.s = { ...HEADER_STYLES.main };
         } else {
-          cell.s = { ...BASE_STYLES.center };
+          cell.s = { ...BASE_STYLES.center, border: BORDERS.thin };
 
-          // --- FIX: Apply Percentage Format First ---
+          // Colors (Logic warna baris tidak berubah)
+          if (relR >= 2 && relR < sumDryTot) cell.s.fill = FILL_STYLES.dry;
+          else if (relR === sumDryTot) {
+            cell.s.fill = FILL_STYLES.dryTotal;
+            cell.s.font = FONT_STYLES.bold;
+          } else if (relR >= sumFrzStart && relR < sumFrzEnd) cell.s.fill = FILL_STYLES.frozen;
+          else if (relR === sumFrzTot) {
+            cell.s.fill = FILL_STYLES.frozenTotal;
+            cell.s.font = FONT_STYLES.bold;
+          } else if (relR === sumOTV) {
+            cell.s.fill = FILL_STYLES.otv;
+            cell.s.font = FONT_STYLES.bold;
+          }
+
+          if (C === 0) cell.s.alignment = { horizontal: 'left', indent: 1 };
+
+          // Format Percent
+          if (isSum1 && C === 5) {
+            cell.t = 'n';
+            cell.s.numFmt = '0.00%';
+          }
+          if (isSum2 && C >= 1) {
+            cell.t = 'n';
+            cell.s.numFmt = '0.00%';
+            if (cell.v > 0) cell.s.fill = getPctFill(cell.v);
+          }
+        }
+        continue;
+      }
+
+      if (R === summaryCountEndRow || R === summaryPctEndRow) continue;
+
+      // === B. DAILY TABLES STYLING ===
+      let isTable1 = false,
+        isTable2 = false,
+        relR = -1;
+      if (R >= table1StartRow && R < table1StartRow + tableHeight) {
+        isTable1 = true;
+        relR = R - table1StartRow;
+      } else if (R >= table2StartRow && R < table2StartRow + tableHeight) {
+        isTable2 = true;
+        relR = R - table2StartRow;
+      }
+
+      if (relR !== -1) {
+        const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2.rowMasterTotals;
+        const startDry = 2;
+        const dryInter = startDry + vehicleTypes.length;
+        const dryTot = dryInter + 1;
+        const frzStart = dryTot + 1;
+        const frzInter = frzStart + vehicleTypes.length;
+        const frzTot = frzInter + 1;
+        const otvRow = frzTot + 1;
+
+        // INITIALIZE STYLE FIRST (Fix Overwrite)
+        cell.s = { ...BASE_STYLES.center };
+
+        // HEADER ROW (Daily)
+        if (relR === 0 || relR === 1) {
+          cell.s = { ...HEADER_STYLES.main };
+          if (C === 3) cell.s.border.left = BORDERS.medium;
+          if (C > 2 && (C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
+          if (C === 2) cell.s.border.right = BORDERS.medium;
+        } else {
+          let rowFill = null;
+          if (relR >= startDry && relR < dryInter) rowFill = FILL_STYLES.dry;
+          else if (relR === dryTot) rowFill = FILL_STYLES.dryTotal;
+          else if (relR >= frzStart && relR < frzInter) rowFill = FILL_STYLES.frozen;
+          else if (relR === frzTot) rowFill = FILL_STYLES.frozenTotal;
+          else if (relR === otvRow) rowFill = FILL_STYLES.otv;
+
+          // FIX 2: APPLY FORMAT PERCENTAGE HERE (AFTER INIT)
           if (isTable2 && C > 2) {
             if (typeof cell.v === 'number') {
               cell.t = 'n';
-              cell.s.numFmt = '0%'; // Format "7%"
+              cell.s.numFmt = '0%'; // Set Format
             }
           }
 
-          if (C === 2) {
-            cell.s.border = { left: BORDERS.thin, right: BORDERS.medium };
-            if (rowFill) cell.s.fill = rowFill;
-            cell.s.font = FONT_STYLES.bold;
+          if (C <= 2) {
+            // Label & Total
+            if (C <= 1) {
+              const isMerged = [dryInter, dryTot, frzInter, frzTot, otvRow].includes(relR);
+              if (isMerged && C === 0) cell.s.alignment = { ...BASE_STYLES.left.alignment };
+              else if (C === 0) cell.s.alignment = { ...BASE_STYLES.center.alignment };
+              else cell.s.alignment = { ...BASE_STYLES.left.alignment };
+              if (rowFill) cell.s.fill = rowFill;
+              cell.s.border = undefined;
+            } else {
+              cell.s.border = { left: BORDERS.thin, right: BORDERS.medium };
+              if (rowFill) cell.s.fill = rowFill;
+              cell.s.font = FONT_STYLES.bold;
+            }
           } else {
+            // Data Columns
             if (C === 3) cell.s.border = { left: BORDERS.medium };
             else cell.s.border = {};
             if ((C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
@@ -362,7 +536,7 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
             if (C > 2) {
               const relativeIdx = (C - 3) % 3;
               if (relativeIdx === 0) isTMSCol = true;
-              if (relativeIdx === 2) isTVUCol = true; // TVU Check
+              if (relativeIdx === 2) isTVUCol = true;
               const dateIndex = Math.floor((C - 3) / 3);
               if (dateKeys[dateIndex] && dateKeys[dateIndex].isSunday) isSundayCol = true;
             }
@@ -373,17 +547,11 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
             const val = cell.v;
 
             if (isTable1) {
-              // COUNT
-              if (isTMSCol && isDetailRow && val > masterTotal) {
-                finalFill = FILL_STYLES.alertRed;
-              } else if (isSundayCol) {
-                finalFill = FILL_STYLES.red;
-              }
+              if (isTMSCol && isDetailRow && val > masterTotal) finalFill = FILL_STYLES.alertRed;
+              else if (isSundayCol) finalFill = FILL_STYLES.red;
             } else {
-              // PERCENTAGE (TMS OR TVU)
-              if (isSundayCol) {
-                finalFill = FILL_STYLES.red;
-              } else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
+              if (isSundayCol) finalFill = FILL_STYLES.red;
+              else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
                 if (val > 1) finalFill = FILL_STYLES.alertRed;
                 else if (val >= 0.75)
                   finalFill = { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };
@@ -392,21 +560,12 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
                 else finalFill = { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
               }
             }
-
             if (finalFill) cell.s.fill = finalFill;
-
-            if (isTable2 && finalFill === FILL_STYLES.alertRed) {
-              cell.s.font = FONT_STYLES.whiteBold;
-            }
+            if (isTable2 && finalFill === FILL_STYLES.alertRed) cell.s.font = FONT_STYLES.whiteBold;
           }
-        }
-
-        if (
-          [dryInterbranchRow, dryTotalRow, frozenInterbranchRow, frozenTotalRow, otvRow].includes(
-            relR
-          )
-        ) {
-          cell.s.font = FONT_STYLES.bold;
+          if ([dryInter, dryTot, frzInter, frzTot, otvRow].includes(relR)) {
+            cell.s.font = FONT_STYLES.bold;
+          }
         }
       }
     }
