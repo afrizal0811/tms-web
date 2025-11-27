@@ -292,7 +292,6 @@ export function generateTruckDetailSheet(
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
-      console.log(metrics);
       // --- UPDATE LOGIC DISPLAY DI SINI ---
       // Syarat mutlak: metrics.outlets > 0
       // Jika outlets == 0 (walaupun ada weight/volume dari routing), tampilkan NULL.
