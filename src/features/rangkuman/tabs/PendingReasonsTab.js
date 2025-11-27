@@ -126,7 +126,7 @@ export default function PendingReasonsTab({ data, locationName }) {
         <thead className="sticky top-0 z-20">
           <tr>
             <th className={thClass}>Flow</th>
-            <th className={thClass}>Date RO</th>
+            <th className={thClass}>Date</th>
             <th className={thClass}>License Plat</th>
             <th className={thClass}>Driver</th>
             <th className={thClass}>Faktur Batal</th>

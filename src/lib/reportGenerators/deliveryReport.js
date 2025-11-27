@@ -395,7 +395,7 @@ export function generateDeliveryWorkbook(
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
     'Flow',
-    'Date RO',
+    'Date',
     'Plat',
     'Driver',
     'Faktur Batal/ Tolakan SO',

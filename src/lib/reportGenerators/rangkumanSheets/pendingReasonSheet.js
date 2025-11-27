@@ -188,7 +188,7 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
   // Headers
   let headers = [
     'Flow',
-    'Date RO',
+    'Date',
     'License Plat',
     'Driver',
     'Faktur Batal/ Tolakan SO',

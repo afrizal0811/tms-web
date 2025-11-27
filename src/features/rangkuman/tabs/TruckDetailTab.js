@@ -1,3 +1,4 @@
+// File: features/rangkuman/tabs/TruckDetailTab.js
 import { Fragment } from 'react';
 import { formatMinutesToHHMM } from '@/lib/utils';
 
@@ -27,19 +28,18 @@ export default function TruckDetailTab({ data }) {
   const stickyPlate = 'sticky left-[80px] z-20 border-r';
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
-  // --- COLOR CONSTANTS (Sesuai Gambar) ---
-  const COLOR_A = 'bg-[#fae2d5]'; // Peach (Type, Driver, Sub-header non-Sunday)
-  const COLOR_B = 'bg-[#dbe9f7]'; // Blue (Date header non-Sunday)
-  const COLOR_C = 'bg-[#f4cccc]'; // Red/Pink (All Sunday block)
+  // --- COLOR CONSTANTS ---
+  const COLOR_A = 'bg-[#fae2d5]'; // Peach
+  const COLOR_B = 'bg-[#dbe9f7]'; // Blue
+  const COLOR_C = 'bg-[#f4cccc]'; // Red/Pink
 
   return (
     <div className="w-full overflow-auto h-full">
       <table className="border-collapse border-0 text-sm whitespace-nowrap">
         {/* HEADER */}
         <thead className="sticky top-0 z-30 bg-gray-100">
-          {/* Baris 1: Judul Kolom Tetap & Tanggal */}
+          {/* Baris 1 */}
           <tr>
-            {/* AREA A: Sticky Headers */}
             <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
               Type
             </th>
@@ -57,7 +57,6 @@ export default function TruckDetailTab({ data }) {
             </th>
 
             {dateKeys.map((d, i) => {
-              // AREA C (Sunday) vs AREA B (Normal Date)
               const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
               return (
                 <th
@@ -71,10 +70,9 @@ export default function TruckDetailTab({ data }) {
             })}
           </tr>
 
-          {/* Baris 2: Nama Metrik */}
+          {/* Baris 2 */}
           <tr>
             {dateKeys.map((d, i) => {
-              // AREA C (Sunday) vs AREA A (Normal Sub-header - ikut warna peach kiri)
               const metricColor = isSunday(d.str) ? COLOR_C : COLOR_A;
               return (
                 <Fragment key={i}>
@@ -100,7 +98,7 @@ export default function TruckDetailTab({ data }) {
 
             return (
               <tr key={email} className="hover:bg-gray-50">
-                {/* Kolom Sticky Kiri - Default Putih (sticky butuh bg-white agar tidak transparan saat scroll horizontal) */}
+                {/* Kolom Sticky Kiri */}
                 <td className={`${tdClass} ${stickyType} bg-white`}>{driver.type}</td>
                 <td className={`${tdClass} ${stickyPlate} bg-white`}>{driver.plat}</td>
                 <td
@@ -113,14 +111,13 @@ export default function TruckDetailTab({ data }) {
                 {dateKeys.map((d, i) => {
                   const metrics = dataMatrix[d.str][email];
                   const isSun = isSunday(d.str);
-                  // AREA C (Sunday Data) vs Putih/Gray
                   const cellBg = isSun ? COLOR_C : '';
                   const emptyBg = isSun ? COLOR_C : 'bg-gray-50';
 
-                  if (
-                    !metrics ||
-                    (metrics.outlets === 0 && metrics.dist === 0 && metrics.weight === 0)
-                  ) {
+                  // --- UPDATE LOGIC DI SINI ---
+                  // Tampilkan data HANYA jika outlets > 0.
+                  // Jika outlets == 0, maka dianggap libur/tidak jalan (kosongkan row).
+                  if (!metrics || metrics.outlets === 0) {
                     return (
                       <Fragment key={i}>
                         <td className={`${tdClass} border-l-2 border-l-gray-400 ${emptyBg}`}></td>
