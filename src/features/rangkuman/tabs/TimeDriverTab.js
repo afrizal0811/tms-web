@@ -36,7 +36,7 @@ export default function TimeDriverTab({ data }) {
           {/* Row 1: Headers */}
           <tr>
             {/* UPDATE: Tambahkan top-0 di class th */}
-            <th rowSpan="2" className={`${thClass} min-w-[80px] ${stickyHeaderType} ${COLOR_A}`}>
+            <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
               Type
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
