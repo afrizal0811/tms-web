@@ -1,3 +1,4 @@
+// File: features/rangkuman/tabs/TimeDriverTab.js
 import { Fragment } from 'react';
 
 export default function TimeDriverTab({ data }) {
@@ -21,37 +22,29 @@ export default function TimeDriverTab({ data }) {
   const tdClass =
     'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700 whitespace-nowrap';
 
-  // --- UPDATE Z-INDEX ---
-  // Menggunakan z-10 dan z-20 agar header tetap di atas body,
-  // tapi tidak menutupi komponen lain yang lebih penting (seperti Navbar App / Dropdown)
-  const stickyType = 'sticky left-0 z-20 border-r';
-  const stickyPlate = 'sticky left-[80px] z-20 border-r';
-  const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
-  const stickyHeaderRow = 'sticky top-0 z-10 bg-gray-100'; // Turunkan ke z-10
-  const stickyHeaderCol = 'sticky z-30'; // Header + Kolom Kiri (20+10)
+  const stickyHeaderType = 'sticky top-0 left-0 z-40';
+  const stickyHeaderPlate = 'sticky top-0 left-[80px] z-40';
+  const stickyHeaderDriver = 'sticky top-0 left-[180px] z-40';
+  const stickyBodyType = 'sticky left-0 z-20 border-r';
+  const stickyBodyPlate = 'sticky left-[80px] z-20 border-r';
+  const stickyBodyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
     <div className="w-full overflow-auto h-full">
       <table className="border-collapse border-0 text-sm whitespace-nowrap">
-        <thead className={stickyHeaderRow}>
+        <thead className="sticky top-0 z-30 bg-gray-100">
           {/* Row 1: Headers */}
           <tr>
-            {/* Area Sticky Kiri Atas (Corner) - z-30 agar paling atas */}
-            <th
-              rowSpan="2"
-              className={`${thClass} min-w-20 left-0 ${stickyHeaderCol} ${COLOR_A}`}
-            >
+            {/* UPDATE: Tambahkan top-0 di class th */}
+            <th rowSpan="2" className={`${thClass} min-w-[80px] ${stickyHeaderType} ${COLOR_A}`}>
               Type
             </th>
-            <th
-              rowSpan="2"
-              className={`${thClass} min-w-[100px] left-20 ${stickyHeaderCol} ${COLOR_A}`}
-            >
+            <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
               Licence No.
             </th>
             <th
               rowSpan="2"
-              className={`${thClass} min-w-[200px] left-[180px] ${stickyHeaderCol} ${COLOR_A} border-r-2 border-slate-400`}
+              className={`${thClass} min-w-[200px] ${stickyHeaderDriver} ${COLOR_A} border-r-2 border-slate-400`}
             >
               Driver
             </th>
@@ -91,11 +84,11 @@ export default function TimeDriverTab({ data }) {
             const driver = driverMap[email];
             return (
               <tr key={email} className="hover:bg-gray-50">
-                {/* Info Driver - Sticky Left (z-20) */}
-                <td className={`${tdClass} ${stickyType} bg-white`}>{driver.type}</td>
-                <td className={`${tdClass} ${stickyPlate} bg-white`}>{driver.plat}</td>
+                {/* Gunakan variabel stickyBody... yang tidak ada top-0 nya */}
+                <td className={`${tdClass} ${stickyBodyType} bg-white`}>{driver.type}</td>
+                <td className={`${tdClass} ${stickyBodyPlate} bg-white`}>{driver.plat}</td>
                 <td
-                  className={`${tdClass} ${stickyDriver} text-left border-r-2 border-slate-400 bg-white`}
+                  className={`${tdClass} ${stickyBodyDriver} text-left border-r-2 border-slate-400 bg-white`}
                 >
                   {driver.name}
                 </td>
@@ -117,22 +110,22 @@ export default function TimeDriverTab({ data }) {
                     );
                   }
 
-                  const { startDisplay, finishDisplay, durationDisplay, dayDiff } = metrics;
-
                   return (
                     <Fragment key={i}>
                       <td className={`${tdClass} border-l-2 border-l-gray-400 ${cellBg}`}>
-                        {startDisplay}
+                        {metrics.startDisplay}
                       </td>
                       <td className={`${tdClass} ${cellBg}`}>
-                        {finishDisplay}
-                        {dayDiff > 0 && (
+                        {metrics.finishDisplay}
+                        {metrics.dayDiff > 0 && (
                           <span className="text-red-600 text-[10px] ml-1 font-bold">
-                            (+{dayDiff})
+                            (+{metrics.dayDiff})
                           </span>
                         )}
                       </td>
-                      <td className={`${tdClass} ${cellBg} font-medium`}>{durationDisplay}</td>
+                      <td className={`${tdClass} ${cellBg} font-medium`}>
+                        {metrics.durationDisplay}
+                      </td>
                     </Fragment>
                   );
                 })}
