@@ -1,19 +1,19 @@
 // File: features/rangkuman/tabs/components/ServiceLevelChart.js
 'use client';
 
-import { useState, useMemo } from 'react';
+import { processServiceLevelData } from '@/lib/dashboardHelper';
+import { useMemo, useState } from 'react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
 } from 'recharts';
-import { processServiceLevelData } from '@/lib/dashboardHelper';
-import DailyServiceLevelModal from './DailyServiceLevelModal';
+import DailyServiceLevelModal from '../modals/DailyServiceLevelModal';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {

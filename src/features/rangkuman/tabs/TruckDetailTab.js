@@ -1,7 +1,7 @@
 // File: features/rangkuman/tabs/TruckDetailTab.js
 import { formatMinutesToHHMM } from '@/lib/utils';
 import { Fragment, useState } from 'react';
-import TruckDetailModal from './components/TruckDetailModal';
+import TruckDetailModal from './modals/TruckDetailModal';
 
 export default function TruckDetailTab({ data }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
