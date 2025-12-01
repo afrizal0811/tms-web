@@ -1,7 +1,7 @@
 // File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
-import { formatDate, formatMinutesToHHMM, getUTC7DateString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
+import { formatDate, formatMinutesToHHMM, getUTC7DateString } from '@/lib/utils';
+import { COLORS, BORDERS, BASE_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
 // Status yang dianggap GAGAL / BELUM SELESAI
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -46,25 +46,40 @@ function getDriverStorageType(driver) {
   return '-';
 }
 
-// Helper Format Waktu Lengkap (DD/MM HH:mm)
+// Helper Format Waktu (DD/MM HH:mm)
 function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
-    return d.toLocaleString('id-ID', {
+    const dateStr = d.toLocaleDateString('id-ID', {
       timeZone: 'Asia/Jakarta',
-      day: '2-digit',
+      day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
+    const timeStr = d
+      .toLocaleTimeString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+      .replace(/\./g, ':');
+    return `${dateStr} ${timeStr}`;
   } catch {
     return '-';
   }
 }
 
-/**
- * BAGIAN 1: LOGIKA PERHITUNGAN (DATA MATRIX)
- */
+// Helper Parsing Date untuk Timestamp
+function parseApiDateString(dateStr) {
+  if (!dateStr) return null;
+  let isoStr = dateStr.toString().replace(' ', 'T');
+  if (!isoStr.endsWith('Z') && !isoStr.includes('+')) isoStr += 'Z';
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function calculateTruckDetailData(
   driverData,
   resultsData,
@@ -217,30 +232,89 @@ export function calculateTruckDetailData(
           const diffTime = Math.abs(d2 - d1);
           dayDiffCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
-
         if (isManual) entry.hasManualError = true;
         if (isDateDiff) entry.hasBedaHariError = true;
 
         const rawSO = task.content || '-';
         const formattedSO = rawSO.replace(/,/g, ', ');
 
-        // --- UPDATE: Format Waktu Mulai ---
-        const startTimeStr = formatDateTimeWIB(task.startTime);
+        // --- UPDATE LOGIC SEQUENCE (Sesuai Delivery Report) ---
+        const flow = task.flow || '';
+        const isGR = flow.toUpperCase().includes('GR');
+
+        // Tentukan Sumber Waktu Tiba (Actual Arrival)
+        let arrivalSource;
+        if (isGR) {
+          arrivalSource = task.page1DoneTime; // Logic GR
+        } else {
+          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai; // Logic Reguler
+        }
+
+        // Ambil Timestamp untuk Sorting Real Sequence
+        const arrObj = parseApiDateString(arrivalSource);
+        const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
+        // -------------------------------------------------------
+
+        // String untuk Tooltip (Mulai pada ...)
+        // Jika Arrival Source ada, gunakan itu (karena itu real start visit)
+        // Jika tidak ada, fallback ke startTime task
+        const realStartTimeStr = arrivalSource
+          ? formatDateTimeWIB(arrivalSource)
+          : formatDateTimeWIB(task.startTime);
 
         entry.taskList.push({
+          _tempId: Math.random().toString(36).substr(2, 9),
           customerName: task.customerName,
           soNumber: formattedSO,
-          flow: task.flow || 'Unknown',
+          flow: flow,
           status: status,
           isManual: isManual,
           isDateDiff: isDateDiff,
           dayDiff: dayDiffCount,
-          startTimeStr: startTimeStr, // Simpan Start Time
+          startTimeStr: realStartTimeStr, // Digunakan di Tooltip
+          // Data Sorting
+          roSequence: task.routePlannedOrder,
+          arrivalTimestamp: arrivalTimestamp, // KUNCI: Sort by Arrival, bukan DoneTime
         });
       }
     });
   }
 
+  // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
+  Object.keys(dataMatrix).forEach((dateKey) => {
+    Object.keys(dataMatrix[dateKey]).forEach((email) => {
+      const entry = dataMatrix[dateKey][email];
+
+      if (entry.taskList && entry.taskList.length > 0) {
+        // A. Hitung Real Sequence (Sort by Actual Arrival Timestamp)
+        const sortedByTime = [...entry.taskList].sort((a, b) => {
+          return a.arrivalTimestamp - b.arrivalTimestamp;
+        });
+
+        const realRankMap = new Map();
+        sortedByTime.forEach((item, index) => {
+          realRankMap.set(item._tempId, index + 1);
+        });
+        entry.taskList.forEach((item) => {
+          item.realSequence = realRankMap.get(item._tempId);
+        });
+
+        // B. Sort Tampilan Akhir (Manual Assign First, then by RO)
+        entry.taskList.sort((a, b) => {
+          const roA = a.roSequence === null || a.roSequence === undefined ? -1 : a.roSequence;
+          const roB = b.roSequence === null || b.roSequence === undefined ? -1 : b.roSequence;
+
+          if (roA !== roB) {
+            return roA - roB; // -1 naik ke atas
+          }
+          // Jika RO sama (sama-sama manual), urutkan berdasarkan Real Sequence (Waktu Tiba)
+          return (a.realSequence || 0) - (b.realSequence || 0);
+        });
+      }
+    });
+  });
+
+  // Sorting Driver
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -260,7 +334,7 @@ export function calculateTruckDetailData(
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
-// ... (BAGIAN GENERATE EXCEL TIDAK PERLU DIUBAH KARENA HANYA UNTUK WEB) ...
+// ... (BAGIAN GENERATE EXCEL TIDAK PERLU DIUBAH, KARENA HANYA MODAL YG PAKAI TASKLIST) ...
 export function generateTruckDetailSheet(
   wb,
   driverData,
@@ -411,7 +485,7 @@ export function generateTruckDetailSheet(
         const relR = R - legendStartRow;
         if (relR === 0 && C === 0) cell.s = { font: { bold: true, underline: true } };
         else if (relR > 0 && C === 0) {
-          cell.s = { alignment: { horizontal: 'center' } };
+          cell.s = { border: BORDERS.thin, alignment: { horizontal: 'center' } };
           let legendColor = null;
           if (relR === 1) legendColor = ERROR_FILLS.blue;
           if (relR === 2) legendColor = ERROR_FILLS.yellow;

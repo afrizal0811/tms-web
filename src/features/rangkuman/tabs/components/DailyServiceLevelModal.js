@@ -42,7 +42,7 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
 
   return (
     <div
-      className="fixed inset-0 z-9999 flex items-center justify-center bg-white/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div

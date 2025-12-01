@@ -38,7 +38,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
   const isAllSelected = unmappedData.every((item) => mappings[`${item.plat}-${item.tag}`]);
 
   return (
-    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-white/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="bg-orange-600 px-6 py-4">
