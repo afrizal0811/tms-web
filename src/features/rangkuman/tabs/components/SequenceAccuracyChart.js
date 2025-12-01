@@ -94,7 +94,6 @@ export default function SequenceAccuracyChart({ allTasks }) {
       {isProcessing && (
         <div className="absolute inset-0 z-50 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
           <Spinner />
-          <span className="text-xs font-bold text-slate-500 mt-2">Memuat detail...</span>
         </div>
       )}
 
