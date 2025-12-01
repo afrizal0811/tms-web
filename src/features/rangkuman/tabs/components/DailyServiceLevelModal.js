@@ -109,7 +109,9 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
               <span className="w-3 h-3 bg-[#22c55e] rounded-sm"></span> ≥ 75%
             </div>
           </div>
-          <span>Menampilkan performa harian untuk bulan terpilih.</span>
+          <span>
+            Data lengkap tersedia di tab <strong>Truck Detail</strong>.
+          </span>
         </div>
       </div>
     </div>

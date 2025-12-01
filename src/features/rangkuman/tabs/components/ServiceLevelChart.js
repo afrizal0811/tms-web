@@ -116,7 +116,7 @@ export default function ServiceLevelChart({ allTasks }) {
       </div>
 
       <p className="text-xs text-gray-400 mt-4 text-center italic">
-        *Klik batang grafik untuk melihat detail harian
+        Klik batang grafik untuk melihat detail per harinya.
       </p>
 
       <DailyServiceLevelModal
