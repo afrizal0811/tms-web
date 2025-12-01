@@ -94,3 +94,74 @@
 .react-datepicker__navigation {
   top: 1.3rem !important;
 }
+
+.custom-year-picker .react-datepicker {
+  font-family: inherit;
+  width: 420px !important; /* Lebih besar */
+  max-width: 92vw !important; /* Tetap aman di HP */
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1),
+              0 4px 6px -2px rgba(0,0,0,0.05) !important;
+}
+
+/* Header */
+.custom-year-picker .react-datepicker__header {
+  width: 100% !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  border-top-left-radius: 0.75rem !important;
+  border-top-right-radius: 0.75rem !important;
+  padding-top: 14px !important; /* Sedikit lebih besar */
+}
+
+/* Grid tahun */
+.custom-year-picker .react-datepicker__year-wrapper {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important; /* Lebih lega */
+  padding: 20px !important;
+  max-width: 100% !important;
+}
+
+/* Individual year item */
+.custom-year-picker .react-datepicker__year-text {
+  padding: 12px 0 !important; /* Lebih besar */
+  font-size: 1.1rem !important; 
+  font-weight: 500 !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Hover */
+.custom-year-picker .react-datepicker__year-text:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Active */
+.custom-year-picker .react-datepicker__year-text--selected,
+.custom-year-picker .react-datepicker__year-text--keyboard-selected {
+  background-color: #0284c7 !important;
+  color: white !important;
+}
+
+/* ========================= */
+/*    MOBILE OPTIMIZATION    */
+/* ========================= */
+
+/* HP ukuran < 420px */
+@media (max-width: 420px) {
+  .custom-year-picker .react-datepicker {
+    width: 95vw !important;       /* Full tapi masih ada margin */
+  }
+
+  .custom-year-picker .react-datepicker__year-wrapper {
+    grid-template-columns: repeat(3, 1fr) !important; /* Ini tetap 3 kolom */
+    gap: 8px !important;
+    padding: 16px !important;
+  }
+
+  .custom-year-picker .react-datepicker__year-text {
+    font-size: 1rem !important;
+    padding: 10px 0 !important;
+  }
+}
