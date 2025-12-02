@@ -14,13 +14,12 @@ function isTaskSuccess(task) {
   return status === 'SUKSES';
 }
 
-// --- UPDATE 1: SERVICE LEVEL (FILTER DRIVER) ---
+// --- SERVICE LEVEL (TIDAK BERUBAH) ---
 export function processServiceLevelData(allTasks, view = 'monthly', selectedMonthKey = null) {
   if (!allTasks || allTasks.length === 0) return [];
   const grouped = {};
 
   allTasks.forEach((task) => {
-    // Filter: Hanya task yang punya driver (assignee tidak kosong)
     if (!task.assignee || task.assignee.length === 0) return;
 
     const dateStr = task.doneTime || task.createdTime;
@@ -64,15 +63,14 @@ export function processServiceLevelData(allTasks, view = 'monthly', selectedMont
     }));
 }
 
-// --- UPDATE 2: SEQUENCE ACCURACY (STACKED DATA) ---
+// --- UPDATE: SEQUENCE ACCURACY (RATE CALCULATION) ---
 export function processSequenceAccuracyData(allTasks, view = 'monthly', selectedMonthKey = null) {
   if (!allTasks || allTasks.length === 0) return [];
 
-  // 1. Grouping Real Sequence (Per Driver Per Hari)
+  // 1. Grouping Real Sequence
   const driverDateMap = {};
 
   allTasks.forEach((task) => {
-    // Filter: Wajib punya driver (karena sequence butuh driver)
     const email = task.assignee && task.assignee[0] ? task.assignee[0].toLowerCase() : null;
     if (!email) return;
 
@@ -112,11 +110,10 @@ export function processSequenceAccuracyData(allTasks, view = 'monthly', selected
     });
   });
 
-  // 2. Hitung Status Per Task (Match/Mismatch/Manual)
+  // 2. Hitung Status Per Task
   const processedResults = [];
 
   Object.values(driverDateMap).forEach((group) => {
-    // Sort by Actual Arrival
     group.sort((a, b) => a.arrivalTimestamp - b.arrivalTimestamp);
 
     group.forEach((item, index) => {
@@ -124,21 +121,16 @@ export function processSequenceAccuracyData(allTasks, view = 'monthly', selected
       let status = 'manual';
 
       if (item.roSequence !== null && item.roSequence !== undefined) {
-        // Jika ada RO, cek match
         status = parseInt(item.roSequence) === realSeq ? 'match' : 'mismatch';
       } else {
-        // Jika tidak ada RO, Manual
         status = 'manual';
       }
 
-      processedResults.push({
-        ...item,
-        status,
-      });
+      processedResults.push({ ...item, status });
     });
   });
 
-  // 3. Aggregasi Data Stacked
+  // 3. Aggregasi Data
   const groupedChart = {};
 
   processedResults.forEach((item) => {
@@ -154,7 +146,7 @@ export function processSequenceAccuracyData(allTasks, view = 'monthly', selected
     }
 
     groupedChart[key].total += 1;
-    groupedChart[key][item.status] += 1; // Increment match/mismatch/manual
+    groupedChart[key][item.status] += 1;
   });
 
   // 4. Format Output
@@ -167,12 +159,7 @@ export function processSequenceAccuracyData(allTasks, view = 'monthly', selected
       mismatch: item.mismatch,
       manual: item.manual,
       total: item.total,
-      // Rate Sesuai = (Match + Manual) / Total ??
-      // Atau murni Match / Total?
-      // Sesuai request: "manual assign dianggap sesuai".
-      rate:
-        item.total > 0
-          ? parseFloat((((item.match + item.manual) / item.total) * 100).toFixed(1))
-          : 0,
+      // UPDATE DI SINI: Rate = Match / Total (Manual tidak dihitung sebagai keberhasilan)
+      rate: item.total > 0 ? parseFloat(((item.match / item.total) * 100).toFixed(1)) : 0,
     }));
 }

@@ -1,21 +1,20 @@
 // File: features/rangkuman/tabs/components/SequenceAccuracyChart.js
 'use client';
 
-import { useState, useMemo } from 'react';
+import Spinner from '@/components/Spinner';
+import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
+import { useMemo, useState } from 'react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  Cell,
 } from 'recharts';
-import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
 import DailySequenceAccuracyModal from '../modals/DailySequenceAccuracyModal';
-import Spinner from '@/components/Spinner';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -25,13 +24,12 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
 
         <div className="flex justify-between gap-4 mb-1">
-          {/* UPDATE 2: Teks Tooltip */}
-          <span className="text-emerald-400">● Sesuai:</span>
-          <span className="font-mono">{data.match}</span>
-        </div>
-        <div className="flex justify-between gap-4 mb-1">
           <span className="text-blue-400">● Manual:</span>
           <span className="font-mono">{data.manual}</span>
+        </div>
+        <div className="flex justify-between gap-4 mb-1">
+          <span className="text-emerald-400">● Sesuai:</span>
+          <span className="font-mono">{data.match}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
           <span className="text-red-400">● Tidak Sesuai:</span>

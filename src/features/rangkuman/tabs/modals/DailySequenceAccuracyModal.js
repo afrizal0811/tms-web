@@ -1,16 +1,7 @@
 // File: features/rangkuman/tabs/modals/DailySequenceAccuracyModal.js
 'use client';
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const DailyTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -18,23 +9,28 @@ const DailyTooltip = ({ active, payload, label }) => {
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">Tanggal {label}</p>
-
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-emerald-400">● Sesuai:</span>
-          <span className="font-mono">{data.match}</span>
-        </div>
         <div className="flex justify-between gap-4 mb-1">
           <span className="text-blue-400">● Manual:</span>
           <span className="font-mono">{data.manual}</span>
+        </div>
+        <div className="flex justify-between gap-4 mb-1">
+          <span className="text-emerald-400">● Sesuai:</span>
+          <span className="font-mono">{data.match}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
           <span className="text-red-400">● Mismatch:</span>
           <span className="font-mono">{data.mismatch}</span>
         </div>
 
-        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
-          <span>Akurasi:</span>
-          <span>{data.rate}%</span>
+        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex flex-col gap-0.5">
+          <div className="flex justify-between gap-4">
+            <span>Total Task:</span>
+            <span>{data.total}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span>Akurasi:</span>
+            <span>{data.rate}%</span>
+          </div>
         </div>
       </div>
     );
