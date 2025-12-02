@@ -2,9 +2,9 @@
 'use client';
 
 import ServiceLevelChart from './components/ServiceLevelChart';
-import SequenceAccuracyChart from './components/SequenceAccuracyChart'; // Import Baru
+import SequenceAccuracyChart from './components/SequenceAccuracyChart';
 
-export default function DashboardTab({ yearlyTasks, selectedYear }) {
+export default function DashboardTab({ yearlyTasks, selectedYear, selectedLocation }) {
   const yearNum = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
 
   return (
@@ -19,20 +19,15 @@ export default function DashboardTab({ yearlyTasks, selectedYear }) {
         </div>
       </div>
 
-      {/* Grid Layout untuk Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {' '}
-        {/* Ubah jadi 2 kolom */}
         {!yearlyTasks || yearlyTasks.length === 0 ? (
           <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
             Belum ada data untuk tahun {yearNum}.
           </div>
         ) : (
           <>
-            {/* Chart 1 */}
-            <ServiceLevelChart allTasks={yearlyTasks} />
-
-            {/* Chart 2 (BARU) */}
+            {/* UPDATE: Kirim hubId */}
+            <ServiceLevelChart allTasks={yearlyTasks} hubId={selectedLocation} />
             <SequenceAccuracyChart allTasks={yearlyTasks} />
           </>
         )}

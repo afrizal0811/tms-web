@@ -53,8 +53,17 @@
 │   │   └── tabs
 │   │       ├── AverageKmTab.js
 │   │       ├── components
+│   │       │   ├── ExceptionRateChart.js
+│   │       │   ├── SequenceAccuracyChart.js
+│   │       │   ├── ServiceLevelChart.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
+│   │       ├── DashboardTab.js
+│   │       ├── modals
+│   │       │   ├── DailyExceptionModal.js
+│   │       │   ├── DailySequenceAccuracyModal.js
+│   │       │   ├── DailyServiceLevelModal.js
+│   │       │   └── TruckDetailModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── PlaceholderTab.js
 │   │       ├── TimeDriverTab.js
@@ -73,6 +82,7 @@
 └── lib
     ├── apiService.js
     ├── constants.js
+    ├── dashboardHelper.js
     ├── driverDataHelper.js
     ├── hooks
     │   └── useVehicleTagCheck.js

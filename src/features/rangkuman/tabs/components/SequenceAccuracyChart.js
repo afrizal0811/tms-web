@@ -20,29 +20,29 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50">
+      <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
 
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-blue-400">● Manual:</span>
+          <span className="text-blue-400">● Manual</span>
           <span className="font-mono">{data.manual}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-emerald-400">● Sesuai:</span>
+          <span className="text-emerald-400">● Sesuai</span>
           <span className="font-mono">{data.match}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-red-400">● Tidak Sesuai:</span>
+          <span className="text-red-400">● Tidak Sesuai</span>
           <span className="font-mono">{data.mismatch}</span>
         </div>
 
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex flex-col gap-0.5">
           <div className="flex justify-between gap-4">
-            <span>Total Task:</span>
+            <span>Total Task</span>
             <span>{data.total}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span>Total Akurasi:</span>
+            <span>Total Akurasi</span>
             <span>{data.rate}%</span>
           </div>
         </div>
@@ -99,8 +99,8 @@ export default function SequenceAccuracyChart({ allTasks }) {
         <h3 className="text-lg font-bold text-slate-800">Sequence Accuracy</h3>
         {/* UPDATE 1: Ubah Teks Deskripsi */}
         <p className="text-sm text-gray-500">
-          Kesesuaian urutan <span className="font-bold text-sky-600">Routing</span> vs{' '}
-          <span className="font-bold text-emerald-600">Aktual</span>.
+          Kesesuaian urutan <span className="font-bold text-emerald-600">Routing</span> vs{' '}
+          <span className="font-bold text-red-600">Aktual</span>.
         </p>
       </div>
 

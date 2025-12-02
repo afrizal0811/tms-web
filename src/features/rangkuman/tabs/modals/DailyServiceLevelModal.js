@@ -1,4 +1,4 @@
-// File: features/rangkuman/tabs/components/DailyServiceLevelModal.js
+// File: features/rangkuman/tabs/modals/DailyServiceLevelModal.js
 'use client';
 
 import {
@@ -9,46 +9,71 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
+  Legend,
 } from 'recharts';
 
 const DailyTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50">
-        <p className="font-bold mb-1 text-sm">Tanggal {label}</p>
-        <p>
-          Rate: <span className="text-emerald-400 font-bold">{data.rate}%</span>
-        </p>
-        <p>
-          Sukses: {data.success} / {data.total}
-        </p>
+      <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
+        <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">Tanggal {label}</p>
+
+        <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
+          <span>● Sukses</span>
+          <span className="font-mono">{data.SUKSES}</span>
+        </div>
+        {data.PENDING > 0 && (
+          <div className="flex justify-between gap-4 mb-1 text-amber-400">
+            <span>● Pending</span>
+            <span className="font-mono">{data.PENDING}</span>
+          </div>
+        )}
+        {data.BATAL > 0 && (
+          <div className="flex justify-between gap-4 mb-1 text-red-400">
+            <span>● Batal</span>
+            <span className="font-mono">{data.BATAL}</span>
+          </div>
+        )}
+        {data.PARTIAL > 0 && (
+          <div className="flex justify-between gap-4 mb-1 text-orange-400">
+            <span>● Partial</span>
+            <span className="font-mono">{data.PARTIAL}</span>
+          </div>
+        )}
+        {data.PENDING_GR > 0 && (
+          <div className="flex justify-between gap-4 mb-1 text-yellow-600">
+            <span>● Pending GR</span>
+            <span className="font-mono">{data.PENDING_GR}</span>
+          </div>
+        )}
+
+        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
+          <span>Rate</span>
+          <span>{data.rate}%</span>
+        </div>
       </div>
     );
   }
   return null;
 };
 
-// Helper Warna Batang
-const getBarColor = (rate) => {
-  if (rate >= 75) return '#22c55e'; // Hijau
-  if (rate >= 50) return '#f97316'; // Orange
-  return '#ef4444'; // Merah
-};
-
 export default function DailyServiceLevelModal({ isOpen, onClose, title, data }) {
   if (!isOpen) return null;
 
+  // Cek apakah ada data Pending GR di bulan ini (untuk kondisional bar)
+  const hasPendingGR = data && data.some((d) => d.PENDING_GR > 0);
+
   return (
     <div
-      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="bg-slate-800 px-6 py-4 flex justify-between items-center">
           <h3 className="text-lg font-bold text-white">{title}</h3>
           <button
@@ -59,35 +84,73 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
           </button>
         </div>
 
+        {/* Chart Body */}
         <div className="p-6 h-[400px] w-full bg-white">
           {data && data.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis
-                  dataKey="name"
+                  dataKey="label"
                   name="Tanggal"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   dy={10}
                 />
-                <YAxis
-                  domain={[0, 100]}
-                  unit="%"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                 <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f1f5f9' }} />
+                <Legend
+                  iconType="circle"
+                  verticalAlign="top"
+                  align="right"
+                  wrapperStyle={{ paddingBottom: '10px', fontSize: '12px' }}
+                />
 
-                {/* REMOVED: ReferenceLine (Target 95%) */}
+                {/* STACKED BARS */}
+                <Bar
+                  name="Sukses"
+                  dataKey="SUKSES"
+                  stackId="a"
+                  fill="#22c55e"
+                  radius={[0, 0, 0, 0]}
+                  maxBarSize={40}
+                />
+                <Bar
+                  name="Pending"
+                  dataKey="PENDING"
+                  stackId="a"
+                  fill="#eab308"
+                  radius={[0, 0, 0, 0]}
+                  maxBarSize={40}
+                />
+                <Bar
+                  name="Batal"
+                  dataKey="BATAL"
+                  stackId="a"
+                  fill="#ef4444"
+                  radius={[0, 0, 0, 0]}
+                  maxBarSize={40}
+                />
+                <Bar
+                  name="Partial"
+                  dataKey="PARTIAL"
+                  stackId="a"
+                  fill="#f97316"
+                  radius={[0, 0, 0, 0]}
+                  maxBarSize={40}
+                />
 
-                <Bar dataKey="rate" radius={[4, 4, 0, 0]} maxBarSize={40} animationDuration={800}>
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getBarColor(entry.rate)} />
-                  ))}
-                </Bar>
+                {hasPendingGR && (
+                  <Bar
+                    name="Pending GR"
+                    dataKey="PENDING_GR"
+                    stackId="a"
+                    fill="#d97706"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                  />
+                )}
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -97,21 +160,9 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
           )}
         </div>
 
-        <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 text-right flex justify-between items-center">
-          <div className="flex gap-3 font-medium">
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-[#ef4444] rounded-sm"></span> &lt; 50%
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-[#f97316] rounded-sm"></span> 50% - 74%
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-[#22c55e] rounded-sm"></span> ≥ 75%
-            </div>
-          </div>
-          <span>
-            Data lengkap tersedia di tab <strong>Truck Detail</strong>.
-          </span>
+        <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 text-right">
+          Data lengkap tersedia di tab <strong className="text-slate-700">Truck Detail</strong> dan{' '}
+          <strong className="text-slate-700">Pending Reasons</strong>
         </div>
       </div>
     </div>

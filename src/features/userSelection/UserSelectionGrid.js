@@ -199,7 +199,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
 
       {/* Spinner overlay saat hook sedang cek */}
       {isChecking && (
-        <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-lg">
+        <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center">
             <Spinner />
             <p className="mt-3 text-sm text-slate-600">Memeriksa konfigurasi kendaraan...</p>
