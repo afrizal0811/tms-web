@@ -2,9 +2,6 @@
 import RangkumanSummary from '@/features/rangkuman/RangkumanSummary';
 import AppLayout from '@/components/AppLayout'; // Import AppLayout
 
-export const metadata = {
-  title: 'Rangkuman Laporan | TMS',
-};
 
 export default function RangkumanPage() {
   return (

@@ -64,6 +64,10 @@ export default function RangkumanSummary() {
 
   const isDashboard = activeTab === 'Dashboard';
 
+  // Track which tabs' ready-dot has been dismissed by user click
+  // { Dashboard: true/false, 'Task Summary': true/false, ... }
+  const [dismissedDots, setDismissedDots] = useState({});
+
   // 1. Load Lokasi
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -73,6 +77,43 @@ export default function RangkumanSummary() {
       if (storedLocationName) setSelectedLocationName(storedLocationName);
     }
   }, []);
+
+  // Reset dismissed dots when component mounts (init false)
+  useEffect(() => {
+    const initial = {};
+    [
+      'Dashboard',
+      'Task Summary',
+      'Pending Reasons',
+      'Time Driver',
+      'Truck Detail',
+      'Truck Usage',
+      'Average KM',
+    ].forEach((t) => (initial[t] = false));
+    setDismissedDots(initial);
+  }, []);
+
+  // Whenever a loading for a category starts, re-enable (undismiss) related dots:
+  // - when global monthly loading starts -> reset dismissed for non-dashboard tabs
+  // - when dashboard loading starts -> reset dismissed for dashboard
+  useEffect(() => {
+    if (isLoading) {
+      // undismiss non-dashboard tabs so they show blue again after next finish
+      setDismissedDots((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => {
+          if (k !== 'Dashboard') next[k] = false;
+        });
+        return next;
+      });
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (isDashboardLoading) {
+      setDismissedDots((prev) => ({ ...prev, Dashboard: false }));
+    }
+  }, [isDashboardLoading]);
 
   // 2. Global Timer logic (menggunakan selisih waktu nyata)
   useEffect(() => {
@@ -266,7 +307,7 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
-      // --- REPLACED LOGIC: adjusted previous date (lokasi & routing) ---
+      // --- adjusted previous date (lokasi & routing) ---
       const locStartDate = getAdjustedPreviousDate(startDate);
       const locStartStr = formatDate(locStartDate);
       const locTimeFrom = `${locStartStr} 23:00:00`;
@@ -439,7 +480,6 @@ export default function RangkumanSummary() {
 
     // 2) If user is NOT on Dashboard and global monthly is loading -> show central loading (global timer)
     if (isLoading && !isDashboard) {
-      // show also long-wait message if desired
       const showLongLoadingMsg = elapsedTime > 120;
       return (
         <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
@@ -510,6 +550,41 @@ export default function RangkumanSummary() {
     }
   };
 
+  // ------------------- Ping Dot (aligned center with text) -------------------
+  const getPingDot = (tabId) => {
+    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
+    const dismissed = dismissedDots[tabId];
+
+    // if user already dismissed the ready dot, don't show anything
+    if (!isLoadingTarget && dismissed) return null;
+
+    return (
+      <span className="inline-flex items-center ml-2" aria-hidden>
+        {isLoadingTarget ? (
+          // slightly larger dot with ping animation for loading
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
+          </span>
+        ) : (
+          // smaller solid dot for ready state
+          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-sky-500" />
+        )}
+      </span>
+    );
+  };
+
+  // ------------------- Handle tab click: set active + dismiss if ready -------------------
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+
+    // if that tab is in ready state (i.e., not loading), mark it dismissed so blue dot hides
+    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
+    if (!isLoadingTarget) {
+      setDismissedDots((prev) => ({ ...prev, [tabId]: true }));
+    }
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
@@ -546,7 +621,7 @@ export default function RangkumanSummary() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* No small timers in header: central timer appears in content area */}
+            {/* intentionally left blank: central timer appears in content area */}
           </div>
 
           {!isDashboard && (
@@ -585,21 +660,23 @@ export default function RangkumanSummary() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
-        <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide">
+        <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
           <button
-            onClick={() => setActiveTab('Dashboard')}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-              activeTab === 'Dashboard'
-                ? 'border-sky-600 text-sky-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            onClick={() => handleTabClick('Dashboard')}
+            className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
+              ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+              ${isDashboardLoading ? 'animate-pulse text-sky-600 font-semibold' : ''}
+            `}
           >
-            Dashboard
+            <div className="flex items-center gap-2">
+              <span>Dashboard</span>
+              {getPingDot('Dashboard')}
+            </div>
           </button>
           {tabs.slice(1).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               className={`
                         px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
                         ${
@@ -609,7 +686,10 @@ export default function RangkumanSummary() {
                         }
                     `}
             >
-              {tab.label}
+              <div className="flex items-center gap-2">
+                <span>{tab.label}</span>
+                {getPingDot(tab.id)}
+              </div>
             </button>
           ))}
         </div>
