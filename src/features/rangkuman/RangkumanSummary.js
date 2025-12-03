@@ -1,7 +1,7 @@
 // File: features/rangkuman/RangkumanSummary.js
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx-js-style';
@@ -16,13 +16,13 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDate } from '@/lib/utils';
 
 // --- IMPORT TABS ---
-import AverageKmTab from './tabs/AverageKmTab';
-import DashboardTab from './tabs/DashboardTab';
-import PendingReasonsTab from './tabs/PendingReasonsTab';
-import PlaceholderTab from './tabs/PlaceholderTab';
-import TimeDriverTab from './tabs/TimeDriverTab';
-import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
+import AverageKmTab from './tabs/AverageKmTab';
+import TruckDetailTab from './tabs/TruckDetailTab';
+import TimeDriverTab from './tabs/TimeDriverTab';
+import PendingReasonsTab from './tabs/PendingReasonsTab';
+import DashboardTab from './tabs/DashboardTab';
+import PlaceholderTab from './tabs/PlaceholderTab';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -195,6 +195,30 @@ export default function RangkumanSummary() {
     [fetchWithRetry, fetchWithTracker]
   );
 
+  // --- helper: hitung tanggal "lookup" yang benar ---
+  // rules:
+  // - default: gunakan H-1
+  // - jika H-1 adalah Minggu -> pakai H-2 (Sabtu)
+  // - jika selectedDate adalah Senin -> pakai H-2 (Sabtu)
+  const getAdjustedPreviousDate = (baseDate) => {
+    const d = new Date(baseDate);
+    // default offset 1 day
+    let offset = 1;
+    // if baseDate is Monday (1), use offset 2 to land on Saturday
+    if (d.getDay() === 1) {
+      offset = 2;
+    }
+    const candidate = new Date(d);
+    candidate.setDate(d.getDate() - offset);
+
+    // If candidate is Sunday (0) -> move back to Saturday
+    if (candidate.getDay() === 0) {
+      candidate.setDate(candidate.getDate() - 1);
+    }
+
+    return candidate;
+  };
+
   // ==== MAIN: hybrid - background yearly, blocking monthly ====
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
@@ -242,17 +266,16 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
-      const locStartDate = new Date(startDate);
-      locStartDate.setDate(locStartDate.getDate() - 1);
+      // --- REPLACED LOGIC: adjusted previous date (lokasi & routing) ---
+      const locStartDate = getAdjustedPreviousDate(startDate);
       const locStartStr = formatDate(locStartDate);
       const locTimeFrom = `${locStartStr} 23:00:00`;
 
-      const routingStartDate = new Date(startDate);
-      routingStartDate.setDate(routingStartDate.getDate() - 1);
-      const routingEndDate = new Date(endDate);
-      routingEndDate.setDate(routingEndDate.getDate() - 1);
+      const routingStartDate = getAdjustedPreviousDate(startDate);
+      const routingEndDate = getAdjustedPreviousDate(endDate);
       const routingStartStr = formatDate(routingStartDate);
       const routingEndStr = formatDate(routingEndDate);
+      // --------------------------------------------------------------
 
       // Monthly fetches (blocking)
       const monthlyPromises = [
