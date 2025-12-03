@@ -1,3 +1,4 @@
+// File: features/reports/BulkReportDownloader.js
 'use client';
 
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
@@ -51,16 +52,18 @@ export default function BulkReportDownloader({ driverData }) {
     setEndDate(end);
   };
 
-  // --- (PERUBAHAN 2): Pengecekan validitas rentang (tidak berubah, tapi penting) ---
+  // --- VALIDATION: allow Sunday as start/end, but require range length > 0 (start !== end) ---
   let isRangeInvalid = false;
   if (!startDate || !endDate) {
     isRangeInvalid = true;
   } else if (startDate.getTime() === endDate.getTime()) {
+    // range must be at least 2 different days (start != end)
     isRangeInvalid = true;
-  } else if (isDateSunday(formatDate(startDate)) || isDateSunday(formatDate(endDate))) {
+  } else if (startDate > endDate) {
+    // start should not be after end
     isRangeInvalid = true;
   }
-  // --- (SELESAI PERUBAHAN 2) ---
+  // --------------------------------------------------------
 
   // --- (Handler untuk tombol-tombol) ---
   const handleBulkRoutingSummary = async () => {
@@ -68,7 +71,7 @@ export default function BulkReportDownloader({ driverData }) {
       if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
         toastError('Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.');
       } else {
-        toastError('Tanggal awal atau tanggal akhir tidak boleh hari Minggu.');
+        toastError('Rentang tanggal tidak valid. Pastikan awal <= akhir dan berbeda tanggal.');
       }
       return;
     }
@@ -77,7 +80,6 @@ export default function BulkReportDownloader({ driverData }) {
     setCurrentReport('routing');
     toastInfo('Memulai proses bulk Routing Summary...');
     try {
-      // ... (Logic fetch, zip, download - tidak berubah) ...
       const originalStartDateString = formatDate(startDate);
       const originalEndDateString = formatDate(endDate);
       const hubId = localStorage.getItem('userLocation');
@@ -94,7 +96,7 @@ export default function BulkReportDownloader({ driverData }) {
         const dateForFile = formatDate(dateObj);
         if (isDateSunday(dateForFile)) {
           const formattedDate = format(dateObj, 'dd-MM-yyyy');
-          toastWarning(`Melewati ${formattedDate} (Hari Minggu)`);
+          toastWarning(`Melewati ${formattedDate} (Hari Minggu)`); // skip sundays
           continue;
         }
         try {
@@ -153,7 +155,7 @@ export default function BulkReportDownloader({ driverData }) {
       if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
         toastError('Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.');
       } else {
-        toastError('Tanggal awal atau tanggal akhir tidak boleh hari Minggu.');
+        toastError('Rentang tanggal tidak valid. Pastikan awal <= akhir dan berbeda tanggal.');
       }
       return;
     }
@@ -162,7 +164,6 @@ export default function BulkReportDownloader({ driverData }) {
     setCurrentReport('delivery');
     toastInfo('Memulai proses bulk Delivery Summary...');
     try {
-      // ... (Logic fetch, zip, download - tidak berubah) ...
       const originalStartDateString = formatDate(startDate);
       const originalEndDateString = formatDate(endDate);
       const hubId = localStorage.getItem('userLocation');
@@ -246,7 +247,7 @@ export default function BulkReportDownloader({ driverData }) {
       if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
         toastError('Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.');
       } else {
-        toastError('Tanggal awal atau tanggal akhir tidak boleh hari Minggu.');
+        toastError('Rentang tanggal tidak valid. Pastikan awal <= akhir dan berbeda tanggal.');
       }
       return;
     }
@@ -255,7 +256,6 @@ export default function BulkReportDownloader({ driverData }) {
     setCurrentReport('time');
     toastInfo('Memulai proses bulk Time Summary...');
     try {
-      // ... (Logic fetch, zip, download - tidak berubah) ...
       const originalStartDateString = formatDate(startDate);
       const originalEndDateString = formatDate(endDate);
       const hubName = localStorage.getItem('userLocationName') || 'Lokasi';
@@ -329,10 +329,9 @@ export default function BulkReportDownloader({ driverData }) {
       <div className="flex flex-col sm:flex-row justify-center items-center">
         <div className="mb-8 text-center w-full max-w-xs">
           <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
-            Pilih Rentang Tanggal
+            Pilih Rentang Tanggal Pengiriman
           </label>
 
-          {/* --- (PERUBAHAN 7): Ganti <input> dengan <DatePicker> --- */}
           <DatePicker
             selectsRange={true}
             startDate={startDate}
@@ -342,11 +341,9 @@ export default function BulkReportDownloader({ driverData }) {
             dateFormat="dd/MM/yyyy"
             className="w-64 p-2 rounded border border-gray-300 text-slate-900 bg-white text-center"
           />
-          {/* --- (SELESAI PERUBAHAN 7) --- */}
         </div>
       </div>
 
-      {/* --- (PERUBAHAN 3): Hapus <Tooltip> & tambahkan 'disabled:cursor-not-allowed' --- */}
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
         {/* Tombol Routing Summary */}
         <button
@@ -405,7 +402,6 @@ export default function BulkReportDownloader({ driverData }) {
           )}
         </button>
       </div>
-      {/* --- (SELESAI PERUBAHAN 3) --- */}
     </div>
   );
 }
