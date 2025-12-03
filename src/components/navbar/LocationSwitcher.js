@@ -100,11 +100,12 @@ export default function LocationSwitcher() {
   return (
     <>
       <LocationDropdown
-        value={localStorage.getItem('userLocation') || ''}
-        onChange={handleLocationChange}
-        hubsToShow={allowedHubs} // hanya { _id, name }
         className="text-sm border border-gray-300 rounded-md bg-white"
+        compact={true}
+        hubsToShow={allowedHubs} // hanya { _id, name }
+        onChange={handleLocationChange}
         showPlaceholder={false}
+        value={localStorage.getItem('userLocation') || ''}
       />
 
       {/* Modal mapping jika hook meminta mapping.
