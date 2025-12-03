@@ -1,6 +1,11 @@
 // File: features/rangkuman/RangkumanSummary.js
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import * as XLSX from 'xlsx-js-style';
+
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import {
@@ -9,10 +14,6 @@ import {
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDate } from '@/lib/utils';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import * as XLSX from 'xlsx-js-style';
 
 // --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
@@ -27,20 +28,38 @@ export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
 
+  // State Waktu
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // State Data Bulanan
   const [driverData, setDriverData] = useState([]);
-  const [rawData, setRawData] = useState({ tasks: [], results: [], locations: [] });
+  const [rawData, setRawData] = useState({
+    tasks: [],
+    results: [],
+    locations: [],
+  });
+
+  // State Data Tahunan (Dashboard)
   const [yearlyTasks, setYearlyTasks] = useState([]);
 
+  // Refs untuk Cache
   const lastFetchedYearRef = useRef(null);
   const lastFetchedLocationRef = useRef(null);
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Loading States Terpisah
+  const [isLoading, setIsLoading] = useState(false); // Loading Global (Bulanan)
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false); // Loading Khusus Dashboard
+
+  // separate timers (keperluan internal)
+  const [elapsedTime, setElapsedTime] = useState(0); // for global/monthly fetch
+  const fetchStartTimeRef = useRef(null);
+
+  const [dashboardElapsedTime, setDashboardElapsedTime] = useState(0); // for dashboard yearly fetch
+  const dashboardFetchStartRef = useRef(null);
+
   const [reportPreview, setReportPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('Dashboard');
 
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
 
   const isDashboard = activeTab === 'Dashboard';
@@ -55,18 +74,41 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // 2. Timer Logic
+  // 2. Global Timer logic (menggunakan selisih waktu nyata)
   useEffect(() => {
     let interval = null;
     if (isLoading) {
-      interval = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
+      if (!fetchStartTimeRef.current) fetchStartTimeRef.current = Date.now();
+      interval = setInterval(() => {
+        const now = Date.now();
+        setElapsedTime(Math.floor((now - fetchStartTimeRef.current) / 1000));
+      }, 1000);
     } else {
       setElapsedTime(0);
+      fetchStartTimeRef.current = null;
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isLoading]);
+
+  // 3. Dashboard Timer logic (separate)
+  useEffect(() => {
+    let interval = null;
+    if (isDashboardLoading) {
+      if (!dashboardFetchStartRef.current) dashboardFetchStartRef.current = Date.now();
+      interval = setInterval(() => {
+        const now = Date.now();
+        setDashboardElapsedTime(Math.floor((now - dashboardFetchStartRef.current) / 1000));
+      }, 1000);
+    } else {
+      setDashboardElapsedTime(0);
+      dashboardFetchStartRef.current = null;
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isDashboardLoading]);
 
   const formatTimer = (seconds) => {
     const m = Math.floor(seconds / 60)
@@ -76,14 +118,9 @@ export default function RangkumanSummary() {
     return `${m}:${s}`;
   };
 
-  // ========== UTILS: retry + tracker ==========
+  // ========== UTILS: wait + retry + tracker ==========
   const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  /**
-   * fn should be a function returning a Promise (e.g. () => getTasks(params))
-   * retries: number of retries
-   * baseMs: base delay in ms
-   */
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 500 } = {}) => {
     let attempt = 0;
     while (true) {
@@ -96,16 +133,13 @@ export default function RangkumanSummary() {
           throw err;
         }
         const backoff = baseMs * Math.pow(2, attempt - 1);
-        await wait(backoff);
+        const jitter = Math.floor(Math.random() * 100);
+        await wait(backoff + jitter);
       }
     }
   }, []);
 
-  /**
-   * fetchWithTracker: menerima function yang mengembalikan promise ATAU langsung promise.
-   * label: string yang ditampilkan di UI pendingEndpoints.
-   */
-  const fetchWithTracker = async (promiseOrFn, label) => {
+  const fetchWithTracker = useCallback(async (promiseOrFn, label) => {
     setPendingEndpoints((prev) => [...prev, label]);
     try {
       const result = typeof promiseOrFn === 'function' ? await promiseOrFn() : await promiseOrFn;
@@ -113,10 +147,10 @@ export default function RangkumanSummary() {
     } finally {
       setPendingEndpoints((prev) => prev.filter((item) => item !== label));
     }
-  };
-  // =============================================
+  }, []);
+  // ===================================================
 
-  // --- FUNGSI BARU: FETCH TAHUNAN DIPECAH PER KUARTAL (SERIAL + RETRY) ---
+  // --- FUNGSI: FETCH TAHUNAN DIPECAH PER KUARTAL (SERIAL + RETRY) ---
   const fetchYearlyDataSplit = useCallback(
     async (hubId, year) => {
       const quarters = [
@@ -128,7 +162,6 @@ export default function RangkumanSummary() {
 
       const all = [];
 
-      // Serial loop -> jauh lebih stabil daripada Promise.all untuk beban besar
       for (const q of quarters) {
         const label = `Yearly-${q.label}`;
         try {
@@ -148,34 +181,59 @@ export default function RangkumanSummary() {
               ),
             label
           );
-          if (Array.isArray(quarterData)) {
+          if (Array.isArray(quarterData) && quarterData.length) {
             all.push(...quarterData);
           }
         } catch (err) {
-          // Toleransi: log error dan lanjut ke kuartal berikutnya
-          // Kalau mau stricter: throw err; agar upstream tahu
           console.error(`Failed to fetch ${label}:`, err?.message || err);
-          // continue ke kuartal selanjutnya
+          // toleransi: lanjutkan ke kuartal selanjutnya
         }
       }
 
       return all;
     },
-    [fetchWithRetry]
+    [fetchWithRetry, fetchWithTracker]
   );
-  // --------------------------------------------------------
 
-  // 4. SMART FETCH DATA
+  // ==== MAIN: hybrid - background yearly, blocking monthly ====
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
 
+    // Mulai loading bulanan (blocking)
     setIsLoading(true);
     setPendingEndpoints([]);
+    fetchStartTimeRef.current = Date.now();
+
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+
+    // Cek butuh fetch tahunan?
+    const needFetchYearly =
+      lastFetchedYearRef.current !== year || lastFetchedLocationRef.current !== selectedLocation;
+
+    // Jika perlu, jalankan fetch yearly di background (tracked) dan set isDashboardLoading
+    if (needFetchYearly) {
+      setIsDashboardLoading(true);
+      // background async IIFE sehingga monthly masih bisa proceed
+      (async () => {
+        try {
+          dashboardFetchStartRef.current = Date.now();
+          const yearly = await fetchWithTracker(
+            () => fetchYearlyDataSplit(selectedLocation, year),
+            'Yearly Dashboard'
+          );
+          setYearlyTasks(yearly);
+          lastFetchedYearRef.current = year;
+          lastFetchedLocationRef.current = selectedLocation;
+        } catch (err) {
+          console.error('Dashboard fetch error:', err);
+        } finally {
+          setIsDashboardLoading(false);
+        }
+      })();
+    }
 
     try {
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-
       // Params Bulanan
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
@@ -196,15 +254,10 @@ export default function RangkumanSummary() {
       const routingStartStr = formatDate(routingStartDate);
       const routingEndStr = formatDate(routingEndDate);
 
-      // Logic Cek Fetch Tahunan
-      const needFetchYearly =
-        lastFetchedYearRef.current !== year || lastFetchedLocationRef.current !== selectedLocation;
-
-      // --- SUSUN PROMISE UTAMA ---
-      const promises = [
-        // driver data (cached helper)
+      // Monthly fetches (blocking)
+      const monthlyPromises = [
+        // driver (cached helper)
         fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers'),
-        // monthly tasks wrapped with retry & tracker
         fetchWithTracker(
           () =>
             fetchWithRetry(
@@ -221,7 +274,6 @@ export default function RangkumanSummary() {
             ),
           'Monthly Tasks'
         ),
-        // routing summary
         fetchWithTracker(
           () =>
             fetchWithRetry(
@@ -236,7 +288,6 @@ export default function RangkumanSummary() {
             ),
           'Routing'
         ),
-        // location histories
         fetchWithTracker(
           () =>
             fetchWithRetry(
@@ -255,34 +306,15 @@ export default function RangkumanSummary() {
         ),
       ];
 
-      // --- SISIPKAN FETCH TAHUNAN (JIKA PERLU) ---
-      if (needFetchYearly) {
-        promises.push(
-          fetchWithTracker(() => fetchYearlyDataSplit(selectedLocation, year), 'Yearly Dashboard')
-        );
-      } else {
-        promises.push(Promise.resolve(null));
-      }
+      const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all(monthlyPromises);
 
-      // --- TUNGGU SEMUA SELESAI ---
-      const [driversRes, tasksRes, resultsRes, locRes, yearlyRes] = await Promise.all(promises);
-
-      // --- PROSES DATA ---
-
-      // 1. Set Yearly Data (Jika baru diambil)
-      if (needFetchYearly && yearlyRes) {
-        setYearlyTasks(yearlyRes);
-        lastFetchedYearRef.current = year;
-        lastFetchedLocationRef.current = selectedLocation;
-      }
-
-      // 2. Set Monthly Data
       const drivers = driversRes || [];
       setDriverData(drivers);
 
       const filteredResults = (resultsRes || []).filter(
         (item) => item.dispatchStatus && item.dispatchStatus.toLowerCase() === 'done'
       );
+
       const newRawData = {
         tasks: tasksRes || [],
         results: filteredResults,
@@ -302,17 +334,19 @@ export default function RangkumanSummary() {
       setReportPreview(preview);
     } catch (err) {
       console.error(err);
-      toastError('Gagal mengambil data: ' + (err?.message || err));
+      toastError('Gagal mengambil data laporan: ' + (err?.message || err));
       setReportPreview(null);
     } finally {
       setIsLoading(false);
+      // dashboard may still be loading in background
     }
-  }, [selectedLocation, selectedDate, fetchWithRetry, fetchYearlyDataSplit]);
+  }, [selectedLocation, selectedDate, fetchWithRetry, fetchWithTracker, fetchYearlyDataSplit]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // 5. Handle Date Change
   const handleDateChange = (date) => {
     if (!date) return;
     if (isDashboard) {
@@ -328,6 +362,7 @@ export default function RangkumanSummary() {
     if (!selectedDate) return;
     if (driverData.length === 0) {
       toastError('Data Driver belum siap/kosong.');
+      return;
     }
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
@@ -362,20 +397,39 @@ export default function RangkumanSummary() {
     { id: 'Average KM', label: 'Average KM of Routing' },
   ];
 
+  // Centralized loading box component (used for both global and dashboard loading)
+  const CentralLoading = ({ text, seconds }) => (
+    <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
+      <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+      <div className="text-center space-y-1">
+        <p className="text-lg font-medium text-slate-700">{text}</p>
+        <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(seconds)}</p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
-    if (isLoading) {
+    // 1) If user is on Dashboard tab and dashboard is loading -> show central loading (dashboard timer)
+    if (activeTab === 'Dashboard' && isDashboardLoading) {
+      return <CentralLoading text="Sedang memuat data..." seconds={dashboardElapsedTime} />;
+    }
+
+    // 2) If user is NOT on Dashboard and global monthly is loading -> show central loading (global timer)
+    if (isLoading && !isDashboard) {
+      // show also long-wait message if desired
       const showLongLoadingMsg = elapsedTime > 120;
-      const pendingText = pendingEndpoints.join(', ');
       return (
         <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
           <div className="text-center space-y-1">
             <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
             <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
           </div>
           {showLongLoadingMsg && pendingEndpoints.length > 0 && (
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md max-w-md text-center text-sm animate-pulse">
-              <p className="font-semibold">Memproses banyak data di {pendingText}.</p>
+              <p className="font-semibold">
+                Memproses banyak data di {pendingEndpoints.join(', ')}.
+              </p>
               <p>Mohon tunggu.</p>
             </div>
           )}
@@ -383,10 +437,16 @@ export default function RangkumanSummary() {
       );
     }
 
+    // 3) Normal rendering: Dashboard (not loading) or other tabs (not loading)
     if (activeTab === 'Dashboard') {
       return (
         <div className="w-full h-[calc(100vh-240px)] flex flex-col">
-          <DashboardTab yearlyTasks={yearlyTasks} selectedYear={selectedDate} />
+          <DashboardTab
+            yearlyTasks={yearlyTasks}
+            selectedYear={selectedDate}
+            selectedLocation={selectedLocation}
+            isLoading={isDashboardLoading}
+          />
         </div>
       );
     }
@@ -429,14 +489,12 @@ export default function RangkumanSummary() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
-      {/* HAPUS <style jsx global> DARI SINI KARENA SUDAH DI GLOBALS.CSS */}
-
       <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Rangkuman Laporan</h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
           <div className="w-full sm:w-auto relative z-50">
             <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">
               {isDashboard ? 'Pilih Tahun' : 'Pilih Bulan'}
@@ -449,7 +507,6 @@ export default function RangkumanSummary() {
               showMonthYearPicker={!isDashboard}
               wrapperClassName="w-full"
               disabled={isLoading}
-              // Class "custom-year-picker" memicu style di globals.css
               calendarClassName={
                 isDashboard
                   ? 'custom-year-picker shadow-xl border-0 rounded-xl font-sans'
@@ -463,6 +520,10 @@ export default function RangkumanSummary() {
                         }
                     `}
             />
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* No small timers in header: central timer appears in content area */}
           </div>
 
           {!isDashboard && (
@@ -504,7 +565,11 @@ export default function RangkumanSummary() {
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide">
           <button
             onClick={() => setActiveTab('Dashboard')}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === 'Dashboard'
+                ? 'border-sky-600 text-sky-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
           >
             Dashboard
           </button>

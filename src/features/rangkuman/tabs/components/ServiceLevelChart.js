@@ -202,6 +202,9 @@ export default function ServiceLevelChart({ allTasks, hubId }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <p className="text-xs text-gray-400 mt-4 text-center italic">
+        Klik batang grafik untuk melihat detail per harinya.
+      </p>
 
       <DailyServiceLevelModal
         isOpen={!!selectedMonth}
