@@ -1,40 +1,32 @@
 // File: src/components/VehicleData.js
 'use client';
 
+import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
-import Tooltip from '@/components/Tooltip';
-import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { getVehicles } from '../../lib/apiService';
+import { getOrFetchDriverData } from '../../lib/driverDataHelper';
+import { toastError, toastSuccess } from '../../lib/toastHelper';
 
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
-  // 1. State untuk melacak apakah teks terpotong
   const [isTruncated, setIsTruncated] = useState(false);
-  // 2. Ref untuk menunjuk ke elemen button
   const buttonRef = useRef(null);
 
-  // 3. Gunakan useLayoutEffect untuk mengukur DOM setelah render
   useLayoutEffect(() => {
     const element = buttonRef.current;
     if (element) {
-      // 4. Cek apakah lebar konten (scrollWidth) > lebar elemen (clientWidth)
       const isTextTruncated = element.scrollWidth > element.clientWidth;
-
-      // 5. Update state
       if (isTextTruncated !== isTruncated) {
         setIsTruncated(isTextTruncated);
       }
     }
-    // Jalankan pengecekan ini setiap kali 'children' (teks) berubah
   }, [children, isTruncated]);
 
-  // 6. Buat elemen tombol
   const buttonElement = (
     <button
-      ref={buttonRef} // Pasang ref ke tombol
+      ref={buttonRef}
       onClick={onClick}
       className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
         isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
@@ -44,13 +36,10 @@ function TabButton({ children, isActive, onClick }) {
     </button>
   );
 
-  // 7. Logika Kondisional:
-  // HANYA jika terpotong, bungkus tombol dengan Tooltip
   if (isTruncated) {
     return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
   }
 
-  // 8. Jika tidak terpotong, kembalikan tombol biasa
   return buttonElement;
 }
 
@@ -66,7 +55,7 @@ function Td({ children }) {
     <td className="p-3 text-sm text-gray-800 border-b border-gray-200 align-top">{children}</td>
   );
 }
-// --- (Komponen PaginationControls - TIDAK BERUBAH) ---
+
 function PaginationControls({
   totalItems,
   itemsPerPage,
@@ -133,7 +122,7 @@ export default function VehicleData() {
 
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
-  const [templateData, setTemplateData] = useState([]);
+  const [templateData, setTemplateData] = useState([]); // Data Murni
 
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [sheetSelection, setSheetSelection] = useState({
@@ -143,7 +132,6 @@ export default function VehicleData() {
   });
   const downloadDropdownRef = useRef(null);
 
-  // Helper format volume (tidak berubah)
   const formatVolume = (vol) => {
     if (vol === null || vol === undefined) return null;
     const num = parseFloat(vol);
@@ -151,9 +139,7 @@ export default function VehicleData() {
     return parseFloat(num.toFixed(12));
   };
 
-  // useEffect untuk fetch data (tidak berubah)
   useEffect(() => {
-    // ... (Logika fetch data, pemisahan master/conditional/template - TIDAK BERUBAH) ...
     async function fetchData() {
       setIsLoading(true);
       try {
@@ -172,17 +158,63 @@ export default function VehicleData() {
         });
         setDriverMap(map);
 
+        // 1. Ambil Data Mentah dari API
         const rawApiData = await getVehicles({
           limit: 500,
           hubId: userLocation,
         });
 
-        // 'rawApiData' dijamin berupa array (data.data)
         if (rawApiData.length === 0) {
           throw new Error('Tidak ada data yang ditemukan.');
         }
+
+        const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
+
+        setTemplateData([...rawApiData].sort(sortByEmail));
+
+        let processedData = rawApiData.map((v) => ({
+          ...v,
+          tags: v.tags ? [...v.tags] : [], // Clone array tags
+        }));
+
+        try {
+          const storedMapString = localStorage.getItem('vehicleTagMap');
+
+          if (storedMapString) {
+            const tagMap = JSON.parse(storedMapString);
+            const hubMap = tagMap[userLocation];
+
+            if (hubMap) {
+              processedData.forEach((vehicle) => {
+                if (!vehicle.tags || vehicle.tags.length === 0 || !vehicle.name) return;
+
+                const originalTag = vehicle.tags[0];
+                const plate = vehicle.name;
+
+                const parts = originalTag.split('-');
+
+                if (parts.length >= 2) {
+                  const storagePrefix = parts[0];
+                  const currentType = parts[1];
+
+                  if (hubMap[plate] && hubMap[plate][currentType]) {
+                    const mappedType = hubMap[plate][currentType];
+
+                    const newFullTag = `${storagePrefix}-${mappedType}`;
+
+                    // Update tag HANYA di processedData
+                    vehicle.tags[0] = newFullTag;
+                  }
+                }
+              });
+            }
+          }
+        } catch (error) {
+          toastError(`Gagal melakukan mapping vehicle tag: ${error}`);
+        }
+
         const emailToVehiclesMap = new Map();
-        for (const vehicle of rawApiData) {
+        for (const vehicle of processedData) {
           const email = vehicle.assignee;
           if (email) {
             if (!emailToVehiclesMap.has(email)) {
@@ -215,10 +247,8 @@ export default function VehicleData() {
           }
         }
 
-        const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
         setMasterData(masterList.sort(sortByEmail));
         setConditionalData(conditionalList.sort(sortByEmail));
-        setTemplateData(rawApiData.sort(sortByEmail));
       } catch (err) {
         toastError(err.message);
       } finally {
@@ -257,7 +287,6 @@ export default function VehicleData() {
       const wb = XLSX.utils.book_new();
       const headerStyle = { font: { bold: true } };
 
-      // ... (Logika penambahan sheet - tidak berubah)
       if (sheetSelection.master) {
         const headers1 = ['Plat', 'Type', 'Email', 'Name'];
         const data1 = masterData.map((v) => [
@@ -289,6 +318,7 @@ export default function VehicleData() {
         XLSX.utils.book_append_sheet(wb, wsC, 'Conditional Vehicle');
       }
       if (sheetSelection.template) {
+        // Template menggunakan templateData (Data Murni)
         const headers2 = [
           'Name*',
           'Assignee',
@@ -335,7 +365,6 @@ export default function VehicleData() {
       if (wb.SheetNames.length === 0) {
         alert('Pilih setidaknya satu sheet untuk di-download.');
       } else {
-        // --- (PERUBAHAN 1): Nama File Dinamis ---
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Data Kendaraan - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
@@ -399,27 +428,23 @@ export default function VehicleData() {
     <div className="w-full max-w-none px-4 sm:px-6">
       {/* Kontrol Atas: Search dan Download */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-        {/* --- (PERUBAHAN 2): Input Search dengan Tombol Clear --- */}
         <div className="relative w-full max-w-sm mb-2 sm:mb-0">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setCurrentPage(1); // Reset halaman saat search
+              setCurrentPage(1);
             }}
             placeholder="Cari (Plat, Email, Nama, Tag)..."
-            // Tambahkan padding kanan (pr-8) untuk ruang 'X'
             className="w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400"
           />
-          {/* Tombol Clear 'X' */}
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Hapus pencarian"
             >
-              {/* Ikon X (Heroicons) */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -433,9 +458,8 @@ export default function VehicleData() {
             </button>
           )}
         </div>
-        {/* --- SELESAI PERUBAHAN 2 --- */}
 
-        {/* Tombol Dropdown Download (Tidak berubah) */}
+        {/* Tombol Dropdown Download */}
         <div className="relative" ref={downloadDropdownRef}>
           <button
             onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
@@ -621,7 +645,6 @@ export default function VehicleData() {
               </div>
             )}
 
-            {/* Kontrol Paginasi (Tidak berubah) */}
             <PaginationControls
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
