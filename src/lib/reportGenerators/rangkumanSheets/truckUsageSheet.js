@@ -411,27 +411,19 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       if (isSum1 || isSum2) {
         const startRow = isSum1 ? 0 : summaryPctStartRow;
         const relR = R - startRow;
-
-        // --- UPDATE MULAI ---
-        // Tentukan batas kolom maksimal
-        // Summary 1 (Count): Sampai kolom IV (Index 8)
-        // Summary 2 (Percent): Sampai kolom TVU (Index 3)
         const maxCol = isSum1 ? 8 : 3;
 
-        // Jika kolom melebihi batas, kosongkan dan skip
         if (C > maxCol) {
           cell.v = '';
           cell.s = {};
           continue;
         }
-        // --- UPDATE SELESAI ---
 
         if (relR === 0 || relR === 1) {
           cell.s = { ...HEADER_STYLES.main };
         } else {
           cell.s = { ...BASE_STYLES.center, border: BORDERS.thin };
 
-          // Colors (Logic warna baris tidak berubah)
           if (relR >= 2 && relR < sumDryTot) cell.s.fill = FILL_STYLES.dry;
           else if (relR === sumDryTot) {
             cell.s.fill = FILL_STYLES.dryTotal;
@@ -447,7 +439,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
 
           if (C === 0) cell.s.alignment = { horizontal: 'left', indent: 1 };
 
-          // Format Percent
           if (isSum1 && C === 5) {
             cell.t = 'n';
             cell.s.numFmt = '0.00%';
@@ -485,7 +476,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
         const frzTot = frzInter + 1;
         const otvRow = frzTot + 1;
 
-        // INITIALIZE STYLE FIRST (Fix Overwrite)
         cell.s = { ...BASE_STYLES.center };
 
         // HEADER ROW (Daily)
@@ -496,22 +486,20 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
           if (C === 2) cell.s.border.right = BORDERS.medium;
         } else {
           let rowFill = null;
-          if (relR >= startDry && relR < dryInter) rowFill = FILL_STYLES.dry;
+          if (relR >= startDry && relR <= dryInter) rowFill = FILL_STYLES.dry;
           else if (relR === dryTot) rowFill = FILL_STYLES.dryTotal;
-          else if (relR >= frzStart && relR < frzInter) rowFill = FILL_STYLES.frozen;
+          else if (relR >= frzStart && relR <= frzInter) rowFill = FILL_STYLES.frozen;
           else if (relR === frzTot) rowFill = FILL_STYLES.frozenTotal;
           else if (relR === otvRow) rowFill = FILL_STYLES.otv;
 
-          // FIX 2: APPLY FORMAT PERCENTAGE HERE (AFTER INIT)
           if (isTable2 && C > 2) {
             if (typeof cell.v === 'number') {
               cell.t = 'n';
-              cell.s.numFmt = '0%'; // Set Format
+              cell.s.numFmt = '0%';
             }
           }
 
           if (C <= 2) {
-            // Label & Total
             if (C <= 1) {
               const isMerged = [dryInter, dryTot, frzInter, frzTot, otvRow].includes(relR);
               if (isMerged && C === 0) cell.s.alignment = { ...BASE_STYLES.left.alignment };
@@ -525,7 +513,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
               cell.s.font = FONT_STYLES.bold;
             }
           } else {
-            // Data Columns
             if (C === 3) cell.s.border = { left: BORDERS.medium };
             else cell.s.border = {};
             if ((C - 3) % 3 === 2) cell.s.border.right = BORDERS.medium;
