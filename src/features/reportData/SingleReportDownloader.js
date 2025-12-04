@@ -248,7 +248,7 @@ export default function TmsSummary({
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">TMS Report</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">Laporan Harian</h1>
 
       <div className="mb-8 text-center w-full max-w-xs">
         <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">

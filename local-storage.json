@@ -1,4 +1,357 @@
 {
+  "selectedUser": {
+    "name": "Afrizal Maulana",
+    "email": "afrizal.maulana@panganlestari.com",
+    "hubId": [
+      "67a41cb1480d2d3b580fc61c",
+      "670369a8a5d2d4b5ee0b020d",
+      "683924970c29c079e30d862f",
+      "6895a281bc530d4a4908f5ef",
+      "68b8038b1aa98343380e3ab2"
+    ],
+    "organizationId": "6703410af6be892f3208ecda",
+    "status": "active",
+    "isDeleted": false,
+    "lastLogin": "2025-11-24T01:35:32+00:00",
+    "roleId": "677c940ee491a8634b09defe",
+    "activationCode": "f73NCbzlSncexIBXjbpc",
+    "teamId": [],
+    "language": "en",
+    "avatar": null,
+    "verifiedTime": "2024-10-07T04:55:05+00:00",
+    "firstLogin": false,
+    "role": {
+      "name": "Superadmin",
+      "_id": "677c940ee491a8634b09defe"
+    },
+    "_id": "6706312c1b19b5822c031e2f"
+  },
+  "driverData": [
+    {
+      "email": "jobbazizah@gmail.com",
+      "name": "Azizah",
+      "plat": null,
+      "type": null
+    },
+    {
+      "email": "afrizalmaulanamuh@gmail.com",
+      "name": "'DRY' Afrizal Driver",
+      "plat": "Mobil Demo",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck01@panganlestari.com",
+      "name": "'FRZ' HAERUL ANWAR",
+      "plat": "B 9588 FCC",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck02@panganlestari.com",
+      "name": "'FRZ' DIAN PRASETYA",
+      "plat": "B 9598 FCC",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck03@panganlestari.com",
+      "name": "'FRZ' HENDRIK",
+      "plat": "B 9953 FXU",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck04@panganlestari.com",
+      "name": "'FRZ' SUHENDAR",
+      "plat": "B 9382 FCE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck05@panganlestari.com",
+      "name": "'FRZ' AGUNG NUGROHO",
+      "plat": "B 9384 FCE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck06@panganlestari.com",
+      "name": "'FRZ' SANDY NUGRAHA",
+      "plat": "B 9021 FCJ",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck07@panganlestari.com",
+      "name": "'FRZ' WALUYO",
+      "plat": "B 9624 FCG",
+      "type": "FROZEN-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck08@panganlestari.com",
+      "name": "'FRZ' NGISOMUDIN",
+      "plat": "B 9802 FXW",
+      "type": "FROZEN-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck09@panganlestari.com",
+      "name": "'FRZ' DADAN HIDAYAT",
+      "plat": "B 9793 FXW",
+      "type": "FROZEN-KURNIA"
+    },
+    {
+      "email": "kendaraan.plck10@panganlestari.com",
+      "name": "'FRZ' MAZHAR",
+      "plat": "B 9170 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck11@panganlestari.com",
+      "name": "'FRZ' ANGGA FITRAH",
+      "plat": "B 9171 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck12@panganlestari.com",
+      "name": "'FRZ' M. NUR IKHSAN",
+      "plat": "B 9172 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck13@panganlestari.com",
+      "name": "'FRZ' AHDI",
+      "plat": "B 9201 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck14@panganlestari.com",
+      "name": "'DRY' YUNUS",
+      "plat": "B 9402 FCA",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck15@panganlestari.com",
+      "name": "'DRY' ASEP MAULAHASUBHI",
+      "plat": "B 9732 FCC",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck16@panganlestari.com",
+      "name": "'DRY' TARMIDI",
+      "plat": "B 9508 FCI",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck17@panganlestari.com",
+      "name": "'DRY' SUWARDI",
+      "plat": "B 9125 FFX",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck18@panganlestari.com",
+      "name": "'DRY' ARIYANTO",
+      "plat": "B 9205 FCM",
+      "type": "DRY-CDD-LONG-5000"
+    },
+    {
+      "email": "kendaraan.plck19@panganlestari.com",
+      "name": "'DRY' AJIANTO",
+      "plat": "B 9511 DO",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck20@panganlestari.com",
+      "name": "'DRY' SISWANTO",
+      "plat": "B 9565 FCB",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck21@panganlestari.com",
+      "name": "'DRY' FIKRI AZIZ",
+      "plat": "B 9723 FCB",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck22@panganlestari.com",
+      "name": "'DRY' FAHMI ILYAS",
+      "plat": "B 9177 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck23@panganlestari.com",
+      "name": "'DRY' BUDI MULYANA",
+      "plat": "B 9179 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck24@panganlestari.com",
+      "name": "'DRY' NARSUN LAMPARD",
+      "plat": "B 9464 FXU",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck25@panganlestari.com",
+      "name": "'DRY' ASEP SAIPUL",
+      "plat": "B 9587 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck26@panganlestari.com",
+      "name": "'DRY' SAEFUL ANWAR",
+      "plat": "B 9481 FCD",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck27@panganlestari.com",
+      "name": "'DRY' DIAN ANDRIANA",
+      "plat": "B 9845 FXX",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck28@panganlestari.com",
+      "name": "'DRY' RAMA",
+      "plat": "B 9846 FXX",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck29@panganlestari.com",
+      "name": "'DRY' DEDE ISKANDAR",
+      "plat": "B 9307 FCG",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck30@panganlestari.com",
+      "name": "'DRY' WANDA",
+      "plat": "B 9208 BCX",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck31@panganlestari.com",
+      "name": "'DRY' ONDRI YUNI",
+      "plat": "B 9567 FXU",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck32@panganlestari.com",
+      "name": "'DRY' TANDRI RAHMAN",
+      "plat": "B 9576 FXU",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck33@panganlestari.com",
+      "name": "'DRY' RICKI ADIANSYAH",
+      "plat": "B 9243 FXW",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck34@panganlestari.com",
+      "name": "'DRY' ILHAM SAPUTRA",
+      "plat": "B 9244 FXW",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck35@panganlestari.com",
+      "name": "'DRY' ASNEN",
+      "plat": "B 9207 FCM",
+      "type": "DRY-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck36@panganlestari.com",
+      "name": "'DRY' SAEFUL",
+      "plat": "B 9246 FXW",
+      "type": "DRY-L300-1500"
+    },
+    {
+      "email": "kendaraan.pldm01@panganlestari.com",
+      "name": "'DRY' ZAENURI",
+      "plat": "B 9722 FCB - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm02@panganlestari.com",
+      "name": "'DRY' SAMSURI",
+      "plat": "B 9181 FCC - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm03@panganlestari.com",
+      "name": "'DRY' BURHAN",
+      "plat": "B 9733 FCC - DM",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.pldm04@panganlestari.com",
+      "name": "'DRY' ABDULLAH",
+      "plat": "B 9462 FXU - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm05@panganlestari.com",
+      "name": "'DRY' SAIMAN",
+      "plat": "B 9569 FXU - DM",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.pldm06@panganlestari.com",
+      "name": "'DRY' ROKHIM",
+      "plat": "B 9574 FXU - DM",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck37@panganlestari.com",
+      "name": "'DRY' SEWA 1",
+      "plat": "'DRY' SEWA 1 CDE",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck38@panganlestari.com",
+      "name": "'DRY' SEWA 2",
+      "plat": "'DRY' SEWA 2 CDE LONG",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck39@panganlestari.com",
+      "name": "'DRY' SEWA 3",
+      "plat": "'DRY' SEWA 3 CDD",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck40@panganlestari.com",
+      "name": "'DRY' SEWA 4",
+      "plat": "'DRY' SEWA 4 CDD LONG",
+      "type": "DRY-CDD-LONG-5000"
+    },
+    {
+      "email": "kendaraan.plck41@panganlestari.com",
+      "name": "'DRY' SEWA 5",
+      "plat": "'DRY' SEWA 5 FUSO",
+      "type": "DRY-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck42@panganlestari.com",
+      "name": "'FRZ' SEWA 1",
+      "plat": "'FROZEN' SEWA 1 CDE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck43@panganlestari.com",
+      "name": "'FRZ' SEWA 2",
+      "plat": "'FROZEN' SEWA 2 CDE LONG",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck44@panganlestari.com",
+      "name": "'FRZ' SEWA 3",
+      "plat": "'FROZEN' SEWA 3 CDD",
+      "type": "FROZEN-SUBUH"
+    },
+    {
+      "email": "kendaraan.plck45@panganlestari.com",
+      "name": "'FRZ' SEWA 4",
+      "plat": "'FROZEN' SEWA 4 CDD LONG",
+      "type": "FROZEN-SOUR-SALLY"
+    },
+    {
+      "email": "kendaraan.plck46@panganlestari.com",
+      "name": "'FRZ' SEWA 5",
+      "plat": "'FROZEN' SEWA 5 FUSO",
+      "type": "FROZEN-FUSO-10000"
+    }
+  ],
   "allHubsList": [
     {
       "name": "Cikarang",
@@ -19,6 +372,8 @@
         "enableLanguage": true,
         "language": "id",
         "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
         "_id": "624fb53c88d36ab78ccdfe0e"
       }
     },
@@ -41,6 +396,8 @@
         "enableLanguage": true,
         "language": "id",
         "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
         "_id": "624fb53c88d36ab78ccdfe0e"
       }
     },
@@ -63,6 +420,8 @@
         "enableLanguage": true,
         "language": "id",
         "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
         "_id": "624fb53c88d36ab78ccdfe0e"
       }
     },
@@ -85,230 +444,82 @@
         "enableLanguage": true,
         "language": "id",
         "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
         "_id": "624fb53c88d36ab78ccdfe0e"
       }
     }
   ],
-  "driverData": [
-    { "email": "jobbazizah@gmail.com", "name": "Azizah", "plat": null, "type": null },
-    {
-      "email": "kendaraan.plsda01@panganlestari.com",
-      "name": "'DRY' Agung Setiawan",
-      "plat": "W 8261 QA",
-      "type": "DRY-CDE-2000"
+  "masterTruck": {
+    "Dry": {
+      "Total": 29,
+      "L300": 1,
+      "CDE": 13,
+      "CDE-LONG": 8,
+      "CDD": 5,
+      "CDD-LONG": 1,
+      "FUSO": 1,
+      "FUSO-LONG": 0
     },
-    {
-      "email": "kendaraan.plsda02@panganlestari.com",
-      "name": "'DRY' Khoirul Musawimin",
-      "plat": "W 8921 PB",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda03@panganlestari.com",
-      "name": "'DRY' Yohanif Mahfutro",
-      "plat": "W 8259 QA",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda04@panganlestari.com",
-      "name": "'DRY' Mochammad Bagus Pratama",
-      "plat": "W 8260 QA",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda05@panganlestari.com",
-      "name": "'FRZ' Buckhori Muslim",
-      "plat": "W 8137 PI",
-      "type": "FROZEN-KFC"
-    },
-    {
-      "email": "kendaraan.plsda06@panganlestari.com",
-      "name": "'FRZ' Dirgantara Dharma",
-      "plat": "L 9123 BX",
-      "type": "FROZEN-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda07@panganlestari.com",
-      "name": "'FRZ' Sutomo",
-      "plat": "L 9124 BX",
-      "type": "FROZEN-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda08@panganlestari.com",
-      "name": "'DRY' Dodi Andriyan",
-      "plat": "L 9142 CC",
-      "type": "DRY-CDD-5000"
-    },
-    {
-      "email": "kendaraan.plsda09@panganlestari.com",
-      "name": "'DRY' Sutikno",
-      "plat": "L 9143 CC",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda10@panganlestari.com",
-      "name": "'DRY' Mohamad Arif Saputra",
-      "plat": "L 9276 BI",
-      "type": "DRY-CDD-5000"
-    },
-    {
-      "email": "kendaraan.plsda11@panganlestari.com",
-      "name": "'DRY' Arik Siswanto OS",
-      "plat": "W 8312 PV",
-      "type": "DRY-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda12@panganlestari.com",
-      "name": "'DRY' Junaidi Abdillah",
-      "plat": "W 8236 QA",
-      "type": "DRY-HAVI"
-    },
-    {
-      "email": "kendaraan.plsda13@panganlestari.com",
-      "name": "'DRY' M.Bagus Fitroni Bashori",
-      "plat": "L 9475 CJ",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda14@panganlestari.com",
-      "name": "'FRZ' Edo Hermawan",
-      "plat": "W 8944 PC",
-      "type": "FROZEN-CDE-LONG-2000"
-    },
-    {
-      "email": "kendaraan.plsda15@panganlestari.com",
-      "name": "'DRY' Arief Wahyu Pambudi",
-      "plat": "W 8153 PV",
-      "type": "DRY-L300-1000"
-    },
-    {
-      "email": "kendaraan.plsda16@panganlestari.com",
-      "name": "'FRZ' M Hilmi",
-      "plat": "W 8262 PV",
-      "type": "FROZEN-FUSO-10000"
-    },
-    {
-      "email": "kendaraan.plsda17@panganlestari.com",
-      "name": "'DRY' Roy Ardiansyah",
-      "plat": "L 9277 BI",
-      "type": "DRY-CDD-5000"
-    },
-    {
-      "email": "kendaraan.plsda18@panganlestari.com",
-      "name": "'FRZ' Yugi Arvianto",
-      "plat": "W 8319 PV",
-      "type": "FROZEN-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda19@panganlestari.com",
-      "name": "'FRZ' Usman",
-      "plat": "W 8212 QH",
-      "type": "FROZEN-CDE-LONG-2000"
-    },
-    {
-      "email": "kendaraan.plsda20@panganlestari.com",
-      "name": "'DRY' Mohamad Suud",
-      "plat": "W 8262 QA",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda21@panganlestari.com",
-      "name": "'DRY' Machwal Anam",
-      "plat": "W 8933 PC",
-      "type": "DRY-CDE-LONG-2000"
-    },
-    {
-      "email": "kendaraan.plsda22@panganlestari.com",
-      "name": "'DRY' Rachmat Fahsy",
-      "plat": "W 8934 PC",
-      "type": "DRY-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda23@panganlestari.com",
-      "name": "'DRY' Sugianto",
-      "plat": "W 9093 PD",
-      "type": "DRY-CDE-ROTI"
-    },
-    {
-      "email": "kendaraan.plsda24@panganlestari.com",
-      "name": "'FRZ' Nurdin Alamsyah",
-      "plat": "W 8958 PQ",
-      "type": "FROZEN-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda25@panganlestari.com",
-      "name": "'DRY' Mulyo Agustiawan",
-      "plat": "L 8798 BX",
-      "type": "DRY-CDE-2000"
-    },
-    {
-      "email": "kendaraan.plsda26@panganlestari.com",
-      "name": "'FRZ' Siswanto OS",
-      "plat": "W 9094 PD",
-      "type": "FROZEN-CDE-LONG-2000"
-    },
-    {
-      "email": "kendaraan.plsda27@panganlestari.com",
-      "name": "'DRY' Riadi",
-      "plat": "W 9335 PG",
-      "type": "DRY-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda28@panganlestari.com",
-      "name": "'DRY' Moch Kariyo Slamet",
-      "plat": "W 8059 QH",
-      "type": "DRY-CDD-LONG-5000"
-    },
-    {
-      "email": "kendaraan.plsda31@panganlestari.com",
-      "name": "'DRY' Mochammad Choirul Ni'am",
-      "plat": "W 8081 QH",
-      "type": "DRY-CDE-LONG-2000"
-    },
-    {
-      "email": "kendaraan.plsda30@panganlestari.com",
-      "name": "'DRY' Nasikin Efendi",
-      "plat": "W 9971 PF",
-      "type": "DRY-CDE-LONG-2500"
-    },
-    {
-      "email": "afrizalmaulanamuh@gmail.com",
-      "name": "'DRY' Afrizal Driver",
-      "plat": "Mobil Demo",
-      "type": "DRY-CDE-2000"
+    "Frozen": {
+      "Total": 13,
+      "L300": 0,
+      "CDE": 10,
+      "CDE-LONG": 2,
+      "CDD": 0,
+      "CDD-LONG": 0,
+      "FUSO": 1,
+      "FUSO-LONG": 0
     }
-  ],
-  "selectedUser": {
-    "name": "Afrizal Maulana",
-    "email": "afrizal.maulana@panganlestari.com",
-    "hubId": [
-      "67a41cb1480d2d3b580fc61c",
-      "670369a8a5d2d4b5ee0b020d",
-      "683924970c29c079e30d862f",
-      "6895a281bc530d4a4908f5ef",
-      "68b8038b1aa98343380e3ab2"
-    ],
-    "organizationId": "6703410af6be892f3208ecda",
-    "status": "active",
-    "isDeleted": false,
-    "lastLogin": "2025-11-11T02:12:42+00:00",
-    "roleId": "677c940ee491a8634b09defe",
-    "activationCode": "f73NCbzlSncexIBXjbpc",
-    "teamId": [],
-    "language": "en",
-    "avatar": null,
-    "verifiedTime": "2024-10-07T04:55:05+00:00",
-    "firstLogin": false,
-    "role": { "name": "Superadmin", "_id": "677c940ee491a8634b09defe" },
-    "_id": "6706312c1b19b5822c031e2f"
   },
-  "userLocation": "670369a8a5d2d4b5ee0b020d",
-  "userLocationName": "Sidoarjo",
   "vehicleTagMap": {
-    "67a41cb1480d2d3b580fc61c": {
-      "H 9409 LQ": { "TEGAL": "CDE-LONG" },
-      "H 9491 JQ": { "REMBANG": "CDE" }
+    "670369a8a5d2d4b5ee0b020d": {
+      "W 8137 PI": {
+        "KFC": "CDD-LONG"
+      },
+      "W 8236 QA": {
+        "HAVI": "FUSO-LONG"
+      }
     },
-    "670369a8a5d2d4b5ee0b020d": { "W 8137 PI": { "KFC": "CDD-LONG" } }
-  }
+    "6895a281bc530d4a4908f5ef": {
+      "B 9624 FCG": {
+        "KFC": "FUSO-LONG"
+      },
+      "B 9793 FXW": {
+        "KURNIA": "CDE-LONG"
+      },
+      "'FROZEN' SEWA 3 CDD": {
+        "KFC": "CDD",
+        "SUBUH": "CDD"
+      },
+      "B 9624 FCG KFC": {
+        "KFC": "FUSO"
+      },
+      "B 9384 FCE SOUR SALLY": {
+        "SOUR": "CDE"
+      },
+      "B 9802 FXW SOUR SALLY": {
+        "SOUR": "CDE-LONG"
+      },
+      "'FROZEN' SEWA 4 CDD LONG": {
+        "SOUR": "CDD-LONG"
+      }
+    },
+    "67a41cb1480d2d3b580fc61c": {
+      "H 9491 JQ SAT REMBANG": {
+        "REMBANG": "CDE"
+      },
+      "H 9409 LQ SAT TEGAL": {
+        "TEGAL": "CDD"
+      },
+      "H 9243 SQ MENGINAP": {
+        "MENGINAP1": "CDD"
+      },
+      "H 8311 MQ MENGINAP": {
+        "MENGINAP2": "CDD"
+      }
+    }
+  },
+  "userLocation": "6895a281bc530d4a4908f5ef",
+  "userLocationName": "Cikarang"
 }
