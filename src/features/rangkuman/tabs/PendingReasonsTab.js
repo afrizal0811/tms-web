@@ -90,7 +90,11 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
 
 export default function PendingReasonsTab({ data, locationName }) {
   if (!data || data.length === 0) {
-    return <div className="p-6 text-center text-gray-400">Tidak ada data Pending Reason.</div>;
+    return (
+      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        Tidak ada data yang ditemukan.
+      </div>
+    );
   }
 
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>

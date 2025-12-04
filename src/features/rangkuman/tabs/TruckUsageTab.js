@@ -5,9 +5,26 @@ import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 export default function TruckUsageTab({ data }) {
   const { dateMap, summaryData, vehicleTypes } = data || {};
 
-  if (!dateMap) {
-    return <div className="p-6 text-center text-gray-400">Tidak ada data untuk ditampilkan.</div>;
+  const hasUsageData =
+    dateMap &&
+    Object.values(dateMap).some((dateObj) => {
+      const dryCount = dateObj.DryTotal || 0;
+      const frozenCount = dateObj.FrozenTotal || 0;
+      const otvCount = dateObj.OTV || 0;
+
+      // Return true jika ada data (jumlah > 0)
+      return dryCount > 0 || frozenCount > 0 || otvCount > 0;
+    });
+
+  // Jika dateMap null/undefined ATAU tidak ada usage (semua 0)
+  if (!dateMap || !hasUsageData) {
+    return (
+      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        Tidak ada data yang ditemukan.
+      </div>
+    );
   }
+  // --- SELESAI LOGIKA BARU ---
 
   return (
     <div className="w-full h-full flex flex-col gap-8 pb-10 overflow-auto">

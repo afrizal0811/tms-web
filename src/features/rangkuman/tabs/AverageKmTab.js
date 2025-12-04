@@ -1,8 +1,14 @@
 // File: src/features/rangkuman/tabs/AverageKmTab.js
 export default function AverageKmTab({ data, monthTotals }) {
-  if (!data || data.length === 0) {
-    return <div className="p-6 text-center text-gray-400">Tidak ada data routing.</div>;
+  const hasRoutingData = data && data.some((row) => (row.totalKm || 0) > 0);
+  if (!data || data.length === 0 || !hasRoutingData) {
+    return (
+      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        Tidak ada data yang ditemukan.
+      </div>
+    );
   }
+
 
   return (
     <div className="w-full overflow-auto max-h-[650px]">

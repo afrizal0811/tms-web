@@ -46,8 +46,7 @@ export default function DashboardTab({ yearlyTasks, selectedYear, selectedLocati
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {!yearlyTasks || yearlyTasks.length === 0 ? (
           <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
-            {/* Tampilkan Spinner jika state loading parent belum selesai mengirim data kosong */}
-            Belum ada data untuk tahun {yearNum}.
+            Tidak ada data yang ditemukan.
           </div>
         ) : (
           <>

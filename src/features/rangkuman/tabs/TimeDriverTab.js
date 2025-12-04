@@ -4,8 +4,19 @@ import { Fragment } from 'react';
 export default function TimeDriverTab({ data }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
 
-  if (!driverEmails || driverEmails.length === 0) {
-    return <div className="p-6 text-center text-gray-400">Tidak ada data driver.</div>;
+  const hasMatrixData =
+    dataMatrix &&
+    Object.values(dataMatrix).some((dateObj) => {
+      return dateObj && Object.keys(dateObj).length > 0;
+    });
+
+  const hasDrivers = driverEmails && driverEmails.length > 0;
+  if (!hasMatrixData || !hasDrivers) {
+    return (
+      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        Tidak ada data yang ditemukan.
+      </div>
+    );
   }
 
   // Helpers & Constants
@@ -35,7 +46,6 @@ export default function TimeDriverTab({ data }) {
         <thead className="sticky top-0 z-30 bg-gray-100">
           {/* Row 1: Headers */}
           <tr>
-            {/* UPDATE: Tambahkan top-0 di class th */}
             <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
               Type
             </th>
@@ -84,7 +94,6 @@ export default function TimeDriverTab({ data }) {
             const driver = driverMap[email];
             return (
               <tr key={email} className="hover:bg-gray-50">
-                {/* Gunakan variabel stickyBody... yang tidak ada top-0 nya */}
                 <td className={`${tdClass} ${stickyBodyType} bg-white`}>{driver.type}</td>
                 <td className={`${tdClass} ${stickyBodyPlate} bg-white`}>{driver.plat}</td>
                 <td

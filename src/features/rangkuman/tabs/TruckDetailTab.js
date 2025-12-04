@@ -7,8 +7,19 @@ export default function TruckDetailTab({ data }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const [modalData, setModalData] = useState(null);
 
-  if (!driverEmails || driverEmails.length === 0) {
-    return <div className="p-6 text-center text-gray-400">Tidak ada data driver.</div>;
+  const hasMatrixData =
+    dataMatrix &&
+    Object.values(dataMatrix).some((dateObj) => {
+      return dateObj && Object.keys(dateObj).length > 0;
+    });
+
+  const hasDrivers = driverEmails && driverEmails.length > 0;
+  if (!hasMatrixData || !hasDrivers) {
+    return (
+      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        Tidak ada data yang ditemukan.
+      </div>
+    );
   }
 
   const handleCellClick = (metrics, driverName, dateStr) => {
