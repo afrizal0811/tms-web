@@ -29,21 +29,21 @@ export default function HelpDropdown() {
       {/* Tombol Pemicu Dropdown */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors flex items-center cursor-pointer"
+        className={`text-sm font-mediumtransition-colors flex items-center cursor-pointer ${
+          isOpen ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
+        }`}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
         Help
         {/* Ikon panah bawah (chevron-down) */}
         <svg
-          xmlns="http://www.w3.org/2000/svg"
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+          viewBox="0 0 20 20"
           fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={3}
           stroke="currentColor"
-          className={`w-4 h-4 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 8l4 4 4-4" />
         </svg>
       </button>
 
@@ -55,7 +55,7 @@ export default function HelpDropdown() {
               href={plannerUrl}
               target="_blank" // Buka di tab baru
               rel="noopener noreferrer"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600"
             >
               Panduan - Planner
             </a>
@@ -63,7 +63,7 @@ export default function HelpDropdown() {
               href={driverUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600"
             >
               Panduan - Driver
             </a>
