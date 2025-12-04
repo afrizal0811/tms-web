@@ -220,7 +220,6 @@ export default function Home() {
           <LocationDropdown
             value={tempSelectedLocation}
             onChange={handleLocationChange}
-            onStatusChange={() => {}}
             hubsToShow={currentHubListView}
             className="mt-6 p-2 rounded border border-gray-300 w-64"
           />
