@@ -6,6 +6,10 @@ import * as XLSX from 'xlsx-js-style';
 
 import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
 import {
+  calculatePendingReasonData,
+  generatePendingReasonSheet,
+} from './rangkumanSheets/pendingReasonSheet';
+import {
   calculateTimeDriverData,
   generateTimeDriverSheet,
 } from './rangkumanSheets/timeDriverSheet';
@@ -18,11 +22,8 @@ import {
   generateTruckUsageSheet,
 } from './rangkumanSheets/truckUsageSheet';
 
-// IMPORT BARU
-import {
-  calculatePendingReasonData,
-  generatePendingReasonSheet,
-} from './rangkumanSheets/pendingReasonSheet';
+// --- IMPORT TASK SUMMARY SHEET ---
+import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
 
 export function generateRangkumanDataPreview(
   driverData,
@@ -33,6 +34,7 @@ export function generateRangkumanDataPreview(
   endDateStr,
   hubId
 ) {
+  // ... (Bagian preview ini TIDAK BERUBAH) ...
   // 1. Average KM
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
@@ -56,8 +58,7 @@ export function generateRangkumanDataPreview(
     startDateStr,
     endDateStr
   );
-
-  // 5. Pending Reason (NEW)
+  // 5. Pending Reason
   const pendingReasonData = calculatePendingReasonData(driverData, allTasks);
 
   return {
@@ -66,13 +67,12 @@ export function generateRangkumanDataPreview(
     truckUsageData: truckUsageData,
     truckDetailData: { ...truckDetailRaw, driverMap: Object.fromEntries(truckDetailRaw.driverMap) },
     timeDriverData: { ...timeDriverRaw, driverMap: Object.fromEntries(timeDriverRaw.driverMap) },
-
-    pendingReasonsData: pendingReasonData, // <-- Data Baru
-
+    pendingReasonsData: pendingReasonData,
     taskSummaryData: [],
   };
 }
 
+// --- UPDATE FUNGSI INI: Tambahkan parameter taskSummaryMetrics & masterTruckData ---
 export function generateRangkumanWorkbook(
   driverData,
   allTasks,
@@ -81,13 +81,14 @@ export function generateRangkumanWorkbook(
   startDateStr,
   endDateStr,
   hubName,
-  hubId
+  hubId,
+  taskSummaryMetrics, // <--- Parameter Baru
+  masterTruckData // <--- Parameter Baru
 ) {
   const wb = XLSX.utils.book_new();
 
-  // GANTI PLACEHOLDER DENGAN SHEET BARU
+  generateTaskSummarySheet(wb, taskSummaryMetrics, startDateStr, endDateStr, masterTruckData);
   generatePendingReasonSheet(wb, driverData, allTasks, hubName);
-
   generateTimeDriverSheet(wb, driverData, locationHistoryData, startDateStr, endDateStr);
   generateTruckDetailSheet(wb, driverData, resultsData, allTasks, startDateStr, endDateStr);
   generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId);

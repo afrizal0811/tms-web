@@ -1,7 +1,7 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
-import * as XLSX from 'xlsx-js-style';
 import { formatDate } from '@/lib/utils';
-import { BORDERS, BASE_STYLES, HEADER_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
+import * as XLSX from 'xlsx-js-style';
+import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 function formatLongDate(dateObj) {
   return dateObj.toLocaleDateString('en-GB', {
@@ -35,7 +35,7 @@ function getDeliveryDateFromRouting(isoString) {
 }
 
 /**
- * BAGIAN 1: LOGIKA PERHITUNGAN (Sama seperti sebelumnya)
+ * BAGIAN 1: LOGIKA PERHITUNGAN
  */
 export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const dailyVehicleMap = {};
@@ -137,7 +137,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 }
 
 /**
- * BAGIAN 2: GENERATOR EXCEL (Updated Styling)
+ * BAGIAN 2: GENERATOR EXCEL (Merged + Styled, Minggu gabungan tanggal + label)
  */
 export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr) {
   const { summaryData, monthTotals } = calculateAverageKmData(
@@ -182,7 +182,8 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     dailyHeader1,
     dailyHeader2,
   ];
-  
+
+  // Isi baris harian — tanggal tetap dimasukkan (untuk Minggu kita pakai tanggal kemudian override isi merged cell)
   const excelRows = excelData;
   summaryData.forEach((row) => {
     if (row.isSunday) {
@@ -200,14 +201,11 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     }
   });
 
-  // Gunakan variable lokal agar tidak conflict
-  
-  // *Note: Di atas saya push ke excelRows yg sebenarnya reference ke excelData array yg sama.
-
+  // buat sheet dari array
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
-  // --- MERGING ---
-  ws['!merges'] = [
+  // --- STATIC MERGES (table headers dll) ---
+  const staticMerges = [
     // Table 1
     { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
     { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
@@ -221,7 +219,57 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     { s: { r: 4, c: 6 }, e: { r: 5, c: 6 } },
   ];
 
-  // --- STYLING (USING REPORTSTYLES) ---
+  ws['!merges'] = staticMerges.slice();
+  if (!ws['!merges']) ws['!merges'] = [];
+
+  summaryData.forEach((row, idx) => {
+    if (row.isSunday) {
+      const rowIndex = 6 + idx;
+
+      // Merge B..G
+      ws['!merges'].push({
+        s: { r: rowIndex, c: 1 },
+        e: { r: rowIndex, c: 6 },
+      });
+
+      // Kolom A → tanggal tetap tampil + merah
+      const dateCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
+      ws[dateCellRef].s = {
+        ...BASE_STYLES.cellCenter,
+        fill: FILL_STYLES.red,
+        font: { bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      };
+
+      // Kolom B merged → isi Libur (Minggu)
+      const mergedCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 1 });
+      ws[mergedCellRef] = {
+        t: 's',
+        v: 'Libur (Minggu)',
+        s: {
+          ...BASE_STYLES.cellCenter,
+          fill: FILL_STYLES.red,
+          font: { bold: true },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        },
+      };
+
+      // Kosongkan C..G
+      for (let c = 2; c <= 6; c++) {
+        const emptyRef = XLSX.utils.encode_cell({ r: rowIndex, c });
+        ws[emptyRef] = {
+          t: 's',
+          v: '',
+          s: {
+            ...BASE_STYLES.cellCenter,
+            fill: FILL_STYLES.red,
+          },
+        };
+      }
+    }
+  });
+
+  // --- STYLING SELURUH SHEET (headers, angka, kolom warna, dsb) ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -231,18 +279,15 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
 
       // 1. TABLE 1 (MONTHLY) - Rows 0-2
       if (R < 3) {
-        cell.s = { ...BASE_STYLES.cellCenter }; // Default Border
+        cell.s = { ...BASE_STYLES.cellCenter };
 
         if (R === 0 || R === 1) {
           cell.s = { ...HEADER_STYLES.main };
         }
 
-        // Data Row (Row 2)
         if (R === 2 && C >= 1) {
           cell.t = 'n';
           cell.s = { ...cell.s, numFmt: '#,##0.000' };
-
-          // Konsistensi warna: Dry (Col 1), Frozen (Col 2)
           if (C === 1) cell.s.fill = FILL_STYLES.dry;
           if (C === 2) cell.s.fill = FILL_STYLES.frozen;
         }
@@ -259,27 +304,55 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
           const dataIndex = R - 6;
           const rowData = summaryData[dataIndex];
 
-          cell.s = { ...BASE_STYLES.cellCenter }; // Base style
-
+          // Jika baris Minggu (sudah kita merge & set style pada sel A), berikan style khusus
           if (rowData && rowData.isSunday) {
-            cell.s.fill = FILL_STYLES.red; // Minggu
-          } else {
-            // Format Angka
+            if (C === 0) {
+              // kolom A (tanggal) — sudah di-set sebelumnya; pastikan tetap pakai fill merah & centered
+              cell.s = {
+                ...((ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter),
+                fill: FILL_STYLES.red,
+                font: { bold: true },
+                alignment: { horizontal: 'center', vertical: 'center' },
+              };
+              cell.t = 's';
+            } else if (C === 1) {
+              // kolom B (awal merged cell) — jangan overwrite jika style sudah ada,
+              // tapi pastikan alignment & wrapText disetel
+              const existing = (ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter;
+              cell.s = {
+                ...existing,
+                fill: FILL_STYLES.red,
+                font: { bold: true },
+                alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              };
+              cell.t = 's';
+            } else {
+              // kolom C..G tetap kosong tampilannya tapi warna ikut merah
+              cell.s = {
+                ...BASE_STYLES.cellCenter,
+                fill: FILL_STYLES.red,
+              };
+              cell.t = 's';
+            }
+            continue; // skip numeric formatting
+          }
+
+          // bukan Minggu: normal formatting
+          cell.s = { ...BASE_STYLES.cellCenter };
+
+          if (rowData) {
             if (C >= 1) {
               cell.t = 'n';
-              // Count (Col 1, 2) -> Int
               if (C === 1 || C === 2) {
                 cell.s.numFmt = '0';
               } else {
-                // KM (Col 3+) -> Decimal
                 cell.s.numFmt = '#,##0.000';
               }
 
-              // Warna Kolom Spesifik (Agar sama dengan Truck Usage)
-              // Col 3 = Dry KM -> Peach
               if (C === 3) cell.s.fill = FILL_STYLES.dry;
-              // Col 4 = Frozen KM -> Blue
               if (C === 4) cell.s.fill = FILL_STYLES.frozen;
+            } else {
+              cell.t = 's';
             }
           }
         }
@@ -296,5 +369,6 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     { wch: 18 },
     { wch: 15 },
   ];
+
   XLSX.utils.book_append_sheet(wb, ws, 'Average KM of Routing');
 }

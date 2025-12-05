@@ -9,7 +9,6 @@ export default function AverageKmTab({ data, monthTotals }) {
     );
   }
 
-
   return (
     <div className="w-full overflow-auto max-h-[650px]">
       {/* TABEL 1: MONTHLY SUMMARY */}
@@ -99,7 +98,10 @@ export default function AverageKmTab({ data, monthTotals }) {
         </thead>
         <tbody className="bg-white">
           {data.map((row, idx) => (
-            <tr key={idx} className={`hover:bg-gray-50 ${row.isSunday ? 'bg-red-100' : ''}`}>
+            <tr
+              key={idx}
+              className={` ${row.isSunday ? 'bg-red-200 text-red-900 border-b' : 'hover:bg-gray-50'}`}
+            >
               <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap font-medium">
                 {row.date}
               </td>
@@ -107,7 +109,7 @@ export default function AverageKmTab({ data, monthTotals }) {
                 <>
                   <td
                     colSpan="6"
-                    className="border border-gray-300 px-4 py-2 bg-red-50 text-center text-gray-400 text-xs"
+                    className="px-2 py-2 border border-gray-300 font-bold text-center align-middle"
                   >
                     Libur (Minggu)
                   </td>

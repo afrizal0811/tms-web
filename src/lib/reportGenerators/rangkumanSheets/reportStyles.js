@@ -2,56 +2,73 @@
 
 // --- 1. DEFINISI WARNA (PALETTE) ---
 export const COLORS = {
-  header: { rgb: 'D9D2E9' }, // Ungu Muda (Header Umum)
-  headerBlue: { rgb: '4472C4' }, // Biru Tua (Header Pending Reason)
+  header: { rgb: 'D9D2E9' },
+  headerBlue: { rgb: '4472C4' },
 
-  dry: { rgb: 'FAE2D5' }, // Peach (Dry)
-  dryTotal: { rgb: 'F9CB9C' }, // Orange Muda (Total Dry)
+  dry: { rgb: 'FAE2D5' },
+  dryTotal: { rgb: 'F9CB9C' },
 
-  frozen: { rgb: 'DBE9F7' }, // Biru Muda (Frozen)
-  frozenTotal: { rgb: 'C9DAF8' }, // Biru Agak Tua (Total Frozen)
+  frozen: { rgb: 'DBE9F7' },
+  frozenTotal: { rgb: 'C9DAF8' },
 
-  otv: { rgb: 'D9F2D0' }, // Hijau Muda (OTV)
+  otv: { rgb: 'D9F2D0' },
 
-  sunday: { rgb: 'FFC7CE' }, // Merah Muda (Minggu/Libur)
-  alert: { rgb: 'FF0000' }, // Merah Terang (Overlimit)
-  yellowWarn: { rgb: 'FFFF00' }, // Kuning (Warning 0)
+  sunday: { rgb: 'FFC7CE' },
+  alert: { rgb: 'FF0000' },
+  yellowWarn: { rgb: 'FFFF00' },
 
-  masterTotal: { rgb: 'E2EFDA' }, // Hijau Muda (Master Total - Legacy)
-  subHeader: { rgb: 'D9E1F2' }, // Biru Abu (Sub Header Truck Usage)
+  masterTotal: { rgb: 'E2EFDA' },
+  subHeader: { rgb: 'D9E1F2' },
   white: { rgb: 'FFFFFF' },
+
+  // --- WARNA BARU: TASK SUMMARY ---
+  taskYellow: { rgb: 'FFF2CC' }, // Date, Type, MT, TV, VA
+  taskPink: { rgb: 'EAD1DC' }, // DP
+  taskGreen: { rgb: 'D9EAD3' }, // DT, %DT
+  taskRed: { rgb: 'F4CCCC' }, // MA, %MA
+  taskCyan: { rgb: 'D0E0E3' }, // RT, %RT
+  taskBlue: { rgb: 'CFE2F3' }, // CO, %CO
+  taskGray: { rgb: 'CCCCCC' }, // PR, %PR
+  taskViolet: { rgb: 'D9D2E9' }, // TVU, %TVU
 };
 
 // --- 2. DEFINISI BORDER ---
 export const BORDERS = {
-  thin: { style: 'thin', color: { auto: 1 } },
+  thin: {
+    top: { style: 'thin', color: { auto: 1 } },
+    bottom: { style: 'thin', color: { auto: 1 } },
+    left: { style: 'thin', color: { auto: 1 } },
+    right: { style: 'thin', color: { auto: 1 } },
+  },
   medium: { style: 'medium', color: { auto: 1 } },
 };
 
 // --- 3. STYLE DASAR ---
 export const BASE_STYLES = {
-  center: { alignment: { horizontal: 'center', vertical: 'center' } },
-  left: { alignment: { horizontal: 'left', vertical: 'center', indent: 1 } },
-
-  // Style Dasar Sel dengan Border Tipis
-  cellCenter: {
+  center: {
     alignment: { horizontal: 'center', vertical: 'center' },
-    border: { top: BORDERS.thin, bottom: BORDERS.thin, left: BORDERS.thin, right: BORDERS.thin },
+    font: { name: 'Calibri', sz: 11 },
+    border: BORDERS.thin,
   },
-
-  // Style Dasar Sel (Hanya Top Bottom)
-  cellRow: {
-    alignment: { horizontal: 'center', vertical: 'center' },
-    border: { top: BORDERS.thin, bottom: BORDERS.thin },
+  left: {
+    alignment: { horizontal: 'left', vertical: 'center' },
+    font: { name: 'Calibri', sz: 11 },
+    border: BORDERS.thin,
+  },
+  cellCenter: {
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    font: { name: 'Calibri', sz: 10 },
+    border: BORDERS.thin,
   },
 };
 
-// --- 4. STYLE HEADER ---
+// --- 4. STYLE HEADER KHUSUS ---
 export const HEADER_STYLES = {
+  // Header Umum (Ungu Muda)
   main: {
     font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     fill: { patternType: 'solid', fgColor: COLORS.header },
-    alignment: { horizontal: 'center', vertical: 'center' },
     border: { top: BORDERS.thin, bottom: BORDERS.thin },
   },
 
@@ -73,9 +90,9 @@ export const HEADER_STYLES = {
 
 // --- 5. STYLE KONDISIONAL (PRESETS) ---
 export const FILL_STYLES = {
-  red: { patternType: 'solid', fgColor: COLORS.sunday }, // Minggu / Error Empty
-  alertRed: { patternType: 'solid', fgColor: COLORS.alert }, // Overlimit
-  yellow: { patternType: 'solid', fgColor: COLORS.yellowWarn }, // Warning
+  red: { patternType: 'solid', fgColor: COLORS.sunday },
+  alertRed: { patternType: 'solid', fgColor: COLORS.alert },
+  yellow: { patternType: 'solid', fgColor: COLORS.yellowWarn },
 
   // Kategori
   dry: { patternType: 'solid', fgColor: COLORS.dry },
@@ -83,10 +100,19 @@ export const FILL_STYLES = {
   frozen: { patternType: 'solid', fgColor: COLORS.frozen },
   frozenTotal: { patternType: 'solid', fgColor: COLORS.frozenTotal },
   otv: { patternType: 'solid', fgColor: COLORS.otv },
+
+  // Task Summary Fills
+  taskYellow: { patternType: 'solid', fgColor: COLORS.taskYellow },
+  taskPink: { patternType: 'solid', fgColor: COLORS.taskPink },
+  taskGreen: { patternType: 'solid', fgColor: COLORS.taskGreen },
+  taskRed: { patternType: 'solid', fgColor: COLORS.taskRed },
+  taskCyan: { patternType: 'solid', fgColor: COLORS.taskCyan },
+  taskBlue: { patternType: 'solid', fgColor: COLORS.taskBlue },
+  taskGray: { patternType: 'solid', fgColor: COLORS.taskGray },
+  taskViolet: { patternType: 'solid', fgColor: COLORS.taskViolet },
 };
 
 export const FONT_STYLES = {
   bold: { bold: true },
   whiteBold: { bold: true, color: COLORS.white },
-  redBold: { bold: true, color: { rgb: '9C0006' } }, // Merah Tua (Text)
 };

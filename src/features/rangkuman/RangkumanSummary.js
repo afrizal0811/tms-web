@@ -1,7 +1,7 @@
 // File: features/rangkuman/RangkumanSummary.js
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx-js-style';
@@ -16,22 +16,21 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDate } from '@/lib/utils';
 
 // --- IMPORT TABS ---
-import TruckUsageTab from './tabs/TruckUsageTab';
 import AverageKmTab from './tabs/AverageKmTab';
-import TruckDetailTab from './tabs/TruckDetailTab';
-import TimeDriverTab from './tabs/TimeDriverTab';
-import PendingReasonsTab from './tabs/PendingReasonsTab';
 import DashboardTab from './tabs/DashboardTab';
+import PendingReasonsTab from './tabs/PendingReasonsTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
+import TaskSummaryTab from './tabs/TaskSummaryTab';
+import TimeDriverTab from './tabs/TimeDriverTab';
+import TruckDetailTab from './tabs/TruckDetailTab';
+import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
-
-  // State Waktu
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [masterTruckData, setMasterTruckData] = useState(null);
 
-  // State Data Bulanan
   const [driverData, setDriverData] = useState([]);
   const [rawData, setRawData] = useState({
     tasks: [],
@@ -39,36 +38,30 @@ export default function RangkumanSummary() {
     locations: [],
   });
 
-  // State Data Tahunan (Dashboard)
   const [yearlyTasks, setYearlyTasks] = useState([]);
-
-  // Refs untuk Cache
   const lastFetchedYearRef = useRef(null);
   const lastFetchedLocationRef = useRef(null);
 
-  // Loading States Terpisah
-  const [isLoading, setIsLoading] = useState(false); // Loading Global (Bulanan)
-  const [isDashboardLoading, setIsDashboardLoading] = useState(false); // Loading Khusus Dashboard
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 
-  // separate timers (keperluan internal)
-  const [elapsedTime, setElapsedTime] = useState(0); // for global/monthly fetch
+  const [elapsedTime, setElapsedTime] = useState(0);
   const fetchStartTimeRef = useRef(null);
-
-  const [dashboardElapsedTime, setDashboardElapsedTime] = useState(0); // for dashboard yearly fetch
+  const [dashboardElapsedTime, setDashboardElapsedTime] = useState(0);
   const dashboardFetchStartRef = useRef(null);
 
   const [reportPreview, setReportPreview] = useState(null);
   const [activeTab, setActiveTab] = useState('Dashboard');
-
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
 
   const isDashboard = activeTab === 'Dashboard';
-
-  // Track which tabs' ready-dot has been dismissed by user click
-  // { Dashboard: true/false, 'Task Summary': true/false, ... }
   const [dismissedDots, setDismissedDots] = useState({});
 
-  // 1. Load Lokasi
+  // --- STATE TASK SUMMARY ---
+  const [taskSummaryMetrics, setTaskSummaryMetrics] = useState({});
+  const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
+  const [historyProgress, setHistoryProgress] = useState(0);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLocation = localStorage.getItem('userLocation');
@@ -78,7 +71,6 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // Reset dismissed dots when component mounts (init false)
   useEffect(() => {
     const initial = {};
     [
@@ -93,12 +85,8 @@ export default function RangkumanSummary() {
     setDismissedDots(initial);
   }, []);
 
-  // Whenever a loading for a category starts, re-enable (undismiss) related dots:
-  // - when global monthly loading starts -> reset dismissed for non-dashboard tabs
-  // - when dashboard loading starts -> reset dismissed for dashboard
   useEffect(() => {
     if (isLoading) {
-      // undismiss non-dashboard tabs so they show blue again after next finish
       setDismissedDots((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((k) => {
@@ -115,7 +103,6 @@ export default function RangkumanSummary() {
     }
   }, [isDashboardLoading]);
 
-  // 2. Global Timer logic (menggunakan selisih waktu nyata)
   useEffect(() => {
     let interval = null;
     if (isLoading) {
@@ -133,7 +120,6 @@ export default function RangkumanSummary() {
     };
   }, [isLoading]);
 
-  // 3. Dashboard Timer logic (separate)
   useEffect(() => {
     let interval = null;
     if (isDashboardLoading) {
@@ -159,7 +145,6 @@ export default function RangkumanSummary() {
     return `${m}:${s}`;
   };
 
-  // ========== UTILS: wait + retry + tracker ==========
   const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 500 } = {}) => {
@@ -173,9 +158,7 @@ export default function RangkumanSummary() {
         if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
           throw err;
         }
-        const backoff = baseMs * Math.pow(2, attempt - 1);
-        const jitter = Math.floor(Math.random() * 100);
-        await wait(backoff + jitter);
+        await wait(baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100));
       }
     }
   }, []);
@@ -189,9 +172,34 @@ export default function RangkumanSummary() {
       setPendingEndpoints((prev) => prev.filter((item) => item !== label));
     }
   }, []);
-  // ===================================================
 
-  // --- FUNGSI: FETCH TAHUNAN DIPECAH PER KUARTAL (SERIAL + RETRY) ---
+  const fetchWithConcurrency = async (items, asyncFn, concurrency) => {
+    let index = 0;
+    const results = [];
+    const executing = [];
+
+    const enqueue = () => {
+      if (index === items.length) return Promise.resolve();
+      const currIndex = index++;
+      const item = items[currIndex];
+      const progressPct = Math.round((currIndex / items.length) * 100);
+      setHistoryProgress(progressPct);
+
+      const p = Promise.resolve().then(() => asyncFn(item));
+      results.push(p);
+
+      const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+
+      let r = Promise.resolve();
+      if (executing.length >= concurrency) {
+        r = Promise.race(executing);
+      }
+      return r.then(() => enqueue());
+    };
+    return enqueue().then(() => Promise.all(results));
+  };
+
   const fetchYearlyDataSplit = useCallback(
     async (hubId, year) => {
       const quarters = [
@@ -200,9 +208,7 @@ export default function RangkumanSummary() {
         { start: `${year}-07-01 00:00:00`, end: `${year}-09-30 23:59:59`, label: 'Q3' },
         { start: `${year}-10-01 00:00:00`, end: `${year}-12-31 23:59:59`, label: 'Q4' },
       ];
-
       const all = [];
-
       for (const q of quarters) {
         const label = `Yearly-${q.label}`;
         try {
@@ -227,59 +233,242 @@ export default function RangkumanSummary() {
           }
         } catch (err) {
           console.error(`Failed to fetch ${label}:`, err?.message || err);
-          // toleransi: lanjutkan ke kuartal selanjutnya
         }
       }
-
       return all;
     },
     [fetchWithRetry, fetchWithTracker]
   );
 
-  // --- helper: hitung tanggal "lookup" yang benar ---
-  // rules:
-  // - default: gunakan H-1
-  // - jika H-1 adalah Minggu -> pakai H-2 (Sabtu)
-  // - jika selectedDate adalah Senin -> pakai H-2 (Sabtu)
   const getAdjustedPreviousDate = (baseDate) => {
     const d = new Date(baseDate);
-    // default offset 1 day
     let offset = 1;
-    // if baseDate is Monday (1), use offset 2 to land on Saturday
-    if (d.getDay() === 1) {
-      offset = 2;
-    }
+    if (d.getDay() === 1) offset = 2;
     const candidate = new Date(d);
     candidate.setDate(d.getDate() - offset);
-
-    // If candidate is Sunday (0) -> move back to Saturday
-    if (candidate.getDay() === 0) {
-      candidate.setDate(candidate.getDate() - 1);
-    }
-
+    if (candidate.getDay() === 0) candidate.setDate(candidate.getDate() - 1);
     return candidate;
   };
 
-  // ==== MAIN: hybrid - background yearly, blocking monthly ====
+  const getRoutingDateKeyFromDateStr = (dateStr) => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    let offset = 1;
+    if (d.getDay() === 1) offset = 2;
+    d.setDate(d.getDate() - offset);
+    if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const da = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${da}`;
+  };
+
+  // --- LOGIC BARU: PROCESS TASK SUMMARY METRICS ---
+  const processTaskSummaryMetrics = async (allTasks, allResults) => {
+    setIsCalculatingMetrics(true);
+
+    const tempMetrics = {};
+
+    const initDate = (dateKey) => {
+      if (!tempMetrics[dateKey]) {
+        tempMetrics[dateKey] = {
+          dry: { dp: 0, dt_hist: 0, dt_sum: 0, ma_base: 0, rt: 0, co: 0, pr: 0, tv: 0 },
+          frozen: { dp: 0, dt_hist: 0, dt_sum: 0, ma_base: 0, rt: 0, co: 0, pr: 0, tv: 0 },
+          unknown: { dp: 0, dt_hist: 0, dt_sum: 0, ma_base: 0, rt: 0, co: 0, pr: 0, tv: 0 },
+        };
+      }
+    };
+
+    const getTypeFromTags = (tags) => {
+      if (!tags) return 'unknown';
+      const tagStr = Array.isArray(tags)
+        ? tags.join(' ').toUpperCase()
+        : String(tags).toUpperCase();
+      if (tagStr.includes('FROZEN')) return 'frozen';
+      if (tagStr.includes('DRY')) return 'dry';
+      return 'unknown';
+    };
+
+    // 1. MAPPING VISIT ID (Untuk History DT)
+    const visitTypeMap = new Map();
+    // (Logic mapping sama seperti sebelumnya)
+    if (allResults && Array.isArray(allResults)) {
+      allResults.forEach((res) => {
+        const routing = res.result?.routing || [];
+        const dropped = res.result?.dropped || [];
+        routing.forEach((vehicle) => {
+          const vTags = vehicle.vehicleTags || [];
+          vehicle.trips?.forEach((trip) => {
+            if (trip.isHub) return;
+            let type = getTypeFromTags(trip.tags);
+            if (type === 'unknown') type = getTypeFromTags(vTags);
+            if (trip.visitId) visitTypeMap.set(trip.visitId, type);
+          });
+        });
+        dropped.forEach((trip) => {
+          if (trip.visitId) visitTypeMap.set(trip.visitId, getTypeFromTags(trip.tags));
+        });
+      });
+    }
+
+    // 2. PROCESS TASKS (DP, RT, CO, PR, MA_Base)
+    // (Logic sama seperti sebelumnya)
+    if (allTasks && Array.isArray(allTasks)) {
+      allTasks.forEach((task) => {
+        if (!task.doneTime) return;
+        const deliveryDateStr = task.doneTime.substring(0, 10);
+        const dateKey = getRoutingDateKeyFromDateStr(deliveryDateStr);
+        if (!dateKey) return;
+
+        initDate(dateKey);
+        const typeRaw = (task.typeStorage || '').toUpperCase();
+        let type = 'unknown';
+        if (typeRaw.includes('FROZEN')) type = 'frozen';
+        else if (typeRaw.includes('DRY')) type = 'dry';
+
+        tempMetrics[dateKey][type].dp += 1;
+        if (!task.eta || !task.etd || !task.routePlannedOrder)
+          tempMetrics[dateKey][type].ma_base += 1;
+
+        const labels = Array.isArray(task.label) ? task.label : [];
+        const labelStr = labels.join(' ').toUpperCase(); // Helper check string inside array
+
+        if (labels.some((l) => l === 'PENDING')) tempMetrics[dateKey][type].rt += 1;
+        if (labels.some((l) => l === 'BATAL')) tempMetrics[dateKey][type].co += 1;
+        if (labels.some((l) => l === 'TERIMA SEBAGIAN')) tempMetrics[dateKey][type].pr += 1;
+      });
+    }
+
+    // 3. PROCESS RESULTS (DT & TV) - OPTIMIZED BATCH FETCH
+    const doneResults = (allResults || []).filter(
+      (item) => item.dispatchStatus && item.dispatchStatus.toLowerCase() === 'done'
+    );
+
+    // 3a. Prepare Result IDs & Map for quick lookup
+    const resultIdsToFetch = [];
+    const resultMap = new Map(); // ID -> ResultObject
+
+    doneResults.forEach((res) => {
+      const dateKey = res.createdTime ? res.createdTime.substring(0, 10) : null;
+      if (!dateKey || !res._id) return;
+
+      initDate(dateKey);
+
+      // Push ID untuk di-fetch history-nya
+      resultIdsToFetch.push(res._id);
+      resultMap.set(res._id, res); // Simpan ref objek asli untuk lookup dateKey nanti
+
+      // Hitung TV & DT Summary (Logic Client-Side)
+      const routing = res.result?.routing || [];
+      routing.forEach((v) => {
+        tempMetrics[dateKey][getTypeFromTags(v.vehicleTags)].tv += 1;
+      });
+
+      const droppedArr = res.result?.dropped || [];
+      const droppedCountVal = res.summary?.droppedVisits || 0;
+      if (droppedArr.length > 0) {
+        droppedArr.forEach((t) => (tempMetrics[dateKey][getTypeFromTags(t.tags)].dt_sum += 1));
+      } else if (droppedCountVal > 0) {
+        tempMetrics[dateKey].unknown.dt_sum += droppedCountVal;
+      }
+    });
+
+    // 3b. BATCH FETCH HISTORY (1x Request Only!)
+    try {
+      if (resultIdsToFetch.length > 0) {
+        // Panggil API Route Internal baru
+        const response = await fetch('/api/get-batch-histories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resultIds: resultIdsToFetch }),
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          const batchData = json.data || []; // Array of { resultId, history: [] }
+
+          // Proses hasil batch
+          batchData.forEach((item) => {
+            const originalRes = resultMap.get(item.resultId);
+            if (!originalRes) return;
+
+            const dateKey = originalRes.createdTime.substring(0, 10);
+            const historyList = item.history || [];
+
+            // Hitung DT History
+            historyList.forEach((h) => {
+              if (h.vehicleFrom && h.vehicleFrom.toLowerCase() === 'dropped') {
+                const visits = h.visits || [];
+                visits.forEach((v) => {
+                  let type = visitTypeMap.get(v.visitId) || 'unknown';
+                  tempMetrics[dateKey][type].dt_hist += 1;
+                });
+              }
+            });
+          });
+        } else {
+          console.error('Batch history fetch failed');
+        }
+      }
+    } catch (err) {
+      console.error('Error batch fetch:', err);
+      toastError('Gagal mengambil data history (Batch).');
+    }
+
+    // 4. DISTRIBUSI & FINAL CALC (Sama)
+    Object.keys(tempMetrics).forEach((dateKey) => {
+      const m = tempMetrics[dateKey];
+      const distribute = (prop) => {
+        if (m.unknown[prop] > 0) {
+          const totalKnown = m.dry.dp + m.frozen.dp;
+          if (totalKnown > 0) {
+            const dryRatio = m.dry.dp / totalKnown;
+            const addDry = Math.round(m.unknown[prop] * dryRatio);
+            const addFrozen = m.unknown[prop] - addDry;
+            m.dry[prop] += addDry;
+            m.frozen[prop] += addFrozen;
+          } else {
+            m.dry[prop] += m.unknown[prop];
+          }
+          m.unknown[prop] = 0;
+        }
+      };
+
+      ['dp', 'dt_sum', 'dt_hist', 'ma_base', 'rt', 'co', 'pr', 'tv'].forEach((p) => distribute(p));
+
+      ['dry', 'frozen'].forEach((type) => {
+        m[type].dt_total = m[type].dt_hist + m[type].dt_sum;
+        const maFromDT = Math.max(0, m[type].dt_hist - m[type].dt_sum);
+        m[type].ma_total = m[type].ma_base + maFromDT;
+        m[type].va = 0;
+        m[type].tvu = m[type].tv + 0;
+      });
+    });
+
+    setTaskSummaryMetrics(tempMetrics);
+    setIsCalculatingMetrics(false);
+  };
+
+  // ==== MAIN FETCH ====
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
 
-    // Mulai loading bulanan (blocking)
     setIsLoading(true);
     setPendingEndpoints([]);
+    setTaskSummaryMetrics({});
+    setIsCalculatingMetrics(false);
+    setHistoryProgress(0);
     fetchStartTimeRef.current = Date.now();
 
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
 
-    // Cek butuh fetch tahunan?
     const needFetchYearly =
       lastFetchedYearRef.current !== year || lastFetchedLocationRef.current !== selectedLocation;
 
-    // Jika perlu, jalankan fetch yearly di background (tracked) dan set isDashboardLoading
     if (needFetchYearly) {
       setIsDashboardLoading(true);
-      // background async IIFE sehingga monthly masih bisa proceed
       (async () => {
         try {
           dashboardFetchStartRef.current = Date.now();
@@ -299,28 +488,17 @@ export default function RangkumanSummary() {
     }
 
     try {
-      // Params Bulanan
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
-      const timeFrom = `${startStr} 00:00:00`;
-      const timeTo = `${endStr} 23:59:59`;
-
-      // --- adjusted previous date (lokasi & routing) ---
-      const locStartDate = getAdjustedPreviousDate(startDate);
-      const locStartStr = formatDate(locStartDate);
-      const locTimeFrom = `${locStartStr} 23:00:00`;
-
       const routingStartDate = getAdjustedPreviousDate(startDate);
       const routingEndDate = getAdjustedPreviousDate(endDate);
       const routingStartStr = formatDate(routingStartDate);
       const routingEndStr = formatDate(routingEndDate);
-      // --------------------------------------------------------------
 
-      // Monthly fetches (blocking)
+      // Fetch Bulanan
       const monthlyPromises = [
-        // driver (cached helper)
         fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers'),
         fetchWithTracker(
           () =>
@@ -329,12 +507,12 @@ export default function RangkumanSummary() {
                 getTasks({
                   hubId: selectedLocation,
                   status: 'DONE',
-                  timeFrom,
-                  timeTo,
+                  timeFrom: `${startStr} 00:00:00`,
+                  timeTo: `${endStr} 23:59:59`,
                   timeBy: 'doneTime',
                   limit: 10000,
                 }),
-              { retries: 2, baseMs: 500 }
+              { retries: 2 }
             ),
           'Monthly Tasks'
         ),
@@ -348,7 +526,7 @@ export default function RangkumanSummary() {
                   dateTo: `${routingEndStr} 23:59:59`,
                   limit: 10000,
                 }),
-              { retries: 2, baseMs: 500 }
+              { retries: 2 }
             ),
           'Routing'
         ),
@@ -357,28 +535,23 @@ export default function RangkumanSummary() {
             fetchWithRetry(
               () =>
                 getLocationHistories({
-                  timeFrom: locTimeFrom,
-                  timeTo,
+                  timeFrom: `${startStr} 23:00:00`,
+                  timeTo: `${endStr} 23:59:59`,
                   limit: 10000,
                   startFinish: 'true',
-                  fields: 'finish,startTime,email,trackedTime,totalDistance',
-                  timeBy: 'createdTime',
                 }),
-              { retries: 2, baseMs: 500 }
+              { retries: 2 }
             ),
           'History'
         ),
       ];
 
       const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all(monthlyPromises);
-
-      const drivers = driversRes || [];
-      setDriverData(drivers);
+      setDriverData(driversRes || []);
 
       const filteredResults = (resultsRes || []).filter(
-        (item) => item.dispatchStatus && item.dispatchStatus.toLowerCase() === 'done'
+        (item) => item.dispatchStatus?.toLowerCase() === 'done'
       );
-
       const newRawData = {
         tasks: tasksRes || [],
         results: filteredResults,
@@ -387,7 +560,7 @@ export default function RangkumanSummary() {
       setRawData(newRawData);
 
       const preview = generateRangkumanDataPreview(
-        drivers,
+        driversRes || [],
         newRawData.tasks,
         newRawData.results,
         newRawData.locations,
@@ -396,21 +569,22 @@ export default function RangkumanSummary() {
         selectedLocation
       );
       setReportPreview(preview);
-    } catch (err) {
-      console.error(err);
-      toastError('Gagal mengambil data laporan: ' + (err?.message || err));
-      setReportPreview(null);
+
+      // --- HERE IS THE TRIGGER ---
+      processTaskSummaryMetrics(newRawData.tasks, newRawData.results);
+    } catch (e) {
+      console.error(e);
+      toastError('Gagal ambil data.');
     } finally {
       setIsLoading(false);
-      // dashboard may still be loading in background
     }
+    //eslint-disable-next-line
   }, [selectedLocation, selectedDate, fetchWithRetry, fetchWithTracker, fetchYearlyDataSplit]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // 5. Handle Date Change
   const handleDateChange = (date) => {
     if (!date) return;
     if (isDashboard) {
@@ -441,8 +615,11 @@ export default function RangkumanSummary() {
         formatDate(startDate),
         formatDate(endDate),
         selectedLocationName,
-        selectedLocation
+        selectedLocation,
+        taskSummaryMetrics, // <--- Kirim Metrics
+        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } } // <--- Kirim Master Truck
       );
+
       XLSX.writeFile(wb, excelFileName);
       toastSuccess('Rangkuman berhasil di-download!');
     } catch (err) {
@@ -461,46 +638,56 @@ export default function RangkumanSummary() {
     { id: 'Average KM', label: 'Average KM of Routing' },
   ];
 
-  // Centralized loading box component (used for both global and dashboard loading)
-  const CentralLoading = ({ text, seconds }) => (
+  const CentralLoading = ({ seconds }) => (
     <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
       <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
       <div className="text-center space-y-1">
-        <p className="text-lg font-medium text-slate-700">{text}</p>
+        <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
         <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(seconds)}</p>
       </div>
+      {seconds > 120 && pendingEndpoints.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md max-w-md text-center text-sm animate-pulse">
+          <p className="font-semibold">Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
+          <p>Mohon tunggu.</p>
+        </div>
+      )}
     </div>
   );
 
+  const getPingDot = (tabId) => {
+    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
+    const dismissed = dismissedDots[tabId];
+    if (!isLoadingTarget && dismissed) return null;
+    return (
+      <span className="inline-flex items-center ml-2" aria-hidden>
+        {isLoadingTarget ? (
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
+          </span>
+        ) : (
+          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-sky-500" />
+        )}
+      </span>
+    );
+  };
+
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
+    if (!isLoadingTarget) {
+      setDismissedDots((prev) => ({ ...prev, [tabId]: true }));
+    }
+  };
+
   const renderContent = () => {
-    // 1) If user is on Dashboard tab and dashboard is loading -> show central loading (dashboard timer)
     if (activeTab === 'Dashboard' && isDashboardLoading) {
-      return <CentralLoading text="Sedang memuat data..." seconds={dashboardElapsedTime} />;
+      return <CentralLoading seconds={dashboardElapsedTime} />;
     }
-
-    // 2) If user is NOT on Dashboard and global monthly is loading -> show central loading (global timer)
     if (isLoading && !isDashboard) {
-      const showLongLoadingMsg = elapsedTime > 120;
-      return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
-          <div className="text-center space-y-1">
-            <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
-            <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
-          </div>
-          {showLongLoadingMsg && pendingEndpoints.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md max-w-md text-center text-sm animate-pulse">
-              <p className="font-semibold">
-                Memproses banyak data di {pendingEndpoints.join(', ')}.
-              </p>
-              <p>Mohon tunggu.</p>
-            </div>
-          )}
-        </div>
-      );
+      return <CentralLoading seconds={elapsedTime} />;
     }
 
-    // 3) Normal rendering: Dashboard (not loading) or other tabs (not loading)
     if (activeTab === 'Dashboard') {
       return (
         <div className="w-full h-[calc(100vh-240px)] flex flex-col">
@@ -514,7 +701,7 @@ export default function RangkumanSummary() {
       );
     }
 
-    if (!reportPreview) {
+    if (!reportPreview && activeTab !== 'Task Summary') {
       return (
         <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
           <p>Tidak ada data / Belum dimuat.</p>
@@ -528,7 +715,20 @@ export default function RangkumanSummary() {
       </div>
     );
 
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const startStr = formatDate(new Date(year, month, 1));
+    const endStr = formatDate(new Date(year, month + 1, 0));
+
     switch (activeTab) {
+      case 'Task Summary':
+        return renderTabContent(TaskSummaryTab, {
+          metrics: taskSummaryMetrics,
+          isLoading: isCalculatingMetrics,
+          progress: historyProgress,
+          startDateStr: startStr,
+          endDateStr: endStr,
+        });
       case 'Truck Usage':
         return renderTabContent(TruckUsageTab, { data: reportPreview.truckUsageData });
       case 'Average KM':
@@ -547,41 +747,6 @@ export default function RangkumanSummary() {
         });
       default:
         return <PlaceholderTab tabName={activeTab} />;
-    }
-  };
-
-  // ------------------- Ping Dot (aligned center with text) -------------------
-  const getPingDot = (tabId) => {
-    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
-    const dismissed = dismissedDots[tabId];
-
-    // if user already dismissed the ready dot, don't show anything
-    if (!isLoadingTarget && dismissed) return null;
-
-    return (
-      <span className="inline-flex items-center ml-2" aria-hidden>
-        {isLoadingTarget ? (
-          // slightly larger dot with ping animation for loading
-          <span className="relative flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 animate-ping" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
-          </span>
-        ) : (
-          // smaller solid dot for ready state
-          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-sky-500" />
-        )}
-      </span>
-    );
-  };
-
-  // ------------------- Handle tab click: set active + dismiss if ready -------------------
-  const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
-
-    // if that tab is in ready state (i.e., not loading), mark it dismissed so blue dot hides
-    const isLoadingTarget = tabId === 'Dashboard' ? isDashboardLoading : isLoading;
-    if (!isLoadingTarget) {
-      setDismissedDots((prev) => ({ ...prev, [tabId]: true }));
     }
   };
 
@@ -605,25 +770,9 @@ export default function RangkumanSummary() {
               showMonthYearPicker={!isDashboard}
               wrapperClassName="w-full"
               disabled={isLoading}
-              calendarClassName={
-                isDashboard
-                  ? 'custom-year-picker shadow-xl border-0 rounded-xl font-sans'
-                  : 'shadow-xl border-0 rounded-xl font-sans'
-              }
-              className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors
-                        ${
-                          isLoading
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                            : 'bg-white text-slate-700 cursor-pointer focus:ring-2 focus:ring-sky-500 focus:border-transparent hover:bg-gray-50'
-                        }
-                    `}
+              className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer focus:ring-2 focus:ring-sky-500'}`}
             />
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* intentionally left blank: central timer appears in content area */}
-          </div>
-
           {!isDashboard && (
             <div className="w-full sm:w-auto relative z-0">
               <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
@@ -663,10 +812,7 @@ export default function RangkumanSummary() {
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
           <button
             onClick={() => handleTabClick('Dashboard')}
-            className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-              ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-              ${isDashboardLoading ? 'animate-pulse text-sky-600 font-semibold' : ''}
-            `}
+            className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700'} ${isDashboardLoading ? 'animate-pulse text-sky-600 font-semibold' : ''}`}
           >
             <div className="flex items-center gap-2">
               <span>Dashboard</span>
@@ -677,14 +823,7 @@ export default function RangkumanSummary() {
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`
-                        px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-                        ${
-                          activeTab === tab.id
-                            ? 'border-sky-600 text-sky-700'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }
-                    `}
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             >
               <div className="flex items-center gap-2">
                 <span>{tab.label}</span>
@@ -693,7 +832,6 @@ export default function RangkumanSummary() {
             </button>
           ))}
         </div>
-
         <div className="flex-1 p-0 sm:p-6 overflow-hidden">{renderContent()}</div>
       </div>
     </div>
