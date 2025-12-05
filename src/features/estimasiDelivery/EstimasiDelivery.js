@@ -1,13 +1,13 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
+import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { formatSimpleTime, isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-
 // ... (Komponen Th, Td, TabButton, HighlightText, parseSONumber - TIDAK BERUBAH) ...
 function Th({ children, widthClass = '' }) {
   return (
@@ -371,7 +371,7 @@ export default function EstimasiDelivery() {
         >
           {isDownloading ? (
             <div className="flex justify-center items-center">
-              <div className="w-5 h-5 border-2 border-sky-300 border-t-white rounded-full animate-spin" />
+              <Spinner size='w-5 h-5'/>
             </div>
           ) : (
             'Download Excel'
@@ -398,7 +398,7 @@ export default function EstimasiDelivery() {
         <div className="overflow-y-auto grow">
           {isLoading && (
             <div className="w-full flex justify-center items-center p-20">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
+              <Spinner />
             </div>
           )}
           {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (

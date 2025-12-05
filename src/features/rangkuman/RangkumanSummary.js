@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx-js-style';
 
+import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import {
@@ -640,7 +641,7 @@ export default function RangkumanSummary() {
 
   const CentralLoading = ({ seconds }) => (
     <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
-      <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
+      <Spinner />
       <div className="text-center space-y-1">
         <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
         <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(seconds)}</p>
@@ -770,6 +771,7 @@ export default function RangkumanSummary() {
               showMonthYearPicker={!isDashboard}
               wrapperClassName="w-full"
               disabled={isLoading}
+              calendarClassName={isDashboard ? 'custom-year-picker' : ''}
               className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer focus:ring-2 focus:ring-sky-500'}`}
             />
           </div>
@@ -784,7 +786,11 @@ export default function RangkumanSummary() {
                 className="w-full sm:w-auto px-6 h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Spinner
+                    addClass="inline-block"
+                    border="border-2 border-slate-400 border-t-white"
+                    size="w-5 h-5"
+                  />
                 ) : (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -812,7 +818,7 @@ export default function RangkumanSummary() {
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
           <button
             onClick={() => handleTabClick('Dashboard')}
-            className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700'} ${isDashboardLoading ? 'animate-pulse text-sky-600 font-semibold' : ''}`}
+            className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === 'Dashboard' ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700 opacity-60 cursor-pointer'} ${isDashboardLoading ? 'animate-pulse text-sky-600 font-semibold' : ''}`}
           >
             <div className="flex items-center gap-2">
               <span>Dashboard</span>
@@ -823,7 +829,7 @@ export default function RangkumanSummary() {
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? 'border-sky-600 text-sky-700' : 'border-transparent text-gray-500 hover:text-gray-700 opacity-60 cursor-pointer'}`}
             >
               <div className="flex items-center gap-2">
                 <span>{tab.label}</span>

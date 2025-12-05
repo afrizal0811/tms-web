@@ -1,6 +1,7 @@
 // File: src/components/VehicleData.js
 'use client';
 
+import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -515,7 +516,7 @@ export default function VehicleData() {
                 >
                   {isDownloading ? (
                     <div className="flex justify-center items-center">
-                      <div className="w-5 h-5 border-2 border-sky-300 border-t-white rounded-full animate-spin" />
+                      <Spinner />
                     </div>
                   ) : (
                     'Download'
@@ -529,7 +530,7 @@ export default function VehicleData() {
       <div className="overflow-y-auto grow">
         {isLoading && (
           <div className="w-full flex justify-center items-center p-20">
-            <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
+            <Spinner />
           </div>
         )}
         {!isLoading && (

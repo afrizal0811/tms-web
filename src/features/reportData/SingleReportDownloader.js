@@ -1,14 +1,14 @@
 // File: features/reportData/TmsSummary.js
 'use client';
 
+import Spinner from '@/components/Spinner';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { TAG_MAP_KEY } from '@/lib/constants';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx-js-style';
-
-import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
-import { TAG_MAP_KEY } from '@/lib/constants';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 
 import {
   calculateStartFinishDates,
@@ -275,7 +275,7 @@ export default function TmsSummary({
         >
           {currentRunning === 'routing' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Routing Summary'
@@ -291,7 +291,7 @@ export default function TmsSummary({
         >
           {currentRunning === 'delivery' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Delivery Summary'
@@ -307,7 +307,7 @@ export default function TmsSummary({
         >
           {currentRunning === 'time' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Time Summary'

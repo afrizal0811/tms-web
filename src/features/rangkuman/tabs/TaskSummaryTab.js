@@ -1,8 +1,8 @@
 // File: features/rangkuman/tabs/TaskSummaryTab.js
 'use client';
 
+import Spinner from '@/components/Spinner';
 import { useEffect, useMemo, useState } from 'react';
-
 export default function TaskSummaryTab({ metrics, isLoading, progress, startDateStr, endDateStr }) {
   const [masterTruckData, setMasterTruckData] = useState({
     Dry: { Total: 0 },
@@ -62,7 +62,11 @@ export default function TaskSummaryTab({ metrics, isLoading, progress, startDate
   const renderValue = (val) => {
     if (isLoading && val === undefined) {
       return (
-        <div className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+        <Spinner
+          addClass="inline-block"
+          border="border-2 border-slate-400 border-t-transparent"
+          size="w-3 h-3"
+        />
       );
     }
     return val || 0;
@@ -71,7 +75,11 @@ export default function TaskSummaryTab({ metrics, isLoading, progress, startDate
   const calculatePct = (num, den) => {
     if (isLoading && (num === undefined || den === undefined)) {
       return (
-        <div className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+        <Spinner
+          addClass="inline-block"
+          border="border-2 border-slate-400 border-t-transparent"
+          size="w-3 h-3"
+        />
       );
     }
     const n = num || 0;

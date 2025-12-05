@@ -1,6 +1,7 @@
 // File: features/reports/BulkReportDownloader.js
 'use client';
 
+import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
@@ -357,7 +358,7 @@ export default function BulkReportDownloader({ driverData }) {
         >
           {isLoading && currentReport === 'routing' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Routing Summary'
@@ -376,7 +377,7 @@ export default function BulkReportDownloader({ driverData }) {
         >
           {isLoading && currentReport === 'delivery' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Delivery Summary'
@@ -395,7 +396,7 @@ export default function BulkReportDownloader({ driverData }) {
         >
           {isLoading && currentReport === 'time' ? (
             <div className="flex justify-center items-center">
-              <div className="w-6 h-6 border-4 border-amber-400 border-t-white rounded-full animate-spin" />
+              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
             </div>
           ) : (
             'Time Summary'
