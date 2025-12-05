@@ -279,6 +279,10 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
 
       // 1. TABLE 1 (MONTHLY) - Rows 0-2
       if (R < 3) {
+        // --- MODIFIKASI: JANGAN BERI STYLE JIKA KOLOM > 4 (E) ---
+        if (C > 4) continue;
+        // --------------------------------------------------------
+
         cell.s = { ...BASE_STYLES.cellCenter };
 
         if (R === 0 || R === 1) {

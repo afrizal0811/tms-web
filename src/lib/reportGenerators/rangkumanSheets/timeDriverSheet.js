@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx-js-style';
 import { formatMinutesToHHMM } from '@/lib/utils';
 import { COLORS, BORDERS, BASE_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// ... (SEMUA HELPER FUNCTION & LOGIC CALCULATION TETAP SAMA) ...
+// ... (HELPER FUNCTIONS TETAP SAMA) ...
 function normalizeEmail(email) {
   return email ? email.toLowerCase().trim() : '';
 }
@@ -72,7 +72,7 @@ function getDriverStorageType(driver) {
 }
 
 export function calculateTimeDriverData(driverData, locationHistoryData, startDateStr, endDateStr) {
-  /* ...KODE LOGIC CALCULATION SAMA PERSIS... */ const driverMap = new Map();
+  const driverMap = new Map();
   const driverEmails = [];
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -169,18 +169,21 @@ export function generateTimeDriverSheet(
     endDateStr
   );
 
-  // --- STYLES (Refactored) ---
+  // --- STYLES ---
   const headerStyle = {
     ...BASE_STYLES.center,
     font: FONT_STYLES.bold,
-    border: { top: BORDERS.thin, bottom: BORDERS.thin, left: BORDERS.thin, right: BORDERS.thin },
-  };
-  const dataStyle = {
-    ...BASE_STYLES.center,
-    border: { top: BORDERS.thin, bottom: BORDERS.thin },
+    // Header tetap pakai box border agar rapi
+    border: BORDERS.thin,
   };
 
-  // --- BUILD DATA (Sama) ---
+  // Style Base untuk Data (Alignment Center)
+  const dataStyle = {
+    ...BASE_STYLES.center,
+    font: { name: 'Calibri', sz: 11 },
+  };
+
+  // --- BUILD DATA ---
   const row1 = ['Type of Truck', 'Licence No.', 'Driver'];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {
@@ -217,7 +220,7 @@ export function generateTimeDriverSheet(
   });
   ws['!merges'] = merges;
 
-  // --- STYLING LOOP (Refactored) ---
+  // --- STYLING LOOP ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -226,6 +229,8 @@ export function generateTimeDriverSheet(
       const cell = ws[cellRef];
 
       let cellFill = null;
+
+      // Tentukan Warna Header (Sama seperti sebelumnya)
       if (C <= 2) {
         if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry }; // Peach
       } else {
@@ -241,23 +246,65 @@ export function generateTimeDriverSheet(
         }
       }
 
+      // --- HEADER (Row 0 & 1) ---
       if (R === 0 || R === 1) {
         cell.s = { ...headerStyle };
         if (cellFill) cell.s.fill = cellFill;
-        if (C > 2 && (C - 2) % 3 === 0) cell.s.border.right = BORDERS.medium;
-      } else {
+
+        // Tambah border kanan tebal untuk pemisah grup di header
+        if (C === 2) cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
+        else if (C > 2 && (C - 2) % 3 === 0)
+          cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
+      }
+
+      // --- DATA ROWS (Row >= 2) ---
+      else {
         cell.s = { ...dataStyle };
-        cell.s.border = { ...dataStyle.border };
         if (cellFill) cell.s.fill = cellFill;
 
-        if (C === 2) cell.s.border.right = BORDERS.medium;
-        if (C > 2 && (C - 2) % 3 === 0) cell.s.border.right = BORDERS.medium;
+        // Alignment untuk kolom Info
         if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+
+        // --- LOGIKA BORDER BARU (Tanpa Atas Bawah, Grouping Kanan Kiri) ---
+        let borderLeft = { style: 'none' };
+        let borderRight = { style: 'none' };
+        const borderTop = { style: 'none' };
+        const borderBottom = { style: 'none' };
+
+        // 1. Kolom Info (0, 1, 2)
+        if (C <= 2) {
+          borderLeft = { style: 'thin' };
+          borderRight = { style: 'thin' };
+          // Kolom Driver (idx 2) dikasih batas kanan tebal
+          if (C === 2) borderRight = BORDERS.medium;
+        }
+        // 2. Kolom Tanggal (3, 4, 5 | 6, 7, 8 | ...)
+        else {
+          const relIdx = (C - 3) % 3; // 0=Start, 1=Finish, 2=Duration
+
+          // Awal Grup Tanggal (Start Time) -> Border Kiri Medium
+          if (relIdx === 0) {
+            borderLeft = BORDERS.medium;
+          }
+          // Akhir Grup Tanggal (Duration) -> Border Kanan Medium
+          if (relIdx === 2) {
+            borderRight = BORDERS.medium;
+          }
+        }
+
+        cell.s.border = {
+          top: borderTop,
+          bottom: borderBottom,
+          left: borderLeft,
+          right: borderRight,
+        };
       }
     }
   }
+
   const cols = [{ wch: 12 }, { wch: 15 }, { wch: 30 }];
   for (let i = 0; i < dateKeys.length * 3; i++) cols.push({ wch: 10 });
   ws['!cols'] = cols;
+
   XLSX.utils.book_append_sheet(wb, ws, 'Time Driver');
 }

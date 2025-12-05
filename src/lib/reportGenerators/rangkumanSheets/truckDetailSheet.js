@@ -6,11 +6,23 @@ import { COLORS, BORDERS, BASE_STYLES, FILL_STYLES, FONT_STYLES } from './report
 // Status yang dianggap GAGAL / BELUM SELESAI
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
-// --- WARNA KHUSUS ERROR ---
-const ERROR_FILLS = {
-  green: { patternType: 'solid', fgColor: { rgb: '4F46E5' } }, // Indigo
-  blue: { patternType: 'solid', fgColor: { rgb: '3B82F6' } }, // Blue
-  yellow: { patternType: 'solid', fgColor: { rgb: '8B5CF6' } }, // Violet
+// --- WARNA KHUSUS ERROR (Fill Background) ---
+const ERROR_STYLES = {
+  // Manual Assign (Blue-ish)
+  manual: {
+    fill: { patternType: 'solid', fgColor: { rgb: '4F76C7' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
+  },
+  // Beda Hari (Pink-ish)
+  date: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'C85D86' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
+  },
+  // Both (Purple-ish)
+  both: {
+    fill: { patternType: 'solid', fgColor: { rgb: '5C5FB2' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
+  },
 };
 
 // --- HELPERS ---
@@ -238,26 +250,16 @@ export function calculateTruckDetailData(
         const rawSO = task.content || '-';
         const formattedSO = rawSO.replace(/,/g, ', ');
 
-        // --- UPDATE LOGIC SEQUENCE (Sesuai Delivery Report) ---
         const flow = task.flow || '';
         const isGR = flow.toUpperCase().includes('GR');
-
-        // Tentukan Sumber Waktu Tiba (Actual Arrival)
         let arrivalSource;
         if (isGR) {
-          arrivalSource = task.page1DoneTime; // Logic GR
+          arrivalSource = task.page1DoneTime;
         } else {
-          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai; // Logic Reguler
+          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
         }
-
-        // Ambil Timestamp untuk Sorting Real Sequence
         const arrObj = parseApiDateString(arrivalSource);
         const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
-        // -------------------------------------------------------
-
-        // String untuk Tooltip (Mulai pada ...)
-        // Jika Arrival Source ada, gunakan itu (karena itu real start visit)
-        // Jika tidak ada, fallback ke startTime task
         const realStartTimeStr = arrivalSource
           ? formatDateTimeWIB(arrivalSource)
           : formatDateTimeWIB(task.startTime);
@@ -271,10 +273,9 @@ export function calculateTruckDetailData(
           isManual: isManual,
           isDateDiff: isDateDiff,
           dayDiff: dayDiffCount,
-          startTimeStr: realStartTimeStr, // Digunakan di Tooltip
-          // Data Sorting
+          startTimeStr: realStartTimeStr,
           roSequence: task.routePlannedOrder,
-          arrivalTimestamp: arrivalTimestamp, // KUNCI: Sort by Arrival, bukan DoneTime
+          arrivalTimestamp: arrivalTimestamp,
         });
       }
     });
@@ -286,7 +287,6 @@ export function calculateTruckDetailData(
       const entry = dataMatrix[dateKey][email];
 
       if (entry.taskList && entry.taskList.length > 0) {
-        // A. Hitung Real Sequence (Sort by Actual Arrival Timestamp)
         const sortedByTime = [...entry.taskList].sort((a, b) => {
           return a.arrivalTimestamp - b.arrivalTimestamp;
         });
@@ -299,22 +299,19 @@ export function calculateTruckDetailData(
           item.realSequence = realRankMap.get(item._tempId);
         });
 
-        // B. Sort Tampilan Akhir (Manual Assign First, then by RO)
         entry.taskList.sort((a, b) => {
           const roA = a.roSequence === null || a.roSequence === undefined ? -1 : a.roSequence;
           const roB = b.roSequence === null || b.roSequence === undefined ? -1 : b.roSequence;
 
           if (roA !== roB) {
-            return roA - roB; // -1 naik ke atas
+            return roA - roB;
           }
-          // Jika RO sama (sama-sama manual), urutkan berdasarkan Real Sequence (Waktu Tiba)
           return (a.realSequence || 0) - (b.realSequence || 0);
         });
       }
     });
   });
 
-  // Sorting Driver
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -334,7 +331,6 @@ export function calculateTruckDetailData(
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
-// ... (BAGIAN GENERATE EXCEL TIDAK PERLU DIUBAH, KARENA HANYA MODAL YG PAKAI TASKLIST) ...
 export function generateTruckDetailSheet(
   wb,
   driverData,
@@ -357,8 +353,9 @@ export function generateTruckDetailSheet(
   };
   const dataStyle = {
     ...BASE_STYLES.cellCenter,
-    border: { top: BORDERS.thin, bottom: BORDERS.thin },
+    font: { name: 'Calibri', sz: 11 },
   };
+
   const row1 = ['Type of Truck', 'Licence No.', 'Driver'];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {
@@ -398,11 +395,16 @@ export function generateTruckDetailSheet(
     });
     excelData.push(row);
   });
+
+  // --- LEGEND DATA ---
   excelData.push([]);
-  excelData.push(['KETERANGAN ERROR (WARNA BORDER)', '', '']);
-  excelData.push(['', 'Manual Assign Error (Blue Border)', '']);
-  excelData.push(['', 'Beda Hari Error (Violet Border)', '']);
-  excelData.push(['', 'Multiple Error (Indigo Border)', '']);
+  const legendStartRow = excelData.length; // Index baris untuk Judul Legend
+  excelData.push(['KETERANGAN WARNA']); // Row 0
+  excelData.push(['', 'Ada task yang manual assign (tanpa routing)']); // Row 1
+  excelData.push(['', 'Ada task yang tanggal Start dan Done berbeda']); // Row 2
+  excelData.push(['', 'Ada manual assign dan beda tanggal Start-Done']); // Row 3
+  excelData.push(['Untuk lebih lengkap, buka Truck Detail di website']); // Row 4
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
   merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
@@ -413,10 +415,21 @@ export function generateTruckDetailSheet(
     merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 6 } });
     colIdx += 7;
   });
+
+  // --- 2. MERGE UNTUK LEGEND ---
+  // Merge judul
+  merges.push({ s: { r: legendStartRow, c: 0 }, e: { r: legendStartRow, c: 5 } });
+  // Merge deskripsi (Kolom B sampai F)
+  merges.push({ s: { r: legendStartRow + 1, c: 1 }, e: { r: legendStartRow + 1, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 3, c: 1 }, e: { r: legendStartRow + 3, c: 6 } });
+  // Merge footer
+  merges.push({ s: { r: legendStartRow + 4, c: 0 }, e: { r: legendStartRow + 4, c: 6 } });
+
   ws['!merges'] = merges;
   const range = XLSX.utils.decode_range(ws['!ref']);
   const dataEndRow = 2 + driverEmails.length;
-  const legendStartRow = dataEndRow + 1;
+
   for (let R = range.s.r; R <= range.e.r; ++R) {
     let driverEmail = null;
     if (R >= 2 && R < dataEndRow) driverEmail = driverEmails[R - 2];
@@ -424,12 +437,23 @@ export function generateTruckDetailSheet(
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
+
       if (R < dataEndRow) {
         let cellFill = null;
-        let borderTop = BORDERS.thin;
-        let borderBottom = BORDERS.thin;
+        let currentFontStyle = dataStyle.font;
+
+        // --- DEFAULT BORDER: None ---
+        let borderTop = { style: 'none' };
+        let borderBottom = { style: 'none' };
+        let borderLeft = { style: 'none' };
+        let borderRight = { style: 'none' };
+
+        // 1. HEADER (Row 0 & 1)
         if (R === 0 || R === 1) {
           cell.s = { ...headerStyle };
+          if (C === 2) cell.s.border.right = BORDERS.medium;
+          else if (C > 2 && (C - 3) % 7 === 6) cell.s.border.right = BORDERS.medium;
+
           if (C <= 2) {
             cellFill = { patternType: 'solid', fgColor: COLORS.dry };
           } else {
@@ -443,63 +467,82 @@ export function generateTruckDetailSheet(
               }
             }
           }
-        } else {
-          cell.s = { ...dataStyle };
-          cell.s.border = { ...dataStyle.border };
+        }
+        // 2. DATA ROWS (Row >= 2)
+        else {
           if (C <= 2) {
-            if (C === 2) cell.s.border.right = BORDERS.medium;
-            cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+            borderLeft = BORDERS.thin;
+            borderRight = BORDERS.thin;
+            if (C === 2) borderRight = BORDERS.medium;
+            cell.s = {
+              ...dataStyle,
+              alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+            };
           } else {
             const dateIdx = Math.floor((C - 3) / 7);
             const relativeIdx = (C - 3) % 7;
+
+            borderLeft = { style: 'none' };
+            borderRight = { style: 'none' };
+            if (relativeIdx === 0) borderLeft = BORDERS.medium;
+            if (relativeIdx === 6) borderRight = BORDERS.medium;
+
             if (dateKeys[dateIdx]) {
               const dateStr = dateKeys[dateIdx].str;
               const dObj = new Date(dateStr);
               const metrics = dataMatrix[dateStr][driverEmail];
+
+              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
+
               if (metrics && metrics.outlets > 0) {
-                let errColor = null;
+                let errStyle = null;
                 if (metrics.hasManualError && metrics.hasBedaHariError)
-                  errColor = ERROR_FILLS.green;
-                else if (metrics.hasManualError) errColor = ERROR_FILLS.blue;
-                else if (metrics.hasBedaHariError) errColor = ERROR_FILLS.yellow;
-                if (errColor) {
-                  borderTop = { style: 'medium', color: errColor };
-                  borderBottom = { style: 'medium', color: errColor };
+                  errStyle = ERROR_STYLES.both;
+                else if (metrics.hasManualError) errStyle = ERROR_STYLES.manual;
+                else if (metrics.hasBedaHariError) errStyle = ERROR_STYLES.date;
+
+                if (errStyle) {
+                  cellFill = errStyle.fill;
+                  currentFontStyle = errStyle.font;
                 }
               }
-              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
             }
+
             if ([0, 1, 6].includes(relativeIdx)) {
               cell.t = 'n';
-              cell.s = { ...cell.s, numFmt: '0.0%' };
+              cell.s = { ...dataStyle, numFmt: '0.0%' };
             } else if ([2, 3, 4].includes(relativeIdx)) {
               cell.t = 'n';
-              cell.s = { ...cell.s, numFmt: '#,##0' };
+              cell.s = { ...dataStyle, numFmt: '#,##0' };
+            } else {
+              cell.s = { ...dataStyle };
             }
-            if (relativeIdx === 6) cell.s.border.right = BORDERS.medium;
           }
-          cell.s.border = { ...cell.s.border, top: borderTop, bottom: borderBottom };
+          cell.s.border = {
+            top: borderTop,
+            bottom: borderBottom,
+            left: borderLeft,
+            right: borderRight,
+          };
+          cell.s.font = currentFontStyle;
         }
         if (cellFill) cell.s.fill = cellFill;
       } else if (R >= legendStartRow) {
         const relR = R - legendStartRow;
-        if (relR === 0 && C === 0) cell.s = { font: { bold: true, underline: true } };
-        else if (relR > 0 && C === 0) {
-          cell.s = { border: BORDERS.thin, alignment: { horizontal: 'center' } };
-          let legendColor = null;
-          if (relR === 1) legendColor = ERROR_FILLS.blue;
-          if (relR === 2) legendColor = ERROR_FILLS.yellow;
-          if (relR === 3) legendColor = ERROR_FILLS.green;
-          if (legendColor) {
-            cell.s.border = {
-              top: { style: 'medium', color: legendColor },
-              bottom: { style: 'medium', color: legendColor },
-              left: BORDERS.thin,
-              right: BORDERS.thin,
-            };
+
+        if (relR === 0 && C === 0) {
+          cell.s = { font: { bold: true, underline: true } };
+        } else if (relR >= 1 && relR <= 3) {
+          if (C === 0) {
+            cell.s = { border: BORDERS.thin };
+            if (relR === 1) cell.s.fill = ERROR_STYLES.manual.fill;
+            if (relR === 2) cell.s.fill = ERROR_STYLES.date.fill;
+            if (relR === 3) cell.s.fill = ERROR_STYLES.both.fill;
+          } else if (C === 1) {
+            cell.s = { alignment: { horizontal: 'left', vertical: 'center' } };
           }
-        } else if (relR > 0 && C === 1) {
-          cell.s = { alignment: { horizontal: 'left' } };
+        } else if (relR === 4 && C === 0) {
+          cell.s = { font: { italic: true } };
         }
       }
     }

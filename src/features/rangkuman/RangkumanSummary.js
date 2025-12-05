@@ -781,7 +781,7 @@ export default function RangkumanSummary() {
               <button
                 onClick={handleDownloadExcel}
                 disabled={isLoading || rawData.tasks.length === 0}
-                className="w-full sm:w-auto px-6 h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                className="w-full sm:w-auto px-6 h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

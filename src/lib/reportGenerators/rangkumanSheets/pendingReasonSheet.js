@@ -1,16 +1,8 @@
 // File: lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
 import * as XLSX from 'xlsx-js-style';
-import {
-  COLORS,
-  BORDERS,
-  BASE_STYLES,
-  HEADER_STYLES,
-  FILL_STYLES,
-  FONT_STYLES,
-} from './reportStyles';
+import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
-// ... (Helpers dan Calculate Function SAMA PERSIS) ...
-// ... Copy paste semua fungsi helper dan calculatePendingReasonData ...
+// --- HELPER FUNCTIONS ---
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 function normalizeEmail(email) {
   return email ? email.toLowerCase().trim() : '';
@@ -67,7 +59,7 @@ function getDriverStorageType(driver) {
 }
 
 export function calculatePendingReasonData(driverData, allTasks) {
-  /* ...CODE CALCULATE TETAP SAMA... */ const processedData = [];
+  const processedData = [];
   const driverMap = new Map();
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -184,7 +176,6 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
   );
 
-
   // Headers
   let headers = [
     'Flow',
@@ -255,6 +246,16 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
+  ws['!views'] = [
+    {
+      state: 'frozen',
+      ySplit: 1,
+      xSplit: 0,
+      topLeftCell: 'A2',
+      activeCell: 'A2',
+    },
+  ];
+
   // --- STYLING ---
   const shift = shouldShowPendingGR ? 0 : -1;
   const idxPending = 6;
@@ -271,10 +272,36 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
       if (!ws[cellRef]) continue;
       const cell = ws[cellRef];
 
+      // HEADER (Row 0)
       if (R === 0) {
         cell.s = HEADER_STYLES.blueHeader;
-      } else {
-        let currentStyle = { ...BASE_STYLES.cellCenter }; // Default Border Thin
+      }
+      // DATA ROWS
+      else {
+        const dataIdx = R - 1;
+        const item = data[dataIdx];
+        const nextItem = data[dataIdx + 1];
+
+        // Cek apakah ini baris terakhir untuk tanggal tersebut
+        const isLastInDate = !nextItem || item.dateStr !== nextItem.dateStr;
+
+        // Border Bawah: Medium jika ganti tanggal, None jika masih tanggal sama
+        const bottomBorder = isLastInDate ? BORDERS.medium : { style: 'none' };
+
+        // Border Atas: Thin jika Baris Pertama data, None jika bukan (biar nyambung)
+        const topBorder = R === 1 ? BORDERS.thin : { style: 'none' };
+
+        let currentStyle = {
+          ...BASE_STYLES.cellCenter,
+          border: {
+            // --- 2. HAPUS BORDER KIRI & KANAN (SESUAI PERMINTAAN) ---
+            left: { style: 'none' },
+            right: { style: 'none' },
+            top: topBorder,
+            bottom: bottomBorder,
+          },
+        };
+
         const val = cell.v;
 
         if (C === idxPending && errorRows.has(R)) {
@@ -292,7 +319,8 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
       }
     }
   }
-  // Col Widths (Simplified)
+
+  // --- 3. SET COL WIDTHS ---
   ws['!cols'] = [
     { wch: 10 },
     { wch: 12 },
