@@ -336,7 +336,7 @@ export default function DashboardSummary({ driverData }) {
 
   return (
     <div className="w-full max-w-none">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Rangkuman</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
       {/* Tampilan Error (Jika ada) */}
       {error && (

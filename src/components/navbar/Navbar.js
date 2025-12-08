@@ -83,14 +83,14 @@ export default function Navbar() {
       ref={navRef}
       className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm"
     >
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
         <div className="flex items-center space-x-4 sm:space-x-6">
           <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
             TMS
           </Link>
 
           {/* Navigasi Desktop */}
-          <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
+          <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
             {/* Laporan as a non-clickable parent (category) - Option A */}
             <div ref={laporanRef} className="relative">
               {/* header label - NOT a navigation link to page, only toggles dropdown on click */}
@@ -152,17 +152,17 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
+        <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
           <LocationSwitcher />
           <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
           <UserDisplay />
         </div>
 
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
-            className="p-2 rounded-md text-slate-700 hover:bg-gray-100"
+            className="p-2 rounded-md text-slate-700 hover:bg-gray-100 cursor-pointer"
           >
             {isMobileMenuOpen ? (
               <svg
@@ -196,7 +196,7 @@ export default function Navbar() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
             <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>

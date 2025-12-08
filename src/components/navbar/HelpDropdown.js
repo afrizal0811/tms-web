@@ -29,13 +29,13 @@ export default function HelpDropdown() {
       {/* Tombol Pemicu Dropdown */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`text-sm font-mediumtransition-colors flex items-center cursor-pointer ${
+        className={`text-sm font-mediumtransition-colors flex items-center cursor-pointer gap-1 ${
           isOpen ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
         }`}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        Help
+        Bantuan
         {/* Ikon panah bawah (chevron-down) */}
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : 'rotate-0'}`}

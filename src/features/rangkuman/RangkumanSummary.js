@@ -1,11 +1,7 @@
 // File: features/rangkuman/RangkumanSummary.js
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import * as XLSX from 'xlsx-js-style';
-
+import DownloadButton from '@/components/DownloadButton';
 import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
@@ -15,6 +11,10 @@ import {
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDate } from '@/lib/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import * as XLSX from 'xlsx-js-style';
 
 // --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
@@ -31,7 +31,7 @@ export default function RangkumanSummary() {
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [masterTruckData, setMasterTruckData] = useState(null);
-
+  const [isDownloading, setIsDownloading] = useState(false);
   const [driverData, setDriverData] = useState([]);
   const [rawData, setRawData] = useState({
     tasks: [],
@@ -598,6 +598,7 @@ export default function RangkumanSummary() {
   };
 
   const handleDownloadExcel = () => {
+    setIsDownloading(true);
     if (!selectedDate) return;
     if (driverData.length === 0) {
       toastError('Data Driver belum siap/kosong.');
@@ -622,10 +623,12 @@ export default function RangkumanSummary() {
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('Rangkuman berhasil di-download!');
+      toastSuccess('Rangkuman berhasil diunduh!');
+      setIsDownloading(false);
     } catch (err) {
       console.error(err);
       toastError('Gagal membuat Excel: ' + err.message);
+      setIsDownloading(false);
     }
   };
 
@@ -772,7 +775,7 @@ export default function RangkumanSummary() {
               wrapperClassName="w-full"
               disabled={isLoading}
               calendarClassName={isDashboard ? 'custom-year-picker' : ''}
-              className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer focus:ring-2 focus:ring-sky-500'}`}
+              className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer'}`}
             />
           </div>
           {!isDashboard && (
@@ -780,35 +783,11 @@ export default function RangkumanSummary() {
               <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
                 Action
               </label>
-              <button
+              <DownloadButton
                 onClick={handleDownloadExcel}
-                disabled={isLoading || rawData.tasks.length === 0}
-                className="w-full sm:w-auto px-6 h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-              >
-                {isLoading ? (
-                  <Spinner
-                    addClass="inline-block"
-                    border="border-2 border-slate-400 border-t-white"
-                    size="w-5 h-5"
-                  />
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                )}
-                <span>Download Excel</span>
-              </button>
+                disabled={isDownloading || isLoading}
+                isLoading={isLoading || isDownloading}
+              />
             </div>
           )}
         </div>

@@ -65,7 +65,7 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
             <h3 className="text-lg font-bold text-white">{driverName}</h3>
             <p className="text-slate-300 text-sm">{formatHeaderDate(dateStr)}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -108,15 +108,15 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
                       <Tooltip
                         tooltipContent={
                           <span>
-                            Urutan Routing: <b>#{displayRO}</b> <br />
-                            Urutan Aktual: <b>#{displayReal}</b>
+                            Urutan Routing: <b>{displayRO}</b> <br />
+                            Urutan Aktual: <b>{displayReal}</b>
                           </span>
                         }
                       >
                         <div
                           className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(displayRO, displayReal)}`}
                         >
-                          #{displayRO} &rarr; #{displayReal}
+                          {displayRO === '-' ? '-' : `#${displayRO}`} &rarr; #{displayReal}
                         </div>
                       </Tooltip>
                     </div>

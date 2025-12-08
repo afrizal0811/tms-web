@@ -1,6 +1,7 @@
 // File: src/components/VehicleData.js
 'use client';
 
+import DownloadButton from '@/components/DownloadButton';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
@@ -9,7 +10,6 @@ import * as XLSX from 'xlsx-js-style';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-
 // --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
 function TabButton({ children, isActive, onClick }) {
   const [isTruncated, setIsTruncated] = useState(false);
@@ -29,8 +29,10 @@ function TabButton({ children, isActive, onClick }) {
     <button
       ref={buttonRef}
       onClick={onClick}
-      className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
+      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
+        isActive
+          ? 'border-b-2 border-sky-600 text-sky-600'
+          : 'text-gray-500 hover:text-gray-700 opacity-40 cursor-pointer '
       }`}
     >
       {children}
@@ -132,6 +134,7 @@ export default function VehicleData() {
     template: true,
   });
   const downloadDropdownRef = useRef(null);
+  const noSheetSelected = Object.values(sheetSelection).every((value) => !value);
 
   const formatVolume = (vol) => {
     if (vol === null || vol === undefined) return null;
@@ -364,12 +367,12 @@ export default function VehicleData() {
       }
 
       if (wb.SheetNames.length === 0) {
-        alert('Pilih setidaknya satu sheet untuk di-download.');
+        toastError('Pilih setidaknya satu sheet untuk diunduh.');
       } else {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Data Kendaraan - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
-        toastSuccess('File Data Kendaraan berhasil di-download!');
+        toastSuccess('File Data Kendaraan berhasil diunduh!');
       }
     } catch (err) {
       toastError(err.message);
@@ -437,8 +440,9 @@ export default function VehicleData() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Cari (Plat, Email, Nama, Tag)..."
-            className="w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400"
+            placeholder="Cari Data Kendaraan"
+            className={`w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading || isDownloading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+            disabled={isLoading || isDownloading}
           />
           {searchQuery && (
             <button
@@ -462,18 +466,16 @@ export default function VehicleData() {
 
         {/* Tombol Dropdown Download */}
         <div className="relative" ref={downloadDropdownRef}>
-          <button
+          <DownloadButton
             onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
             disabled={isDownloading || isLoading}
-            className="px-4 py-2 w-40 text-center cursor-pointer bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-400"
-          >
-            Download Excel
-          </button>
+            isLoading={isLoading || isDownloading}
+          />
           {isDownloadDropdownOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10">
               <div className="p-3">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Pilih sheet untuk di-download:
+                  Pilih sheet untuk diunduh:
                 </p>
                 <label className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
                   <input
@@ -511,8 +513,8 @@ export default function VehicleData() {
               <div className="border-t border-gray-200 p-2">
                 <button
                   onClick={handleConfirmDownload}
-                  disabled={isDownloading}
-                  className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-sky-700"
+                  disabled={isDownloading || noSheetSelected}
+                  className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   {isDownloading ? (
                     <div className="flex justify-center items-center">

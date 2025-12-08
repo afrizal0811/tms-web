@@ -115,7 +115,7 @@ export default function TmsSummary({
       }
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Routing Summary berhasil di-download!');
+      toastSuccess('File Routing Summary berhasil diunduh!');
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -177,7 +177,7 @@ export default function TmsSummary({
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Delivery Summary berhasil di-download!');
+      toastSuccess('File Delivery Summary berhasil diunduh!');
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -223,7 +223,7 @@ export default function TmsSummary({
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Time Summary berhasil di-download!');
+      toastSuccess('File Time Summary berhasil diunduh!');
     } catch (err) {
       toastError(err.message || String(err));
     } finally {

@@ -1,6 +1,7 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
+import DownloadButton from '@/components/DownloadButton';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { formatSimpleTime, isDateSunday, parseOutletName } from '@/lib/utils';
@@ -8,6 +9,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 // ... (Komponen Th, Td, TabButton, HighlightText, parseSONumber - TIDAK BERUBAH) ...
 function Th({ children, widthClass = '' }) {
   return (
@@ -46,8 +50,10 @@ function TabButton({ children, isActive, onClick }) {
     <button
       ref={buttonRef}
       onClick={onClick}
-      className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
+      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
+        isActive
+          ? 'border-b-2 border-sky-600 text-sky-600'
+          : 'text-gray-500 hover:text-gray-700 opacity-40 cursor-pointer '
       }`}
     >
       {children}
@@ -91,20 +97,34 @@ function parseSONumber(visitName) {
 // --- (Selesai Helper) ---
 
 export default function EstimasiDelivery() {
+  // State tetap String YYYY-MM-DD agar kompatibel dengan logic useEffect di bawah
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
+    // Format YYYY-MM-DD manual untuk menghindari timezone issue
+    const y = yesterday.getFullYear();
+    const m = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const d = String(yesterday.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   });
+
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // (Handler handleDateChange - TIDAK BERUBAH)
-  const handleDateChange = (e) => {
-    const newDateStr = e.target.value;
+  // --- 2. UPDATE HANDLER DATE CHANGE ---
+  // React Datepicker mengembalikan Object Date, bukan event
+  const handleDateChange = (date) => {
+    if (!date) return;
+
+    // Konversi Date Object ke String YYYY-MM-DD (Local Time)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const newDateStr = `${year}-${month}-${day}`;
+
     if (isDateSunday(newDateStr)) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
@@ -112,9 +132,9 @@ export default function EstimasiDelivery() {
     setSelectedDate(newDateStr);
   };
 
-  // --- (PERUBAHAN DI useEffect INI) ---
-  // --- (GANTI SELURUH useEffect INI) ---
+  // --- 3. UPDATE USE EFFECT (TIDAK ADA PERUBAHAN LOGIKA, HANYA FORMAT TANGGAL AMAN) ---
   useEffect(() => {
+    // Pastikan parsing tanggal aman (ganti - dengan / agar browser compatible)
     const date = new Date(selectedDate.replace(/-/g, '/'));
     if (date.getDay() === 0) {
       setAllRoutes([]);
@@ -153,49 +173,28 @@ export default function EstimasiDelivery() {
         });
         const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
-        // --- (PERUBAHAN UTAMA ADA DI FUNGSI INI) ---
-
-        // Helper function untuk mencari ETD HUB pertama (order 0)
         const getHubEtd = (route) => {
           if (!route.trips || route.trips.length === 0) {
-            return Infinity; // Taruh di akhir jika tidak ada trip
+            return Infinity;
           }
           const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
 
-          // Cek jika hubTrip ada, dan ETD-nya adalah string yang valid
-          // (Contoh: "14:00:00")
           if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
-            // --- PERBAIKAN KUNCI ---
-            // Gabungkan tanggal dari datepicker dengan jam dari ETD
-            // Misal: selectedDate = "2025-11-09", hubTrip.etd = "14:00:00"
-            // Hasil: "2025-11-09T14:00:00"
             const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
-            // --- SELESAI PERBAIKAN ---
-
             const etdTime = new Date(fullEtdString).getTime();
-
-            // Cek apakah hasilnya BUKAN NaN (Not a Number)
             if (!isNaN(etdTime)) {
-              return etdTime; // Kembalikan timestamp yang valid
+              return etdTime;
             }
           }
-
-          // Jika tidak ada trip, tidak ada ETD, atau ETD tidak valid,
-          // kirim ke paling akhir.
           return Infinity;
         };
-        // --- (SELESAI PERUBAHAN FUNGSI) ---
 
-        // Terapkan sorting (ascending)
         allDoneRoutings.sort((routeA, routeB) => {
           return getHubEtd(routeA) - getHubEtd(routeB);
         });
-        // --- (SELESAI PERUBAHAN) ---
 
-        // Simpan data yang sudah bersih DAN terurut
         setAllRoutes(allDoneRoutings);
 
-        // Atur tab aktif (tidak berubah)
         if (allDoneRoutings.length > 0) {
           setActiveVehicleId(allDoneRoutings[0].vehicleId);
         } else {
@@ -283,13 +282,13 @@ export default function EstimasiDelivery() {
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
       if (wb.SheetNames.length === 0) {
-        toastError('Tidak ada data untuk di-download.');
+        toastError('Tidak ada data untuk diunduh.');
         return;
       } else {
         const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
         const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
         XLSX.writeFile(wb, fileName);
-        toastSuccess('File Estimasi Delivery berhasil di-download!');
+        toastSuccess('File Estimasi Delivery berhasil diunduh!');
       }
     } catch (e) {
       toastError(e.message);
@@ -298,7 +297,6 @@ export default function EstimasiDelivery() {
     }
   };
 
-  // ... (useEffect untuk reset tab - TIDAK BERUBAH) ...
   useEffect(() => {
     if (activeVehicleId) {
       const isActiveVehicleStillPresent = filteredVehicleRoutes.some(
@@ -314,37 +312,40 @@ export default function EstimasiDelivery() {
     }
   }, [filteredVehicleRoutes, activeVehicleId]);
 
-  // ... (useMemo untuk activeRoute - TIDAK BERUBAH) ...
   const activeRoute = useMemo(() => {
     if (!activeVehicleId) return null;
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
-  // ... (Return JSX - TIDAK BERUBAH) ...
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      {/* 1. Kontrol Atas (Statis) (TIDAK BERUBAH) */}
+      {/* 1. Kontrol Atas (Statis) */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-center shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2 sm:mb-0 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2 sm:mb-0 w-full sm:w-auto relative z-50">
           <label htmlFor="estimasiDate" className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">
             Tanggal Routing:
           </label>
-          <input
-            type="date"
+
+          {/* --- 4. GANTI INPUT MENJADI DATEPICKER --- */}
+          <DatePicker
             id="estimasiDate"
-            value={selectedDate}
+            selected={selectedDate ? new Date(selectedDate) : new Date()}
             onChange={handleDateChange}
+            dateFormat="dd/MM/yyyy"
             disabled={isLoading}
-            className="p-2 border border-gray-300 rounded-md text-gray-900 w-full sm:w-auto"
+            className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer '}`}
+            wrapperClassName="w-full sm:w-auto"
           />
         </div>
+
         <div className="relative w-full max-w-sm mb-2 sm:mb-0">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari (Kendaraan, Outlet, SO)..."
-            className="w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400"
+            placeholder="Cari Kendaraan, Customer, atau SO"
+            className={`w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+            disabled={isLoading}
           />
           {searchQuery && (
             <button
@@ -364,19 +365,11 @@ export default function EstimasiDelivery() {
             </button>
           )}
         </div>
-        <button
+        <DownloadButton
           onClick={handleDownloadExcel}
           disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-          className="px-4 py-2 w-40 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-400"
-        >
-          {isDownloading ? (
-            <div className="flex justify-center items-center">
-              <Spinner size='w-5 h-5'/>
-            </div>
-          ) : (
-            'Download Excel'
-          )}
-        </button>
+          isLoading={isLoading || isDownloading}
+        />
       </div>
       <div className="flex items-center border-b border-gray-200 shrink-0">
         <div className="flex flex-nowrap overflow-x-auto grow">
