@@ -1,15 +1,17 @@
 // File: features/rangkuman/tabs/modals/DailyServiceLevelModal.js
 'use client';
 
+import Spinner from '@/components/Spinner';
+import { memo } from 'react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 const DailyTooltip = ({ active, payload, label }) => {
@@ -58,11 +60,11 @@ const DailyTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function DailyServiceLevelModal({ isOpen, onClose, title, data }) {
+function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
   if (!isOpen) return null;
 
-  // Cek apakah ada data Pending GR di bulan ini (untuk kondisional bar)
-  const hasPendingGR = data && data.some((d) => d.PENDING_GR > 0);
+  const hasData = Array.isArray(data) && data.length > 0;
+  const hasPendingGR = hasData && data.some((d) => d.PENDING_GR > 0);
 
   return (
     <div
@@ -86,7 +88,11 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
 
         {/* Chart Body */}
         <div className="p-6 h-[400px] w-full bg-white">
-          {data && data.length > 0 ? (
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Spinner />
+            </div>
+          ) : hasData ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -107,7 +113,6 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
                   wrapperStyle={{ paddingBottom: '10px', fontSize: '12px' }}
                 />
 
-                {/* STACKED BARS */}
                 <Bar
                   name="Sukses"
                   dataKey="SUKSES"
@@ -140,7 +145,6 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
                   radius={[0, 0, 0, 0]}
                   maxBarSize={40}
                 />
-
                 {hasPendingGR && (
                   <Bar
                     name="Pending GR"
@@ -168,3 +172,5 @@ export default function DailyServiceLevelModal({ isOpen, onClose, title, data })
     </div>
   );
 }
+
+export default memo(DailyServiceLevelModal);

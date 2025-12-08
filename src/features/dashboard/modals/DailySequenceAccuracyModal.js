@@ -1,6 +1,8 @@
 // File: features/rangkuman/tabs/modals/DailySequenceAccuracyModal.js
 'use client';
 
+import Spinner from '@/components/Spinner';
+import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const DailyTooltip = ({ active, payload, label }) => {
@@ -38,8 +40,11 @@ const DailyTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function DailySequenceAccuracyModal({ isOpen, onClose, title, data }) {
+function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading }) {
+  // kalau modal tertutup, jangan render apa pun
   if (!isOpen) return null;
+
+  const hasData = Array.isArray(data) && data.length > 0;
 
   return (
     <div
@@ -63,7 +68,11 @@ export default function DailySequenceAccuracyModal({ isOpen, onClose, title, dat
 
         {/* Chart Body */}
         <div className="p-6 h-[400px] w-full bg-white">
-          {data && data.length > 0 ? (
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Spinner />
+            </div>
+          ) : hasData ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -77,8 +86,6 @@ export default function DailySequenceAccuracyModal({ isOpen, onClose, title, dat
                 />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                 <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f1f5f9' }} />
-                {/* Legend Chart dimatikan karena sudah ada di footer, atau biarkan jika ingin double info */}
-                {/* <Legend iconType="circle" verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '10px', fontSize: '12px' }}/> */}
 
                 <Bar
                   name="Sesuai"
@@ -107,31 +114,30 @@ export default function DailySequenceAccuracyModal({ isOpen, onClose, title, dat
               </BarChart>
             </ResponsiveContainer>
           ) : (
+            // TEKS JIKA TIDAK ADA DATA
             <div className="h-full flex items-center justify-center text-gray-400">
               Tidak ada data untuk bulan ini.
             </div>
           )}
         </div>
 
-        {/* UPDATE: Footer Layout (Kiri: Legend, Kanan: Info Tab) */}
+        {/* Footer */}
         <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-2">
-          {/* KIRI: Legenda Warna */}
           <div className="flex gap-4 font-medium">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#22c55e] rounded-sm"></span>
+              <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
               <span>Sesuai</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#3b82f6] rounded-sm"></span>
+              <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
               <span>Manual Assign</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#ef4444] rounded-sm"></span>
+              <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
               <span>Tidak Sesuai</span>
             </div>
           </div>
 
-          {/* KANAN: Info Tab */}
           <div className="text-right">
             Data lengkap tersedia di tab <strong className="text-slate-700">Truck Detail</strong>
           </div>
@@ -140,3 +146,5 @@ export default function DailySequenceAccuracyModal({ isOpen, onClose, title, dat
     </div>
   );
 }
+
+export default memo(DailySequenceAccuracyModal);

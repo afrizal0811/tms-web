@@ -1,5 +1,7 @@
 ├── app
 │   ├── api
+│   │   ├── get-batch-histories
+│   │   │   └── route.js
 │   │   ├── get-hubs
 │   │   │   └── route.js
 │   │   ├── get-location-histories
@@ -30,6 +32,7 @@
 ├── components
 │   ├── AppLayout.js
 │   ├── ConfirmModal.js
+│   ├── DownloadButton.js
 │   ├── Footer.js
 │   ├── LocationDropdown.js
 │   ├── navbar
@@ -53,28 +56,24 @@
 │   │   └── tabs
 │   │       ├── AverageKmTab.js
 │   │       ├── components
-│   │       │   ├── ExceptionRateChart.js
 │   │       │   ├── SequenceAccuracyChart.js
 │   │       │   ├── ServiceLevelChart.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── DashboardTab.js
 │   │       ├── modals
-│   │       │   ├── DailyExceptionModal.js
 │   │       │   ├── DailySequenceAccuracyModal.js
 │   │       │   ├── DailyServiceLevelModal.js
 │   │       │   └── TruckDetailModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── PlaceholderTab.js
+│   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
 │   ├── reportData
 │   │   ├── BulkReportDownloader.js
-│   │   ├── DeliverySummary.js
-│   │   ├── RoutingSummary.js
-│   │   ├── StartFinishSummary.js
-│   │   └── TmsSummary.js
+│   │   └── SingleReportDownloader.js
 │   ├── userSelection
 │   │   └── UserSelectionGrid.js
 │   └── vehicleData
@@ -94,6 +93,7 @@
     │   │   ├── averageKmSheet.js
     │   │   ├── pendingReasonSheet.js
     │   │   ├── reportStyles.js
+    │   │   ├── taskSummarySheet.js
     │   │   ├── timeDriverSheet.js
     │   │   ├── truckDetailSheet.js
     │   │   └── truckUsageSheet.js
