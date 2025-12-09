@@ -48,7 +48,13 @@
 │   └── VehicleTagMappingModal.js
 ├── features
 │   ├── dashboard
-│   │   └── DashboardSummary.js
+│   │   ├── components
+│   │   │   ├── SequenceAccuracyChart.js
+│   │   │   └── ServiceLevelChart.js
+│   │   ├── DashboardSummary.js
+│   │   └── modals
+│   │       ├── DailySequenceAccuracyModal.js
+│   │       └── DailyServiceLevelModal.js
 │   ├── estimasiDelivery
 │   │   └── EstimasiDelivery.js
 │   ├── rangkuman
@@ -56,14 +62,9 @@
 │   │   └── tabs
 │   │       ├── AverageKmTab.js
 │   │       ├── components
-│   │       │   ├── SequenceAccuracyChart.js
-│   │       │   ├── ServiceLevelChart.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
-│   │       ├── DashboardTab.js
 │   │       ├── modals
-│   │       │   ├── DailySequenceAccuracyModal.js
-│   │       │   ├── DailyServiceLevelModal.js
 │   │       │   └── TruckDetailModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── PlaceholderTab.js

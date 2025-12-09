@@ -1,18 +1,19 @@
 // File: src/features/dashboard/DashboardSummary.js
 'use client';
 
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 import Spinner from '@/components/Spinner';
-import Tooltip from '@/components/Tooltip';
 import { getTasks } from '@/lib/apiService';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastWarning } from '@/lib/toastHelper';
 
-// --- IMPORT CHART (ABSOLUTE PATH) ---
+// --- IMPORT CHART ---
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+// --- IMPORT DETAIL TAB BARU ---
+import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 
 // ========== HELPER FUNCTIONS ==========
 const normalizeEmail = (email) => {
@@ -67,29 +68,7 @@ function processOrderInfo(rawOrderId) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ========== KOMONEN STAT CARD ==========
-const StatCard = forwardRef(function StatCard(
-  { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
-  ref
-) {
-  const cardElement = (
-    <div ref={ref} className={`bg-white shadow-md rounded-lg p-6 ${className}`}>
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-12 bg-gray-200 animate-pulse rounded" />
-      ) : (
-        <p className={`mt-1 text-3xl font-semibold text-gray-900 ${valueClassName}`}>{value}</p>
-      )}
-    </div>
-  );
-
-  if (tooltipContent) {
-    return <Tooltip tooltipContent={tooltipContent}>{cardElement}</Tooltip>;
-  }
-  return cardElement;
-});
-StatCard.displayName = 'StatCard';
-
+// ========== SKELETON & WRAPPER TAB DIAGRAM ==========
 const ChartSkeleton = ({ title }) => (
   <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[450px] flex flex-col animate-pulse">
     <div className="mb-6">
@@ -102,18 +81,16 @@ const ChartSkeleton = ({ title }) => (
   </div>
 );
 
-// Wrapper ini yang ngatur skeleton & delay render chart
 function DiagramTab({ yearlyTasks, hubId }) {
   const [renderStep, setRenderStep] = useState(0);
 
   useEffect(() => {
-    // reset setiap data tahunannya berubah
-    // eslint-disable-next-line
+    //eslint-disable-next-line
     setRenderStep(0);
 
     if (yearlyTasks && yearlyTasks.length > 0) {
-      const t1 = setTimeout(() => setRenderStep(1), 200); // ServiceLevel dulu
-      const t2 = setTimeout(() => setRenderStep(2), 600); // lalu SequenceAccuracy
+      const t1 = setTimeout(() => setRenderStep(1), 200);
+      const t2 = setTimeout(() => setRenderStep(2), 600);
 
       return () => {
         clearTimeout(t1);
@@ -133,14 +110,12 @@ function DiagramTab({ yearlyTasks, hubId }) {
   return (
     <div className="w-full h-full flex flex-col gap-6 pb-4 overflow-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Service Level */}
         {renderStep >= 1 ? (
           <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
         ) : (
           <ChartSkeleton title="Service Level" />
         )}
 
-        {/* Chart 2: Sequence Accuracy */}
         {renderStep >= 2 ? (
           <SequenceAccuracyChart allTasks={yearlyTasks} />
         ) : (
@@ -164,34 +139,17 @@ export default function DashboardSummary({ driverData }) {
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
-  const inFlightYearFetchKey = useRef(null); // cacheKey kalau sedang fetch tahunan
-  const yearlyCacheRef = useRef({}); // in-memory cache { `${hubId}:${year}`: tasks[] }
+  const inFlightYearFetchKey = useRef(null);
+  const yearlyCacheRef = useRef({});
 
   // Tabs
-  const [activeTab, setActiveTab] = useState('Diagram'); // 'Diagram' | 'Detail'
+  const [activeTab, setActiveTab] = useState('Diagram');
   const [dismissedDots, setDismissedDots] = useState({
     Diagram: false,
     Detail: false,
   });
 
   const DAILY_CACHE_PREFIX = 'dashboardDailyTasks';
-
-  // ========== SMALL HANDLERS ==========
-  const handleCopy = (task) => {
-    if (!task.copyValue) {
-      toastWarning('Tidak ada nomor SO untuk disalin');
-      return;
-    }
-    navigator.clipboard.writeText(task.copyValue).then(
-      () => {
-        toastSuccess(`Salin: ${task.tooltip}`);
-      },
-      (err) => {
-        toastError('Gagal menyalin ke clipboard');
-        console.error('Gagal menyalin:', err);
-      }
-    );
-  };
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -263,7 +221,7 @@ export default function DashboardSummary({ driverData }) {
     }
   }, [isYearlyLoading]);
 
-  // ========== 1. FETCH HARIAN (Detail) + CACHE (sessionStorage) ==========
+  // ========== 1. FETCH HARIAN (Detail) ==========
   useEffect(() => {
     async function fetchData() {
       if (selectedDate.getDay() === 0) {
@@ -281,6 +239,10 @@ export default function DashboardSummary({ driverData }) {
           flowReDelivery: 0,
           flowPendingGR: 0,
           crossDayTasks: [],
+          totalDry: 0,
+          totalFrozen: 0,
+          assignedDry: 0,
+          assignedFrozen: 0,
         };
         setSummaryData(emptySummary);
         return;
@@ -354,6 +316,10 @@ export default function DashboardSummary({ driverData }) {
             flowReDelivery: 0,
             flowPendingGR: 0,
             crossDayTasks: [],
+            totalDry: 0,
+            totalFrozen: 0,
+            assignedDry: 0,
+            assignedFrozen: 0,
           };
           setSummaryData(emptySummary);
           try {
@@ -374,10 +340,25 @@ export default function DashboardSummary({ driverData }) {
         let flowReDelivery = 0;
         let flowPendingGR = 0;
 
+        // tambahan: statistik Dry / Frozen
+        let totalDry = 0;
+        let totalFrozen = 0;
+        let assignedDry = 0;
+        let assignedFrozen = 0;
+
         for (const task of tasksData) {
           const flow = task.flow || 'N/A';
           const orderInfo = processOrderInfo(task.orderId);
 
+          const typeStorage = (task.typeStorage || '').toUpperCase();
+          const isDry = typeStorage === 'DRY';
+          const isFrozen = typeStorage === 'FROZEN';
+
+          // hitung total Dry/Frozen (semua status)
+          if (isDry) totalDry++;
+          if (isFrozen) totalFrozen++;
+
+          // status
           if (task.status === 'DONE') done++;
           else if (task.status === 'ONGOING') ongoing++;
           else if (task.status === 'UNASSIGNED') {
@@ -390,12 +371,20 @@ export default function DashboardSummary({ driverData }) {
             });
           }
 
+          const isAssigned = task.status !== 'UNASSIGNED';
+
+          // hitung Dry/Frozen untuk task ter-assign
+          if (isAssigned) {
+            if (isDry) assignedDry++;
+            if (isFrozen) assignedFrozen++;
+          }
+
           const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
-          if (manualCategory && task.status !== 'UNASSIGNED') {
+          if (manualCategory && isAssigned) {
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
             const normalizedAssignee = normalizeEmail(rawAssignee);
-            let finalAssignee = driverMap.get(normalizedAssignee) || rawAssignee;
+            let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
             if (finalAssignee === 'N/A') finalAssignee = '-';
 
             manualAssignList.push({
@@ -453,6 +442,11 @@ export default function DashboardSummary({ driverData }) {
           flowReDelivery,
           flowPendingGR,
           crossDayTasks,
+          // tambahan untuk tooltip
+          totalDry,
+          totalFrozen,
+          assignedDry,
+          assignedFrozen,
         };
 
         setSummaryData(summary);
@@ -472,7 +466,7 @@ export default function DashboardSummary({ driverData }) {
     fetchData();
   }, [driverData, selectedDate]);
 
-  // ========== FETCH WITH RETRY (untuk tahunan) ==========
+  // ========== FETCH TAHUNAN ==========
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
     let attempt = 0;
     while (true) {
@@ -490,7 +484,6 @@ export default function DashboardSummary({ driverData }) {
     }
   }, []);
 
-  // ========== 2. FETCH TAHUNAN (Diagram) - CHUNK + RETRY + IN-MEMORY CACHE ==========
   const fetchYearlyData = useCallback(
     async (hubId, year, cacheKey) => {
       setIsYearlyLoading(true);
@@ -513,7 +506,7 @@ export default function DashboardSummary({ driverData }) {
                 status: 'DONE',
                 timeFrom: q.start,
                 timeTo: q.end,
-                timeBy: 'doneTime',
+                timeBy: 'startTime',
                 limit: 25000,
               })
             );
@@ -539,9 +532,6 @@ export default function DashboardSummary({ driverData }) {
     [fetchWithRetry]
   );
 
-  // Trigger fetch tahunan:
-  // - hanya kalau TAB DIAGRAM aktif
-  // - hanya 1x per (hubId, year) dalam lifecycle, pakai in-memory cache
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
@@ -633,227 +623,10 @@ export default function DashboardSummary({ driverData }) {
 
         {/* CONTENT */}
         <div className="p-6">
-          {/* TAB DETAIL */}
           {activeTab === 'Detail' && (
-            <div className="space-y-10 animate-in fade-in duration-300">
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* Total & Assigned */}
-                <div className="lg:col-span-1 lg:order-2 flex flex-col gap-6">
-                  <StatCard
-                    title="Total Task"
-                    value={summaryData?.totalTasks}
-                    isLoading={loading}
-                    className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
-                    valueClassName="text-5xl"
-                    tooltipContent="Total semua task (Selesai, Berjalan, & Belum Assign)."
-                  />
-                  <StatCard
-                    title="Task Ter-assign"
-                    value={summaryData?.assignedTasks}
-                    isLoading={loading}
-                    className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
-                    valueClassName="text-5xl"
-                    tooltipContent="Total task yang sudah di-assign ke driver."
-                  />
-                </div>
-
-                {/* Grid kecil */}
-                <div className="lg:col-span-2 lg:order-1 grid grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
-                  <StatCard
-                    title="Belum Assign"
-                    value={summaryData?.unassigned}
-                    isLoading={loading}
-                    tooltipContent="Jumlah task 'UNASSIGNED'."
-                  />
-                  <StatCard
-                    title="Berjalan"
-                    value={summaryData?.ongoing}
-                    isLoading={loading}
-                    tooltipContent="Jumlah task 'ONGOING'."
-                  />
-                  <StatCard
-                    title="Selesai"
-                    value={summaryData?.done}
-                    isLoading={loading}
-                    tooltipContent="Jumlah task 'DONE'."
-                  />
-                  <StatCard
-                    title="Manual Assign"
-                    value={summaryData?.manualAssignList?.length}
-                    isLoading={loading}
-                    tooltipContent="Task tanpa proses routing."
-                  />
-                  <StatCard
-                    title="Beda Hari"
-                    value={summaryData?.crossDayTasks?.length}
-                    isLoading={loading}
-                    tooltipContent="Task selesai di hari berbeda."
-                  />
-                  <StatCard
-                    title="Delivery"
-                    value={summaryData?.flowDelivery}
-                    isLoading={loading}
-                    tooltipContent="Flow 'Delivery'."
-                  />
-                  <StatCard
-                    title="Re-Delivery"
-                    value={summaryData?.flowReDelivery}
-                    isLoading={loading}
-                    tooltipContent="Flow 'Re Delivery'."
-                  />
-                  <StatCard
-                    title="Pending GR"
-                    value={summaryData?.flowPendingGR}
-                    isLoading={loading}
-                    tooltipContent="Flow 'Pending GR'."
-                  />
-                </div>
-
-                {/* List Data */}
-                <div className="lg:col-span-2 lg:order-3 flex flex-col gap-6">
-                  {/* Unassigned */}
-                  <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
-                    <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-                      Daftar Belum Assign
-                    </h3>
-                    {loading ? (
-                      <div className="flex justify-center items-center grow">
-                        <Spinner />
-                      </div>
-                    ) : summaryData?.unassignedList?.length > 0 ? (
-                      <div className="overflow-y-auto grow">
-                        <table className="min-w-full">
-                          <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Flow
-                              </th>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Customer Name
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {summaryData.unassignedList.map((t, i) => (
-                              <tr
-                                key={i}
-                                className="hover:bg-gray-50 cursor-copy"
-                                onClick={() => handleCopy(t)}
-                              >
-                                <td className="p-3 text-xs">{t.flow}</td>
-                                <td className="p-3 text-xs">{t.customer}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                        Kosong
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Manual Assign */}
-                  <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
-                    <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-                      Daftar Manual Assign
-                    </h3>
-                    {loading ? (
-                      <div className="flex justify-center items-center grow">
-                        <Spinner />
-                      </div>
-                    ) : summaryData?.manualAssignList?.length > 0 ? (
-                      <div className="overflow-y-auto grow">
-                        <table className="min-w-full">
-                          <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Flow
-                              </th>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Customer Name
-                              </th>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Driver
-                              </th>
-                            </tr>
-                          </thead>
-
-                          <tbody className="divide-y divide-gray-100">
-                            {summaryData.manualAssignList.map((t, i) => (
-                              <tr
-                                key={i}
-                                className="hover:bg-gray-50 cursor-copy"
-                                onClick={() => handleCopy(t)}
-                              >
-                                <td className="p-3 text-xs">{t.flow}</td>
-                                <td className="p-3 text-xs">{t.customer}</td>
-                                <td className="p-3 text-xs font-semibold">{t.driver}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                        Kosong
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Cross Day */}
-                  <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
-                    <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-                      Daftar Beda Hari
-                    </h3>
-                    {loading ? (
-                      <div className="flex justify-center items-center grow">
-                        <Spinner />
-                      </div>
-                    ) : summaryData?.crossDayTasks?.length > 0 ? (
-                      <div className="overflow-y-auto grow">
-                        <table className="min-w-full">
-                          <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Customer Name
-                              </th>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Tgl. Selesai
-                              </th>
-                              <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Driver
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {summaryData.crossDayTasks.map((t, i) => (
-                              <tr
-                                key={i}
-                                className="hover:bg-gray-50 cursor-copy"
-                                onClick={() => handleCopy(t)}
-                              >
-                                <td className="p-3 text-xs">{t.customer}</td>
-                                <td className="p-3 text-xs text-red-500">{t.doneDateDisplay}</td>
-                                <td className="p-3 text-xs">{t.driver}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                        Kosong
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DashboardDetailTab loading={loading} summaryData={summaryData} />
           )}
 
-          {/* TAB DIAGRAM */}
           {activeTab === 'Diagram' && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="flex items-center gap-3 mb-4">
@@ -863,7 +636,6 @@ export default function DashboardSummary({ driverData }) {
               </div>
 
               {isYearlyLoading ? (
-                // Masih ambil data tahunan dari API
                 <div className="h-[400px] flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-500">
                   <div className="flex flex-col items-center gap-3">
                     <Spinner />
@@ -871,7 +643,6 @@ export default function DashboardSummary({ driverData }) {
                   </div>
                 </div>
               ) : (
-                // Data tahunan sudah ada -> serahkan ke DiagramTab (skeleton + delay render chart)
                 <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />
               )}
             </div>

@@ -391,7 +391,7 @@ export default function RangkumanSummary() {
                   status: 'DONE',
                   timeFrom: `${startStr} 00:00:00`,
                   timeTo: `${endStr} 23:59:59`,
-                  timeBy: 'doneTime',
+                  timeBy: 'startTime',
                   limit: 10000,
                 }),
               { retries: 2 }

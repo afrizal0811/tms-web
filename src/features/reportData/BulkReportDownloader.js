@@ -191,7 +191,7 @@ export default function BulkReportDownloader({ driverData }) {
             status: 'DONE',
             timeFrom: timeFrom,
             timeTo: timeTo,
-            timeBy: 'doneTime',
+            timeBy: 'startTime',
             limit: 1000,
           });
           const resultsPromise = getResultsSummary({

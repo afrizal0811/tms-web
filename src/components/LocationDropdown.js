@@ -150,10 +150,9 @@ export default function LocationDropdown({
       value={localValue ?? ''}
       onChange={handleChange}
       disabled={disabled || loading || Boolean(error)}
-      className={`${base} ${paddingClass} ${disabledClass} ${className}`}
+      className={`${base} ${paddingClass} ${disabledClass} ${className} cursor-pointer`}
       {...rest}
     >
-      {loading && <option value="">{placeholder ?? 'Memuat...'}</option>}
       {error && <option value="">{error}</option>}
 
       {!loading && !error && (
