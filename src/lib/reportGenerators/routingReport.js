@@ -1,7 +1,7 @@
 // File: lib/reportGenerators/routingReport.js
 'use client';
 
-import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
+import { VEHICLE_TYPES } from '@/lib/constants';
 import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 

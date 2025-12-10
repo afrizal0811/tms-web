@@ -6,11 +6,14 @@ import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx-js-style';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
-// --- (Komponen Styling: TabButton, Th, Td - TIDAK BERUBAH) ---
+import { toastError } from '../../lib/toastHelper';
+import Pagination from './components/Pagination';
+import TemplateTab from './components/TemplateTab';
+import VehicleTab from './components/VehicleTab';
+import { handleConfirmDownload } from './help';
+
 function TabButton({ children, isActive, onClick }) {
   const [isTruncated, setIsTruncated] = useState(false);
   const buttonRef = useRef(null);
@@ -46,74 +49,6 @@ function TabButton({ children, isActive, onClick }) {
   return buttonElement;
 }
 
-function Th({ children }) {
-  return (
-    <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase bg-gray-100 border-b border-gray-200">
-      {children}
-    </th>
-  );
-}
-function Td({ children }) {
-  return (
-    <td className="p-3 text-sm text-gray-800 border-b border-gray-200 align-top">{children}</td>
-  );
-}
-
-function PaginationControls({
-  totalItems,
-  itemsPerPage,
-  currentPage,
-  onPageChange,
-  onItemsPerPageChange,
-}) {
-  const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / itemsPerPage);
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      onPageChange(newPage);
-    }
-  };
-  if (totalItems === 0) return null;
-  return (
-    <div className="flex flex-col sm:flex-row justify-between items-center mt-4 p-3">
-      <div className="flex items-center space-x-2 mb-2 sm:mb-0">
-        <span className="text-sm text-gray-600">Tampilkan:</span>
-        <select
-          value={itemsPerPage}
-          onChange={(e) => onItemsPerPageChange(e.target.value)}
-          className="p-1 border border-gray-300 rounded-md text-sm"
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value="all">Semua</option>
-        </select>
-        <span className="text-sm text-gray-600">dari {totalItems} data</span>
-      </div>
-      {itemsPerPage !== 'all' && (
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
-          >
-            ‹
-          </button>
-          <span className="text-sm text-gray-700">
-            Halaman {currentPage} dari {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
-          >
-            ›
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-// --- Selesai Komponen ---
-
 export default function VehicleData() {
   const [activeTab, setActiveTab] = useState('master');
   const [driverMap, setDriverMap] = useState(new Map());
@@ -134,14 +69,17 @@ export default function VehicleData() {
     template: true,
   });
   const downloadDropdownRef = useRef(null);
-  const noSheetSelected = Object.values(sheetSelection).every((value) => !value);
+  const downloadOptions = [
+    { name: 'master', label: 'Master Vehicle' },
+    { name: 'conditional', label: 'Conditional Vehicle', show: conditionalData.length > 0 },
+    { name: 'template', label: 'Template Vehicle' },
+  ];
 
-  const formatVolume = (vol) => {
-    if (vol === null || vol === undefined) return null;
-    const num = parseFloat(vol);
-    if (isNaN(num)) return null;
-    return parseFloat(num.toFixed(12));
-  };
+  const noSheetSelected = !(
+    sheetSelection.master ||
+    sheetSelection.template ||
+    (conditionalData.length > 0 && sheetSelection.conditional)
+  );
 
   useEffect(() => {
     async function fetchData() {
@@ -284,104 +222,6 @@ export default function VehicleData() {
     }));
   };
 
-  // Logika Konfirmasi Download
-  const handleConfirmDownload = () => {
-    setIsDownloading(true);
-    try {
-      const wb = XLSX.utils.book_new();
-      const headerStyle = { font: { bold: true } };
-
-      if (sheetSelection.master) {
-        const headers1 = ['Plat', 'Type', 'Email', 'Name'];
-        const data1 = masterData.map((v) => [
-          v.name,
-          v.tags?.[0] || null,
-          v.assignee,
-          driverMap.get(normalizeEmail(v.assignee)) || null,
-        ]);
-        const ws1 = XLSX.utils.aoa_to_sheet([headers1, ...data1]);
-        ws1['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
-        ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
-          if (ws1[cell]) ws1[cell].s = headerStyle;
-        });
-        XLSX.utils.book_append_sheet(wb, ws1, 'Master Vehicle');
-      }
-      if (sheetSelection.conditional && conditionalData.length > 0) {
-        const headersC = ['Plat', 'Type', 'Email', 'Name'];
-        const dataC = conditionalData.map((v) => [
-          v.name,
-          v.tags?.[0] || null,
-          v.assignee,
-          driverMap.get(normalizeEmail(v.assignee)) || null,
-        ]);
-        const wsC = XLSX.utils.aoa_to_sheet([headersC, ...dataC]);
-        wsC['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
-        ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
-          if (wsC[cell]) wsC[cell].s = headerStyle;
-        });
-        XLSX.utils.book_append_sheet(wb, wsC, 'Conditional Vehicle');
-      }
-      if (sheetSelection.template) {
-        // Template menggunakan templateData (Data Murni)
-        const headers2 = [
-          'Name*',
-          'Assignee',
-          'Start Time',
-          'End Time',
-          'Break Start',
-          'Break End',
-          'Multiday',
-          'Speed Km/h',
-          'Cost Factor',
-          'Vehicle Tags',
-          'Odd Even',
-          'weight Min',
-          'weight Max',
-          'volume Min',
-          'volume Max',
-        ];
-        const data2 = templateData.map((v) => [
-          v.name,
-          v.assignee,
-          v.workingTime?.startTime || null,
-          v.workingTime?.endTime || null,
-          v.breaktime?.startTime || null,
-          v.breaktime?.endTime || null,
-          v.workingTime?.multiday || 0,
-          v.speed,
-          null,
-          v.tags?.join('; ') || null,
-          v.oddEven,
-          0,
-          v.capacity?.weight?.max || null,
-          0,
-          formatVolume(v.capacity?.volume?.max),
-        ]);
-        const ws2 = XLSX.utils.aoa_to_sheet([headers2, ...data2]);
-        ws2['!cols'] = Array(headers2.length).fill({ wch: 20 });
-        headers2.forEach((h, i) => {
-          const cellRef = XLSX.utils.encode_cell({ c: i, r: 0 });
-          if (ws2[cellRef]) ws2[cellRef].s = headerStyle;
-        });
-        XLSX.utils.book_append_sheet(wb, ws2, 'Template Vehicle');
-      }
-
-      if (wb.SheetNames.length === 0) {
-        toastError('Pilih setidaknya satu sheet untuk diunduh.');
-      } else {
-        const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
-        const fileName = `Data Kendaraan - ${locationName}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        toastSuccess('File Data Kendaraan berhasil diunduh!');
-      }
-    } catch (err) {
-      toastError(err.message);
-    } finally {
-      setIsDownloading(false);
-      setIsDownloadDropdownOpen(false);
-    }
-  };
-
   // --- (Logika Filter/Paginasi - TIDAK BERUBAH) ---
   const sourceData = useMemo(() => {
     switch (activeTab) {
@@ -399,11 +239,13 @@ export default function VehicleData() {
   const filteredData = useMemo(() => {
     return sourceData.filter((v) => {
       const lowerCaseQuery = searchQuery.toLowerCase();
+      const vehicleType = v.tags?.[0] || '';
+
       const searchableString = [
         v.name,
         v.assignee,
         driverMap.get(normalizeEmail(v.assignee)),
-        ...(v.tags || []),
+        vehicleType,
       ]
         .join(' ')
         .toLowerCase();
@@ -430,25 +272,21 @@ export default function VehicleData() {
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      {/* Kontrol Atas: Search dan Download */}
-      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-        <div className="relative w-full max-w-sm mb-2 sm:mb-0">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-2">
+        <div className="w-full md:w-auto relative z-0">
+          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Filter</label>
           <input
+            className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+            disabled={isLoading}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Plat, Tipe, Customer, atau SO"
             type="text"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Cari Data Kendaraan"
-            className={`w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading || isDownloading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
-            disabled={isLoading || isDownloading}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              aria-label="Hapus pencarian"
+              className="absolute right-2 top-10 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -463,13 +301,15 @@ export default function VehicleData() {
             </button>
           )}
         </div>
-
-        {/* Tombol Dropdown Download */}
-        <div className="relative" ref={downloadDropdownRef}>
+        <div className="w-full md:w-auto relative z-50" ref={downloadDropdownRef}>
+          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
+            Action
+          </label>
           <DownloadButton
             onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
             disabled={isDownloading || isLoading}
             isLoading={isLoading || isDownloading}
+            width="w-full md:w-auto"
           />
           {isDownloadDropdownOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10">
@@ -477,42 +317,38 @@ export default function VehicleData() {
                 <p className="text-sm font-semibold text-gray-700 mb-2">
                   Pilih sheet untuk diunduh:
                 </p>
-                <label className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
-                  <input
-                    type="checkbox"
-                    name="master"
-                    checked={sheetSelection.master}
-                    onChange={handleToggleChange}
-                    className="form-checkbox h-4 w-4 text-sky-600 rounded"
-                  />
-                  <span className="text-sm text-gray-800">Master Vehicle</span>
-                </label>
-                {conditionalData.length > 0 && (
-                  <label className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      name="conditional"
-                      checked={sheetSelection.conditional}
-                      onChange={handleToggleChange}
-                      className="form-checkbox h-4 w-4 text-sky-600 rounded"
-                    />
-                    <span className="text-sm text-gray-800">Conditional Vehicle</span>
-                  </label>
-                )}
-                <label className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
-                  <input
-                    type="checkbox"
-                    name="template"
-                    checked={sheetSelection.template}
-                    onChange={handleToggleChange}
-                    className="form-checkbox h-4 w-4 text-sky-600 rounded"
-                  />
-                  <span className="text-sm text-gray-800">Template Vehicle</span>
-                </label>
+                {downloadOptions.map((option) => {
+                  if (option.show === false) return null;
+                  return (
+                    <label
+                      key={option.name}
+                      className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        name={option.name}
+                        checked={sheetSelection[option.name]}
+                        onChange={handleToggleChange}
+                        className="form-checkbox h-4 w-4 text-sky-600 rounded curson-pointer"
+                      />
+                      <span className="text-sm text-gray-800">{option.label}</span>
+                    </label>
+                  );
+                })}
               </div>
               <div className="border-t border-gray-200 p-2">
                 <button
-                  onClick={handleConfirmDownload}
+                  onClick={() =>
+                    handleConfirmDownload({
+                      masterData,
+                      driverMap,
+                      conditionalData,
+                      sheetSelection,
+                      templateData,
+                      setIsDownloading,
+                      setIsDownloadDropdownOpen,
+                    })
+                  }
                   disabled={isDownloading || noSheetSelected}
                   className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
@@ -529,14 +365,15 @@ export default function VehicleData() {
           )}
         </div>
       </div>
-      <div className="overflow-y-auto grow">
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
         {isLoading && (
           <div className="w-full flex justify-center items-center p-20">
             <Spinner />
           </div>
         )}
         {!isLoading && (
-          <div className="flex space-x-1 border-b border-gray-200">
+          <div className="flex space-x-1 border-b border-gray-200 shrink-0">
             <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
               Master Vehicle
             </TabButton>
@@ -559,102 +396,24 @@ export default function VehicleData() {
             Tidak ada data ditemukan untuk filter ini.
           </p>
         )}
+
         {!isLoading && totalItems > 0 && (
-          <div className="bg-white shadow-md rounded-b-lg">
+          <div className="bg-white rounded-b-lg flex-1 flex flex-col justify-between overflow-hidden">
             {(activeTab === 'master' || activeTab === 'conditional') && (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[600px]">
-                  <thead>
-                    <tr>
-                      <Th>Plat</Th>
-                      <Th>Type</Th>
-                      <Th>Email</Th>
-                      <Th>Name</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((v) => (
-                      <tr key={v._id} className="hover:bg-gray-50">
-                        <Td>{v.name}</Td>
-                        <Td>{v.tags?.[0] || null}</Td>
-                        <Td>{v.assignee}</Td>
-                        <Td>{driverMap.get(normalizeEmail(v.assignee)) || null}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <VehicleTab paginatedData={paginatedData} driverMap={driverMap} />
             )}
             {activeTab === 'template' && (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[1200px]">
-                  <thead>
-                    <tr>
-                      <Th>Name*</Th>
-                      <Th>Assignee</Th>
-                      <Th>Start Time</Th>
-                      <Th>End Time</Th>
-                      <Th>Break Start</Th>
-                      <Th>Break End</Th>
-                      <Th>Multiday</Th>
-                      <Th>Speed Km/h</Th>
-                      <Th>Cost Factor</Th>
-                      <Th>Vehicle Tags</Th>
-                      <Th>Odd Even</Th>
-                      <Th>Weight Min</Th>
-                      <Th>Weight Max</Th>
-                      <Th>Volume Min</Th>
-                      <Th>Volume Max</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((v) => (
-                      <tr key={v._id} className="hover:bg-gray-50">
-                        <Td>{v.name}</Td>
-                        <Td>{v.assignee}</Td>
-                        <Td>{v.workingTime?.startTime || null}</Td>
-                        <Td>{v.workingTime?.endTime || null}</Td>
-                        <Td>{v.breaktime?.startTime || null}</Td>
-                        <Td>{v.breaktime?.endTime || null}</Td>
-                        <Td>{v.workingTime?.multiday || 0}</Td>
-                        <Td>{v.speed}</Td>
-                        <Td>{null}</Td>
-                        <Td>
-                          {(() => {
-                            const tags = v.tags || [];
-                            if (tags.length === 0) return null;
-                            const firstTag = tags[0];
-                            const remainingTags = tags.slice(1);
-                            const remainingCount = remainingTags.length;
-                            if (remainingCount === 0) return firstTag;
-                            return (
-                              <Tooltip tooltipContent={remainingTags.join('\n')}>
-                                <span>
-                                  {firstTag}; (+{remainingCount} lainnya)
-                                </span>
-                              </Tooltip>
-                            );
-                          })()}
-                        </Td>
-                        <Td>{v.oddEven}</Td>
-                        <Td>0</Td>
-                        <Td>{v.capacity?.weight?.max || null}</Td>
-                        <Td>0</Td>
-                        <Td>{formatVolume(v.capacity?.volume?.max)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <TemplateTab paginatedData={paginatedData} driverMap={driverMap} />
             )}
-
-            <PaginationControls
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            <div className="border-t border-gray-200 bg-white z-20 shrink-0">
+              <Pagination
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
           </div>
         )}
       </div>

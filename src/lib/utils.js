@@ -12,6 +12,14 @@ export function formatDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+export function formatDatePoint(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${day}.${month}.${year}`;
+}
+
+
 /**
  * Menghitung tanggal target (kemarin atau H-2 jika kemarin Minggu).
  * @param {string} selectedDateStr - Tanggal dipilih dari datepicker (YYYY-MM-DD)
@@ -479,4 +487,12 @@ export const isDateSunday = (dateStr) => {
   // agar diperlakukan sebagai waktu lokal & .getDay() konsisten
   const date = new Date(dateStr.replace(/-/g, '/'));
   return date.getDay() === 0; // 0 = Minggu
+};
+
+export const formatTimer = (seconds) => {
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 };

@@ -80,7 +80,7 @@ export default function LaporanPage() {
 
   // Tampilan utama jika data berhasil dimuat
   return (
-    <AppLayout mainClassName="items-center justify-center px-6">
+    <AppLayout mainClassName="items-center justify-center px-4">
       <SingleReportDownloader
         selectedLocation={data.selectedLocation}
         selectedLocationName={data.selectedLocationName}

@@ -7,7 +7,6 @@ import { TAG_MAP_KEY } from '@/lib/constants';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx-js-style';
 
 import {
@@ -215,12 +214,16 @@ export default function TmsSummary({
         throw new Error('Tidak ada data Start/Finish untuk tanggal ini.');
       }
 
-      const { wb, excelFileName } = generateTimeSummaryWorkbook(
+      const { wb, excelFileName, error } = generateTimeSummaryWorkbook(
         driverData,
         allApiData,
         selectedDateString,
         selectedLocationName
       );
+
+      if (error) {
+        throw new Error('Tidak ada data Start/Finish untuk tanggal ini.');
+      }
 
       XLSX.writeFile(wb, excelFileName);
       toastSuccess('File Time Summary berhasil diunduh!');
@@ -250,18 +253,18 @@ export default function TmsSummary({
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">Laporan Harian</h1>
 
-      <div className="mb-8 text-center w-full max-w-xs">
+      <div className="mb-8 text-center w-full max-w-xs cursor-pointer">
         <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
-          Pilih Tanggal Pengiriman
+          Tanggal Pengiriman
         </label>
-
         <DatePicker
-          id="shippingDate"
-          selected={selectedDate}
-          onChange={handleDateChange}
-          disabled={disabledCommon}
-          dateFormat="dd/MM/yyyy"
           className="p-2 rounded border border-gray-300 bg-white text-slate-900 disabled:bg-gray-200 disabled:text-gray-400 w-full max-w-xs text-center"
+          dateFormat="dd MMMM yyyy"
+          disabled={disabledCommon}
+          id="shippingDate"
+          maxDate={new Date()}
+          onChange={handleDateChange}
+          selected={selectedDate}
         />
       </div>
 
@@ -269,7 +272,7 @@ export default function TmsSummary({
         <button
           onClick={handleRouting}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'routing' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >
@@ -285,7 +288,7 @@ export default function TmsSummary({
         <button
           onClick={handleDelivery}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'delivery' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >
@@ -301,7 +304,7 @@ export default function TmsSummary({
         <button
           onClick={handleTime}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'time' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >

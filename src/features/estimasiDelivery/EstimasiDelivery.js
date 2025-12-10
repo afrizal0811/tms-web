@@ -3,101 +3,16 @@
 
 import DownloadButton from '@/components/DownloadButton';
 import Spinner from '@/components/Spinner';
-import Tooltip from '@/components/Tooltip';
-import { formatSimpleTime, isDateSunday, parseOutletName } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx-js-style';
-import { getResultsSummary } from '../../lib/apiService';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
+import { isDateSunday, parseOutletName } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-
-// ... (Komponen Th, Td, TabButton, HighlightText, parseSONumber - TIDAK BERUBAH) ...
-function Th({ children, widthClass = '' }) {
-  return (
-    <th
-      className={`
-      sticky top-0 z-10 
-      p-3 text-left text-xs font-semibold text-gray-600 
-      uppercase bg-gray-100 border-b border-gray-200
-      ${widthClass} 
-    `}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({ children }) {
-  return (
-    <td className="p-3 text-sm text-gray-800 border-b border-gray-200 align-top">{children}</td>
-  );
-}
-
-function TabButton({ children, isActive, onClick }) {
-  const [isTruncated, setIsTruncated] = useState(false);
-  const buttonRef = useRef(null);
-  useLayoutEffect(() => {
-    const element = buttonRef.current;
-    if (element) {
-      const isTextTruncated = element.scrollWidth > element.clientWidth;
-      if (isTextTruncated !== isTruncated) {
-        setIsTruncated(isTextTruncated);
-      }
-    }
-  }, [children, isTruncated]);
-  const buttonElement = (
-    <button
-      ref={buttonRef}
-      onClick={onClick}
-      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive
-          ? 'border-b-2 border-sky-600 text-sky-600'
-          : 'text-gray-500 hover:text-gray-700 opacity-40 cursor-pointer '
-      }`}
-    >
-      {children}
-    </button>
-  );
-  if (isTruncated) {
-    return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
-  }
-  return buttonElement;
-}
-function escapeRegExp(string) {
-  if (!string) return '';
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-function HighlightText({ text, highlight }) {
-  if (!highlight || !text) {
-    return text;
-  }
-  const safeHighlight = escapeRegExp(highlight);
-  const regex = new RegExp(`(${safeHighlight})`, 'gi');
-  const parts = text.split(regex);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <strong key={i} className="bg-yellow-300 text-black rounded-sm px-0.5">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-    </span>
-  );
-}
-function parseSONumber(visitName) {
-  if (!visitName) return '';
-  const matches = visitName.match(/(SO|SS)\d{4}-\d+/g);
-  return matches ? matches.join(', ') : null;
-}
-// --- (Selesai Helper) ---
+import { getResultsSummary } from '../../lib/apiService';
+import { toastError } from '../../lib/toastHelper';
+import TabButton from './components/TabButton';
+import TableData from './components/TableData';
+import { handleConfirmDownload, parseSONumber } from './help';
 
 export default function EstimasiDelivery() {
-  // State tetap String YYYY-MM-DD agar kompatibel dengan logic useEffect di bawah
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -114,12 +29,8 @@ export default function EstimasiDelivery() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // --- 2. UPDATE HANDLER DATE CHANGE ---
-  // React Datepicker mengembalikan Object Date, bukan event
   const handleDateChange = (date) => {
     if (!date) return;
-
-    // Konversi Date Object ke String YYYY-MM-DD (Local Time)
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -227,76 +138,6 @@ export default function EstimasiDelivery() {
     });
   }, [allRoutes, searchQuery]);
 
-  // ... (handleDownloadExcel - TIDAK BERUBAH) ...
-  const handleDownloadExcel = () => {
-    setIsDownloading(true);
-    try {
-      const wb = XLSX.utils.book_new();
-      const headerStyle = { font: { bold: true } };
-      const redStyle = { font: { color: { rgb: 'FF0000' }, bold: true } };
-      const redStyleNoBold = { font: { color: { rgb: 'FF0000' } } };
-      filteredVehicleRoutes.forEach((route, index) => {
-        let sheetName = route.vehicleName.replace(/['"]/g, '');
-        sheetName = sheetName.substring(0, 31);
-        if (wb.SheetNames.includes(sheetName)) {
-          sheetName = `${sheetName.substring(0, 28)} (${index})`;
-        }
-        const headers = [
-          'No.',
-          'Outlet',
-          'SO',
-          'Jam Buka',
-          'Jam Tutup',
-          'Estimasi Sampai',
-          'Estimasi Berangkat',
-        ];
-        const dataForSheet = [];
-        dataForSheet.push(headers.map((h) => ({ v: h, s: headerStyle })));
-        route.trips.forEach((trip, tripIndex) => {
-          const isHub = trip.isHub;
-          const isFirstHub = isHub && trip.order === 0;
-          const isLastHub = isHub && tripIndex === route.trips.length - 1;
-          const style = isHub ? redStyleNoBold : undefined;
-          const hubStyle = isHub ? redStyle : undefined;
-          const row = [
-            { v: trip.order, s: style },
-            { v: isHub ? 'HUB' : parseOutletName(trip.visitName), s: hubStyle || style },
-            { v: isHub ? '' : parseSONumber(trip.visitName), s: style },
-            { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime), s: style },
-            { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime), s: style },
-            { v: isFirstHub ? '' : formatSimpleTime(trip.eta), s: style },
-            { v: isLastHub ? '' : formatSimpleTime(trip.etd), s: style },
-          ];
-          dataForSheet.push(row);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(dataForSheet, { cellStyles: true });
-        ws['!cols'] = [
-          { wch: 5 },
-          { wch: 40 },
-          { wch: 25 },
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 18 },
-          { wch: 20 },
-        ];
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      });
-      if (wb.SheetNames.length === 0) {
-        toastError('Tidak ada data untuk diunduh.');
-        return;
-      } else {
-        const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
-        const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        toastSuccess('File Estimasi Delivery berhasil diunduh!');
-      }
-    } catch (e) {
-      toastError(e.message);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   useEffect(() => {
     if (activeVehicleId) {
       const isActiveVehicleStillPresent = filteredVehicleRoutes.some(
@@ -320,37 +161,40 @@ export default function EstimasiDelivery() {
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       {/* 1. Kontrol Atas (Statis) */}
-      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2 sm:mb-0 w-full sm:w-auto relative z-50">
-          <label htmlFor="estimasiDate" className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">
-            Tanggal Routing:
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-2">
+        <div className="w-full md:w-auto relative z-50">
+          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">
+            Tanggal Routing
           </label>
-
-          {/* --- 4. GANTI INPUT MENJADI DATEPICKER --- */}
           <DatePicker
-            id="estimasiDate"
-            selected={selectedDate ? new Date(selectedDate) : new Date()}
-            onChange={handleDateChange}
-            dateFormat="dd/MM/yyyy"
+            className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
+              isLoading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
+            }`}
+            dateFormat="dd MMMM yyyy"
             disabled={isLoading}
-            className={`w-full sm:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-pointer '}`}
-            wrapperClassName="w-full sm:w-auto"
+            id="estimasiDate"
+            maxDate={new Date().setDate(new Date().getDate() - 1)}
+            onChange={handleDateChange}
+            selected={selectedDate ? new Date(selectedDate) : new Date()}
+            wrapperClassName="w-full"
           />
         </div>
-
-        <div className="relative w-full max-w-sm mb-2 sm:mb-0">
+        <div className="w-full md:w-auto relative z-0">
+          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Filter</label>
           <input
+            className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+            disabled={isLoading}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Plat, Customer, atau SO"
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari Kendaraan, Customer, atau SO"
-            className={`w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
-            disabled={isLoading}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-10 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -365,104 +209,56 @@ export default function EstimasiDelivery() {
             </button>
           )}
         </div>
-        <DownloadButton
-          onClick={handleDownloadExcel}
-          disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-          isLoading={isLoading || isDownloading}
-        />
-      </div>
-      <div className="flex items-center border-b border-gray-200 shrink-0">
-        <div className="flex flex-nowrap overflow-x-auto grow">
-          {filteredVehicleRoutes.map((route, index) => {
-            const id = route.vehicleId;
-            return (
-              <TabButton
-                key={id ?? index}
-                isActive={activeVehicleId === id}
-                onClick={() => setActiveVehicleId(id)}
-              >
-                {route.vehicleName}
-              </TabButton>
-            );
-          })}
+        <div className="w-full md:w-auto relative z-50">
+          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
+            Action
+          </label>
+          <DownloadButton
+            onClick={() =>
+              handleConfirmDownload({
+                filteredVehicleRoutes,
+                setIsDownloading,
+              })
+            }
+            disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
+            isLoading={isLoading || isDownloading}
+            width="w-full md:w-auto"
+          />
         </div>
       </div>
-      <div className="bg-white shadow-md rounded-b-lg flex flex-col grow overflow-hidden min-h-0">
-        <div className="overflow-y-auto grow">
-          {isLoading && (
-            <div className="w-full flex justify-center items-center p-20">
-              <Spinner />
-            </div>
-          )}
-          {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
-            <p className="p-10 text-center text-gray-500">
-              Tidak ada data ditemukan untuk tanggal atau filter ini.
-            </p>
-          )}
-          {!isLoading && activeRoute && (
-            <table className="w-full table-fixed border-collapse">
-              <thead>
-                <tr>
-                  <Th widthClass="w-[5%]">No.</Th>
-                  <Th widthClass="w-[30%]">Outlet</Th>
-                  <Th widthClass="w-[20%]">SO</Th>
-                  <Th widthClass="w-[10%]">Jam Buka</Th>
-                  <Th widthClass="w-[10%]">Jam Tutup</Th>
-                  <Th widthClass="w-[12.5%]">Estimasi Sampai</Th>
-                  <Th widthClass="w-[12.5%]">Estimasi Berangkat</Th>
-                </tr>
-              </thead>
-              <tbody className="bg-white">
-                {activeRoute.trips.map((trip, tripIndex) => {
-                  const isHub = trip.isHub;
-                  const isFirstHub = isHub && trip.order === 0;
-                  const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
-                  const redText = isHub ? 'text-red-600' : '';
-                  const outletName = isHub ? null : parseOutletName(trip.visitName);
-                  const soNumber = isHub ? null : parseSONumber(trip.visitName);
-                  let isMatch = false;
-                  if (searchQuery && !isHub) {
-                    const lowerQuery = searchQuery.toLowerCase();
-                    if (outletName && outletName.toLowerCase().includes(lowerQuery)) {
-                      isMatch = true;
-                    }
-                    if (soNumber && soNumber.toLowerCase().includes(lowerQuery)) {
-                      isMatch = true;
-                    }
-                  }
-                  const rowClass = isMatch ? 'bg-yellow-100' : '';
-                  return (
-                    <tr
-                      key={`${trip.visitId}-${trip.order}`}
-                      className={`hover:bg-gray-50 ${rowClass}`}
-                    >
-                      <Td>
-                        <p className={redText}>{trip.order}</p>
-                      </Td>
-                      <Td>
-                        {isHub ? (
-                          <strong className={redText}>HUB</strong>
-                        ) : (
-                          <HighlightText text={outletName} highlight={searchQuery} />
-                        )}
-                      </Td>
-                      <Td>
-                        {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
-                      </Td>
-                      <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
-                      <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
-                      <Td>
-                        <p className={redText}>{isFirstHub ? '' : formatSimpleTime(trip.eta)}</p>
-                      </Td>
-                      <Td>
-                        <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
+        <div className="flex items-center border-b border-gray-200 shrink-0">
+          <div className="flex flex-nowrap overflow-x-auto grow">
+            {filteredVehicleRoutes.map((route, index) => {
+              const id = route.vehicleId;
+              return (
+                <TabButton
+                  key={id ?? index}
+                  isActive={activeVehicleId === id}
+                  onClick={() => setActiveVehicleId(id)}
+                >
+                  {route.vehicleName}
+                </TabButton>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
+          <div className="overflow-y-auto grow">
+            {isLoading && (
+              <div className="w-full flex justify-center items-center p-20">
+                <Spinner />
+              </div>
+            )}
+            {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
+              <p className="p-10 text-center text-gray-500">
+                Tidak ada data ditemukan untuk tanggal atau filter ini.
+              </p>
+            )}
+            {!isLoading && activeRoute && (
+              <TableData activeRoute={activeRoute} searchQuery={searchQuery} />
+            )}
+          </div>
         </div>
       </div>
     </div>

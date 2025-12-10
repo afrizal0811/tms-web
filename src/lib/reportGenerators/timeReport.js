@@ -63,6 +63,8 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
+  if (filteredApiData.length === 0) return {error: 'Tidak ada data Start/Finish untuk tanggal ini.'};
+
   const apiDataMap = filteredApiData.reduce((acc, item) => {
     if (item.email) {
       acc.set(item.email, item);

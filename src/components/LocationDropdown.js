@@ -139,18 +139,14 @@ export default function LocationDropdown({
   const paddingClass = compact ? 'px-3 py-1 text-sm' : 'px-3 py-2';
   const disabledClass =
     disabled || loading || error ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white';
-  const base =
-    'rounded-md border transition focus:outline-none focus:ring-2 focus:ring-sky-400 ' +
-    'border-gray-300 text-gray-700 ';
+  const base = 'rounded-md border transition border-gray-300 text-gray-700 cursor-pointer hover:bg-gray-50';
 
   return (
-    // NOTE: we spread only `rest` (native HTML attributes) after we've excluded custom props above.
-    // This prevents React warning about unknown DOM attributes like `showPlaceholder`.
     <select
       value={localValue ?? ''}
       onChange={handleChange}
       disabled={disabled || loading || Boolean(error)}
-      className={`${base} ${paddingClass} ${disabledClass} ${className} cursor-pointer`}
+      className={`${base} ${paddingClass} ${disabledClass} ${className} `}
       {...rest}
     >
       {error && <option value="">{error}</option>}

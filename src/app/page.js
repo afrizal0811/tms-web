@@ -261,12 +261,8 @@ export default function Home() {
       </SelectionLayout>
     );
   }
-
-  // 3. Jika LOKASI dan USER ada -> Tampilkan Layout APLIKASI UTAMA (Dengan Navbar)
   return (
-    // Gunakan <AppLayout> agar Navbar muncul
-    <AppLayout mainClassName="items-center justify-center px-6">
-      {/* Render komponen Dashboard baru */}
+    <AppLayout mainClassName="items-center px-4">
       <DashboardSummary driverData={driverData.data} />
     </AppLayout>
   );

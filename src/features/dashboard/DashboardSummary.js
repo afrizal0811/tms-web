@@ -1,9 +1,9 @@
 // File: src/features/dashboard/DashboardSummary.js
 'use client';
 
+import { formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 
 import Spinner from '@/components/Spinner';
 import { getTasks } from '@/lib/apiService';
@@ -133,15 +133,17 @@ export default function DashboardSummary({ driverData }) {
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
   const [error, setError] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   // State Tahunan
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
+
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
   const inFlightYearFetchKey = useRef(null);
   const yearlyCacheRef = useRef({});
-
+  const fetchStartTimeRef = useRef(null);
   // Tabs
   const [activeTab, setActiveTab] = useState('Diagram');
   const [dismissedDots, setDismissedDots] = useState({
@@ -222,11 +224,88 @@ export default function DashboardSummary({ driverData }) {
   }, [isYearlyLoading]);
 
   // ========== 1. FETCH HARIAN (Detail) ==========
-  useEffect(() => {
-    async function fetchData() {
-      if (selectedDate.getDay() === 0) {
-        setLoading(false);
-        setError(null);
+  const fetchData = useCallback(async () => {
+    fetchStartTimeRef.current = Date.now();
+    if (selectedDate.getDay() === 0) {
+      setLoading(false);
+      setError(null);
+      const emptySummary = {
+        totalTasks: 0,
+        unassigned: 0,
+        manualAssignList: [],
+        unassignedList: [],
+        done: 0,
+        ongoing: 0,
+        assignedTasks: 0,
+        flowDelivery: 0,
+        flowReDelivery: 0,
+        flowPendingGR: 0,
+        crossDayTasks: [],
+        totalDry: 0,
+        totalFrozen: 0,
+        assignedDry: 0,
+        assignedFrozen: 0,
+      };
+      setSummaryData(emptySummary);
+      return;
+    }
+
+    const driverMap = new Map();
+    try {
+      if (driverData) {
+        driverData.forEach((driver) => {
+          if (driver.email && driver.name) {
+            driverMap.set(normalizeEmail(driver.email), driver.name);
+          }
+        });
+      }
+    } catch (e) {
+      toastWarning('Gagal memproses cache nama driver.');
+    }
+
+    try {
+      if (typeof window === 'undefined') return;
+
+      const hubId = localStorage.getItem('userLocation');
+      if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
+
+      const localStart = new Date(selectedDate);
+      localStart.setHours(0, 0, 0, 0);
+      const localEnd = new Date(localStart);
+      localEnd.setHours(23, 59, 59, 999);
+
+      const timeFrom = formatToApiUtc(localStart);
+      const timeTo = formatToApiUtc(localEnd);
+
+      const cacheKey = `${DAILY_CACHE_PREFIX}:${hubId}:${timeFrom}:${timeTo}`;
+
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setSummaryData(parsed);
+          setLoading(false);
+          setError(null);
+          return;
+        } catch (e) {
+          sessionStorage.removeItem(cacheKey);
+        }
+      }
+
+      setLoading(true);
+      setError(null);
+      setSummaryData(null);
+
+      const tasksData = await getTasks({
+        status: 'DONE,ONGOING,UNASSIGNED',
+        hubId,
+        timeFrom,
+        timeTo,
+        timeBy: 'startTime',
+        limit: 1000,
+      });
+
+      if (!tasksData || tasksData.length === 0) {
         const emptySummary = {
           totalTasks: 0,
           unassigned: 0,
@@ -245,226 +324,149 @@ export default function DashboardSummary({ driverData }) {
           assignedFrozen: 0,
         };
         setSummaryData(emptySummary);
-        return;
-      }
-
-      const driverMap = new Map();
-      try {
-        if (driverData) {
-          driverData.forEach((driver) => {
-            if (driver.email && driver.name) {
-              driverMap.set(normalizeEmail(driver.email), driver.name);
-            }
-          });
-        }
-      } catch (e) {
-        toastWarning('Gagal memproses cache nama driver.');
-      }
-
-      try {
-        if (typeof window === 'undefined') return;
-
-        const hubId = localStorage.getItem('userLocation');
-        if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
-
-        const localStart = new Date(selectedDate);
-        localStart.setHours(0, 0, 0, 0);
-        const localEnd = new Date(localStart);
-        localEnd.setHours(23, 59, 59, 999);
-
-        const timeFrom = formatToApiUtc(localStart);
-        const timeTo = formatToApiUtc(localEnd);
-
-        const cacheKey = `${DAILY_CACHE_PREFIX}:${hubId}:${timeFrom}:${timeTo}`;
-
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            setSummaryData(parsed);
-            setLoading(false);
-            setError(null);
-            return;
-          } catch (e) {
-            sessionStorage.removeItem(cacheKey);
-          }
-        }
-
-        setLoading(true);
-        setError(null);
-        setSummaryData(null);
-
-        const tasksData = await getTasks({
-          status: 'DONE,ONGOING,UNASSIGNED',
-          hubId,
-          timeFrom,
-          timeTo,
-          timeBy: 'startTime',
-          limit: 1000,
-        });
-
-        if (!tasksData || tasksData.length === 0) {
-          const emptySummary = {
-            totalTasks: 0,
-            unassigned: 0,
-            manualAssignList: [],
-            unassignedList: [],
-            done: 0,
-            ongoing: 0,
-            assignedTasks: 0,
-            flowDelivery: 0,
-            flowReDelivery: 0,
-            flowPendingGR: 0,
-            crossDayTasks: [],
-            totalDry: 0,
-            totalFrozen: 0,
-            assignedDry: 0,
-            assignedFrozen: 0,
-          };
-          setSummaryData(emptySummary);
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(emptySummary));
-          } catch (e) {
-            // ignore quota errors
-          }
-          return;
-        }
-
-        let manualAssignList = [];
-        let crossDayTasks = [];
-        let unassignedList = [];
-        let done = 0;
-        let ongoing = 0;
-        let unassigned = 0;
-        let flowDelivery = 0;
-        let flowReDelivery = 0;
-        let flowPendingGR = 0;
-
-        // tambahan: statistik Dry / Frozen
-        let totalDry = 0;
-        let totalFrozen = 0;
-        let assignedDry = 0;
-        let assignedFrozen = 0;
-
-        for (const task of tasksData) {
-          const flow = task.flow || 'N/A';
-          const orderInfo = processOrderInfo(task.orderId);
-
-          const typeStorage = (task.typeStorage || '').toUpperCase();
-          const isDry = typeStorage === 'DRY';
-          const isFrozen = typeStorage === 'FROZEN';
-
-          // hitung total Dry/Frozen (semua status)
-          if (isDry) totalDry++;
-          if (isFrozen) totalFrozen++;
-
-          // status
-          if (task.status === 'DONE') done++;
-          else if (task.status === 'ONGOING') ongoing++;
-          else if (task.status === 'UNASSIGNED') {
-            unassigned++;
-            unassignedList.push({
-              customer: task.customerName || 'N/A',
-              flow,
-              copyValue: orderInfo.copyValue,
-              tooltip: orderInfo.tooltip,
-            });
-          }
-
-          const isAssigned = task.status !== 'UNASSIGNED';
-
-          // hitung Dry/Frozen untuk task ter-assign
-          if (isAssigned) {
-            if (isDry) assignedDry++;
-            if (isFrozen) assignedFrozen++;
-          }
-
-          const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
-          if (manualCategory && isAssigned) {
-            const rawAssignee =
-              task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-            const normalizedAssignee = normalizeEmail(rawAssignee);
-            let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-            if (finalAssignee === 'N/A') finalAssignee = '-';
-
-            manualAssignList.push({
-              customer: task.customerName || 'N/A',
-              driver: finalAssignee,
-              flow,
-              copyValue: orderInfo.copyValue,
-              tooltip: orderInfo.tooltip,
-            });
-          }
-
-          if (flow === 'Delivery') flowDelivery++;
-          else if (flow.includes('Re Delivery')) flowReDelivery++;
-          else if (flow.includes('Pending GR')) flowPendingGR++;
-
-          if (task.status === 'DONE' && task.startTime && task.doneTime) {
-            const startDateWIB = getWIBDateString(task.startTime);
-            const doneDateWIB = getWIBDateString(task.doneTime);
-
-            if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
-              const startDate = new Date(task.startTime);
-              const doneDate = new Date(task.doneTime);
-              const diffInMs = doneDate.getTime() - startDate.getTime();
-              const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-
-              const rawAssignee =
-                task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-              const normalizedAssignee = normalizeEmail(rawAssignee);
-              const driverName = driverMap.get(normalizedAssignee) || rawAssignee;
-
-              crossDayTasks.push({
-                customer: task.customerName || 'N/A',
-                doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
-                driver: driverName,
-                copyValue: orderInfo.copyValue,
-                tooltip: orderInfo.tooltip,
-              });
-            }
-          }
-        }
-
-        unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
-        manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-        crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
-
-        const summary = {
-          totalTasks: tasksData.length,
-          unassigned,
-          manualAssignList,
-          unassignedList,
-          done,
-          ongoing,
-          assignedTasks: done + ongoing,
-          flowDelivery,
-          flowReDelivery,
-          flowPendingGR,
-          crossDayTasks,
-          // tambahan untuk tooltip
-          totalDry,
-          totalFrozen,
-          assignedDry,
-          assignedFrozen,
-        };
-
-        setSummaryData(summary);
         try {
-          sessionStorage.setItem(cacheKey, JSON.stringify(summary));
+          sessionStorage.setItem(cacheKey, JSON.stringify(emptySummary));
         } catch (e) {
           // ignore quota errors
         }
-      } catch (err) {
-        console.error(err);
-        setError(err.message || 'Gagal mengambil data harian.');
-      } finally {
-        setLoading(false);
+        return;
       }
-    }
 
-    fetchData();
+      let manualAssignList = [];
+      let crossDayTasks = [];
+      let unassignedList = [];
+      let done = 0;
+      let ongoing = 0;
+      let unassigned = 0;
+      let flowDelivery = 0;
+      let flowReDelivery = 0;
+      let flowPendingGR = 0;
+
+      // tambahan: statistik Dry / Frozen
+      let totalDry = 0;
+      let totalFrozen = 0;
+      let assignedDry = 0;
+      let assignedFrozen = 0;
+
+      for (const task of tasksData) {
+        const flow = task.flow || 'N/A';
+        const orderInfo = processOrderInfo(task.orderId);
+
+        const typeStorage = (task.typeStorage || '').toUpperCase();
+        const isDry = typeStorage === 'DRY';
+        const isFrozen = typeStorage === 'FROZEN';
+
+        // hitung total Dry/Frozen (semua status)
+        if (isDry) totalDry++;
+        if (isFrozen) totalFrozen++;
+
+        // status
+        if (task.status === 'DONE') done++;
+        else if (task.status === 'ONGOING') ongoing++;
+        else if (task.status === 'UNASSIGNED') {
+          unassigned++;
+          unassignedList.push({
+            customer: task.customerName || 'N/A',
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
+          });
+        }
+
+        const isAssigned = task.status !== 'UNASSIGNED';
+
+        // hitung Dry/Frozen untuk task ter-assign
+        if (isAssigned) {
+          if (isDry) assignedDry++;
+          if (isFrozen) assignedFrozen++;
+        }
+
+        const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
+        if (manualCategory && isAssigned) {
+          const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+          const normalizedAssignee = normalizeEmail(rawAssignee);
+          let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+          if (finalAssignee === 'N/A') finalAssignee = '-';
+
+          manualAssignList.push({
+            customer: task.customerName || 'N/A',
+            driver: finalAssignee,
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
+          });
+        }
+
+        if (flow === 'Delivery') flowDelivery++;
+        else if (flow.includes('Re Delivery')) flowReDelivery++;
+        else if (flow.includes('Pending GR')) flowPendingGR++;
+
+        if (task.status === 'DONE' && task.startTime && task.doneTime) {
+          const startDateWIB = getWIBDateString(task.startTime);
+          const doneDateWIB = getWIBDateString(task.doneTime);
+
+          if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
+            const startDate = new Date(task.startTime);
+            const doneDate = new Date(task.doneTime);
+            const diffInMs = doneDate.getTime() - startDate.getTime();
+            const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+
+            const rawAssignee =
+              task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+            const normalizedAssignee = normalizeEmail(rawAssignee);
+            const driverName = driverMap.get(normalizedAssignee) || rawAssignee;
+
+            crossDayTasks.push({
+              customer: task.customerName || 'N/A',
+              doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
+              driver: driverName,
+              copyValue: orderInfo.copyValue,
+              tooltip: orderInfo.tooltip,
+            });
+          }
+        }
+      }
+
+      unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+      manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+      crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+
+      const summary = {
+        totalTasks: tasksData.length,
+        unassigned,
+        manualAssignList,
+        unassignedList,
+        done,
+        ongoing,
+        assignedTasks: done + ongoing,
+        flowDelivery,
+        flowReDelivery,
+        flowPendingGR,
+        crossDayTasks,
+        // tambahan untuk tooltip
+        totalDry,
+        totalFrozen,
+        assignedDry,
+        assignedFrozen,
+      };
+
+      setSummaryData(summary);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(summary));
+      } catch (e) {
+        // ignore quota errors
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Gagal mengambil data harian.');
+    } finally {
+      setLoading(false);
+    }
   }, [driverData, selectedDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // ========== FETCH TAHUNAN ==========
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
@@ -532,6 +534,23 @@ export default function DashboardSummary({ driverData }) {
     [fetchWithRetry]
   );
 
+  // 4. Timer Logic
+  useEffect(() => {
+    let interval = null;
+    if (isYearlyLoading) {
+      if (!fetchStartTimeRef.current) fetchStartTimeRef.current = Date.now();
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      fetchStartTimeRef.current = null;
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isYearlyLoading]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
@@ -569,27 +588,32 @@ export default function DashboardSummary({ driverData }) {
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
 
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 py-6">
+    <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       {/* HEADER & DATEPICKER */}
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
-        <div>
+      {/* UBAHAN 1: Tambahkan 'items-start' pada mobile dan 'md:items-center' pada desktop agar layout rapi */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div className="mb-4 md:mb-0">
+          {' '}
+          {/* Tambahkan margin bottom di mobile agar tidak nempel */}
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Overview performa operasional{' '}
-            <span className="font-semibold text-sky-600">Harian & Tahunan</span>
+            Overview performa <span className="font-semibold text-sky-600">Harian & Tahunan</span>
           </p>
         </div>
 
-        <div className="flex flex-col items-start mt-4 md:mt-0">
-          <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">
-            Pilih Tanggal Pengiriman
+        {/* UBAHAN 2: Tambahkan 'w-full' (mobile) dan 'md:w-auto' (desktop) pada wrapper input */}
+        <div className="flex flex-col items-start mt-0 md:mt-0 w-full md:w-auto">
+          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">
+            Tanggal Pengiriman
           </label>
           <DatePicker
-            selected={selectedDate}
-            onChange={handleDateChange}
-            className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm focus:ring-2 focus:ring-sky-500 outline-none w-48 cursor-pointer"
+            className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer"
             dateFormat="dd MMMM yyyy"
             disabled={loading}
+            maxDate={new Date()}
+            onChange={handleDateChange}
+            selected={selectedDate}
+            wrapperClassName="w-full md:w-auto"
           />
         </div>
       </div>
@@ -600,7 +624,7 @@ export default function DashboardSummary({ driverData }) {
         </div>
       )}
 
-      {/* TABS */}
+      {/* TABS (Tidak berubah) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
         <div className="flex overflow-x-auto border-b border-gray-200 px-4">
           {['Diagram', 'Detail'].map((tab) => (
@@ -636,10 +660,13 @@ export default function DashboardSummary({ driverData }) {
               </div>
 
               {isYearlyLoading ? (
-                <div className="h-[400px] flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-500">
-                  <div className="flex flex-col items-center gap-3">
-                    <Spinner />
-                    <p className="text-sm font-medium">Sedang memuat data tahunan...</p>
+                <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
+                  <Spinner />
+                  <div className="text-center space-y-1">
+                    <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
+                    <p className="text-2xl font-mono font-bold text-sky-600">
+                      {formatTimer(elapsedTime)}
+                    </p>
                   </div>
                 </div>
               ) : (

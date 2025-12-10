@@ -1,12 +1,12 @@
 import Spinner from './Spinner';
 
 export default function DownloadButton(props) {
-  const { onClick, isLoading = false, disabled = false } = props;
+  const { onClick, isLoading = false, disabled = false, width = 'w-full sm:w-auto ' } = props;
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full sm:w-auto px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+      className={`${width} px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer`}
     >
       {isLoading ? (
         <Spinner
@@ -30,7 +30,9 @@ export default function DownloadButton(props) {
           />
         </svg>
       )}
-      <span>Download Excel</span>
+      <span>
+        Download <span className="inline lg:inline sm:hidden">Excel</span>
+      </span>
     </button>
   );
 }
