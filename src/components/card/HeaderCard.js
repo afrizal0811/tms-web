@@ -10,7 +10,11 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
         </div>
       )}
       {items.map((item, index) => (
-        <div key={index} className="flex flex-col items-start w-full md:w-auto">
+        <div
+          key={index}
+          className="flex flex-col items-start w-full md:w-auto"
+          style={{ zIndex: 50 - index }}
+        >
           <label
             className={`block text-xs mb-1 ml-1 font-medium select-none ${
               item.hideLabel ? 'text-transparent' : 'text-gray-400'

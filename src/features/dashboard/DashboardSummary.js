@@ -5,7 +5,8 @@ import { formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 
-import HeaderCard from '@/components/HeaderCard';
+import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
+import HeaderCard from '@/components/card/HeaderCard';
 import Spinner from '@/components/Spinner';
 import { getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
@@ -342,7 +343,6 @@ export default function DashboardSummary({ driverData }) {
       let flowReDelivery = 0;
       let flowPendingGR = 0;
 
-      // tambahan: statistik Dry / Frozen
       let totalDry = 0;
       let totalFrozen = 0;
       let assignedDry = 0;
@@ -356,11 +356,9 @@ export default function DashboardSummary({ driverData }) {
         const isDry = typeStorage === 'DRY';
         const isFrozen = typeStorage === 'FROZEN';
 
-        // hitung total Dry/Frozen (semua status)
         if (isDry) totalDry++;
         if (isFrozen) totalFrozen++;
 
-        // status
         if (task.status === 'DONE') done++;
         else if (task.status === 'ONGOING') ongoing++;
         else if (task.status === 'UNASSIGNED') {
@@ -375,7 +373,6 @@ export default function DashboardSummary({ driverData }) {
 
         const isAssigned = task.status !== 'UNASSIGNED';
 
-        // hitung Dry/Frozen untuk task ter-assign
         if (isAssigned) {
           if (isDry) assignedDry++;
           if (isFrozen) assignedFrozen++;
@@ -384,7 +381,6 @@ export default function DashboardSummary({ driverData }) {
         const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
         if (manualCategory && isAssigned) {
           const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-          const normalizedAssignee = normalizeEmail(rawAssignee);
           let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
           if (finalAssignee === 'N/A') finalAssignee = '-';
 
@@ -413,8 +409,7 @@ export default function DashboardSummary({ driverData }) {
 
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-            const normalizedAssignee = normalizeEmail(rawAssignee);
-            const driverName = driverMap.get(normalizedAssignee) || rawAssignee;
+            const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
 
             crossDayTasks.push({
               customer: task.customerName || 'N/A',
@@ -443,7 +438,6 @@ export default function DashboardSummary({ driverData }) {
         flowReDelivery,
         flowPendingGR,
         crossDayTasks,
-        // tambahan untuk tooltip
         totalDry,
         totalFrozen,
         assignedDry,
@@ -534,7 +528,6 @@ export default function DashboardSummary({ driverData }) {
     [fetchWithRetry]
   );
 
-  // 4. Timer Logic
   useEffect(() => {
     let interval = null;
     if (isYearlyLoading) {
@@ -613,6 +606,12 @@ export default function DashboardSummary({ driverData }) {
     },
   ];
 
+  // Config untuk Card Tabs dengan Ping Dot
+  const cardTabs = [
+    { id: 'Diagram', label: 'Diagram', extraContent: getPingDot('Diagram') },
+    { id: 'Detail', label: 'Detail', extraContent: getPingDot('Detail') },
+  ];
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
@@ -623,29 +622,14 @@ export default function DashboardSummary({ driverData }) {
         </div>
       )}
 
-      {/* TABS (Tidak berubah) */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
-        <div className="flex overflow-x-auto border-b border-gray-200 px-4">
-          {['Diagram', 'Detail'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabClick(tab)}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                activeTab === tab
-                  ? 'border-sky-600 text-sky-700 font-bold'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 opacity-50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span>{tab}</span>
-                {getPingDot(tab)}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* CONTENT */}
-        <div className="p-6">
+      {/* Gunakan Card, tetapi set isLoading false karena content di dalamnya handle loading sendiri (Diagram/Detail) */}
+      <BodyCard
+        tabs={cardTabs}
+        activeTabId={activeTab}
+        onTabClick={handleTabClick}
+        isLoading={false}
+      >
+        <div className="p-6 h-full overflow-y-auto">
           {activeTab === 'Detail' && (
             <DashboardDetailTab loading={loading} summaryData={summaryData} />
           )}
@@ -659,7 +643,7 @@ export default function DashboardSummary({ driverData }) {
               </div>
 
               {isYearlyLoading ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <Spinner />
                   <div className="text-center space-y-1">
                     <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
@@ -674,7 +658,7 @@ export default function DashboardSummary({ driverData }) {
             </div>
           )}
         </div>
-      </div>
+      </BodyCard>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 // File: features/reportData/RangkumanSummary.js
 'use client';
 
+import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
 import DownloadButton from '@/components/DownloadButton';
-import HeaderCard from '@/components/HeaderCard';
-import Spinner from '@/components/Spinner';
+import HeaderCard from '@/components/card/HeaderCard';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import {
@@ -25,37 +25,24 @@ import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
-// 2. HELPER UNTUK MENENTUKAN TANGGAL AWAL (REQ: Handle Tanggal 1)
 const getInitialDate = () => {
   const now = new Date();
-
-  // Jika bukan tanggal 1, gunakan tanggal hari ini (Bulan Berjalan)
   if (now.getDate() > 1) {
     return now;
   }
-
-  // Jika TANGGAL 1
   const targetDate = new Date(now);
-  targetDate.setDate(targetDate.getDate() - 1); // Mundur ke akhir bulan lalu (H-1)
-
-  // Cek apakah hasilnya Hari Minggu?
-  // (Jika tanggal 1 adalah Senin, maka H-1 adalah Minggu) -> Mundur ke Sabtu
+  targetDate.setDate(targetDate.getDate() - 1);
   if (targetDate.getDay() === 0) {
     targetDate.setDate(targetDate.getDate() - 1);
   }
-
   return targetDate;
 };
 
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
-
-  // 3. GUNAKAN INITIAL DATE HELPER DI SINI
   const [selectedDate, setSelectedDate] = useState(getInitialDate());
-
   const [masterTruckData, setMasterTruckData] = useState(null);
-
   const [driverData, setDriverData] = useState([]);
   const [rawData, setRawData] = useState({
     tasks: [],
@@ -63,26 +50,19 @@ export default function RangkumanSummary() {
     locations: [],
   });
 
-  // Loading States
   const [isLoading, setIsLoading] = useState(false);
-
-  // Timers
   const [elapsedTime, setElapsedTime] = useState(0);
   const fetchStartTimeRef = useRef(null);
-
   const [reportPreview, setReportPreview] = useState(null);
 
-  // Default Tab: Task Summary
   const [activeTab, setActiveTab] = useState('Task Summary');
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
   const [dismissedDots, setDismissedDots] = useState({});
 
-  // --- STATE TASK SUMMARY ---
   const [taskSummaryMetrics, setTaskSummaryMetrics] = useState({});
   const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
   const [historyProgress, setHistoryProgress] = useState(0);
 
-  // 1. Load Lokasi & Master Truck
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLocation = localStorage.getItem('userLocation');
@@ -99,7 +79,6 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // 2. Init Dismissed Dots
   useEffect(() => {
     const initial = {};
     [
@@ -113,7 +92,6 @@ export default function RangkumanSummary() {
     setDismissedDots(initial);
   }, []);
 
-  // 3. Reset Dismissed Dots saat Loading
   useEffect(() => {
     if (isLoading) {
       setDismissedDots((prev) => {
@@ -126,7 +104,6 @@ export default function RangkumanSummary() {
     }
   }, [isLoading]);
 
-  // 4. Timer Logic
   useEffect(() => {
     let interval = null;
     if (isLoading) {
@@ -143,7 +120,6 @@ export default function RangkumanSummary() {
     };
   }, [isLoading]);
 
-  // ========== UTILS ==========
   const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 500 } = {}) => {
@@ -174,7 +150,6 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // (Helper ini tetap ada karena digunakan oleh logic Metrics internal, tidak perlu diubah)
   const getRoutingDateKeyFromDateStr = (dateStr) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return null;
@@ -188,7 +163,6 @@ export default function RangkumanSummary() {
     return `${y}-${m}-${da}`;
   };
 
-  // --- TASK SUMMARY METRICS ---
   const processTaskSummaryMetrics = async (allTasks, allResults) => {
     setIsCalculatingMetrics(true);
     setHistoryProgress(0);
@@ -350,7 +324,6 @@ export default function RangkumanSummary() {
     setIsCalculatingMetrics(false);
   };
 
-  // ==== MAIN: FETCH DATA BULANAN ====
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
 
@@ -365,7 +338,6 @@ export default function RangkumanSummary() {
     const month = selectedDate.getMonth();
 
     try {
-      // 1. Tanggal Start & End Bulan Ini (Normal untuk Tasks)
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
       const startStr = formatDate(startDate);
@@ -373,14 +345,11 @@ export default function RangkumanSummary() {
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
-      // 2. Tanggal History (Mulai H-1 jam 22:00)
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
       const locStartStr = formatDate(locStartDate);
       const locTimeFrom = `${locStartStr} 22:00:00`;
 
-      // 3. UPDATE LOGIC: Menggunakan calculateTargetDates (Sama seperti SingleReportDownloader)
-      // Logic ini otomatis handle H-1 dan Skip Sunday jika boundary-nya kena hari Minggu
       const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
       const { dateTo: routingEndStr } = calculateTargetDates(endStr);
 
@@ -458,7 +427,6 @@ export default function RangkumanSummary() {
       );
       setReportPreview(preview);
 
-      // Trigger Calculation
       processTaskSummaryMetrics(newRawData.tasks, newRawData.results);
     } catch (e) {
       console.error(e);
@@ -467,7 +435,7 @@ export default function RangkumanSummary() {
     } finally {
       setIsLoading(false);
     }
-    //eslint-disable-next-line
+    // eslint-disable-next-line
   }, [selectedLocation, selectedDate, fetchWithRetry, fetchWithTracker]);
 
   useEffect(() => {
@@ -510,16 +478,6 @@ export default function RangkumanSummary() {
     }
   };
 
-  // --- TABS & CONTENT ---
-  const tabs = [
-    { id: 'Task Summary', label: 'Task Summary' },
-    { id: 'Pending Reasons', label: 'Pending Reasons' },
-    { id: 'Time Driver', label: 'Time Driver' },
-    { id: 'Truck Detail', label: 'Truck Detail' },
-    { id: 'Truck Usage', label: 'Truck Usage' },
-    { id: 'Average KM', label: 'Average KM of Routing' },
-  ];
-
   const getPingDot = (tabId) => {
     const dismissed = dismissedDots[tabId];
     if (!isLoading && dismissed) return null;
@@ -545,34 +503,6 @@ export default function RangkumanSummary() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12 space-y-4">
-          <Spinner />
-          <div className="text-center space-y-1">
-            <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
-            <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
-          </div>
-          {elapsedTime > 120 && pendingEndpoints.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md max-w-md text-center text-sm animate-pulse">
-              <p className="font-semibold">
-                Memproses banyak data di {pendingEndpoints.join(', ')}.
-              </p>
-              <p>Mohon tunggu.</p>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (!reportPreview && activeTab !== 'Task Summary') {
-      return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
-          <p>Tidak ada data / Belum dimuat.</p>
-        </div>
-      );
-    }
-
     const renderTabContent = (Component, props) => (
       <div className="w-full h-[calc(100vh-240px)] flex flex-col">
         <Component {...props} />
@@ -613,6 +543,7 @@ export default function RangkumanSummary() {
         return <PlaceholderTab tabName={activeTab} />;
     }
   };
+
   const datePicker = (
     <DatePicker
       selected={selectedDate}
@@ -651,34 +582,47 @@ export default function RangkumanSummary() {
     },
   ];
 
+  // Config untuk Card Tabs dengan Ping Dot
+  const tabConfig = [
+    { id: 'Task Summary', label: 'Task Summary' },
+    { id: 'Pending Reasons', label: 'Pending Reasons' },
+    { id: 'Time Driver', label: 'Time Driver' },
+    { id: 'Truck Detail', label: 'Truck Detail' },
+    { id: 'Truck Usage', label: 'Truck Usage' },
+    { id: 'Average KM', label: 'Average KM of Routing' },
+  ];
+
+  const cardTabs = tabConfig.map((t) => ({
+    id: t.id,
+    label: t.label,
+    extraContent: getPingDot(t.id),
+  }));
+
+  const loadingText = `Sedang memuat data... (${formatTimer(elapsedTime)})`;
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
       <HeaderCard items={headerItems} />
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
-        <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabClick(tab.id)}
-              className={`
-                      px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-                      ${
-                        activeTab === tab.id
-                          ? 'border-sky-600 text-sky-700'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 opacity-50 cursor-pointer'
-                      }
-                  `}
-            >
-              <div className="flex items-center gap-2">
-                <span>{tab.label}</span>
-                {getPingDot(tab.id)}
-              </div>
-            </button>
-          ))}
-        </div>
 
-        <div className="flex-1 p-0 sm:p-6 overflow-hidden">{renderContent()}</div>
-      </div>
+      <BodyCard
+        tabs={cardTabs}
+        activeTabId={activeTab}
+        onTabClick={handleTabClick}
+        isLoading={isLoading}
+        loadingText={loadingText}
+        isEmpty={!isLoading && !reportPreview && activeTab !== 'Task Summary'}
+        emptyMessage="Tidak ada data / Belum dimuat."
+      >
+        {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
+          <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
+            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse">
+              <p>Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && renderContent()}
+      </BodyCard>
     </div>
   );
 }

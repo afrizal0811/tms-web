@@ -1,15 +1,14 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
+import BodyCard from '@/components/card/BodyCard';
 import DownloadButton from '@/components/DownloadButton';
-import HeaderCard from '@/components/HeaderCard';
-import Spinner from '@/components/Spinner';
+import HeaderCard from '@/components/card/HeaderCard';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
-import TabButton from './components/TabButton';
 import TableData from './components/TableData';
 import { handleConfirmDownload, parseSONumber } from './help';
 
@@ -17,7 +16,6 @@ export default function EstimasiDelivery() {
   const [selectedDate, setSelectedDate] = useState(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    // Format YYYY-MM-DD manual untuk menghindari timezone issue
     const y = yesterday.getFullYear();
     const m = String(yesterday.getMonth() + 1).padStart(2, '0');
     const d = String(yesterday.getDate()).padStart(2, '0');
@@ -44,9 +42,7 @@ export default function EstimasiDelivery() {
     setSelectedDate(newDateStr);
   };
 
-  // --- 3. UPDATE USE EFFECT (TIDAK ADA PERUBAHAN LOGIKA, HANYA FORMAT TANGGAL AMAN) ---
   useEffect(() => {
-    // Pastikan parsing tanggal aman (ganti - dengan / agar browser compatible)
     const date = new Date(selectedDate.replace(/-/g, '/'));
     if (date.getDay() === 0) {
       setAllRoutes([]);
@@ -238,44 +234,35 @@ export default function EstimasiDelivery() {
     },
   ];
 
+  // --- PERUBAHAN DI SINI ---
+  // Kita ubah array vehicles menjadi format Tab yang dimengerti oleh Card.js
+  const vehicleTabs = filteredVehicleRoutes.map((route) => ({
+    id: route.vehicleId,
+    label: route.vehicleName,
+  }));
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard items={headerItems} />
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
-        <div className="flex items-center border-b border-gray-200 shrink-0">
-          <div className="flex flex-nowrap overflow-x-auto grow">
-            {filteredVehicleRoutes.map((route, index) => {
-              const id = route.vehicleId;
-              return (
-                <TabButton
-                  key={id ?? index}
-                  isActive={activeVehicleId === id}
-                  onClick={() => setActiveVehicleId(id)}
-                >
-                  {route.vehicleName}
-                </TabButton>
-              );
-            })}
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
-          <div className="overflow-y-auto grow">
-            {isLoading && (
-              <div className="w-full flex justify-center items-center p-20">
-                <Spinner />
-              </div>
-            )}
-            {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
-              <p className="p-10 text-center text-gray-500">
-                Tidak ada data ditemukan untuk tanggal atau filter ini.
-              </p>
-            )}
+
+      <BodyCard
+        className="min-h-[400px]"
+        isLoading={isLoading}
+        isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
+        emptyMessage="Tidak ada data ditemukan untuk tanggal atau filter ini."
+        // Gunakan Props Standard Card sekarang
+        tabs={vehicleTabs}
+        activeTabId={activeVehicleId}
+        onTabClick={setActiveVehicleId}
+      >
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col border-none">
+          <div className="overflow-y-auto grow h-full">
             {!isLoading && activeRoute && (
               <TableData activeRoute={activeRoute} searchQuery={searchQuery} />
             )}
           </div>
         </div>
-      </div>
+      </BodyCard>
     </div>
   );
 }

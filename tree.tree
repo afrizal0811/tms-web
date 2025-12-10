@@ -31,24 +31,30 @@
 │       └── page.js
 ├── components
 │   ├── AppLayout.js
+│   ├── Card.js
 │   ├── ConfirmModal.js
 │   ├── DownloadButton.js
 │   ├── Footer.js
+│   ├── HeaderCard.js
 │   ├── LocationDropdown.js
 │   ├── navbar
 │   │   ├── HelpDropdown.js
-│   │   ├── LaporanDropdown.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
 │   │   └── UserDisplay.js
 │   ├── SelectionLayout.js
 │   ├── SessionGuard.js
 │   ├── Spinner.js
+│   ├── table
+│   │   ├── TabButton.js
+│   │   ├── Td.js
+│   │   └── Th.js
 │   ├── Tooltip.js
 │   └── VehicleTagMappingModal.js
 ├── features
 │   ├── dashboard
 │   │   ├── components
+│   │   │   ├── DashboardDetailTab.js
 │   │   │   ├── SequenceAccuracyChart.js
 │   │   │   └── ServiceLevelChart.js
 │   │   ├── DashboardSummary.js
@@ -56,7 +62,11 @@
 │   │       ├── DailySequenceAccuracyModal.js
 │   │       └── DailyServiceLevelModal.js
 │   ├── estimasiDelivery
-│   │   └── EstimasiDelivery.js
+│   │   ├── components
+│   │   │   ├── TabButton.js
+│   │   │   └── TableData.js
+│   │   ├── EstimasiDelivery.js
+│   │   └── help.js
 │   ├── rangkuman
 │   │   ├── RangkumanSummary.js
 │   │   └── tabs
@@ -74,10 +84,16 @@
 │   │       └── TruckUsageTab.js
 │   ├── reportData
 │   │   ├── BulkReportDownloader.js
+│   │   ├── help.js
 │   │   └── SingleReportDownloader.js
 │   ├── userSelection
 │   │   └── UserSelectionGrid.js
 │   └── vehicleData
+│       ├── components
+│       │   ├── Pagination.js
+│       │   ├── TemplateTab.js
+│       │   └── VehicleTab.js
+│       ├── help.js
 │       └── VehicleData.js
 └── lib
     ├── apiService.js

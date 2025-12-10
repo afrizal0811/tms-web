@@ -1,53 +1,17 @@
 // File: src/components/VehicleData.js
 'use client';
 
+import BodyCard from '@/components/card/BodyCard'; // Import Card Baru
 import DownloadButton from '@/components/DownloadButton';
-import HeaderCard from '@/components/HeaderCard';
-import Spinner from '@/components/Spinner';
-import Tooltip from '@/components/Tooltip';
+import HeaderCard from '@/components/card/HeaderCard';
 import { normalizeEmail } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError } from '../../lib/toastHelper';
 import Pagination from './components/Pagination';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
-
-function TabButton({ children, isActive, onClick }) {
-  const [isTruncated, setIsTruncated] = useState(false);
-  const buttonRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const element = buttonRef.current;
-    if (element) {
-      const isTextTruncated = element.scrollWidth > element.clientWidth;
-      if (isTextTruncated !== isTruncated) {
-        setIsTruncated(isTextTruncated);
-      }
-    }
-  }, [children, isTruncated]);
-
-  const buttonElement = (
-    <button
-      ref={buttonRef}
-      onClick={onClick}
-      className={`px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive
-          ? 'border-b-2 border-sky-600 text-sky-600'
-          : 'text-gray-500 hover:text-gray-700 opacity-40 cursor-pointer '
-      }`}
-    >
-      {children}
-    </button>
-  );
-
-  if (isTruncated) {
-    return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
-  }
-
-  return buttonElement;
-}
 
 export default function VehicleData() {
   const [activeTab, setActiveTab] = useState('master');
@@ -60,7 +24,7 @@ export default function VehicleData() {
 
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
-  const [templateData, setTemplateData] = useState([]); // Data Murni
+  const [templateData, setTemplateData] = useState([]);
 
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [sheetSelection, setSheetSelection] = useState({
@@ -69,18 +33,9 @@ export default function VehicleData() {
     template: true,
   });
   const downloadDropdownRef = useRef(null);
-  const downloadOptions = [
-    { name: 'master', label: 'Master Vehicle' },
-    { name: 'conditional', label: 'Conditional Vehicle', show: conditionalData.length > 0 },
-    { name: 'template', label: 'Template Vehicle' },
-  ];
 
-  const noSheetSelected = !(
-    sheetSelection.master ||
-    sheetSelection.template ||
-    (conditionalData.length > 0 && sheetSelection.conditional)
-  );
-
+  // ... (Logic Fetch Data sama persis, disembunyikan untuk ringkas) ...
+  // Silakan pertahankan logic useEffect fetchData yang lama di sini
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
@@ -200,29 +155,6 @@ export default function VehicleData() {
     fetchData();
   }, []);
 
-  // useEffect untuk Click-Outside (tidak berubah)
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
-        setIsDownloadDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [downloadDropdownRef]);
-
-  // Handler untuk Checkbox/Toggle (tidak berubah)
-  const handleToggleChange = (e) => {
-    const { name, checked } = e.target;
-    setSheetSelection((prev) => ({
-      ...prev,
-      [name]: checked,
-    }));
-  };
-
-  // --- (Logika Filter/Paginasi - TIDAK BERUBAH) ---
   const sourceData = useMemo(() => {
     switch (activeTab) {
       case 'master':
@@ -240,7 +172,6 @@ export default function VehicleData() {
     return sourceData.filter((v) => {
       const lowerCaseQuery = searchQuery.toLowerCase();
       const vehicleType = v.tags?.[0] || '';
-
       const searchableString = [
         v.name,
         v.assignee,
@@ -264,9 +195,7 @@ export default function VehicleData() {
 
   const totalItems = filteredData.length;
   const paginatedData = useMemo(() => {
-    if (itemsPerPage === 'all') {
-      return filteredData;
-    }
+    if (itemsPerPage === 'all') return filteredData;
     return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
@@ -310,72 +239,50 @@ export default function VehicleData() {
   );
 
   const headerItems = [
-    {
-      label: 'Filter',
-      component: searchBar,
-      hideLabel: false,
-    },
-    {
-      label: 'Action',
-      component: downloadButton,
-      hideLabel: true,
-    },
+    { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: 'Action', component: downloadButton, hideLabel: true },
+  ];
+
+  // --- PREPARE TABS FOR CARD ---
+  const tabs = [
+    { id: 'master', label: 'Master Vehicle' },
+    ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
+    { id: 'template', label: 'Template Vehicle' },
   ];
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
       <HeaderCard items={headerItems} />
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
-        {isLoading && (
-          <div className="w-full flex justify-center items-center p-20">
-            <Spinner />
-          </div>
-        )}
-        {!isLoading && (
-          <div className="flex space-x-1 border-b border-gray-200 shrink-0">
-            <TabButton isActive={activeTab === 'master'} onClick={() => setActiveTab('master')}>
-              Master Vehicle
-            </TabButton>
-            {conditionalData.length > 0 && (
-              <TabButton
-                isActive={activeTab === 'conditional'}
-                onClick={() => setActiveTab('conditional')}
-              >
-                Conditional Vehicle
-              </TabButton>
-            )}
-            <TabButton isActive={activeTab === 'template'} onClick={() => setActiveTab('template')}>
-              Template Vehicle
-            </TabButton>
-          </div>
-        )}
 
-        {!isLoading && totalItems === 0 && (
-          <p className="p-10 text-center text-gray-500">
-            Tidak ada data ditemukan untuk filter ini.
-          </p>
-        )}
+      {/* PENGGUNAAN CARD */}
+      <BodyCard
+        isLoading={isLoading}
+        tabs={tabs}
+        activeTabId={activeTab}
+        onTabClick={setActiveTab}
+        isEmpty={!isLoading && totalItems === 0}
+        emptyMessage="Tidak ada data ditemukan untuk filter ini."
+      >
+        {/* Content Inside Card */}
+        <div className="flex-1 flex flex-col justify-between overflow-hidden">
+          {(activeTab === 'master' || activeTab === 'conditional') && (
+            <VehicleTab paginatedData={paginatedData} driverMap={driverMap} />
+          )}
+          {activeTab === 'template' && (
+            <TemplateTab paginatedData={paginatedData} driverMap={driverMap} />
+          )}
 
-        {!isLoading && totalItems > 0 && (
-          <div className="bg-white rounded-b-lg flex-1 flex flex-col justify-between overflow-hidden">
-            {(activeTab === 'master' || activeTab === 'conditional') && (
-              <VehicleTab paginatedData={paginatedData} driverMap={driverMap} />
-            )}
-            {activeTab === 'template' && (
-              <TemplateTab paginatedData={paginatedData} driverMap={driverMap} />
-            )}
-            <div className="border-t border-gray-200 bg-white z-20 shrink-0">
-              <Pagination
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
-            </div>
+          <div className="border-t border-gray-200 bg-white z-20 shrink-0">
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
           </div>
-        )}
-      </div>
+        </div>
+      </BodyCard>
     </div>
   );
 }

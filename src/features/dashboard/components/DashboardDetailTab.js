@@ -6,8 +6,6 @@ import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 
-// ========== STAT CARD ==========
-
 const StatCard = forwardRef(function StatCard(
   { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
   ref
