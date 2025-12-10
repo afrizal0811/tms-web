@@ -5,10 +5,10 @@ import { formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 
+import HeaderCard from '@/components/HeaderCard';
 import Spinner from '@/components/Spinner';
 import { getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-
 // --- IMPORT CHART ---
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
@@ -586,37 +586,36 @@ export default function DashboardSummary({ driverData }) {
 
   // ========== RENDER ==========
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
+  const subtitle = (
+    <>
+      Overview performa <span className="font-semibold text-sky-600">Harian & Tahunan</span>
+    </>
+  );
+
+  const datePicker = (
+    <DatePicker
+      key={selectedDate.toISOString()}
+      className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer"
+      dateFormat="dd MMMM yyyy"
+      disabled={loading}
+      maxDate={new Date()}
+      onChange={handleDateChange}
+      selected={selectedDate}
+      wrapperClassName="w-full md:w-auto"
+    />
+  );
+
+  const headerItems = [
+    {
+      label: 'Tanggal Pengiriman',
+      component: datePicker,
+      hideLabel: false,
+    },
+  ];
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      {/* HEADER & DATEPICKER */}
-      {/* UBAHAN 1: Tambahkan 'items-start' pada mobile dan 'md:items-center' pada desktop agar layout rapi */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
-        <div className="mb-4 md:mb-0">
-          {' '}
-          {/* Tambahkan margin bottom di mobile agar tidak nempel */}
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Overview performa <span className="font-semibold text-sky-600">Harian & Tahunan</span>
-          </p>
-        </div>
-
-        {/* UBAHAN 2: Tambahkan 'w-full' (mobile) dan 'md:w-auto' (desktop) pada wrapper input */}
-        <div className="flex flex-col items-start mt-0 md:mt-0 w-full md:w-auto">
-          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">
-            Tanggal Pengiriman
-          </label>
-          <DatePicker
-            className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer"
-            dateFormat="dd MMMM yyyy"
-            disabled={loading}
-            maxDate={new Date()}
-            onChange={handleDateChange}
-            selected={selectedDate}
-            wrapperClassName="w-full md:w-auto"
-          />
-        </div>
-      </div>
+      <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
 
       {error && (
         <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -625,7 +624,7 @@ export default function DashboardSummary({ driverData }) {
       )}
 
       {/* TABS (Tidak berubah) */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
         <div className="flex overflow-x-auto border-b border-gray-200 px-4">
           {['Diagram', 'Detail'].map((tab) => (
             <button

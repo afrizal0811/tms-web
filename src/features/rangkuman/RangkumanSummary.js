@@ -2,6 +2,7 @@
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
+import HeaderCard from '@/components/HeaderCard';
 import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
@@ -10,11 +11,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import {
-  formatDate,
-  formatTimer,
-  calculateTargetDates, // 1. IMPORT FUNGSI LOGIKA TANGGAL
-} from '@/lib/utils';
+import { calculateTargetDates, formatDate, formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import * as XLSX from 'xlsx-js-style';
@@ -616,43 +613,48 @@ export default function RangkumanSummary() {
         return <PlaceholderTab tabName={activeTab} />;
     }
   };
+  const datePicker = (
+    <DatePicker
+      selected={selectedDate}
+      onChange={handleDateChange}
+      dateFormat="MMMM yyyy"
+      showMonthYearPicker
+      wrapperClassName="w-full"
+      disabled={isLoading}
+      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
+        isLoading
+          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
+      }`}
+    />
+  );
+
+  const downloadButton = (
+    <DownloadButton
+      width="w-full md:w-auto"
+      onClick={handleDownloadExcel}
+      disabled={isLoading || rawData.tasks.length === 0}
+      isLoading={isLoading}
+    />
+  );
+
+  const headerItems = [
+    {
+      label: 'Tanggal Routing',
+      component: datePicker,
+      hideLabel: false,
+    },
+    {
+      label: 'Action',
+      component: downloadButton,
+      hideLabel: true,
+    },
+  ];
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-0 sm:gap-4">
-        <div className="w-full md:w-auto relative z-50">
-          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Pilih Bulan</label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={handleDateChange}
-            dateFormat="MMMM yyyy"
-            showMonthYearPicker
-            wrapperClassName="w-full"
-            disabled={isLoading}
-            className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-              isLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-            }`}
-          />
-        </div>
-
-        {/* 2. Komponen Kanan (Button) */}
-        <div className="w-full md:w-auto relative z-50">
-          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
-            Action
-          </label>
-          <DownloadButton
-            width="w-full md:w-auto"
-            onClick={handleDownloadExcel}
-            disabled={isLoading || rawData.tasks.length === 0}
-            isLoading={isLoading}
-          />
-        </div>
-      </div>
-
-      {/* ... Sisa kode tab dan content di bawah ... */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
+      <HeaderCard items={headerItems} />
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
           {tabs.map((tab) => (
             <button

@@ -2,6 +2,7 @@
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
+import HeaderCard from '@/components/HeaderCard';
 import Spinner from '@/components/Spinner';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -158,74 +159,88 @@ export default function EstimasiDelivery() {
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
+  const datePicker = (
+    <DatePicker
+      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
+        isLoading
+          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
+      }`}
+      dateFormat="dd MMMM yyyy"
+      disabled={isLoading}
+      id="estimasiDate"
+      maxDate={new Date().setDate(new Date().getDate() - 1)}
+      onChange={handleDateChange}
+      selected={selectedDate ? new Date(selectedDate) : new Date()}
+      wrapperClassName="w-full"
+    />
+  );
+
+  const searchBar = (
+    <div className="relative w-full">
+      <input
+        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+        disabled={isLoading}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Plat, Customer, atau SO"
+        type="text"
+        value={searchQuery}
+      />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery('')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+
+  const downloadButton = (
+    <DownloadButton
+      onClick={() =>
+        handleConfirmDownload({
+          filteredVehicleRoutes,
+          setIsDownloading,
+        })
+      }
+      disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
+      isLoading={isLoading || isDownloading}
+      width="w-full md:w-auto"
+    />
+  );
+
+  const headerItems = [
+    {
+      label: 'Tanggal Routing',
+      component: datePicker,
+      hideLabel: false,
+    },
+    {
+      label: 'Filter',
+      component: searchBar,
+      hideLabel: false,
+    },
+    {
+      label: 'Action',
+      component: downloadButton,
+      hideLabel: true,
+    },
+  ];
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      {/* 1. Kontrol Atas (Statis) */}
-      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-2">
-        <div className="w-full md:w-auto relative z-50">
-          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">
-            Tanggal Routing
-          </label>
-          <DatePicker
-            className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-              isLoading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-            }`}
-            dateFormat="dd MMMM yyyy"
-            disabled={isLoading}
-            id="estimasiDate"
-            maxDate={new Date().setDate(new Date().getDate() - 1)}
-            onChange={handleDateChange}
-            selected={selectedDate ? new Date(selectedDate) : new Date()}
-            wrapperClassName="w-full"
-          />
-        </div>
-        <div className="w-full md:w-auto relative z-0">
-          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Filter</label>
-          <input
-            className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
-            disabled={isLoading}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Plat, Customer, atau SO"
-            type="text"
-            value={searchQuery}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-10 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <div className="w-full md:w-auto relative z-50">
-          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
-            Action
-          </label>
-          <DownloadButton
-            onClick={() =>
-              handleConfirmDownload({
-                filteredVehicleRoutes,
-                setIsDownloading,
-              })
-            }
-            disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-            isLoading={isLoading || isDownloading}
-            width="w-full md:w-auto"
-          />
-        </div>
-      </div>
+      <HeaderCard items={headerItems} />
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
         <div className="flex items-center border-b border-gray-200 shrink-0">
           <div className="flex flex-nowrap overflow-x-auto grow">

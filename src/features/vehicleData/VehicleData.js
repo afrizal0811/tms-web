@@ -2,6 +2,7 @@
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
+import HeaderCard from '@/components/HeaderCard';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
@@ -12,7 +13,6 @@ import { toastError } from '../../lib/toastHelper';
 import Pagination from './components/Pagination';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
-import { handleConfirmDownload } from './help';
 
 function TabButton({ children, isActive, onClick }) {
   const [isTruncated, setIsTruncated] = useState(false);
@@ -270,102 +270,61 @@ export default function VehicleData() {
     return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
+  const searchBar = (
+    <div className="relative w-full">
+      <input
+        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+        disabled={isLoading}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Plat, Customer, atau SO"
+        type="text"
+        value={searchQuery}
+      />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery('')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+
+  const downloadButton = (
+    <DownloadButton
+      onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+      disabled={isDownloading || isLoading}
+      isLoading={isLoading || isDownloading}
+      width="w-full md:w-auto"
+    />
+  );
+
+  const headerItems = [
+    {
+      label: 'Filter',
+      component: searchBar,
+      hideLabel: false,
+    },
+    {
+      label: 'Action',
+      component: downloadButton,
+      hideLabel: true,
+    },
+  ];
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-2">
-        <div className="w-full md:w-auto relative z-0">
-          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Filter</label>
-          <input
-            className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
-            disabled={isLoading}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Plat, Tipe, Customer, atau SO"
-            type="text"
-            value={searchQuery}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-10 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <div className="w-full md:w-auto relative z-50" ref={downloadDropdownRef}>
-          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
-            Action
-          </label>
-          <DownloadButton
-            onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-            disabled={isDownloading || isLoading}
-            isLoading={isLoading || isDownloading}
-            width="w-full md:w-auto"
-          />
-          {isDownloadDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-              <div className="p-3">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Pilih sheet untuk diunduh:
-                </p>
-                {downloadOptions.map((option) => {
-                  if (option.show === false) return null;
-                  return (
-                    <label
-                      key={option.name}
-                      className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50"
-                    >
-                      <input
-                        type="checkbox"
-                        name={option.name}
-                        checked={sheetSelection[option.name]}
-                        onChange={handleToggleChange}
-                        className="form-checkbox h-4 w-4 text-sky-600 rounded curson-pointer"
-                      />
-                      <span className="text-sm text-gray-800">{option.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-              <div className="border-t border-gray-200 p-2">
-                <button
-                  onClick={() =>
-                    handleConfirmDownload({
-                      masterData,
-                      driverMap,
-                      conditionalData,
-                      sheetSelection,
-                      templateData,
-                      setIsDownloading,
-                      setIsDownloadDropdownOpen,
-                    })
-                  }
-                  disabled={isDownloading || noSheetSelected}
-                  className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  {isDownloading ? (
-                    <div className="flex justify-center items-center">
-                      <Spinner />
-                    </div>
-                  ) : (
-                    'Download'
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
+      <HeaderCard items={headerItems} />
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
         {isLoading && (
           <div className="w-full flex justify-center items-center p-20">
