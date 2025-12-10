@@ -1,8 +1,8 @@
-// File: src/components/VehicleData.js
+// File: src/features/vehicleData/VehicleData.js
 'use client';
 
-import BodyCard from '@/components/card/BodyCard'; // Import Card Baru
 import DownloadButton from '@/components/DownloadButton';
+import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
 import HeaderCard from '@/components/card/HeaderCard';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -34,8 +34,7 @@ export default function VehicleData() {
   });
   const downloadDropdownRef = useRef(null);
 
-  // ... (Logic Fetch Data sama persis, disembunyikan untuk ringkas) ...
-  // Silakan pertahankan logic useEffect fetchData yang lama di sini
+  // --- FETCH DATA LOGIC (TIDAK BERUBAH) ---
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
@@ -55,7 +54,6 @@ export default function VehicleData() {
         });
         setDriverMap(map);
 
-        // 1. Ambil Data Mentah dari API
         const rawApiData = await getVehicles({
           limit: 500,
           hubId: userLocation,
@@ -71,12 +69,11 @@ export default function VehicleData() {
 
         let processedData = rawApiData.map((v) => ({
           ...v,
-          tags: v.tags ? [...v.tags] : [], // Clone array tags
+          tags: v.tags ? [...v.tags] : [],
         }));
 
         try {
           const storedMapString = localStorage.getItem('vehicleTagMap');
-
           if (storedMapString) {
             const tagMap = JSON.parse(storedMapString);
             const hubMap = tagMap[userLocation];
@@ -84,22 +81,15 @@ export default function VehicleData() {
             if (hubMap) {
               processedData.forEach((vehicle) => {
                 if (!vehicle.tags || vehicle.tags.length === 0 || !vehicle.name) return;
-
                 const originalTag = vehicle.tags[0];
                 const plate = vehicle.name;
-
                 const parts = originalTag.split('-');
-
                 if (parts.length >= 2) {
                   const storagePrefix = parts[0];
                   const currentType = parts[1];
-
                   if (hubMap[plate] && hubMap[plate][currentType]) {
                     const mappedType = hubMap[plate][currentType];
-
                     const newFullTag = `${storagePrefix}-${mappedType}`;
-
-                    // Update tag HANYA di processedData
                     vehicle.tags[0] = newFullTag;
                   }
                 }
@@ -155,6 +145,19 @@ export default function VehicleData() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
+        setIsDownloadDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [downloadDropdownRef]);
+
+  // --- FILTER & PAGINATION LOGIC ---
   const sourceData = useMemo(() => {
     switch (activeTab) {
       case 'master':
@@ -172,6 +175,7 @@ export default function VehicleData() {
     return sourceData.filter((v) => {
       const lowerCaseQuery = searchQuery.toLowerCase();
       const vehicleType = v.tags?.[0] || '';
+
       const searchableString = [
         v.name,
         v.assignee,
@@ -195,14 +199,21 @@ export default function VehicleData() {
 
   const totalItems = filteredData.length;
   const paginatedData = useMemo(() => {
-    if (itemsPerPage === 'all') return filteredData;
+    if (itemsPerPage === 'all') {
+      return filteredData;
+    }
     return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
+  // --- HEADER ITEMS ---
   const searchBar = (
     <div className="relative w-full">
       <input
-        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${
+          isLoading
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+            : 'bg-white text-slate-700 cursor-text '
+        }`}
         disabled={isLoading}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="Plat, Customer, atau SO"
@@ -243,9 +254,11 @@ export default function VehicleData() {
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
-  // --- PREPARE TABS FOR CARD ---
+  // --- TABS CONFIGURATION ---
+  // Card akan otomatis merender tab berdasarkan array ini
   const tabs = [
     { id: 'master', label: 'Master Vehicle' },
+    // Hanya tampilkan tab Conditional jika ada datanya
     ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
     { id: 'template', label: 'Template Vehicle' },
   ];
@@ -254,17 +267,17 @@ export default function VehicleData() {
     <div className="w-full max-w-none px-4 sm:px-6">
       <HeaderCard items={headerItems} />
 
-      {/* PENGGUNAAN CARD */}
       <BodyCard
-        isLoading={isLoading}
         tabs={tabs}
         activeTabId={activeTab}
         onTabClick={setActiveTab}
+        isLoading={isLoading}
+        loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
         emptyMessage="Tidak ada data ditemukan untuk filter ini."
       >
-        {/* Content Inside Card */}
         <div className="flex-1 flex flex-col justify-between overflow-hidden">
+          {/* CONTENT TABLE */}
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab paginatedData={paginatedData} driverMap={driverMap} />
           )}
@@ -272,6 +285,7 @@ export default function VehicleData() {
             <TemplateTab paginatedData={paginatedData} driverMap={driverMap} />
           )}
 
+          {/* PAGINATION (Sticky Bottom) */}
           <div className="border-t border-gray-200 bg-white z-20 shrink-0">
             <Pagination
               totalItems={totalItems}

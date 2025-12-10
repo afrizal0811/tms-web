@@ -1,9 +1,9 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
-import BodyCard from '@/components/card/BodyCard';
 import DownloadButton from '@/components/DownloadButton';
 import HeaderCard from '@/components/card/HeaderCard';
+import BodyCard from '@/components/card/BodyCard';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
@@ -82,24 +82,17 @@ export default function EstimasiDelivery() {
         const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
         const getHubEtd = (route) => {
-          if (!route.trips || route.trips.length === 0) {
-            return Infinity;
-          }
+          if (!route.trips || route.trips.length === 0) return Infinity;
           const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
-
           if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
             const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
             const etdTime = new Date(fullEtdString).getTime();
-            if (!isNaN(etdTime)) {
-              return etdTime;
-            }
+            if (!isNaN(etdTime)) return etdTime;
           }
           return Infinity;
         };
 
-        allDoneRoutings.sort((routeA, routeB) => {
-          return getHubEtd(routeA) - getHubEtd(routeB);
-        });
+        allDoneRoutings.sort((routeA, routeB) => getHubEtd(routeA) - getHubEtd(routeB));
 
         setAllRoutes(allDoneRoutings);
 
@@ -118,14 +111,11 @@ export default function EstimasiDelivery() {
   }, [selectedDate]);
 
   const filteredVehicleRoutes = useMemo(() => {
-    if (!searchQuery) {
-      return allRoutes;
-    }
+    if (!searchQuery) return allRoutes;
     const lowerCaseQuery = searchQuery.toLowerCase();
     return allRoutes.filter((route) => {
-      if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery)) {
+      if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery))
         return true;
-      }
       return route.trips.some((trip) => {
         if (trip.isHub) return false;
         const outlet = parseOutletName(trip.visitName)?.toLowerCase();
@@ -175,7 +165,11 @@ export default function EstimasiDelivery() {
   const searchBar = (
     <div className="relative w-full">
       <input
-        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-slate-700 cursor-text '}`}
+        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${
+          isLoading
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+            : 'bg-white text-slate-700 cursor-text '
+        }`}
         disabled={isLoading}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="Plat, Customer, atau SO"
@@ -217,25 +211,12 @@ export default function EstimasiDelivery() {
   );
 
   const headerItems = [
-    {
-      label: 'Tanggal Routing',
-      component: datePicker,
-      hideLabel: false,
-    },
-    {
-      label: 'Filter',
-      component: searchBar,
-      hideLabel: false,
-    },
-    {
-      label: 'Action',
-      component: downloadButton,
-      hideLabel: true,
-    },
+    { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
+    { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
-  // --- PERUBAHAN DI SINI ---
-  // Kita ubah array vehicles menjadi format Tab yang dimengerti oleh Card.js
+  // Map data kendaraan menjadi Tabs yang dimengerti Card.js
   const vehicleTabs = filteredVehicleRoutes.map((route) => ({
     id: route.vehicleId,
     label: route.vehicleName,
@@ -248,14 +229,15 @@ export default function EstimasiDelivery() {
       <BodyCard
         className="min-h-[400px]"
         isLoading={isLoading}
+        loadingText="Memuat Rute..."
         isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
         emptyMessage="Tidak ada data ditemukan untuk tanggal atau filter ini."
-        // Gunakan Props Standard Card sekarang
+        // Tab Props
         tabs={vehicleTabs}
         activeTabId={activeVehicleId}
         onTabClick={setActiveVehicleId}
       >
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col border-none">
+        <div className="bg-white rounded-xl shadow-sm h-[600px] flex flex-col border-none">
           <div className="overflow-y-auto grow h-full">
             {!isLoading && activeRoute && (
               <TableData activeRoute={activeRoute} searchQuery={searchQuery} />

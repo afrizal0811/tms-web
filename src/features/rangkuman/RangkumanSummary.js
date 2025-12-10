@@ -2,8 +2,8 @@
 'use client';
 
 import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
-import DownloadButton from '@/components/DownloadButton';
 import HeaderCard from '@/components/card/HeaderCard';
+import DownloadButton from '@/components/DownloadButton';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import {
@@ -598,8 +598,22 @@ export default function RangkumanSummary() {
     extraContent: getPingDot(t.id),
   }));
 
-  const loadingText = `Sedang memuat data... (${formatTimer(elapsedTime)})`;
+  const loadingText = (
+    <div className="flex flex-col items-center justify-center space-y-4">
+      <div className="text-center space-y-1">
+        <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
+        <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
+      </div>
+    </div>
+  );
 
+  const warningContent =
+    pendingEndpoints.length > 0 ? (
+      <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
+        <p>Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
+      </div>
+    ) : null;
+    
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
       <HeaderCard items={headerItems} />
@@ -609,7 +623,7 @@ export default function RangkumanSummary() {
         activeTabId={activeTab}
         onTabClick={handleTabClick}
         isLoading={isLoading}
-        loadingText={loadingText}
+        longLoadingContent={warningContent}
         isEmpty={!isLoading && !reportPreview && activeTab !== 'Task Summary'}
         emptyMessage="Tidak ada data / Belum dimuat."
       >
