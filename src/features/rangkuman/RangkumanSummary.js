@@ -1,3 +1,4 @@
+// File: features/reportData/RangkumanSummary.js
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
@@ -9,12 +10,16 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { formatDate, formatTimer } from '@/lib/utils';
+import {
+  formatDate,
+  formatTimer,
+  calculateTargetDates, // 1. IMPORT FUNGSI LOGIKA TANGGAL
+} from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import * as XLSX from 'xlsx-js-style';
 
-// --- IMPORT TABS (Tanpa Dashboard) ---
+// --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
@@ -23,11 +28,35 @@ import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
+// 2. HELPER UNTUK MENENTUKAN TANGGAL AWAL (REQ: Handle Tanggal 1)
+const getInitialDate = () => {
+  const now = new Date();
+
+  // Jika bukan tanggal 1, gunakan tanggal hari ini (Bulan Berjalan)
+  if (now.getDate() > 1) {
+    return now;
+  }
+
+  // Jika TANGGAL 1
+  const targetDate = new Date(now);
+  targetDate.setDate(targetDate.getDate() - 1); // Mundur ke akhir bulan lalu (H-1)
+
+  // Cek apakah hasilnya Hari Minggu?
+  // (Jika tanggal 1 adalah Senin, maka H-1 adalah Minggu) -> Mundur ke Sabtu
+  if (targetDate.getDay() === 0) {
+    targetDate.setDate(targetDate.getDate() - 1);
+  }
+
+  return targetDate;
+};
+
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
-  // Default: Bulan Ini
-  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // 3. GUNAKAN INITIAL DATE HELPER DI SINI
+  const [selectedDate, setSelectedDate] = useState(getInitialDate());
+
   const [masterTruckData, setMasterTruckData] = useState(null);
 
   const [driverData, setDriverData] = useState([]);
@@ -127,8 +156,13 @@ export default function RangkumanSummary() {
         return await fn();
       } catch (err) {
         attempt++;
-        if (attempt > retries) throw err;
-        await wait(baseMs * Math.pow(2, attempt - 1));
+        const status = err?.response?.status || err?.status || null;
+        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
+          throw err;
+        }
+        const backoff = baseMs * Math.pow(2, attempt - 1);
+        const jitter = Math.floor(Math.random() * 100);
+        await wait(backoff + jitter);
       }
     }
   }, []);
@@ -136,22 +170,14 @@ export default function RangkumanSummary() {
   const fetchWithTracker = useCallback(async (promiseOrFn, label) => {
     setPendingEndpoints((prev) => [...prev, label]);
     try {
-      return typeof promiseOrFn === 'function' ? await promiseOrFn() : await promiseOrFn;
+      const result = typeof promiseOrFn === 'function' ? await promiseOrFn() : await promiseOrFn;
+      return result;
     } finally {
       setPendingEndpoints((prev) => prev.filter((item) => item !== label));
     }
   }, []);
 
-  const getAdjustedPreviousDate = (baseDate) => {
-    const d = new Date(baseDate);
-    let offset = 1;
-    if (d.getDay() === 1) offset = 2;
-    const candidate = new Date(d);
-    candidate.setDate(d.getDate() - offset);
-    if (candidate.getDay() === 0) candidate.setDate(candidate.getDate() - 1);
-    return candidate;
-  };
-
+  // (Helper ini tetap ada karena digunakan oleh logic Metrics internal, tidak perlu diubah)
   const getRoutingDateKeyFromDateStr = (dateStr) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return null;
@@ -342,14 +368,24 @@ export default function RangkumanSummary() {
     const month = selectedDate.getMonth();
 
     try {
+      // 1. Tanggal Start & End Bulan Ini (Normal untuk Tasks)
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
-      const routingStartDate = getAdjustedPreviousDate(startDate);
-      const routingEndDate = getAdjustedPreviousDate(endDate);
-      const routingStartStr = formatDate(routingStartDate);
-      const routingEndStr = formatDate(routingEndDate);
+      const timeFrom = `${startStr} 00:00:00`;
+      const timeTo = `${endStr} 23:59:59`;
+
+      // 2. Tanggal History (Mulai H-1 jam 22:00)
+      const locStartDate = new Date(startDate);
+      locStartDate.setDate(locStartDate.getDate() - 1);
+      const locStartStr = formatDate(locStartDate);
+      const locTimeFrom = `${locStartStr} 22:00:00`;
+
+      // 3. UPDATE LOGIC: Menggunakan calculateTargetDates (Sama seperti SingleReportDownloader)
+      // Logic ini otomatis handle H-1 dan Skip Sunday jika boundary-nya kena hari Minggu
+      const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
+      const { dateTo: routingEndStr } = calculateTargetDates(endStr);
 
       const monthlyPromises = [
         fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers'),
@@ -360,12 +396,12 @@ export default function RangkumanSummary() {
                 getTasks({
                   hubId: selectedLocation,
                   status: 'DONE',
-                  timeFrom: `${startStr} 00:00:00`,
-                  timeTo: `${endStr} 23:59:59`,
-                  timeBy: 'startTime',
+                  timeFrom,
+                  timeTo,
+                  timeBy: 'doneTime',
                   limit: 10000,
                 }),
-              { retries: 2 }
+              { retries: 2, baseMs: 500 }
             ),
           'Monthly Tasks'
         ),
@@ -379,7 +415,7 @@ export default function RangkumanSummary() {
                   dateTo: `${routingEndStr} 23:59:59`,
                   limit: 10000,
                 }),
-              { retries: 2 }
+              { retries: 2, baseMs: 500 }
             ),
           'Routing'
         ),
@@ -388,12 +424,14 @@ export default function RangkumanSummary() {
             fetchWithRetry(
               () =>
                 getLocationHistories({
-                  timeFrom: `${startStr} 23:00:00`,
-                  timeTo: `${endStr} 23:59:59`,
+                  timeFrom: locTimeFrom,
+                  timeTo,
                   limit: 10000,
                   startFinish: 'true',
+                  fields: 'finish,startTime,email,trackedTime,totalDistance',
+                  timeBy: 'createdTime',
                 }),
-              { retries: 2 }
+              { retries: 2, baseMs: 500 }
             ),
           'History'
         ),
@@ -579,48 +617,48 @@ export default function RangkumanSummary() {
     }
   };
 
-return (
-  <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
-    <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-0 sm:gap-4">
-      <div className="w-full md:w-auto relative z-50">
-        <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Pilih Bulan</label>
-        <DatePicker
-          selected={selectedDate}
-          onChange={handleDateChange}
-          dateFormat="MMMM yyyy"
-          showMonthYearPicker
-          wrapperClassName="w-full"
-          disabled={isLoading}
-          className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-            isLoading
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-              : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-          }`}
-        />
+  return (
+    <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-end bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-0 sm:gap-4">
+        <div className="w-full md:w-auto relative z-50">
+          <label className="block text-xs text-gray-400 mb-1 ml-1 font-medium">Pilih Bulan</label>
+          <DatePicker
+            selected={selectedDate}
+            onChange={handleDateChange}
+            dateFormat="MMMM yyyy"
+            showMonthYearPicker
+            wrapperClassName="w-full"
+            disabled={isLoading}
+            className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
+              isLoading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
+            }`}
+          />
+        </div>
+
+        {/* 2. Komponen Kanan (Button) */}
+        <div className="w-full md:w-auto relative z-50">
+          <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
+            Action
+          </label>
+          <DownloadButton
+            width="w-full md:w-auto"
+            onClick={handleDownloadExcel}
+            disabled={isLoading || rawData.tasks.length === 0}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
-      {/* 2. Komponen Kanan (Button) */}
-      <div className="w-full md:w-auto relative z-50">
-        <label className="block text-xs text-transparent mb-1 ml-1 font-medium select-none">
-          Action
-        </label>
-        <DownloadButton
-          width="w-full md:w-auto"
-          onClick={handleDownloadExcel}
-          disabled={isLoading || rawData.tasks.length === 0}
-          isLoading={isLoading}
-        />
-      </div>
-    </div>
-
-    {/* ... Sisa kode tab dan content di bawah ... */}
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
-      <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
-            className={`
+      {/* ... Sisa kode tab dan content di bawah ... */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col">
+        <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`
                       px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
                       ${
                         activeTab === tab.id
@@ -628,17 +666,17 @@ return (
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 opacity-50 cursor-pointer'
                       }
                   `}
-          >
-            <div className="flex items-center gap-2">
-              <span>{tab.label}</span>
-              {getPingDot(tab.id)}
-            </div>
-          </button>
-        ))}
-      </div>
+            >
+              <div className="flex items-center gap-2">
+                <span>{tab.label}</span>
+                {getPingDot(tab.id)}
+              </div>
+            </button>
+          ))}
+        </div>
 
-      <div className="flex-1 p-0 sm:p-6 overflow-hidden">{renderContent()}</div>
+        <div className="flex-1 p-0 sm:p-6 overflow-hidden">{renderContent()}</div>
+      </div>
     </div>
-  </div>
-);
+  );
 }

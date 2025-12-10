@@ -92,7 +92,7 @@ export default function BulkReportDownloader({ driverData }) {
             status: 'DONE',
             timeFrom: timeFrom,
             timeTo: timeTo,
-            timeBy: 'startTime',
+            timeBy: 'doneTime',
             limit: 1000,
           }),
           getResultsSummary({

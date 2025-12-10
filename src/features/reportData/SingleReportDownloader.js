@@ -148,7 +148,7 @@ export default function TmsSummary({
         status: 'DONE',
         timeFrom,
         timeTo,
-        timeBy: 'startTime',
+        timeBy: 'doneTime',
         limit: 5000,
       });
 

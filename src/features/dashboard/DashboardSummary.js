@@ -301,7 +301,7 @@ export default function DashboardSummary({ driverData }) {
         hubId,
         timeFrom,
         timeTo,
-        timeBy: 'startTime',
+        timeBy: 'doneTime',
         limit: 1000,
       });
 
@@ -508,7 +508,7 @@ export default function DashboardSummary({ driverData }) {
                 status: 'DONE',
                 timeFrom: q.start,
                 timeTo: q.end,
-                timeBy: 'startTime',
+                timeBy: 'doneTime',
                 limit: 25000,
               })
             );
