@@ -80,7 +80,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
           <h3 className="text-lg font-bold text-white">{title}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-2xl leading-none"
+            className="text-slate-400 hover:text-white text-2xl leading-none cursor-pointer"
           >
             &times;
           </button>
@@ -165,7 +165,8 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
         </div>
 
         <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 text-right">
-          Data lengkap tersedia di tab <strong className="text-slate-700">Truck Detail</strong> dan{' '}
+          Data lengkap tersedia di menu <strong className="text-slate-700">Rangkuman</strong> pada
+          tab <strong className="text-slate-700">Truck Detail</strong> dan{' '}
           <strong className="text-slate-700">Pending Reasons</strong>
         </div>
       </div>
