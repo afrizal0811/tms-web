@@ -2,6 +2,7 @@
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
+import SearchBar from '@/components/SearchBar';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
@@ -154,7 +155,7 @@ export default function EstimasiDelivery() {
       }`}
       dateFormat="dd MMMM yyyy"
       disabled={isLoading}
-      dropdownMode="select" 
+      dropdownMode="select"
       id="estimasiDate"
       maxDate={new Date().setDate(new Date().getDate() - 1)}
       onChange={handleDateChange}
@@ -164,39 +165,13 @@ export default function EstimasiDelivery() {
       wrapperClassName="w-full"
     />
   );
-
   const searchBar = (
-    <div className="relative w-full">
-      <input
-        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${
-          isLoading
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-            : 'bg-white text-slate-700 cursor-text '
-        }`}
-        disabled={isLoading}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Plat, Customer, atau SO"
-        type="text"
-        value={searchQuery}
-      />
-      {searchQuery && (
-        <button
-          onClick={() => setSearchQuery('')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-5 h-5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-    </div>
+    <SearchBar
+      disabled={isLoading}
+      onChange={(val) => setSearchQuery(val)}
+      placeholder="Cari Plat, Customer, atau SO"
+      value={searchQuery}
+    />
   );
 
   const downloadButton = (
@@ -214,7 +189,7 @@ export default function EstimasiDelivery() {
   );
 
   const headerItems = [
-    { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: 'Filter', component: searchBar, hideLabel: true },
     { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];

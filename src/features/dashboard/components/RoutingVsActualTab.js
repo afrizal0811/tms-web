@@ -1,6 +1,7 @@
-// File: src/features/dashboard/components/RoutingVsActualTab.js
 'use client';
 
+import HighlightText from '@/components/HighlightText';
+import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
@@ -88,7 +89,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         const end = new Date(actualDeparture).getTime();
         if (!isNaN(start) && !isNaN(end) && end >= start) {
           const diffMs = end - start;
-          const diffMins = Math.ceil(diffMs / 60000); // Hitung dalam menit (bulatkan ke atas)
+          const diffMins = Math.ceil(diffMs / 60000);
           actualVisitTimeVal = diffMins;
         }
       }
@@ -229,31 +230,13 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
   return (
     <div className="flex flex-col h-full space-y-4">
+      {/* Gunakan SearchBar yang lebih universal */}
       <div className="flex justify-end">
-        <div className="relative w-full max-w-xs">
-          <input
-            type="text"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-            placeholder="Cari Plat, Driver, atau Customer..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-        </div>
+        <SearchBar
+          value={searchQuery}
+          onChange={(val) => setSearchQuery(val)}
+          placeholder="Cari Plat, Driver, atau Customer"
+        />
       </div>
 
       {processedData.length === 0 ? (
@@ -344,13 +327,18 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                 const isMatch = row.roSequence == row.realSequence;
                 const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
 
-                // Isi sel tabel disimpan dalam variabel agar bisa dipakai di dalam Tooltip atau Tr biasa
                 const cellContent = (
                   <>
                     <td className="px-4 py-2">{row.flow}</td>
-                    <td className="px-4 py-2">{row.plat}</td>
-                    <td className="px-4 py-2 font-medium">{row.driver}</td>
-                    <td className="px-4 py-2">{row.customerName}</td>
+                    <td className="px-4 py-2">
+                      <HighlightText text={row.plat} highlight={searchQuery} />
+                    </td>
+                    <td className="px-4 py-2 font-medium">
+                      <HighlightText text={row.driver} highlight={searchQuery} />
+                    </td>
+                    <td className="px-4 py-2">
+                      <HighlightText text={row.customerName} highlight={searchQuery} />
+                    </td>
                     <td className="px-4 py-2">{row.statusLabel}</td>
                     <td className="px-4 py-2 text-center">{row.openTime}</td>
                     <td className="px-4 py-2 text-center">{row.closeTime}</td>
@@ -374,7 +362,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                   </>
                 );
 
-                // JIKA MANUAL ASSIGN -> BUNGKUS DENGAN TOOLTIP
                 if (row.isManualAssign) {
                   return (
                     <Tooltip key={index} tooltipContent="Manual Assign">
@@ -385,7 +372,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                   );
                 }
 
-                // JIKA NORMAL
                 return (
                   <tr key={index} className={`${rowClass} border-b border-gray-100`}>
                     {cellContent}

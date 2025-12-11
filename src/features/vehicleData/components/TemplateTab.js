@@ -1,10 +1,13 @@
+'use client';
+
+import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
 import { formatVolume } from '../help';
 
-export default function TemplateTab({ paginatedData, driverMap }) {
+export default function TemplateTab({ paginatedData, driverMap, searchQuery }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-[1200px]">
@@ -30,8 +33,15 @@ export default function TemplateTab({ paginatedData, driverMap }) {
         <tbody>
           {paginatedData.map((v) => (
             <tr key={v._id} className="hover:bg-gray-50">
-              <Td>{v.name}</Td>
-              <Td>{driverMap.get(normalizeEmail(v.assignee)) || null}</Td>
+              <Td>
+                <HighlightText text={v.name} highlight={searchQuery} />
+              </Td>
+              <Td>
+                <HighlightText
+                  text={driverMap.get(normalizeEmail(v.assignee)) || null}
+                  highlight={searchQuery}
+                />
+              </Td>
               <Td>{v.workingTime?.startTime || null}</Td>
               <Td>{v.workingTime?.endTime || null}</Td>
               <Td>{v.breaktime?.startTime || null}</Td>

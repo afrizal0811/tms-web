@@ -4,6 +4,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
+import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -36,7 +37,6 @@ export default function VehicleData() {
   });
   const downloadDropdownRef = useRef(null);
 
-  // --- LOGIC DARI CODE 2 (Sheet Selection) ---
   const downloadOptions = [
     { name: 'master', label: 'Master Vehicle' },
     {
@@ -60,9 +60,7 @@ export default function VehicleData() {
       [name]: checked,
     }));
   };
-  // -------------------------------------------
 
-  // --- FETCH DATA LOGIC (TIDAK BERUBAH DARI CODE 1) ---
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
@@ -185,7 +183,6 @@ export default function VehicleData() {
     };
   }, [downloadDropdownRef]);
 
-  // --- FILTER & PAGINATION LOGIC ---
   const sourceData = useMemo(() => {
     switch (activeTab) {
       case 'master':
@@ -233,44 +230,18 @@ export default function VehicleData() {
     return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
-  // --- HEADER ITEMS ---
   const searchBar = (
-    <div className="relative w-full">
-      <input
-        className={`w-full max-w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 ${
-          isLoading
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-            : 'bg-white text-slate-700 cursor-text '
-        }`}
-        disabled={isLoading}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Plat, Customer, atau SO"
-        type="text"
-        value={searchQuery}
-      />
-      {searchQuery && (
-        <button
-          onClick={() => setSearchQuery('')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-5 h-5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-    </div>
+    <SearchBar
+      value={searchQuery}
+      onChange={(val) => setSearchQuery(val)}
+      placeholder="Plat, Customer, atau SO"
+      disabled={isLoading}
+      className="w-full lg:max-w-xs"
+    />
   );
 
-  // --- GABUNGAN UI: Tombol Download dengan Dropdown (Code 2 Logic) ---
   const downloadButton = (
-    <div className="relative z-50" ref={downloadDropdownRef}>
+    <div className="w-full md:w-auto z-50" ref={downloadDropdownRef}>
       <DownloadButton
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
         disabled={isDownloading || isLoading}
@@ -336,7 +307,6 @@ export default function VehicleData() {
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
-  // --- TABS CONFIGURATION ---
   const tabs = [
     { id: 'master', label: 'Master Vehicle' },
     ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
@@ -363,15 +333,23 @@ export default function VehicleData() {
         emptyMessage="Tidak ada data ditemukan untuk filter ini."
       >
         <div className="flex-1 flex flex-col justify-between overflow-hidden">
-          {/* CONTENT TABLE */}
           {(activeTab === 'master' || activeTab === 'conditional') && (
-            <VehicleTab paginatedData={paginatedData} driverMap={driverMap} />
+            // Kirim searchQuery ke komponen tab
+            <VehicleTab
+              paginatedData={paginatedData}
+              driverMap={driverMap}
+              searchQuery={searchQuery}
+            />
           )}
           {activeTab === 'template' && (
-            <TemplateTab paginatedData={paginatedData} driverMap={driverMap} />
+            // Kirim searchQuery ke komponen tab
+            <TemplateTab
+              paginatedData={paginatedData}
+              driverMap={driverMap}
+              searchQuery={searchQuery}
+            />
           )}
 
-          {/* PAGINATION (Sticky Bottom) */}
           <div className="border-t border-gray-200 bg-white z-20 shrink-0">
             <Pagination
               totalItems={totalItems}
