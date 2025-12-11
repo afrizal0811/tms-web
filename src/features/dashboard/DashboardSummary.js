@@ -10,9 +10,9 @@ import { getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 
 // --- IMPORT COMPONENTS ---
+import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
-import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 
 // ========== HELPER FUNCTIONS ==========
 const normalizeEmail = (email) => {
@@ -367,7 +367,7 @@ export default function DashboardSummary({ driverData }) {
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
   const subtitle = (
     <>
-      Overview performa <span className="font-semibold text-sky-600">Harian & Tahunan</span>
+      Overview performa <span className="font-semibold text-sky-600">harian & tahunan</span>
     </>
   );
 

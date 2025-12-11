@@ -2,8 +2,8 @@
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
-import HeaderCard from '@/components/card/HeaderCard';
 import BodyCard from '@/components/card/BodyCard';
+import HeaderCard from '@/components/card/HeaderCard';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import DatePicker from 'react-datepicker';
@@ -211,8 +211,8 @@ export default function EstimasiDelivery() {
   );
 
   const headerItems = [
-    { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
     { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
@@ -222,9 +222,16 @@ export default function EstimasiDelivery() {
     label: route.vehicleName,
   }));
 
+  const subtitle = (
+    <>
+      Monitoring{' '}
+      <span className="font-semibold text-sky-600">rute kunjungan & jadwal pengiriman</span> harian.
+    </>
+  );
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      <HeaderCard items={headerItems} />
+      <HeaderCard title="Estimasi Delivery" subtitle={subtitle} items={headerItems} />
 
       <BodyCard
         className="min-h-[400px]"

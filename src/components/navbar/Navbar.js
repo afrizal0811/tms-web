@@ -85,8 +85,11 @@ export default function Navbar() {
     >
       <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
         <div className="flex items-center space-x-4 sm:space-x-6">
-          <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
-            TMS
+          <Link href="/" className="flex flex-col leading-tight">
+            <span className="hidden lg:block text-slate-900 font-bold text-lg sm:text-xl">TMS</span>
+            <span className="block lg:hidden text-slate-900 font-bold text-lg sm:text-xl">
+              TMS Data Processing
+            </span>
           </Link>
 
           {/* Navigasi Desktop */}

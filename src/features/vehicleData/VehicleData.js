@@ -263,9 +263,15 @@ export default function VehicleData() {
     { id: 'template', label: 'Template Vehicle' },
   ];
 
+  const subtitle = (
+    <>
+      Manajemen daftar <span className="font-semibold text-sky-600">kendaraan</span>
+    </>
+  );
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      <HeaderCard items={headerItems} />
+      <HeaderCard title="Data Kendaraan" subtitle={subtitle} items={headerItems} />
 
       <BodyCard
         tabs={tabs}

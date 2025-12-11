@@ -11,7 +11,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { calculateTargetDates, formatDate, formatTimer } from '@/lib/utils';
+import { calculateTargetDates, formatDate } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import * as XLSX from 'xlsx-js-style';
@@ -598,13 +598,13 @@ export default function RangkumanSummary() {
     extraContent: getPingDot(t.id),
   }));
 
-  const loadingText = (
-    <div className="flex flex-col items-center justify-center space-y-4">
-      <div className="text-center space-y-1">
-        <p className="text-lg font-medium text-slate-700">Sedang memuat data...</p>
-        <p className="text-2xl font-mono font-bold text-sky-600">{formatTimer(elapsedTime)}</p>
-      </div>
-    </div>
+  const subtitle = (
+    <>
+      Rekapitulasi{' '}
+      <span className="font-semibold text-sky-600">
+        performa tugas
+      </span>{' '} bulanan
+    </>
   );
 
   const warningContent =
@@ -613,10 +613,10 @@ export default function RangkumanSummary() {
         <p>Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
       </div>
     ) : null;
-    
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
-      <HeaderCard items={headerItems} />
+      <HeaderCard title="Rangkuman" subtitle={subtitle} items={headerItems} />
 
       <BodyCard
         tabs={cardTabs}
