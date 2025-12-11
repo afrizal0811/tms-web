@@ -1,9 +1,10 @@
 // File: src/features/vehicleData/VehicleData.js
 'use client';
 
-import DownloadButton from '@/components/DownloadButton';
-import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
+import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import DownloadButton from '@/components/DownloadButton';
+import Spinner from '@/components/Spinner';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
@@ -12,6 +13,7 @@ import { toastError } from '../../lib/toastHelper';
 import Pagination from './components/Pagination';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
+import { handleConfirmDownload } from './help';
 
 export default function VehicleData() {
   const [activeTab, setActiveTab] = useState('master');
@@ -34,7 +36,33 @@ export default function VehicleData() {
   });
   const downloadDropdownRef = useRef(null);
 
-  // --- FETCH DATA LOGIC (TIDAK BERUBAH) ---
+  // --- LOGIC DARI CODE 2 (Sheet Selection) ---
+  const downloadOptions = [
+    { name: 'master', label: 'Master Vehicle' },
+    {
+      name: 'conditional',
+      label: 'Conditional Vehicle',
+      show: conditionalData.length > 0,
+    },
+    { name: 'template', label: 'Template Vehicle' },
+  ];
+
+  const noSheetSelected = !(
+    sheetSelection.master ||
+    sheetSelection.template ||
+    (conditionalData.length > 0 && sheetSelection.conditional)
+  );
+
+  const handleToggleChange = (e) => {
+    const { name, checked } = e.target;
+    setSheetSelection((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
+  // -------------------------------------------
+
+  // --- FETCH DATA LOGIC (TIDAK BERUBAH DARI CODE 1) ---
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
@@ -240,13 +268,67 @@ export default function VehicleData() {
     </div>
   );
 
+  // --- GABUNGAN UI: Tombol Download dengan Dropdown (Code 2 Logic) ---
   const downloadButton = (
-    <DownloadButton
-      onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-      disabled={isDownloading || isLoading}
-      isLoading={isLoading || isDownloading}
-      width="w-full md:w-auto"
-    />
+    <div className="relative z-50" ref={downloadDropdownRef}>
+      <DownloadButton
+        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+        disabled={isDownloading || isLoading}
+        isLoading={isLoading || isDownloading}
+        width="w-full md:w-auto"
+      />
+
+      {isDownloadDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+          <div className="p-3">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Pilih sheet untuk diunduh:</p>
+            {downloadOptions.map((option) => {
+              if (option.show === false) return null;
+              return (
+                <label
+                  key={option.name}
+                  className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    name={option.name}
+                    checked={sheetSelection[option.name]}
+                    onChange={handleToggleChange}
+                    className="form-checkbox h-4 w-4 text-sky-600 rounded cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-800">{option.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="border-t border-gray-200 p-2">
+            <button
+              onClick={() =>
+                handleConfirmDownload({
+                  masterData,
+                  driverMap,
+                  conditionalData,
+                  sheetSelection,
+                  templateData,
+                  setIsDownloading,
+                  setIsDownloadDropdownOpen,
+                })
+              }
+              disabled={isDownloading || noSheetSelected}
+              className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isDownloading ? (
+                <div className="flex justify-center items-center">
+                  <Spinner size="w-5 h-5 border-2" />
+                </div>
+              ) : (
+                'Download'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 
   const headerItems = [
@@ -255,10 +337,8 @@ export default function VehicleData() {
   ];
 
   // --- TABS CONFIGURATION ---
-  // Card akan otomatis merender tab berdasarkan array ini
   const tabs = [
     { id: 'master', label: 'Master Vehicle' },
-    // Hanya tampilkan tab Conditional jika ada datanya
     ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
     { id: 'template', label: 'Template Vehicle' },
   ];

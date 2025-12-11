@@ -24,12 +24,12 @@ export const handleConfirmDownload = ({
     const headerStyle = { font: { bold: true } };
 
     if (sheetSelection.master) {
-      const headers1 = ['Plat', 'Type', 'Email', 'Name'];
+      const headers1 = ['Plat', 'Type', 'Name', 'Email'];
       const data1 = masterData.map((v) => [
         v.name,
         v.tags?.[0] || null,
-        v.assignee,
         driverMap.get(normalizeEmail(v.assignee)) || null,
+        v.assignee,
       ]);
       const ws1 = XLSX.utils.aoa_to_sheet([headers1, ...data1]);
       ws1['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
@@ -39,12 +39,12 @@ export const handleConfirmDownload = ({
       XLSX.utils.book_append_sheet(wb, ws1, 'Master Vehicle');
     }
     if (sheetSelection.conditional && conditionalData.length > 0) {
-      const headersC = ['Plat', 'Type', 'Email', 'Name'];
+      const headersC = ['Plat', 'Type', 'Name', 'Email'];
       const dataC = conditionalData.map((v) => [
         v.name,
         v.tags?.[0] || null,
-        v.assignee,
         driverMap.get(normalizeEmail(v.assignee)) || null,
+        v.assignee,
       ]);
       const wsC = XLSX.utils.aoa_to_sheet([headersC, ...dataC]);
       wsC['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
