@@ -1,4 +1,3 @@
-// File: src/features/dashboard/DashboardSummary.js
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -6,12 +5,18 @@ import DatePicker from 'react-datepicker';
 
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import { getResultsSummary, getTasks } from '@/lib/apiService';
+import { toastError, toastWarning } from '@/lib/toastHelper';
+
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
+import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
-import { getTasks } from '@/lib/apiService';
-import { toastError, toastWarning } from '@/lib/toastHelper';
-import { normalizeEmail } from '@/lib/utils';
+
+const normalizeEmail = (email) => {
+  if (!email) return null;
+  return email.toLowerCase().trim();
+};
 
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
@@ -50,7 +55,6 @@ function processOrderInfo(rawOrderId) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ========== SKELETON DIAGRAM ==========
 const ChartSkeleton = ({ title }) => (
   <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[450px] flex flex-col animate-pulse">
     <div className="mb-6">
@@ -105,40 +109,39 @@ function DiagramTab({ yearlyTasks, hubId }) {
   );
 }
 
-// ========== MAIN COMPONENT ==========
 export default function DashboardSummary({ driverData }) {
-  // State Harian (Selected Date juga dipakai untuk Tahunan)
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
+  const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [error, setError] = useState(null);
 
-  // State Tahunan
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
 
-  // REFS
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
   const inFlightYearFetchKey = useRef(null);
   const yearlyCacheRef = useRef({});
   const fetchStartTimeRef = useRef(null);
 
-  // Tabs
   const [activeTab, setActiveTab] = useState('Diagram');
   const [dismissedDots, setDismissedDots] = useState({
     Diagram: false,
     Detail: false,
+    RoutingVsActual: false,
   });
 
   const DAILY_CACHE_PREFIX = 'dashboardDailyTasks';
 
   const handleDateChange = (date) => {
     if (!date) return;
-    if (activeTab === 'Detail' && date.getDay() === 0) {
+
+    if (activeTab !== 'Diagram' && date.getDay() === 0) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
     }
+
     if (activeTab === 'Diagram') {
       const newYear = date.getFullYear();
       const updatedDate = new Date(selectedDate);
@@ -149,7 +152,6 @@ export default function DashboardSummary({ driverData }) {
     }
   };
 
-  // Helper Ping Dot
   const getPingDot = (tabId) => {
     const isTabLoading = tabId === 'Diagram' ? isYearlyLoading : loading;
     const dismissed = dismissedDots[tabId];
@@ -177,14 +179,15 @@ export default function DashboardSummary({ driverData }) {
   };
 
   useEffect(() => {
-    if (loading) setDismissedDots((prev) => ({ ...prev, Detail: false }));
+    if (loading) {
+      setDismissedDots((prev) => ({ ...prev, Detail: false, RoutingVsActual: false }));
+    }
   }, [loading]);
 
   useEffect(() => {
     if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
   }, [isYearlyLoading]);
 
-  // ========== FETCH HARIAN (Detail) ==========
   const fetchData = useCallback(async () => {
     if (selectedDate.getDay() === 0) {
       setLoading(false);
@@ -205,6 +208,7 @@ export default function DashboardSummary({ driverData }) {
         assignedDry: 0,
         assignedFrozen: 0,
       });
+      setRawData({ tasks: [], results: [] });
       return;
     }
 
@@ -235,33 +239,28 @@ export default function DashboardSummary({ driverData }) {
       const timeFrom = formatToApiUtc(localStart);
       const timeTo = formatToApiUtc(localEnd);
 
-      const cacheKey = `${DAILY_CACHE_PREFIX}:${hubId}:${timeFrom}:${timeTo}`;
-
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          setSummaryData(parsed);
-          setLoading(false);
-          setError(null);
-          return;
-        } catch (e) {
-          sessionStorage.removeItem(cacheKey);
-        }
-      }
-
       setLoading(true);
       setError(null);
       setSummaryData(null);
 
-      const tasksData = await getTasks({
-        status: 'DONE,ONGOING,UNASSIGNED',
-        hubId,
-        timeFrom,
-        timeTo,
-        timeBy: 'doneTime',
-        limit: 1000,
-      });
+      const [tasksData, resultsData] = await Promise.all([
+        getTasks({
+          status: 'DONE,ONGOING,UNASSIGNED',
+          hubId,
+          timeFrom,
+          timeTo,
+          timeBy: 'doneTime',
+          limit: 1000,
+        }),
+        getResultsSummary({
+          dateFrom: timeFrom,
+          dateTo: timeTo,
+          limit: 500,
+          hubId: hubId,
+        }),
+      ]);
+
+      setRawData({ tasks: tasksData || [], results: resultsData || [] });
 
       if (!tasksData || tasksData.length === 0) {
         const emptySummary = {
@@ -282,11 +281,6 @@ export default function DashboardSummary({ driverData }) {
           assignedFrozen: 0,
         };
         setSummaryData(emptySummary);
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify(emptySummary));
-        } catch (e) {
-          // ignore quota errors
-        }
         return;
       }
 
@@ -401,11 +395,6 @@ export default function DashboardSummary({ driverData }) {
       };
 
       setSummaryData(summary);
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(summary));
-      } catch (e) {
-        // ignore quota errors
-      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'Gagal mengambil data harian.');
@@ -418,7 +407,6 @@ export default function DashboardSummary({ driverData }) {
     fetchData();
   }, [fetchData]);
 
-  // ========== FETCH TAHUNAN ==========
   const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
     let attempt = 0;
     while (true) {
@@ -476,24 +464,6 @@ export default function DashboardSummary({ driverData }) {
     [fetchWithRetry]
   );
 
-  const [elapsedTime, setElapsedTime] = useState(0);
-
-  useEffect(() => {
-    let interval = null;
-    if (isYearlyLoading) {
-      if (!fetchStartTimeRef.current) fetchStartTimeRef.current = Date.now();
-      interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000));
-      }, 1000);
-    } else {
-      setElapsedTime(0);
-      fetchStartTimeRef.current = null;
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isYearlyLoading]);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
@@ -527,7 +497,6 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData]);
 
-  // ========== RENDER ==========
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
 
   const subtitle = (
@@ -558,7 +527,7 @@ export default function DashboardSummary({ driverData }) {
 
   const headerItems = [
     {
-      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman', // Label juga dinamis biar lebih UX friendly
+      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman',
       component: datePicker,
       hideLabel: false,
     },
@@ -567,6 +536,11 @@ export default function DashboardSummary({ driverData }) {
   const cardTabs = [
     { id: 'Diagram', label: 'Diagram', extraContent: getPingDot('Diagram') },
     { id: 'Detail', label: 'Detail', extraContent: getPingDot('Detail') },
+    {
+      id: 'RoutingVsActual',
+      label: 'Routing vs Aktual',
+      extraContent: getPingDot('RoutingVsActual'),
+    },
   ];
 
   const isCardLoading = activeTab === 'Diagram' ? isYearlyLoading : false;
@@ -592,6 +566,15 @@ export default function DashboardSummary({ driverData }) {
         <div className="p-6 h-full overflow-y-auto">
           {activeTab === 'Detail' && (
             <DashboardDetailTab loading={loading} summaryData={summaryData} />
+          )}
+
+          {activeTab === 'RoutingVsActual' && (
+            <RoutingVsActualTab
+              loading={loading}
+              tasks={rawData.tasks}
+              results={rawData.results}
+              drivers={driverData}
+            />
           )}
 
           {activeTab === 'Diagram' && (
