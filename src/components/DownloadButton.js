@@ -30,9 +30,7 @@ export default function DownloadButton(props) {
           />
         </svg>
       )}
-      <span>
-        Download <span className="inline lg:inline sm:hidden">Excel</span>
-      </span>
+      <span>Download Excel</span>
     </button>
   );
 }

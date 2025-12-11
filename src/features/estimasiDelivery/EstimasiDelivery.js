@@ -232,7 +232,6 @@ export default function EstimasiDelivery() {
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard title="Estimasi Delivery" subtitle={subtitle} items={headerItems} />
-
       <BodyCard
         className="min-h-[400px]"
         isLoading={isLoading}

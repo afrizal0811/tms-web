@@ -1,24 +1,18 @@
 // File: src/features/dashboard/DashboardSummary.js
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-
-import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
+import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import { getTasks } from '@/lib/apiService';
-import { toastError, toastWarning } from '@/lib/toastHelper';
-
-// --- IMPORT COMPONENTS ---
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+import { getTasks } from '@/lib/apiService';
+import { toastError, toastWarning } from '@/lib/toastHelper';
+import { normalizeEmail } from '@/lib/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
 
 // ========== HELPER FUNCTIONS ==========
-const normalizeEmail = (email) => {
-  if (!email) return null;
-  return email.toLowerCase().trim();
-};
 
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
@@ -124,10 +118,12 @@ export default function DashboardSummary({ driverData }) {
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
 
+  // REFS
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
   const inFlightYearFetchKey = useRef(null);
   const yearlyCacheRef = useRef({});
+  const fetchStartTimeRef = useRef(null); // Ref untuk menyimpan waktu mulai
 
   // Tabs
   const [activeTab, setActiveTab] = useState('Diagram');
@@ -221,6 +217,7 @@ export default function DashboardSummary({ driverData }) {
 
     try {
       if (typeof window === 'undefined') return;
+
       const hubId = localStorage.getItem('userLocation');
       if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
 
@@ -228,14 +225,17 @@ export default function DashboardSummary({ driverData }) {
       localStart.setHours(0, 0, 0, 0);
       const localEnd = new Date(localStart);
       localEnd.setHours(23, 59, 59, 999);
+
       const timeFrom = formatToApiUtc(localStart);
       const timeTo = formatToApiUtc(localEnd);
 
       const cacheKey = `${DAILY_CACHE_PREFIX}:${hubId}:${timeFrom}:${timeTo}`;
+
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         try {
-          setSummaryData(JSON.parse(cached));
+          const parsed = JSON.parse(cached);
+          setSummaryData(parsed);
           setLoading(false);
           setError(null);
           return;
@@ -257,23 +257,149 @@ export default function DashboardSummary({ driverData }) {
         limit: 1000,
       });
 
-      // ... (Logic pemrosesan data harian sama persis dengan file lama) ...
-      // Untuk singkatnya, saya gunakan logic placeholder yang sesuai.
-      // Pastikan logic for-loop processing Anda dipaste di sini.
-
-      const summary = {
-        /* ... hasil processing ... */
-      };
-      // ...
-
-      // MOCKUP Logic (Silakan ganti dengan logic for loop Anda yg asli)
-      if (!tasksData) {
-        setSummaryData({});
+      if (!tasksData || tasksData.length === 0) {
+        const emptySummary = {
+          totalTasks: 0,
+          unassigned: 0,
+          manualAssignList: [],
+          unassignedList: [],
+          done: 0,
+          ongoing: 0,
+          assignedTasks: 0,
+          flowDelivery: 0,
+          flowReDelivery: 0,
+          flowPendingGR: 0,
+          crossDayTasks: [],
+          totalDry: 0,
+          totalFrozen: 0,
+          assignedDry: 0,
+          assignedFrozen: 0,
+        };
+        setSummaryData(emptySummary);
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(emptySummary));
+        } catch (e) {
+          // ignore quota errors
+        }
         return;
       }
 
-      // -- Simpan ke state --
-      // setSummaryData(summary);
+      let manualAssignList = [];
+      let crossDayTasks = [];
+      let unassignedList = [];
+      let done = 0;
+      let ongoing = 0;
+      let unassigned = 0;
+      let flowDelivery = 0;
+      let flowReDelivery = 0;
+      let flowPendingGR = 0;
+      let totalDry = 0;
+      let totalFrozen = 0;
+      let assignedDry = 0;
+      let assignedFrozen = 0;
+
+      for (const task of tasksData) {
+        const flow = task.flow || 'N/A';
+        const orderInfo = processOrderInfo(task.orderId);
+
+        const typeStorage = (task.typeStorage || '').toUpperCase();
+        const isDry = typeStorage === 'DRY';
+        const isFrozen = typeStorage === 'FROZEN';
+
+        if (isDry) totalDry++;
+        if (isFrozen) totalFrozen++;
+
+        if (task.status === 'DONE') done++;
+        else if (task.status === 'ONGOING') ongoing++;
+        else if (task.status === 'UNASSIGNED') {
+          unassigned++;
+          unassignedList.push({
+            customer: task.customerName || 'N/A',
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
+          });
+        }
+
+        const isAssigned = task.status !== 'UNASSIGNED';
+
+        if (isAssigned) {
+          if (isDry) assignedDry++;
+          if (isFrozen) assignedFrozen++;
+        }
+
+        const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
+        if (manualCategory && isAssigned) {
+          const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+          let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+          if (finalAssignee === 'N/A') finalAssignee = '-';
+
+          manualAssignList.push({
+            customer: task.customerName || 'N/A',
+            driver: finalAssignee,
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
+          });
+        }
+
+        if (flow === 'Delivery') flowDelivery++;
+        else if (flow.includes('Re Delivery')) flowReDelivery++;
+        else if (flow.includes('Pending GR')) flowPendingGR++;
+
+        if (task.status === 'DONE' && task.startTime && task.doneTime) {
+          const startDateWIB = getWIBDateString(task.startTime);
+          const doneDateWIB = getWIBDateString(task.doneTime);
+
+          if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
+            const startDate = new Date(task.startTime);
+            const doneDate = new Date(task.doneTime);
+            const diffInMs = doneDate.getTime() - startDate.getTime();
+            const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+
+            const rawAssignee =
+              task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+            const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+
+            crossDayTasks.push({
+              customer: task.customerName || 'N/A',
+              doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
+              driver: driverName,
+              copyValue: orderInfo.copyValue,
+              tooltip: orderInfo.tooltip,
+            });
+          }
+        }
+      }
+
+      unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+      manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+      crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+
+      const summary = {
+        totalTasks: tasksData.length,
+        unassigned,
+        manualAssignList,
+        unassignedList,
+        done,
+        ongoing,
+        assignedTasks: done + ongoing,
+        flowDelivery,
+        flowReDelivery,
+        flowPendingGR,
+        crossDayTasks,
+        totalDry,
+        totalFrozen,
+        assignedDry,
+        assignedFrozen,
+      };
+
+      setSummaryData(summary);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(summary));
+      } catch (e) {
+        // ignore quota errors
+      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'Gagal mengambil data harian.');
@@ -295,8 +421,9 @@ export default function DashboardSummary({ driverData }) {
       } catch (err) {
         attempt++;
         const status = err?.response?.status || err?.status || null;
-        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429))
+        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
           throw err;
+        }
         const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
         await wait(delay);
       }
@@ -343,27 +470,59 @@ export default function DashboardSummary({ driverData }) {
     [fetchWithRetry]
   );
 
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (isYearlyLoading) {
+      if (!fetchStartTimeRef.current) fetchStartTimeRef.current = Date.now();
+      interval = setInterval(() => {
+        // Update state lokal untuk memicu re-render
+        setElapsedTime(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      fetchStartTimeRef.current = null;
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isYearlyLoading]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
+
     const hubId = localStorage.getItem('userLocation');
     if (!hubId) return;
+
     const year = selectedDate.getFullYear();
     const cacheKey = `${hubId}:${year}`;
-    if (yearlyCacheRef.current[cacheKey]) {
-      setYearlyTasks(yearlyCacheRef.current[cacheKey]);
+
+    const cached = yearlyCacheRef.current[cacheKey];
+    if (cached) {
+      setYearlyTasks(cached);
       lastFetchedYear.current = year;
       lastFetchedLocation.current = hubId;
       return;
     }
-    if (lastFetchedYear.current === year && lastFetchedLocation.current === hubId) return;
+
+    const alreadyFetched =
+      lastFetchedYear.current === year && lastFetchedLocation.current === hubId;
+    if (alreadyFetched) {
+      return;
+    }
+
     if (inFlightYearFetchKey.current === cacheKey) return;
+
     inFlightYearFetchKey.current = cacheKey;
+
     fetchYearlyData(hubId, year, cacheKey).finally(() => {
       inFlightYearFetchKey.current = null;
     });
   }, [selectedDate, activeTab, fetchYearlyData]);
 
+  // ========== RENDER ==========
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
   const subtitle = (
     <>
@@ -409,6 +568,8 @@ export default function DashboardSummary({ driverData }) {
         onTabClick={handleTabClick}
         isLoading={isCardLoading}
         loadingText="Memuat Data Tahunan..."
+        // PROP PENTING: Mengirimkan waktu mulai yang persisten (ref) ke BodyCard
+        timerStartTime={fetchStartTimeRef.current}
       >
         <div className="p-6 h-full overflow-y-auto">
           {activeTab === 'Detail' && (
@@ -423,7 +584,6 @@ export default function DashboardSummary({ driverData }) {
                 </h2>
               </div>
 
-              {/* Jika tidak loading, tampilkan konten. Jika loading, Card overlay yang handle. */}
               {!isYearlyLoading && <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />}
             </div>
           )}

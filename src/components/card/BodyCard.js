@@ -1,9 +1,9 @@
-// File: src/components/Card.js
+// File: src/components/card/BodyCard.js
 'use client';
 
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
-import { formatTimer } from '@/lib/utils'; // Pastikan import formatTimer
+import { formatTimer } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 const LoadingState = ({ elapsed, text }) => (
@@ -16,7 +16,7 @@ const LoadingState = ({ elapsed, text }) => (
   </div>
 );
 
-export default function Card({
+export default function BodyCard({
   children,
   isLoading = false,
   loadingText = 'Sedang memuat data...',
@@ -26,20 +26,22 @@ export default function Card({
   activeTabId,
   onTabClick,
   customHeader = null,
-  // Prop baru untuk konten tambahan jika loading lama (misal: > 120s)
   longLoadingContent = null,
+  timerStartTime = null, // <--- 1. TERIMA PROP BARU
 }) {
-  // --- INTERNAL TIMER LOGIC ---
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(null);
 
   useEffect(() => {
     let interval = null;
     if (isLoading) {
-      if (!startTimeRef.current) startTimeRef.current = Date.now();
-      //eslint-disable-next-line
-      setElapsedTime(0); // Reset visual awal
+      if (timerStartTime) {
+        startTimeRef.current = timerStartTime;
+      } else if (!startTimeRef.current) {
+        startTimeRef.current = Date.now();
+      }
 
+      setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       interval = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
@@ -51,8 +53,7 @@ export default function Card({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isLoading]);
-  // -----------------------------
+  }, [isLoading, timerStartTime]);
 
   const renderHeader = () => {
     if (customHeader) {
@@ -83,9 +84,7 @@ export default function Card({
   };
 
   return (
-    <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full h-[600px]`}
-    >
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full h-[600px]">
       {renderHeader()}
 
       <div className="flex-1 p-0 overflow-hidden flex flex-col relative rounded-b-xl bg-white">

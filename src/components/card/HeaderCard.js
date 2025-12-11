@@ -2,10 +2,15 @@
 'use client';
 
 export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
+  const itemsLength = items.length;
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-4">
+    <div
+      className={`flex flex-col ${itemsLength >= 2 ? 'lg:flex-row' : 'md:flex-row'} justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 gap-4`}
+    >
       {(title || subtitle) && (
-        <div className="mb-4 md:mb-0">
+        <div
+          className={`mb-4 md:mb-0 text-left  ${itemsLength >= 2 ? 'md:text-center ' : ''}  lg:text-left`}
+        >
           {title && <h1 className="text-3xl font-bold text-gray-900">{title}</h1>}
           {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         </div>
