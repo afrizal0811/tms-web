@@ -167,10 +167,13 @@ export default function BulkReportDownloader({ driverData }) {
             className="w-full sm:w-64 p-2 rounded border border-gray-300 text-slate-900 bg-white text-center"
             dateFormat="dd/MM/yyyy"
             disabled={isLoading}
+            dropdownMode="select"
             endDate={endDate}
             maxDate={new Date()}
             onChange={handleDateChange}
             selectsRange={true}
+            showMonthDropdown={true}
+            showYearDropdown={true}
             startDate={startDate}
           />
         </div>

@@ -261,10 +261,13 @@ export default function TmsSummary({
           className="p-2 rounded border border-gray-300 bg-white text-slate-900 disabled:bg-gray-200 disabled:text-gray-400 w-full max-w-xs text-center"
           dateFormat="dd MMMM yyyy"
           disabled={disabledCommon}
+          dropdownMode="select"
           id="shippingDate"
           maxDate={new Date()}
           onChange={handleDateChange}
           selected={selectedDate}
+          showMonthDropdown={true}
+          showYearDropdown={true}
         />
       </div>
 

@@ -1,6 +1,9 @@
 // File: src/features/dashboard/DashboardSummary.js
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
+
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
@@ -9,10 +12,6 @@ import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart
 import { getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { normalizeEmail } from '@/lib/utils';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-
-// ========== HELPER FUNCTIONS ==========
 
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
@@ -108,7 +107,7 @@ function DiagramTab({ yearlyTasks, hubId }) {
 
 // ========== MAIN COMPONENT ==========
 export default function DashboardSummary({ driverData }) {
-  // State Harian
+  // State Harian (Selected Date juga dipakai untuk Tahunan)
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
@@ -123,7 +122,7 @@ export default function DashboardSummary({ driverData }) {
   const lastFetchedLocation = useRef(null);
   const inFlightYearFetchKey = useRef(null);
   const yearlyCacheRef = useRef({});
-  const fetchStartTimeRef = useRef(null); // Ref untuk menyimpan waktu mulai
+  const fetchStartTimeRef = useRef(null);
 
   // Tabs
   const [activeTab, setActiveTab] = useState('Diagram');
@@ -136,11 +135,18 @@ export default function DashboardSummary({ driverData }) {
 
   const handleDateChange = (date) => {
     if (!date) return;
-    if (date.getDay() === 0) {
+    if (activeTab === 'Detail' && date.getDay() === 0) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
     }
-    setSelectedDate(date);
+    if (activeTab === 'Diagram') {
+      const newYear = date.getFullYear();
+      const updatedDate = new Date(selectedDate);
+      updatedDate.setFullYear(newYear);
+      setSelectedDate(updatedDate);
+    } else {
+      setSelectedDate(date);
+    }
   };
 
   // Helper Ping Dot
@@ -477,7 +483,6 @@ export default function DashboardSummary({ driverData }) {
     if (isYearlyLoading) {
       if (!fetchStartTimeRef.current) fetchStartTimeRef.current = Date.now();
       interval = setInterval(() => {
-        // Update state lokal untuk memicu re-render
         setElapsedTime(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000));
       }, 1000);
     } else {
@@ -524,26 +529,40 @@ export default function DashboardSummary({ driverData }) {
 
   // ========== RENDER ==========
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
+
   const subtitle = (
     <>
       Overview performa <span className="font-semibold text-sky-600">harian & tahunan</span>
     </>
   );
 
+  const isDiagramTab = activeTab === 'Diagram';
+
   const datePicker = (
     <DatePicker
-      key={selectedDate.toISOString()}
-      className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer"
-      dateFormat="dd MMMM yyyy"
-      disabled={loading}
+      calendarClassName={isDiagramTab ? 'custom-year-picker' : ''}
+      className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer hover:bg-gray-50 transition-colors"
+      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
+      disabled={loading || (isDiagramTab && isYearlyLoading)}
+      dropdownMode="select"
+      key={activeTab}
       maxDate={new Date()}
       onChange={handleDateChange}
       selected={selectedDate}
+      showMonthDropdown={!isDiagramTab}
+      showYearDropdown={!isDiagramTab}
+      showYearPicker={isDiagramTab}
       wrapperClassName="w-full md:w-auto"
     />
   );
 
-  const headerItems = [{ label: 'Tanggal Pengiriman', component: datePicker, hideLabel: false }];
+  const headerItems = [
+    {
+      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman', // Label juga dinamis biar lebih UX friendly
+      component: datePicker,
+      hideLabel: false,
+    },
+  ];
 
   const cardTabs = [
     { id: 'Diagram', label: 'Diagram', extraContent: getPingDot('Diagram') },
@@ -568,7 +587,6 @@ export default function DashboardSummary({ driverData }) {
         onTabClick={handleTabClick}
         isLoading={isCardLoading}
         loadingText="Memuat Data Tahunan..."
-        // PROP PENTING: Mengirimkan waktu mulai yang persisten (ref) ke BodyCard
         timerStartTime={fetchStartTimeRef.current}
       >
         <div className="p-6 h-full overflow-y-auto">

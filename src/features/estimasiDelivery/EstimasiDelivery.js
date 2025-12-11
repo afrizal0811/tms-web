@@ -154,10 +154,13 @@ export default function EstimasiDelivery() {
       }`}
       dateFormat="dd MMMM yyyy"
       disabled={isLoading}
+      dropdownMode="select" 
       id="estimasiDate"
       maxDate={new Date().setDate(new Date().getDate() - 1)}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
+      showMonthDropdown={true}
+      showYearDropdown={true}
       wrapperClassName="w-full"
     />
   );
