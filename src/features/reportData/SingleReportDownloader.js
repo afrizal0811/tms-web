@@ -5,7 +5,7 @@ import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import * as XLSX from 'xlsx-js-style';
 
@@ -15,6 +15,7 @@ import {
   formatDate,
   getTodayDateString,
   isDateSunday,
+  formatTimer,
 } from '@/lib/utils';
 
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
@@ -23,18 +24,6 @@ import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
-/**
- * Unified TmsSummary component.
- *
- * Props:
- * - driverData: array
- * - isAnyLoading: boolean (parent-level)
- * - isMapping: boolean (parent-level)
- * - selectedLocation: string hubId
- * - selectedLocationName: string
- * - setIsAnyLoading: fn
- * - setIsMapping: fn
- */
 export default function TmsSummary({
   driverData,
   isAnyLoading,
@@ -46,7 +35,28 @@ export default function TmsSummary({
 }) {
   const initialDate = parseDate(getTodayDateString());
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [currentRunning, setCurrentRunning] = useState(null); // 'routing'|'delivery'|'time'|null
+  const [currentRunning, setCurrentRunning] = useState(null); 
+
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    let interval = null;
+    if (currentRunning) {
+      startTimeRef.current = Date.now();
+      setElapsedTime(0);
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      startTimeRef.current = null;
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentRunning]);
 
   const selectedDateString = formatDate(selectedDate); // "YYYY-MM-DD"
   const isDateInvalid = isDateSunday(selectedDateString);
@@ -92,7 +102,7 @@ export default function TmsSummary({
 
       const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
       if (filteredResults.length === 0) {
-        throw new Error('Tidak ada data yang ditemukan untuk tanggal ini (Routing).');
+        throw new Error('Tidak ada data Routing untuk tanggal ini.');
       }
 
       // Tag map for mapping validation
@@ -280,14 +290,16 @@ export default function TmsSummary({
           `}
         >
           {currentRunning === 'routing' ? (
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center gap-2">
               <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Routing Summary'
           )}
         </button>
 
+        {/* Tombol Delivery */}
         <button
           onClick={handleDelivery}
           disabled={disabledCommon || isDateInvalid}
@@ -296,8 +308,9 @@ export default function TmsSummary({
           `}
         >
           {currentRunning === 'delivery' ? (
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center gap-2">
               <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Delivery Summary'
@@ -312,8 +325,9 @@ export default function TmsSummary({
           `}
         >
           {currentRunning === 'time' ? (
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center gap-2">
               <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Time Summary'

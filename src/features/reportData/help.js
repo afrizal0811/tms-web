@@ -29,7 +29,6 @@ export const bulkDownloader = async ({
   setCurrentReport,
   processDateCallback,
 }) => {
-  // 1. Validasi Tanggal
   let isRangeInvalid = false;
   if (!startDate || !endDate) {
     isRangeInvalid = true;
@@ -48,13 +47,11 @@ export const bulkDownloader = async ({
     return;
   }
 
-  // 2. Validasi Data Driver
   if (!driverData || driverData.length === 0) {
     toastError('Data Driver tidak valid.');
     return;
   }
 
-  // 3. Setup State & Variable
   setIsLoading(true);
   setCurrentReport(reportType);
   toastInfo('Memulai proses...');
@@ -62,8 +59,6 @@ export const bulkDownloader = async ({
   try {
     const originalStartDateString = formatDatePoint(startDate);
     const originalEndDateString = formatDatePoint(endDate);
-
-    // Ambil info lokasi dari LocalStorage
     const hubId = localStorage.getItem('userLocation');
     const hubName = localStorage.getItem('userLocationName') || 'Lokasi';
 
@@ -71,22 +66,19 @@ export const bulkDownloader = async ({
 
     const datesToProcess = getDatesInRange(startDate, endDate);
     const zip = new JSZip();
+
     let filesGenerated = 0;
     let sundaysSkipped = 0;
+    const skippedDates = [];
 
-    // 4. Looping Tanggal
     for (const dateObj of datesToProcess) {
       const dateForFile = formatDate(dateObj);
 
-      // Skip Hari Minggu
       if (isDateSunday(dateForFile)) {
         sundaysSkipped++;
-        // console.log(`Melewati ${dateForFile} (Hari Minggu)`); // Optional log
         continue;
       }
-
       try {
-        // Jalankan logika spesifik (fetch api & generate excel) lewat callback
         const result = await processDateCallback({
           dateObj,
           dateForFile,
@@ -94,26 +86,34 @@ export const bulkDownloader = async ({
           hubName,
         });
 
-        // Jika callback mengembalikan data workbook
         if (result) {
           const { wb, excelFileName } = result;
           const excelUint8Array = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
           zip.file(excelFileName, excelUint8Array);
           filesGenerated++;
+        } else {
+          skippedDates.push(dateForFile);
         }
       } catch (err) {
         toastError(`Gagal memproses ${dateForFile}: ${err.message}`);
       }
     }
 
-    // 5. Finalisasi & Download
     if (filesGenerated === 0) {
-      toastError(`Tidak ada file ${zipPrefix} yang berhasil dibuat.`);
+      if (skippedDates.length > 0) {
+        toastWarning(`Tidak ada data ditemukan untuk semua tanggal dalam rentang ini.`);
+      } else {
+        toastError(`Tidak ada file ${zipPrefix} yang berhasil dibuat.`);
+      }
       return;
     }
 
-    if (sundaysSkipped > 0) {
-      toastWarning(`Melewati ${sundaysSkipped} hari (Hari Minggu)`);
+    if (sundaysSkipped > 0 && skippedDates.length === 0) {
+      toastWarning(`Melewati ${sundaysSkipped} tanggal untuk hari Minggu.`);
+    } else if (sundaysSkipped > 0) {
+      toastWarning(
+        `Terdapat ${skippedDates.length} tanggal yang tidak memiliki data (termasuk hari Minggu).`
+      );
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -123,7 +123,6 @@ export const bulkDownloader = async ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     toastSuccess(`Berhasil! ${filesGenerated} file telah di-zip dan diunduh.`);
   } catch (e) {
     toastError(e.message);

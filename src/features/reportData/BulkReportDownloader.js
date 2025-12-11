@@ -7,9 +7,13 @@ import { TAG_MAP_KEY } from '@/lib/constants';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
-import { toastWarning } from '@/lib/toastHelper'; // Kita masih butuh warning untuk notif "Data Kosong" per tanggal
-import { calculateStartFinishDates, calculateTargetDates, getTodayDateString } from '@/lib/utils';
-import { useState } from 'react';
+import {
+  calculateStartFinishDates,
+  calculateTargetDates,
+  getTodayDateString,
+  formatTimer, // 1. Import formatTimer
+} from '@/lib/utils';
+import { useState, useRef, useEffect } from 'react'; // 2. Import useRef & useEffect
 import DatePicker from 'react-datepicker';
 import { bulkDownloader } from './help';
 
@@ -24,6 +28,30 @@ export default function BulkReportDownloader({ driverData }) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
+
+  // 3. State & Ref untuk Timer
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const startTimeRef = useRef(null);
+
+  // 4. Logic Timer
+  useEffect(() => {
+    let interval = null;
+    if (isLoading) {
+      startTimeRef.current = Date.now();
+      //eslint-disable-next-line
+      setElapsedTime(0);
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      startTimeRef.current = null;
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading]);
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
@@ -64,10 +92,8 @@ export default function BulkReportDownloader({ driverData }) {
             dateForFile,
             hubName
           );
-        } else {
-          toastWarning(`Tidak ada data Routing Summary untuk ${apiDate}`);
-          return null;
         }
+        return null;
       },
     });
   };
@@ -113,10 +139,8 @@ export default function BulkReportDownloader({ driverData }) {
             hubId,
             hubName
           );
-        } else {
-          toastWarning(`Tidak ada data Delivery Summary untuk ${apiDate}`);
-          return null;
         }
+        return null;
       },
     });
   };
@@ -144,10 +168,8 @@ export default function BulkReportDownloader({ driverData }) {
 
         if (allApiData.length > 0) {
           return generateTimeSummaryWorkbook(driverData, allApiData, dateForFile, hubName);
-        } else {
-          toastWarning(`Tidak ada data Time Summary untuk ${dateForFile}`);
-          return null;
         }
+        return null;
       },
     });
   };
@@ -190,8 +212,9 @@ export default function BulkReportDownloader({ driverData }) {
           `}
         >
           {isLoading && currentReport === 'routing' ? (
-            <div className="flex justify-center items-center">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+            <div className="flex justify-center items-center gap-2">
+              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Routing Summary'
@@ -209,8 +232,9 @@ export default function BulkReportDownloader({ driverData }) {
           `}
         >
           {isLoading && currentReport === 'delivery' ? (
-            <div className="flex justify-center items-center">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+            <div className="flex justify-center items-center gap-2">
+              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Delivery Summary'
@@ -228,8 +252,9 @@ export default function BulkReportDownloader({ driverData }) {
           `}
         >
           {isLoading && currentReport === 'time' ? (
-            <div className="flex justify-center items-center">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
+            <div className="flex justify-center items-center gap-2">
+              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
+              <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
             'Time Summary'
