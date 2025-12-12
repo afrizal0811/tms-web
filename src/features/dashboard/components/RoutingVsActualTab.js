@@ -1,3 +1,4 @@
+// File: src/features/dashboard/components/RoutingVsActualTab.js
 'use client';
 
 import HighlightText from '@/components/HighlightText';
@@ -197,7 +198,16 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         time: hubTimes.hubETD,
       });
 
-      matchingTasks.sort((a, b) => a.roSequence - b.roSequence);
+      // Urutkan berdasarkan Real Sequence (Kronologis/Aktual)
+      matchingTasks.sort((a, b) => {
+        const realA = a.realSequence !== null ? a.realSequence : 999999;
+        const realB = b.realSequence !== null ? b.realSequence : 999999;
+
+        if (realA !== realB) {
+          return realA - realB;
+        }
+        return a.roSequence - b.roSequence;
+      });
 
       matchingTasks.forEach((t) => {
         finalRows.push({
@@ -230,8 +240,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* Gunakan SearchBar yang lebih universal */}
-      <div className="flex justify-end">
+      <div className="flex w-full justify-end">
         <SearchBar
           value={searchQuery}
           onChange={(val) => setSearchQuery(val)}
@@ -348,7 +357,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                     <td className="px-4 py-2 text-center">{row.actualDeparture}</td>
                     <td className="px-4 py-2 text-center">{row.visitTime}</td>
                     <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
-                    <td className="px-4 py-2 text-center font-semibold">{row.roSequence}</td>
+                    <td className="px-4 py-2 text-center font-semibold">
+                      {row.roSequence === 0 ? '-' : row.roSequence}
+                    </td>
                     <td className="px-4 py-2 text-center font-semibold">
                       {row.realSequence ?? '-'}
                     </td>
