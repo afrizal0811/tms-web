@@ -145,13 +145,10 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-
-            {/* MENU BARU: Rangkuman */}
             <NavLink href="/rangkuman">Rangkuman</NavLink>
-
+            <NavLink href="/update-longlat">Update Longlat</NavLink>
             <NavLink href="/estimasi">Estimasi Pengantaran</NavLink>
             <NavLink href="/vehicles">Data Kendaraan</NavLink>
-            <NavLink href="/update-longlat">Update Longlat</NavLink>
             <HelpDropdown />
           </div>
         </div>
@@ -205,9 +202,9 @@ export default function Navbar() {
             <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
             <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
             <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>
+            <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
-            <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
 
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>

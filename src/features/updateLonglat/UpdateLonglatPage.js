@@ -9,7 +9,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import { getTasks } from '@/lib/apiService';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper'; // Import Helper Driver
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
@@ -18,7 +18,7 @@ import {
   formatCoordinates,
   formatToApiUtc,
   formatYYYYMMDDToDDMMYYYY,
-  normalizeEmail, // Import Normalize Email
+  normalizeEmail,
 } from '@/lib/utils';
 
 import UpdateLonglatTable from './components/UpdateLonglatTable';
@@ -63,7 +63,7 @@ export default function UpdateLonglatPage() {
       const hubId = localStorage.getItem('userLocation');
       if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
 
-      // 1. Ambil Data Driver untuk Mapping Nama
+      // 1. Ambil Data Driver (Cepat & Cached)
       const drivers = await getOrFetchDriverData(hubId);
       const emailToNameMap = new Map();
       if (drivers) {
@@ -73,7 +73,7 @@ export default function UpdateLonglatPage() {
         });
       }
 
-      // 2. Waktu untuk Data Utama (Hari Ini)
+      // 2. Siapkan Waktu
       const localStart = new Date(selectedDate);
       localStart.setHours(0, 0, 0, 0);
       const localEnd = new Date(localStart);
@@ -82,55 +82,57 @@ export default function UpdateLonglatPage() {
       const timeFrom = formatToApiUtc(localStart);
       const timeTo = formatToApiUtc(localEnd);
 
-      // 3. Waktu untuk History (3 Bulan ke belakang)
+      // --- OPTIMASI STEP 1: Fetch HANYA Data Hari Ini ---
+      const todayTasks = await getTasks({
+        status: 'DONE',
+        hubId,
+        timeFrom,
+        timeTo,
+        timeBy: 'doneTime',
+        limit: 1000,
+      });
+
+      // Simpan data hari ini ke state
+      const currentData = todayTasks || [];
+      setTasksData(currentData);
+
+      // --- OPTIMASI STEP 2: Cek Apakah Ada Update? ---
+      const hasUpdates = currentData.some((task) => task.klikLokasiClient);
+
+      // JIKA TIDAK ADA UPDATE: Stop di sini. Hemat waktu loading.
+      if (!hasUpdates) {
+        setLoading(false);
+        return;
+      }
+
+      // --- OPTIMASI STEP 3: JIKA ADA UPDATE, Baru Fetch History (Berat) ---
       const historyStart = new Date(localStart);
-      historyStart.setMonth(historyStart.getMonth() - 3); // Mundur 3 bulan
+      historyStart.setMonth(historyStart.getMonth() - 3);
       const historyTimeFrom = formatToApiUtc(historyStart);
 
-      // Format tanggal untuk UI Modal (dd MMMM yyyy)
       const options = { day: 'numeric', month: 'long', year: 'numeric' };
       setHistoryRange({
         start: historyStart.toLocaleDateString('id-ID', options),
         end: localEnd.toLocaleDateString('id-ID', options),
       });
 
-      // 4. Parallel Fetching: Task Hari Ini & Task History
-      const [todayTasks, historyTasks] = await Promise.all([
-        getTasks({
-          status: 'DONE',
-          hubId,
-          timeFrom,
-          timeTo,
-          timeBy: 'doneTime',
-          limit: 1000,
-        }),
-        getTasks({
-          status: 'DONE',
-          hubId,
-          timeFrom: historyTimeFrom,
-          timeTo: timeTo,
-          timeBy: 'doneTime',
-          limit: 5000,
-        }),
-      ]);
-
-      // Set Data Utama
-      if (!todayTasks || todayTasks.length === 0) {
-        setTasksData([]);
-      } else {
-        setTasksData(todayTasks);
-      }
+      const historyTasks = await getTasks({
+        status: 'DONE',
+        hubId,
+        timeFrom: historyTimeFrom,
+        timeTo: timeTo,
+        timeBy: 'doneTime',
+        limit: 5000,
+      });
 
       // Process History Data menjadi Map
       const map = new Map();
       if (historyTasks && Array.isArray(historyTasks)) {
-        // URUTKAN DARI TANGGAL AWAL (LAMA) KE TANGGAL TERPILIH (BARU) [ASCENDING]
+        // Sort history: Tanggal Lama -> Baru (Ascending)
         historyTasks.sort((a, b) => new Date(a.doneTime) - new Date(b.doneTime));
 
         historyTasks.forEach((task) => {
-          // Hanya ambil task yang ada update lokasi (klikLokasiClient)
-          // Atau jika ingin menampilkan semua kunjungan, hapus kondisi ini.
-          // Tapi biasanya history update lokasi hanya yg ada update-nya.
+          // Hanya ambil task yang ada update lokasi
           if (!task.klikLokasiClient) return;
 
           const name = task.customerName || '';
@@ -140,7 +142,6 @@ export default function UpdateLonglatPage() {
             map.set(name, []);
           }
 
-          // Format Tanggal
           let dateStr = '-';
           if (task.doneTime) {
             try {
@@ -154,17 +155,16 @@ export default function UpdateLonglatPage() {
             }
           }
 
-          // Mapping Driver Name
           const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
           const normAssignee = normalizeEmail(rawAssignee);
           const driverName = emailToNameMap.get(normAssignee) || rawAssignee || '-';
 
-          // Hitung Perbedaan Jarak
           const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
 
           map.get(name).push({
             date: dateStr,
-            longlat: task.klikLokasiClient, // New Longlat
+            newLonglat: task.klikLokasiClient,
+            oldLonglat: task.longlat,
             distanceDiff: bedaJarak,
             driverName: driverName,
           });
@@ -184,7 +184,7 @@ export default function UpdateLonglatPage() {
     fetchData();
   }, [fetchData]);
 
-  // --- PROCESSING DATA (Data Tabel Utama) ---
+  // --- PROCESSING DATA ---
   const processedData = useMemo(() => {
     if (loading || !tasksData) return [];
 
@@ -199,7 +199,6 @@ export default function UpdateLonglatPage() {
 
         const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
 
-        // Flagging Merah: Jika salah satu ID tidak ada
         const isDataIncomplete = !custId || !locId;
 
         updateList.push({
@@ -242,7 +241,6 @@ export default function UpdateLonglatPage() {
       const sheetData = [headers];
 
       processedData.forEach((row, index) => {
-        // Logic Excel: Jika incomplete, ID di-strip
         const displayCustId = row.isIncomplete ? '-' : row.customerId || '';
         const displayLocId = row.isIncomplete ? '-' : row.locationId || '';
 
@@ -309,13 +307,20 @@ export default function UpdateLonglatPage() {
   // --- RENDER COMPONENTS ---
   const datePicker = (
     <DatePicker
-      className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer hover:bg-gray-50 transition-colors"
+      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
+        loading
+          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
+      }`}
       dateFormat="dd MMMM yyyy"
       disabled={loading || isDownloading}
+      dropdownMode="select"
       maxDate={new Date()}
       onChange={handleDateChange}
       selected={selectedDate}
-      wrapperClassName="w-full md:w-auto"
+      showMonthDropdown={true}
+      showYearDropdown={true}
+      wrapperClassName="w-full"
     />
   );
 
@@ -365,7 +370,7 @@ export default function UpdateLonglatPage() {
         emptyMessage="Tidak ada data task ditemukan untuk tanggal ini."
       >
         <div className="p-6 h-full overflow-y-auto">
-          {/* Kirim props historyRange ke tabel */}
+          {/* Kirim processedData dan historyMap ke table */}
           <UpdateLonglatTable
             data={processedData}
             historyMap={historyMap}
