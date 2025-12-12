@@ -496,3 +496,5 @@ export const formatTimer = (seconds) => {
   const s = (seconds % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
 };
+
+export const formatToApiUtc = (date) => date.toISOString().slice(0, 19).replace('T', ' ');

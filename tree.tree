@@ -37,12 +37,14 @@
 │   ├── ConfirmModal.js
 │   ├── DownloadButton.js
 │   ├── Footer.js
+│   ├── HighlightText.js
 │   ├── LocationDropdown.js
 │   ├── navbar
 │   │   ├── HelpDropdown.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
 │   │   └── UserDisplay.js
+│   ├── SearchBar.js
 │   ├── SelectionLayout.js
 │   ├── SessionGuard.js
 │   ├── Spinner.js
@@ -56,6 +58,7 @@
 │   ├── dashboard
 │   │   ├── components
 │   │   │   ├── DashboardDetailTab.js
+│   │   │   ├── RoutingVsActualTab.js
 │   │   │   ├── SequenceAccuracyChart.js
 │   │   │   └── ServiceLevelChart.js
 │   │   ├── DashboardSummary.js

@@ -7,7 +7,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-
+import { formatToApiUtc } from '@/lib/utils';
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
@@ -34,8 +34,6 @@ const getWIBDateString = (utcTimestamp) => {
     return null;
   }
 };
-
-const formatToApiUtc = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
 function processOrderInfo(rawOrderId) {
   if (!rawOrderId || rawOrderId === 'N/A') {
