@@ -15,11 +15,13 @@ import { handleConfirmDownload, parseSONumber } from './help';
 
 export default function EstimasiDelivery() {
   const [selectedDate, setSelectedDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const y = yesterday.getFullYear();
-    const m = String(yesterday.getMonth() + 1).padStart(2, '0');
-    const d = String(yesterday.getDate()).padStart(2, '0');
+    const date = new Date();
+    const daysToSubtract = date.getDay() === 1 ? 2 : 1;
+    date.setDate(date.getDate() - daysToSubtract);
+
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   });
 

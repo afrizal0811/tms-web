@@ -19,6 +19,7 @@ import {
   formatToApiUtc,
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
+  formatDate,
 } from '@/lib/utils';
 
 import UpdateLonglatTable from './components/UpdateLonglatTable';
@@ -74,14 +75,11 @@ export default function UpdateLonglatPage() {
       }
 
       // 2. Siapkan Waktu
-      const localStart = new Date(selectedDate);
-      localStart.setHours(0, 0, 0, 0);
-      const localEnd = new Date(localStart);
-      localEnd.setHours(23, 59, 59, 999);
+      const selectedDateStr = formatDate(selectedDate);
 
-      const timeFrom = formatToApiUtc(localStart);
-      const timeTo = formatToApiUtc(localEnd);
-
+      // Isi jam manual (LOCAL → API sudah siap terima string)
+      const timeFrom = `${selectedDateStr} 00:00:00`;
+      const timeTo = `${selectedDateStr} 23:59:59`;
       // --- OPTIMASI STEP 1: Fetch HANYA Data Hari Ini ---
       const todayTasks = await getTasks({
         status: 'DONE',
@@ -105,15 +103,16 @@ export default function UpdateLonglatPage() {
         return;
       }
 
-      // --- OPTIMASI STEP 3: JIKA ADA UPDATE, Baru Fetch History (Berat) ---
-      const historyStart = new Date(localStart);
+      const historyStart = new Date(`${selectedDateStr}T00:00:00`);
       historyStart.setMonth(historyStart.getMonth() - 3);
-      const historyTimeFrom = formatToApiUtc(historyStart);
 
-      const options = { day: 'numeric', month: 'long', year: 'numeric' };
+      const historyDateStr = formatDate(historyStart);
+      const historyTimeFrom = `${historyDateStr} 00:00:00`;
+
+      const displayOptions = { day: 'numeric', month: 'long', year: 'numeric' };
       setHistoryRange({
-        start: historyStart.toLocaleDateString('id-ID', options),
-        end: localEnd.toLocaleDateString('id-ID', options),
+        start: new Date(historyDateStr).toLocaleDateString('id-ID', displayOptions),
+        end: new Date(selectedDateStr).toLocaleDateString('id-ID', displayOptions),
       });
 
       const historyTasks = await getTasks({

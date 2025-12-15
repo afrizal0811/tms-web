@@ -242,9 +242,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     <div className="flex flex-col h-full space-y-4">
       <div className="flex w-full justify-end">
         <SearchBar
-          value={searchQuery}
+          disabled={loading}
           onChange={(val) => setSearchQuery(val)}
           placeholder="Cari Plat, Driver, atau Customer"
+          value={searchQuery}
         />
       </div>
 

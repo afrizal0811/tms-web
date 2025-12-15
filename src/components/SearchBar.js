@@ -9,11 +9,7 @@ export default function SearchBar({
   disabled = false,
 }) {
   return (
-    // PERUBAHAN DISINI:
-    // "w-full" -> Selalu full width secara default
-    // "lg:max-w-xs" -> Hanya membatasi lebar (320px) saat layar Desktop (Large)
     <div className={`relative w-full lg:max-w-xs ${className}`}>
-      {/* Search Icon (Kiri) */}
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg
           className="h-5 w-5 text-gray-400"
@@ -30,10 +26,9 @@ export default function SearchBar({
         </svg>
       </div>
 
-      {/* Input Field */}
       <input
         type="text"
-        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow"
+        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
         placeholder={placeholder}
         disabled={disabled}
         value={value}

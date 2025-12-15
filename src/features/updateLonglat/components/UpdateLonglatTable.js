@@ -3,10 +3,6 @@
 
 import { useState } from 'react';
 import CustomerHistoryModal from './CustomerHistoryModal';
-import HighlightText from '@/components/HighlightText'; // Pastikan import ini ada jika dipakai di cell
-import SearchBar from '@/components/SearchBar'; // Pastikan ini ada jika searchbar masih ada (opsional sesuai request sebelumnya searchbar dihapus, tapi di kode ini saya fokus ke Modal)
-
-// Asumsi: SearchBar sudah dihapus sesuai request sebelumnya, jadi saya fokus ke Table & Modal logic.
 
 export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
   const [selectedRow, setSelectedRow] = useState(null);
@@ -83,12 +79,6 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
           </div>
         )}
       </div>
-
-      {/* PERBAIKAN UTAMA:
-        Render Modal secara KONDISIONAL ({isModalOpen && ...}).
-        Ini akan memaksa React untuk "Membangun Ulang" (Remount) modal dari nol setiap kali dibuka.
-        Efeknya: State reset, Peta reset ke FitBounds awal.
-      */}
       {isModalOpen && (
         <CustomerHistoryModal
           isOpen={isModalOpen}

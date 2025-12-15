@@ -232,11 +232,11 @@ export default function VehicleData() {
 
   const searchBar = (
     <SearchBar
-      value={searchQuery}
-      onChange={(val) => setSearchQuery(val)}
-      placeholder="Plat, Customer, atau SO"
-      disabled={isLoading}
       className="w-full lg:max-w-xs"
+      disabled={isLoading}
+      onChange={(val) => setSearchQuery(val)}
+      placeholder="Cari Plat, Customer, atau SO"
+      value={searchQuery}
     />
   );
 
