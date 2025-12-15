@@ -5,6 +5,13 @@ import { VEHICLE_TYPES } from '@/lib/constants';
 import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
+// Helper kecil untuk memformat jam (HH:mm:ss -> HH:mm)
+function formatSimpleTime(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return '-';
+  // Ambil 5 karakter pertama (HH:mm)
+  return timeStr.substring(0, 5);
+}
+
 export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dateForFile, hubName) {
   const driverMap = driverData.reduce((acc, driver) => {
     if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
@@ -33,10 +40,30 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
 
         const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
 
-        // --- UPDATE LOGIC: Trigger Manual jika <= 0 ---
-        const needsManualWeight = hasTrips && initialTotalWeight <= 0;
-        const needsManualVolume = hasTrips && initialTotalVolume <= 0;
-        // Distance & Time tetap jika 0 karena jarang negatif
+        // --- 1. LOGIKA BARU: Ambil ETD Hub & ETA First Store ---
+        let etdHubVal = '-';
+        let etaFirstStoreVal = '-';
+
+        if (hasTrips) {
+          // Cari Hub (biasanya trip pertama atau yang flag isHub=true)
+          const hubTrip = route.trips.find((t) => t.isHub);
+          if (hubTrip && hubTrip.etd) {
+            etdHubVal = formatSimpleTime(hubTrip.etd);
+          } else if (route.trips[0] && route.trips[0].etd) {
+            // Fallback: ambil trip pertama jika tidak ada flag isHub
+            etdHubVal = formatSimpleTime(route.trips[0].etd);
+          }
+
+          // Cari First Store (trip pertama yang BUKAN hub)
+          const firstStoreTrip = route.trips.find((t) => !t.isHub);
+          if (firstStoreTrip && firstStoreTrip.eta) {
+            etaFirstStoreVal = formatSimpleTime(firstStoreTrip.eta);
+          }
+        }
+        // --------------------------------------------------------
+
+        const needsManualWeight = hasTrips && initialTotalWeight === 0;
+        const needsManualVolume = hasTrips && initialTotalVolume === 0;
         const needsManualDistance = hasTrips && initialTotalDistance === 0;
         const needsManualTravelTime = hasTrips && initialTotalTravelTime === 0;
         const needsManualVisitTime = hasTrips && initialTotalVisitTime === 0;
@@ -51,7 +78,6 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
           waitingTime: 0,
         };
 
-        // --- UPDATE LOGIC: Hitung Manual dengan Math.abs() ---
         if (
           hasTrips &&
           (needsManualWeight ||
@@ -118,6 +144,10 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
           totalVisits: null,
           totalDelivered: null,
           shipDurationRaw: manualSpentTime || route.totalSpentTime || 0,
+          // Simpan data baru
+          etaFirstStore: etaFirstStoreVal,
+          etdHub: etdHubVal,
+
           hasTrips: hasTrips,
           totalTravelTime: totalTravelTime,
           totalVisitTime: totalVisitTime,
@@ -178,6 +208,11 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         ),
         totalDistance: Math.max(existing.totalDistance, row.totalDistance),
         shipDurationRaw: Math.max(existing.shipDurationRaw, row.shipDurationRaw),
+        // Untuk ETA/ETD, kita pertahankan yg sudah ada (asumsi 1 driver 1 route utama), atau overwrite jika perlu.
+        // Di sini kita biarkan yg pertama ditemukan.
+        etaFirstStore: existing.etaFirstStore !== '-' ? existing.etaFirstStore : row.etaFirstStore,
+        etdHub: existing.etdHub !== '-' ? existing.etdHub : row.etdHub,
+
         hasTrips: existing.hasTrips || row.hasTrips,
         totalTravelTime: existing.totalTravelTime && row.totalTravelTime,
         totalVisitTime: existing.totalVisitTime && row.totalVisitTime,
@@ -186,16 +221,27 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   }
 
   const wb = XLSX.utils.book_new();
-  const headerStyle = {
+
+  // --- STYLING DEFINITIONS ---
+  const defaultHeaderStyle = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
+
+  // 2. LOGIKA BARU: Style Warna Hijau (#84fa92)
+  const greenHeaderStyle = {
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { patternType: 'solid', fgColor: { rgb: '84FA92' } },
+  };
+
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const redFillStyle = {
     fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
 
+  // 3. LOGIKA BARU: Tambah Header
   const headers1 = [
     'Plat',
     'Driver',
@@ -205,6 +251,8 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
     'Total Visits',
     'Total Delivered',
     'Ship Duration',
+    'ETA First Store', // Baru
+    'ETD Hub', // Baru
   ];
 
   const validDriverData = driverData.filter((driver) => {
@@ -218,6 +266,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
     const driverName = driver.name;
     const driverPlat = driver.plat;
     const mergedRow = mergedTruckDetailMap.get(driverName);
+
     if (mergedRow && mergedRow.hasTrips) {
       const hasMissingTimes = mergedRow.totalTravelTime === 0 || mergedRow.totalVisitTime === 0;
       return {
@@ -229,6 +278,10 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         TotalVisits: null,
         TotalDelivered: null,
         ShipDuration: formatMinutesToHHMM(mergedRow.shipDurationRaw),
+        // Map Data Baru
+        ETAFirstStore: mergedRow.etaFirstStore,
+        ETDHub: mergedRow.etdHub,
+
         hasMissingTimes: hasMissingTimes,
       };
     } else {
@@ -241,6 +294,8 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         TotalVisits: null,
         TotalDelivered: null,
         ShipDuration: null,
+        ETAFirstStore: null,
+        ETDHub: null,
         hasMissingTimes: false,
       };
     }
@@ -268,6 +323,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   });
 
   const missingTimesFound = excelDataRows.some((row) => row.hasMissingTimes);
+
   const finalSheetData1 = [
     headers1,
     ...excelDataRows.map((row) => [
@@ -279,19 +335,47 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
       row.TotalVisits,
       row.TotalDelivered,
       row.ShipDuration,
+      row.ETAFirstStore, // Kolom 8
+      row.ETDHub, // Kolom 9
     ]),
   ];
 
   const wsTruckDetail = XLSX.utils.aoa_to_sheet(finalSheetData1);
   const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
-  const centerAlignedDataColumns1 = [2, 3, 4, 7];
+
+  // Kolom yang harus center alignment (tambah indeks 8 dan 9 untuk ETA/ETD)
+  const centerAlignedDataColumns1 = [2, 3, 4, 7, 8, 9];
   const shipDurationColIndex = 7;
+
+  // Daftar nama header yang harus berwarna hijau
+  const greenHeaders = [
+    'Plat',
+    'Driver',
+    'Weight Percentage',
+    'Volume Percentage',
+    'Total Distance (m)',
+    'Total Visits',
+    'Total Delivered',
+    'Ship Duration',
+  ];
+
   for (let R = range1.s.r; R <= range1.e.r; ++R) {
     for (let C = range1.s.c; C <= range1.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsTruckDetail[cellRef]) continue;
+
       if (R === 0) {
-        wsTruckDetail[cellRef].s = headerStyle;
+        // --- LOGIKA APPLY WARNA HEADER ---
+        // Cek apakah kolom ini termasuk dalam daftar greenHeaders
+        // Karena array headers1 urut, kita bisa cek berdasarkan nama header di data
+        const headerName = finalSheetData1[0][C];
+
+        if (greenHeaders.includes(headerName)) {
+          wsTruckDetail[cellRef].s = greenHeaderStyle;
+        } else {
+          wsTruckDetail[cellRef].s = defaultHeaderStyle;
+        }
+
         if (C === shipDurationColIndex && missingTimesFound) {
           if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
           wsTruckDetail[cellRef].c.push({
@@ -303,6 +387,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
       } else if (centerAlignedDataColumns1.includes(C)) {
         wsTruckDetail[cellRef].s = centerStyle;
       }
+
       const rowData = excelDataRows[R - 1];
       if (rowData && rowData.hasMissingTimes && C === shipDurationColIndex) {
         wsTruckDetail[cellRef].s = redFillStyle;
@@ -316,9 +401,10 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
       2,
   }));
   wsTruckDetail['!cols'] = colWidths1;
+
   XLSX.utils.book_append_sheet(wb, wsTruckDetail, 'Truck Detail');
 
-  // --- Distance Summary ---
+  // --- SUMMARY SHEETS (Distance & Usage) - TIDAK BERUBAH ---
   const totalDryKm = totalDryDistance / 1000;
   const totalFrozenKm = totalFrozenDistance / 1000;
   const distanceSummaryData = [
@@ -342,7 +428,6 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   wsDistanceSummary['!cols'] = [{ wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsDistanceSummary, 'Total Distance Summary');
 
-  // --- Truck Usage ---
   const usageHeader = ['Tipe Kendaraan', 'Jumlah (Dry)', 'Jumlah (Frozen)'];
   const usageDataRows = VEHICLE_TYPES.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
