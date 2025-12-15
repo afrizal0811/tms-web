@@ -3,6 +3,7 @@
 
 import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
 import HeaderCard from '@/components/card/HeaderCard';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
@@ -13,7 +14,6 @@ import {
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { calculateTargetDates, formatDate } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
 import * as XLSX from 'xlsx-js-style';
 
 // --- IMPORT TABS ---
@@ -545,18 +545,14 @@ export default function RangkumanSummary() {
   };
 
   const datePicker = (
-    <DatePicker
+    <CustomDatePicker
       selected={selectedDate}
       onChange={handleDateChange}
+      isLoading={isLoading}
       dateFormat="MMMM yyyy"
       showMonthYearPicker
+      className="md:w-48"
       wrapperClassName="w-full"
-      disabled={isLoading}
-      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-        isLoading
-          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-      }`}
     />
   );
 
@@ -600,10 +596,7 @@ export default function RangkumanSummary() {
 
   const subtitle = (
     <>
-      Rekapitulasi{' '}
-      <span className="font-semibold text-sky-600">
-        performa tugas
-      </span>{' '} bulanan
+      Rekapitulasi <span className="font-semibold text-sky-600">performa tugas</span> bulanan
     </>
   );
 

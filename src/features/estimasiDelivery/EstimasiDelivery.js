@@ -1,13 +1,13 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
+import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { isDateSunday, parseOutletName } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
-import DatePicker from 'react-datepicker';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
 import TableData from './components/TableData';
@@ -149,21 +149,13 @@ export default function EstimasiDelivery() {
   }, [filteredVehicleRoutes, activeVehicleId]);
 
   const datePicker = (
-    <DatePicker
-      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-        isLoading
-          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-      }`}
-      dateFormat="dd MMMM yyyy"
-      disabled={isLoading}
-      dropdownMode="select"
+    <CustomDatePicker
       id="estimasiDate"
-      maxDate={new Date().setDate(new Date().getDate() - 1)}
+      className="md:w-48"
+      isLoading={isLoading}
+      maxDate={new Date(new Date().setDate(new Date().getDate() - 1))}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
-      showMonthDropdown={true}
-      showYearDropdown={true}
       wrapperClassName="w-full"
     />
   );

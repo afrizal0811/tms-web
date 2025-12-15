@@ -1,21 +1,21 @@
 // File: features/reportData/TmsSummary.js
 'use client';
 
+import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { useState, useRef, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
+import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 import {
   calculateStartFinishDates,
   calculateTargetDates,
   formatDate,
+  formatTimer,
   getTodayDateString,
   isDateSunday,
-  formatTimer,
 } from '@/lib/utils';
 
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
@@ -35,7 +35,7 @@ export default function TmsSummary({
 }) {
   const initialDate = parseDate(getTodayDateString());
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [currentRunning, setCurrentRunning] = useState(null); 
+  const [currentRunning, setCurrentRunning] = useState(null);
 
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(null);
@@ -267,17 +267,12 @@ export default function TmsSummary({
         <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
           Tanggal Pengiriman
         </label>
-        <DatePicker
-          className="p-2 rounded border border-gray-300 bg-white text-slate-900 disabled:bg-gray-200 disabled:text-gray-400 w-full max-w-xs text-center"
-          dateFormat="dd MMMM yyyy"
-          disabled={disabledCommon}
-          dropdownMode="select"
+        <CustomDatePicker
           id="shippingDate"
-          maxDate={new Date()}
-          onChange={handleDateChange}
           selected={selectedDate}
-          showMonthDropdown={true}
-          showYearDropdown={true}
+          onChange={handleDateChange}
+          disabled={disabledCommon}
+          className="max-w-xs"
         />
       </div>
 

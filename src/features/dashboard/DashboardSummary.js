@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
-
+import CustomDatePicker from '@/components/CustomDatePicker';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
@@ -507,19 +507,13 @@ export default function DashboardSummary({ driverData }) {
 
   const datePicker = (
     <DatePicker
-      calendarClassName={isDiagramTab ? 'custom-year-picker' : ''}
-      className="border border-gray-300 rounded-lg p-2.5 text-center font-medium text-slate-700 shadow-sm outline-none w-full md:w-48 cursor-pointer hover:bg-gray-50 transition-colors"
-      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-      disabled={loading || (isDiagramTab && isYearlyLoading)}
-      dropdownMode="select"
-      key={activeTab}
+      className="md:w-48" // Custom width untuk desktop
+      dateFormat="dd MMMM yyyy"
+      isLoading={loading} // Menangani state disabled & styling loading
       maxDate={new Date()}
       onChange={handleDateChange}
       selected={selectedDate}
-      showMonthDropdown={!isDiagramTab}
-      showYearDropdown={!isDiagramTab}
-      showYearPicker={isDiagramTab}
-      wrapperClassName="w-full md:w-auto"
+      wrapperClassName="w-full"
     />
   );
 

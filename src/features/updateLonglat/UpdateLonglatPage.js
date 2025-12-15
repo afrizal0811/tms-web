@@ -2,7 +2,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import DatePicker from 'react-datepicker';
+
+import CustomDatePicker from '@/components/CustomDatePicker';
 import * as XLSX from 'xlsx-js-style';
 
 import BodyCard from '@/components/card/BodyCard';
@@ -16,10 +17,9 @@ import {
   extractCustomerId,
   extractLocationId,
   formatCoordinates,
-  formatToApiUtc,
+  formatDate,
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
-  formatDate,
 } from '@/lib/utils';
 
 import UpdateLonglatTable from './components/UpdateLonglatTable';
@@ -305,20 +305,11 @@ export default function UpdateLonglatPage() {
 
   // --- RENDER COMPONENTS ---
   const datePicker = (
-    <DatePicker
-      className={`w-full md:w-48 px-4 py-2.5 h-[42px] rounded-lg border border-gray-300 text-center font-medium shadow-sm transition-colors ${
-        loading
-          ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-          : 'bg-white text-slate-700 cursor-pointer hover:bg-gray-50'
-      }`}
-      dateFormat="dd MMMM yyyy"
-      disabled={loading || isDownloading}
-      dropdownMode="select"
-      maxDate={new Date()}
-      onChange={handleDateChange}
+    <CustomDatePicker
       selected={selectedDate}
-      showMonthDropdown={true}
-      showYearDropdown={true}
+      onChange={handleDateChange}
+      isLoading={loading || isDownloading}
+      className="md:w-48"
       wrapperClassName="w-full"
     />
   );

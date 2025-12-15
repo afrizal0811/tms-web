@@ -1,6 +1,7 @@
 // File: features/reports/BulkReportDownloader.js
 'use client';
 
+import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
@@ -10,11 +11,10 @@ import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
+  formatTimer,
   getTodayDateString,
-  formatTimer, // 1. Import formatTimer
 } from '@/lib/utils';
-import { useState, useRef, useEffect } from 'react'; // 2. Import useRef & useEffect
-import DatePicker from 'react-datepicker';
+import { useEffect, useRef, useState } from 'react'; // 2. Import useRef & useEffect
 import { bulkDownloader } from './help';
 
 const parseDate = (dateStr) => {
@@ -185,18 +185,14 @@ export default function BulkReportDownloader({ driverData }) {
           <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
             Rentang Tanggal Pengiriman
           </label>
-          <DatePicker
-            className="w-full sm:w-64 p-2 rounded border border-gray-300 text-slate-900 bg-white text-center"
-            dateFormat="dd/MM/yyyy"
-            disabled={isLoading}
-            dropdownMode="select"
-            endDate={endDate}
-            maxDate={new Date()}
-            onChange={handleDateChange}
-            selectsRange={true}
-            showMonthDropdown={true}
-            showYearDropdown={true}
+          <CustomDatePicker
+            selectsRange
             startDate={startDate}
+            endDate={endDate}
+            onChange={handleDateChange}
+            isLoading={isLoading}
+            dateFormat="dd/MM/yyyy"
+            className="sm:w-64"
           />
         </div>
       </div>
