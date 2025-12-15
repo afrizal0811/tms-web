@@ -1,12 +1,11 @@
-// File: src/features/updateLonglat/components/UpdateMap.js
 'use client';
 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 
-// Fix icon default Leaflet
+// Fix default icon Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -34,114 +33,137 @@ const blueIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// --- LOGIC HIGHLIGHT ---
+// --- Highlight Effect ---
 function HighlightEffect({ activeCoords, highlightTrigger, markerRefs }) {
   const map = useMap();
 
   useEffect(() => {
     if (!activeCoords) return;
 
-    // Parsing Koordinat
     const [lat, lng] = activeCoords.split(',').map(Number);
+    if (isNaN(lat) || isNaN(lng)) return;
 
-    if (!isNaN(lat) && !isNaN(lng)) {
-      // Terbang ke lokasi (Zoom level 18)
-      map.flyTo([lat, lng], 18, {
-        animate: true,
-        duration: 1.5,
-      });
+    map.flyTo([lat, lng], 18, {
+      animate: true,
+      duration: 1.5,
+    });
 
-      // Buka Popup jika marker tersedia
-      const marker = markerRefs.current[activeCoords];
-      if (marker) {
-        setTimeout(() => {
-          marker.openPopup();
-        }, 300);
-      }
+    const marker = markerRefs.current[activeCoords];
+    if (marker) {
+      setTimeout(() => marker.openPopup(), 300);
     }
   }, [activeCoords, highlightTrigger, map, markerRefs]);
 
   return null;
 }
 
-// --- LOGIC INITIAL ZOOM (Tanpa Lock) ---
+// --- Initial Fit Bounds ---
 function InitialFitBounds({ points }) {
   const map = useMap();
 
   useEffect(() => {
     if (!points || points.length === 0) return;
-
-    // Hitung area yang mencakup semua titik
     const bounds = L.latLngBounds(points);
-
-    // Sesuaikan zoom agar semua titik terlihat (dengan padding)
     map.fitBounds(bounds, { padding: [50, 50] });
-
-    // HAPUS LOGIKA setMinZoom DI SINI
-    // User sekarang bebas zoom out setelah inisialisasi selesai.
   }, [map, points]);
 
   return null;
 }
 
 export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
-  const mapElements = [];
-  const allPoints = [];
   const markerRefs = useRef({});
+  const latestOldPoint = useMemo(() => {
+    if (!data || data.length === 0) return null;
 
-  data.forEach((item, index) => {
-    if (!item.newLonglat || !item.oldLonglat) return;
+    let latest = null;
 
-    const [newLat, newLng] = item.newLonglat.split(',').map(Number);
-    const [oldLat, oldLng] = item.oldLonglat.split(',').map(Number);
+    for (const item of data) {
+      if (!item.oldLonglat || !item.date) continue;
 
-    if (isNaN(newLat) || isNaN(oldLat)) return;
+      // date format: DD/MM/YYYY
+      const [d, m, y] = item.date.split('/');
+      const parsedDate = new Date(`${y}-${m}-${d}`);
 
-    const newPos = [newLat, newLng];
-    const oldPos = [oldLat, oldLng];
+      if (!latest || parsedDate > latest.parsedDate) {
+        latest = {
+          oldLonglat: item.oldLonglat,
+          dateLabel: item.date,
+          parsedDate,
+        };
+      }
+    }
 
-    allPoints.push(newPos);
-    allPoints.push(oldPos);
+    return latest;
+  }, [data]);
+  const { mapElements, allPoints } = useMemo(() => {
+    const elements = [];
+    const points = [];
 
-    // Marker Baru (Biru)
-    mapElements.push(
-      <Marker
-        key={`new-${index}`}
-        position={newPos}
-        icon={blueIcon}
-        ref={(el) => {
-          if (el) markerRefs.current[item.newLonglat] = el;
-        }}
-      >
-        <Popup>
-          <strong>Lokasi Baru (Input User)</strong>
-          <br />
-          Driver: {item.driverName}
-          <br />
-          Tgl: {item.date}
-        </Popup>
-      </Marker>
-    );
+    // Marker MERAH (HANYA 1)
+    if (latestOldPoint) {
+      const [lat, lng] = latestOldPoint.oldLonglat.split(',').map(Number);
 
-    // Marker Lama (Merah)
-    mapElements.push(
-      <Marker key={`old-${index}`} position={oldPos} icon={redIcon} opacity={0.6}>
-        <Popup>
-          <strong>Lokasi Master (Lama)</strong>
-          <br />
-          Referensi Awal
-        </Popup>
-      </Marker>
-    );
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const pos = [lat, lng];
+        points.push(pos);
 
-    mapElements.push(
-      <Polyline
-        key={`line-${index}`}
-        positions={[oldPos, newPos]}
-        pathOptions={{ color: 'blue', dashArray: '5, 10', opacity: 0.5 }}
-      />
-    );
-  });
+        elements.push(
+          <Marker key="old-latest" position={pos} icon={redIcon} opacity={0.7}>
+            <Popup>
+              <strong>Lokasi Master (Lama)</strong>
+              <br />
+              Berlaku sejak:
+              <br />
+              <strong>{latestOldPoint.dateLabel}</strong>
+            </Popup>
+          </Marker>
+        );
+      }
+    }
+
+    data.forEach((item, index) => {
+      if (!item.newLonglat || !item.oldLonglat) return;
+
+      const [newLat, newLng] = item.newLonglat.split(',').map(Number);
+      const [oldLat, oldLng] = item.oldLonglat.split(',').map(Number);
+
+      if (isNaN(newLat) || isNaN(oldLat)) return;
+
+      const newPos = [newLat, newLng];
+      const oldPos = [oldLat, oldLng];
+
+      points.push(newPos);
+
+      elements.push(
+        <Marker
+          key={`new-${index}`}
+          position={newPos}
+          icon={blueIcon}
+          ref={(el) => {
+            if (el) markerRefs.current[item.newLonglat] = el;
+          }}
+        >
+          <Popup>
+            <strong>Lokasi Baru (Input User)</strong>
+            <br />
+            Driver: {item.driverName}
+            <br />
+            Tgl: {item.date}
+          </Popup>
+        </Marker>
+      );
+
+      elements.push(
+        <Polyline
+          key={`line-${index}`}
+          positions={[oldPos, newPos]}
+          pathOptions={{ color: 'blue', dashArray: '5, 10', opacity: 0.5 }}
+        />
+      );
+    });
+
+    return { mapElements: elements, allPoints: points };
+  }, [data, latestOldPoint]);
 
   if (allPoints.length === 0) {
     return (
@@ -164,7 +186,6 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
 
       {mapElements}
 
-      {/* Gunakan komponen baru tanpa lock */}
       <InitialFitBounds points={allPoints} />
 
       <HighlightEffect

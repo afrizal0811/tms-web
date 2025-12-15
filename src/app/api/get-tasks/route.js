@@ -13,6 +13,7 @@ export async function GET(request) {
     const timeBy = searchParams.get('timeBy');
     // Default limit internal per halaman (API membatasi max 1000)
     const limit = searchParams.get('limit') || 1000;
+    const fields = searchParams.get('fields');
 
     // Cek parameter wajib
     if (!hubId || !timeFrom || !timeTo || !status || !timeBy) {
@@ -37,6 +38,9 @@ export async function GET(request) {
       externalUrl.searchParams.append('timeBy', timeBy);
       externalUrl.searchParams.append('limit', limit);
       externalUrl.searchParams.append('page', pageNumber); // Tambahkan parameter page
+      if (fields) {
+        externalUrl.searchParams.append('fields', fields);
+      }
 
       const res = await fetch(externalUrl.toString(), {
         headers: {
