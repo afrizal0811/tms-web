@@ -1,23 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import { getResultsSummary, getTasks } from '@/lib/apiService';
-import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatToApiUtc } from '@/lib/utils';
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
-
-const normalizeEmail = (email) => {
-  if (!email) return null;
-  return email.toLowerCase().trim();
-};
-
+import { getResultsSummary, getTasks } from '@/lib/apiService';
+import { toastError, toastWarning } from '@/lib/toastHelper';
+import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
   try {
@@ -240,6 +233,7 @@ export default function DashboardSummary({ driverData }) {
       setLoading(true);
       setError(null);
       setSummaryData(null);
+      fetchStartTimeRef.current = Date.now();
 
       const [tasksData, resultsData] = await Promise.all([
         getTasks({
@@ -503,23 +497,19 @@ export default function DashboardSummary({ driverData }) {
     </>
   );
 
-  const isDiagramTab = activeTab === 'Diagram';
-
   const datePicker = (
-    <DatePicker
-      className="md:w-48" // Custom width untuk desktop
-      dateFormat="dd MMMM yyyy"
-      isLoading={loading} // Menangani state disabled & styling loading
-      maxDate={new Date()}
-      onChange={handleDateChange}
+    <CustomDatePicker
       selected={selectedDate}
+      onChange={handleDateChange}
+      isLoading={loading}
+      className="md:w-48"
       wrapperClassName="w-full"
     />
   );
 
   const headerItems = [
     {
-      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman',
+      label: activeTab === 'Diagram' ? 'Tahun Performa' : 'Tanggal Pengiriman',
       component: datePicker,
       hideLabel: false,
     },
@@ -535,7 +525,7 @@ export default function DashboardSummary({ driverData }) {
     },
   ];
 
-  const isCardLoading = activeTab === 'Diagram' ? isYearlyLoading : false;
+  const isCardLoading = activeTab === 'Diagram' ? isYearlyLoading : loading;
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
@@ -552,7 +542,7 @@ export default function DashboardSummary({ driverData }) {
         activeTabId={activeTab}
         onTabClick={handleTabClick}
         isLoading={isCardLoading}
-        loadingText="Memuat Data Tahunan..."
+        loadingText="Memuat data..."
         timerStartTime={fetchStartTimeRef.current}
       >
         <div className="p-6 h-full overflow-y-auto">

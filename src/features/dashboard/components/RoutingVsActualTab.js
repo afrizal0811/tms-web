@@ -3,7 +3,6 @@
 
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
-import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
@@ -229,15 +228,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     return finalRows;
   }, [loading, tasks, results, drivers, searchQuery]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <Spinner />
-        <p className="text-gray-500 mt-4">Memproses data Routing vs Aktual...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full space-y-4">
       <div className="flex w-full justify-end">
@@ -249,7 +239,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         />
       </div>
 
-      {processedData.length === 0 ? (
+      {!loading && processedData.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
           <p>Tidak ada data yang cocok dengan pencarian.</p>
         </div>
