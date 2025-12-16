@@ -1,7 +1,7 @@
-// File: features/reportData/RangkumanSummary.js
+// File: src/features/rangkuman/RangkumanSummary.js
 'use client';
 
-import BodyCard from '@/components/card/BodyCard'; // Import Card Reusable
+import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
@@ -24,6 +24,8 @@ import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
+// Tab Baru
+import TimeROTab from './tabs/TimeROTab';
 
 const getInitialDate = () => {
   const now = new Date();
@@ -88,6 +90,7 @@ export default function RangkumanSummary() {
       'Truck Detail',
       'Truck Usage',
       'Average KM',
+      'Time RO',
     ].forEach((t) => (initial[t] = false));
     setDismissedDots(initial);
   }, []);
@@ -338,20 +341,26 @@ export default function RangkumanSummary() {
     const month = selectedDate.getMonth();
 
     try {
+      // 1. Tentukan Full Range Bulan untuk Grid/Display (Tanggal 1 sd Akhir Bulan)
+      // Gunakan formatDateUniversal agar formatnya YYYY-MM-DD
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
+      const endDatePlusOne = new Date(endDate);
+      endDatePlusOne.setDate(endDatePlusOne.getDate() + 1);
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
-      const timeFrom = `${startStr} 00:00:00`;
-      const timeTo = `${endStr} 23:59:59`;
+      const endPlusOneStr = formatDateUniversal(endDatePlusOne);
+
+      // 2. Tentukan Range untuk Fetching (Bisa H-1 atau H-2 untuk Routing)
+      const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
+      const { dateTo: routingEndStr } = calculateTargetDates(endStr);
 
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
       const locStartStr = formatDateUniversal(locStartDate);
       const locTimeFrom = `${locStartStr} 22:00:00`;
-
-      const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
-      const { dateTo: routingEndStr } = calculateTargetDates(endStr);
+      const timeFrom = `${startStr} 00:00:00`;
+      const timeTo = `${endPlusOneStr} 23:59:59`;
 
       const monthlyPromises = [
         fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers'),
@@ -362,8 +371,8 @@ export default function RangkumanSummary() {
                 getTasks({
                   hubId: selectedLocation,
                   status: 'DONE',
-                  timeFrom,
-                  timeTo,
+                  timeFrom: timeFrom,
+                  timeTo: timeTo,
                   timeBy: 'doneTime',
                   limit: 10000,
                 }),
@@ -377,8 +386,8 @@ export default function RangkumanSummary() {
               () =>
                 getResultsSummary({
                   hubId: selectedLocation,
-                  dateFrom: `${routingStartStr} 00:00:00`,
-                  dateTo: `${routingEndStr} 23:59:59`,
+                  dateFrom: routingStartStr, // Fetch H-1/H-2
+                  dateTo: routingEndStr,
                   limit: 10000,
                 }),
               { retries: 2, baseMs: 500 }
@@ -391,7 +400,7 @@ export default function RangkumanSummary() {
               () =>
                 getLocationHistories({
                   timeFrom: locTimeFrom,
-                  timeTo,
+                  timeTo: timeTo,
                   limit: 10000,
                   startFinish: 'true',
                   fields: 'finish,startTime,email,trackedTime,totalDistance',
@@ -509,8 +518,10 @@ export default function RangkumanSummary() {
       </div>
     );
 
+    // Hitung tanggal untuk props tab (menggunakan format YYYY-MM-DD)
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
+    // Gunakan formatDateUniversal agar format konsisten 'YYYY-MM-DD'
     const startStr = formatDateUniversal(new Date(year, month, 1));
     const endStr = formatDateUniversal(new Date(year, month + 1, 0));
 
@@ -538,6 +549,13 @@ export default function RangkumanSummary() {
         return renderTabContent(PendingReasonsTab, {
           data: reportPreview.pendingReasonsData,
           locationName: selectedLocationName,
+        });
+      // TAB BARU: Time RO
+      case 'Time RO':
+        return renderTabContent(TimeROTab, {
+          tasks: rawData.tasks,
+          startDateStr: startStr,
+          endDateStr: endStr,
         });
       default:
         return <PlaceholderTab tabName={activeTab} />;
@@ -578,8 +596,8 @@ export default function RangkumanSummary() {
     },
   ];
 
-  // Config untuk Card Tabs dengan Ping Dot
   const tabConfig = [
+    { id: 'Time RO', label: 'Time RO' },
     { id: 'Task Summary', label: 'Task Summary' },
     { id: 'Pending Reasons', label: 'Pending Reasons' },
     { id: 'Time Driver', label: 'Time Driver' },
@@ -596,7 +614,7 @@ export default function RangkumanSummary() {
 
   const subtitle = (
     <>
-      Rekapitulasi <span className="font-semibold text-sky-600">performa tugas</span> bulanan
+      Rekapitulasi <span className="font-semibold text-sky-600">performa tugas</span> tiap bulan
     </>
   );
 
@@ -608,7 +626,7 @@ export default function RangkumanSummary() {
     ) : null;
 
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 space-y-6">
+    <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
       <HeaderCard title="Rangkuman" subtitle={subtitle} items={headerItems} />
 
       <BodyCard

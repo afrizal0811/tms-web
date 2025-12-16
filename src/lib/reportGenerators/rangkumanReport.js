@@ -21,7 +21,7 @@ import {
   calculateTruckUsageData,
   generateTruckUsageSheet,
 } from './rangkumanSheets/truckUsageSheet';
-
+import { generateTimeROSheet } from './rangkumanSheets/timeROSheet';
 // --- IMPORT TASK SUMMARY SHEET ---
 import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
 
@@ -87,6 +87,7 @@ export function generateRangkumanWorkbook(
 ) {
   const wb = XLSX.utils.book_new();
 
+  generateTimeROSheet(wb, allTasks, startDateStr, endDateStr);
   generateTaskSummarySheet(wb, taskSummaryMetrics, startDateStr, endDateStr, masterTruckData);
   generatePendingReasonSheet(wb, driverData, allTasks, hubName);
   generateTimeDriverSheet(wb, driverData, locationHistoryData, startDateStr, endDateStr);

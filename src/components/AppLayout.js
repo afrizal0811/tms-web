@@ -1,4 +1,3 @@
-// File: src/components/AppLayout.js
 'use client';
 
 import Footer from '@/components/Footer';
@@ -6,11 +5,9 @@ import Navbar from '@/components/navbar/Navbar';
 
 export default function AppLayout({ children, mainClassName }) {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Navbar />
-      <main className={`grow flex flex-col w-full pt-8 ${mainClassName || ''}`}>
-        {children}
-      </main>
+      <main className={`flex-1 overflow-auto w-full pt-8 ${mainClassName || ''}`}>{children}</main>
       <Footer />
     </div>
   );
