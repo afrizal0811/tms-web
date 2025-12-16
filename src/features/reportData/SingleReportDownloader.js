@@ -12,9 +12,8 @@ import * as XLSX from 'xlsx-js-style';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
-  formatDate,
+  formatDateUniversal,
   formatTimer,
-  getTodayDateString,
   isDateSunday,
 } from '@/lib/utils';
 
@@ -33,7 +32,7 @@ export default function TmsSummary({
   setIsAnyLoading,
   setIsMapping,
 }) {
-  const initialDate = parseDate(getTodayDateString());
+  const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [currentRunning, setCurrentRunning] = useState(null);
 
@@ -58,7 +57,7 @@ export default function TmsSummary({
     };
   }, [currentRunning]);
 
-  const selectedDateString = formatDate(selectedDate); // "YYYY-MM-DD"
+  const selectedDateString = formatDateUniversal(selectedDate); // "YYYY-MM-DD"
   const isDateInvalid = isDateSunday(selectedDateString);
 
   const disabledCommon = isAnyLoading || isMapping;

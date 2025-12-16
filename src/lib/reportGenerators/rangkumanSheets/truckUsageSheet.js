@@ -1,7 +1,7 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckUsageSheet.js
 import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
 import { getMasterTruckData } from '@/lib/masterTruckHelper';
-import { formatDate } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -147,7 +147,7 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
   while (currentIterDate <= endDateObj) {
-    const dateStr = formatDate(currentIterDate);
+    const dateStr = formatDateUniversal(currentIterDate);
     const dayNum = currentIterDate.getDate();
     const isSunday = currentIterDate.getDay() === 0;
     dateKeys.push({ str: dateStr, day: dayNum, isSunday });

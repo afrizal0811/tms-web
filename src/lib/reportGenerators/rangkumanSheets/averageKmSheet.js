@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
-import { formatDate } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -79,7 +79,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   };
 
   while (currentIterDate <= endDateObj) {
-    const currentDateString = formatDate(currentIterDate);
+    const currentDateString = formatDateUniversal(currentIterDate);
     const displayDate = formatLongDate(currentIterDate);
     const isSunday = currentIterDate.getDay() === 0;
 

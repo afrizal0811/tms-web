@@ -6,7 +6,7 @@ import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import { isDateSunday, parseOutletName } from '@/lib/utils';
+import { isDateSunday, parseCustomerString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
@@ -121,7 +121,7 @@ export default function EstimasiDelivery() {
         return true;
       return route.trips.some((trip) => {
         if (trip.isHub) return false;
-        const outlet = parseOutletName(trip.visitName)?.toLowerCase();
+        const outlet = parseCustomerString(trip.visitName).name?.toLowerCase();
         const so = parseSONumber(trip.visitName)?.toLowerCase();
         return (outlet && outlet.includes(lowerCaseQuery)) || (so && so.includes(lowerCaseQuery));
       });

@@ -12,7 +12,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { calculateTargetDates, formatDate } from '@/lib/utils';
+import { calculateTargetDates, formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
@@ -340,14 +340,14 @@ export default function RangkumanSummary() {
     try {
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
-      const startStr = formatDate(startDate);
-      const endStr = formatDate(endDate);
+      const startStr = formatDateUniversal(startDate);
+      const endStr = formatDateUniversal(endDate);
       const timeFrom = `${startStr} 00:00:00`;
       const timeTo = `${endStr} 23:59:59`;
 
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
-      const locStartStr = formatDate(locStartDate);
+      const locStartStr = formatDateUniversal(locStartDate);
       const locTimeFrom = `${locStartStr} 22:00:00`;
 
       const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
@@ -462,8 +462,8 @@ export default function RangkumanSummary() {
         rawData.tasks,
         rawData.results,
         rawData.locations,
-        formatDate(startDate),
-        formatDate(endDate),
+        formatDateUniversal(startDate),
+        formatDateUniversal(endDate),
         selectedLocationName,
         selectedLocation,
         taskSummaryMetrics,
@@ -511,8 +511,8 @@ export default function RangkumanSummary() {
 
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
-    const startStr = formatDate(new Date(year, month, 1));
-    const endStr = formatDate(new Date(year, month + 1, 0));
+    const startStr = formatDateUniversal(new Date(year, month, 1));
+    const endStr = formatDateUniversal(new Date(year, month + 1, 0));
 
     switch (activeTab) {
       case 'Task Summary':

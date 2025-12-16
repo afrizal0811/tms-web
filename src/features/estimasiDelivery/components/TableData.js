@@ -2,7 +2,7 @@
 import HighlightText from '@/components/HighlightText'; // Import komponen baru
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, parseOutletName } from '@/lib/utils';
+import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import { parseSONumber } from '../help';
 
 export default function TableData({ activeRoute, searchQuery }) {
@@ -27,7 +27,7 @@ export default function TableData({ activeRoute, searchQuery }) {
           const isFirstHub = isHub && trip.order === 0;
           const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
           const redText = isHub ? 'text-red-600' : '';
-          const outletName = isHub ? null : parseOutletName(trip.visitName);
+          const outletName = isHub ? null : parseCustomerString(trip.visitName).name;
           const soNumber = isHub ? null : parseSONumber(trip.visitName);
 
           let isMatch = false;

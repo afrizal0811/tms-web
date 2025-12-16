@@ -1,6 +1,6 @@
-import { formatSimpleTime, parseOutletName } from '@/lib/utils';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
+import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import { toastError, toastSuccess } from '../../lib/toastHelper';
 
 export function parseSONumber(visitName) {
   if (!visitName) return '';
@@ -40,7 +40,7 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading 
         const hubStyle = isHub ? redStyle : undefined;
         const row = [
           { v: trip.order, s: style },
-          { v: isHub ? 'HUB' : parseOutletName(trip.visitName), s: hubStyle || style },
+          { v: isHub ? 'HUB' : parseCustomerString(trip.visitName).name, s: hubStyle || style },
           { v: isHub ? '' : parseSONumber(trip.visitName), s: style },
           { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime), s: style },
           { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime), s: style },

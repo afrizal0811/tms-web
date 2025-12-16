@@ -10,11 +10,10 @@ import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
-  extractCustomerId,
-  extractLocationId,
   formatCoordinates,
-  formatDate,
+  formatDateUniversal,
   normalizeEmail,
+  parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UpdateLonglatTable from './components/UpdateLonglatTable';
@@ -118,7 +117,7 @@ export default function UpdateLonglatPage() {
       }
 
       // 2. Fetch Data Hari Ini
-      const selectedDateStr = formatDate(selectedDate);
+      const selectedDateStr = formatDateUniversal(selectedDate);
       const timeFrom = `${selectedDateStr} 00:00:00`;
       const timeTo = `${selectedDateStr} 23:59:59`;
 
@@ -172,8 +171,8 @@ export default function UpdateLonglatPage() {
           chunkEnd.setDate(chunkEnd.getDate() + daysPerChunk);
           if (chunkEnd > finalEnd) chunkEnd.setTime(finalEnd.getTime());
           chunks.push({
-            startStr: `${formatDate(chunkStart)} 00:00:00`,
-            endStr: `${formatDate(chunkEnd)} 23:59:59`,
+            startStr: `${formatDateUniversal(chunkStart)} 00:00:00`,
+            endStr: `${formatDateUniversal(chunkEnd)} 23:59:59`,
           });
           current.setDate(current.getDate() + daysPerChunk + 1);
         }
@@ -294,8 +293,7 @@ export default function UpdateLonglatPage() {
     for (const task of tasksData) {
       if (task.klikLokasiClient) {
         const customerName = task.customerName || '';
-        const custId = extractCustomerId(customerName);
-        const locId = extractLocationId(customerName);
+        const { id: custId, location: locId } = parseCustomerString(customerName);
         const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
         const isDataIncomplete = !custId || !locId;
 

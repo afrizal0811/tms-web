@@ -1,7 +1,7 @@
 // File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
+import { formatDateUniversal, formatMinutesToHHMM, getUTC7DateString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { formatDate, formatMinutesToHHMM, getUTC7DateString } from '@/lib/utils';
-import { COLORS, BORDERS, BASE_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
+import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
 // Status yang dianggap GAGAL / BELUM SELESAI
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -122,7 +122,7 @@ export function calculateTruckDetailData(
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
   while (currentIterDate <= endDateObj) {
-    const dateStr = formatDate(currentIterDate);
+    const dateStr = formatDateUniversal(currentIterDate);
     const dayNum = currentIterDate.getDate();
     const monthName = currentIterDate.toLocaleDateString('en-GB', { month: 'long' });
     const yearShort = currentIterDate.toLocaleDateString('en-GB', { year: '2-digit' });

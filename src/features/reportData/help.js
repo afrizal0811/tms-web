@@ -1,5 +1,5 @@
 import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatDate, formatDatePoint, isDateSunday } from '@/lib/utils';
+import { formatDateUniversal, isDateSunday } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 
@@ -57,8 +57,8 @@ export const bulkDownloader = async ({
   toastInfo('Memulai proses...');
 
   try {
-    const originalStartDateString = formatDatePoint(startDate);
-    const originalEndDateString = formatDatePoint(endDate);
+    const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');
+    const originalEndDateString = formatDateUniversal(endDate, 'DD.MM.YYYY');
     const hubId = localStorage.getItem('userLocation');
     const hubName = localStorage.getItem('userLocationName') || 'Lokasi';
 
@@ -72,7 +72,7 @@ export const bulkDownloader = async ({
     const skippedDates = [];
 
     for (const dateObj of datesToProcess) {
-      const dateForFile = formatDate(dateObj);
+      const dateForFile = formatDateUniversal(dateObj);
 
       if (isDateSunday(dateForFile)) {
         sundaysSkipped++;

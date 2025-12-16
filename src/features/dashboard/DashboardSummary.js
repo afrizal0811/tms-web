@@ -123,8 +123,6 @@ export default function DashboardSummary({ driverData }) {
     RoutingVsActual: false,
   });
 
-  const DAILY_CACHE_PREFIX = 'dashboardDailyTasks';
-
   const handleDateChange = (date) => {
     if (!date) return;
 

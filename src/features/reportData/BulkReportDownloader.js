@@ -11,8 +11,8 @@ import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
+  formatDateUniversal,
   formatTimer,
-  getTodayDateString,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react'; // 2. Import useRef & useEffect
 import { bulkDownloader } from './help';
@@ -22,7 +22,7 @@ const parseDate = (dateStr) => {
 };
 
 export default function BulkReportDownloader({ driverData }) {
-  const today = parseDate(getTodayDateString());
+  const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
