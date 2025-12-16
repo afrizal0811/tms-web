@@ -1,15 +1,17 @@
 // File: src/features/dashboard/components/RoutingVsActualTab.js
 'use client';
 
+import DownloadButton from '@/components/DownloadButton';
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
+import { downloadRoutingVsActual } from '../help';
 
 export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [isDownloading, setIsDownloading] = useState(false);
   const processedData = useMemo(() => {
     if (loading || !tasks || !drivers) return [];
 
@@ -228,17 +230,39 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     return finalRows;
   }, [loading, tasks, results, drivers, searchQuery]);
 
+  const handleDownload = async () => {
+    if (processedData.length === 0) return;
+
+    setIsDownloading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 100));
+      downloadRoutingVsActual(processedData);
+    } catch (e) {
+      console.error('Gagal download:', e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full space-y-4">
-      <div className="flex w-full justify-end">
-        <SearchBar
-          disabled={loading}
-          onChange={(val) => setSearchQuery(val)}
-          placeholder="Cari Plat, Driver, atau Customer"
-          value={searchQuery}
-        />
+      <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
+        <div className="w-full md:w-64 order-1">
+          <SearchBar
+            disabled={loading || isDownloading}
+            onChange={(val) => setSearchQuery(val)}
+            placeholder="Cari Plat, Driver, atau Customer"
+            value={searchQuery}
+          />
+        </div>
+        <div className="w-full md:w-auto order-2">
+          <DownloadButton
+            onClick={handleDownload}
+            disabled={loading || isDownloading || processedData.length === 0}
+            width="w-full md:w-auto" // Responsive width props
+          />
+        </div>
       </div>
-
       {!loading && processedData.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
           <p>Tidak ada data yang cocok dengan pencarian.</p>
