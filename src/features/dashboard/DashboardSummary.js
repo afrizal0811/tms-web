@@ -413,45 +413,57 @@ export default function DashboardSummary({ driverData }) {
     }
   }, []);
 
-  const fetchYearlyData = useCallback(
-    async (hubId, year, cacheKey) => {
-      setIsYearlyLoading(true);
-      const quarters = [
-        { start: `${year}-01-01 00:00:00`, end: `${year}-03-31 23:59:59`, label: 'Q1' },
-        { start: `${year}-04-01 00:00:00`, end: `${year}-06-30 23:59:59`, label: 'Q2' },
-        { start: `${year}-07-01 00:00:00`, end: `${year}-09-30 23:59:59`, label: 'Q3' },
-        { start: `${year}-10-01 00:00:00`, end: `${year}-12-31 23:59:59`, label: 'Q4' },
-      ];
-      let allTasks = [];
-      try {
-        for (const q of quarters) {
-          try {
-            const quarterData = await fetchWithRetry(() =>
-              getTasks({
-                hubId,
-                status: 'DONE',
-                timeFrom: q.start,
-                timeTo: q.end,
-                timeBy: 'doneTime',
-                limit: 25000,
-              })
-            );
-            if (Array.isArray(quarterData)) allTasks = allTasks.concat(quarterData);
-            else if (quarterData?.data) allTasks = allTasks.concat(quarterData.data);
-          } catch (err) {
-            toastError(`Gagal ambil data tahunan ${q.label}:`, err);
-          }
-        }
-        yearlyCacheRef.current[cacheKey] = allTasks;
-        setYearlyTasks(allTasks);
-        lastFetchedYear.current = year;
-        lastFetchedLocation.current = hubId;
-      } finally {
-        setIsYearlyLoading(false);
-      }
-    },
-    [fetchWithRetry]
-  );
+  const fetchYearlyData = useCallback(async (hubId, year) => {
+    setIsYearlyLoading(true);
+    setYearlyTasks([]);
+
+    // 1. Generate 12 rentang waktu (Januari - Desember)
+    // Karena 1 bulan max 31 hari, ini aman dari limit API.
+    const monthlyRanges = [];
+    for (let i = 0; i < 12; i++) {
+      // Trik mendapatkan tanggal terakhir di bulan tersebut (28/29/30/31)
+      const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+
+      const monthStr = String(i + 1).padStart(2, '0');
+      const lastDayStr = String(lastDayOfThisMonth).padStart(2, '0');
+
+      monthlyRanges.push({
+        start: `${year}-${monthStr}-01 00:00:00`,
+        end: `${year}-${monthStr}-${lastDayStr} 23:59:59`,
+      });
+    }
+
+    let allTasks = [];
+    try {
+      // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
+      const promises = monthlyRanges.map((range) =>
+        getTasks({
+          hubId,
+          status: 'DONE',
+          timeFrom: range.start,
+          timeTo: range.end,
+          timeBy: 'doneTime',
+          limit: 10000,
+        })
+      );
+
+      const results = await Promise.all(promises);
+
+      // 3. Gabungkan semua hasil
+      results.forEach((res) => {
+        if (Array.isArray(res)) allTasks = [...allTasks, ...res];
+        else if (res?.data) allTasks = [...allTasks, ...res.data];
+      });
+
+      setYearlyTasks(allTasks);
+      lastFetchedYear.current = year;
+      lastFetchedLocation.current = hubId;
+    } catch (err) {
+      console.error('Gagal ambil data tahunan', err);
+    } finally {
+      setIsYearlyLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

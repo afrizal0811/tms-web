@@ -41,7 +41,7 @@ export default function DashboardDetailTab({ loading, summaryData }) {
         toastSuccess(`Salin: ${task.tooltip}`);
       },
       (err) => {
-        toastError('Gagal menyalin ke clipboard');
+        toastError('Gagal menyalin ke clipboard: ', err);
       }
     );
   };

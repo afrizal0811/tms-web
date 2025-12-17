@@ -340,86 +340,136 @@ export default function RangkumanSummary() {
     const month = selectedDate.getMonth();
 
     try {
-      // 1. Tentukan Full Range Bulan untuk Grid/Display (Tanggal 1 sd Akhir Bulan)
-      // Gunakan formatDateUniversal agar formatnya YYYY-MM-DD
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
       const endDatePlusOne = new Date(endDate);
       endDatePlusOne.setDate(endDatePlusOne.getDate() + 1);
+
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
       const endPlusOneStr = formatDateUniversal(endDatePlusOne);
 
-      // 2. Tentukan Range untuk Fetching (Bisa H-1 atau H-2 untuk Routing)
       const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
       const { dateTo: routingEndStr } = calculateTargetDates(endStr);
 
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
       const locStartStr = formatDateUniversal(locStartDate);
+
       const locTimeFrom = `${locStartStr} 22:00:00`;
-      const timeFrom = `${startStr} 00:00:00`;
-      const timeTo = `${endPlusOneStr} 23:59:59`;
+      const tasksTimeFrom = `${startStr} 00:00:00`;
+      const finalTimeTo = `${endPlusOneStr} 23:59:59`;
 
-      const monthlyPromises = [
-        fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers'),
-        fetchWithTracker(
-          () =>
-            fetchWithRetry(
-              () =>
-                getTasks({
-                  hubId: selectedLocation,
-                  status: 'DONE',
-                  timeFrom: timeFrom,
-                  timeTo: timeTo,
-                  timeBy: 'doneTime',
-                  limit: 10000,
-                }),
-              { retries: 2, baseMs: 500 }
-            ),
-          'Monthly Tasks'
-        ),
-        fetchWithTracker(
-          () =>
-            fetchWithRetry(
-              () =>
-                getResultsSummary({
-                  hubId: selectedLocation,
-                  dateFrom: routingStartStr, // Fetch H-1/H-2
-                  dateTo: routingEndStr,
-                  limit: 10000,
-                }),
-              { retries: 2, baseMs: 500 }
-            ),
-          'Routing'
-        ),
-        fetchWithTracker(
-          () =>
-            fetchWithRetry(
-              () =>
-                getLocationHistories({
-                  timeFrom: locTimeFrom,
-                  timeTo: timeTo,
-                  limit: 10000,
-                  startFinish: 'true',
-                  fields: 'finish,startTime,email,trackedTime,totalDistance',
-                  timeBy: 'createdTime',
-                }),
-              { retries: 2, baseMs: 500 }
-            ),
-          'History'
-        ),
-      ];
+      const midDateObj = new Date(year, month, 15);
+      const midDateStr = formatDateUniversal(midDateObj); // "YYYY-MM-15"
 
-      const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all(monthlyPromises);
+      const midNextObj = new Date(year, month, 16);
+      const midNextStr = formatDateUniversal(midNextObj); // "YYYY-MM-16"
+
+      const splitTimeEnd = `${midDateStr} 23:59:59`;
+      const splitTimeStart = `${midNextStr} 00:00:00`;
+
+      const mergeResults = (resArray) => {
+        let merged = [];
+        resArray.forEach((res) => {
+          if (Array.isArray(res)) merged = [...merged, ...res];
+          else if (res?.data) merged = [...merged, ...res.data];
+        });
+        return merged;
+      };
+
+      const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
+      const pTasks = fetchWithTracker(async () => {
+        const [part1, part2] = await Promise.all([
+          fetchWithRetry(() =>
+            getTasks({
+              hubId: selectedLocation,
+              status: 'DONE',
+              timeBy: 'doneTime',
+              limit: 10000,
+              timeFrom: tasksTimeFrom,
+              timeTo: splitTimeEnd,
+            })
+          ),
+          fetchWithRetry(() =>
+            getTasks({
+              hubId: selectedLocation,
+              status: 'DONE',
+              timeBy: 'doneTime',
+              limit: 10000,
+              timeFrom: splitTimeStart,
+              timeTo: finalTimeTo,
+            })
+          ),
+        ]);
+        return mergeResults([part1, part2]);
+      }, 'Monthly Tasks (Split)');
+
+      // 3. ROUTING / RESULTS (Split 2 Request)
+      const pRouting = fetchWithTracker(async () => {
+        const [part1, part2] = await Promise.all([
+          fetchWithRetry(() =>
+            getResultsSummary({
+              hubId: selectedLocation,
+              limit: 10000,
+              dateFrom: routingStartStr,
+              dateTo: midDateStr, // Buffer awal s/d tgl 15
+            })
+          ),
+          fetchWithRetry(() =>
+            getResultsSummary({
+              hubId: selectedLocation,
+              limit: 10000,
+              dateFrom: midNextStr,
+              dateTo: routingEndStr, // Tgl 16 s/d Buffer akhir
+            })
+          ),
+        ]);
+        // Filter dispatchStatus DONE di sini agar konsisten
+        const combined = mergeResults([part1, part2]);
+        return combined.filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
+      }, 'Routing (Split)');
+
+      // 4. HISTORY (Split 2 Request)
+      const pHistory = fetchWithTracker(async () => {
+        const params = {
+          limit: 10000,
+          startFinish: 'true',
+          fields: 'finish,startTime,email,trackedTime,totalDistance',
+          timeBy: 'createdTime',
+        };
+        const [part1, part2] = await Promise.all([
+          fetchWithRetry(() =>
+            getLocationHistories({
+              ...params,
+              timeFrom: locTimeFrom,
+              timeTo: splitTimeEnd,
+            })
+          ),
+          fetchWithRetry(() =>
+            getLocationHistories({
+              ...params,
+              timeFrom: splitTimeStart,
+              timeTo: finalTimeTo,
+            })
+          ),
+        ]);
+        return mergeResults([part1, part2]);
+      }, 'History (Split)');
+
+      // --- EXECUTE ALL ---
+      const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all([
+        pDrivers,
+        pTasks,
+        pRouting,
+        pHistory,
+      ]);
+
       setDriverData(driversRes || []);
 
-      const filteredResults = (resultsRes || []).filter(
-        (item) => item.dispatchStatus?.toLowerCase() === 'done'
-      );
       const newRawData = {
         tasks: tasksRes || [],
-        results: filteredResults,
+        results: resultsRes || [], 
         locations: locRes || [],
       };
       setRawData(newRawData);
