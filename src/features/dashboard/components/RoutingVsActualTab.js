@@ -9,10 +9,13 @@ import { toastError } from '@/lib/toastHelper';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual } from '../help';
+import RoutingMapModal from '../modals/RoutingMapModal';
 
 export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
   const processedData = useMemo(() => {
     if (loading || !tasks || !drivers) return [];
 
@@ -115,6 +118,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         actualVisitTime: actualVisitTimeVal,
         realSequence: 0,
         isManualAssign: roSequence === 0,
+        longlat: task.longlat,
       });
     }
 
@@ -257,6 +261,29 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           />
         </div>
         <div className="w-full md:w-auto order-2">
+          <button
+            onClick={() => setIsMapModalOpen(true)}
+            disabled={loading || processedData.length === 0}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              />
+            </svg>
+            Lihat Peta
+          </button>
+        </div>
+        <div className="w-full md:w-auto order-3">
           <DownloadButton
             onClick={handleDownload}
             disabled={loading || isDownloading || processedData.length === 0}
@@ -310,9 +337,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                       <td className="px-4 py-2"></td>
                       <td className="px-4 py-2"></td>
                       <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
                       <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                      <td className="px-4 py-2"></td>
+                      <td className="px-4 py-2"></td>
                       <td className="px-4 py-2"></td>
                       <td className="px-4 py-2"></td>
                       <td className="px-4 py-2"></td>
@@ -409,6 +436,13 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           </table>
         </div>
       )}
+
+      {/* Component Modal Peta Ditambahkan Disini */}
+      <RoutingMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        data={processedData}
+      />
     </div>
   );
 }
