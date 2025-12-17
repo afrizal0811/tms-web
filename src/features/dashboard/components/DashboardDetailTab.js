@@ -42,7 +42,6 @@ export default function DashboardDetailTab({ loading, summaryData }) {
       },
       (err) => {
         toastError('Gagal menyalin ke clipboard');
-        console.error('Gagal menyalin:', err);
       }
     );
   };

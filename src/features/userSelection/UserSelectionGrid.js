@@ -187,7 +187,14 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
   if (usersData.data.length === 0) {
     return <p className="mt-6 text-gray-400">Tidak ada user ditemukan di lokasi ini.</p>;
   }
-
+  const modalMessage = (
+    <div className='flex flex-col gap-2'>
+      <div>
+        Anda yakin ingin memilih user <span className="font-bold">{userToConfirm?.name}</span>?
+      </div>
+      <div className='underline'>User tidak bisa diubah kembali.</div>
+    </div>
+  );
   // Tampilan Grid
   return (
     <div className="w-full max-w-2xl mt-6 mx-auto relative">
@@ -210,7 +217,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       <ConfirmModal
         isOpen={isConfirmOpen}
         title="Konfirmasi Pilihan User"
-        message={`Anda yakin ingin memilih user "${userToConfirm?.name}"?`}
+        message={modalMessage}
         onConfirm={handleConfirmSelection}
         onCancel={handleCancelSelection}
       />

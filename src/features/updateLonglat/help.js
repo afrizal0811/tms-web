@@ -67,7 +67,6 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     XLSX.writeFile(wb, fileName);
     toastSuccess('Berhasil mengunduh data.');
   } catch (e) {
-    console.error(e);
     toastError('Gagal membuat Excel.');
   } finally {
     setIsDownloading(false);

@@ -3,6 +3,7 @@
 
 import { checkUnmappedVehicles } from '@/lib/driverDataHelper';
 import { useCallback, useState } from 'react';
+import { toastError } from '../toastHelper';
 
 export function useVehicleTagCheck() {
   const [isChecking, setIsChecking] = useState(false);
@@ -35,7 +36,7 @@ export function useVehicleTagCheck() {
         onSuccess();
       }
     } catch (error) {
-      console.error('Vehicle check error:', error);
+      toastError('Vehicle check error:', error);
       // Fail-safe: Jika error, anggap aman dan lanjut
       onSuccess();
     } finally {

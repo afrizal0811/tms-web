@@ -4,6 +4,7 @@ import { getMasterTruckData } from '@/lib/masterTruckHelper';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
+import { toastError } from '@/lib/toastHelper';
 
 // --- HELPER FUNCTIONS (TIDAK BERUBAH) ---
 function formatMonthName(dateObj) {
@@ -138,7 +139,7 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       const storedMap = localStorage.getItem(TAG_MAP_KEY);
       if (storedMap) tagMap = JSON.parse(storedMap);
     } catch (e) {
-      console.error(e);
+      toastError(e);
     }
   }
   const hubMasterData = getMasterTruckData() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };

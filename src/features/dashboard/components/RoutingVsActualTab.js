@@ -5,6 +5,7 @@ import DownloadButton from '@/components/DownloadButton';
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
+import { toastError } from '@/lib/toastHelper';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual } from '../help';
@@ -238,7 +239,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       await new Promise((r) => setTimeout(r, 100));
       downloadRoutingVsActual(processedData);
     } catch (e) {
-      console.error('Gagal download:', e);
+      toastError('Gagal download:', e);
     } finally {
       setIsDownloading(false);
     }

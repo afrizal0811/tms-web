@@ -54,7 +54,7 @@ export default function LocationSwitcher() {
                 : hubsSimple;
             setAllowedHubs(allowed);
           } catch (e) {
-            console.error('allHubsList parse error', e);
+            toastError('allHubsList parse error', e);
             setAllowedHubs([]);
           }
         }
@@ -81,7 +81,7 @@ export default function LocationSwitcher() {
       });
     } catch (err) {
       // fallback: apabila triggerCheck melempar error, tetap simpan agar user tidak terjebak
-      console.error('triggerCheck error:', err);
+      toastError('triggerCheck error:', err);
       localStorage.setItem('userLocation', id);
       localStorage.setItem('userLocationName', name);
       localStorage.removeItem('driverData');
@@ -117,7 +117,7 @@ export default function LocationSwitcher() {
             try {
               handleMappingCompleted();
             } catch (err) {
-              console.error('handleMappingCompleted error:', err);
+              toastError('handleMappingCompleted error:', err);
             }
           }}
         />

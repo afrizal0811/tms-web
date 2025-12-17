@@ -386,8 +386,7 @@ export default function DashboardSummary({ driverData }) {
 
       setSummaryData(summary);
     } catch (err) {
-      console.error(err);
-      setError(err.message || 'Gagal mengambil data harian.');
+      toastError(err.message || 'Gagal mengambil data harian.');
     } finally {
       setLoading(false);
     }
@@ -440,7 +439,7 @@ export default function DashboardSummary({ driverData }) {
             if (Array.isArray(quarterData)) allTasks = allTasks.concat(quarterData);
             else if (quarterData?.data) allTasks = allTasks.concat(quarterData.data);
           } catch (err) {
-            console.error(`Gagal ambil data tahunan ${q.label}:`, err);
+            toastError(`Gagal ambil data tahunan ${q.label}:`, err);
           }
         }
         yearlyCacheRef.current[cacheKey] = allTasks;

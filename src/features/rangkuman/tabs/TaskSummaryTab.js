@@ -2,6 +2,7 @@
 'use client';
 
 import Spinner from '@/components/Spinner';
+import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
 export default function TaskSummaryTab({ metrics, isLoading, progress, startDateStr, endDateStr }) {
   const [masterTruckData, setMasterTruckData] = useState({
@@ -18,7 +19,7 @@ export default function TaskSummaryTab({ metrics, isLoading, progress, startDate
           setMasterTruckData(JSON.parse(stored));
         }
       } catch (e) {
-        console.error('Failed to load masterTruck from storage', e);
+        toastError('Failed to load masterTruck from storage', e);
       }
     }
   }, []);

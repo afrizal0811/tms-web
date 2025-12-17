@@ -76,7 +76,7 @@ export default function RangkumanSummary() {
         const storedMaster = localStorage.getItem('masterTruck');
         if (storedMaster) setMasterTruckData(JSON.parse(storedMaster));
       } catch (e) {
-        console.error(e);
+        toastError(e);
       }
     }
   }, []);
@@ -292,7 +292,6 @@ export default function RangkumanSummary() {
         }
       }
     } catch (err) {
-      console.error('Error batch fetch:', err);
       toastError('Gagal mengambil data history (Batch).');
     }
 
@@ -438,8 +437,7 @@ export default function RangkumanSummary() {
 
       processTaskSummaryMetrics(newRawData.tasks, newRawData.results);
     } catch (e) {
-      console.error(e);
-      toastError('Gagal ambil data: ' + e.message);
+      toastError(e.message);
       setReportPreview(null);
     } finally {
       setIsLoading(false);
@@ -482,7 +480,6 @@ export default function RangkumanSummary() {
       XLSX.writeFile(wb, excelFileName);
       toastSuccess('Rangkuman berhasil di-download!');
     } catch (err) {
-      console.error(err);
       toastError('Gagal membuat Excel: ' + err.message);
     }
   };

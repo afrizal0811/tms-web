@@ -1,7 +1,7 @@
 // File: lib/masterTruckHelper.js
 
 const STORAGE_KEY = 'masterTruck';
-
+import { toastError } from "./toastHelper";
 /**
  * Mengambil data Master Truck dari Local Storage.
  * Return format: { Dry: { Total: 0, ... }, Frozen: { Total: 0, ... } }
@@ -12,7 +12,7 @@ export const getMasterTruckData = () => {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (e) {
-    console.error('Gagal load master truck data', e);
+    toastError('Gagal load master truck data:', e);
     return {};
   }
 };

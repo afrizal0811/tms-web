@@ -7,7 +7,7 @@ export default function AppLayout({ children, mainClassName }) {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <Navbar />
-      <main className={`flex-1 overflow-auto w-full pt-8 ${mainClassName || ''}`}>{children}</main>
+      <main className={`grow flex flex-col w-full pt-8 ${mainClassName || ''}`}>{children}</main>
       <Footer />
     </div>
   );

@@ -1,9 +1,7 @@
 import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID, TAG_MAP_KEY, VEHICLE_TYPES } from './constants';
+import { toastError, toastWarning } from './toastHelper';
 
-// --- HELPER: Resolve Tipe Kendaraan (Mapping & Parsing) ---
-// Digunakan untuk menstandarkan tag kendaraan (misal: SUB-CDE-BOX -> CDE)
-// dan mengecek konversi manual dari Local Storage.
 const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
   if (!rawTag) return null;
 
@@ -44,7 +42,7 @@ const updateMasterTruckStorage = (drivers, hubId) => {
     const storedMap = localStorage.getItem(TAG_MAP_KEY);
     if (storedMap) tagMap = JSON.parse(storedMap);
   } catch (e) {
-    console.error('Gagal load vehicleTagMap', e);
+    toastError('Gagal load vehicleTagMap', e);
   }
 
   // 2. Inisialisasi Struktur Data (Detail per Tipe)
@@ -109,7 +107,7 @@ export async function checkUnmappedVehicles(hubId) {
       const storedMap = localStorage.getItem(TAG_MAP_KEY);
       if (storedMap) tagMap = JSON.parse(storedMap);
     } catch (e) {
-      console.error(e);
+      toastError(e);
     }
   }
 
@@ -154,7 +152,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     return unmappedList;
   } catch (error) {
-    console.error('Gagal mengecek kendaraan:', error);
+    toastError('Gagal mengecek kendaraan:', error);
     return [];
   }
 }
@@ -179,7 +177,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return parsed;
     }
   } catch (e) {
-    console.warn(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
+    toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
   try {

@@ -210,7 +210,7 @@ export default function UpdateLonglatPage() {
 
       // --- STEP 4: RETRY LOGIC (Background) ---
       if (failedChunks.length > 0) {
-        console.warn(`Mengulang ${failedChunks.length} chunk yang gagal...`);
+        toastWarning(`Mengulang ${failedChunks.length} chunk yang gagal...`);
 
         // Jalankan retry
         const retryPromises = failedChunks.map((chunk) =>
