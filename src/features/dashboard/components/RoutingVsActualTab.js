@@ -292,8 +292,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
       </div>
       {!loading && processedData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
-          <p>Tidak ada data yang cocok dengan pencarian.</p>
+        <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+          Tidak ada data yang ditemukan.
         </div>
       ) : (
         <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">

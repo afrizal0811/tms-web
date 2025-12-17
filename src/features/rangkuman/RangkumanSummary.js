@@ -12,7 +12,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { calculateTargetDates, formatDateUniversal } from '@/lib/utils';
+import { calculateTargetDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
@@ -354,20 +354,48 @@ export default function RangkumanSummary() {
 
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
-      const locStartStr = formatDateUniversal(locStartDate);
 
-      const locTimeFrom = `${locStartStr} 22:00:00`;
-      const tasksTimeFrom = `${startStr} 00:00:00`;
-      const finalTimeTo = `${endPlusOneStr} 23:59:59`;
+      // 1. Buffer Date (H-2)
+      const bufferDate = new Date(startDate);
+      bufferDate.setDate(bufferDate.getDate() - 2);
+      // const bufferStr = formatDateUniversal(bufferDate); // Tidak dipakai stringnya lagi
 
+      // locTimeFrom (Jam 22:00 H-2)
+      const locStartObj = new Date(bufferDate);
+      locStartObj.setHours(22, 0, 0, 0);
+      const locTimeFrom = formatToApiUtc(locStartObj);
+
+      // tasksTimeFrom (Jam 00:00 H-2)
+      const taskStartObj = new Date(bufferDate);
+      taskStartObj.setHours(0, 0, 0, 0);
+      const tasksTimeFrom = formatToApiUtc(taskStartObj);
+
+      // finalTimeTo (Jam 23:59 End Date + 1)
+      const finalEndObj = new Date(endDatePlusOne);
+      finalEndObj.setHours(23, 59, 59, 999);
+      const finalTimeTo = formatToApiUtc(finalEndObj);
+
+      // --- Split Logic ---
       const midDateObj = new Date(year, month, 15);
-      const midDateStr = formatDateUniversal(midDateObj); // "YYYY-MM-15"
-
       const midNextObj = new Date(year, month, 16);
-      const midNextStr = formatDateUniversal(midNextObj); // "YYYY-MM-16"
 
-      const splitTimeEnd = `${midDateStr} 23:59:59`;
-      const splitTimeStart = `${midNextStr} 00:00:00`;
+      // splitTimeEnd (Tgl 15 Jam 23:59 UTC) -> Pengganti midDateStr
+      midDateObj.setHours(23, 59, 59, 999);
+      const splitTimeEnd = formatToApiUtc(midDateObj);
+
+      // splitTimeStart (Tgl 16 Jam 00:00 UTC) -> Pengganti midNextStr
+      midNextObj.setHours(0, 0, 0, 0);
+      const splitTimeStart = formatToApiUtc(midNextObj);
+
+      // --- PERSIAPAN TIME ROUTING (UTC) ---
+      // Kita perlu konversi routingStartStr (YYYY-MM-DD) ke UTC Full Timestamp
+      const routingStartObj = new Date(routingStartStr);
+      routingStartObj.setHours(0, 0, 0, 0);
+      const routingStartUtc = formatToApiUtc(routingStartObj);
+
+      const routingEndObj = new Date(routingEndStr);
+      routingEndObj.setHours(23, 59, 59, 999);
+      const routingEndUtc = formatToApiUtc(routingEndObj);
 
       const mergeResults = (resArray) => {
         let merged = [];
@@ -379,13 +407,14 @@ export default function RangkumanSummary() {
       };
 
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
+
       const pTasks = fetchWithTracker(async () => {
         const [part1, part2] = await Promise.all([
           fetchWithRetry(() =>
             getTasks({
               hubId: selectedLocation,
               status: 'DONE',
-              timeBy: 'doneTime',
+              timeBy: 'startTime',
               limit: 10000,
               timeFrom: tasksTimeFrom,
               timeTo: splitTimeEnd,
@@ -395,7 +424,7 @@ export default function RangkumanSummary() {
             getTasks({
               hubId: selectedLocation,
               status: 'DONE',
-              timeBy: 'doneTime',
+              timeBy: 'startTime',
               limit: 10000,
               timeFrom: splitTimeStart,
               timeTo: finalTimeTo,
@@ -406,26 +435,26 @@ export default function RangkumanSummary() {
       }, 'Monthly Tasks (Split)');
 
       // 3. ROUTING / RESULTS (Split 2 Request)
+      // UPDATE: Gunakan variable UTC yang baru (routingStartUtc, splitTimeEnd, dll)
       const pRouting = fetchWithTracker(async () => {
         const [part1, part2] = await Promise.all([
           fetchWithRetry(() =>
             getResultsSummary({
               hubId: selectedLocation,
               limit: 10000,
-              dateFrom: routingStartStr,
-              dateTo: midDateStr, // Buffer awal s/d tgl 15
+              dateFrom: routingStartUtc, // Ganti routingStartStr
+              dateTo: splitTimeEnd, // Ganti midDateStr
             })
           ),
           fetchWithRetry(() =>
             getResultsSummary({
               hubId: selectedLocation,
               limit: 10000,
-              dateFrom: midNextStr,
-              dateTo: routingEndStr, // Tgl 16 s/d Buffer akhir
+              dateFrom: splitTimeStart, // Ganti midNextStr
+              dateTo: routingEndUtc, // Ganti routingEndStr
             })
           ),
         ]);
-        // Filter dispatchStatus DONE di sini agar konsisten
         const combined = mergeResults([part1, part2]);
         return combined.filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
       }, 'Routing (Split)');
@@ -469,7 +498,7 @@ export default function RangkumanSummary() {
 
       const newRawData = {
         tasks: tasksRes || [],
-        results: resultsRes || [], 
+        results: resultsRes || [],
         locations: locRes || [],
       };
       setRawData(newRawData);
@@ -593,11 +622,13 @@ export default function RangkumanSummary() {
       case 'Time Driver':
         return renderTabContent(TimeDriverTab, { data: reportPreview.timeDriverData });
       case 'Pending Reasons':
+        const filteredPendingData = (reportPreview?.pendingReasonsData || []).filter(
+          (item) => formatDateUniversal(item.date || item.doneTime || item.createdTime) >= startStr
+        );
         return renderTabContent(PendingReasonsTab, {
-          data: reportPreview.pendingReasonsData,
+          data: filteredPendingData,
           locationName: selectedLocationName,
         });
-      // TAB BARU: Time RO
       case 'Time RO':
         return renderTabContent(TimeROTab, {
           tasks: rawData.tasks,
@@ -632,7 +663,7 @@ export default function RangkumanSummary() {
 
   const headerItems = [
     {
-      label: 'Tanggal Routing',
+      label: 'Bulan Performa',
       component: datePicker,
       hideLabel: false,
     },

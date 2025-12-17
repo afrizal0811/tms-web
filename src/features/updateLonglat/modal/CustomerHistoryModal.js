@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 
 // Import Peta secara Dynamic
-const UpdateMap = dynamic(() => import('./UpdateMap'), {
+const UpdateMap = dynamic(() => import('../components/UpdateMap'), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400">

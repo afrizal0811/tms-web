@@ -14,6 +14,7 @@ import {
   calculateTargetDates,
   formatDateUniversal,
   formatTimer,
+  formatToApiUtc,
   isDateSunday,
 } from '@/lib/utils';
 
@@ -149,15 +150,23 @@ export default function TmsSummary({
 
       // calculateTargetDates returns dateFrom (H-1) as needed by prior logic
       const { dateFrom: apiDate } = calculateTargetDates(selectedDateString);
-      const timeFrom = `${selectedDateString} 00:00:00`;
-      const timeTo = `${selectedDateString} 23:59:59`;
+
+      // Buat objek Date untuk Start (00:00:00) dan End (23:59:59)
+      const startObj = new Date(selectedDate);
+      startObj.setHours(0, 0, 0, 0);
+
+      const endObj = new Date(selectedDate);
+      endObj.setHours(23, 59, 59, 999);
+
+      const timeFrom = formatToApiUtc(startObj);
+      const timeTo = formatToApiUtc(endObj);
 
       const tasksPromise = getTasks({
         hubId: selectedLocation,
         status: 'DONE',
         timeFrom,
         timeTo,
-        timeBy: 'doneTime',
+        timeBy: 'startTime',
         limit: 5000,
       });
 

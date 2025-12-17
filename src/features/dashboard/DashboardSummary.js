@@ -239,7 +239,7 @@ export default function DashboardSummary({ driverData }) {
           hubId,
           timeFrom,
           timeTo,
-          timeBy: 'doneTime',
+          timeBy: 'startTime',
           limit: 1000,
         }),
         getResultsSummary({
@@ -350,7 +350,6 @@ export default function DashboardSummary({ driverData }) {
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
             const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-
             crossDayTasks.push({
               customer: task.customerName || 'N/A',
               doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
@@ -442,7 +441,7 @@ export default function DashboardSummary({ driverData }) {
           status: 'DONE',
           timeFrom: range.start,
           timeTo: range.end,
-          timeBy: 'doneTime',
+          timeBy: 'startTime',
           limit: 10000,
         })
       );
@@ -498,6 +497,8 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData]);
 
+  const isDiagramTab = activeTab === 'Diagram'; 
+  const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
 
   const subtitle = (
@@ -510,7 +511,8 @@ export default function DashboardSummary({ driverData }) {
     <CustomDatePicker
       selected={selectedDate}
       onChange={handleDateChange}
-      isLoading={loading}
+      isLoading={isLoadingSelected}
+      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
       className="md:w-48"
       wrapperClassName="w-full"
     />
@@ -518,7 +520,7 @@ export default function DashboardSummary({ driverData }) {
 
   const headerItems = [
     {
-      label: activeTab === 'Diagram' ? 'Tahun Performa' : 'Tanggal Pengiriman',
+      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman',
       component: datePicker,
       hideLabel: false,
     },
@@ -534,8 +536,6 @@ export default function DashboardSummary({ driverData }) {
     },
   ];
 
-  const isCardLoading = activeTab === 'Diagram' ? isYearlyLoading : loading;
-
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
@@ -550,7 +550,7 @@ export default function DashboardSummary({ driverData }) {
         tabs={cardTabs}
         activeTabId={activeTab}
         onTabClick={handleTabClick}
-        isLoading={isCardLoading}
+        isLoading={isLoadingSelected}
         loadingText="Memuat data..."
         timerStartTime={fetchStartTimeRef.current}
       >

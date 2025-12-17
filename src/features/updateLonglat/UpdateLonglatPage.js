@@ -11,7 +11,7 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
   formatCoordinates,
-  formatDateUniversal,
+  formatToApiUtc,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
@@ -117,16 +117,21 @@ export default function UpdateLonglatPage() {
       }
 
       // 2. Fetch Data Hari Ini
-      const selectedDateStr = formatDateUniversal(selectedDate);
-      const timeFrom = `${selectedDateStr} 00:00:00`;
-      const timeTo = `${selectedDateStr} 23:59:59`;
+      const localStart = new Date(selectedDate);
+      localStart.setHours(0, 0, 0, 0);
+
+      const localEnd = new Date(selectedDate);
+      localEnd.setHours(23, 59, 59, 999);
+
+      const timeFrom = formatToApiUtc(localStart);
+      const timeTo = formatToApiUtc(localEnd);
 
       const todayTasks = await getTasks({
         status: 'DONE',
         hubId,
         timeFrom,
         timeTo,
-        timeBy: 'doneTime',
+        timeBy: 'startTime',
         limit: 1000,
       });
 
@@ -170,9 +175,12 @@ export default function UpdateLonglatPage() {
           const chunkEnd = new Date(current);
           chunkEnd.setDate(chunkEnd.getDate() + daysPerChunk);
           if (chunkEnd > finalEnd) chunkEnd.setTime(finalEnd.getTime());
+          chunkStart.setHours(0, 0, 0, 0);
+          chunkEnd.setHours(23, 59, 59, 999);
+
           chunks.push({
-            startStr: `${formatDateUniversal(chunkStart)} 00:00:00`,
-            endStr: `${formatDateUniversal(chunkEnd)} 23:59:59`,
+            startStr: formatToApiUtc(chunkStart),
+            endStr: formatToApiUtc(chunkEnd),
           });
           current.setDate(current.getDate() + daysPerChunk + 1);
         }
@@ -189,7 +197,7 @@ export default function UpdateLonglatPage() {
           hubId,
           timeFrom: chunk.startStr,
           timeTo: chunk.endStr,
-          timeBy: 'doneTime',
+          timeBy: 'startTime',
           limit: 2000,
           fields: 'customerName,klikLokasiClient,longlat,doneTime,assignee',
         })
@@ -219,7 +227,7 @@ export default function UpdateLonglatPage() {
             hubId,
             timeFrom: chunk.startStr,
             timeTo: chunk.endStr,
-            timeBy: 'doneTime',
+            timeBy: 'startTime',
             limit: 2000,
             fields: 'customerName,klikLokasiClient,longlat,doneTime,assignee',
           })

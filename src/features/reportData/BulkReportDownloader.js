@@ -13,6 +13,7 @@ import {
   calculateTargetDates,
   formatDateUniversal,
   formatTimer,
+  formatToApiUtc,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react'; // 2. Import useRef & useEffect
 import { bulkDownloader } from './help';
@@ -109,8 +110,15 @@ export default function BulkReportDownloader({ driverData }) {
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const { dateFrom: apiDate, dateTo: apiDateTo } = calculateTargetDates(dateForFile);
-        const timeFrom = `${apiDate} 00:00:00`;
-        const timeTo = `${apiDateTo} 23:59:59`;
+
+        // Convert string YYYY-MM-DD kembali ke Date Object untuk set jam
+        const startD = new Date(apiDate);
+        startD.setHours(0, 0, 0, 0);
+        const endD = new Date(apiDateTo);
+        endD.setHours(23, 59, 59, 999);
+
+        const timeFrom = formatToApiUtc(startD);
+        const timeTo = formatToApiUtc(endD);
 
         const [allTasks, resultsData] = await Promise.all([
           getTasks({
@@ -118,7 +126,7 @@ export default function BulkReportDownloader({ driverData }) {
             status: 'DONE',
             timeFrom: timeFrom,
             timeTo: timeTo,
-            timeBy: 'doneTime',
+            timeBy: 'startTime',
             limit: 1000,
           }),
           getResultsSummary({

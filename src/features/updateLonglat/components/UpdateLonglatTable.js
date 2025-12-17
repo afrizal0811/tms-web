@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import CustomerHistoryModal from './CustomerHistoryModal';
+import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
 export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
   const [selectedRow, setSelectedRow] = useState(null);
