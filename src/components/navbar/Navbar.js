@@ -45,6 +45,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
+  const hiddenTextClassName = 'hidden [@media(min-width:1155px)]:inline';
 
   useEffect(() => {
     // close mobile menu on route change
@@ -146,9 +147,15 @@ export default function Navbar() {
               )}
             </div>
             <NavLink href="/rangkuman">Rangkuman</NavLink>
-            <NavLink href="/update-longlat">Update Longlat</NavLink>
-            <NavLink href="/estimasi">Estimasi Pengantaran</NavLink>
-            <NavLink href="/vehicles">Data Kendaraan</NavLink>
+            <NavLink href="/update-longlat">
+              <span className={hiddenTextClassName}>Update</span> Longlat
+            </NavLink>
+            <NavLink href="/estimasi">
+              <span className={hiddenTextClassName}>Esitmasi</span> Pengantaran
+            </NavLink>
+            <NavLink href="/vehicles">
+              <span className={hiddenTextClassName}>Data</span> Kendaraan
+            </NavLink>
             <HelpDropdown />
           </div>
         </div>
