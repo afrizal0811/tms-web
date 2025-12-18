@@ -13,7 +13,7 @@ export default function TimeDriverTab({ data }) {
   const hasDrivers = driverEmails && driverEmails.length > 0;
   if (!hasMatrixData || !hasDrivers) {
     return (
-      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
         Tidak ada data yang ditemukan.
       </div>
     );
@@ -41,8 +41,8 @@ export default function TimeDriverTab({ data }) {
   const stickyBodyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full overflow-auto h-full">
-      <table className="border-collapse border-0 text-sm whitespace-nowrap">
+    <div className="rounded-xl overflow-auto border border-gray-300 m-6 h-full">
+      <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-30 bg-gray-100">
           {/* Row 1: Headers */}
           <tr>

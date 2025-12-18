@@ -19,7 +19,7 @@ export default function TruckUsageTab({ data }) {
   // Jika dateMap null/undefined ATAU tidak ada usage (semua 0)
   if (!dateMap || !hasUsageData) {
     return (
-      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
         Tidak ada data yang ditemukan.
       </div>
     );
@@ -27,15 +27,15 @@ export default function TruckUsageTab({ data }) {
   // --- SELESAI LOGIKA BARU ---
 
   return (
-    <div className="w-full h-full flex flex-col gap-8 pb-10 overflow-auto">
+    <div className="w-full h-full flex flex-col gap-8 pb-10 overflow-auto p-6 ">
       {/* BLOCK 1: SUMMARY COUNT */}
       <div className="flex flex-col gap-2 min-w-max">
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">Truck Usage Summary (Count)</h3>
-        <div className="border rounded-lg shadow-sm bg-white p-1">
+        <div className="border border-gray-300 rounded-xl overflow-hidden">
           <TruckUsageSummaryTable
             summaryData={summaryData}
             vehicleTypes={vehicleTypes}
-            isPercentage={false} // <-- Count Mode
+            isPercentage={false}
           />
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function TruckUsageTab({ data }) {
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">
           Truck Usage Summary (Percentage)
         </h3>
-        <div className="border rounded-lg shadow-sm bg-white p-1">
+        <div className="border border-gray-300 rounded-xl overflow-hidden">
           <TruckUsageSummaryTable
             summaryData={summaryData}
             vehicleTypes={vehicleTypes}
@@ -57,7 +57,7 @@ export default function TruckUsageTab({ data }) {
       {/* BLOCK 3: DAILY COUNT */}
       <div className="flex flex-col gap-2 min-w-max">
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">Daily Vehicle Usage (Count)</h3>
-        <div className="border rounded-lg shadow-sm bg-white">
+        <div className="border border-gray-300 rounded-xl overflow-hidden">
           <TruckUsageTable {...data} isPercentage={false} />
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function TruckUsageTab({ data }) {
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">
           Daily Vehicle Usage (Percentage)
         </h3>
-        <div className="border rounded-lg shadow-sm bg-white">
+        <div className="border border-gray-300 rounded-xl overflow-hidden">
           <TruckUsageTable {...data} isPercentage={true} />
         </div>
       </div>

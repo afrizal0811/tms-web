@@ -99,7 +99,7 @@ export default function BodyCard({
             )}
           </>
         ) : isEmpty ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
             <p>{emptyMessage}</p>
           </div>
         ) : (

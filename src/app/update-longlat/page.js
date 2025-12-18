@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <AppLayout>
+    <AppLayout mainClassName="items-center px-4">
       <UpdateLonglatPage />
     </AppLayout>
   );

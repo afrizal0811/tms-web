@@ -359,7 +359,6 @@ export default function UpdateLonglatPage() {
         isLoading={loading}
         loadingText={loadingText}
         isEmpty={!loading && processedData.length === 0}
-        emptyMessage="Tidak ada data task ditemukan untuk tanggal ini."
       >
         <div className="p-6 h-full overflow-y-auto">
           <UpdateLonglatTable

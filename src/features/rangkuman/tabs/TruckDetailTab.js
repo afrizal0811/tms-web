@@ -16,7 +16,7 @@ export default function TruckDetailTab({ data }) {
   const hasDrivers = driverEmails && driverEmails.length > 0;
   if (!hasMatrixData || !hasDrivers) {
     return (
-      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
         Tidak ada data yang ditemukan.
       </div>
     );
@@ -56,10 +56,10 @@ export default function TruckDetailTab({ data }) {
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 relative">
+    <div className="w-full h-full flex flex-col gap-4 relative p-6">
       <TruckDetailModal isOpen={!!modalData} onClose={closeModal} data={modalData} />
 
-      <div className="overflow-auto flex-1">
+      <div className="overflow-auto flex-1 rounded-xl border border-gray-200">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>

@@ -330,9 +330,8 @@ export default function VehicleData() {
         isLoading={isLoading}
         loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
-        emptyMessage="Tidak ada data ditemukan untuk filter ini."
       >
-        <div className="flex-1 flex flex-col justify-between overflow-hidden">
+        <div className="flex-1 flex flex-col justify-between overflow-hidden m-6 border border-gray-300 rounded-xl">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             // Kirim searchQuery ke komponen tab
             <VehicleTab

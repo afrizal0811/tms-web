@@ -250,7 +250,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex-1 flex flex-col h-full space-y-4">
       <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
         <div className="w-full md:w-64 order-1">
           <SearchBar
@@ -287,12 +287,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           <DownloadButton
             onClick={handleDownload}
             disabled={loading || isDownloading || processedData.length === 0}
-            width="w-full md:w-auto" // Responsive width props
+            width="w-full md:w-auto"
           />
         </div>
       </div>
       {!loading && processedData.length === 0 ? (
-        <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+        <div className="flex-1 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
           Tidak ada data yang ditemukan.
         </div>
       ) : (
@@ -436,8 +436,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           </table>
         </div>
       )}
-
-      {/* Component Modal Peta Ditambahkan Disini */}
+      {/* Component Modal Peta */}
       <RoutingMapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}

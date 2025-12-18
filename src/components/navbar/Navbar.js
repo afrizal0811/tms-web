@@ -151,7 +151,7 @@ export default function Navbar() {
               <span className={hiddenTextClassName}>Update</span> Longlat
             </NavLink>
             <NavLink href="/estimasi">
-              <span className={hiddenTextClassName}>Esitmasi</span> Pengantaran
+              Estimasi<span className={hiddenTextClassName}> Pengiriman</span>
             </NavLink>
             <NavLink href="/vehicles">
               <span className={hiddenTextClassName}>Data</span> Kendaraan

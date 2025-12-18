@@ -609,6 +609,7 @@ export default function RangkumanSummary() {
           progress: historyProgress,
           startDateStr: startStr,
           endDateStr: endStr,
+          isHasData: Object.entries(taskSummaryMetrics).length > 0,
         });
       case 'Truck Usage':
         return renderTabContent(TruckUsageTab, { data: reportPreview.truckUsageData });

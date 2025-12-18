@@ -203,20 +203,18 @@ export default function EstimasiDelivery() {
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      <HeaderCard title="Estimasi Delivery" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title="Estimasi Pengiriman" subtitle={subtitle} items={headerItems} />
       <BodyCard
         className="min-h-[400px]"
         isLoading={isLoading}
         loadingText="Memuat Rute..."
         isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
-        emptyMessage="Tidak ada data ditemukan untuk tanggal atau filter ini."
-        // Tab Props
         tabs={vehicleTabs}
         activeTabId={activeVehicleId}
         onTabClick={setActiveVehicleId}
       >
-        <div className="bg-white rounded-xl shadow-sm h-[600px] flex flex-col border-none">
-          <div className="overflow-y-auto grow h-full">
+        <div className="bg-white rounded-xl h-[600px] flex flex-col border-none">
+          <div className="overflow-y-auto grow h-full m-6 border border-gray-300 rounded-xl">
             {!isLoading && activeRoute && (
               <TableData activeRoute={activeRoute} searchQuery={searchQuery} />
             )}

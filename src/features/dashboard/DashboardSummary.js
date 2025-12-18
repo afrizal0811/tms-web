@@ -76,14 +76,14 @@ function DiagramTab({ yearlyTasks, hubId }) {
 
   if (!yearlyTasks || yearlyTasks.length === 0) {
     return (
-      <div className="h-[350px] lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
+      <div className="flex-1 lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
         Tidak ada data yang ditemukan.
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col gap-6 pb-4 overflow-auto">
+    <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {renderStep >= 1 ? (
           <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
@@ -554,7 +554,7 @@ export default function DashboardSummary({ driverData }) {
         loadingText="Memuat data..."
         timerStartTime={fetchStartTimeRef.current}
       >
-        <div className="p-6 h-full overflow-y-auto">
+        <div className="flex-1 flex flex-col p-6 overflow-hidden">
           {activeTab === 'Detail' && (
             <DashboardDetailTab loading={loading} summaryData={summaryData} />
           )}
@@ -568,16 +568,8 @@ export default function DashboardSummary({ driverData }) {
             />
           )}
 
-          {activeTab === 'Diagram' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-lg font-bold text-slate-700">
-                  Performa Tahun {selectedDate.getFullYear()}
-                </h2>
-              </div>
-
-              {!isYearlyLoading && <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />}
-            </div>
+          {activeTab === 'Diagram' && !isYearlyLoading && (
+            <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />
           )}
         </div>
       </BodyCard>

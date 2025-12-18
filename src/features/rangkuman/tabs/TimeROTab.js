@@ -2,7 +2,7 @@
 'use client';
 
 import { isDateSunday } from '@/lib/utils'; // Pastikan import ini ada
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 // Fungsi helper untuk mendapatkan format HH:mm dari ISO String dalam UTC+7
 const formatTimeHHMM = (isoString) => {
@@ -120,21 +120,28 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
       .sort()
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr]);
+  const hasAnyData = processedData.some(
+    (item) => item.debugEndOrder != null || item.debugStartOrder != null
+  );
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-auto">
       <div className="flex-1 overflow-auto">
-        <table className="min-w-full text-sm text-left border-collapse">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
-            <tr>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Start RO</th>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">End RO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {processedData.length > 0 ? (
-              processedData.map((row, idx) => {
+        {!hasAnyData ? (
+          <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
+            Tidak ada data yang ditemukan.
+          </div>
+        ) : (
+          <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl overflow-hidden">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
+                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Start RO</th>
+                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">End RO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {processedData.map((row, idx) => {
                 const isSunday = isDateSunday(row.dateKey);
 
                 // Jika Minggu: Background Merah & Merge Cells
@@ -166,16 +173,10 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
                     <td className="px-6 py-4 text-gray-700">{endRODisplay}</td>
                   </tr>
                 );
-              })
-            ) : (
-              <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                  Tidak ada data untuk rentang tanggal ini.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
