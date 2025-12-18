@@ -1,7 +1,7 @@
 // File: features/rangkuman/tabs/PendingReasonsTab.js
-import { useState, useRef } from 'react';
 import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
+import { useRef, useState } from 'react';
 
 // --- KONFIGURASI DINAMIS ---
 const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
@@ -89,14 +89,6 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
 };
 
 export default function PendingReasonsTab({ data, locationName }) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-        Tidak ada data yang ditemukan.
-      </div>
-    );
-  }
-
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
     (locationName || '').toLowerCase().includes(loc.toLowerCase())
   );

@@ -587,6 +587,66 @@ export default function RangkumanSummary() {
     }
   };
 
+  const isTabEmpty = () => {
+    if (isLoading) return false;
+
+    // Default check untuk tab yang butuh reportPreview
+    if (activeTab !== 'Task Summary' && activeTab !== 'Time RO' && !reportPreview) return true;
+
+    switch (activeTab) {
+      case 'Task Summary':
+        return Object.keys(taskSummaryMetrics).length === 0;
+
+      case 'Truck Usage': {
+        const { dateMap } = reportPreview?.truckUsageData || {};
+        return !(
+          dateMap &&
+          Object.values(dateMap).some(
+            (d) => (d.DryTotal || 0) > 0 || (d.FrozenTotal || 0) > 0 || (d.OTV || 0) > 0
+          )
+        );
+      }
+
+      case 'Average KM': {
+        const data = reportPreview?.averageKmData;
+        const hasRouting = data && data.some((row) => (row.totalKm || 0) > 0);
+        return !data || data.length === 0 || !hasRouting;
+      }
+
+      case 'Truck Detail': {
+        const { dataMatrix, driverEmails } = reportPreview?.truckDetailData || {};
+        const hasMatrix =
+          dataMatrix && Object.values(dataMatrix).some((d) => d && Object.keys(d).length > 0);
+        return !(hasMatrix && driverEmails && driverEmails.length > 0);
+      }
+
+      case 'Time Driver': {
+        const { dataMatrix, driverEmails } = reportPreview?.timeDriverData || {};
+        const hasMatrix =
+          dataMatrix && Object.values(dataMatrix).some((d) => d && Object.keys(d).length > 0);
+        return !(hasMatrix && driverEmails && driverEmails.length > 0);
+      }
+
+      case 'Pending Reasons': {
+        // Filter logic duplikasi dari renderContent agar konsisten
+        const year = selectedDate.getFullYear();
+        const month = selectedDate.getMonth();
+        const startStr = formatDateUniversal(new Date(year, month, 1));
+        const filtered = (reportPreview?.pendingReasonsData || []).filter(
+          (item) => formatDateUniversal(item.date || item.doneTime || item.createdTime) >= startStr
+        );
+        return filtered.length === 0;
+      }
+
+      case 'Time RO':
+        // Cek apakah ada task dari API
+        return !(rawData.tasks && rawData.tasks.some((t) => t.createdFrom === 'API'));
+
+      default:
+        return false;
+    }
+  };
+
   const renderContent = () => {
     const renderTabContent = (Component, props) => (
       <div className="w-full h-[calc(100vh-240px)] flex flex-col">
@@ -714,8 +774,7 @@ export default function RangkumanSummary() {
         onTabClick={handleTabClick}
         isLoading={isLoading}
         longLoadingContent={warningContent}
-        isEmpty={!isLoading && !reportPreview && activeTab !== 'Task Summary'}
-        emptyMessage="Tidak ada data / Belum dimuat."
+        isEmpty={isTabEmpty()}
       >
         {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
           <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
@@ -724,7 +783,6 @@ export default function RangkumanSummary() {
             </div>
           </div>
         )}
-
         {!isLoading && renderContent()}
       </BodyCard>
     </div>

@@ -3,22 +3,6 @@ import { Fragment } from 'react';
 
 export default function TimeDriverTab({ data }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
-
-  const hasMatrixData =
-    dataMatrix &&
-    Object.values(dataMatrix).some((dateObj) => {
-      return dateObj && Object.keys(dateObj).length > 0;
-    });
-
-  const hasDrivers = driverEmails && driverEmails.length > 0;
-  if (!hasMatrixData || !hasDrivers) {
-    return (
-      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-        Tidak ada data yang ditemukan.
-      </div>
-    );
-  }
-
   // Helpers & Constants
   const isSunday = (dateStr) => {
     const d = new Date(dateStr);

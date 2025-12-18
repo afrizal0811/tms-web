@@ -74,14 +74,6 @@ function DiagramTab({ yearlyTasks, hubId }) {
     }
   }, [yearlyTasks]);
 
-  if (!yearlyTasks || yearlyTasks.length === 0) {
-    return (
-      <div className="flex-1 lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
-        Tidak ada data yang ditemukan.
-      </div>
-    );
-  }
-
   return (
     <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -501,6 +493,12 @@ export default function DashboardSummary({ driverData }) {
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
 
+  const isDailyEmpty = !loading && (!rawData.tasks || rawData.tasks.length === 0);
+  const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || yearlyTasks.length === 0);
+
+  // Tentukan kosong berdasarkan Tab Aktif
+  const isCardEmpty = isDiagramTab ? isYearlyEmpty : isDailyEmpty;
+
   const subtitle = (
     <>
       Overview performa <span className="font-semibold text-sky-600">harian & tahunan</span>
@@ -539,13 +537,6 @@ export default function DashboardSummary({ driverData }) {
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          <strong>Gagal memuat data:</strong> {error}
-        </div>
-      )}
-
       <BodyCard
         tabs={cardTabs}
         activeTabId={activeTab}
@@ -553,6 +544,7 @@ export default function DashboardSummary({ driverData }) {
         isLoading={isLoadingSelected}
         loadingText="Memuat data..."
         timerStartTime={fetchStartTimeRef.current}
+        isEmpty={isCardEmpty}
       >
         <div className="flex-1 flex flex-col p-6 overflow-hidden">
           {activeTab === 'Detail' && (

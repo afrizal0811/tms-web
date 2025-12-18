@@ -4,7 +4,14 @@
 import Spinner from '@/components/Spinner';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
-export default function TaskSummaryTab({ metrics, isLoading, progress, startDateStr, endDateStr, isHasData }) {
+export default function TaskSummaryTab({
+  metrics,
+  isLoading,
+  progress,
+  startDateStr,
+  endDateStr,
+  isHasData,
+}) {
   const [masterTruckData, setMasterTruckData] = useState({
     Dry: { Total: 0 },
     Frozen: { Total: 0 },
@@ -130,155 +137,137 @@ export default function TaskSummaryTab({ metrics, isLoading, progress, startDate
       )}
 
       <div className="flex-1 overflow-auto bg-white rounded-lg border border-gray-200 ">
-        {!isHasData ? (
-          <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-            Tidak ada data yang ditemukan.
-          </div>
-        ) : (
-          <table className="min-w-full text-xs text-center border-collapse text-gray-700 ">
-            <thead className="text-xs text-gray-700 uppercase sticky top-0 z-10 font-bold">
-              <tr>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>
-                  Date
-                </th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>Type</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cPink}`}>DP</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>DT</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>% DT</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>MA</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>% MA</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>RT</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>% RT</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>CO</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>% CO</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>PR</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>% PR</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>MT</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>TV</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>VA</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>TVU</th>
-                <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>
-                  % TVU
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {allDates.map((item) => {
-                const { key, display, isSunday, dateObj } = item;
-                if (isSunday) return renderSundayRows(key, display);
+        <table className="min-w-full text-xs text-center border-collapse text-gray-700 ">
+          <thead className="text-xs text-gray-700 uppercase sticky top-0 z-10 font-bold">
+            <tr>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>Date</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>Type</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cPink}`}>DP</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>DT</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>% DT</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>MA</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>% MA</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>RT</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>% RT</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>CO</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>% CO</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>PR</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>% PR</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>MT</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>TV</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>VA</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>TVU</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>% TVU</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allDates.map((item) => {
+              const { key, display, isSunday, dateObj } = item;
+              if (isSunday) return renderSundayRows(key, display);
 
-                const routingKey = getRoutingDateKey(dateObj);
-                const data = metrics ? metrics[routingKey] : null;
+              const routingKey = getRoutingDateKey(dateObj);
+              const data = metrics ? metrics[routingKey] : null;
 
-                const d = data?.dry || {};
-                const f = data?.frozen || {};
+              const d = data?.dry || {};
+              const f = data?.frozen || {};
 
-                const mtDry = masterTruckData.Dry?.Total || 0;
-                const mtFrozen = masterTruckData.Frozen?.Total || 0;
+              const mtDry = masterTruckData.Dry?.Total || 0;
+              const mtFrozen = masterTruckData.Frozen?.Total || 0;
 
-                return [
-                  // ROW 1: DRY
-                  <tr key={`${key}-dry`} className="hover:bg-gray-50 bg-white">
-                    <td
-                      rowSpan={2}
-                      className="px-2 py-2 border border-gray-300 font-medium align-middle bg-white"
-                    >
-                      {display}
-                    </td>
-                    <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
-                      Dry
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.dp)}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.dt_total)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
-                      {calculatePct(d.dt_total, d.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.ma_total)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
-                      {calculatePct(d.ma_total, d.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.rt)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
-                      {calculatePct(d.rt, d.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.co)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
-                      {calculatePct(d.co, d.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.pr)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
-                      {calculatePct(d.pr, d.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300 font-semibold">{mtDry}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.tv)}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.va)}</td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(d.tvu)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
-                      {calculatePct(d.tvu, mtDry)}
-                    </td>
-                  </tr>,
-
-                  // ROW 2: FROZEN
-                  <tr key={`${key}-frozen`} className="hover:bg-gray-50 bg-white">
-                    <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
-                      Frozen
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.dp)}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.dt_total)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
-                      {calculatePct(f.dt_total, f.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.ma_total)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
-                      {calculatePct(f.ma_total, f.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.rt)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
-                      {calculatePct(f.rt, f.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.co)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
-                      {calculatePct(f.co, f.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.pr)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
-                      {calculatePct(f.pr, f.dp)}
-                    </td>
-
-                    <td className="px-2 py-2 border border-gray-300 font-semibold">{mtFrozen}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.tv)}</td>
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.va)}</td>
-
-                    <td className="px-2 py-2 border border-gray-300">{renderValue(f.tvu)}</td>
-                    <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
-                      {calculatePct(f.tvu, mtFrozen)}
-                    </td>
-                  </tr>,
-                ];
-              })}
-
-              {allDates.length === 0 && (
-                <tr>
-                  <td colSpan={18} className="px-6 py-8 text-center text-gray-400 italic">
-                    Pilih bulan terlebih dahulu untuk melihat data.
+              return [
+                // ROW 1: DRY
+                <tr key={`${key}-dry`} className="hover:bg-gray-50 bg-white">
+                  <td
+                    rowSpan={2}
+                    className="px-2 py-2 border border-gray-300 font-medium align-middle bg-white"
+                  >
+                    {display}
                   </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                  <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
+                    Dry
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.dp)}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.dt_total)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
+                    {calculatePct(d.dt_total, d.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.ma_total)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
+                    {calculatePct(d.ma_total, d.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.rt)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
+                    {calculatePct(d.rt, d.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.co)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
+                    {calculatePct(d.co, d.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.pr)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
+                    {calculatePct(d.pr, d.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300 font-semibold">{mtDry}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.tv)}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.va)}</td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.tvu)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
+                    {calculatePct(d.tvu, mtDry)}
+                  </td>
+                </tr>,
+
+                // ROW 2: FROZEN
+                <tr key={`${key}-frozen`} className="hover:bg-gray-50 bg-white">
+                  <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
+                    Frozen
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.dp)}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.dt_total)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
+                    {calculatePct(f.dt_total, f.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.ma_total)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
+                    {calculatePct(f.ma_total, f.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.rt)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
+                    {calculatePct(f.rt, f.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.co)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
+                    {calculatePct(f.co, f.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.pr)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
+                    {calculatePct(f.pr, f.dp)}
+                  </td>
+
+                  <td className="px-2 py-2 border border-gray-300 font-semibold">{mtFrozen}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.tv)}</td>
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.va)}</td>
+
+                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.tvu)}</td>
+                  <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
+                    {calculatePct(f.tvu, mtFrozen)}
+                  </td>
+                </tr>,
+              ];
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

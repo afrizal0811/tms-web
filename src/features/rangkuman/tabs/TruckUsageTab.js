@@ -1,30 +1,9 @@
 // File: features/rangkuman/tabs/TruckUsageTab.js
-import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
+import TruckUsageTable from './components/TruckUsageTable';
 
 export default function TruckUsageTab({ data }) {
-  const { dateMap, summaryData, vehicleTypes } = data || {};
-
-  const hasUsageData =
-    dateMap &&
-    Object.values(dateMap).some((dateObj) => {
-      const dryCount = dateObj.DryTotal || 0;
-      const frozenCount = dateObj.FrozenTotal || 0;
-      const otvCount = dateObj.OTV || 0;
-
-      // Return true jika ada data (jumlah > 0)
-      return dryCount > 0 || frozenCount > 0 || otvCount > 0;
-    });
-
-  // Jika dateMap null/undefined ATAU tidak ada usage (semua 0)
-  if (!dateMap || !hasUsageData) {
-    return (
-      <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-        Tidak ada data yang ditemukan.
-      </div>
-    );
-  }
-  // --- SELESAI LOGIKA BARU ---
+  const { summaryData, vehicleTypes } = data || {};
 
   return (
     <div className="w-full h-full flex flex-col gap-8 pb-10 overflow-auto p-6 ">

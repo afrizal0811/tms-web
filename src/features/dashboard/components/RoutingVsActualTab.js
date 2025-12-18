@@ -291,151 +291,143 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           />
         </div>
       </div>
-      {!loading && processedData.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400">
-          Tidak ada data yang ditemukan.
-        </div>
-      ) : (
-        <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
-          <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th className="px-4 py-3 border-b">Flow</th>
-                <th className="px-4 py-3 border-b">Plat</th>
-                <th className="px-4 py-3 border-b">Driver</th>
-                <th className="px-4 py-3 border-b">Customer</th>
-                <th className="px-4 py-3 border-b">Status</th>
-                <th className="px-4 py-3 border-b text-center">Open</th>
-                <th className="px-4 py-3 border-b text-center">Close</th>
-                <th className="px-4 py-3 border-b text-center">ETA</th>
-                <th className="px-4 py-3 border-b text-center">Arrival</th>
-                <th className="px-4 py-3 border-b text-center">ETD</th>
-                <th className="px-4 py-3 border-b text-center">Departure</th>
-                <th className="px-4 py-3 border-b text-center">Visit Time</th>
-                <th className="px-4 py-3 border-b text-center">Act Visit</th>
-                <th className="px-4 py-3 border-b text-center">RO Seq</th>
-                <th className="px-4 py-3 border-b text-center">Real Seq</th>
-                <th className="px-4 py-3 border-b text-center">Match?</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {processedData.map((row, index) => {
-                if (row.type === 'SPACER') {
-                  return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
-                }
+      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
+        <table className="min-w-full text-xs text-left">
+          <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
+            <tr>
+              <th className="px-4 py-3 border-b">Flow</th>
+              <th className="px-4 py-3 border-b">Plat</th>
+              <th className="px-4 py-3 border-b">Driver</th>
+              <th className="px-4 py-3 border-b">Customer</th>
+              <th className="px-4 py-3 border-b">Status</th>
+              <th className="px-4 py-3 border-b text-center">Open</th>
+              <th className="px-4 py-3 border-b text-center">Close</th>
+              <th className="px-4 py-3 border-b text-center">ETA</th>
+              <th className="px-4 py-3 border-b text-center">Arrival</th>
+              <th className="px-4 py-3 border-b text-center">ETD</th>
+              <th className="px-4 py-3 border-b text-center">Departure</th>
+              <th className="px-4 py-3 border-b text-center">Visit Time</th>
+              <th className="px-4 py-3 border-b text-center">Act Visit</th>
+              <th className="px-4 py-3 border-b text-center">RO Seq</th>
+              <th className="px-4 py-3 border-b text-center">Real Seq</th>
+              <th className="px-4 py-3 border-b text-center">Match?</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {processedData.map((row, index) => {
+              if (row.type === 'SPACER') {
+                return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
+              }
 
-                if (row.type === 'HUB_START') {
-                  return (
-                    <tr
-                      key={index}
-                      className="text-red-600 font-bold border-b border-gray-100 bg-white"
-                    >
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                    </tr>
-                  );
-                }
-
-                if (row.type === 'HUB_END') {
-                  return (
-                    <tr
-                      key={index}
-                      className="text-red-600 font-bold border-b border-gray-100 bg-white"
-                    >
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2"></td>
-                    </tr>
-                  );
-                }
-
-                const isMatch = row.roSequence == row.realSequence;
-                const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
-
-                const cellContent = (
-                  <>
-                    <td className="px-4 py-2">{row.flow}</td>
-                    <td className="px-4 py-2">
-                      <HighlightText text={row.plat} highlight={searchQuery} />
-                    </td>
-                    <td className="px-4 py-2 font-medium">
-                      <HighlightText text={row.driver} highlight={searchQuery} />
-                    </td>
-                    <td className="px-4 py-2">
-                      <HighlightText text={row.customerName} highlight={searchQuery} />
-                    </td>
-                    <td className="px-4 py-2">{row.statusLabel}</td>
-                    <td className="px-4 py-2 text-center">{row.openTime}</td>
-                    <td className="px-4 py-2 text-center">{row.closeTime}</td>
-                    <td className="px-4 py-2 text-center">{row.eta}</td>
-                    <td className="px-4 py-2 text-center">{row.actualArrival}</td>
-                    <td className="px-4 py-2 text-center">{row.etd}</td>
-                    <td className="px-4 py-2 text-center">{row.actualDeparture}</td>
-                    <td className="px-4 py-2 text-center">{row.visitTime}</td>
-                    <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
-                    <td className="px-4 py-2 text-center font-semibold">
-                      {row.roSequence === 0 ? '-' : row.roSequence}
-                    </td>
-                    <td className="px-4 py-2 text-center font-semibold">
-                      {row.realSequence ?? '-'}
-                    </td>
-                    <td
-                      className={`px-4 py-2 text-center font-bold ${
-                        isMatch ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {isMatch ? 'SAMA' : 'BEDA'}
-                    </td>
-                  </>
-                );
-
-                if (row.isManualAssign) {
-                  return (
-                    <Tooltip key={index} tooltipContent="Manual Assign">
-                      <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
-                        {cellContent}
-                      </tr>
-                    </Tooltip>
-                  );
-                }
-
+              if (row.type === 'HUB_START') {
                 return (
-                  <tr key={index} className={`${rowClass} border-b border-gray-100`}>
-                    {cellContent}
+                  <tr
+                    key={index}
+                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                  >
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+              }
+
+              if (row.type === 'HUB_END') {
+                return (
+                  <tr
+                    key={index}
+                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                  >
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                  </tr>
+                );
+              }
+
+              const isMatch = row.roSequence == row.realSequence;
+              const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
+
+              const cellContent = (
+                <>
+                  <td className="px-4 py-2">{row.flow}</td>
+                  <td className="px-4 py-2">
+                    <HighlightText text={row.plat} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2 font-medium">
+                    <HighlightText text={row.driver} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <HighlightText text={row.customerName} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2">{row.statusLabel}</td>
+                  <td className="px-4 py-2 text-center">{row.openTime}</td>
+                  <td className="px-4 py-2 text-center">{row.closeTime}</td>
+                  <td className="px-4 py-2 text-center">{row.eta}</td>
+                  <td className="px-4 py-2 text-center">{row.actualArrival}</td>
+                  <td className="px-4 py-2 text-center">{row.etd}</td>
+                  <td className="px-4 py-2 text-center">{row.actualDeparture}</td>
+                  <td className="px-4 py-2 text-center">{row.visitTime}</td>
+                  <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
+                  <td className="px-4 py-2 text-center font-semibold">
+                    {row.roSequence === 0 ? '-' : row.roSequence}
+                  </td>
+                  <td className="px-4 py-2 text-center font-semibold">{row.realSequence ?? '-'}</td>
+                  <td
+                    className={`px-4 py-2 text-center font-bold ${
+                      isMatch ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {isMatch ? 'SAMA' : 'BEDA'}
+                  </td>
+                </>
+              );
+
+              if (row.isManualAssign) {
+                return (
+                  <Tooltip key={index} tooltipContent="Manual Assign">
+                    <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
+                      {cellContent}
+                    </tr>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <tr key={index} className={`${rowClass} border-b border-gray-100`}>
+                  {cellContent}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {/* Component Modal Peta */}
       <RoutingMapModal
         isOpen={isMapModalOpen}

@@ -120,63 +120,54 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
       .sort()
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr]);
-  const hasAnyData = processedData.some(
-    (item) => item.debugEndOrder != null || item.debugStartOrder != null
-  );
 
   return (
     <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-auto">
       <div className="flex-1 overflow-auto">
-        {!hasAnyData ? (
-          <div className="h-full lg:col-span-2 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-            Tidak ada data yang ditemukan.
-          </div>
-        ) : (
-          <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl overflow-hidden">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
-                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Start RO</th>
-                <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">End RO</th>
-              </tr>
-            </thead>
-            <tbody>
-              {processedData.map((row, idx) => {
-                const isSunday = isDateSunday(row.dateKey);
+        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl overflow-hidden">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
+            <tr>
+              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
+              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Start RO</th>
+              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">End RO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {processedData.map((row, idx) => {
+              const isSunday = isDateSunday(row.dateKey);
 
-                // Jika Minggu: Background Merah & Merge Cells
-                if (isSunday) {
-                  return (
-                    <tr key={idx} className="bg-red-200 border-b border-red-300 text-red-900">
-                      <td className="px-6 py-4 font-medium border-r border-red-300">
-                        {row.dateDisplay}
-                      </td>
-                      <td colSpan={2} className="px-6 py-4 font-bold text-center">
-                        Libur (Minggu)
-                      </td>
-                    </tr>
-                  );
-                }
-
-                // Jika Hari Kerja Biasa
-                const isValidEndRO = isSameDayWIB(row.minCreatedTime, row.minAssignedTime);
-                const endRODisplay = isValidEndRO ? formatTimeHHMM(row.minAssignedTime) : '-';
-
+              // Jika Minggu: Background Merah & Merge Cells
+              if (isSunday) {
                 return (
-                  <tr key={idx} className="bg-white border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-200">
+                  <tr key={idx} className="bg-red-200 border-b border-red-300 text-red-900">
+                    <td className="px-6 py-4 font-medium border-r border-red-300">
                       {row.dateDisplay}
                     </td>
-                    <td className="px-6 py-4 text-gray-700 border-r border-gray-200">
-                      {formatTimeHHMM(row.minCreatedTime)}
+                    <td colSpan={2} className="px-6 py-4 font-bold text-center">
+                      Libur (Minggu)
                     </td>
-                    <td className="px-6 py-4 text-gray-700">{endRODisplay}</td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        )}
+              }
+
+              // Jika Hari Kerja Biasa
+              const isValidEndRO = isSameDayWIB(row.minCreatedTime, row.minAssignedTime);
+              const endRODisplay = isValidEndRO ? formatTimeHHMM(row.minAssignedTime) : '-';
+
+              return (
+                <tr key={idx} className="bg-white border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-200">
+                    {row.dateDisplay}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 border-r border-gray-200">
+                    {formatTimeHHMM(row.minCreatedTime)}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700">{endRODisplay}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
