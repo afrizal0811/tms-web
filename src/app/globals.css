@@ -136,19 +136,19 @@
 }
 
 /* Hover */
-.custom-year-picker .react-datepicker__year-text:hover {
-  background-color: #f3f4f6 !important;
+.react-datepicker__year-text:hover {
+  background-color: #e0f2fe !important; /* Sky-100 saat di-hover */
 }
 
 /* Active */
-.custom-year-picker .react-datepicker__year-text--selected,
-.custom-year-picker .react-datepicker__year-text--keyboard-selected {
-  background-color: #0284c7 !important;
-  color: white !important;
+.react-datepicker__year-text--selected,
+.react-datepicker__year-text--keyboard-selected {
+  color: #ffffff !important; /* Teks Putih */
+  background-color: #0284c7 !important; /* Sky-600 (Sesuai tema dashboard Anda) */
 }
 
 /* ========================= */
-/*    MOBILE OPTIMIZATION    */
+/* MOBILE OPTIMIZATION    */
 /* ========================= */
 
 /* HP ukuran < 420px */
@@ -211,4 +211,66 @@
 /* Pastikan header mengakomodasi tinggi dropdown */
 .react-datepicker__header {
   padding-bottom: 8px !important; /* Tambah padding bawah agar tidak terlalu mepet */
+}
+
+/* ========================================================= */
+/* --- OVERRIDE REACT-DATEPICKER YEAR VIEW (FINAL FIX) --- */
+/* ========================================================= */
+
+/* 1. Container Utama */
+.react-datepicker--year-only {
+  width: auto !important;
+  min-width: 280px;
+}
+
+/* 2. Wrapper Grid 3 Kolom */
+.react-datepicker__year-wrapper {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.5rem;
+  padding: 1rem !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+/* 3. Style Dasar Item Tahun (Teks Abu Gelap) */
+.react-datepicker__year-text {
+  width: auto !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  height: auto !important;
+  padding: 0.75rem 0.25rem !important;
+  
+  /* Font Styling */
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  color: #334155 !important; /* Warna default (Slate-700) */
+  border-radius: 0.5rem !important;
+}
+
+/* 4. State Selected (Tahun Terpilih) - Text Putih & BG Biru */
+/* Menggunakan selector ganda agar lebih spesifik dan menang dari rule nomor 3 */
+.react-datepicker__year-text.react-datepicker__year-text--selected,
+.react-datepicker__year-text.react-datepicker__year-text--keyboard-selected {
+  color: #ffffff !important;       /* Pasti Putih */
+  background-color: #0284c7 !important; /* Sky-600 */
+}
+
+/* 5. Efek Hover (Saat mouse di atas tahun yg BELUM dipilih) */
+.react-datepicker__year-text:hover {
+  background-color: #e0f2fe !important; /* Sky-100 */
+  color: #0284c7 !important; /* Teks jadi biru */
+}
+
+/* 6. Efek Hover pada tahun yang SUDAH dipilih (Tetap Putih) */
+.react-datepicker__year-text.react-datepicker__year-text--selected:hover {
+  background-color: #0369a1 !important; /* Sky-700 (lebih gelap dikit) */
+  color: #ffffff !important; /* Tetap Putih */
+}
+
+/* Opsional: Sedikit penyesuaian pada header agar lebarnya konsisten */
+.react-datepicker--year-only .react-datepicker__header {
+  width: 100% !important;
 }

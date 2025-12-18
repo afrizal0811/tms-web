@@ -509,10 +509,10 @@ export default function DashboardSummary({ driverData }) {
     <CustomDatePicker
       selected={selectedDate}
       onChange={handleDateChange}
-      isLoading={isLoadingSelected}
+      isLoading={isDiagramTab ? isYearlyLoading : loading}
       dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-      className="md:w-48"
-      wrapperClassName="w-full"
+      showYearPicker={isDiagramTab}
+      className="custom-year-picker"
     />
   );
 
