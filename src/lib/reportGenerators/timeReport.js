@@ -7,6 +7,7 @@ import {
   formatTimestampToQuotedHHMM_UTC7,
   formatYYYYMMDDToDDMMYYYY,
   normalizeEmail,
+  formatMinutesToHHMM,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -53,9 +54,10 @@ export function generateTimeSummaryWorkbook(
       finishDate: formatTimestampToDDMMYYYY_UTC7(finishTime),
       finishTimeFormatted: formatTimestampToQuotedHHMM_UTC7(finishTime),
       duration: calculateDurationAsQuotedHHMM(startTime, finishTime),
+      travelTimeVal: item.finish?.totalDuration || 0, // Ambil durasi
     };
   });
-
+  console.log('processedApiData', processedApiData);
   const filteredApiData = processedApiData.filter((item) => {
     const criteriaMet = item.trackedTime >= 10 && item.totalDistance > 5;
     const emailExists = item.emailExists;
@@ -63,7 +65,8 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (filteredApiData.length === 0) return {error: 'Tidak ada data Start/Finish untuk tanggal ini.'};
+  if (filteredApiData.length === 0)
+    return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' };
 
   const apiDataMap = filteredApiData.reduce((acc, item) => {
     if (item.email) {
@@ -95,6 +98,7 @@ export function generateTimeSummaryWorkbook(
         finishDate: null,
         finishTimeFormatted: null,
         duration: null,
+        travelTimeVal: null,
       };
     }
   });
@@ -126,18 +130,38 @@ export function generateTimeSummaryWorkbook(
     'Finish Date',
     'Finish Time',
     'Duration',
+    'Travel Time', // Kolom Baru
+    'Travel Distance (KM)', // Kolom Baru
   ];
   const finalSheetData = [
     headers,
-    ...excelDataObjects.map((item) => [
-      item.plat,
-      item.driver,
-      item.startDate,
-      item.startTimeFormatted,
-      item.finishDate,
-      item.finishTimeFormatted,
-      item.duration,
-    ]),
+    ...excelDataObjects.map((item) => {
+      // --- 3. FORMATTING LOGIC ---
+
+      // A. Travel Time (Menit -> HH:mm, 0 -> null)
+      let displayTravelTime = null;
+      if (item.travelTimeVal && item.travelTimeVal > 0) {
+        displayTravelTime = formatMinutesToHHMM(item.travelTimeVal);
+      }
+
+      // B. Travel Distance (Angka -> 2 Desimal, 0 -> null)
+      let displayTravelDist = null;
+      if (item.totalDistance && item.totalDistance > 0) {
+        displayTravelDist = Number(item.totalDistance.toFixed(2));
+      }
+
+      return [
+        item.plat,
+        item.driver,
+        item.startDate,
+        item.startTimeFormatted,
+        item.finishDate,
+        item.finishTimeFormatted,
+        item.duration,
+        displayTravelTime, // Value Baru
+        displayTravelDist, // Value Baru
+      ];
+    }),
   ];
   const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
 
@@ -157,7 +181,12 @@ export function generateTimeSummaryWorkbook(
   };
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const leftStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
-  const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } }; // Merah solid
+  const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } }; 
+  const greenHeaderStyle = {
+    ...centerStyle,
+    font: { bold: true },
+    fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
+  };
   const range = XLSX.utils.decode_range(ws['!ref']);
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -165,7 +194,11 @@ export function generateTimeSummaryWorkbook(
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) continue;
       if (R === 0) {
-        ws[cellRef].s = headerStyle;
+        if ([2, 3, 4, 5, 6].includes(C)) {
+          ws[cellRef].s = greenHeaderStyle;
+        } else {
+          ws[cellRef].s = headerStyle;
+        }
       } else {
         const rowData = excelDataObjects[R - 1];
         if (C === 0 || C === 1) {
