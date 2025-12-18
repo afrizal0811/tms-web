@@ -57,7 +57,7 @@ export function generateTimeSummaryWorkbook(
       travelTimeVal: item.finish?.totalDuration || 0, // Ambil durasi
     };
   });
-  console.log('processedApiData', processedApiData);
+
   const filteredApiData = processedApiData.filter((item) => {
     const criteriaMet = item.trackedTime >= 10 && item.totalDistance > 5;
     const emailExists = item.emailExists;
