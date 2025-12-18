@@ -1,0 +1,136 @@
+├── app
+│   ├── api
+│   │   ├── get-batch-histories
+│   │   │   └── route.js
+│   │   ├── get-hubs
+│   │   │   └── route.js
+│   │   ├── get-location-histories
+│   │   │   └── route.js
+│   │   ├── get-results-summary
+│   │   │   └── route.js
+│   │   ├── get-tasks
+│   │   │   └── route.js
+│   │   ├── get-users
+│   │   │   └── route.js
+│   │   └── get-vehicles
+│   │       └── route.js
+│   ├── estimasi
+│   │   └── page.js
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── laporan
+│   │   ├── bulk
+│   │   │   └── page.js
+│   │   └── page.js
+│   ├── layout.js
+│   ├── old.ico
+│   ├── page.js
+│   ├── rangkuman
+│   │   └── page.js
+│   ├── update-longlat
+│   │   └── page.js
+│   └── vehicles
+│       └── page.js
+├── components
+│   ├── AppLayout.js
+│   ├── card
+│   │   ├── BodyCard.js
+│   │   └── HeaderCard.js
+│   ├── ConfirmModal.js
+│   ├── CustomDatePicker.js
+│   ├── DownloadButton.js
+│   ├── Footer.js
+│   ├── HighlightText.js
+│   ├── LocationDropdown.js
+│   ├── navbar
+│   │   ├── HelpDropdown.js
+│   │   ├── LocationSwitcher.js
+│   │   ├── Navbar.js
+│   │   └── UserDisplay.js
+│   ├── SearchBar.js
+│   ├── SelectionLayout.js
+│   ├── SessionGuard.js
+│   ├── Spinner.js
+│   ├── table
+│   │   ├── TabButton.js
+│   │   ├── Td.js
+│   │   └── Th.js
+│   ├── Tooltip.js
+│   └── VehicleTagMappingModal.js
+├── features
+│   ├── dashboard
+│   │   ├── components
+│   │   │   ├── DashboardDetailTab.js
+│   │   │   ├── RoutingVsActualTab.js
+│   │   │   ├── SequenceAccuracyChart.js
+│   │   │   └── ServiceLevelChart.js
+│   │   ├── DashboardSummary.js
+│   │   ├── help.js
+│   │   └── modals
+│   │       ├── DailySequenceAccuracyModal.js
+│   │       └── DailyServiceLevelModal.js
+│   ├── estimasiDelivery
+│   │   ├── components
+│   │   │   └── TableData.js
+│   │   ├── EstimasiDelivery.js
+│   │   └── help.js
+│   ├── rangkuman
+│   │   ├── RangkumanSummary.js
+│   │   └── tabs
+│   │       ├── AverageKmTab.js
+│   │       ├── components
+│   │       │   ├── TruckUsageSummaryTable.js
+│   │       │   └── TruckUsageTable.js
+│   │       ├── modals
+│   │       │   └── TruckDetailModal.js
+│   │       ├── PendingReasonsTab.js
+│   │       ├── PlaceholderTab.js
+│   │       ├── TaskSummaryTab.js
+│   │       ├── TimeDriverTab.js
+│   │       ├── TimeROTab.js
+│   │       ├── TruckDetailTab.js
+│   │       └── TruckUsageTab.js
+│   ├── reportData
+│   │   ├── BulkReportDownloader.js
+│   │   ├── help.js
+│   │   └── SingleReportDownloader.js
+│   ├── updateLonglat
+│   │   ├── components
+│   │   │   ├── CustomerHistoryModal.js
+│   │   │   ├── UpdateLonglatTable.js
+│   │   │   └── UpdateMap.js
+│   │   ├── help.js
+│   │   └── UpdateLonglatPage.js
+│   ├── userSelection
+│   │   └── UserSelectionGrid.js
+│   └── vehicleData
+│       ├── components
+│       │   ├── Pagination.js
+│       │   ├── TemplateTab.js
+│       │   └── VehicleTab.js
+│       ├── help.js
+│       └── VehicleData.js
+└── lib
+    ├── apiService.js
+    ├── constants.js
+    ├── dashboardHelper.js
+    ├── driverDataHelper.js
+    ├── hooks
+    │   └── useVehicleTagCheck.js
+    ├── masterTruckHelper.js
+    ├── reportGenerators
+    │   ├── deliveryReport.js
+    │   ├── rangkumanReport.js
+    │   ├── rangkumanSheets
+    │   │   ├── averageKmSheet.js
+    │   │   ├── pendingReasonSheet.js
+    │   │   ├── reportStyles.js
+    │   │   ├── taskSummarySheet.js
+    │   │   ├── timeDriverSheet.js
+    │   │   ├── timeROSheet.js
+    │   │   ├── truckDetailSheet.js
+    │   │   └── truckUsageSheet.js
+    │   ├── routingReport.js
+    │   └── timeReport.js
+    ├── toastHelper.js
+    └── utils.js

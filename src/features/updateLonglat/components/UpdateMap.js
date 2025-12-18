@@ -1,0 +1,198 @@
+'use client';
+
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { useEffect, useMemo, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+
+// Fix default icon Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const redIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const blueIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// --- Highlight Effect ---
+function HighlightEffect({ activeCoords, highlightTrigger, markerRefs }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!activeCoords) return;
+
+    const [lat, lng] = activeCoords.split(',').map(Number);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    map.flyTo([lat, lng], 18, {
+      animate: true,
+      duration: 1.5,
+    });
+
+    const marker = markerRefs.current[activeCoords];
+    if (marker) {
+      setTimeout(() => marker.openPopup(), 300);
+    }
+  }, [activeCoords, highlightTrigger, map, markerRefs]);
+
+  return null;
+}
+
+// --- Initial Fit Bounds ---
+function InitialFitBounds({ points }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!points || points.length === 0) return;
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }, [map, points]);
+
+  return null;
+}
+
+export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
+  const markerRefs = useRef({});
+  const latestOldPoint = useMemo(() => {
+    if (!data || data.length === 0) return null;
+
+    let latest = null;
+
+    for (const item of data) {
+      if (!item.oldLonglat || !item.date) continue;
+
+      // date format: DD/MM/YYYY
+      const [d, m, y] = item.date.split('/');
+      const parsedDate = new Date(`${y}-${m}-${d}`);
+
+      if (!latest || parsedDate > latest.parsedDate) {
+        latest = {
+          oldLonglat: item.oldLonglat,
+          dateLabel: item.date,
+          parsedDate,
+        };
+      }
+    }
+
+    return latest;
+  }, [data]);
+  const { mapElements, allPoints } = useMemo(() => {
+    const elements = [];
+    const points = [];
+
+    // Marker MERAH (HANYA 1)
+    if (latestOldPoint) {
+      const [lat, lng] = latestOldPoint.oldLonglat.split(',').map(Number);
+
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const pos = [lat, lng];
+        points.push(pos);
+
+        elements.push(
+          <Marker key="old-latest" position={pos} icon={redIcon} opacity={0.7}>
+            <Popup>
+              <strong>Lokasi Master (Lama)</strong>
+              <br />
+              Berlaku sejak:
+              <br />
+              <strong>{latestOldPoint.dateLabel}</strong>
+            </Popup>
+          </Marker>
+        );
+      }
+    }
+
+    data.forEach((item, index) => {
+      if (!item.newLonglat || !item.oldLonglat) return;
+
+      const [newLat, newLng] = item.newLonglat.split(',').map(Number);
+      const [oldLat, oldLng] = item.oldLonglat.split(',').map(Number);
+
+      if (isNaN(newLat) || isNaN(oldLat)) return;
+
+      const newPos = [newLat, newLng];
+      const oldPos = [oldLat, oldLng];
+
+      points.push(newPos);
+
+      elements.push(
+        <Marker
+          key={`new-${index}`}
+          position={newPos}
+          icon={blueIcon}
+          ref={(el) => {
+            if (el) markerRefs.current[item.newLonglat] = el;
+          }}
+        >
+          <Popup>
+            <strong>Lokasi Baru (Input User)</strong>
+            <br />
+            Driver: {item.driverName}
+            <br />
+            Tgl: {item.date}
+          </Popup>
+        </Marker>
+      );
+
+      elements.push(
+        <Polyline
+          key={`line-${index}`}
+          positions={[oldPos, newPos]}
+          pathOptions={{ color: 'blue', dashArray: '5, 10', opacity: 0.5 }}
+        />
+      );
+    });
+
+    return { mapElements: elements, allPoints: points };
+  }, [data, latestOldPoint]);
+
+  if (allPoints.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-100 text-gray-400 text-sm">
+        Data koordinat tidak valid untuk ditampilkan di peta.
+      </div>
+    );
+  }
+
+  return (
+    <MapContainer
+      center={allPoints[0]}
+      zoom={13}
+      style={{ height: '100%', width: '100%', borderRadius: '0.5rem' }}
+    >
+      <TileLayer
+        attribution="&copy; OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {mapElements}
+
+      <InitialFitBounds points={allPoints} />
+
+      <HighlightEffect
+        activeCoords={activeCoords}
+        highlightTrigger={highlightTrigger}
+        markerRefs={markerRefs}
+      />
+    </MapContainer>
+  );
+}

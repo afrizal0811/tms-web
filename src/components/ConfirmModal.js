@@ -24,7 +24,7 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
   return createPortal(
     <div
       // Backdrop (Overlay)
-      className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
@@ -41,7 +41,7 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth="1.5"
-              stroke="currentColor"
+              stroke="red"
             >
               <path
                 strokeLinecap="round"
@@ -56,7 +56,7 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
         <h3 className="text-lg font-medium text-center text-white mb-2">{title}</h3>
 
         {/* Pesan (Message) */}
-        <p className="text-sm text-center text-gray-400 mb-6">{message}</p>
+        <div className="text-sm text-center text-gray-400 mb-6">{message}</div>
 
         {/* Tombol Aksi */}
         <div className="flex justify-center gap-4">

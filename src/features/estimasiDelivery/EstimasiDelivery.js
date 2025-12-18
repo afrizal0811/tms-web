@@ -1,110 +1,43 @@
 // File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
-import Tooltip from '@/components/Tooltip';
-import { formatSimpleTime, isDateSunday, parseOutletName } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx-js-style';
+import CustomDatePicker from '@/components/CustomDatePicker';
+import DownloadButton from '@/components/DownloadButton';
+import SearchBar from '@/components/SearchBar';
+import BodyCard from '@/components/card/BodyCard';
+import HeaderCard from '@/components/card/HeaderCard';
+import { isDateSunday, parseCustomerString } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 import { getResultsSummary } from '../../lib/apiService';
-import { toastError, toastSuccess } from '../../lib/toastHelper';
-
-// ... (Komponen Th, Td, TabButton, HighlightText, parseSONumber - TIDAK BERUBAH) ...
-function Th({ children, widthClass = '' }) {
-  return (
-    <th
-      className={`
-      sticky top-0 z-10 
-      p-3 text-left text-xs font-semibold text-gray-600 
-      uppercase bg-gray-100 border-b border-gray-200
-      ${widthClass} 
-    `}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({ children }) {
-  return (
-    <td className="p-3 text-sm text-gray-800 border-b border-gray-200 align-top">{children}</td>
-  );
-}
-
-function TabButton({ children, isActive, onClick }) {
-  const [isTruncated, setIsTruncated] = useState(false);
-  const buttonRef = useRef(null);
-  useLayoutEffect(() => {
-    const element = buttonRef.current;
-    if (element) {
-      const isTextTruncated = element.scrollWidth > element.clientWidth;
-      if (isTextTruncated !== isTruncated) {
-        setIsTruncated(isTextTruncated);
-      }
-    }
-  }, [children, isTruncated]);
-  const buttonElement = (
-    <button
-      ref={buttonRef}
-      onClick={onClick}
-      className={`cursor-pointer px-4 py-3 font-semibold text-sm truncate w-40 shrink-0 ${
-        isActive ? 'border-b-2 border-sky-600 text-sky-600' : 'text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {children}
-    </button>
-  );
-  if (isTruncated) {
-    return <Tooltip tooltipContent={children}>{buttonElement}</Tooltip>;
-  }
-  return buttonElement;
-}
-function escapeRegExp(string) {
-  if (!string) return '';
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-function HighlightText({ text, highlight }) {
-  if (!highlight || !text) {
-    return text;
-  }
-  const safeHighlight = escapeRegExp(highlight);
-  const regex = new RegExp(`(${safeHighlight})`, 'gi');
-  const parts = text.split(regex);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <strong key={i} className="bg-yellow-300 text-black rounded-sm px-0.5">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-    </span>
-  );
-}
-function parseSONumber(visitName) {
-  if (!visitName) return '';
-  const matches = visitName.match(/(SO|SS)\d{4}-\d+/g);
-  return matches ? matches.join(', ') : null;
-}
-// --- (Selesai Helper) ---
+import { toastError } from '../../lib/toastHelper';
+import TableData from './components/TableData';
+import { handleConfirmDownload, parseSONumber } from './help';
 
 export default function EstimasiDelivery() {
   const [selectedDate, setSelectedDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
+    const date = new Date();
+    const daysToSubtract = date.getDay() === 1 ? 2 : 1;
+    date.setDate(date.getDate() - daysToSubtract);
+
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   });
+
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // (Handler handleDateChange - TIDAK BERUBAH)
-  const handleDateChange = (e) => {
-    const newDateStr = e.target.value;
+  const handleDateChange = (date) => {
+    if (!date) return;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const newDateStr = `${year}-${month}-${day}`;
+
     if (isDateSunday(newDateStr)) {
       toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
@@ -112,8 +45,6 @@ export default function EstimasiDelivery() {
     setSelectedDate(newDateStr);
   };
 
-  // --- (PERUBAHAN DI useEffect INI) ---
-  // --- (GANTI SELURUH useEffect INI) ---
   useEffect(() => {
     const date = new Date(selectedDate.replace(/-/g, '/'));
     if (date.getDay() === 0) {
@@ -153,49 +84,21 @@ export default function EstimasiDelivery() {
         });
         const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
-        // --- (PERUBAHAN UTAMA ADA DI FUNGSI INI) ---
-
-        // Helper function untuk mencari ETD HUB pertama (order 0)
         const getHubEtd = (route) => {
-          if (!route.trips || route.trips.length === 0) {
-            return Infinity; // Taruh di akhir jika tidak ada trip
-          }
+          if (!route.trips || route.trips.length === 0) return Infinity;
           const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
-
-          // Cek jika hubTrip ada, dan ETD-nya adalah string yang valid
-          // (Contoh: "14:00:00")
           if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
-            // --- PERBAIKAN KUNCI ---
-            // Gabungkan tanggal dari datepicker dengan jam dari ETD
-            // Misal: selectedDate = "2025-11-09", hubTrip.etd = "14:00:00"
-            // Hasil: "2025-11-09T14:00:00"
             const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
-            // --- SELESAI PERBAIKAN ---
-
             const etdTime = new Date(fullEtdString).getTime();
-
-            // Cek apakah hasilnya BUKAN NaN (Not a Number)
-            if (!isNaN(etdTime)) {
-              return etdTime; // Kembalikan timestamp yang valid
-            }
+            if (!isNaN(etdTime)) return etdTime;
           }
-
-          // Jika tidak ada trip, tidak ada ETD, atau ETD tidak valid,
-          // kirim ke paling akhir.
           return Infinity;
         };
-        // --- (SELESAI PERUBAHAN FUNGSI) ---
 
-        // Terapkan sorting (ascending)
-        allDoneRoutings.sort((routeA, routeB) => {
-          return getHubEtd(routeA) - getHubEtd(routeB);
-        });
-        // --- (SELESAI PERUBAHAN) ---
+        allDoneRoutings.sort((routeA, routeB) => getHubEtd(routeA) - getHubEtd(routeB));
 
-        // Simpan data yang sudah bersih DAN terurut
         setAllRoutes(allDoneRoutings);
 
-        // Atur tab aktif (tidak berubah)
         if (allDoneRoutings.length > 0) {
           setActiveVehicleId(allDoneRoutings[0].vehicleId);
         } else {
@@ -211,94 +114,20 @@ export default function EstimasiDelivery() {
   }, [selectedDate]);
 
   const filteredVehicleRoutes = useMemo(() => {
-    if (!searchQuery) {
-      return allRoutes;
-    }
+    if (!searchQuery) return allRoutes;
     const lowerCaseQuery = searchQuery.toLowerCase();
     return allRoutes.filter((route) => {
-      if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery)) {
+      if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery))
         return true;
-      }
       return route.trips.some((trip) => {
         if (trip.isHub) return false;
-        const outlet = parseOutletName(trip.visitName)?.toLowerCase();
+        const outlet = parseCustomerString(trip.visitName).name?.toLowerCase();
         const so = parseSONumber(trip.visitName)?.toLowerCase();
         return (outlet && outlet.includes(lowerCaseQuery)) || (so && so.includes(lowerCaseQuery));
       });
     });
   }, [allRoutes, searchQuery]);
 
-  // ... (handleDownloadExcel - TIDAK BERUBAH) ...
-  const handleDownloadExcel = () => {
-    setIsDownloading(true);
-    try {
-      const wb = XLSX.utils.book_new();
-      const headerStyle = { font: { bold: true } };
-      const redStyle = { font: { color: { rgb: 'FF0000' }, bold: true } };
-      const redStyleNoBold = { font: { color: { rgb: 'FF0000' } } };
-      filteredVehicleRoutes.forEach((route, index) => {
-        let sheetName = route.vehicleName.replace(/['"]/g, '');
-        sheetName = sheetName.substring(0, 31);
-        if (wb.SheetNames.includes(sheetName)) {
-          sheetName = `${sheetName.substring(0, 28)} (${index})`;
-        }
-        const headers = [
-          'No.',
-          'Outlet',
-          'SO',
-          'Jam Buka',
-          'Jam Tutup',
-          'Estimasi Sampai',
-          'Estimasi Berangkat',
-        ];
-        const dataForSheet = [];
-        dataForSheet.push(headers.map((h) => ({ v: h, s: headerStyle })));
-        route.trips.forEach((trip, tripIndex) => {
-          const isHub = trip.isHub;
-          const isFirstHub = isHub && trip.order === 0;
-          const isLastHub = isHub && tripIndex === route.trips.length - 1;
-          const style = isHub ? redStyleNoBold : undefined;
-          const hubStyle = isHub ? redStyle : undefined;
-          const row = [
-            { v: trip.order, s: style },
-            { v: isHub ? 'HUB' : parseOutletName(trip.visitName), s: hubStyle || style },
-            { v: isHub ? '' : parseSONumber(trip.visitName), s: style },
-            { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime), s: style },
-            { v: isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime), s: style },
-            { v: isFirstHub ? '' : formatSimpleTime(trip.eta), s: style },
-            { v: isLastHub ? '' : formatSimpleTime(trip.etd), s: style },
-          ];
-          dataForSheet.push(row);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(dataForSheet, { cellStyles: true });
-        ws['!cols'] = [
-          { wch: 5 },
-          { wch: 40 },
-          { wch: 25 },
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 18 },
-          { wch: 20 },
-        ];
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      });
-      if (wb.SheetNames.length === 0) {
-        toastError('Tidak ada data untuk di-download.');
-        return;
-      } else {
-        const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
-        const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        toastSuccess('File Estimasi Delivery berhasil di-download!');
-      }
-    } catch (e) {
-      toastError(e.message);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  // ... (useEffect untuk reset tab - TIDAK BERUBAH) ...
   useEffect(() => {
     if (activeVehicleId) {
       const isActiveVehicleStillPresent = filteredVehicleRoutes.some(
@@ -314,164 +143,84 @@ export default function EstimasiDelivery() {
     }
   }, [filteredVehicleRoutes, activeVehicleId]);
 
-  // ... (useMemo untuk activeRoute - TIDAK BERUBAH) ...
   const activeRoute = useMemo(() => {
     if (!activeVehicleId) return null;
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
-  // ... (Return JSX - TIDAK BERUBAH) ...
+  const datePicker = (
+    <CustomDatePicker
+      id="estimasiDate"
+      className="md:w-48"
+      isLoading={isLoading}
+      maxDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+      onChange={handleDateChange}
+      selected={selectedDate ? new Date(selectedDate) : new Date()}
+      wrapperClassName="w-full"
+    />
+  );
+  const searchBar = (
+    <SearchBar
+      disabled={isLoading}
+      onChange={(val) => setSearchQuery(val)}
+      placeholder="Cari Plat, Customer, atau SO"
+      value={searchQuery}
+    />
+  );
+
+  const downloadButton = (
+    <DownloadButton
+      onClick={() =>
+        handleConfirmDownload({
+          filteredVehicleRoutes,
+          setIsDownloading,
+        })
+      }
+      disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
+      isLoading={isLoading || isDownloading}
+      width="w-full md:w-auto"
+    />
+  );
+
+  const headerItems = [
+    { label: 'Filter', component: searchBar, hideLabel: true },
+    { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
+    { label: 'Action', component: downloadButton, hideLabel: true },
+  ];
+
+  // Map data kendaraan menjadi Tabs yang dimengerti Card.js
+  const vehicleTabs = filteredVehicleRoutes.map((route) => ({
+    id: route.vehicleId,
+    label: route.vehicleName,
+  }));
+
+  const subtitle = (
+    <>
+      Monitoring{' '}
+      <span className="font-semibold text-sky-600">rute kunjungan & jadwal pengiriman</span> harian.
+    </>
+  );
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      {/* 1. Kontrol Atas (Statis) (TIDAK BERUBAH) */}
-      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2 sm:mb-0 w-full sm:w-auto">
-          <label htmlFor="estimasiDate" className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">
-            Tanggal Routing:
-          </label>
-          <input
-            type="date"
-            id="estimasiDate"
-            value={selectedDate}
-            onChange={handleDateChange}
-            disabled={isLoading}
-            className="p-2 border border-gray-300 rounded-md text-gray-900 w-full sm:w-auto"
-          />
+      <HeaderCard title="Estimasi Pengiriman" subtitle={subtitle} items={headerItems} />
+      <BodyCard
+        className="min-h-[400px]"
+        isLoading={isLoading}
+        loadingText="Memuat Rute..."
+        isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
+        tabs={vehicleTabs}
+        activeTabId={activeVehicleId}
+        onTabClick={setActiveVehicleId}
+      >
+        <div className="bg-white rounded-xl h-[600px] flex flex-col border-none">
+          <div className="overflow-y-auto grow h-full m-6 border border-gray-300 rounded-xl">
+            {!isLoading && activeRoute && (
+              <TableData activeRoute={activeRoute} searchQuery={searchQuery} />
+            )}
+          </div>
         </div>
-        <div className="relative w-full max-w-sm mb-2 sm:mb-0">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari (Kendaraan, Outlet, SO)..."
-            className="w-full p-2 pr-8 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <button
-          onClick={handleDownloadExcel}
-          disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-          className="px-4 py-2 w-40 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-400"
-        >
-          {isDownloading ? (
-            <div className="flex justify-center items-center">
-              <div className="w-5 h-5 border-2 border-sky-300 border-t-white rounded-full animate-spin" />
-            </div>
-          ) : (
-            'Download Excel'
-          )}
-        </button>
-      </div>
-      <div className="flex items-center border-b border-gray-200 shrink-0">
-        <div className="flex flex-nowrap overflow-x-auto grow">
-          {filteredVehicleRoutes.map((route, index) => {
-            const id = route.vehicleId;
-            return (
-              <TabButton
-                key={id ?? index}
-                isActive={activeVehicleId === id}
-                onClick={() => setActiveVehicleId(id)}
-              >
-                {route.vehicleName}
-              </TabButton>
-            );
-          })}
-        </div>
-      </div>
-      <div className="bg-white shadow-md rounded-b-lg flex flex-col grow overflow-hidden min-h-0">
-        <div className="overflow-y-auto grow">
-          {isLoading && (
-            <div className="w-full flex justify-center items-center p-20">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
-            </div>
-          )}
-          {!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute) && (
-            <p className="p-10 text-center text-gray-500">
-              Tidak ada data ditemukan untuk tanggal atau filter ini.
-            </p>
-          )}
-          {!isLoading && activeRoute && (
-            <table className="w-full table-fixed border-collapse">
-              <thead>
-                <tr>
-                  <Th widthClass="w-[5%]">No.</Th>
-                  <Th widthClass="w-[30%]">Outlet</Th>
-                  <Th widthClass="w-[20%]">SO</Th>
-                  <Th widthClass="w-[10%]">Jam Buka</Th>
-                  <Th widthClass="w-[10%]">Jam Tutup</Th>
-                  <Th widthClass="w-[12.5%]">Estimasi Sampai</Th>
-                  <Th widthClass="w-[12.5%]">Estimasi Berangkat</Th>
-                </tr>
-              </thead>
-              <tbody className="bg-white">
-                {activeRoute.trips.map((trip, tripIndex) => {
-                  const isHub = trip.isHub;
-                  const isFirstHub = isHub && trip.order === 0;
-                  const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
-                  const redText = isHub ? 'text-red-600' : '';
-                  const outletName = isHub ? null : parseOutletName(trip.visitName);
-                  const soNumber = isHub ? null : parseSONumber(trip.visitName);
-                  let isMatch = false;
-                  if (searchQuery && !isHub) {
-                    const lowerQuery = searchQuery.toLowerCase();
-                    if (outletName && outletName.toLowerCase().includes(lowerQuery)) {
-                      isMatch = true;
-                    }
-                    if (soNumber && soNumber.toLowerCase().includes(lowerQuery)) {
-                      isMatch = true;
-                    }
-                  }
-                  const rowClass = isMatch ? 'bg-yellow-100' : '';
-                  return (
-                    <tr
-                      key={`${trip.visitId}-${trip.order}`}
-                      className={`hover:bg-gray-50 ${rowClass}`}
-                    >
-                      <Td>
-                        <p className={redText}>{trip.order}</p>
-                      </Td>
-                      <Td>
-                        {isHub ? (
-                          <strong className={redText}>HUB</strong>
-                        ) : (
-                          <HighlightText text={outletName} highlight={searchQuery} />
-                        )}
-                      </Td>
-                      <Td>
-                        {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
-                      </Td>
-                      <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
-                      <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
-                      <Td>
-                        <p className={redText}>{isFirstHub ? '' : formatSimpleTime(trip.eta)}</p>
-                      </Td>
-                      <Td>
-                        <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      </BodyCard>
     </div>
   );
 }

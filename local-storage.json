@@ -1,0 +1,525 @@
+{
+  "selectedUser": {
+    "name": "Afrizal Maulana",
+    "email": "afrizal.maulana@panganlestari.com",
+    "hubId": [
+      "67a41cb1480d2d3b580fc61c",
+      "670369a8a5d2d4b5ee0b020d",
+      "683924970c29c079e30d862f",
+      "6895a281bc530d4a4908f5ef",
+      "68b8038b1aa98343380e3ab2"
+    ],
+    "organizationId": "6703410af6be892f3208ecda",
+    "status": "active",
+    "isDeleted": false,
+    "lastLogin": "2025-11-24T01:35:32+00:00",
+    "roleId": "677c940ee491a8634b09defe",
+    "activationCode": "f73NCbzlSncexIBXjbpc",
+    "teamId": [],
+    "language": "en",
+    "avatar": null,
+    "verifiedTime": "2024-10-07T04:55:05+00:00",
+    "firstLogin": false,
+    "role": {
+      "name": "Superadmin",
+      "_id": "677c940ee491a8634b09defe"
+    },
+    "_id": "6706312c1b19b5822c031e2f"
+  },
+  "driverData": [
+    {
+      "email": "jobbazizah@gmail.com",
+      "name": "Azizah",
+      "plat": null,
+      "type": null
+    },
+    {
+      "email": "afrizalmaulanamuh@gmail.com",
+      "name": "'DRY' Afrizal Driver",
+      "plat": "Mobil Demo",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck01@panganlestari.com",
+      "name": "'FRZ' HAERUL ANWAR",
+      "plat": "B 9588 FCC",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck02@panganlestari.com",
+      "name": "'FRZ' DIAN PRASETYA",
+      "plat": "B 9598 FCC",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck03@panganlestari.com",
+      "name": "'FRZ' HENDRIK",
+      "plat": "B 9953 FXU",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck04@panganlestari.com",
+      "name": "'FRZ' SUHENDAR",
+      "plat": "B 9382 FCE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck05@panganlestari.com",
+      "name": "'FRZ' AGUNG NUGROHO",
+      "plat": "B 9384 FCE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck06@panganlestari.com",
+      "name": "'FRZ' SANDY NUGRAHA",
+      "plat": "B 9021 FCJ",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck07@panganlestari.com",
+      "name": "'FRZ' WALUYO",
+      "plat": "B 9624 FCG",
+      "type": "FROZEN-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck08@panganlestari.com",
+      "name": "'FRZ' NGISOMUDIN",
+      "plat": "B 9802 FXW",
+      "type": "FROZEN-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck09@panganlestari.com",
+      "name": "'FRZ' DADAN HIDAYAT",
+      "plat": "B 9793 FXW",
+      "type": "FROZEN-KURNIA"
+    },
+    {
+      "email": "kendaraan.plck10@panganlestari.com",
+      "name": "'FRZ' MAZHAR",
+      "plat": "B 9170 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck11@panganlestari.com",
+      "name": "'FRZ' ANGGA FITRAH",
+      "plat": "B 9171 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck12@panganlestari.com",
+      "name": "'FRZ' M. NUR IKHSAN",
+      "plat": "B 9172 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck13@panganlestari.com",
+      "name": "'FRZ' AHDI",
+      "plat": "B 9201 FFX",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck14@panganlestari.com",
+      "name": "'DRY' YUNUS",
+      "plat": "B 9402 FCA",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck15@panganlestari.com",
+      "name": "'DRY' ASEP MAULAHASUBHI",
+      "plat": "B 9732 FCC",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck16@panganlestari.com",
+      "name": "'DRY' TARMIDI",
+      "plat": "B 9508 FCI",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck17@panganlestari.com",
+      "name": "'DRY' SUWARDI",
+      "plat": "B 9125 FFX",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck18@panganlestari.com",
+      "name": "'DRY' ARIYANTO",
+      "plat": "B 9205 FCM",
+      "type": "DRY-CDD-LONG-5000"
+    },
+    {
+      "email": "kendaraan.plck19@panganlestari.com",
+      "name": "'DRY' AJIANTO",
+      "plat": "B 9511 DO",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck20@panganlestari.com",
+      "name": "'DRY' SISWANTO",
+      "plat": "B 9565 FCB",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck21@panganlestari.com",
+      "name": "'DRY' FIKRI AZIZ",
+      "plat": "B 9723 FCB",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck22@panganlestari.com",
+      "name": "'DRY' FAHMI ILYAS",
+      "plat": "B 9177 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck23@panganlestari.com",
+      "name": "'DRY' BUDI MULYANA",
+      "plat": "B 9179 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck24@panganlestari.com",
+      "name": "'DRY' NARSUN LAMPARD",
+      "plat": "B 9464 FXU",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck25@panganlestari.com",
+      "name": "'DRY' ASEP SAIPUL",
+      "plat": "B 9587 FCC",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck26@panganlestari.com",
+      "name": "'DRY' SAEFUL ANWAR",
+      "plat": "B 9481 FCD",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck27@panganlestari.com",
+      "name": "'DRY' DIAN ANDRIANA",
+      "plat": "B 9845 FXX",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck28@panganlestari.com",
+      "name": "'DRY' RAMA",
+      "plat": "B 9846 FXX",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck29@panganlestari.com",
+      "name": "'DRY' DEDE ISKANDAR",
+      "plat": "B 9307 FCG",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck30@panganlestari.com",
+      "name": "'DRY' WANDA",
+      "plat": "B 9208 BCX",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck31@panganlestari.com",
+      "name": "'DRY' ONDRI YUNI",
+      "plat": "B 9567 FXU",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck32@panganlestari.com",
+      "name": "'DRY' TANDRI RAHMAN",
+      "plat": "B 9576 FXU",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck33@panganlestari.com",
+      "name": "'DRY' RICKI ADIANSYAH",
+      "plat": "B 9243 FXW",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck34@panganlestari.com",
+      "name": "'DRY' ILHAM SAPUTRA",
+      "plat": "B 9244 FXW",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck35@panganlestari.com",
+      "name": "'DRY' ASNEN",
+      "plat": "B 9207 FCM",
+      "type": "DRY-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck36@panganlestari.com",
+      "name": "'DRY' SAEFUL",
+      "plat": "B 9246 FXW",
+      "type": "DRY-L300-1500"
+    },
+    {
+      "email": "kendaraan.pldm01@panganlestari.com",
+      "name": "'DRY' ZAENURI",
+      "plat": "B 9722 FCB - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm02@panganlestari.com",
+      "name": "'DRY' SAMSURI",
+      "plat": "B 9181 FCC - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm03@panganlestari.com",
+      "name": "'DRY' BURHAN",
+      "plat": "B 9733 FCC - DM",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.pldm04@panganlestari.com",
+      "name": "'DRY' ABDULLAH",
+      "plat": "B 9462 FXU - DM",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.pldm05@panganlestari.com",
+      "name": "'DRY' SAIMAN",
+      "plat": "B 9569 FXU - DM",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.pldm06@panganlestari.com",
+      "name": "'DRY' ROKHIM",
+      "plat": "B 9574 FXU - DM",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck37@panganlestari.com",
+      "name": "'DRY' SEWA 1",
+      "plat": "'DRY' SEWA 1 CDE",
+      "type": "DRY-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck38@panganlestari.com",
+      "name": "'DRY' SEWA 2",
+      "plat": "'DRY' SEWA 2 CDE LONG",
+      "type": "DRY-CDE-LONG-2500"
+    },
+    {
+      "email": "kendaraan.plck39@panganlestari.com",
+      "name": "'DRY' SEWA 3",
+      "plat": "'DRY' SEWA 3 CDD",
+      "type": "DRY-CDD-5000"
+    },
+    {
+      "email": "kendaraan.plck40@panganlestari.com",
+      "name": "'DRY' SEWA 4",
+      "plat": "'DRY' SEWA 4 CDD LONG",
+      "type": "DRY-CDD-LONG-5000"
+    },
+    {
+      "email": "kendaraan.plck41@panganlestari.com",
+      "name": "'DRY' SEWA 5",
+      "plat": "'DRY' SEWA 5 FUSO",
+      "type": "DRY-FUSO-10000"
+    },
+    {
+      "email": "kendaraan.plck42@panganlestari.com",
+      "name": "'FRZ' SEWA 1",
+      "plat": "'FROZEN' SEWA 1 CDE",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck43@panganlestari.com",
+      "name": "'FRZ' SEWA 2",
+      "plat": "'FROZEN' SEWA 2 CDE LONG",
+      "type": "FROZEN-CDE-2000"
+    },
+    {
+      "email": "kendaraan.plck44@panganlestari.com",
+      "name": "'FRZ' SEWA 3",
+      "plat": "'FROZEN' SEWA 3 CDD",
+      "type": "FROZEN-SUBUH"
+    },
+    {
+      "email": "kendaraan.plck45@panganlestari.com",
+      "name": "'FRZ' SEWA 4",
+      "plat": "'FROZEN' SEWA 4 CDD LONG",
+      "type": "FROZEN-SOUR-SALLY"
+    },
+    {
+      "email": "kendaraan.plck46@panganlestari.com",
+      "name": "'FRZ' SEWA 5",
+      "plat": "'FROZEN' SEWA 5 FUSO",
+      "type": "FROZEN-FUSO-10000"
+    }
+  ],
+  "allHubsList": [
+    {
+      "name": "Cikarang",
+      "address": "Jl. Jati Raya No.10b Blok J1, RW.11, Serang, Kec. Cikarang Selatan, Kabupaten Bekasi, Jawa Barat 17530",
+      "lat": -6.34295,
+      "lng": 107.12882,
+      "countryCode": "IDN",
+      "organizationId": "6703410af6be892f3208ecda",
+      "updatedTime": "2025-09-03T08:59:27.536000Z",
+      "createdTime": "2025-08-08T07:08:49.820000Z",
+      "_id": "6895a281bc530d4a4908f5ef",
+      "country": {
+        "code": "IDN",
+        "phoneCode": "+62",
+        "name": "Indonesia",
+        "isActive": true,
+        "alpha2Code": "ID",
+        "enableLanguage": true,
+        "language": "id",
+        "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
+        "_id": "624fb53c88d36ab78ccdfe0e"
+      }
+    },
+    {
+      "name": "Daan Mogot",
+      "address": "Jl. Green Sedayu Biz Park, RT.11/RW.6, Kalideres, Kec. Kalideres, Kota Jakarta Barat, Daerah Khusus Ibukota Jakarta 11840",
+      "lat": -6.15768,
+      "lng": 106.68985,
+      "countryCode": "IDN",
+      "organizationId": "6703410af6be892f3208ecda",
+      "updatedTime": "2025-09-09T06:16:17.924000Z",
+      "createdTime": "2025-09-03T08:59:55.102000Z",
+      "_id": "68b8038b1aa98343380e3ab2",
+      "country": {
+        "code": "IDN",
+        "phoneCode": "+62",
+        "name": "Indonesia",
+        "isActive": true,
+        "alpha2Code": "ID",
+        "enableLanguage": true,
+        "language": "id",
+        "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
+        "_id": "624fb53c88d36ab78ccdfe0e"
+      }
+    },
+    {
+      "name": "Semarang",
+      "address": "Central Jav, Jalan semarang-tugu Jl. Raya Ngaliyan No.km. 9,8, Tambakaji, Ngaliyan, Semarang City, Central Java 50185",
+      "lat": -6.98589,
+      "lng": 110.34656,
+      "countryCode": "IDN",
+      "organizationId": "6703410af6be892f3208ecda",
+      "updatedTime": "2025-02-06T02:21:37.657000Z",
+      "createdTime": "2025-02-06T02:21:37.657000Z",
+      "_id": "67a41cb1480d2d3b580fc61c",
+      "country": {
+        "code": "IDN",
+        "phoneCode": "+62",
+        "name": "Indonesia",
+        "isActive": true,
+        "alpha2Code": "ID",
+        "enableLanguage": true,
+        "language": "id",
+        "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
+        "_id": "624fb53c88d36ab78ccdfe0e"
+      }
+    },
+    {
+      "name": "Sidoarjo",
+      "address": "Jalan Jenggolo II 17, Pucang Kel., Sidoarjo, Sidoarjo, 61219, Indonesia",
+      "lat": -7.438664038801844,
+      "lng": 112.72312223071498,
+      "countryCode": "IDN",
+      "organizationId": "6703410af6be892f3208ecda",
+      "updatedTime": "2024-10-16T03:13:17.852000Z",
+      "createdTime": "2024-10-07T04:55:04.777000Z",
+      "_id": "670369a8a5d2d4b5ee0b020d",
+      "country": {
+        "code": "IDN",
+        "phoneCode": "+62",
+        "name": "Indonesia",
+        "isActive": true,
+        "alpha2Code": "ID",
+        "enableLanguage": true,
+        "language": "id",
+        "languageName": "Indonesian",
+        "capital": "Jakarta",
+        "location": "-6.17147,106.8263",
+        "_id": "624fb53c88d36ab78ccdfe0e"
+      }
+    }
+  ],
+  "masterTruck": {
+    "Dry": {
+      "Total": 29,
+      "L300": 1,
+      "CDE": 13,
+      "CDE-LONG": 8,
+      "CDD": 5,
+      "CDD-LONG": 1,
+      "FUSO": 1,
+      "FUSO-LONG": 0
+    },
+    "Frozen": {
+      "Total": 13,
+      "L300": 0,
+      "CDE": 10,
+      "CDE-LONG": 2,
+      "CDD": 0,
+      "CDD-LONG": 0,
+      "FUSO": 1,
+      "FUSO-LONG": 0
+    }
+  },
+  "vehicleTagMap": {
+    "670369a8a5d2d4b5ee0b020d": {
+      "W 8137 PI": {
+        "KFC": "CDD-LONG"
+      },
+      "W 8236 QA": {
+        "HAVI": "FUSO-LONG"
+      }
+    },
+    "6895a281bc530d4a4908f5ef": {
+      "B 9624 FCG": {
+        "KFC": "FUSO-LONG"
+      },
+      "B 9793 FXW": {
+        "KURNIA": "CDE-LONG"
+      },
+      "'FROZEN' SEWA 3 CDD": {
+        "KFC": "CDD",
+        "SUBUH": "CDD"
+      },
+      "B 9624 FCG KFC": {
+        "KFC": "FUSO"
+      },
+      "B 9384 FCE SOUR SALLY": {
+        "SOUR": "CDE"
+      },
+      "B 9802 FXW SOUR SALLY": {
+        "SOUR": "CDE-LONG"
+      },
+      "'FROZEN' SEWA 4 CDD LONG": {
+        "SOUR": "CDD-LONG"
+      }
+    },
+    "67a41cb1480d2d3b580fc61c": {
+      "H 9491 JQ SAT REMBANG": {
+        "REMBANG": "CDE"
+      },
+      "H 9409 LQ SAT TEGAL": {
+        "TEGAL": "CDD"
+      },
+      "H 9243 SQ MENGINAP": {
+        "MENGINAP1": "CDD"
+      },
+      "H 8311 MQ MENGINAP": {
+        "MENGINAP2": "CDD"
+      }
+    }
+  },
+  "userLocation": "6895a281bc530d4a4908f5ef",
+  "userLocationName": "Cikarang"
+}

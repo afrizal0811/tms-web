@@ -1,0 +1,439 @@
+// File: src/features/dashboard/components/RoutingVsActualTab.js
+'use client';
+
+import DownloadButton from '@/components/DownloadButton';
+import HighlightText from '@/components/HighlightText';
+import SearchBar from '@/components/SearchBar';
+import Tooltip from '@/components/Tooltip';
+import { toastError } from '@/lib/toastHelper';
+import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
+import { useMemo, useState } from 'react';
+import { downloadRoutingVsActual } from '../help';
+import RoutingMapModal from '../modals/RoutingMapModal';
+
+export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  const processedData = useMemo(() => {
+    if (loading || !tasks || !drivers) return [];
+
+    const emailToDriverMap = drivers.reduce((acc, driver) => {
+      const normalized = normalizeEmail(driver.email);
+      if (normalized) {
+        acc[normalized] = { plat: driver.plat || null, name: driver.name };
+      }
+      return acc;
+    }, {});
+
+    const hubTimesMap = new Map();
+    if (results) {
+      const filteredResults = results.filter((item) => item.dispatchStatus === 'done');
+      for (const result of filteredResults) {
+        if (result.result && Array.isArray(result.result.routing)) {
+          for (const route of result.result.routing) {
+            const driverEmail = normalizeEmail(route.assignee);
+            const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
+            const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
+            if (!driverName || !Array.isArray(route.trips) || route.trips.length === 0) continue;
+
+            const hubTrips = route.trips.filter((trip) => trip.isHub === true);
+            if (hubTrips.length > 0) {
+              const hubETD = hubTrips[0].etd;
+              const hubETA = hubTrips[hubTrips.length - 1].eta;
+              hubTimesMap.set(driverName, {
+                hubETD: formatSimpleTime(hubETD) || '-',
+                hubETA: formatSimpleTime(hubETA) || '-',
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const driverStats = new Map();
+    const allTaskData = [];
+
+    for (const task of tasks) {
+      const emailString =
+        Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
+      const driverEmail = normalizeEmail(emailString);
+      const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
+      const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
+      const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
+      const customerName = task.customerName || '';
+      const flow = task.flow;
+
+      if (driverName !== 'N/A') {
+        const stats = driverStats.get(driverName) || {
+          plat: null,
+          driverEmail: driverEmail,
+        };
+        if (!stats.plat && driverInfo && driverInfo.plat) {
+          stats.plat = driverInfo.plat;
+        }
+        driverStats.set(driverName, stats);
+      }
+
+      let actualArrival, actualDeparture;
+      if (flow && flow.toUpperCase().includes('GR')) {
+        actualArrival = task.page1DoneTime;
+        actualDeparture = task.page1DoneTime;
+      } else {
+        actualArrival = task.klikJikaSudahSampai;
+        actualDeparture = task.page3DoneTime;
+      }
+
+      const roSequence = task.routePlannedOrder || 0;
+      const etaVal = formatSimpleTime(task.eta);
+      const etdVal = formatSimpleTime(task.etd);
+
+      let actualVisitTimeVal = '-';
+      if (actualArrival && actualDeparture) {
+        const start = new Date(actualArrival).getTime();
+        const end = new Date(actualDeparture).getTime();
+        if (!isNaN(start) && !isNaN(end) && end >= start) {
+          const diffMs = end - start;
+          const diffMins = Math.ceil(diffMs / 60000);
+          actualVisitTimeVal = diffMins;
+        }
+      }
+
+      allTaskData.push({
+        driver: driverName,
+        plat: driverInfo ? driverInfo.plat : null,
+        actualArrivalTimestamp: actualArrival ? new Date(actualArrival).getTime() : null,
+        roSequence: roSequence,
+        statusLabel: statusLabel,
+        flow: flow,
+        customerName: customerName,
+        openTime: formatSimpleTime(task.openTime) || '-',
+        closeTime: formatSimpleTime(task.closeTime) || '-',
+        eta: etaVal || '-',
+        etd: etdVal || '-',
+        actualArrival: formatTimestampToHHMM(actualArrival) || '-',
+        actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
+        visitTime: task.visitTime || '-',
+        actualVisitTime: actualVisitTimeVal,
+        realSequence: 0,
+        isManualAssign: roSequence === 0,
+        longlat: task.longlat,
+      });
+    }
+
+    allTaskData.sort((a, b) => {
+      const driverCompare = a.driver.localeCompare(b.driver);
+      if (driverCompare !== 0) return driverCompare;
+      const timeA = a.actualArrivalTimestamp || Infinity;
+      const timeB = b.actualArrivalTimestamp || Infinity;
+      return timeA - timeB;
+    });
+
+    let currentDriver = null;
+    let rankCounter = 1;
+    for (const row of allTaskData) {
+      if (row.driver !== currentDriver) {
+        currentDriver = row.driver;
+        rankCounter = 1;
+      }
+      if (row.actualArrivalTimestamp !== null) {
+        row.realSequence = rankCounter;
+        rankCounter++;
+      } else {
+        row.realSequence = null;
+      }
+    }
+
+    const tasksByNameMap = new Map();
+    for (const task of allTaskData) {
+      if (!tasksByNameMap.has(task.driver)) {
+        tasksByNameMap.set(task.driver, []);
+      }
+      tasksByNameMap.get(task.driver).push(task);
+    }
+
+    const getSortGroup = (platStr) => {
+      if (!platStr) return 1;
+      const platUpper = platStr.toUpperCase();
+      if (platUpper.includes('DM')) return 3;
+      if (platUpper.includes('SEWA')) return 2;
+      return 1;
+    };
+
+    let driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
+      return {
+        plat: stats.plat,
+        driver: driverName,
+      };
+    });
+
+    driverList.sort((a, b) => {
+      const groupA = getSortGroup(a.plat);
+      const groupB = getSortGroup(b.plat);
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+      return (a.driver || '').localeCompare(b.driver || '');
+    });
+
+    const finalRows = [];
+    const query = searchQuery.toLowerCase();
+
+    for (const driverRow of driverList) {
+      const driverName = driverRow.driver;
+      const driverPlat = driverRow.plat;
+      const driverTasks = tasksByNameMap.get(driverName) || [];
+      const hubTimes = hubTimesMap.get(driverName) || { hubETD: '-', hubETA: '-' };
+
+      const isDriverMatch =
+        driverName.toLowerCase().includes(query) ||
+        (driverPlat && driverPlat.toLowerCase().includes(query));
+
+      const matchingTasks = driverTasks.filter((t) => {
+        if (isDriverMatch) return true;
+        return t.customerName && t.customerName.toLowerCase().includes(query);
+      });
+
+      if (matchingTasks.length === 0 && !isDriverMatch) continue;
+
+      finalRows.push({
+        type: 'HUB_START',
+        driver: driverName,
+        plat: driverPlat,
+        time: hubTimes.hubETD,
+      });
+
+      // Urutkan berdasarkan Real Sequence (Kronologis/Aktual)
+      matchingTasks.sort((a, b) => {
+        const realA = a.realSequence !== null ? a.realSequence : 999999;
+        const realB = b.realSequence !== null ? b.realSequence : 999999;
+
+        if (realA !== realB) {
+          return realA - realB;
+        }
+        return a.roSequence - b.roSequence;
+      });
+
+      matchingTasks.forEach((t) => {
+        finalRows.push({
+          type: 'TASK',
+          ...t,
+        });
+      });
+
+      finalRows.push({
+        type: 'HUB_END',
+        driver: driverName,
+        plat: driverPlat,
+        time: hubTimes.hubETA,
+      });
+
+      finalRows.push({ type: 'SPACER' });
+    }
+
+    return finalRows;
+  }, [loading, tasks, results, drivers, searchQuery]);
+
+  const handleDownload = async () => {
+    if (processedData.length === 0) return;
+
+    setIsDownloading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 100));
+      downloadRoutingVsActual(processedData);
+    } catch (e) {
+      toastError('Gagal download:', e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col h-full space-y-4">
+      <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
+        <div className="w-full md:w-64 order-1">
+          <SearchBar
+            disabled={loading || isDownloading}
+            onChange={(val) => setSearchQuery(val)}
+            placeholder="Cari Plat, Driver, atau Customer"
+            value={searchQuery}
+          />
+        </div>
+        <div className="w-full md:w-auto order-2">
+          <button
+            onClick={() => setIsMapModalOpen(true)}
+            disabled={loading || processedData.length === 0}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              />
+            </svg>
+            Lihat Peta
+          </button>
+        </div>
+        <div className="w-full md:w-auto order-3">
+          <DownloadButton
+            onClick={handleDownload}
+            disabled={loading || isDownloading || processedData.length === 0}
+            width="w-full md:w-auto"
+          />
+        </div>
+      </div>
+      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
+        <table className="min-w-full text-xs text-left">
+          <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
+            <tr>
+              <th className="px-4 py-3 border-b">Flow</th>
+              <th className="px-4 py-3 border-b">Plat</th>
+              <th className="px-4 py-3 border-b">Driver</th>
+              <th className="px-4 py-3 border-b">Customer</th>
+              <th className="px-4 py-3 border-b">Status</th>
+              <th className="px-4 py-3 border-b text-center">Open</th>
+              <th className="px-4 py-3 border-b text-center">Close</th>
+              <th className="px-4 py-3 border-b text-center">ETA</th>
+              <th className="px-4 py-3 border-b text-center">Arrival</th>
+              <th className="px-4 py-3 border-b text-center">ETD</th>
+              <th className="px-4 py-3 border-b text-center">Departure</th>
+              <th className="px-4 py-3 border-b text-center">Visit Time</th>
+              <th className="px-4 py-3 border-b text-center">Act Visit</th>
+              <th className="px-4 py-3 border-b text-center">RO Seq</th>
+              <th className="px-4 py-3 border-b text-center">Real Seq</th>
+              <th className="px-4 py-3 border-b text-center">Match?</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {processedData.map((row, index) => {
+              if (row.type === 'SPACER') {
+                return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
+              }
+
+              if (row.type === 'HUB_START') {
+                return (
+                  <tr
+                    key={index}
+                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                  >
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                  </tr>
+                );
+              }
+
+              if (row.type === 'HUB_END') {
+                return (
+                  <tr
+                    key={index}
+                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                  >
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                  </tr>
+                );
+              }
+
+              const isMatch = row.roSequence == row.realSequence;
+              const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
+
+              const cellContent = (
+                <>
+                  <td className="px-4 py-2">{row.flow}</td>
+                  <td className="px-4 py-2">
+                    <HighlightText text={row.plat} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2 font-medium">
+                    <HighlightText text={row.driver} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <HighlightText text={row.customerName} highlight={searchQuery} />
+                  </td>
+                  <td className="px-4 py-2">{row.statusLabel}</td>
+                  <td className="px-4 py-2 text-center">{row.openTime}</td>
+                  <td className="px-4 py-2 text-center">{row.closeTime}</td>
+                  <td className="px-4 py-2 text-center">{row.eta}</td>
+                  <td className="px-4 py-2 text-center">{row.actualArrival}</td>
+                  <td className="px-4 py-2 text-center">{row.etd}</td>
+                  <td className="px-4 py-2 text-center">{row.actualDeparture}</td>
+                  <td className="px-4 py-2 text-center">{row.visitTime}</td>
+                  <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
+                  <td className="px-4 py-2 text-center font-semibold">
+                    {row.roSequence === 0 ? '-' : row.roSequence}
+                  </td>
+                  <td className="px-4 py-2 text-center font-semibold">{row.realSequence ?? '-'}</td>
+                  <td
+                    className={`px-4 py-2 text-center font-bold ${
+                      isMatch ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {isMatch ? 'SAMA' : 'BEDA'}
+                  </td>
+                </>
+              );
+
+              if (row.isManualAssign) {
+                return (
+                  <Tooltip key={index} tooltipContent="Manual Assign">
+                    <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
+                      {cellContent}
+                    </tr>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <tr key={index} className={`${rowClass} border-b border-gray-100`}>
+                  {cellContent}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {/* Component Modal Peta */}
+      <RoutingMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        data={processedData}
+      />
+    </div>
+  );
+}

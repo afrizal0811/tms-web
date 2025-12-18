@@ -47,7 +47,7 @@ export default function LaporanBulkPage() {
 
   // Tampilan utama
   return (
-    <AppLayout mainClassName="items-center justify-center px-6">
+    <AppLayout mainClassName="items-center justify-center px-4">
       <BulkReportDownloader driverData={driverData} />
     </AppLayout>
   );

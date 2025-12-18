@@ -7,7 +7,7 @@ import VehicleData from '@/features/vehicleData/VehicleData';
 
 export default function VehiclesPage() {
   return (
-    <AppLayout>
+    <AppLayout mainClassName="items-center px-4">
       <VehicleData />
     </AppLayout>
   );

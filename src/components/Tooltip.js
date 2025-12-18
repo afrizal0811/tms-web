@@ -1,14 +1,12 @@
 'use client';
 
-// 1. Impor 'cloneElement' dan 'Children' dari React
 import { Children, cloneElement, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-// 'children' sekarang kembali menjadi elemen JSX (bukan fungsi)
 export default function Tooltip({ children, tooltipContent }) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef(null); // Ref ini akan kita "suntikkan"
+  const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
 
   const clearTimer = () => {
@@ -20,13 +18,14 @@ export default function Tooltip({ children, tooltipContent }) {
 
   const handleMouseEnter = () => {
     clearTimer();
+    // Delay sedikit agar tidak flicker
     timeoutRef.current = setTimeout(() => {
-      // Mengakses .current di dalam event handler (SETELAH render)
-      // ini 100% aman dan tidak akan menyebabkan error
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
+
+      // Hitung posisi agar muncul di atas elemen
       setPosition({
-        top: rect.top - 8,
+        top: rect.top - 10, // Geser ke atas sedikit
         left: rect.left + rect.width / 2,
       });
       setIsVisible(true);
@@ -38,9 +37,9 @@ export default function Tooltip({ children, tooltipContent }) {
     setIsVisible(false);
   };
 
-  // useEffect untuk scroll/resize (tidak berubah)
+  const hideTooltip = () => setIsVisible(false);
+
   useEffect(() => {
-    const hideTooltip = () => setIsVisible(false);
     window.addEventListener('scroll', hideTooltip, true);
     window.addEventListener('resize', hideTooltip, true);
     return () => {
@@ -50,49 +49,43 @@ export default function Tooltip({ children, tooltipContent }) {
     };
   }, []);
 
-  // 2. Siapkan props yang akan "disuntikkan"
   const triggerProps = {
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
-    ref: triggerRef, // Teruskan ref
+    ref: triggerRef,
   };
 
-  // 3. Render
   return (
     <>
-      {/* cloneElement mengambil 'children' (hanya 1) 
-        dan menambahkan 'triggerProps' ke dalamnya.
-        Ini akan berhasil untuk <tr>, <div>, <button>, dll.
-      */}
       {cloneElement(Children.only(children), triggerProps)}
 
-      {/* Portal (tidak berubah) */}
       {isVisible &&
         createPortal(
           <div
             className="
-            fixed z-50 
-            w-48 
+            fixed 
+            z-99999
+            w-max max-w-xs
             whitespace-pre-line 
-            px-3 py-1.5 
+            px-3 py-2 
             text-xs font-medium text-white 
             bg-slate-800 
-            rounded-md shadow-lg
+            rounded-md shadow-xl border border-slate-600
+            pointer-events-none
           "
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
-              transform: 'translate(-50%, -100%)',
+              transform: 'translate(-50%, -100%)', // Geser ke atas tengah
             }}
           >
             {tooltipContent}
-            {/* Segitiga */}
+
+            {/* Segitiga Kecil di Bawah Tooltip */}
             <div
               className="
               absolute left-1/2 top-full -translate-x-1/2 
-              w-0 h-0 
-              border-x-4 border-x-transparent 
-              border-t-4 border-t-slate-800
+              border-4 border-transparent border-t-slate-800
             "
             />
           </div>,

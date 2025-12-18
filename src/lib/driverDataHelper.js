@@ -1,85 +1,210 @@
 import { getUsers, getVehicles } from './apiService';
-import { ROLE_ID } from './constants';
+import { ROLE_ID, TAG_MAP_KEY, VEHICLE_TYPES } from './constants';
 import { toastError, toastWarning } from './toastHelper';
 
+const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
+  if (!rawTag) return null;
+
+  // 1. Parsing Standar
+  const parts = rawTag.split('-');
+  // Ambil bagian ke-2 (index 1) sebagai tipe dasar, atau ambil raw jika tidak ada dash
+  let typeCandidate = parts.length > 1 ? parts[1].toUpperCase() : rawTag.toUpperCase();
+
+  // 2. Cek Suffix "LONG" (Khusus CDE/CDD/FUSO)
+  if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
+    if (['CDE', 'CDD', 'FUSO'].includes(typeCandidate)) {
+      typeCandidate = `${typeCandidate}-LONG`;
+    }
+  }
+
+  // 3. Cek Mapping Konfigurasi (vehicleTagMap)
+  if (tagMap && hubId && plate) {
+    const hubMap = tagMap[hubId];
+    if (hubMap && hubMap[plate]) {
+      const mappedValue = hubMap[plate][typeCandidate];
+      if (mappedValue) {
+        return mappedValue; // Gunakan hasil konversi jika ada
+      }
+    }
+  }
+
+  return typeCandidate;
+};
+
+// --- HELPER: Hitung & Simpan Master Truck Detail ---
+// Dijalankan otomatis setiap kali data driver diambil/di-refresh
+const updateMasterTruckStorage = (drivers, hubId) => {
+  if (typeof window === 'undefined' || !Array.isArray(drivers)) return;
+
+  // 1. Load Vehicle Tag Map dari Local Storage
+  let tagMap = {};
+  try {
+    const storedMap = localStorage.getItem(TAG_MAP_KEY);
+    if (storedMap) tagMap = JSON.parse(storedMap);
+  } catch (e) {
+    toastError('Gagal load vehicleTagMap', e);
+  }
+
+  // 2. Inisialisasi Struktur Data (Detail per Tipe)
+  const masterData = {
+    Dry: { Total: 0 },
+    Frozen: { Total: 0 },
+  };
+
+  // Siapkan key default 0 untuk setiap tipe
+  VEHICLE_TYPES.forEach((type) => {
+    masterData.Dry[type] = 0;
+    masterData.Frozen[type] = 0;
+  });
+
+  // 3. Iterasi Data Driver
+  drivers.forEach((d) => {
+    const plat = d.plat || '';
+    const name = (d.name || '').toUpperCase();
+    const rawTag = (d.type || '').toUpperCase();
+    const platUpper = plat.toUpperCase();
+
+    // --- FILTER EXCLUDE ---
+    // Skip jika Plat Kosong, Demo, atau Sewa
+    if (!plat || plat.trim() === '' || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
+      return;
+    }
+
+    // --- TENTUKAN KATEGORI STORAGE ---
+    let storageCategory = null;
+    if (name.includes('DRY')) {
+      storageCategory = 'Dry';
+    } else if (name.includes('FRZ')) {
+      storageCategory = 'Frozen';
+    }
+
+    if (!storageCategory) return;
+
+    // --- TENTUKAN TIPE KENDARAAN (DENGAN MAPPING) ---
+    const resolvedType = resolveVehicleType(rawTag, plat, hubId, tagMap);
+
+    // Cocokkan dengan daftar tipe resmi (VEHICLE_TYPES)
+    const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
+
+    if (matchedType) {
+      masterData[storageCategory][matchedType]++;
+      masterData[storageCategory].Total++;
+    }
+  });
+
+  // 4. Simpan ke Local Storage
+  localStorage.setItem('masterTruck', JSON.stringify(masterData));
+};
+
+// --- FUNGSI BARU: CEK KENDARAAN BELUM TER-MAPPING (Untuk Login) ---
+export async function checkUnmappedVehicles(hubId) {
+  if (!hubId) return [];
+
+  // 1. Load Mapping
+  let tagMap = {};
+  if (typeof window !== 'undefined') {
+    try {
+      const storedMap = localStorage.getItem(TAG_MAP_KEY);
+      if (storedMap) tagMap = JSON.parse(storedMap);
+    } catch (e) {
+      toastError(e);
+    }
+  }
+
+  // 2. Fetch Data Kendaraan dari API
+  try {
+    const res = await getVehicles({ hubId: hubId, limit: 1000 });
+    const vehicles = Array.isArray(res) ? res : res.data || [];
+
+    const unmappedList = [];
+
+    vehicles.forEach((v) => {
+      const tags = v.tags || v.vehicleTags || [];
+      if (tags.length === 0) return;
+
+      const rawTag = String(tags[0]).toUpperCase();
+      const plat = v.name || v.plateNumber; // Asumsi name adalah Plat
+
+      // Parse Tipe Dasar
+      const parts = rawTag.split('-');
+      let specificType = parts.length > 1 ? parts[1] : rawTag;
+
+      if (parts.length > 2 && parts[2] === 'LONG') {
+        if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
+          specificType = `${specificType}-LONG`;
+        }
+      }
+
+      // Cek Standar & Mapping
+      const isStandard = VEHICLE_TYPES.includes(specificType);
+      const isMapped = tagMap[hubId] && tagMap[hubId][plat] && tagMap[hubId][plat][specificType];
+
+      // Jika Non-Standar DAN Belum Di-mapping -> Masukkan List
+      if (!isStandard && !isMapped) {
+        unmappedList.push({
+          plat: plat,
+          fullTag: rawTag,
+          tag: specificType,
+          hubId: hubId,
+        });
+      }
+    });
+
+    return unmappedList;
+  } catch (error) {
+    toastError('Gagal mengecek kendaraan:', error);
+    return [];
+  }
+}
+
 /**
- * Fungsi "pintar" untuk mengambil data driver.
- * 1. Cek localStorage.
- * 2. Jika tidak ada, fetch baru, simpan ke localStorage, lalu kembalikan.
- * @param {string} selectedLocation - ID Hub yang dipilih.
- * @returns {Promise<Array>} - Array data driver yang sudah di-merge.
+ * Fungsi Utama: Ambil Data Driver (Cache/API)
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
     throw new Error('selectedLocation wajib ada untuk mengambil data driver.');
   }
 
-  // 1. Cek localStorage dulu (tidak berubah)
+  // 1. Cek localStorage (Cache)
   try {
     const storedDrivers = localStorage.getItem('driverData');
     if (storedDrivers) {
-      return JSON.parse(storedDrivers);
+      const parsed = JSON.parse(storedDrivers);
+
+      // Tetap update Master Truck saat load dari cache agar data selalu segar
+      updateMasterTruckStorage(parsed, selectedLocation);
+
+      return parsed;
     }
   } catch (e) {
-    toastError(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
+    toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
   try {
-    // --- (PERUBAHAN 2): Logika specialHubs dibuat Dinamis ---
-    let specialHubs = [];
-    //const hardcodedSpecialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
+    // 2. Fetch API Baru
+    const rolesToFetch = [ROLE_ID.driver, ROLE_ID.driverJkt];
 
-    try {
-      const allHubsStr = localStorage.getItem('allHubsList');
-      if (allHubsStr) {
-        const allHubs = JSON.parse(allHubsStr);
-        if (Array.isArray(allHubs)) {
-          // Cari ID berdasarkan nama (case-insensitive)
-          const cikarangId = allHubs.find(
-            (h) => h.name && h.name.toLowerCase() === 'cikarang'
-          )?._id;
-          const daanMogotId = allHubs.find(
-            (h) => h.name && h.name.toLowerCase() === 'daan mogot'
-          )?._id;
-
-          if (cikarangId) specialHubs.push(cikarangId);
-          if (daanMogotId) specialHubs.push(daanMogotId);
-        }
-      }
-    } catch (parseError) {
-      // Tangani jika JSON.parse(allHubsStr) gagal
-      toastError(`Gagal memproses daftar hub: ${parseError.message}`);
-    }
-
-    if (specialHubs.length === 0) {
-      toastWarning('Daftar hub tidak ditemukan di cache. Hubungi admin.');
-    }
-
-    const isSpecialHub = specialHubs.includes(selectedLocation);
-
-    const rolesToFetch = [ROLE_ID.driver];
-    if (isSpecialHub) {
-      rolesToFetch.push(ROLE_ID.driverJkt);
-    }
-
-    // Panggil fungsi API (tidak berubah)
     const driverPromises = rolesToFetch.map((roleId) =>
       getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
     );
     const vehiclePromise = getVehicles({ hubId: selectedLocation, limit: 500 });
 
-    const driverResponses = await Promise.all(driverPromises);
-    const vehicleResult = await vehiclePromise;
+    const [driverResponses, vehicleResult] = await Promise.all([
+      Promise.all(driverPromises),
+      vehiclePromise,
+    ]);
 
-    // Proses data (tidak berubah)
+    // Proses Driver
     const rawDrivers = driverResponses.flat();
-    const processedDrivers = rawDrivers.map((driver) => ({
+    const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
+
+    const processedDrivers = uniqueDrivers.map((driver) => ({
       _id: driver._id,
       name: driver.name,
       email: driver.email,
     }));
 
-    // Proses vehicle (tidak berubah)
+    // Proses Vehicle Map
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
@@ -90,7 +215,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       return acc;
     }, {});
 
-    // Merge data (tidak berubah)
+    // Merge
     const mergedDriverData = processedDrivers.map((driver) => {
       const vehicleInfo = vehicleMap[driver.email];
       return {
@@ -101,15 +226,14 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan ke localStorage dan kembalikan (tidak berubah)
+    // Simpan
     localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+
+    // Update Master Truck
+    updateMasterTruckStorage(mergedDriverData, selectedLocation);
+
     return mergedDriverData;
   } catch (err) {
-    // --- (PERUBAHAN 3): Jangan "telan" error ---
-    // 'apiService' sudah menampilkan toastError.
-    // Kita lempar error lagi agar komponen pemanggil (page.js, dll)
-    // tahu bahwa fetch gagal dan bisa menghentikan spinner-nya.
     throw err;
-    // --- (SELESAI PERUBAHAN 3) ---
   }
 }

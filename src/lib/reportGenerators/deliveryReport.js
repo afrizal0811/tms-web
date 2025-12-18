@@ -4,8 +4,6 @@
 import {
   calculateHaversineDistance,
   calculateMinuteDifference,
-  extractCustomerId,
-  extractLocationId,
   extractTempFromDriverName,
   formatCoordinates,
   formatSimpleTime,
@@ -13,6 +11,7 @@ import {
   formatYYYYMMDDToDDMMYYYY,
   getUTC7DateString,
   normalizeEmail,
+  parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -84,8 +83,7 @@ export function generateDeliveryWorkbook(
     const driverEmail = normalizeEmail(emailString);
     const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
     const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-    const statusLabel =
-      task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
+    const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
     const customerName = task.customerName || '';
     const flow = task.flow;
 
@@ -96,7 +94,7 @@ export function generateDeliveryWorkbook(
         plat: null,
         driverEmail: driverEmail,
         mismatchCustomers: [],
-        missingDataCustomers: [], 
+        missingDataCustomers: [],
       };
       stats.totalOutlet += 1;
       if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
@@ -142,6 +140,7 @@ export function generateDeliveryWorkbook(
         migrationOccurred = true;
       }
     }
+    const { id: custId, location: locId } = parseCustomerString(customerName);
     allTaskDataForSequence.push({
       driverEmail: driverEmail,
       driver: driverName,
@@ -165,15 +164,15 @@ export function generateDeliveryWorkbook(
       actualDeparture: formatTimestampToHHMM(actualDeparture),
       visitTime: task.visitTime,
       actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-      customerId: extractCustomerId(customerName),
+      customerId: custId,
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
     });
     if (task.klikLokasiClient) {
       updateLonglatData.push({
         customerName: customerName,
-        customerId: extractCustomerId(customerName),
-        locationId: extractLocationId(customerName),
+        customerId: custId,
+        locationId: locId,
         newLonglat: formatCoordinates(task.klikLokasiClient),
         bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient),
       });
@@ -209,7 +208,7 @@ export function generateDeliveryWorkbook(
     if (platUpper.includes('SEWA')) return 2;
     return 1;
   };
-  
+
   // 6. Filter & Sortir data "Hasil Pending SO"
   const pendingSOData = allTaskDataForSequence.filter(
     (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
@@ -234,9 +233,9 @@ export function generateDeliveryWorkbook(
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const wrapTextStyle = { alignment: { wrapText: true, vertical: 'center', horizontal: 'left' } };
   const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
-  const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } }; 
-  const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } }; 
-  const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } }; 
+  const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } };
+  const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
+  const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } };
   const greenHeaderStyle = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center' },
@@ -297,9 +296,7 @@ export function generateDeliveryWorkbook(
           return `• ${task.name} (${formattedDate})`;
         })
         .join('\n');
-      const missingDataText = stats.missingDataCustomers
-        .map((task) => `• ${task.name}`)
-        .join('\n');
+      const missingDataText = stats.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
       const hasManualError = stats.missingDataCustomers.length > 0;
       const hasBedaHariError = stats.mismatchCustomers.length > 0;
       let highlightType = 'none';
@@ -354,7 +351,12 @@ export function generateDeliveryWorkbook(
   ];
   const wsDelivered = XLSX.utils.aoa_to_sheet(finalSheetData1);
   wsDelivered['!cols'] = [
-    { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 50 },
+    { wch: 15 },
+    { wch: 30 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 50 },
+    { wch: 50 },
   ];
   ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach((cell) => {
     if (wsDelivered[cell]) wsDelivered[cell].s = headerStyle;
@@ -395,7 +397,7 @@ export function generateDeliveryWorkbook(
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
     'Flow',
-    'Date RO',
+    'Date',
     'Plat',
     'Driver',
     'Faktur Batal/ Tolakan SO',
@@ -523,13 +525,7 @@ export function generateDeliveryWorkbook(
   XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Hasil Pending SO');
 
   // --- Sheet 5: Update Longlat ---
-  const headers4 = [
-    'Customer Name',
-    'Customer ID',
-    'Location ID',
-    'New Longlat',
-    'Beda Jarak (m)',
-  ];
+  const headers4 = ['Customer Name', 'Customer ID', 'Location ID', 'New Longlat', 'Beda Jarak (m)'];
   updateLonglatData.sort((a, b) => {
     const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
     const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
@@ -624,8 +620,22 @@ export function generateDeliveryWorkbook(
     const tasks = tasksByNameMap.get(driverName) || [];
     const hubTimes = hubTimesMap.get(driverName) || { hubETD: null, hubETA: null };
     finalSheetData3.push([
-      null, null, null, 'HUB', null, null, null, null, null,
-      hubTimes.hubETD, null, null, null, null, null, null,
+      null,
+      null,
+      null,
+      'HUB',
+      null,
+      null,
+      null,
+      null,
+      null,
+      hubTimes.hubETD,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
     ]);
     tasks.sort((a, b) => a.roSequence - b.roSequence);
     for (const task of tasks) {
@@ -652,8 +662,22 @@ export function generateDeliveryWorkbook(
       ]);
     }
     finalSheetData3.push([
-      null, null, null, 'HUB', null, null, null,
-      hubTimes.hubETA, null, null, null, null, null, null, null, null,
+      null,
+      null,
+      null,
+      'HUB',
+      null,
+      null,
+      null,
+      hubTimes.hubETA,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
     ]);
     finalSheetData3.push(Array(headers3.length).fill(null));
   }
@@ -679,10 +703,10 @@ export function generateDeliveryWorkbook(
     const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
     const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
     let isMissingRequiredData = false;
-    if (R > 0 && !isHubRow) { 
+    if (R > 0 && !isHubRow) {
       const platValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: platColIndex })]?.v;
       const driverValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: driverColIndex })]?.v;
-      if (platValue && driverValue) { 
+      if (platValue && driverValue) {
         const etaValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etaColIndex })]?.v;
         const etdValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etdColIndex })]?.v;
         const roValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: roColIndex })]?.v;

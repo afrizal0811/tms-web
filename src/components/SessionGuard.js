@@ -31,7 +31,7 @@ export default function SessionGuard({ children }) {
 
       // 3. Jika salah satu data penting tidak ada, redirect paksa.
       if (!user || !location || !locationName) {
-        toastError('Sesi tidak ditemukan. Harap pilih lokasi dan user.');
+        toastError('Harap pilih user dan lokasi terlebih dahulu.');
         router.push('/'); // <-- Redirect ke Halaman "Selamat Datang"
       } else {
         // 4. Jika semua data ada, loloskan.

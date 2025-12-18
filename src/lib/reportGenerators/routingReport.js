@@ -1,7 +1,7 @@
+// File: lib/reportGenerators/routingReport.js
 'use client';
 
-// (PERHATIKAN PATH: Sesuaikan path ke 'constants' dan 'utils' jika perlu)
-import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
+import { VEHICLE_TYPES } from '@/lib/constants';
 import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -22,6 +22,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   let totalDryDistance = 0;
   let totalFrozenDistance = 0;
   let truckUsageCount = {};
+
   [...VEHICLE_TYPES, 'Lainnya'].forEach((type) => {
     truckUsageCount[type] = { Dry: 0, Frozen: 0 };
   });
@@ -29,6 +30,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   filteredResults.forEach((resultItem) => {
     if (resultItem.result && Array.isArray(resultItem.result.routing)) {
       resultItem.result.routing.forEach((route) => {
+        // Nilai Awal dari API
         let initialTotalWeight = route.totalWeight || 0;
         let initialTotalVolume = route.totalVolume || 0;
         let initialTotalDistance = route.totalDistance || 0;
@@ -87,8 +89,10 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         ) {
           manualCalcs = route.trips.reduce((acc, trip) => {
             if (!trip.isHub) {
-              if (needsManualWeight) acc.weight += trip.weight || 0;
-              if (needsManualVolume) acc.volume += trip.volume || 0;
+              // Gunakan Math.abs() untuk Weight & Volume agar selalu positif
+              if (needsManualWeight) acc.weight += Math.abs(trip.weight || 0);
+              if (needsManualVolume) acc.volume += Math.abs(trip.volume || 0);
+
               if (needsManualDistance) acc.distance += trip.distance || 0;
               if (needsManualTravelTime) acc.travelTime += trip.travelTime || 0;
               if (needsManualVisitTime) acc.visitTime += trip.visitTime || 0;
@@ -117,12 +121,14 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         const driverInfo = driverMap[assigneeEmail];
         const driverName = driverInfo ? driverInfo.name : assigneeEmail;
 
-        const manualWeightPercentage = ((finalTotalWeight / route.vehicleMaxWeight) * 100).toFixed(
-          1
-        );
-        const manualVolumePercentage = ((finalTotalVolume / route.vehicleMaxVolume) * 100).toFixed(
-          1
-        );
+        // Hitung Persentase (MaxWeight/Volume dari API)
+        const maxWeight = route.vehicleMaxWeight || 0;
+        const maxVolume = route.vehicleMaxVolume || 0;
+
+        const manualWeightPercentage =
+          maxWeight > 0 ? ((finalTotalWeight / maxWeight) * 100).toFixed(1) : 0;
+        const manualVolumePercentage =
+          maxVolume > 0 ? ((finalTotalVolume / maxVolume) * 100).toFixed(1) : 0;
 
         const totalTravelTime = finalTotalTravelTime;
         const totalVisitTime = finalTotalVisitTime;
@@ -132,8 +138,8 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         processedDataRows.push({
           plat: driverInfo ? driverInfo.plat : null,
           driver: driverName,
-          weightPercentage: manualWeightPercentage || 0,
-          volumePercentage: manualVolumePercentage || 0,
+          weightPercentage: manualWeightPercentage,
+          volumePercentage: manualVolumePercentage,
           totalDistance: finalTotalDistance || 0,
           totalVisits: null,
           totalDelivered: null,
@@ -150,6 +156,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
         const tags = route.vehicleTags;
         const distance = finalTotalDistance || 0;
         const vehiclePlat = driverInfo && driverInfo.plat ? driverInfo.plat : 'N/A';
+
         if (hasTrips && Array.isArray(tags) && tags.length > 0) {
           const firstTag = String(tags[0]);
           const parts = firstTag.split('-');
@@ -157,18 +164,21 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
             const generalType = parts[0].toUpperCase();
             if (generalType === 'FROZEN') totalFrozenDistance += distance;
             else if (generalType === 'DRY') totalDryDistance += distance;
+
             let specificType = parts[1].toUpperCase();
             if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
               if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
                 specificType = `${specificType}-LONG`;
               }
             }
+
             let category = 'Lainnya';
             if (VEHICLE_TYPES.includes(specificType)) {
               category = specificType;
             } else if (tagMap[vehiclePlat] && tagMap[vehiclePlat][specificType]) {
               category = tagMap[vehiclePlat][specificType];
             }
+
             if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
             else if (generalType === 'DRY') truckUsageCount[category]['Dry'] += 1;
           }
@@ -188,8 +198,14 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
       mergedTruckDetailMap.set(key, {
         plat: existing.plat || row.plat,
         driver: existing.driver,
-        weightPercentage: Math.max(existing.weightPercentage, row.weightPercentage),
-        volumePercentage: Math.max(existing.volumePercentage, row.volumePercentage),
+        weightPercentage: Math.max(
+          parseFloat(existing.weightPercentage),
+          parseFloat(row.weightPercentage)
+        ),
+        volumePercentage: Math.max(
+          parseFloat(existing.volumePercentage),
+          parseFloat(row.volumePercentage)
+        ),
         totalDistance: Math.max(existing.totalDistance, row.totalDistance),
         shipDurationRaw: Math.max(existing.shipDurationRaw, row.shipDurationRaw),
         // Untuk ETA/ETD, kita pertahankan yg sudah ada (asumsi 1 driver 1 route utama), atau overwrite jika perlu.

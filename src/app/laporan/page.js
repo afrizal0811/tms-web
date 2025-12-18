@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import TmsSummary from '@/features/reportData/TmsSummary';
-import { toastError } from '@/lib/toastHelper';
+import SingleReportDownloader from '@/features/reportData/SingleReportDownloader';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper'; // Pastikan path ini benar
+import { toastError } from '@/lib/toastHelper';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function LaporanPage() {
   const router = useRouter();
@@ -80,8 +80,8 @@ export default function LaporanPage() {
 
   // Tampilan utama jika data berhasil dimuat
   return (
-    <AppLayout mainClassName="items-center justify-center px-6">
-      <TmsSummary
+    <AppLayout mainClassName="items-center justify-center px-4">
+      <SingleReportDownloader
         selectedLocation={data.selectedLocation}
         selectedLocationName={data.selectedLocationName}
         selectedUser={data.selectedUser}

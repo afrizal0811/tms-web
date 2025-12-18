@@ -1,23 +1,22 @@
 // File: src/components/Navbar.js
 'use client';
 
+import { ROLE_ID } from '@/lib/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import HelpDropdown from './HelpDropdown';
-import LocationSwitcher from './LocationSwitcher'; // <-- Komponen Lokasi
-import UserDisplay from './UserDisplay'; // <-- Komponen User BARU
-import LaporanDropdown from './LaporanDropdown';
+import LocationSwitcher from './LocationSwitcher';
+import UserDisplay from './UserDisplay';
 
-// Komponen NavLink (Tidak Berubah)
-function NavLink({ href, children }) {
+function NavLink({ href, children, className }) {
   const pathname = usePathname();
   const isActive = pathname === href;
 
   return (
     <Link
       href={href}
-      className={`text-sm font-medium transition-colors ${
+      className={`text-sm font-medium transition-colors ${className} ${
         isActive ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
       }`}
     >
@@ -26,7 +25,6 @@ function NavLink({ href, children }) {
   );
 }
 
-// Komponen MobileNavLink (Tidak Berubah)
 function MobileNavLink({ href, children }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -44,13 +42,32 @@ function MobileNavLink({ href, children }) {
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLaporanOpen, setIsLaporanOpen] = useState(false);
+
   const pathname = usePathname();
   const navRef = useRef(null);
+  const laporanRef = useRef(null);
+  const hiddenTextClassName = 'hidden [@media(min-width:1155px)]:inline';
 
-  // ... (useEffect untuk pathname & click outside - TIDAK BERUBAH) ...
+  const [isSuperadmin] = useState(() => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const raw = localStorage.getItem('selectedUser');
+      if (!raw) return false;
+
+      const user = JSON.parse(raw);
+      return user?.roleId === ROLE_ID.superadmin;
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
+    // close mobile menu on route change
     //eslint-disable-next-line
     setIsMobileMenuOpen(false);
+    // also close laporan dropdown on route change
+    setIsLaporanOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -58,54 +75,117 @@ export default function Navbar() {
       if (navRef.current && !navRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
       }
+      if (laporanRef.current && !laporanRef.current.contains(event.target)) {
+        setIsLaporanOpen(false);
+      }
     }
-    if (isMobileMenuOpen) {
+
+    if (isMobileMenuOpen || isLaporanOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, isLaporanOpen]);
 
   const plannerUrl = process.env.NEXT_PUBLIC_HELP_URL_PLANNER || '#';
   const driverUrl = process.env.NEXT_PUBLIC_HELP_URL_DRIVER || '#';
 
+  // toggle handler (click) for laporan
+  const toggleLaporan = () => setIsLaporanOpen((s) => !s);
+
   return (
     <nav
       ref={navRef}
-      className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm"
+      className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm"
     >
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* --- PERUBAHAN: SISI KIRI (Logo + Navigasi) --- */}
+      <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
         <div className="flex items-center space-x-4 sm:space-x-6">
-          <Link href="/" className="text-slate-900 font-bold text-lg sm:text-xl">
-            TMS
+          <Link href="/" className="flex flex-col leading-tight">
+            <span className="hidden lg:block text-slate-900 font-bold text-lg sm:text-xl">TMS</span>
+            <span className="block lg:hidden text-slate-900 font-bold text-lg sm:text-xl">
+              TMS Data Processing
+            </span>
           </Link>
 
-          {/* Navigasi Desktop dipindah ke sini */}
-          <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
-            <LaporanDropdown />
-            <NavLink href="/estimasi">Estimasi Delivery</NavLink>
-            <NavLink href="/vehicles">Data Kendaraan</NavLink>
+          {/* Navigasi Desktop */}
+          <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
+            {/* Laporan as a non-clickable parent (category) - Option A */}
+            <div ref={laporanRef} className="relative">
+              {/* header label - NOT a navigation link to page, only toggles dropdown on click */}
+              <button
+                type="button"
+                aria-expanded={isLaporanOpen}
+                onClick={toggleLaporan}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors px-1 py-2 rounded-md cursor-pointer ${
+                  isLaporanOpen
+                    ? 'text-sky-600 font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>Laporan</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${isLaporanOpen ? 'rotate-180' : 'rotate-0'}`}
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 8l4 4 4-4"
+                  />
+                </svg>
+              </button>
+
+              {/* dropdown (opens only by click toggle) */}
+              {isLaporanOpen && (
+                <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                  <div className="py-1">
+                    <Link
+                      href="/laporan"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                      onClick={() => setIsLaporanOpen(false)}
+                    >
+                      Laporan Harian
+                    </Link>
+                    <Link
+                      href="/laporan/bulk"
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                      onClick={() => setIsLaporanOpen(false)}
+                    >
+                      Laporan Periode
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+            {isSuperadmin && <NavLink href="/rangkuman">Rangkuman</NavLink>}
+            <NavLink href="/update-longlat">
+              <span className={hiddenTextClassName}>Update</span> Longlat
+            </NavLink>
+            <NavLink href="/estimasi">
+              Estimasi<span className={hiddenTextClassName}> Pengiriman</span>
+            </NavLink>
+            <NavLink href="/vehicles">
+              <span className={hiddenTextClassName}>Data</span> Kendaraan
+            </NavLink>
             <HelpDropdown />
           </div>
         </div>
-        {/* --- SELESAI PERUBAHAN SISI KIRI --- */}
 
-        {/* --- PERUBAHAN: SISI KANAN (Lokasi + User) --- */}
-        <div className="hidden md:flex items-center space-x-4 sm:space-x-6">
+        <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
           <LocationSwitcher />
           <div className="h-4 w-px bg-gray-300" aria-hidden="true"></div>
           <UserDisplay />
         </div>
-        {/* --- SELESAI PERUBAHAN SISI KANAN --- */}
 
-        {/* Tombol Burger (Mobile) - Tidak berubah */}
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
-            className="p-2 rounded-md text-slate-700 hover:bg-gray-100"
+            className="p-2 rounded-md text-slate-700 hover:bg-gray-100 cursor-pointer"
           >
             {isMobileMenuOpen ? (
               <svg
@@ -138,15 +218,16 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu Dropdown Mobile */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
           <div className="flex flex-col pt-2 pb-4 space-y-1">
-            <MobileNavLink href="/laporan">Laporan (Satuan)</MobileNavLink>
-            <MobileNavLink href="/laporan/bulk">Laporan (Bulk)</MobileNavLink>
-            <MobileNavLink href="/estimasi">Estimasi Delivery</MobileNavLink>
+            <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
+            <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
+            {isSuperadmin && <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>}
+            <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
+            <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
-            {/* Panduan */}
+
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
@@ -167,7 +248,6 @@ export default function Navbar() {
               Panduan - Driver
             </a>
 
-            {/* --- PERUBAHAN: Info User & Lokasi di Mobile --- */}
             <div className="pt-2 pb-1 px-3">
               <div className="border-t border-gray-200"></div>
             </div>
@@ -177,7 +257,6 @@ export default function Navbar() {
             <div className="p-3 pt-0">
               <LocationSwitcher />
             </div>
-            {/* --- SELESAI PERUBAHAN --- */}
           </div>
         </div>
       )}

@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect, forwardRef } from 'react'; // <-- 'forwardRef' di-import
-import { getTasks } from '@/lib/apiService';
-import { toastError, toastWarning, toastSuccess } from '@/lib/toastHelper';
-import { isDateSunday } from '@/lib/utils';
-import Spinner from '@/components/Spinner';
-import Tooltip from '@/components/Tooltip';
-
-// ... (Helper functions: getTodayString, normalizeEmail, getWIBDateString - TIDAK BERUBAH) ...
-const getTodayString = () => new Date().toISOString().split('T')[0];
-const normalizeEmail = (email) => {
-  if (!email) return null;
-  return email.toLowerCase().trim();
-};
+import CustomDatePicker from '@/components/CustomDatePicker';
+import BodyCard from '@/components/card/BodyCard';
+import HeaderCard from '@/components/card/HeaderCard';
+import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
+import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
+import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
+import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+import { getResultsSummary, getTasks } from '@/lib/apiService';
+import { toastError, toastWarning } from '@/lib/toastHelper';
+import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
   try {
@@ -30,110 +28,224 @@ const getWIBDateString = (utcTimestamp) => {
   }
 };
 
-// --- (Komponen StatCard - Diperbarui untuk menerima 'ref' via forwardRef) ---
-const StatCard = forwardRef(function StatCard(
-  // 1. Props (argumen pertama)
-  { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
-  // 2. 'ref' (argumen kedua) - ini akan datang dari <Tooltip>
-  ref
-) {
-  // 3. Buat elemen <div> (Kartu)
-  const cardElement = (
-    // 4. Teruskan 'ref' ke elemen <div>
-    <div ref={ref} className={`bg-white shadow-md rounded-lg p-6 ${className}`}>
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      {isLoading ? (
-        <div className="mt-2 h-8 w-12 bg-gray-200 animate-pulse rounded"></div>
-      ) : (
-        <p className={`mt-1 text-3xl font-semibold text-gray-900 ${valueClassName}`}>{value}</p>
-      )}
-    </div>
-  );
-
-  // 5. Jika ada 'tooltipContent', bungkus 'cardElement' dengan <Tooltip>
-  if (tooltipContent) {
-    // Kita tidak bisa membungkus 'ref' di dalam 'ref',
-    // jadi kita harus meneruskan 'ref' ke 'cardElement'
-    // dan 'Tooltip' akan menangani event hover secara terpisah.
-    // Solusi paling sederhana adalah membungkusnya.
-    return <Tooltip tooltipContent={tooltipContent}>{cardElement}</Tooltip>;
-  }
-
-  // 6. Jika tidak, kembalikan 'cardElement' saja
-  return cardElement;
-});
-StatCard.displayName = 'StatCard'; // (Good practice untuk debugging)
-// --- (SELESAI PEMBARUAN StatCard) ---
-
-// ... (Fungsi formatToApiUtc - TIDAK BERUBAH) ...
-const formatToApiUtc = (date) => {
-  return date.toISOString().slice(0, 19).replace('T', ' ');
-};
-
-// ... (Fungsi processOrderInfo - TIDAK BERUBAH) ...
 function processOrderInfo(rawOrderId) {
   if (!rawOrderId || rawOrderId === 'N/A') {
-    return {
-      tooltip: 'Tidak ada nomor SO',
-      copyValue: null,
-    };
+    return { tooltip: 'Tidak ada nomor SO', copyValue: null };
   }
   const firstOrderId = rawOrderId.split(',')[0].trim();
   let copyValueToUse = null;
+
   if (firstOrderId.startsWith('SO') && firstOrderId.includes('-')) {
     const processedCopy = firstOrderId.split('-')[1];
-    if (processedCopy) {
-      copyValueToUse = processedCopy;
-    } else {
-      copyValueToUse = firstOrderId;
-    }
+    copyValueToUse = processedCopy || firstOrderId;
   } else {
     copyValueToUse = firstOrderId;
   }
-  return {
-    tooltip: rawOrderId,
-    copyValue: copyValueToUse,
-  };
+  return { tooltip: rawOrderId, copyValue: copyValueToUse };
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const ChartSkeleton = ({ title }) => (
+  <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[450px] flex flex-col animate-pulse">
+    <div className="mb-6">
+      <h3 className="text-lg font-bold text-slate-300">{title}</h3>
+      <div className="h-4 w-1/3 bg-slate-100 rounded mt-2" />
+    </div>
+    <div className="flex-1 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 text-sm">
+      Menyiapkan Grafik...
+    </div>
+  </div>
+);
+
+function DiagramTab({ yearlyTasks, hubId }) {
+  const [renderStep, setRenderStep] = useState(0);
+
+  useEffect(() => {
+    //eslint-disable-next-line
+    setRenderStep(0);
+    if (yearlyTasks && yearlyTasks.length > 0) {
+      const t1 = setTimeout(() => setRenderStep(1), 200);
+      const t2 = setTimeout(() => setRenderStep(2), 600);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [yearlyTasks]);
+
+  return (
+    <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {renderStep >= 1 ? (
+          <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
+        ) : (
+          <ChartSkeleton title="Service Level" />
+        )}
+        {renderStep >= 2 ? (
+          <SequenceAccuracyChart allTasks={yearlyTasks} />
+        ) : (
+          <ChartSkeleton title="Sequence Accuracy" />
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardSummary({ driverData }) {
-  // ... (State dan Handler - TIDAK BERUBAH) ...
-  const [selectedDate, setSelectedDate] = useState(getTodayString);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
+  const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [error, setError] = useState(null);
 
-  const handleCopy = (task) => {
-    if (!task.copyValue) {
-      toastWarning('Tidak ada nomor SO untuk disalin');
+  const [yearlyTasks, setYearlyTasks] = useState([]);
+  const [isYearlyLoading, setIsYearlyLoading] = useState(false);
+
+  const lastFetchedYear = useRef(null);
+  const lastFetchedLocation = useRef(null);
+  const inFlightYearFetchKey = useRef(null);
+  const yearlyCacheRef = useRef({});
+  const fetchStartTimeRef = useRef(null);
+
+  const [activeTab, setActiveTab] = useState('Diagram');
+  const [dismissedDots, setDismissedDots] = useState({
+    Diagram: false,
+    Detail: false,
+    RoutingVsActual: false,
+  });
+
+  const handleDateChange = (date) => {
+    if (!date) return;
+
+    if (activeTab !== 'Diagram' && date.getDay() === 0) {
+      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
       return;
     }
-    navigator.clipboard.writeText(task.copyValue).then(
-      () => {
-        toastSuccess(`Salin: ${task.tooltip}`);
-      },
-      (err) => {
-        toastError('Gagal menyalin ke clipboard');
-        console.error('Gagal menyalin:', err);
-      }
+
+    if (activeTab === 'Diagram') {
+      const newYear = date.getFullYear();
+      const updatedDate = new Date(selectedDate);
+      updatedDate.setFullYear(newYear);
+      setSelectedDate(updatedDate);
+    } else {
+      setSelectedDate(date);
+    }
+  };
+
+  const getPingDot = (tabId) => {
+    const isTabLoading = tabId === 'Diagram' ? isYearlyLoading : loading;
+    const dismissed = dismissedDots[tabId];
+    if (!isTabLoading && dismissed) return null;
+    return (
+      <span className="inline-flex items-center ml-2" aria-hidden>
+        {isTabLoading ? (
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
+          </span>
+        ) : (
+          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-sky-500" />
+        )}
+      </span>
     );
   };
 
-  // ... (useEffect - Logic pengambilan data tidak berubah) ...
-  useEffect(() => {
-    async function fetchData() {
-      // 1. CEK: JANGAN fetch data tasks SEBELUM data driver (prop) siap.
-      if (!driverData || driverData.length === 0) {
-        setLoading(true);
-        return;
-      }
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    const isTabLoading = tabId === 'Diagram' ? isYearlyLoading : loading;
+    if (!isTabLoading) {
+      setDismissedDots((prev) => ({ ...prev, [tabId]: true }));
+    }
+  };
 
-      // Cek Hari Minggu di Awal
-      const date = new Date(selectedDate.replace(/-/g, '/'));
-      if (date.getDay() === 0) {
-        setLoading(false);
-        setError(null);
-        setSummaryData({
+  useEffect(() => {
+    if (loading) {
+      setDismissedDots((prev) => ({ ...prev, Detail: false, RoutingVsActual: false }));
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
+  }, [isYearlyLoading]);
+
+  const fetchData = useCallback(async () => {
+    if (selectedDate.getDay() === 0) {
+      setLoading(false);
+      setSummaryData({
+        totalTasks: 0,
+        unassigned: 0,
+        manualAssignList: [],
+        unassignedList: [],
+        done: 0,
+        ongoing: 0,
+        assignedTasks: 0,
+        flowDelivery: 0,
+        flowReDelivery: 0,
+        flowPendingGR: 0,
+        crossDayTasks: [],
+        totalDry: 0,
+        totalFrozen: 0,
+        assignedDry: 0,
+        assignedFrozen: 0,
+      });
+      setRawData({ tasks: [], results: [] });
+      return;
+    }
+
+    const driverMap = new Map();
+    try {
+      if (driverData) {
+        driverData.forEach((driver) => {
+          if (driver.email && driver.name) {
+            driverMap.set(normalizeEmail(driver.email), driver.name);
+          }
+        });
+      }
+    } catch (e) {
+      toastWarning('Gagal memproses cache nama driver.');
+    }
+
+    try {
+      if (typeof window === 'undefined') return;
+
+      const hubId = localStorage.getItem('userLocation');
+      if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
+
+      const localStart = new Date(selectedDate);
+      localStart.setHours(0, 0, 0, 0);
+      const localEnd = new Date(localStart);
+      localEnd.setHours(23, 59, 59, 999);
+
+      const timeFrom = formatToApiUtc(localStart);
+      const timeTo = formatToApiUtc(localEnd);
+
+      setLoading(true);
+      setError(null);
+      setSummaryData(null);
+      fetchStartTimeRef.current = Date.now();
+
+      const [tasksData, resultsData] = await Promise.all([
+        getTasks({
+          status: 'DONE,ONGOING,UNASSIGNED',
+          hubId,
+          timeFrom,
+          timeTo,
+          timeBy: 'startTime',
+          limit: 1000,
+        }),
+        getResultsSummary({
+          dateFrom: timeFrom,
+          dateTo: timeTo,
+          limit: 500,
+          hubId: hubId,
+        }),
+      ]);
+
+      setRawData({ tasks: tasksData || [], results: resultsData || [] });
+
+      if (!tasksData || tasksData.length === 0) {
+        const emptySummary = {
           totalTasks: 0,
           unassigned: 0,
           manualAssignList: [],
@@ -145,462 +257,314 @@ export default function DashboardSummary({ driverData }) {
           flowReDelivery: 0,
           flowPendingGR: 0,
           crossDayTasks: [],
-        });
+          totalDry: 0,
+          totalFrozen: 0,
+          assignedDry: 0,
+          assignedFrozen: 0,
+        };
+        setSummaryData(emptySummary);
         return;
       }
 
-      setLoading(true);
-      setError(null);
-      setSummaryData(null);
+      let manualAssignList = [];
+      let crossDayTasks = [];
+      let unassignedList = [];
+      let done = 0;
+      let ongoing = 0;
+      let unassigned = 0;
+      let flowDelivery = 0;
+      let flowReDelivery = 0;
+      let flowPendingGR = 0;
+      let totalDry = 0;
+      let totalFrozen = 0;
+      let assignedDry = 0;
+      let assignedFrozen = 0;
 
-      // 2. Buat driverMap DARI PROPS
-      const driverMap = new Map();
-      try {
-        driverData.forEach((driver) => {
-          if (driver.email && driver.name) {
-            driverMap.set(normalizeEmail(driver.email), driver.name);
-          }
-        });
-      } catch (e) {
-        toastWarning('Gagal memproses cache nama driver.');
-      }
+      for (const task of tasksData) {
+        const flow = task.flow || 'N/A';
+        const orderInfo = processOrderInfo(task.orderId);
 
-      // 3. Lanjutkan fetch data tasks
-      try {
-        const hubId = localStorage.getItem('userLocation');
-        if (!hubId) {
-          throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
-        }
+        const typeStorage = (task.typeStorage || '').toUpperCase();
+        const isDry = typeStorage === 'DRY';
+        const isFrozen = typeStorage === 'FROZEN';
 
-        // Logika konversi tanggal
-        const localStart = new Date(selectedDate.replace(/-/g, '/'));
-        localStart.setHours(0, 0, 0, 0);
-        const localEnd = new Date(localStart);
-        localEnd.setHours(23, 59, 59, 999);
-        const timeFrom = formatToApiUtc(localStart);
-        const timeTo = formatToApiUtc(localEnd);
+        if (isDry) totalDry++;
+        if (isFrozen) totalFrozen++;
 
-        const tasksData = await getTasks({
-          status: 'DONE,ONGOING,UNASSIGNED',
-          hubId: hubId,
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-          timeBy: 'startTime',
-          limit: 1000,
-        });
-
-        // Tampilan jika data kosong
-        if (!tasksData || tasksData.length === 0) {
-          setSummaryData({
-            totalTasks: 0,
-            unassigned: 0,
-            manualAssignList: [],
-            unassignedList: [],
-            done: 0,
-            ongoing: 0,
-            assignedTasks: 0,
-            flowDelivery: 0,
-            flowReDelivery: 0,
-            flowPendingGR: 0,
-            crossDayTasks: [],
+        if (task.status === 'DONE') done++;
+        else if (task.status === 'ONGOING') ongoing++;
+        else if (task.status === 'UNASSIGNED') {
+          unassigned++;
+          unassignedList.push({
+            customer: task.customerName || 'N/A',
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
           });
-          return;
         }
 
-        // Inisialisasi variabel baru
-        let manualAssignList = [];
-        let crossDayTasks = [];
-        let unassignedList = [];
-        let done = 0;
-        let ongoing = 0;
-        let unassigned = 0;
-        let flowDelivery = 0;
-        let flowReDelivery = 0;
-        let flowPendingGR = 0;
+        const isAssigned = task.status !== 'UNASSIGNED';
 
-        for (const task of tasksData) {
-          const flow = task.flow || 'N/A';
-          const orderInfo = processOrderInfo(task.orderId);
+        if (isAssigned) {
+          if (isDry) assignedDry++;
+          if (isFrozen) assignedFrozen++;
+        }
 
-          // Cek Status
-          if (task.status === 'DONE') done++;
-          else if (task.status === 'ONGOING') ongoing++;
-          else if (task.status === 'UNASSIGNED') {
-            unassigned++;
-            unassignedList.push({
-              customer: task.customerName || 'N/A',
-              flow: flow,
-              copyValue: orderInfo.copyValue,
-              tooltip: orderInfo.tooltip,
-            });
-          }
-          const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
-          // Cek Manual Assign
-          if (manualCategory && task.status !== 'UNASSIGNED') {
+        const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
+        if (manualCategory && isAssigned) {
+          const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+          let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+          if (finalAssignee === 'N/A') finalAssignee = '-';
+
+          manualAssignList.push({
+            customer: task.customerName || 'N/A',
+            driver: finalAssignee,
+            flow,
+            copyValue: orderInfo.copyValue,
+            tooltip: orderInfo.tooltip,
+          });
+        }
+
+        if (flow === 'Delivery') flowDelivery++;
+        else if (flow.includes('Re Delivery')) flowReDelivery++;
+        else if (flow.includes('Pending GR')) flowPendingGR++;
+
+        if (task.status === 'DONE' && task.startTime && task.doneTime) {
+          const startDateWIB = getWIBDateString(task.startTime);
+          const doneDateWIB = getWIBDateString(task.doneTime);
+
+          if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
+            const startDate = new Date(task.startTime);
+            const doneDate = new Date(task.doneTime);
+            const diffInMs = doneDate.getTime() - startDate.getTime();
+            const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-            const normalizedAssignee = normalizeEmail(rawAssignee);
-            let finalAssignee = driverMap.get(normalizedAssignee) || rawAssignee;
-            if (finalAssignee === 'N/A') finalAssignee = '-';
-
-            manualAssignList.push({
+            const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+            crossDayTasks.push({
               customer: task.customerName || 'N/A',
-              driver: finalAssignee,
-              flow: flow,
+              doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
+              driver: driverName,
               copyValue: orderInfo.copyValue,
               tooltip: orderInfo.tooltip,
             });
           }
-
-          // Cek Flow
-          if (flow === 'Delivery') {
-            flowDelivery++;
-          } else if (flow.includes('Re Delivery')) {
-            flowReDelivery++;
-          } else if (flow.includes('Pending GR')) {
-            flowPendingGR++;
-          }
-
-          // Cek Task Beda Hari
-          if (task.status === 'DONE' && task.startTime && task.doneTime) {
-            const startDateWIB = getWIBDateString(task.startTime);
-            const doneDateWIB = getWIBDateString(task.doneTime);
-
-            // --- (PERUBAHAN POIN 3) ---
-            if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
-              // Buat objek Date untuk perhitungan (ini aman, string sudah UTC)
-              const startDate = new Date(task.startTime);
-              const doneDate = new Date(task.doneTime);
-
-              // Hitung perbedaan dalam milidetik
-              const diffInMs = doneDate.getTime() - startDate.getTime();
-
-              // Konversi ke hari dan bulatkan ke atas
-              // (2 jam = 1 hari, 25 jam = 2 hari)
-              const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-
-              const rawAssignee =
-                task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-              const normalizedAssignee = normalizeEmail(rawAssignee);
-              const driverName = driverMap.get(normalizedAssignee) || rawAssignee;
-
-              crossDayTasks.push({
-                customer: task.customerName || 'N/A',
-                // Simpan format baru: "DD-MM-YYYY (H+N)"
-                doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
-                driver: driverName,
-                copyValue: orderInfo.copyValue,
-                tooltip: orderInfo.tooltip,
-              });
-            }
-            // --- (SELESAI POIN 3) ---
-          }
         }
-
-        unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
-        manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-        crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
-
-        setSummaryData({
-          totalTasks: tasksData.length,
-          unassigned: unassigned,
-          manualAssignList: manualAssignList,
-          unassignedList: unassignedList,
-          done: done,
-          ongoing: ongoing,
-          assignedTasks: done + ongoing, // Total baru
-          flowDelivery: flowDelivery,
-          flowReDelivery: flowReDelivery,
-          flowPendingGR: flowPendingGR,
-          crossDayTasks: crossDayTasks,
-        });
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
-    }
 
-    fetchData();
+      unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+      manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+      crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+
+      const summary = {
+        totalTasks: tasksData.length,
+        unassigned,
+        manualAssignList,
+        unassignedList,
+        done,
+        ongoing,
+        assignedTasks: done + ongoing,
+        flowDelivery,
+        flowReDelivery,
+        flowPendingGR,
+        crossDayTasks,
+        totalDry,
+        totalFrozen,
+        assignedDry,
+        assignedFrozen,
+      };
+
+      setSummaryData(summary);
+    } catch (err) {
+      toastError(err.message || 'Gagal mengambil data harian.');
+    } finally {
+      setLoading(false);
+    }
   }, [driverData, selectedDate]);
 
-  // Handler Datepicker (tidak berubah)
-  const handleDateChange = (e) => {
-    const date = e.target.value;
-    if (isDateSunday(date)) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
+    let attempt = 0;
+    while (true) {
+      try {
+        return await fn();
+      } catch (err) {
+        attempt++;
+        const status = err?.response?.status || err?.status || null;
+        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
+          throw err;
+        }
+        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
+        await wait(delay);
+      }
+    }
+  }, []);
+
+  const fetchYearlyData = useCallback(async (hubId, year) => {
+    setIsYearlyLoading(true);
+    setYearlyTasks([]);
+
+    // 1. Generate 12 rentang waktu (Januari - Desember)
+    // Karena 1 bulan max 31 hari, ini aman dari limit API.
+    const monthlyRanges = [];
+    for (let i = 0; i < 12; i++) {
+      // Trik mendapatkan tanggal terakhir di bulan tersebut (28/29/30/31)
+      const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+
+      const monthStr = String(i + 1).padStart(2, '0');
+      const lastDayStr = String(lastDayOfThisMonth).padStart(2, '0');
+
+      monthlyRanges.push({
+        start: `${year}-${monthStr}-01 00:00:00`,
+        end: `${year}-${monthStr}-${lastDayStr} 23:59:59`,
+      });
+    }
+
+    let allTasks = [];
+    try {
+      // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
+      const promises = monthlyRanges.map((range) =>
+        getTasks({
+          hubId,
+          status: 'DONE',
+          timeFrom: range.start,
+          timeTo: range.end,
+          timeBy: 'startTime',
+          limit: 10000,
+        })
+      );
+
+      const results = await Promise.all(promises);
+
+      // 3. Gabungkan semua hasil
+      results.forEach((res) => {
+        if (Array.isArray(res)) allTasks = [...allTasks, ...res];
+        else if (res?.data) allTasks = [...allTasks, ...res.data];
+      });
+
+      setYearlyTasks(allTasks);
+      lastFetchedYear.current = year;
+      lastFetchedLocation.current = hubId;
+    } catch (err) {
+      console.error('Gagal ambil data tahunan', err);
+    } finally {
+      setIsYearlyLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (activeTab !== 'Diagram') return;
+
+    const hubId = localStorage.getItem('userLocation');
+    if (!hubId) return;
+
+    const year = selectedDate.getFullYear();
+    const cacheKey = `${hubId}:${year}`;
+
+    const cached = yearlyCacheRef.current[cacheKey];
+    if (cached) {
+      setYearlyTasks(cached);
+      lastFetchedYear.current = year;
+      lastFetchedLocation.current = hubId;
       return;
     }
-    setSelectedDate(date);
-  };
+
+    const alreadyFetched =
+      lastFetchedYear.current === year && lastFetchedLocation.current === hubId;
+    if (alreadyFetched) {
+      return;
+    }
+
+    if (inFlightYearFetchKey.current === cacheKey) return;
+
+    inFlightYearFetchKey.current = cacheKey;
+
+    fetchYearlyData(hubId, year, cacheKey).finally(() => {
+      inFlightYearFetchKey.current = null;
+    });
+  }, [selectedDate, activeTab, fetchYearlyData]);
+
+  const isDiagramTab = activeTab === 'Diagram'; 
+  const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
+  const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
+
+  const isDailyEmpty = !loading && (!rawData.tasks || rawData.tasks.length === 0);
+  const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || yearlyTasks.length === 0);
+
+  // Tentukan kosong berdasarkan Tab Aktif
+  const isCardEmpty = isDiagramTab ? isYearlyEmpty : isDailyEmpty;
+
+  const subtitle = (
+    <>
+      Overview performa <span className="font-semibold text-sky-600">harian & tahunan</span>
+    </>
+  );
+
+  const datePicker = (
+    <CustomDatePicker
+      selected={selectedDate}
+      onChange={handleDateChange}
+      isLoading={isLoadingSelected}
+      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
+      className="md:w-48"
+      wrapperClassName="w-full"
+    />
+  );
+
+  const headerItems = [
+    {
+      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman',
+      component: datePicker,
+      hideLabel: false,
+    },
+  ];
+
+  const cardTabs = [
+    { id: 'Diagram', label: 'Diagram', extraContent: getPingDot('Diagram') },
+    { id: 'Detail', label: 'Detail', extraContent: getPingDot('Detail') },
+    {
+      id: 'RoutingVsActual',
+      label: 'Routing vs Aktual',
+      extraContent: getPingDot('RoutingVsActual'),
+    },
+  ];
 
   return (
-    <div className="w-full max-w-none">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Rangkuman</h1>
+    <div className="w-full max-w-none px-4 sm:px-6 pb-2">
+      <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
+      <BodyCard
+        tabs={cardTabs}
+        activeTabId={activeTab}
+        onTabClick={handleTabClick}
+        isLoading={isLoadingSelected}
+        loadingText="Memuat data..."
+        timerStartTime={fetchStartTimeRef.current}
+        isEmpty={isCardEmpty}
+      >
+        <div className="flex-1 flex flex-col p-6 overflow-hidden">
+          {activeTab === 'Detail' && (
+            <DashboardDetailTab loading={loading} summaryData={summaryData} />
+          )}
 
-      {/* Tampilan Error (Jika ada) */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          <strong>Gagal memuat data:</strong> {error}
+          {activeTab === 'RoutingVsActual' && (
+            <RoutingVsActualTab
+              loading={loading}
+              tasks={rawData.tasks}
+              results={rawData.results}
+              drivers={driverData}
+            />
+          )}
+
+          {activeTab === 'Diagram' && !isYearlyLoading && (
+            <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />
+          )}
         </div>
-      )}
-
-      {/* --- (PERUBAHAN TOTAL LAYOUT) --- */}
-      {/* Grid 3 Kolom (Desktop) -> tumpukan 3 Blok (Mobile)
-        Menggunakan Mobile-First Order (Urutan HTML = Urutan Mobile)
-        Lalu menggunakan lg:order- untuk mengatur ulang di desktop
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* --- Blok 1: Kartu Utama (Mobile: Posisi 1 / Desktop: Posisi 2 [Tengah]) --- */}
-        <div className="lg:col-span-1 lg:order-2 flex flex-col gap-6">
-          <StatCard
-            title="Total Task"
-            value={summaryData?.totalTasks}
-            isLoading={loading}
-            className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
-            valueClassName="text-5xl"
-            tooltipContent="Total semua task (Selesai, Berjalan, & Belum Assign)."
-          />
-          <StatCard
-            title="Task Ter-assign"
-            value={summaryData?.assignedTasks}
-            isLoading={loading}
-            className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
-            valueClassName="text-5xl"
-            tooltipContent="Total task yang sudah di-assign ke driver (Selesai + Berjalan)."
-          />
-        </div>
-
-        {/* --- Blok 2: Kontrol & Kartu Sekunder (Mobile: Posisi 2 / Desktop: Posisi 1 [Kiri]) --- */}
-        <div className="lg:col-span-2 lg:order-1 flex flex-col gap-6">
-          {/* Datepicker Card */}
-          <div className="bg-white shadow-md rounded-lg p-6">
-            <label htmlFor="dashboardDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Pilih Tanggal Pengiriman
-            </label>
-            <input
-              type="date"
-              id="dashboardDate"
-              value={selectedDate}
-              onChange={handleDateChange}
-              className="p-2 border border-gray-300 rounded-md text-gray-900 w-full"
-              disabled={loading}
-            />
-          </div>
-
-          {/* (POIN 1) Grid Kartu Sekunder: 2 kolom di mobile, 3 di desktop */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Baris 1 */}
-            <StatCard
-              title="Belum Assign"
-              value={summaryData?.unassigned}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan status 'UNASSIGNED'."
-            />
-            <StatCard
-              title="Berjalan"
-              value={summaryData?.ongoing}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan status 'ONGOING'."
-            />
-            <StatCard
-              title="Selesai"
-              value={summaryData?.done}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan status 'DONE'."
-            />
-
-            {/* Baris 2 */}
-            <StatCard
-              title="Manual Assign"
-              value={summaryData?.manualAssignList?.length}
-              isLoading={loading}
-              tooltipContent="Jumlah task yang di-assign secara manual tanpa melalui proses routing"
-            />
-            <StatCard
-              title="Beda Hari"
-              value={summaryData?.crossDayTasks?.length}
-              isLoading={loading}
-              tooltipContent="Jumlah task 'DONE' yang tanggal Mulai dan Selesai berbeda."
-            />
-
-            {/* Baris 3 */}
-            <StatCard
-              title="Delivery"
-              value={summaryData?.flowDelivery}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan flow 'Delivery'."
-            />
-            <StatCard
-              title="Re-Delivery"
-              value={summaryData?.flowReDelivery}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan flow 'Re Delivery'."
-            />
-            <StatCard
-              title="Pending GR"
-              value={summaryData?.flowPendingGR}
-              isLoading={loading}
-              tooltipContent="Jumlah task dengan flow 'Pending GR'."
-            />
-          </div>
-        </div>
-
-        {/* --- Blok 3: Daftar List (Mobile: Posisi 3 / Desktop: Posisi 3 [Kanan]) --- */}
-        <div className="lg:col-span-2 lg:order-3 flex flex-col gap-6">
-          {/* Daftar Task Belum Assign (Paling Atas) */}
-          <div
-            className="bg-white shadow-md rounded-lg overflow-hidden 
-                          flex flex-col h-64"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 p-4 border-b shrink-0">
-              Daftar Belum Assign
-            </h3>
-
-            {loading ? (
-              <div className="flex justify-center items-center p-10 grow">
-                <Spinner />
-              </div>
-            ) : summaryData && summaryData.unassignedList.length > 0 ? (
-              <div className="overflow-y-auto grow">
-                <table className="min-w-full">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Flow
-                      </th>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {summaryData.unassignedList.map((task, index) => (
-                      <Tooltip key={index} tooltipContent={task.tooltip}>
-                        <tr
-                          className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task)}
-                        >
-                          <td className="p-3 text-sm text-gray-800">{task.flow}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.customer}</td>
-                        </tr>
-                      </Tooltip>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-10 text-center flex justify-center items-center grow">
-                <p className="text-gray-500">Semua Task Sudah Di-Assign!</p>
-              </div>
-            )}
-          </div>
-
-          {/* Daftar Task Manual (Fixed Height) */}
-          <div
-            className="bg-white shadow-md rounded-lg overflow-hidden 
-                          flex flex-col h-64"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 p-4 border-b shrink-0">
-              Daftar Manual Assign
-            </h3>
-
-            {loading ? (
-              <div className="flex justify-center items-center p-10 grow">
-                <Spinner />
-              </div>
-            ) : summaryData && summaryData.manualAssignList.length > 0 ? (
-              <div className="overflow-y-auto grow">
-                <table className="min-w-full">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Flow
-                      </th>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
-                      </th>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Driver
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {summaryData.manualAssignList.map((task, index) => (
-                      <Tooltip key={index} tooltipContent={task.tooltip}>
-                        <tr
-                          className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task)}
-                        >
-                          <td className="p-3 text-sm text-gray-800">{task.flow}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.customer}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.driver}</td>
-                        </tr>
-                      </Tooltip>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-10 text-center flex justify-center items-center grow">
-                <p className="text-gray-500">Tidak Ada Task yang di Manual Assign!</p>
-              </div>
-            )}
-          </div>
-
-          {/* Daftar Task Beda Hari (Fixed Height) */}
-          <div
-            className="bg-white shadow-md rounded-lg overflow-hidden 
-                          flex flex-col h-64"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 p-4 border-b shrink-0">
-              Daftar Task Beda Hari
-            </h3>
-
-            {loading ? (
-              <div className="flex justify-center items-center p-10 grow">
-                <Spinner />
-              </div>
-            ) : summaryData && summaryData.crossDayTasks.length > 0 ? (
-              <div className="overflow-y-auto grow">
-                <table className="min-w-full">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
-                      </th>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Tgl. Selesai
-                      </th>
-                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Driver
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {summaryData.crossDayTasks.map((task, index) => (
-                      <Tooltip key={index} tooltipContent={task.tooltip}>
-                        <tr
-                          className="hover:bg-gray-50 cursor-copy"
-                          onClick={() => handleCopy(task)}
-                        >
-                          <td className="p-3 text-sm text-gray-800">{task.customer}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.doneDateDisplay}</td>
-                          <td className="p-3 text-sm text-gray-800">{task.driver}</td>
-                        </tr>
-                      </Tooltip>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-10 text-center flex justify-center items-center grow">
-                <p className="text-gray-500">Tidak Ada Task yang Selesai di Hari Berbeda!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      </BodyCard>
     </div>
   );
 }

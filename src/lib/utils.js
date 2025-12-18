@@ -1,40 +1,39 @@
 // File: src/lib/utils.js
 
-/**
- * Memformat tanggal menjadi YYYY-MM-DD
- * @param {Date} date - Objek Date
- * @returns {string} - Tanggal dalam format YYYY-MM-DD
- */
-export function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+// Mengubah format input tanggal (Date atau string) menjadi pola string tertentu (default: YYYY-MM-DD)
+export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
+  if (!dateInput) return '-';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '-';
+
+  const map = {
+    YYYY: date.getFullYear(),
+    MM: String(date.getMonth() + 1).padStart(2, '0'),
+    DD: String(date.getDate()).padStart(2, '0'),
+    HH: String(date.getHours()).padStart(2, '0'),
+    mm: String(date.getMinutes()).padStart(2, '0'),
+    ss: String(date.getSeconds()).padStart(2, '0'),
+  };
+
+  return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
 }
 
-/**
- * Menghitung tanggal target (kemarin atau H-2 jika kemarin Minggu).
- * @param {string} selectedDateStr - Tanggal dipilih dari datepicker (YYYY-MM-DD)
- * @returns {{ dateFrom: string, dateTo: string }} - Objek berisi dateFrom dan dateTo
- */
+// Menentukan tanggal otomatis (H-1) dengan penyesuaian jika hari tersebut adalah Minggu (mundur ke Sabtu)
 export function calculateTargetDates(selectedDateStr) {
   if (!selectedDateStr) {
     const today = new Date();
-    selectedDateStr = formatDate(today);
+    selectedDateStr = formatDateUniversal(today);
   }
 
   const selectedDate = new Date(selectedDateStr);
 
-  // Kurangi 1 hari
   selectedDate.setDate(selectedDate.getDate() - 1);
 
-  // Cek apakah hasilnya hari Minggu (getDay() 0)
   if (selectedDate.getDay() === 0) {
-    // Jika Minggu, kurangi 1 hari lagi (jadi Sabtu)
     selectedDate.setDate(selectedDate.getDate() - 1);
   }
 
-  const targetDateStr = formatDate(selectedDate);
+  const targetDateStr = formatDateUniversal(selectedDate);
 
   return {
     dateFrom: targetDateStr,
@@ -42,11 +41,7 @@ export function calculateTargetDates(selectedDateStr) {
   };
 }
 
-/**
- * Helper function untuk memicu download file JSON di browser
- * @param {object} data - Objek data JSON yang ingin disimpan
- * @param {string} filename - Nama file yang akan di-download (misal: "results.json")
- */
+// Memicu browser untuk mengunduh data objek sebagai file JSON
 export function saveJSON(data, filename = 'results.json') {
   const jsonString = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonString], {
@@ -62,59 +57,34 @@ export function saveJSON(data, filename = 'results.json') {
   URL.revokeObjectURL(url);
 }
 
-/**
- * Mendapatkan tanggal hari ini dalam format YYYY-MM-DD
- * @returns {string}
- */
-export function getTodayDateString() {
-  return formatDate(new Date());
-}
-
-/**
- * Mengubah total menit menjadi format 'HH:mm
- * @param {number} totalMinutes - Jumlah total menit
- * @returns {string} - String dalam format 'HH:mm
- */
+// Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
 export function formatMinutesToHHMM(totalMinutes) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
-    return "'-'"; // Atau kembalikan null atau string kosong sesuai kebutuhan
+    return "'-'";
   }
   const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60); // Bulatkan menit
+  const minutes = Math.round(totalMinutes % 60);
   const formattedHours = String(hours).padStart(2, '0');
   const formattedMinutes = String(minutes).padStart(2, '0');
-  return `'${formattedHours}:${formattedMinutes}`; // Tambahkan tanda petik di awal
+  return `'${formattedHours}:${formattedMinutes}`;
 }
 
-// File: src/lib/utils.js
-// ... (semua fungsi lama seperti formatDate, calculateTargetDates, dll. biarkan di atas) ...
-
-/**
- * Memformat string timestamp (misal: "2025-10-28T03:01:00Z") menjadi "HH:mm"
- * @param {string | null | undefined} timestamp - String timestamp ISO
- * @returns {string | null} - String dalam format HH:mm atau null
- */
+// Mengambil jam dan menit dari timestamp ISO dan mengembalikannya sebagai string HH:mm
 export function formatTimestampToHHMM(timestamp) {
   if (!timestamp) return null;
   try {
-    // Buat objek Date. 'Z' di akhir (UTC) akan otomatis dikonversi ke timezone lokal
     const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return null; // Cek jika tanggal tidak valid
+    if (isNaN(date.getTime())) return null;
 
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   } catch (e) {
-    return null; // Jika format timestamp tidak terduga
+    return null;
   }
 }
 
-/**
- * Menghitung selisih antara dua timestamp dalam hitungan MENIT
- * @param {string | null} time1 - Timestamp ISO (misal: page3DoneTime)
- * @param {string | null} time2 - Timestamp ISO (misal: klikJikaSudahSampai)
- * @returns {number | null} - Selisih dalam menit
- */
+// Menghitung selisih waktu dalam satuan menit antara dua timestamp
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
   try {
@@ -123,52 +93,52 @@ export function calculateMinuteDifference(time1, time2) {
     if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
 
     const diffMs = Math.abs(date1.getTime() - date2.getTime());
-    return Math.round(diffMs / 60000); // Konversi milidetik ke menit
+    return Math.round(diffMs / 60000);
   } catch (e) {
     return null;
   }
 }
 
-/**
- * Mengekstrak Customer ID (string yg diawali "C0") dari string
- * @param {string} customerName - misal: "Mamdibakes - C0204437 - MAIN"
- * @returns {string | null}
- */
-export function extractCustomerId(customerName) {
-  if (typeof customerName !== 'string') return null;
-  // Gunakan regex untuk mencari kata yg diawali 'C0'
-  const match = customerName.match(/\b(C0\w+)\b/);
-  // \b = batas kata (word boundary), (C0\w+) = grup yg diawali C0 diikuti huruf/angka
-  return match ? match[1] : null; // Kembalikan grup yg ditemukan (C0204437)
+// Memecah string data pelanggan menjadi Nama, ID, dan Lokasi berdasarkan pola pemisah tertentu
+export function parseCustomerString(fullString) {
+  if (!fullString || typeof fullString !== 'string') {
+    return { name: '', id: null, location: null };
+  }
+
+  const parts = fullString.split(/\s+-\s+/);
+
+  let id = parts.find((p) => /^C\d+/.test(p) && !p.includes(' '));
+
+  if (!id && parts.length >= 2) {
+    id = parts[1];
+  }
+
+  const location = parts.length > 2 ? parts[parts.length - 1] : null;
+
+  const name = parts[0] && parts[0] !== id ? parts[0] : '';
+
+  return { name, id, location };
 }
 
-/**
- * Memformat string "HH:mm:ss" (atau "HH:mm") menjadi "HH:mm"
- * @param {string | null | undefined} timeString - String "HH:mm:ss" atau "HH:mm"
- * @returns {string | null} - String dalam format "HH:mm"
- */
+// Menyederhanakan string waktu (HH:mm:ss) menjadi format HH:mm
 export function formatSimpleTime(timeString) {
   if (typeof timeString !== 'string' || !timeString.includes(':')) {
-    return null; // Bukan string waktu yang valid
+    return null;
   }
   const parts = timeString.split(':');
   if (parts.length < 2) {
-    return null; // Format tidak valid
+    return null;
   }
-  return `${parts[0]}:${parts[1]}`; // Ambil "HH" dan "mm"
+  return `${parts[0]}:${parts[1]}`;
 }
 
-/**
- * Mengekstrak tipe temperatur ('FRZ' atau 'DRY') dari nama driver
- * @param {string | null} driverName - misal: "'FRZ' MAZHAR"
- * @returns {string | null} - "FRZ", "DRY", atau null
- */
+// Mendeteksi jenis suhu (FRZ/DRY) berdasarkan kode string pada nama driver
 export function extractTempFromDriverName(driverName) {
   if (typeof driverName !== 'string' || !driverName) {
     return null;
   }
 
-  const trimmedName = driverName.trim().toUpperCase(); // Normalisasi nama
+  const trimmedName = driverName.trim().toUpperCase();
 
   if (trimmedName.startsWith("'FRZ'")) {
     return 'FRZ';
@@ -177,103 +147,52 @@ export function extractTempFromDriverName(driverName) {
     return 'DRY';
   }
 
-  return null; // Default jika tidak ada yg cocok
-}
-
-/**
- * Mengekstrak Location ID (kata terakhir) dari string " - "
- * @param {string} customerName - misal: "Mamdibakes - C0204437 - MAIN"
- * @returns {string | null}
- */
-export function extractLocationId(customerName) {
-  if (typeof customerName !== 'string') return null;
-  const parts = customerName.split(' - ');
-  if (parts.length > 0) {
-    return parts[parts.length - 1].trim(); // Ambil bagian terakhir
-  }
   return null;
 }
 
-/**
- * Memformat objek koordinat {lat, long} menjadi string
- * @param {object | null} coords - { lat: ..., long: ... }
- * @returns {string | null}
- */
-/**
- * Memformat string koordinat "lat,long" menjadi string "lat, long" (dibulatkan)
- * @param {string | null} coordsString - String "lat,long"
- * @returns {string | null}
- */
+// Memformat string koordinat agar memiliki presisi 6 angka desimal
 export function formatCoordinates(coordsString) {
-  if (typeof coordsString !== 'string' || !coordsString.includes(',')) {
-    return null;
-  }
-  try {
-    const parts = coordsString.split(',');
-    const lat = parseFloat(parts[0]).toFixed(6); // 6 angka desimal
-    const long = parseFloat(parts[1]).toFixed(6);
-    if (isNaN(lat) || isNaN(long)) return null;
-    return `${lat}, ${long}`; // Format baru "lat, long"
-  } catch (e) {
-    return null;
-  }
+  const coords = parseCoordinates(coordsString);
+
+  if (!coords) return null;
+
+  return `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}`;
 }
 
-/**
- * Menghitung jarak Haversine antara dua string koordinat.
- * @param {string | null} coordsString1 - "lat,long"
- * @param {string | null} coordsString2 - "lat,long"
- * @returns {number | null} - Jarak dalam METER
- */
+// Mengubah string "lat,long" menjadi objek { lat, lon } bertipe angka
+export function parseCoordinates(coordString) {
+  if (typeof coordString !== 'string' || !coordString.includes(',')) return null;
+  const [latStr, lonStr] = coordString.split(',');
+  const lat = parseFloat(latStr);
+  const lon = parseFloat(lonStr);
+  if (isNaN(lat) || isNaN(lon)) return null;
+  return { lat, lon };
+}
+
+// Menghitung jarak antara dua koordinat menggunakan rumus Haversine (hasil dalam meter)
 export function calculateHaversineDistance(coordsString1, coordsString2) {
-  if (
-    typeof coordsString1 !== 'string' ||
-    !coordsString1.includes(',') ||
-    typeof coordsString2 !== 'string' ||
-    !coordsString2.includes(',')
-  ) {
-    return null;
-  }
+  const c1 = parseCoordinates(coordsString1);
+  const c2 = parseCoordinates(coordsString2);
+
+  if (!c1 || !c2) return null;
 
   const toRad = (value) => (Number(value) * Math.PI) / 180;
-  const R = 6371000; // Radius Bumi dalam meter
+  const R = 6371000;
 
-  try {
-    // Urai string "lat,long"
-    const parts1 = coordsString1.split(',');
-    const lat1 = parseFloat(parts1[0]);
-    const lon1 = parseFloat(parts1[1]);
+  const dLat = toRad(c2.lat - c1.lat);
+  const dLon = toRad(c2.lon - c1.lon);
+  const rLat1 = toRad(c1.lat);
+  const rLat2 = toRad(c2.lat);
 
-    const parts2 = coordsString2.split(',');
-    const lat2 = parseFloat(parts2[0]);
-    const lon2 = parseFloat(parts2[1]);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
-      return null;
-    }
-
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const rLat1 = toRad(lat1);
-    const rLat2 = toRad(lat2);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-
-    return Math.round(distance); // Bulatkan ke meter terdekat
-  } catch (e) {
-    return null;
-  }
+  return Math.round(R * c);
 }
 
-/**
- * Fungsi helper untuk membersihkan/menormalisasi email
- * @param {string} email
- * @returns {string | null}
- */
+// Membersihkan string email (lowercase dan trim spasi)
 export const normalizeEmail = (email) => {
   if (typeof email !== 'string' || !email) {
     return null;
@@ -281,57 +200,28 @@ export const normalizeEmail = (email) => {
   return email.toLowerCase().trim();
 };
 
-/**
- * Helper untuk menambah jam ke Date object
- * @param {Date} date
- * @param {number} hours
- * @returns {Date}
- */
+// Menambahkan jumlah jam tertentu ke dalam objek Date
 function addHours(date, hours) {
   const newDate = new Date(date);
   newDate.setTime(newDate.getTime() + hours * 60 * 60 * 1000);
   return newDate;
 }
 
-/**
- * Helper untuk memformat Date object ke "YYYY-MM-DD HH:mm:ss"
- * @param {Date} date
- * @returns {string}
- */
-function formatFullDateTime(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-/**
- * Menghitung rentang tanggal untuk Start-Finish Summary.
- * timeFrom = H-1 (atau H-2 jika Senin) @ 00:00:00
- * timeTo = H @ 23:59:59
- * @param {string} selectedDateStr - "YYYY-MM-DD"
- * @returns {{ timeFrom: string, timeTo: string }}
- */
+// Menghitung rentang waktu Start (H-1/H-2 00:00) hingga Finish (H 23:59) untuk keperluan query laporan
 export function calculateStartFinishDates(selectedDateStr) {
-  const selectedDate = new Date(selectedDateStr + 'T12:00:00'); // Gunakan siang hari
+  const selectedDate = new Date(selectedDateStr + 'T12:00:00');
 
-  // 1. Hitung timeTo (Akhir hari yang dipilih)
   const timeToEnd = new Date(selectedDate);
   timeToEnd.setHours(23, 59, 59, 999);
-  const timeTo = formatFullDateTime(timeToEnd);
+  const timeTo = formatDateUniversal(timeToEnd, 'YYYY-MM-DD HH:mm:ss');
 
-  // 2. Hitung timeFrom (Awal H-1 atau H-2)
   const timeFromStart = new Date(selectedDate);
-  timeFromStart.setDate(timeFromStart.getDate() - 1); // H-1
+  timeFromStart.setDate(timeFromStart.getDate() - 1);
   if (timeFromStart.getDay() === 0) {
-    // Cek jika H-1 adalah Minggu
-    timeFromStart.setDate(timeFromStart.getDate() - 2); // Mundur ke Sabtu (H-2 dari Senin)
+    timeFromStart.setDate(timeFromStart.getDate() - 2);
   }
   timeFromStart.setHours(0, 0, 0, 0);
-  const timeFrom = formatFullDateTime(timeFromStart);
+  const timeFrom = formatDateUniversal(timeFromStart, 'YYYY-MM-DD HH:mm:ss');
 
   return {
     timeFrom,
@@ -339,144 +229,84 @@ export function calculateStartFinishDates(selectedDateStr) {
   };
 }
 
-/**
- * Mem-parsing string "YYYY-MM-DD HH:mm:ss" (diasumsikan UTC) dan geser ke UTC+7
- * @param {string} timestampStr
- * @returns {Date | null} Objek Date dalam UTC+7
- */
+// Mengonversi timestamp UTC string menjadi objek Date yang digeser manual ke UTC+7
 function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
   try {
-    // 1. Paksa parsing sebagai UTC
     const utcTimestamp = timestampStr.replace(' ', 'T') + 'Z';
     const utcDate = new Date(utcTimestamp);
     if (isNaN(utcDate.getTime())) return null;
 
-    // 2. Tambah 7 jam untuk konversi ke UTC+7
     return addHours(utcDate, 7);
   } catch (e) {
     return null;
   }
 }
 
-/**
- * Format "YYYY-MM-DD HH:mm:ss" (UTC) -> "DD-MM-YYYY" (UTC+7)
- * @param {string} timestampStr
- * @returns {string | null}
- */
+// Memformat tanggal UTC+7 menjadi DD-MM-YYYY
 export function formatTimestampToDDMMYYYY_UTC7(timestampStr) {
-  const date = parseAndShiftToUTC7(timestampStr); // Ini masih benar (menghasilkan Date object +7 jam)
+  const date = parseAndShiftToUTC7(timestampStr);
   if (!date) return null;
 
-  // --- PERBAIKAN DI SINI ---
-  // Gunakan getUTC... untuk membaca tanggal apa adanya (yang sudah +7 jam)
   const day = String(date.getUTCDate()).padStart(2, '0');
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // getUTCMonth() juga 0-11
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const year = date.getUTCFullYear();
-  // --- SELESAI PERBAIKAN ---
 
   return `${day}-${month}-${year}`;
 }
 
-/**
- * Format "YYYY-MM-DD HH:mm:ss" (UTC) -> "'HH:mm" (UTC+7)
- * @param {string} timestampStr
- * @returns {string | null}
- */
+// Memformat waktu UTC+7 menjadi string 'HH:mm (quoted untuk excel)
 export function formatTimestampToQuotedHHMM_UTC7(timestampStr) {
-  const date = parseAndShiftToUTC7(timestampStr); // Ini masih benar
+  const date = parseAndShiftToUTC7(timestampStr);
   if (!date) return null;
 
-  // --- PERBAIKAN DI SINI ---
-  // Gunakan getUTC... untuk membaca waktu apa adanya (yang sudah +7 jam)
   const hours = String(date.getUTCHours()).padStart(2, '0');
   const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  // --- SELESAI PERBAIKAN ---
 
   return `'${hours}:${minutes}`;
 }
 
-/**
- * Menghitung durasi antara 2 timestamp (UTC) dan format ke 'HH:mm
- * @param {string} startTimeStr
- * @param {string} finishTimeStr
- * @returns {string | null}
- */
+// Wrapper untuk menghitung durasi antar dua waktu dan mengembalikan format 'HH:mm
 export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
-  if (!startTimeStr || !finishTimeStr) return null;
-  try {
-    // Tidak perlu geser UTC+7, karena kita hanya butuh selisihnya
-    const startDate = new Date(startTimeStr.replace(' ', 'T') + 'Z');
-    const finishDate = new Date(finishTimeStr.replace(' ', 'T') + 'Z');
-    if (isNaN(startDate.getTime()) || isNaN(finishDate.getTime())) return null;
-
-    let diffMs = finishDate.getTime() - startDate.getTime();
-    if (diffMs < 0) diffMs = 0; // Durasi tidak bisa negatif
-
-    const totalMinutes = Math.round(diffMs / 60000);
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    const formattedHours = String(hours).padStart(2, '0');
-    const formattedMinutes = String(minutes).padStart(2, '0');
-    return `'${formattedHours}:${formattedMinutes}`;
-  } catch (e) {
-    return null;
-  }
+  const totalMinutes = calculateMinuteDifference(startTimeStr, finishTimeStr);
+  return formatMinutesToHHMM(totalMinutes);
 }
 
-/**
- * [BARU] Mengubah "YYYY-MM-DD" menjadi "DD-MM-YYYY"
- * @param {string} yyyyMmDd - String tanggal "YYYY-MM-DD"
- * @returns {string | null}
- */
+// Mengubah format tanggal string dari YYYY-MM-DD menjadi DD.MM.YYYY
 export function formatYYYYMMDDToDDMMYYYY(yyyyMmDd) {
   if (typeof yyyyMmDd !== 'string' || !yyyyMmDd.includes('-')) {
-    return yyyyMmDd; // Kembalikan aslinya jika format salah
+    return yyyyMmDd;
   }
   try {
     const [y, m, d] = yyyyMmDd.split('-');
     if (!y || !m || !d) return yyyyMmDd;
     return `${d}.${m}.${y}`;
   } catch (e) {
-    return yyyyMmDd; // Gagal parsing
+    return yyyyMmDd;
   }
 }
 
+// Mendapatkan string YYYY-MM-DD dari timestamp yang sudah disesuaikan ke UTC+7
 export const getUTC7DateString = (timestamp) => {
-  if (!timestamp) return null;
-  try {
-    // 1. Buat Date object dari timestamp
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return null;
-
-    // 2. Tambah 7 jam untuk UTC+7
-    date.setTime(date.getTime() + 7 * 60 * 60 * 1000);
-
-    // 3. Ambil YYYY, MM, DD dari tanggal yang sudah digeser
-    //    (getUTC... digunakan agar timezone lokal tidak mengacaukan)
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  } catch (e) {
-    return null;
-  }
+  const date = parseAndShiftToUTC7(timestamp);
+  if (!date) return null;
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 };
 
-export function parseOutletName(visitName) {
-  if (!visitName) return '';
-  const parts = visitName.split(' - C0');
-  return parts[0].trim();
-}
-
-
-// --- 2. Fungsi helper untuk Cek Hari Minggu ---
+// Mengecek apakah string tanggal jatuh pada hari Minggu
 export const isDateSunday = (dateStr) => {
-  // 'YYYY-MM-DD' diperlakukan sebagai UTC, jadi ganti ke '/'
-  // agar diperlakukan sebagai waktu lokal & .getDay() konsisten
   const date = new Date(dateStr.replace(/-/g, '/'));
-  return date.getDay() === 0; // 0 = Minggu
+  return date.getDay() === 0;
 };
+
+// Memformat detik integer menjadi string timer MM:SS
+export const formatTimer = (seconds) => {
+  const m = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+};
+
+// Memformat objek Date menjadi string format database (YYYY-MM-DD HH:mm:ss)
+export const formatToApiUtc = (date) => date.toISOString().slice(0, 19).replace('T', ' ');

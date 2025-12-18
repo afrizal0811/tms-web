@@ -1,0 +1,506 @@
+[
+  {
+    "email": "kendaraan.plsmg04@panganlestari.com",
+    "startTime": "2025-11-01 01:57:06",
+    "finish": {
+      "lat": -6.9866052,
+      "lon": 110.34634,
+      "finishTime": "2025-11-01 10:59:47",
+      "notes": null,
+      "totalDuration": 536,
+      "totalDistance": 51.14012927374048
+    },
+    "trackedTime": -541.6833333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg04@panganlestari.com_20251101085706s"
+  },
+  {
+    "email": "kendaraan.plsda16@panganlestari.com",
+    "startTime": "2025-11-01 01:39:42",
+    "finish": {
+      "lat": -7.4361073,
+      "lon": 112.7213576,
+      "finishTime": "2025-11-01 05:38:45",
+      "notes": null,
+      "totalDuration": 241,
+      "totalDistance": 58.79079701995821
+    },
+    "trackedTime": -239.05,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda16@panganlestari.com_20251101083942s"
+  },
+  {
+    "email": "kendaraan.plck09@panganlestari.com",
+    "startTime": "2025-11-01 01:20:56",
+    "finish": {
+      "lat": -6.3422339,
+      "lon": 107.1292863,
+      "finishTime": "2025-11-01 12:02:19",
+      "notes": null,
+      "totalDuration": 575,
+      "totalDistance": 209.75118574987383
+    },
+    "trackedTime": -641.3833333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plck09@panganlestari.com_20251101082056s"
+  },
+  {
+    "email": "kendaraan.plsda05@panganlestari.com",
+    "startTime": "2025-11-01 01:14:27",
+    "finish": {
+      "lat": -7.4388906,
+      "lon": 112.7226012,
+      "finishTime": "2025-11-01 08:00:38",
+      "notes": null,
+      "totalDuration": 403,
+      "totalDistance": 68.21316260979943
+    },
+    "trackedTime": -406.18333333333334,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda05@panganlestari.com_20251101081427s"
+  },
+  {
+    "email": "kendaraan.pldm03@panganlestari.com",
+    "startTime": "2025-11-01 01:14:00",
+    "finish": {
+      "lat": -6.1580013,
+      "lon": 106.6898013,
+      "finishTime": "2025-11-01 11:28:39",
+      "notes": null,
+      "totalDuration": 600,
+      "totalDistance": 48.56555487285356
+    },
+    "trackedTime": -613.65,
+    "_id": "6703410af6be892f3208ecda_kendaraan.pldm03@panganlestari.com_20251101081400s"
+  },
+  {
+    "email": "kendaraan.plsda07@panganlestari.com",
+    "startTime": "2025-11-01 01:11:16",
+    "finish": {
+      "lat": -7.4381791,
+      "lon": 112.722399,
+      "finishTime": "2025-11-01 08:03:13",
+      "notes": null,
+      "totalDuration": 406,
+      "totalDistance": 95.61147235304976
+    },
+    "trackedTime": -410.95,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda07@panganlestari.com_20251101081116s"
+  },
+  {
+    "email": "kendaraan.plsda21@panganlestari.com",
+    "startTime": "2025-11-01 01:10:06",
+    "finish": {
+      "lat": -7.43861,
+      "lon": 112.7230967,
+      "finishTime": "2025-11-01 05:07:26",
+      "notes": null,
+      "totalDuration": 238,
+      "totalDistance": 51.729539316922796
+    },
+    "trackedTime": -237.33333333333334,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda21@panganlestari.com_20251101081006s"
+  },
+  {
+    "email": "kendaraan.plsda13@panganlestari.com",
+    "startTime": "2025-11-01 01:07:52",
+    "finish": {
+      "lat": -7.4385596,
+      "lon": 112.7231279,
+      "finishTime": "2025-11-01 06:29:53",
+      "notes": null,
+      "totalDuration": 341,
+      "totalDistance": 62.456976626417756
+    },
+    "trackedTime": -322.01666666666665,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda13@panganlestari.com_20251101080752s"
+  },
+  {
+    "email": "kendaraan.plsda10@panganlestari.com",
+    "startTime": "2025-11-01 01:04:34",
+    "finish": {
+      "lat": -7.4383905,
+      "lon": 112.7236733,
+      "finishTime": "2025-11-01 01:05:07",
+      "notes": null,
+      "totalDuration": 1,
+      "totalDistance": 0.036004230492782195
+    },
+    "trackedTime": 0.44999999999999996,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda10@panganlestari.com_20251101080434s"
+  },
+  {
+    "email": "kendaraan.plsda02@panganlestari.com",
+    "startTime": "2025-11-01 01:01:28",
+    "finish": {
+      "lat": -7.4384922,
+      "lon": 112.7232348,
+      "finishTime": "2025-11-01 06:27:03",
+      "notes": null,
+      "totalDuration": 320,
+      "totalDistance": 43.53552334620426
+    },
+    "trackedTime": -324.5833333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda02@panganlestari.com_20251101080128s"
+  },
+  {
+    "email": "kendaraan.plsmg10@panganlestari.com",
+    "startTime": "2025-11-01 00:56:19",
+    "finish": {
+      "lat": -6.9867033,
+      "lon": 110.3462767,
+      "finishTime": "2025-11-01 08:29:56",
+      "notes": null,
+      "totalDuration": 450,
+      "totalDistance": 128.8829882364415
+    },
+    "trackedTime": -452.6166666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg10@panganlestari.com_20251101075619s"
+  },
+  {
+    "email": "kendaraan.plsda22@panganlestari.com",
+    "startTime": "2025-11-01 00:55:19",
+    "finish": {
+      "lat": -7.438417,
+      "lon": 112.7232536,
+      "finishTime": "2025-11-01 00:55:25",
+      "notes": null,
+      "totalDuration": 0,
+      "totalDistance": 0.006702640484419168
+    },
+    "trackedTime": -0.1,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda22@panganlestari.com_20251101075519s"
+  },
+  {
+    "email": "kendaraan.plsda30@panganlestari.com",
+    "startTime": "2025-11-01 00:50:05",
+    "finish": {
+      "lat": -7.4387396,
+      "lon": 112.7230886,
+      "finishTime": "2025-11-01 07:49:50",
+      "notes": null,
+      "totalDuration": 413,
+      "totalDistance": 59.284056846343894
+    },
+    "trackedTime": -418.75,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda30@panganlestari.com_20251101075005s"
+  },
+  {
+    "email": "kendaraan.plsda17@panganlestari.com",
+    "startTime": "2025-11-01 00:49:27",
+    "finish": {
+      "lat": -7.4385886,
+      "lon": 112.7238973,
+      "finishTime": "2025-11-01 00:49:30",
+      "notes": null,
+      "totalDuration": 0,
+      "totalDistance": 0
+    },
+    "trackedTime": -0.05,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda17@panganlestari.com_20251101074927s"
+  },
+  {
+    "email": "kendaraan.plsda24@panganlestari.com",
+    "startTime": "2025-11-01 00:48:56",
+    "finish": {
+      "lat": -7.43833,
+      "lon": 112.7232633,
+      "finishTime": "2025-11-01 11:54:12",
+      "notes": null,
+      "totalDuration": 655,
+      "totalDistance": 135.40087840308115
+    },
+    "trackedTime": -665.2666666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda24@panganlestari.com_20251101074856s"
+  },
+  {
+    "email": "kendaraan.plsda02@panganlestari.com",
+    "startTime": "2025-11-01 00:47:28",
+    "finish": {
+      "lat": -7.4371789,
+      "lon": 112.7211104,
+      "finishTime": "2025-11-01 00:48:15",
+      "notes": null,
+      "totalDuration": 1,
+      "totalDistance": 0.003582312201671541
+    },
+    "trackedTime": 0.21666666666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda02@panganlestari.com_20251101074728s"
+  },
+  {
+    "email": "kendaraan.plsmg07@panganlestari.com",
+    "startTime": "2025-11-01 00:46:49",
+    "finish": {
+      "lat": -6.985951,
+      "lon": 110.346499,
+      "finishTime": "2025-11-01 04:58:15",
+      "notes": null,
+      "totalDuration": 253,
+      "totalDistance": 38.848873497580286
+    },
+    "trackedTime": -251.43333333333334,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg07@panganlestari.com_20251101074649s"
+  },
+  {
+    "email": "kendaraan.plsda09@panganlestari.com",
+    "startTime": "2025-11-01 00:44:32",
+    "finish": {
+      "lat": -7.4387031,
+      "lon": 112.7231242,
+      "finishTime": "2025-11-01 06:10:09",
+      "notes": null,
+      "totalDuration": 328,
+      "totalDistance": 70.75502382952935
+    },
+    "trackedTime": -324.6166666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda09@panganlestari.com_20251101074432s"
+  },
+  {
+    "email": "kendaraan.plsda31@panganlestari.com",
+    "startTime": "2025-11-01 00:44:28",
+    "finish": {
+      "lat": -7.4385522,
+      "lon": 112.7242989,
+      "finishTime": "2025-11-03 09:28:57",
+      "notes": null,
+      "totalDuration": 3215,
+      "totalDistance": 143.8766072079771
+    },
+    "trackedTime": -3404.483333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda31@panganlestari.com_20251101074428s"
+  },
+  {
+    "email": "kendaraan.plsda23@panganlestari.com",
+    "startTime": "2025-11-01 00:42:06",
+    "finish": {
+      "lat": -7.4384161,
+      "lon": 112.7231168,
+      "finishTime": "2025-11-17 02:10:23",
+      "notes": null,
+      "totalDuration": 40569,
+      "totalDistance": 358.70934952917077
+    },
+    "trackedTime": -23128.283333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda23@panganlestari.com_20251101074206s"
+  },
+  {
+    "email": "kendaraan.plck05@panganlestari.com",
+    "startTime": "2025-11-01 00:24:13",
+    "finish": {
+      "lat": -6.3428965,
+      "lon": 107.1288183,
+      "finishTime": "2025-11-01 13:22:41",
+      "notes": null,
+      "totalDuration": 760,
+      "totalDistance": 150.71524576111995
+    },
+    "trackedTime": -778.4666666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plck05@panganlestari.com_20251101072413s"
+  },
+  {
+    "email": "kendaraan.plsda08@panganlestari.com",
+    "startTime": "2025-11-01 00:19:08",
+    "finish": {
+      "lat": -7.4392889,
+      "lon": 112.7219996,
+      "finishTime": "2025-11-01 07:04:57",
+      "notes": null,
+      "totalDuration": 412,
+      "totalDistance": 22.87448769392476
+    },
+    "trackedTime": -404.81666666666666,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda08@panganlestari.com_20251101071908s"
+  },
+  {
+    "email": "kendaraan.plsda14@panganlestari.com",
+    "startTime": "2025-11-01 00:17:53",
+    "finish": {
+      "lat": -7.4382418,
+      "lon": 112.7231756,
+      "finishTime": "2025-11-01 10:22:49",
+      "notes": null,
+      "totalDuration": 619,
+      "totalDistance": 104.61481655960837
+    },
+    "trackedTime": -603.9333333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda14@panganlestari.com_20251101071753s"
+  },
+  {
+    "email": "kendaraan.plsda01@panganlestari.com",
+    "startTime": "2025-11-01 00:16:56",
+    "finish": {
+      "lat": -7.4384543,
+      "lon": 112.723155,
+      "finishTime": "2025-11-01 05:32:34",
+      "notes": null,
+      "totalDuration": 320,
+      "totalDistance": 60.43261888942241
+    },
+    "trackedTime": -314.6333333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda01@panganlestari.com_20251101071656s"
+  },
+  {
+    "email": "kendaraan.pldm06@panganlestari.com",
+    "startTime": "2025-11-01 00:15:05",
+    "finish": {
+      "lat": -6.1578115,
+      "lon": 106.6898043,
+      "finishTime": "2025-11-01 08:03:30",
+      "notes": null,
+      "totalDuration": 475,
+      "totalDistance": 68.76633116180167
+    },
+    "trackedTime": -468.4166666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.pldm06@panganlestari.com_20251101071505s"
+  },
+  {
+    "email": "kendaraan.plsda15@panganlestari.com",
+    "startTime": "2025-11-01 00:11:20",
+    "finish": {
+      "lat": -7.4389537,
+      "lon": 112.7261512,
+      "finishTime": "2025-11-01 07:43:40",
+      "notes": null,
+      "totalDuration": 448,
+      "totalDistance": 64.76904761900553
+    },
+    "trackedTime": -452.3333333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda15@panganlestari.com_20251101071120s"
+  },
+  {
+    "email": "kendaraan.plsda30@panganlestari.com",
+    "startTime": "2025-11-01 00:10:33",
+    "finish": {
+      "lat": -7.4371972,
+      "lon": 112.7211417,
+      "finishTime": "2025-11-01 00:31:18",
+      "notes": null,
+      "totalDuration": 20,
+      "totalDistance": 0.057173870597652
+    },
+    "trackedTime": -19.75,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda30@panganlestari.com_20251101071033s"
+  },
+  {
+    "email": "kendaraan.pldm02@panganlestari.com",
+    "startTime": "2025-11-01 00:09:58",
+    "finish": {
+      "lat": -6.157805,
+      "lon": 106.6897961,
+      "finishTime": "2025-11-01 09:10:17",
+      "notes": null,
+      "totalDuration": 556,
+      "totalDistance": 69.20477956204142
+    },
+    "trackedTime": -540.3166666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.pldm02@panganlestari.com_20251101070958s"
+  },
+  {
+    "email": "kendaraan.plsmg03@panganlestari.com",
+    "startTime": "2025-11-01 00:09:56",
+    "finish": {
+      "lat": -6.985866,
+      "lon": 110.3464081,
+      "finishTime": "2025-11-01 10:32:24",
+      "notes": null,
+      "totalDuration": 631,
+      "totalDistance": 82.19386268201272
+    },
+    "trackedTime": -622.4666666666667,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg03@panganlestari.com_20251101070956s"
+  },
+  {
+    "email": "kendaraan.plsda18@panganlestari.com",
+    "startTime": "2025-11-01 00:09:14",
+    "finish": {
+      "lat": -7.4371746,
+      "lon": 112.7211205,
+      "finishTime": "2025-11-01 00:09:24",
+      "notes": null,
+      "totalDuration": 0,
+      "totalDistance": 0.0411009830155484
+    },
+    "trackedTime": -0.16666666666666666,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda18@panganlestari.com_20251101070914s"
+  },
+  {
+    "email": "kendaraan.plsda19@panganlestari.com",
+    "startTime": "2025-11-01 00:08:34",
+    "finish": {
+      "lat": -7.4387335,
+      "lon": 112.7230614,
+      "finishTime": "2025-11-01 09:01:18",
+      "notes": null,
+      "totalDuration": 533,
+      "totalDistance": 122.15922877717524
+    },
+    "trackedTime": -531.7333333333333,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda19@panganlestari.com_20251101070834s"
+  },
+  {
+    "email": "kendaraan.pldm01@panganlestari.com",
+    "startTime": "2025-11-01 00:07:35",
+    "finish": {
+      "lat": -6.157845,
+      "lon": 106.6896689,
+      "finishTime": "2025-11-01 08:43:23",
+      "notes": null,
+      "totalDuration": 530,
+      "totalDistance": 78.22041211394517
+    },
+    "trackedTime": -514.8,
+    "_id": "6703410af6be892f3208ecda_kendaraan.pldm01@panganlestari.com_20251101070735s"
+  },
+  {
+    "email": "kendaraan.plsmg02@panganlestari.com",
+    "startTime": "2025-11-01 00:06:07",
+    "finish": {
+      "lat": -6.9860896,
+      "lon": 110.3463313,
+      "finishTime": "2025-11-01 10:45:55",
+      "notes": null,
+      "totalDuration": 638,
+      "totalDistance": 234.30930212563146
+    },
+    "trackedTime": -638.8,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg02@panganlestari.com_20251101070607s"
+  },
+  {
+    "email": "kendaraan.plsmg09@panganlestari.com",
+    "startTime": "2025-11-01 00:05:31",
+    "finish": {
+      "lat": -6.9860165,
+      "lon": 110.3462448,
+      "finishTime": "2025-11-01 04:25:32",
+      "notes": null,
+      "totalDuration": 259,
+      "totalDistance": 51.38538002249496
+    },
+    "trackedTime": -260.01666666666665,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsmg09@panganlestari.com_20251101070531s"
+  },
+  {
+    "email": "kendaraan.plsda27@panganlestari.com",
+    "startTime": "2025-11-01 00:01:51",
+    "finish": {
+      "lat": -7.4404306,
+      "lon": 112.7253843,
+      "finishTime": "2025-11-02 23:57:30",
+      "notes": null,
+      "totalDuration": 2874,
+      "totalDistance": 65.3368783306131
+    },
+    "trackedTime": -2874.65,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plsda27@panganlestari.com_20251101070151s"
+  },
+  {
+    "email": "kendaraan.plck01@panganlestari.com",
+    "startTime": "2025-11-01 00:00:54",
+    "finish": {
+      "lat": -6.3428929,
+      "lon": 107.1290252,
+      "finishTime": "2025-11-01 12:33:45",
+      "notes": null,
+      "totalDuration": 769,
+      "totalDistance": 151.57531473775438
+    },
+    "trackedTime": -751.85,
+    "_id": "6703410af6be892f3208ecda_kendaraan.plck01@panganlestari.com_20251101070054s"
+  }
+]
