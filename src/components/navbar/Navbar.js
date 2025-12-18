@@ -1,6 +1,7 @@
 // File: src/components/Navbar.js
 'use client';
 
+import { ROLE_ID } from '@/lib/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -8,14 +9,14 @@ import HelpDropdown from './HelpDropdown';
 import LocationSwitcher from './LocationSwitcher';
 import UserDisplay from './UserDisplay';
 
-function NavLink({ href, children }) {
+function NavLink({ href, children, className }) {
   const pathname = usePathname();
   const isActive = pathname === href;
 
   return (
     <Link
       href={href}
-      className={`text-sm font-medium transition-colors ${
+      className={`text-sm font-medium transition-colors ${className} ${
         isActive ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
       }`}
     >
@@ -41,12 +42,26 @@ function MobileNavLink({ href, children }) {
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLaporanOpen, setIsLaporanOpen] = useState(false); // desktop laporan dropdown state
+  const [isLaporanOpen, setIsLaporanOpen] = useState(false);
+
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1155px)]:inline';
 
+  const [isSuperadmin] = useState(() => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const raw = localStorage.getItem('selectedUser');
+      if (!raw) return false;
+
+      const user = JSON.parse(raw);
+      return user?.roleId === ROLE_ID.superadmin;
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
     // close mobile menu on route change
     //eslint-disable-next-line
@@ -146,7 +161,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <NavLink href="/rangkuman">Rangkuman</NavLink>
+            {isSuperadmin && <NavLink href="/rangkuman">Rangkuman</NavLink>}
             <NavLink href="/update-longlat">
               <span className={hiddenTextClassName}>Update</span> Longlat
             </NavLink>
@@ -208,7 +223,7 @@ export default function Navbar() {
           <div className="flex flex-col pt-2 pb-4 space-y-1">
             <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
             <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
-            <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>
+            {isSuperadmin && <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>}
             <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
             <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
             <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
