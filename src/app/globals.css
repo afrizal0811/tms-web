@@ -1,6 +1,16 @@
 @import 'react-datepicker/dist/react-datepicker.css';
 @import 'tailwindcss';
 
+/* Pastikan React Hot Toast selalu di atas Modal Map (z-index modal: 2000) */
+body > div[style*="z-index: 9999"] {
+  z-index: 99999 !important;
+}
+
+/* Atau jika React Hot Toast punya container ID/Class tertentu */
+.go3958317564 { /* Class default react-hot-toast, tapi bisa berubah */
+  z-index: 99999 !important;
+}
+
 /* Style untuk warning kustom Anda */
 .my-toast-warning {
   background: #f59e0b !important; /* Kuning (Amber 500) */
