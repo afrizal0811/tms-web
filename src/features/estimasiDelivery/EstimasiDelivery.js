@@ -153,7 +153,7 @@ export default function EstimasiDelivery() {
       id="estimasiDate"
       className="md:w-48"
       isLoading={isLoading}
-      maxDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+      maxDate={new Date()}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
       wrapperClassName="w-full"
