@@ -26,14 +26,18 @@ const getAngle = (lat1, lng1, lat2, lng2) => {
   return theta;
 };
 
-const createArrowIcon = (angle, color) => {
+// UPDATE 1: Terima parameter isHighlight untuk memperbesar ukuran panah
+const createArrowIcon = (angle, color, isHighlight = false) => {
+  const size = isHighlight ? 24 : 16; // Lebih besar jika highlight
+  const fontSize = isHighlight ? '20px' : '14px';
+
   return new L.DivIcon({
     className: 'arrow-icon',
     html: `
       <div style="
         transform: rotate(${-angle}deg); 
         color: ${color}; 
-        font-size: 14px; 
+        font-size: ${fontSize}; 
         font-weight: 900;
         filter: drop-shadow(1px 1px 0px white);
         display: flex; justify-content: center; align-items: center;
@@ -42,8 +46,8 @@ const createArrowIcon = (angle, color) => {
         ➤
       </div>
     `,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2], // Center anchor dynamic
   });
 };
 
@@ -81,10 +85,14 @@ const ArrowPolyline = ({ segments, defaultColor }) => {
 
         const angle = getAngle(start[0], start[1], end[0], end[1]);
 
+        const startArrowLat = start[0] + (end[0] - start[0]) * 0.1;
+        const startArrowLng = start[1] + (end[1] - start[1]) * 0.1;
         const midLat = (start[0] + end[0]) / 2;
         const midLng = (start[1] + end[1]) / 2;
         const endLat = start[0] + (end[0] - start[0]) * 0.9;
         const endLng = start[1] + (end[1] - start[1]) * 0.9;
+
+        const arrowZIndex = isHighlight ? 1000 : -50;
 
         return (
           <div key={`seg-${i}-${isHighlight ? 'active' : 'normal'}`}>
@@ -96,15 +104,21 @@ const ArrowPolyline = ({ segments, defaultColor }) => {
               dashArray={dashArray}
             />
             <Marker
+              position={[startArrowLat, startArrowLng]}
+              icon={createArrowIcon(angle, color, isHighlight)}
+              zIndexOffset={arrowZIndex}
+              interactive={false}
+            />
+            <Marker
               position={[midLat, midLng]}
-              icon={createArrowIcon(angle, color)}
-              zIndexOffset={-50}
+              icon={createArrowIcon(angle, color, isHighlight)}
+              zIndexOffset={arrowZIndex}
               interactive={false}
             />
             <Marker
               position={[endLat, endLng]}
-              icon={createArrowIcon(angle, color)}
-              zIndexOffset={-50}
+              icon={createArrowIcon(angle, color, isHighlight)}
+              zIndexOffset={arrowZIndex}
               interactive={false}
             />
           </div>
@@ -373,6 +387,8 @@ const MapViewSection = ({
         const displayName = resolveDisplayName(t.customerName);
         points.push({ coords: [t.lat, t.lng], name: displayName });
       });
+      // UPDATE 3: Tambahkan HUB_END di peta Actual agar kembali ke HUB
+      points.push({ coords: hubCoords, name: 'HUB_END' });
     }
 
     for (let i = 0; i < points.length - 1; i++) {
@@ -550,8 +566,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     return data.filter((d) => d.driver === selectedDriver);
   }, [data, selectedDriver]);
 
-  // FIX: Hitung frekuensi nama customer.
-  // Jika > 1, berarti ada duplikat nama di lokasi berbeda.
   const nameFrequency = useMemo(() => {
     const counts = {};
     driverTasks.forEach((t) => {
@@ -564,19 +578,13 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     return counts;
   }, [driverTasks]);
 
-  // FIX: Resolve Display Name
-  // Jika duplikat: "Nama (LocationID)"
-  // Jika unik: "Nama"
   const resolveDisplayName = useCallback(
     (originalCustomerString) => {
       if (!originalCustomerString || originalCustomerString === 'HUB') return 'HUB';
-      // Gunakan 'location', BUKAN 'id'
       const { name, location } = parseCustomerString(originalCustomerString);
       if (!name) return '-';
 
-      // Jika nama customer ini muncul lebih dari sekali, tambahkan Location ID
       if (nameFrequency[name] > 1) {
-        // Fallback jika location null, gunakan '?'
         return `${name} (${location || '?'})`;
       }
       return name;
@@ -584,7 +592,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     [nameFrequency]
   );
 
-  // Handler Manual
   const handleDriverChange = (driverVal) => {
     setSelectedDriver(driverVal);
     const tasks = data ? data.filter((d) => d.driver === driverVal) : [];
@@ -592,18 +599,22 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     setSelectedCustomer(hasHub ? 'HUB' : '');
   };
 
+  // UPDATE 2: Reset customer setiap kali modal dibuka (isOpen=true)
   useEffect(() => {
     if (isOpen && drivers.length > 0) {
+      // Logic pilih driver default jika belum ada/invalid
+      let currentDriver = selectedDriver;
       const isCurrentDriverValid = selectedDriver && drivers.includes(selectedDriver);
 
       if (!isCurrentDriverValid) {
-        const firstDriver = drivers[0];
-        setSelectedDriver(firstDriver);
-
-        const tasks = data ? data.filter((d) => d.driver === firstDriver) : [];
-        const hasHub = tasks.some((t) => t.type === 'HUB_START');
-        setSelectedCustomer(hasHub ? 'HUB' : '');
+        currentDriver = drivers[0];
+        setSelectedDriver(currentDriver);
       }
+
+      // Reset customer ke HUB (jika ada) setiap modal dibuka
+      const tasks = data ? data.filter((d) => d.driver === currentDriver) : [];
+      const hasHub = tasks.some((t) => t.type === 'HUB_START');
+      setSelectedCustomer(hasHub ? 'HUB' : '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, drivers]);
@@ -624,7 +635,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       if (!t.customerName) return;
       if (t.customerName === 'HUB') return;
 
-      // Gunakan nama unik yang sudah di-resolve
       const displayName = resolveDisplayName(t.customerName);
 
       if (!seen.has(displayName)) {
