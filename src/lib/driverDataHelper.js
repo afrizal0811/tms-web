@@ -162,7 +162,7 @@ export async function checkUnmappedVehicles(hubId) {
  */
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) {
-    throw new Error('selectedLocation wajib ada untuk mengambil data driver.');
+    throw new Error('Lokasi Hub tidak ditemukan.');
   }
 
   // 1. Cek localStorage (Cache)
@@ -210,6 +210,8 @@ export async function getOrFetchDriverData(selectedLocation) {
         acc[vehicle.assignee] = {
           plat: vehicle.name,
           type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
+          maxWeight: vehicle.capacity.weight.max,
+          maxVolume: vehicle.capacity.volume.max,
         };
       }
       return acc;
@@ -223,6 +225,8 @@ export async function getOrFetchDriverData(selectedLocation) {
         name: driver.name,
         plat: vehicleInfo ? vehicleInfo.plat : null,
         type: vehicleInfo ? vehicleInfo.type : null,
+        maxWeight: vehicleInfo ? parseFloat(vehicleInfo.maxWeight) : null,
+        maxVolume: vehicleInfo ? parseFloat(vehicleInfo.maxVolume) : null,
       };
     });
 
