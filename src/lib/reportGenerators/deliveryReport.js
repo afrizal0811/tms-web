@@ -237,8 +237,8 @@ export function generateDeliveryWorkbook(
   const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
   const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } };
   const greenHeaderStyle = {
+    ...centerStyle,
     font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   };
 

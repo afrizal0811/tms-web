@@ -3,16 +3,17 @@
 import DatePicker from 'react-datepicker';
 
 export default function CustomDatePicker({
-  selected,
-  onChange,
-  isLoading = false,
-  disabled = false,
-  dateFormat = 'dd MMMM yyyy',
-  maxDate,
   className = '',
-  wrapperClassName = 'w-full md:w-auto',
+  dateFormat = 'dd MMMM yyyy',
+  disableSunday = true,
+  disabled = false,
+  filterDate,
+  isLoading = false,
+  maxDate,
+  onChange,
   placeholderText = '',
-  // Props sisa (selectsRange, startDate, endDate, showYearPicker, dll)
+  selected,
+  wrapperClassName = 'w-full md:w-auto',
   ...props
 }) {
   const isDisabled = isLoading || disabled;
@@ -26,22 +27,38 @@ export default function CustomDatePicker({
     ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
     : 'bg-white text-slate-700 cursor-pointer border-gray-300 hover:bg-gray-50';
 
+  const handleFilterDate = (date) => {
+    if (disableSunday && date.getDay() === 0) {
+      return false;
+    }
+    if (filterDate) {
+      return filterDate(date);
+    }
+    return true;
+  };
+
+  const handleDayClassName = (date) => {
+    if (disableSunday && date.getDay() === 0) {
+      return '!text-[#ff0000] font-bold !cursor-not-allowed';
+    }
+    return undefined;
+  };
+
   return (
     <DatePicker
-      selected={selected}
-      onChange={onChange}
-      disabled={isDisabled}
-      dateFormat={dateFormat}
-      // Default maxDate adalah hari ini, kecuali di-override
-      maxDate={maxDate !== undefined ? maxDate : new Date()}
-      placeholderText={placeholderText}
-      // Classname gabungan
       className={`${baseClasses} ${stateClasses} ${className}`}
-      wrapperClassName={wrapperClassName}
-      // Default props (bisa ditimpa via ...props)
+      dateFormat={dateFormat}
+      dayClassName={handleDayClassName}
+      disabled={isDisabled}
       dropdownMode="select"
+      filterDate={handleFilterDate}
+      maxDate={maxDate !== undefined ? maxDate : new Date()}
+      onChange={onChange}
+      placeholderText={placeholderText}
+      selected={selected}
       showMonthDropdown={!props.showYearPicker && !props.showMonthYearPicker}
       showYearDropdown={!props.showYearPicker && !props.showMonthYearPicker}
+      wrapperClassName={wrapperClassName}
       {...props}
     />
   );

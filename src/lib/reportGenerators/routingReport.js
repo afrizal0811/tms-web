@@ -222,23 +222,22 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
 
   const wb = XLSX.utils.book_new();
 
+  const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   // --- STYLING DEFINITIONS ---
   const defaultHeaderStyle = {
+    ...centerStyle,
     font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
   };
 
-  // 2. LOGIKA BARU: Style Warna Hijau (#84fa92)
   const greenHeaderStyle = {
+    ...centerStyle,
     font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
     fill: { patternType: 'solid', fgColor: { rgb: '84FA92' } },
   };
 
-  const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const redFillStyle = {
+    ...centerStyle,
     fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } },
-    alignment: { horizontal: 'center', vertical: 'center' },
   };
 
   // 3. LOGIKA BARU: Tambah Header
@@ -349,8 +348,6 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
 
   // Daftar nama header yang harus berwarna hijau
   const greenHeaders = [
-    'Plat',
-    'Driver',
     'Weight Percentage',
     'Volume Percentage',
     'Total Distance (m)',

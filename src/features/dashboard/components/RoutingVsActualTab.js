@@ -1,11 +1,10 @@
-// File: src/features/dashboard/components/RoutingVsActualTab.js
 'use client';
 
 import DownloadButton from '@/components/DownloadButton';
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
-import { toastError } from '@/lib/toastHelper';
+import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual } from '../help';
@@ -40,11 +39,14 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
             const hubTrips = route.trips.filter((trip) => trip.isHub === true);
             if (hubTrips.length > 0) {
-              const hubETD = hubTrips[0].etd;
-              const hubETA = hubTrips[hubTrips.length - 1].eta;
+              const firstHub = hubTrips[0];
+              const lastHub = hubTrips[hubTrips.length - 1];
+              const hubLocation = firstHub.coordinate || null;
+
               hubTimesMap.set(driverName, {
-                hubETD: formatSimpleTime(hubETD) || '-',
-                hubETA: formatSimpleTime(hubETA) || '-',
+                hubETD: formatSimpleTime(firstHub.etd) || '-',
+                hubETA: formatSimpleTime(lastHub.eta) || '-',
+                hubLongLat: hubLocation,
               });
             }
           }
@@ -184,7 +186,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       const driverName = driverRow.driver;
       const driverPlat = driverRow.plat;
       const driverTasks = tasksByNameMap.get(driverName) || [];
-      const hubTimes = hubTimesMap.get(driverName) || { hubETD: '-', hubETA: '-' };
+      const hubTimes = hubTimesMap.get(driverName) || {
+        hubETD: '-',
+        hubETA: '-',
+        hubLongLat: null,
+      };
 
       const isDriverMatch =
         driverName.toLowerCase().includes(query) ||
@@ -202,13 +208,13 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         driver: driverName,
         plat: driverPlat,
         time: hubTimes.hubETD,
+        longlat: hubTimes.hubLongLat,
+        customerName: 'HUB',
       });
 
-      // Urutkan berdasarkan Real Sequence (Kronologis/Aktual)
       matchingTasks.sort((a, b) => {
         const realA = a.realSequence !== null ? a.realSequence : 999999;
         const realB = b.realSequence !== null ? b.realSequence : 999999;
-
         if (realA !== realB) {
           return realA - realB;
         }
@@ -227,6 +233,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         driver: driverName,
         plat: driverPlat,
         time: hubTimes.hubETA,
+        longlat: hubTimes.hubLongLat,
+        customerName: 'HUB',
       });
 
       finalRows.push({ type: 'SPACER' });
@@ -249,6 +257,13 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     }
   };
 
+  const handleOpenMap = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      toastWarning('Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.');
+    }
+    setIsMapModalOpen(true);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full space-y-4">
       <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
@@ -262,7 +277,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
         <div className="w-full md:w-auto order-2">
           <button
-            onClick={() => setIsMapModalOpen(true)}
+            onClick={handleOpenMap} // CLUE: Gunakan handler baru
             disabled={loading || processedData.length === 0}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
           >
@@ -292,6 +307,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
       </div>
       <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
+        {/* ... (Tabel Tetap Sama) ... */}
         <table className="min-w-full text-xs text-left">
           <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
             <tr>
@@ -319,33 +335,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                 return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
               }
 
-              if (row.type === 'HUB_START') {
-                return (
-                  <tr
-                    key={index}
-                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
-                  >
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                  </tr>
-                );
-              }
-
-              if (row.type === 'HUB_END') {
+              if (row.type === 'HUB_START' || row.type === 'HUB_END') {
                 return (
                   <tr
                     key={index}
@@ -428,7 +418,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           </tbody>
         </table>
       </div>
-      {/* Component Modal Peta */}
       <RoutingMapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}

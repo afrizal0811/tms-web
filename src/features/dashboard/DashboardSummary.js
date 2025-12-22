@@ -97,7 +97,6 @@ export default function DashboardSummary({ driverData }) {
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
-  const [error, setError] = useState(null);
 
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
@@ -221,7 +220,6 @@ export default function DashboardSummary({ driverData }) {
       const timeTo = formatToApiUtc(localEnd);
 
       setLoading(true);
-      setError(null);
       setSummaryData(null);
       fetchStartTimeRef.current = Date.now();
 
@@ -489,7 +487,7 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData]);
 
-  const isDiagramTab = activeTab === 'Diagram'; 
+  const isDiagramTab = activeTab === 'Diagram';
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
   const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
 
@@ -509,10 +507,10 @@ export default function DashboardSummary({ driverData }) {
     <CustomDatePicker
       selected={selectedDate}
       onChange={handleDateChange}
-      isLoading={isLoadingSelected}
+      isLoading={isDiagramTab ? isYearlyLoading : loading}
       dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-      className="md:w-48"
-      wrapperClassName="w-full"
+      showYearPicker={isDiagramTab}
+      className="custom-year-picker"
     />
   );
 
