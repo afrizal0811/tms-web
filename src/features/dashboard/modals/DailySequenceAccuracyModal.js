@@ -1,6 +1,7 @@
 // File: features/rangkuman/tabs/modals/DailySequenceAccuracyModal.js
 'use client';
 
+import BaseModal from '@/components/BaseModal';
 import Spinner from '@/components/Spinner';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -46,105 +47,84 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
 
   const hasData = Array.isArray(data) && data.length > 0;
 
-  return (
-    <div
-      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-slate-800 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white text-2xl leading-none cursor-pointer"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Chart Body */}
-        <div className="p-6 h-[400px] w-full bg-white">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <Spinner />
-            </div>
-          ) : hasData ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="name"
-                  name="Tanggal"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  dy={10}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f1f5f9' }} />
-
-                <Bar
-                  name="Sesuai"
-                  dataKey="match"
-                  stackId="a"
-                  fill="#22c55e"
-                  radius={[0, 0, 0, 0]}
-                  maxBarSize={40}
-                />
-                <Bar
-                  name="Manual Assign"
-                  dataKey="manual"
-                  stackId="a"
-                  fill="#3b82f6"
-                  radius={[0, 0, 0, 0]}
-                  maxBarSize={40}
-                />
-                <Bar
-                  name="Tidak Sesuai"
-                  dataKey="mismatch"
-                  stackId="a"
-                  fill="#ef4444"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            // TEKS JIKA TIDAK ADA DATA
-            <div className="h-full flex items-center justify-center text-gray-400">
-              Tidak ada data untuk bulan ini.
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex gap-4 font-medium">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
-              <span>Sesuai</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
-              <span>Manual Assign</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-              <span>Tidak Sesuai</span>
-            </div>
-          </div>
-
-          {/* <div className="text-right">
-            Data lengkap tersedia di menu <strong className="text-slate-700">Rangkuman</strong> {" "}
-            pada tab <strong className="text-slate-700">Truck Detail</strong>
-          </div> */}
-        </div>
+  const footerContent = (
+    <div className="flex gap-4 font-medium text-xs text-gray-500">
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
+        <span>Sesuai</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
+        <span>Manual Assign</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
+        <span>Tidak Sesuai</span>
       </div>
     </div>
+  );
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      maxWidth="max-w-5xl"
+      footer={footerContent}
+    >
+      <div className="h-[400px] w-full">
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <Spinner />
+          </div>
+        ) : hasData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            {/* ... BarChart Logic ... */}
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+              <XAxis
+                dataKey="name"
+                name="Tanggal"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              <Bar
+                name="Sesuai"
+                dataKey="match"
+                stackId="a"
+                fill="#22c55e"
+                radius={[0, 0, 0, 0]}
+                maxBarSize={40}
+              />
+              <Bar
+                name="Manual Assign"
+                dataKey="manual"
+                stackId="a"
+                fill="#3b82f6"
+                radius={[0, 0, 0, 0]}
+                maxBarSize={40}
+              />
+              <Bar
+                name="Tidak Sesuai"
+                dataKey="mismatch"
+                stackId="a"
+                fill="#ef4444"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            Tidak ada data untuk bulan ini.
+          </div>
+        )}
+      </div>
+    </BaseModal>
   );
 }
 
