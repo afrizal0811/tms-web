@@ -1,8 +1,8 @@
 'use client';
 
-import CustomDatePicker from '@/components/CustomDatePicker';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
 import LoadCapacityChart from '@/features/dashboard/components/LoadCapacityChart';
 import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
@@ -10,25 +10,9 @@ import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccur
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
+import { formatToApiUtc, normalizeEmail, formatDateWIB } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-const getWIBDateString = (utcTimestamp) => {
-  if (!utcTimestamp) return null;
-  try {
-    const date = new Date(utcTimestamp);
-    return date
-      .toLocaleString('en-GB', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-      .replace(/\//g, '-');
-  } catch (e) {
-    return null;
-  }
-};
+import ChartSkeleton from './components/ChartSkeleton';
 
 function processOrderInfo(rawOrderId) {
   if (!rawOrderId || rawOrderId === 'N/A') {
@@ -47,18 +31,6 @@ function processOrderInfo(rawOrderId) {
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const ChartSkeleton = ({ title }) => (
-  <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[450px] flex flex-col animate-pulse">
-    <div className="mb-6">
-      <h3 className="text-lg font-bold text-slate-300">{title}</h3>
-      <div className="h-4 w-1/3 bg-slate-100 rounded mt-2" />
-    </div>
-    <div className="flex-1 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 text-sm">
-      Menyiapkan Grafik...
-    </div>
-  </div>
-);
 
 // Update: Menerima props driverData dan selectedDate
 function DiagramTab({ yearlyTasks, hubId, driverData, selectedDate }) {
@@ -370,8 +342,8 @@ export default function DashboardSummary({ driverData }) {
         else if (flow.includes('Pending GR')) flowPendingGR++;
 
         if (task.status === 'DONE' && task.startTime && task.doneTime) {
-          const startDateWIB = getWIBDateString(task.startTime);
-          const doneDateWIB = getWIBDateString(task.doneTime);
+          const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
+          const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
 
           if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
             const startDate = new Date(task.startTime);

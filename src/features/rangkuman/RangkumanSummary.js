@@ -57,7 +57,7 @@ export default function RangkumanSummary() {
   const fetchStartTimeRef = useRef(null);
   const [reportPreview, setReportPreview] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('Task Summary');
+  const [activeTab, setActiveTab] = useState('Time RO');
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
   const [dismissedDots, setDismissedDots] = useState({});
 
