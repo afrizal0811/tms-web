@@ -1,7 +1,18 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import Tooltip from '@/components/Tooltip';
+import { downloadLoadCapacityDebug, getStatusBadge } from '../help';
 
 const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
   const [selectedDay, setSelectedDay] = useState(null);
@@ -49,6 +60,14 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
     return [...trips].sort((a, b) => {
       const nameA = a.driverName || '';
       const nameB = b.driverName || '';
+
+      const isRentalA = nameA.toLowerCase().includes('sewa');
+      const isRentalB = nameB.toLowerCase().includes('sewa');
+
+      if (isRentalA !== isRentalB) {
+        return isRentalA ? 1 : -1;
+      }
+
       return nameA.localeCompare(nameB);
     });
   }, [isOpen, monthData, selectedDay]);
@@ -66,21 +85,11 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
     onClose();
   };
 
-  // Helper untuk mendapatkan badge status
-  const getStatusBadge = (pct) => {
-    if (pct > 100) return { label: 'OVERLOAD', classes: 'bg-red-50 text-red-600 border-red-200' };
-    if (pct >= 85)
-      return { label: 'PENUH', classes: 'bg-orange-50 text-orange-600 border-orange-200' };
-    if (pct >= 60)
-      return { label: 'OPTIMAL', classes: 'bg-emerald-50 text-emerald-600 border-emerald-200' };
-    if (pct >= 40) return { label: 'RENDAH', classes: 'bg-blue-50 text-blue-600 border-blue-200' };
-    return { label: 'SGT RENDAH', classes: 'bg-slate-100 text-slate-600 border-slate-200' };
-  };
 
   return (
     <div
       className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200"
@@ -88,9 +97,9 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
       >
         {/* Header */}
         <div className="bg-slate-800 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
+          <h3 className="text-lg font-bold text-white">{title(selectedDay)}</h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-slate-400 hover:text-white text-2xl leading-none cursor-pointer"
           >
             &times;
@@ -117,7 +126,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                     tickLine={false}
                     tick={{ fontSize: 10, fill: '#64748b' }}
                   />
-                  <Tooltip
+                  <RechartsTooltip
                     cursor={{ fill: '#f1f5f9' }}
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
@@ -200,13 +209,8 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
             )}
           </div>
 
-          {/* Section 2: Vehicle Detail List */}
           {selectedDay ? (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h4 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                Daftar Kendaraan Tanggal {selectedDay}
-              </h4>
-
               <div className="space-y-3">
                 {vehicleList.length === 0 ? (
                   <p className="text-center text-gray-400 text-sm py-4">Tidak ada data detail.</p>
@@ -234,13 +238,16 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                           >
                             {trip.driverName}
                           </p>
-                          <p className="text-xs text-slate-500 font-mono mt-1 font-bold bg-slate-200 inline-block px-1 rounded">
-                            {trip.vehicleName}
-                          </p>
+                          <div className="flex flex-col items-start gap-1 mt-1">
+                            <p className="text-xs text-slate-500 font-mono font-bold bg-slate-200 inline-block px-1 rounded">
+                              {trip.vehicleName}
+                            </p>
+                            <p className="text-xs text-slate-400">{trip.tasksCount} Tasks</p>
+                          </div>
                         </div>
 
                         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Weight - Update: 2 Desimal Persentase */}
+                          {/* Weight */}
                           <div>
                             <div className="flex justify-between text-xs mb-1">
                               <span className="text-slate-600 font-medium">Weight</span>
@@ -257,7 +264,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                               />
                             </div>
                           </div>
-                          {/* Volume - Update: 2 Desimal Persentase */}
+                          {/* Volume */}
                           <div>
                             <div className="flex justify-between text-xs mb-1">
                               <span className="text-slate-600 font-medium">Volume</span>
@@ -277,11 +284,13 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                         </div>
 
                         <div className="min-w-[100px] flex flex-col items-end">
-                          <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide ${status.classes}`}
-                          >
-                            {status.label}
-                          </span>
+                          <Tooltip tooltipContent={status.range}>
+                            <span
+                              className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide cursor-help ${status.classes}`}
+                            >
+                              {status.label}
+                            </span>
+                          </Tooltip>
                           <span className="text-[10px] text-slate-400 mt-1">
                             Bound by: {trip.boundBy}
                           </span>
@@ -308,14 +317,15 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                   d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
                 />
               </svg>
-              <p className="text-sm font-medium">
-                Klik batang grafik untuk melihat detail kendaraan pada tanggal tersebut.
+              <p className="text-sm font-medium">Klik pada salah satu batang grafik di atas</p>
+              <p className="text-xs">
+                untuk melihat detail daftar kendaraan pada tanggal tersebut.
               </p>
             </div>
           )}
         </div>
 
-        {/* Footer Legend - Updated */}
+        {/* Footer Legend */}
         <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-2">
           <div className="flex gap-4 font-medium overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
             <div className="flex items-center gap-1.5 whitespace-nowrap">

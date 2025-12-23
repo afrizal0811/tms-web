@@ -63,11 +63,11 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
     setSelectedMonthIndex(index);
   };
 
-  const getModalTitle = () => {
+  const getModalTitle = (date) => {
     if (selectedMonthIndex === null) return '';
     const monthItem = chartData[selectedMonthIndex];
     const monthName = monthItem?.name || '';
-    return `Load Capacity ${monthName}`;
+    return `Load Capacity ${date ? date : ''} ${monthName}`;
   };
 
   const isEmpty = chartData.length === 0;
@@ -77,8 +77,8 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
       <div className="mb-4">
         <h3 className="text-lg font-bold text-slate-800">Load Capacity</h3>
         <p className="text-sm text-gray-500">
-          Persentase Pemakaian{' '}
-          <span className="font-bold text-emerald-600">Kapasitas Kendaraan</span>
+          Persentase pemakaian{' '}
+          <span className="font-bold text-emerald-600">kapasitas kendaraan</span>
         </p>
       </div>
 
@@ -177,7 +177,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
         <DailyLoadCapacityModal
           isOpen={selectedMonthIndex !== null}
           onClose={() => setSelectedMonthIndex(null)}
-          title={getModalTitle()}
+          title={(date) => getModalTitle(date)}
           monthData={selectedMonthIndex !== null ? chartData[selectedMonthIndex] : null}
         />
       </div>

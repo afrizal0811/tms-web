@@ -4,11 +4,10 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
+import LoadCapacityChart from '@/features/dashboard/components/LoadCapacityChart';
 import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
-// Import baru untuk chart Load Capacity
-import LoadCapacityChart from '@/features/dashboard/components/LoadCapacityChart';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
@@ -190,6 +189,23 @@ export default function DashboardSummary({ driverData }) {
     if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
   }, [isYearlyLoading]);
 
+  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
+    let attempt = 0;
+    while (true) {
+      try {
+        return await fn();
+      } catch (err) {
+        attempt++;
+        const status = err?.response?.status || err?.status || null;
+        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
+          throw err;
+        }
+        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
+        await wait(delay);
+      }
+    }
+  }, []);
+
   const fetchData = useCallback(async () => {
     if (selectedDate.getDay() === 0) {
       setLoading(false);
@@ -246,20 +262,24 @@ export default function DashboardSummary({ driverData }) {
       fetchStartTimeRef.current = Date.now();
 
       const [tasksData, resultsData] = await Promise.all([
-        getTasks({
-          status: 'DONE,ONGOING,UNASSIGNED',
-          hubId,
-          timeFrom,
-          timeTo,
-          timeBy: 'startTime',
-          limit: 1000,
-        }),
-        getResultsSummary({
-          dateFrom: timeFrom,
-          dateTo: timeTo,
-          limit: 500,
-          hubId: hubId,
-        }),
+        fetchWithRetry(() =>
+          getTasks({
+            status: 'DONE,ONGOING,UNASSIGNED',
+            hubId,
+            timeFrom,
+            timeTo,
+            timeBy: 'startTime',
+            limit: 1000,
+          })
+        ),
+        fetchWithRetry(() =>
+          getResultsSummary({
+            dateFrom: timeFrom,
+            dateTo: timeTo,
+            limit: 500,
+            hubId: hubId,
+          })
+        ),
       ]);
 
       setRawData({ tasks: tasksData || [], results: resultsData || [] });
@@ -401,80 +421,65 @@ export default function DashboardSummary({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [driverData, selectedDate]);
+  }, [driverData, selectedDate, fetchWithRetry]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
-    let attempt = 0;
-    while (true) {
-      try {
-        return await fn();
-      } catch (err) {
-        attempt++;
-        const status = err?.response?.status || err?.status || null;
-        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err;
-        }
-        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
-        await wait(delay);
+  const fetchYearlyData = useCallback(
+    async (hubId, year) => {
+      setIsYearlyLoading(true);
+      setYearlyTasks([]);
+
+      const monthlyRanges = [];
+      for (let i = 0; i < 12; i++) {
+        const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+
+        const localStart = new Date(year, i, 1, 0, 0, 0);
+        const localEnd = new Date(year, i, lastDayOfThisMonth, 23, 59, 59);
+
+        monthlyRanges.push({
+          start: formatToApiUtc(localStart),
+          end: formatToApiUtc(localEnd),
+        });
       }
-    }
-  }, []);
 
-  const fetchYearlyData = useCallback(async (hubId, year) => {
-    setIsYearlyLoading(true);
-    setYearlyTasks([]);
+      let allTasks = [];
+      try {
+        // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
+        const promises = monthlyRanges.map((range) =>
+          fetchWithRetry(() =>
+            getTasks({
+              hubId,
+              status: 'DONE',
+              timeFrom: range.start,
+              timeTo: range.end,
+              timeBy: 'startTime',
+              limit: 10000,
+            })
+          )
+        );
 
-    // 1. Generate 12 rentang waktu (Januari - Desember)
-    // Karena 1 bulan max 31 hari, ini aman dari limit API.
-    const monthlyRanges = [];
-    for (let i = 0; i < 12; i++) {
-      // Trik mendapatkan tanggal terakhir di bulan tersebut (28/29/30/31)
-      const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+        const results = await Promise.all(promises);
 
-      const monthStr = String(i + 1).padStart(2, '0');
-      const lastDayStr = String(lastDayOfThisMonth).padStart(2, '0');
+        // 3. Gabungkan semua hasil
+        results.forEach((res) => {
+          if (Array.isArray(res)) allTasks = [...allTasks, ...res];
+          else if (res?.data) allTasks = [...allTasks, ...res.data];
+        });
 
-      monthlyRanges.push({
-        start: `${year}-${monthStr}-01 00:00:00`,
-        end: `${year}-${monthStr}-${lastDayStr} 23:59:59`,
-      });
-    }
-
-    let allTasks = [];
-    try {
-      // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
-      const promises = monthlyRanges.map((range) =>
-        getTasks({
-          hubId,
-          status: 'DONE',
-          timeFrom: range.start,
-          timeTo: range.end,
-          timeBy: 'startTime',
-          limit: 10000,
-        })
-      );
-
-      const results = await Promise.all(promises);
-
-      // 3. Gabungkan semua hasil
-      results.forEach((res) => {
-        if (Array.isArray(res)) allTasks = [...allTasks, ...res];
-        else if (res?.data) allTasks = [...allTasks, ...res.data];
-      });
-
-      setYearlyTasks(allTasks);
-      lastFetchedYear.current = year;
-      lastFetchedLocation.current = hubId;
-    } catch (err) {
-      console.error('Gagal ambil data tahunan', err);
-    } finally {
-      setIsYearlyLoading(false);
-    }
-  }, []);
+        setYearlyTasks(allTasks);
+        lastFetchedYear.current = year;
+        lastFetchedLocation.current = hubId;
+      } catch (err) {
+        toastError('Gagal ambil data tahunan', err);
+      } finally {
+        setIsYearlyLoading(false);
+      }
+    },
+    [fetchWithRetry]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

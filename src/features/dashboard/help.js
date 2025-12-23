@@ -5,16 +5,13 @@ export const downloadRoutingVsActual = (data) => {
     return;
   }
 
-  // 1. Sort Data: Driver A-Z, lalu Sequence 0-9
   const sortedData = [...data].sort((a, b) => {
     const driverA = a.driver || '';
     const driverB = b.driver || '';
 
-    // Sort by Driver Name
     if (driverA < driverB) return -1;
     if (driverA > driverB) return 1;
 
-    // Jika driver sama, Sort by Route Sequence
     return (a.routeSequence || 0) - (b.routeSequence || 0);
   });
 
@@ -53,18 +50,16 @@ export const downloadRoutingVsActual = (data) => {
     const isHubEnd = row.type === 'HUB_END';
     const isHub = isHubStart || isHubEnd;
 
-    // JIKA DRIVER BERUBAH (dan bukan baris pertama) -> Tambah Baris Kosong
     if (lastDriver !== null && currentDriver !== lastDriver) {
       sheetData.push(Array(16).fill(''));
     }
     lastDriver = currentDriver;
 
-    // --- MAPPING DATA ---
     const flow = isHub ? null : row.flow;
     const plat = isHub ? null : row.plat;
     const driver = isHub ? null : row.driver;
 
-    // Logika Customer: HUB
+
     let customer = row.customerName || '-';
     if (isHub) {
       customer = `HUB`;
@@ -223,14 +218,13 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     'Desember',
   ];
 
-  // 1. Mapping Driver Data
   const driverMap = {};
   if (Array.isArray(driverData)) {
     driverData.forEach((d) => {
       if (d.email) {
         driverMap[d.email] = {
-          maxWeight: Number(d.maxWeight) || 0,
-          maxVolume: Number(d.maxVolume) || 0,
+          maxWeight: Math.abs(Number(d.maxWeight) || 0),
+          maxVolume: Math.abs(Number(d.maxVolume) || 0),
           name: d.name,
           plat: d.plat,
         };
@@ -238,37 +232,28 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     });
   }
 
-  // UPDATE: Inisialisasi 5 Kategori
   const monthlyData = months.map((m) => ({
     name: m,
-    sangatRendah: 0, // < 40%
-    rendah: 0, // 40-60%
-    optimal: 0, // 60-85%
-    penuh: 0, // 85-100%
-    overload: 0, // > 100%
+    sangatRendah: 0,
+    rendah: 0,
+    optimal: 0,
+    penuh: 0,
+    overload: 0,
     details: {},
   }));
 
   const taskList = Array.isArray(tasks) ? tasks : tasks?.data || [];
-
   if (!taskList || taskList.length === 0) return monthlyData;
-
-  // 2. Grouping Task per Driver per Hari
   const trips = {};
 
   taskList.forEach((task) => {
     if (!task || !task.startTime) return;
-
     const rawDate = new Date(task.startTime);
     if (isNaN(rawDate)) return;
 
-    // Logic Shift +1 Hari
-    const shiftedDate = new Date(rawDate);
-    shiftedDate.setDate(shiftedDate.getDate() + 1);
-
-    if (shiftedDate.getFullYear() !== year) return;
-
-    const dateStr = shiftedDate.toISOString().split('T')[0];
+    const wibOffset = 7 * 60 * 60 * 1000;
+    const wibDate = new Date(rawDate.getTime() + wibOffset);
+    if (wibDate.getUTCFullYear() !== year) return;
 
     let driverEmail = task.assignedTo?.email;
     if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
@@ -277,16 +262,21 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
     if (!driverEmail) return;
 
+    const mapData = driverMap[driverEmail];
+    const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
+
+    if (vehiclePlat === 'Unknown') return;
+
+    const dateStr = wibDate.toISOString().split('T')[0];
     const key = `${dateStr}_${driverEmail}`;
 
     if (!trips[key]) {
-      const mapData = driverMap[driverEmail];
       const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
-      const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
 
       trips[key] = {
         date: dateStr,
-        monthIndex: shiftedDate.getMonth(),
+        // Gunakan getUTCMonth karena wibDate sudah digeser
+        monthIndex: wibDate.getUTCMonth(),
         email: driverEmail,
         driverName: driverName,
         vehicleName: vehiclePlat,
@@ -296,13 +286,15 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
       };
     }
 
-    // Akumulasi dengan Number()
-    trips[key].totalWeight += Number(task.weightKg || 0);
-    trips[key].totalVolume += Number(task.volumeCbm || 0);
+    if (task.flow !== 'Pickup') {
+      trips[key].totalWeight += Math.abs(Number(task.weightKg || 0));
+      trips[key].totalVolume += Math.abs(Number(task.volumeCbm || 0));
+    }
+
     trips[key].tasksCount += 1;
   });
 
-  // 3. Kalkulasi Persentase & Kategorisasi Baru
+  // 3. Kalkulasi Persentase
   Object.values(trips).forEach((trip) => {
     const specs = driverMap[trip.email];
 
@@ -325,20 +317,15 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
     const monthIdx = trip.monthIndex;
 
-    // UPDATE: Logika Kategori Baru
     if (maxPct > 100) {
       monthlyData[monthIdx].overload += 1;
     } else if (maxPct >= 85) {
-      // 85 - 100
       monthlyData[monthIdx].penuh += 1;
     } else if (maxPct >= 60) {
-      // 60 - 85
       monthlyData[monthIdx].optimal += 1;
     } else if (maxPct >= 40) {
-      // 40 - 60
       monthlyData[monthIdx].rendah += 1;
     } else {
-      // < 40
       monthlyData[monthIdx].sangatRendah += 1;
     }
 
@@ -350,4 +337,32 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
   });
 
   return monthlyData;
+};
+
+export const getStatusBadge = (pct) => {
+  if (pct > 100)
+    return { label: 'OVERLOAD', classes: 'bg-red-50 text-red-600 border-red-200', range: '> 100%' };
+  if (pct >= 85)
+    return {
+      label: 'PENUH',
+      classes: 'bg-orange-50 text-orange-600 border-orange-200',
+      range: '85-100%',
+    };
+  if (pct >= 60)
+    return {
+      label: 'OPTIMAL',
+      classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      range: '60-85%',
+    };
+  if (pct >= 40)
+    return {
+      label: 'RENDAH',
+      classes: 'bg-blue-50 text-blue-600 border-blue-200',
+      range: '40-60%',
+    };
+  return {
+    label: 'SGT RENDAH',
+    classes: 'bg-slate-100 text-slate-600 border-slate-200',
+    range: '< 40%',
+  };
 };
