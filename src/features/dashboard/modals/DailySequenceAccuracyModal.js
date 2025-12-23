@@ -138,10 +138,10 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
             </div>
           </div>
 
-          <div className="text-right">
+          {/* <div className="text-right">
             Data lengkap tersedia di menu <strong className="text-slate-700">Rangkuman</strong> {" "}
             pada tab <strong className="text-slate-700">Truck Detail</strong>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

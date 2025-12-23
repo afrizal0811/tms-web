@@ -164,11 +164,11 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
           )}
         </div>
 
-        <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 text-right">
+        {/* <div className="px-6 py-3 bg-gray-50 border-t text-xs text-gray-500 text-right">
           Data lengkap tersedia di menu <strong className="text-slate-700">Rangkuman</strong> pada
           tab <strong className="text-slate-700">Truck Detail</strong> dan{' '}
           <strong className="text-slate-700">Pending Reasons</strong>
-        </div>
+        </div> */}
       </div>
     </div>
   );

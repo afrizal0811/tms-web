@@ -7,10 +7,13 @@ import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailT
 import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
 import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
 import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+// Import baru untuk chart Load Capacity
+import LoadCapacityChart from '@/features/dashboard/components/LoadCapacityChart';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 const getWIBDateString = (utcTimestamp) => {
   if (!utcTimestamp) return null;
   try {
@@ -58,7 +61,8 @@ const ChartSkeleton = ({ title }) => (
   </div>
 );
 
-function DiagramTab({ yearlyTasks, hubId }) {
+// Update: Menerima props driverData dan selectedDate
+function DiagramTab({ yearlyTasks, hubId, driverData, selectedDate }) {
   const [renderStep, setRenderStep] = useState(0);
 
   useEffect(() => {
@@ -67,9 +71,11 @@ function DiagramTab({ yearlyTasks, hubId }) {
     if (yearlyTasks && yearlyTasks.length > 0) {
       const t1 = setTimeout(() => setRenderStep(1), 200);
       const t2 = setTimeout(() => setRenderStep(2), 600);
+      const t3 = setTimeout(() => setRenderStep(3), 1000); // Step tambahan untuk chart ke-3
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
+        clearTimeout(t3);
       };
     }
   }, [yearlyTasks]);
@@ -77,16 +83,32 @@ function DiagramTab({ yearlyTasks, hubId }) {
   return (
     <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Chart 1: Service Level */}
         {renderStep >= 1 ? (
           <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
         ) : (
           <ChartSkeleton title="Service Level" />
         )}
+
+        {/* Chart 2: Sequence Accuracy */}
         {renderStep >= 2 ? (
           <SequenceAccuracyChart allTasks={yearlyTasks} />
         ) : (
           <ChartSkeleton title="Sequence Accuracy" />
         )}
+
+        {/* Chart 3: Load Capacity (New) - Full Width */}
+        <div className="lg:col-span-2">
+          {renderStep >= 3 ? (
+            <LoadCapacityChart
+              tasks={yearlyTasks}
+              driverData={driverData}
+              selectedYear={selectedDate}
+            />
+          ) : (
+            <ChartSkeleton title="Load Capacity" />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -559,7 +581,12 @@ export default function DashboardSummary({ driverData }) {
           )}
 
           {activeTab === 'Diagram' && !isYearlyLoading && (
-            <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />
+            <DiagramTab
+              yearlyTasks={yearlyTasks}
+              hubId={currentHubId}
+              driverData={driverData}
+              selectedDate={selectedDate}
+            />
           )}
         </div>
       </BodyCard>

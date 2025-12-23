@@ -206,3 +206,148 @@ export const downloadRoutingVsActual = (data) => {
   const dateStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `Routing_vs_Actual_${dateStr}.xlsx`);
 };
+
+export const processLoadCapacityData = (tasks, driverData, year) => {
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
+  // 1. Mapping Driver Data
+  const driverMap = {};
+  if (Array.isArray(driverData)) {
+    driverData.forEach((d) => {
+      if (d.email) {
+        driverMap[d.email] = {
+          maxWeight: Number(d.maxWeight) || 0,
+          maxVolume: Number(d.maxVolume) || 0,
+          name: d.name,
+          plat: d.plat,
+        };
+      }
+    });
+  }
+
+  // UPDATE: Inisialisasi 5 Kategori
+  const monthlyData = months.map((m) => ({
+    name: m,
+    sangatRendah: 0, // < 40%
+    rendah: 0, // 40-60%
+    optimal: 0, // 60-85%
+    penuh: 0, // 85-100%
+    overload: 0, // > 100%
+    details: {},
+  }));
+
+  const taskList = Array.isArray(tasks) ? tasks : tasks?.data || [];
+
+  if (!taskList || taskList.length === 0) return monthlyData;
+
+  // 2. Grouping Task per Driver per Hari
+  const trips = {};
+
+  taskList.forEach((task) => {
+    if (!task || !task.startTime) return;
+
+    const rawDate = new Date(task.startTime);
+    if (isNaN(rawDate)) return;
+
+    // Logic Shift +1 Hari
+    const shiftedDate = new Date(rawDate);
+    shiftedDate.setDate(shiftedDate.getDate() + 1);
+
+    if (shiftedDate.getFullYear() !== year) return;
+
+    const dateStr = shiftedDate.toISOString().split('T')[0];
+
+    let driverEmail = task.assignedTo?.email;
+    if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
+      driverEmail = task.assignee[0];
+    }
+
+    if (!driverEmail) return;
+
+    const key = `${dateStr}_${driverEmail}`;
+
+    if (!trips[key]) {
+      const mapData = driverMap[driverEmail];
+      const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
+      const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
+
+      trips[key] = {
+        date: dateStr,
+        monthIndex: shiftedDate.getMonth(),
+        email: driverEmail,
+        driverName: driverName,
+        vehicleName: vehiclePlat,
+        totalWeight: 0,
+        totalVolume: 0,
+        tasksCount: 0,
+      };
+    }
+
+    // Akumulasi dengan Number()
+    trips[key].totalWeight += Number(task.weightKg || 0);
+    trips[key].totalVolume += Number(task.volumeCbm || 0);
+    trips[key].tasksCount += 1;
+  });
+
+  // 3. Kalkulasi Persentase & Kategorisasi Baru
+  Object.values(trips).forEach((trip) => {
+    const specs = driverMap[trip.email];
+
+    const maxWeight = specs?.maxWeight && specs.maxWeight > 0 ? specs.maxWeight : 1;
+    const maxVolume = specs?.maxVolume && specs.maxVolume > 0 ? specs.maxVolume : 1;
+
+    const weightPct = (trip.totalWeight / maxWeight) * 100;
+    const volPct = (trip.totalVolume / maxVolume) * 100;
+
+    const maxPct = Math.max(weightPct, volPct);
+    const boundBy = weightPct >= volPct ? 'Weight' : 'Volume';
+
+    trip.maxPct = maxPct;
+    trip.weightPct = weightPct;
+    trip.volPct = volPct;
+    trip.maxWeight = maxWeight;
+    trip.maxVolume = maxVolume;
+    trip.boundBy = boundBy;
+    trip.isOverload = maxPct > 100;
+
+    const monthIdx = trip.monthIndex;
+
+    // UPDATE: Logika Kategori Baru
+    if (maxPct > 100) {
+      monthlyData[monthIdx].overload += 1;
+    } else if (maxPct >= 85) {
+      // 85 - 100
+      monthlyData[monthIdx].penuh += 1;
+    } else if (maxPct >= 60) {
+      // 60 - 85
+      monthlyData[monthIdx].optimal += 1;
+    } else if (maxPct >= 40) {
+      // 40 - 60
+      monthlyData[monthIdx].rendah += 1;
+    } else {
+      // < 40
+      monthlyData[monthIdx].sangatRendah += 1;
+    }
+
+    const day = parseInt(trip.date.split('-')[2], 10);
+    if (!monthlyData[monthIdx].details[day]) {
+      monthlyData[monthIdx].details[day] = [];
+    }
+    monthlyData[monthIdx].details[day].push(trip);
+  });
+
+  return monthlyData;
+};
