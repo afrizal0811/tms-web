@@ -2,16 +2,16 @@
 'use client';
 
 export default function BaseModal({
+  bodyClassName = 'p-6 overflow-y-auto',
+  children,
+  contentClassName = '',
+  footer,
+  headerClassName = 'bg-slate-800 text-white',
   isOpen,
+  maxWidth = 'max-w-4xl',
+  noClose = false,
   onClose,
   title,
-  children,
-  footer,
-  maxWidth = 'max-w-4xl',
-  headerClassName = 'bg-slate-800 text-white',
-  bodyClassName = 'p-6 overflow-y-auto',
-  // UPDATE: Prop baru untuk override class container utama (untuk tinggi fix)
-  contentClassName = '',
 }) {
   if (!isOpen) return null;
 
@@ -29,13 +29,15 @@ export default function BaseModal({
           className={`px-6 py-4 flex justify-between items-center shrink-0 border-b border-transparent ${headerClassName}`}
         >
           <div className="text-lg font-bold truncate flex-1">{title}</div>
-          <button
-            onClick={onClose}
-            className="ml-4 text-inherit opacity-70 hover:opacity-100 text-2xl leading-none transition-opacity cursor-pointer"
-            aria-label="Close"
-          >
-            &times;
-          </button>
+          {!noClose && (
+            <button
+              onClick={onClose}
+              className="ml-4 text-inherit opacity-70 hover:opacity-100 text-2xl leading-none transition-opacity cursor-pointer"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          )}
         </div>
 
         {/* Body */}

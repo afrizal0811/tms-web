@@ -7,14 +7,11 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
   const [mappings, setMappings] = useState({});
 
   const handleSave = () => {
-    // 1. Load Map Lama
     let currentMap = {};
     try {
       const stored = localStorage.getItem(TAG_MAP_KEY);
       if (stored) currentMap = JSON.parse(stored);
     } catch (e) {}
-
-    // 2. Update Map dengan Input User
     unmappedData.forEach((item) => {
       const { hubId, plat, tag } = item;
       const selectedType = mappings[`${plat}-${tag}`];
@@ -22,16 +19,11 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
       if (selectedType) {
         if (!currentMap[hubId]) currentMap[hubId] = {};
         if (!currentMap[hubId][plat]) currentMap[hubId][plat] = {};
-
-        // Simpan mapping: Key asli -> Value standar
         currentMap[hubId][plat][tag] = selectedType;
       }
     });
 
-    // 3. Simpan ke Local Storage
     localStorage.setItem(TAG_MAP_KEY, JSON.stringify(currentMap));
-
-    // 4. Lanjut ke Dashboard
     onCompleted();
   };
 
@@ -52,19 +44,19 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
 
   return (
     <BaseModal
-      isOpen={true} // Selalu open jika komponen ini di-render
-      onClose={() => {}} // Disable close manual jika perlu, atau pass onCompleted
+      isOpen={true}
+      onClose={() => {}}
       title={
         <div>
           <h2 className="text-xl font-bold">⚠️ PERINGATAN!</h2>
-          <p className="text-orange-100 text-sm mt-1 font-normal">
+          <p className="text-sm mt-1 font-normal">
             Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki.
           </p>
         </div>
       }
-      headerClassName="bg-orange-600 text-white"
       maxWidth="max-w-3xl"
       footer={footerContent}
+      noClose={true}
     >
       {/* Body Content */}
       <div>
