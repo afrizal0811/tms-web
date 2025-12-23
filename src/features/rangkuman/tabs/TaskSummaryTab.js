@@ -10,7 +10,6 @@ export default function TaskSummaryTab({
   progress,
   startDateStr,
   endDateStr,
-  isHasData,
 }) {
   const [masterTruckData, setMasterTruckData] = useState({
     Dry: { Total: 0 },

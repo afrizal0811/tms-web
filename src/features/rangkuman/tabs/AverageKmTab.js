@@ -2,7 +2,7 @@
 export default function AverageKmTab({ data, monthTotals }) {
   return (
     <div className="p-6">
-      <div className="w-full overflow-auto max-h-[650px]">
+      <div className="w-full overflow-auto max-h-full">
         {/* TABEL 1: MONTHLY SUMMARY */}
         <div className="rounded-xl overflow-hidden border border-gray-300 h-auto mb-4">
           <table className="min-w-full border-collapse text-sm">

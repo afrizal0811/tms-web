@@ -649,7 +649,7 @@ export default function RangkumanSummary() {
 
   const renderContent = () => {
     const renderTabContent = (Component, props) => (
-      <div className="w-full h-[calc(100vh-240px)] flex flex-col">
+      <div className="w-full h-full flex flex-col">
         <Component {...props} />
       </div>
     );

@@ -213,7 +213,7 @@ export default function EstimasiDelivery() {
         activeTabId={activeVehicleId}
         onTabClick={setActiveVehicleId}
       >
-        <div className="bg-white rounded-xl h-[600px] flex flex-col border-none">
+        <div className="bg-white rounded-xl h-full flex flex-col border-none">
           <div className="overflow-y-auto grow h-full m-6 border border-gray-300 rounded-xl">
             {!isLoading && activeRoute && (
               <TableData activeRoute={activeRoute} searchQuery={searchQuery} />

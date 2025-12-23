@@ -97,7 +97,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
   return (
     <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-auto">
       <div className="flex-1 overflow-auto">
-        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl overflow-hidden">
+        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl">
           <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
             <tr>
               <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
