@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 
 import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
-import { processLoadCapacityData } from '../help';
+import { processLoadCapacityData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {

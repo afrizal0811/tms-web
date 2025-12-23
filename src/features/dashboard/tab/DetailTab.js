@@ -1,4 +1,4 @@
-// File: src/features/dashboard/components/DashboardDetailTab.js
+// File: src/features/dashboard/components/DetailTab.js
 'use client';
 
 import Spinner from '@/components/Spinner';
@@ -30,7 +30,7 @@ StatCard.displayName = 'StatCard';
 
 // ========== MAIN DETAIL TAB ==========
 
-export default function DashboardDetailTab({ loading, summaryData }) {
+export default function DetailTab({ loading, summaryData }) {
   const handleCopy = (task) => {
     if (!task.copyValue) {
       toastWarning('Tidak ada nomor SO untuk disalin');

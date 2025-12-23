@@ -3,16 +3,13 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
-import LoadCapacityChart from '@/features/dashboard/components/LoadCapacityChart';
-import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
-import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
-import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+import DetailTab from '@/features/dashboard/tab/DetailTab';
+import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatToApiUtc, normalizeEmail, formatDateWIB } from '@/lib/utils';
+import { formatDateWIB, formatToApiUtc, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ChartSkeleton from './components/ChartSkeleton';
+import DiagramTab from './tab/DiagramTab';
 
 function processOrderInfo(rawOrderId) {
   if (!rawOrderId || rawOrderId === 'N/A') {
@@ -31,59 +28,6 @@ function processOrderInfo(rawOrderId) {
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Update: Menerima props driverData dan selectedDate
-function DiagramTab({ yearlyTasks, hubId, driverData, selectedDate }) {
-  const [renderStep, setRenderStep] = useState(0);
-
-  useEffect(() => {
-    //eslint-disable-next-line
-    setRenderStep(0);
-    if (yearlyTasks && yearlyTasks.length > 0) {
-      const t1 = setTimeout(() => setRenderStep(1), 200);
-      const t2 = setTimeout(() => setRenderStep(2), 600);
-      const t3 = setTimeout(() => setRenderStep(3), 1000); // Step tambahan untuk chart ke-3
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    }
-  }, [yearlyTasks]);
-
-  return (
-    <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Service Level */}
-        {renderStep >= 1 ? (
-          <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
-        ) : (
-          <ChartSkeleton title="Service Level" />
-        )}
-
-        {/* Chart 2: Sequence Accuracy */}
-        {renderStep >= 2 ? (
-          <SequenceAccuracyChart allTasks={yearlyTasks} />
-        ) : (
-          <ChartSkeleton title="Sequence Accuracy" />
-        )}
-
-        {/* Chart 3: Load Capacity (New) - Full Width */}
-        <div className="lg:col-span-2">
-          {renderStep >= 3 ? (
-            <LoadCapacityChart
-              tasks={yearlyTasks}
-              driverData={driverData}
-              selectedYear={selectedDate}
-            />
-          ) : (
-            <ChartSkeleton title="Load Capacity" />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardSummary({ driverData }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -544,9 +488,7 @@ export default function DashboardSummary({ driverData }) {
         isEmpty={isCardEmpty}
       >
         <div className="flex-1 flex flex-col p-6 overflow-hidden">
-          {activeTab === 'Detail' && (
-            <DashboardDetailTab loading={loading} summaryData={summaryData} />
-          )}
+          {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
 
           {activeTab === 'RoutingVsActual' && (
             <RoutingVsActualTab
