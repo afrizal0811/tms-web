@@ -52,7 +52,7 @@ export default function DetailTab({ loading, summaryData }) {
   const assignedFrozen = summaryData?.assignedFrozen ?? 0;
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-300 h-full flex flex-col flex-1">
+    <div className="space-y-10 animate-in fade-in duration-300 h-full flex flex-col flex-1 overflow-auto pb-2">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Total & Assigned */}
         <div className="lg:col-span-1 lg:order-2 flex flex-col gap-6">
