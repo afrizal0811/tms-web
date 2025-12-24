@@ -2,6 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { parseCoordinates, parseCustomerString } from '@/lib/utils';
+import L from 'leaflet';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
 
@@ -55,12 +56,11 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     return drivers.length > 0 ? drivers[0] : '';
   }, [userSelectedDriver, drivers]);
 
-  // --- FIX ERROR: Adjust Customer State saat Driver Berubah (Render Phase) ---
-  // Pola ini menggantikan useEffect agar tidak terjadi cascading render error.
+  // --- Adjust Customer State saat Driver Berubah (Render Phase) ---
   if (selectedDriver !== prevDriver) {
     setPrevDriver(selectedDriver);
 
-    // Reset Logic
+    // Reset Logic saat driver berubah
     const tasks = data ? data.filter((d) => d.driver === selectedDriver) : [];
     const hasHub = tasks.some((t) => t.type === 'HUB_START');
     setSelectedCustomer(hasHub ? 'HUB' : '');
@@ -121,10 +121,25 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       if (val === 'HUB' && t.type === 'HUB_START') return true;
       return resolveDisplayName(t.customerName) === val;
     });
+
     if (targetTask) {
       const coords = parseCoordinates(targetTask.longlat);
-      if (coords && mapRo)
-        mapRo.setView([coords.lat, coords.lon], 16, { animate: true, duration: 1.0 });
+      if (coords && mapRo) {
+        const zoomLevel = 16;
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+        if (isMobile) {
+          const mapSize = mapRo.getSize();
+          const targetPoint = mapRo.project([coords.lat, coords.lon], zoomLevel);
+          const offsetY = mapSize.y * 0.25;
+          const newCenterPoint = new L.Point(targetPoint.x, targetPoint.y + offsetY);
+          const newCenterLatLng = mapRo.unproject(newCenterPoint, zoomLevel);
+          mapRo.setView(newCenterLatLng, zoomLevel, { animate: true, duration: 1.0 });
+        } else {
+          // Desktop: Center normal
+          mapRo.setView([coords.lat, coords.lon], zoomLevel, { animate: true, duration: 1.0 });
+        }
+      }
     }
   };
 
@@ -136,7 +151,13 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     if (task && task.customerName) handleFocusCustomer(resolveDisplayName(task.customerName));
   };
 
-  const handleCloseCard = () => setSelectedCustomer('');
+  const handleCloseInfo = () => setSelectedCustomer('');
+  const handleCloseModal = () => {
+    setUserSelectedDriver('');
+    setSelectedCustomer('');
+    setPrevDriver(null);
+    onClose();
+  };
 
   const headerContent = (
     <div className="flex flex-col lg:flex-row gap-4 items-center justify-between w-full lg:pr-8">
@@ -179,7 +200,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCloseModal}
       title={headerContent}
       maxWidth="max-w-6xl"
       headerClassName="bg-white border-b border-gray-200 py-3"
@@ -212,11 +233,10 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             onMarkerClick={onMarkerClick}
             selectedCustomer={selectedCustomer}
             showInfoCard={true}
-            onCloseCard={handleCloseCard}
+            onCloseCard={handleCloseInfo}
             isActualMap={true}
             resolveDisplayName={resolveDisplayName}
           />
-
         </>
       ) : (
         <div className="h-full flex items-center justify-center text-gray-500">
