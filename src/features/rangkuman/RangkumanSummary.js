@@ -57,7 +57,7 @@ export default function RangkumanSummary() {
   const fetchStartTimeRef = useRef(null);
   const [reportPreview, setReportPreview] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('Task Summary');
+  const [activeTab, setActiveTab] = useState('Time RO');
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
   const [dismissedDots, setDismissedDots] = useState({});
 
@@ -649,7 +649,7 @@ export default function RangkumanSummary() {
 
   const renderContent = () => {
     const renderTabContent = (Component, props) => (
-      <div className="w-full h-[calc(100vh-240px)] flex flex-col">
+      <div className="w-full h-full flex flex-col">
         <Component {...props} />
       </div>
     );

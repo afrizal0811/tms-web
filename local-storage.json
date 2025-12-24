@@ -31,325 +31,433 @@
       "email": "jobbazizah@gmail.com",
       "name": "Azizah",
       "plat": null,
-      "type": null
+      "type": null,
+      "maxWeight": null,
+      "maxVolume": null
     },
     {
       "email": "afrizalmaulanamuh@gmail.com",
       "name": "'DRY' Afrizal Driver",
       "plat": "Mobil Demo",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 10800,
+      "maxVolume": 40
     },
     {
       "email": "kendaraan.plck01@panganlestari.com",
       "name": "'FRZ' HAERUL ANWAR",
       "plat": "B 9588 FCC",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 5
     },
     {
       "email": "kendaraan.plck02@panganlestari.com",
       "name": "'FRZ' DIAN PRASETYA",
       "plat": "B 9598 FCC",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 5
     },
     {
       "email": "kendaraan.plck03@panganlestari.com",
       "name": "'FRZ' HENDRIK",
       "plat": "B 9953 FXU",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 5
     },
     {
       "email": "kendaraan.plck04@panganlestari.com",
       "name": "'FRZ' SUHENDAR",
       "plat": "B 9382 FCE",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 6
     },
     {
       "email": "kendaraan.plck05@panganlestari.com",
       "name": "'FRZ' AGUNG NUGROHO",
       "plat": "B 9384 FCE",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 5
     },
     {
       "email": "kendaraan.plck06@panganlestari.com",
       "name": "'FRZ' SANDY NUGRAHA",
       "plat": "B 9021 FCJ",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 6.5
     },
     {
       "email": "kendaraan.plck07@panganlestari.com",
       "name": "'FRZ' WALUYO",
       "plat": "B 9624 FCG",
-      "type": "FROZEN-FUSO-10000"
+      "type": "FROZEN-FUSO-10000",
+      "maxWeight": 10800,
+      "maxVolume": 32
     },
     {
       "email": "kendaraan.plck08@panganlestari.com",
       "name": "'FRZ' NGISOMUDIN",
       "plat": "B 9802 FXW",
-      "type": "FROZEN-CDE-LONG-2500"
+      "type": "FROZEN-CDE-LONG-2500",
+      "maxWeight": 2520,
+      "maxVolume": 9
     },
     {
       "email": "kendaraan.plck09@panganlestari.com",
       "name": "'FRZ' DADAN HIDAYAT",
       "plat": "B 9793 FXW",
-      "type": "FROZEN-KURNIA"
+      "type": "FROZEN-FUSO-10000",
+      "maxWeight": 2520,
+      "maxVolume": 9
     },
     {
       "email": "kendaraan.plck10@panganlestari.com",
       "name": "'FRZ' MAZHAR",
       "plat": "B 9170 FFX",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 7
     },
     {
       "email": "kendaraan.plck11@panganlestari.com",
       "name": "'FRZ' ANGGA FITRAH",
       "plat": "B 9171 FFX",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 7
     },
     {
       "email": "kendaraan.plck12@panganlestari.com",
       "name": "'FRZ' M. NUR IKHSAN",
       "plat": "B 9172 FFX",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 7
     },
     {
       "email": "kendaraan.plck13@panganlestari.com",
       "name": "'FRZ' AHDI",
       "plat": "B 9201 FFX",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2003,
+      "maxVolume": 7
     },
     {
       "email": "kendaraan.plck14@panganlestari.com",
       "name": "'DRY' YUNUS",
       "plat": "B 9402 FCA",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4800,
+      "maxVolume": 11.83896
     },
     {
       "email": "kendaraan.plck15@panganlestari.com",
       "name": "'DRY' ASEP MAULAHASUBHI",
       "plat": "B 9732 FCC",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4800,
+      "maxVolume": 12.051936
     },
     {
       "email": "kendaraan.plck16@panganlestari.com",
       "name": "'DRY' TARMIDI",
       "plat": "B 9508 FCI",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4800,
+      "maxVolume": 14.107545
     },
     {
       "email": "kendaraan.plck17@panganlestari.com",
       "name": "'DRY' SUWARDI",
       "plat": "B 9125 FFX",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4800,
+      "maxVolume": 11.41614
     },
     {
       "email": "kendaraan.plck18@panganlestari.com",
       "name": "'DRY' ARIYANTO",
       "plat": "B 9205 FCM",
-      "type": "DRY-CDD-LONG-5000"
+      "type": "DRY-CDD-LONG-5000",
+      "maxWeight": 4800,
+      "maxVolume": 16.1748576
     },
     {
       "email": "kendaraan.plck19@panganlestari.com",
       "name": "'DRY' AJIANTO",
       "plat": "B 9511 DO",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.549012
     },
     {
       "email": "kendaraan.plck20@panganlestari.com",
       "name": "'DRY' SISWANTO",
       "plat": "B 9565 FCB",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.549012
     },
     {
       "email": "kendaraan.plck21@panganlestari.com",
       "name": "'DRY' FIKRI AZIZ",
       "plat": "B 9723 FCB",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.549012
     },
     {
       "email": "kendaraan.plck22@panganlestari.com",
       "name": "'DRY' FAHMI ILYAS",
       "plat": "B 9177 FCC",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.47649
     },
     {
       "email": "kendaraan.plck23@panganlestari.com",
       "name": "'DRY' BUDI MULYANA",
       "plat": "B 9179 FCC",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.47649
     },
     {
       "email": "kendaraan.plck24@panganlestari.com",
       "name": "'DRY' NARSUN LAMPARD",
       "plat": "B 9464 FXU",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.47649
     },
     {
       "email": "kendaraan.plck25@panganlestari.com",
       "name": "'DRY' ASEP SAIPUL",
       "plat": "B 9587 FCC",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.47649
     },
     {
       "email": "kendaraan.plck26@panganlestari.com",
       "name": "'DRY' SAEFUL ANWAR",
       "plat": "B 9481 FCD",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.47649
     },
     {
       "email": "kendaraan.plck27@panganlestari.com",
       "name": "'DRY' DIAN ANDRIANA",
       "plat": "B 9845 FXX",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 8.322048
     },
     {
       "email": "kendaraan.plck28@panganlestari.com",
       "name": "'DRY' RAMA",
       "plat": "B 9846 FXX",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 8.322048
     },
     {
       "email": "kendaraan.plck29@panganlestari.com",
       "name": "'DRY' DEDE ISKANDAR",
       "plat": "B 9307 FCG",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.552816
     },
     {
       "email": "kendaraan.plck30@panganlestari.com",
       "name": "'DRY' WANDA",
       "plat": "B 9208 BCX",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.2207808
     },
     {
       "email": "kendaraan.plck31@panganlestari.com",
       "name": "'DRY' ONDRI YUNI",
       "plat": "B 9567 FXU",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.2207808
     },
     {
       "email": "kendaraan.plck32@panganlestari.com",
       "name": "'DRY' TANDRI RAHMAN",
       "plat": "B 9576 FXU",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.2207808
     },
     {
       "email": "kendaraan.plck33@panganlestari.com",
       "name": "'DRY' RICKI ADIANSYAH",
       "plat": "B 9243 FXW",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.2207808
     },
     {
       "email": "kendaraan.plck34@panganlestari.com",
       "name": "'DRY' ILHAM SAPUTRA",
       "plat": "B 9244 FXW",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.2207808
     },
     {
       "email": "kendaraan.plck35@panganlestari.com",
       "name": "'DRY' ASNEN",
       "plat": "B 9207 FCM",
-      "type": "DRY-FUSO-10000"
+      "type": "DRY-FUSO-10000",
+      "maxWeight": 10800,
+      "maxVolume": 32
     },
     {
       "email": "kendaraan.plck36@panganlestari.com",
       "name": "'DRY' SAEFUL",
       "plat": "B 9246 FXW",
-      "type": "DRY-L300-1500"
+      "type": "DRY-L300-1500",
+      "maxWeight": 1350,
+      "maxVolume": 5.957208
     },
     {
       "email": "kendaraan.pldm01@panganlestari.com",
       "name": "'DRY' ZAENURI",
       "plat": "B 9722 FCB - DM",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.48
     },
     {
       "email": "kendaraan.pldm02@panganlestari.com",
       "name": "'DRY' SAMSURI",
       "plat": "B 9181 FCC - DM",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.48
     },
     {
       "email": "kendaraan.pldm03@panganlestari.com",
       "name": "'DRY' BURHAN",
       "plat": "B 9733 FCC - DM",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4800,
+      "maxVolume": 12.05
     },
     {
       "email": "kendaraan.pldm04@panganlestari.com",
       "name": "'DRY' ABDULLAH",
       "plat": "B 9462 FXU - DM",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2700,
+      "maxVolume": 6.48
     },
     {
       "email": "kendaraan.pldm05@panganlestari.com",
       "name": "'DRY' SAIMAN",
       "plat": "B 9569 FXU - DM",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.22
     },
     {
       "email": "kendaraan.pldm06@panganlestari.com",
       "name": "'DRY' ROKHIM",
       "plat": "B 9574 FXU - DM",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.22
     },
     {
       "email": "kendaraan.plck37@panganlestari.com",
       "name": "'DRY' SEWA 1",
       "plat": "'DRY' SEWA 1 CDE",
-      "type": "DRY-CDE-2000"
+      "type": "DRY-CDE-2000",
+      "maxWeight": 2250,
+      "maxVolume": 4.38615
     },
     {
       "email": "kendaraan.plck38@panganlestari.com",
       "name": "'DRY' SEWA 2",
       "plat": "'DRY' SEWA 2 CDE LONG",
-      "type": "DRY-CDE-LONG-2500"
+      "type": "DRY-CDE-LONG-2500",
+      "maxWeight": 2700,
+      "maxVolume": 9.925722
     },
     {
       "email": "kendaraan.plck39@panganlestari.com",
       "name": "'DRY' SEWA 3",
       "plat": "'DRY' SEWA 3 CDD",
-      "type": "DRY-CDD-5000"
+      "type": "DRY-CDD-5000",
+      "maxWeight": 4801,
+      "maxVolume": 11.2266
     },
     {
       "email": "kendaraan.plck40@panganlestari.com",
       "name": "'DRY' SEWA 4",
       "plat": "'DRY' SEWA 4 CDD LONG",
-      "type": "DRY-CDD-LONG-5000"
+      "type": "DRY-CDD-LONG-5000",
+      "maxWeight": 5400,
+      "maxVolume": 16.1748576
     },
     {
       "email": "kendaraan.plck41@panganlestari.com",
       "name": "'DRY' SEWA 5",
       "plat": "'DRY' SEWA 5 FUSO",
-      "type": "DRY-FUSO-10000"
+      "type": "DRY-FUSO-10000",
+      "maxWeight": 12150,
+      "maxVolume": 37.38834
     },
     {
       "email": "kendaraan.plck42@panganlestari.com",
       "name": "'FRZ' SEWA 1",
       "plat": "'FROZEN' SEWA 1 CDE",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2250,
+      "maxVolume": 6
     },
     {
       "email": "kendaraan.plck43@panganlestari.com",
       "name": "'FRZ' SEWA 2",
       "plat": "'FROZEN' SEWA 2 CDE LONG",
-      "type": "FROZEN-CDE-2000"
+      "type": "FROZEN-CDE-2000",
+      "maxWeight": 2250,
+      "maxVolume": 4.38615
     },
     {
       "email": "kendaraan.plck44@panganlestari.com",
       "name": "'FRZ' SEWA 3",
       "plat": "'FROZEN' SEWA 3 CDD",
-      "type": "FROZEN-SUBUH"
+      "type": "FROZEN-SUBUH",
+      "maxWeight": 4801,
+      "maxVolume": 11.2266
     },
     {
       "email": "kendaraan.plck45@panganlestari.com",
       "name": "'FRZ' SEWA 4",
       "plat": "'FROZEN' SEWA 4 CDD LONG",
-      "type": "FROZEN-SOUR-SALLY"
+      "type": "FROZEN-SOUR-SALLY",
+      "maxWeight": 5400,
+      "maxVolume": 16.1748576
     },
     {
       "email": "kendaraan.plck46@panganlestari.com",
       "name": "'FRZ' SEWA 5",
       "plat": "'FROZEN' SEWA 5 FUSO",
-      "type": "FROZEN-FUSO-10000"
+      "type": "FROZEN-FUSO-10000",
+      "maxWeight": 10800,
+      "maxVolume": 37.38834
     }
   ],
   "allHubsList": [
@@ -465,10 +573,10 @@
       "Total": 13,
       "L300": 0,
       "CDE": 10,
-      "CDE-LONG": 2,
+      "CDE-LONG": 1,
       "CDD": 0,
       "CDD-LONG": 0,
-      "FUSO": 1,
+      "FUSO": 2,
       "FUSO-LONG": 0
     }
   },
@@ -486,7 +594,8 @@
         "KFC": "FUSO-LONG"
       },
       "B 9793 FXW": {
-        "KURNIA": "CDE-LONG"
+        "KURNIA": "CDE-LONG",
+        "SOUR": "CDE-LONG"
       },
       "'FROZEN' SEWA 3 CDD": {
         "KFC": "CDD",

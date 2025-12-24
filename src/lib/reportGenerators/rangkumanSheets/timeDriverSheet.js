@@ -1,12 +1,8 @@
 // File: lib/reportGenerators/rangkumanSheets/timeDriverSheet.js
+import { formatDateWIB, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { formatMinutesToHHMM } from '@/lib/utils';
-import { COLORS, BORDERS, BASE_STYLES, FILL_STYLES, FONT_STYLES } from './reportStyles';
+import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// ... (HELPER FUNCTIONS TETAP SAMA) ...
-function normalizeEmail(email) {
-  return email ? email.toLowerCase().trim() : '';
-}
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -16,28 +12,7 @@ function parseApiDateString(dateStr) {
   const d = new Date(isoStr);
   return isNaN(d.getTime()) ? null : d;
 }
-function getDateKeyWIB(dateObj) {
-  if (!dateObj) return null;
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .format(dateObj)
-    .split('/')
-    .reverse()
-    .join('-');
-}
-function formatHHMM_WIB(dateObj) {
-  if (!dateObj) return '-';
-  return dateObj.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Jakarta',
-  });
-}
+
 function calculateDuration(startObj, finishObj) {
   if (!startObj || !finishObj) return '-';
   let diffMs = finishObj.getTime() - startObj.getTime();
@@ -49,10 +24,11 @@ function calculateDuration(startObj, finishObj) {
   const m = (totalMinutes % 60).toString().padStart(2, '0');
   return `${h}:${m}`;
 }
+
 function getDayDifferenceWIB(startObj, finishObj) {
   if (!startObj || !finishObj) return 0;
-  const startDateWIB = getDateKeyWIB(startObj);
-  const finishDateWIB = getDateKeyWIB(finishObj);
+  const startDateWIB = formatDateWIB(startObj, 'YYYY-MM-DD');
+  const finishDateWIB = formatDateWIB(finishObj, 'YYYY-MM-DD');
   if (startDateWIB === finishDateWIB) return 0;
   const s = new Date(startDateWIB);
   const f = new Date(finishDateWIB);
@@ -89,7 +65,7 @@ export function calculateTimeDriverData(driverData, locationHistoryData, startDa
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
   while (currentIterDate <= endDateObj) {
-    const dateStr = getDateKeyWIB(currentIterDate);
+    const dateStr = formatDateWIB(currentIterDate, 'YYYY-MM-DD');
     const dayNum = currentIterDate.getDate();
     const monthName = currentIterDate.toLocaleDateString('en-GB', { month: 'long' });
     const yearShort = currentIterDate.toLocaleDateString('en-GB', { year: '2-digit' });
@@ -110,7 +86,7 @@ export function calculateTimeDriverData(driverData, locationHistoryData, startDa
       if (totalDistance <= 5) return;
       const startObj = parseApiDateString(item.startTime);
       const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
-      const dateKey = getDateKeyWIB(startObj);
+      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
       if (dateKey && dataMatrix[dateKey]) {
         const existingEntry = dataMatrix[dateKey][email];
         if (existingEntry) {
@@ -119,8 +95,8 @@ export function calculateTimeDriverData(driverData, locationHistoryData, startDa
             return;
           }
         }
-        const startStr = formatHHMM_WIB(startObj);
-        const finishStr = formatHHMM_WIB(finishObj);
+        const startStr = formatDateWIB(startObj, 'HH:mm');
+        const finishStr = formatDateWIB(finishObj, 'HH:mm');
         let durationStr = '-';
         let dayDiff = 0;
         if (startObj && finishObj) {

@@ -84,9 +84,8 @@ export default function BodyCard({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full min-h-[600px]">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full h-[600px]">
       {renderHeader()}
-
       <div className="flex-1 p-0 overflow-auto flex flex-col relative rounded-b-xl bg-white">
         {isLoading ? (
           <>
@@ -103,7 +102,7 @@ export default function BodyCard({
             <p>{emptyMessage}</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col h-full w-full overflow-hidden">{children}</div>
+          <div className="flex-1 flex flex-col min-h-full w-full">{children}</div>
         )}
       </div>
     </div>

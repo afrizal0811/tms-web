@@ -1,32 +1,15 @@
 'use client';
 
-import CustomDatePicker from '@/components/CustomDatePicker';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import DashboardDetailTab from '@/features/dashboard/components/DashboardDetailTab';
-import RoutingVsActualTab from '@/features/dashboard/components/RoutingVsActualTab';
-import SequenceAccuracyChart from '@/features/dashboard/components/SequenceAccuracyChart';
-import ServiceLevelChart from '@/features/dashboard/components/ServiceLevelChart';
+import CustomDatePicker from '@/components/CustomDatePicker';
+import DetailTab from '@/features/dashboard/tab/DetailTab';
+import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatToApiUtc, normalizeEmail } from '@/lib/utils';
+import { formatDateWIB, formatToApiUtc, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-const getWIBDateString = (utcTimestamp) => {
-  if (!utcTimestamp) return null;
-  try {
-    const date = new Date(utcTimestamp);
-    return date
-      .toLocaleString('en-GB', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-      .replace(/\//g, '-');
-  } catch (e) {
-    return null;
-  }
-};
+import DiagramTab from './tab/DiagramTab';
 
 function processOrderInfo(rawOrderId) {
   if (!rawOrderId || rawOrderId === 'N/A') {
@@ -45,52 +28,6 @@ function processOrderInfo(rawOrderId) {
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const ChartSkeleton = ({ title }) => (
-  <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[450px] flex flex-col animate-pulse">
-    <div className="mb-6">
-      <h3 className="text-lg font-bold text-slate-300">{title}</h3>
-      <div className="h-4 w-1/3 bg-slate-100 rounded mt-2" />
-    </div>
-    <div className="flex-1 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 text-sm">
-      Menyiapkan Grafik...
-    </div>
-  </div>
-);
-
-function DiagramTab({ yearlyTasks, hubId }) {
-  const [renderStep, setRenderStep] = useState(0);
-
-  useEffect(() => {
-    //eslint-disable-next-line
-    setRenderStep(0);
-    if (yearlyTasks && yearlyTasks.length > 0) {
-      const t1 = setTimeout(() => setRenderStep(1), 200);
-      const t2 = setTimeout(() => setRenderStep(2), 600);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    }
-  }, [yearlyTasks]);
-
-  return (
-    <div className="w-full flex-1 flex flex-col gap-6 pb-4 overflow-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {renderStep >= 1 ? (
-          <ServiceLevelChart allTasks={yearlyTasks} hubId={hubId} />
-        ) : (
-          <ChartSkeleton title="Service Level" />
-        )}
-        {renderStep >= 2 ? (
-          <SequenceAccuracyChart allTasks={yearlyTasks} />
-        ) : (
-          <ChartSkeleton title="Sequence Accuracy" />
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardSummary({ driverData }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -168,6 +105,23 @@ export default function DashboardSummary({ driverData }) {
     if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
   }, [isYearlyLoading]);
 
+  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
+    let attempt = 0;
+    while (true) {
+      try {
+        return await fn();
+      } catch (err) {
+        attempt++;
+        const status = err?.response?.status || err?.status || null;
+        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
+          throw err;
+        }
+        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
+        await wait(delay);
+      }
+    }
+  }, []);
+
   const fetchData = useCallback(async () => {
     if (selectedDate.getDay() === 0) {
       setLoading(false);
@@ -224,20 +178,24 @@ export default function DashboardSummary({ driverData }) {
       fetchStartTimeRef.current = Date.now();
 
       const [tasksData, resultsData] = await Promise.all([
-        getTasks({
-          status: 'DONE,ONGOING,UNASSIGNED',
-          hubId,
-          timeFrom,
-          timeTo,
-          timeBy: 'startTime',
-          limit: 1000,
-        }),
-        getResultsSummary({
-          dateFrom: timeFrom,
-          dateTo: timeTo,
-          limit: 500,
-          hubId: hubId,
-        }),
+        fetchWithRetry(() =>
+          getTasks({
+            status: 'DONE,ONGOING,UNASSIGNED',
+            hubId,
+            timeFrom,
+            timeTo,
+            timeBy: 'startTime',
+            limit: 1000,
+          })
+        ),
+        fetchWithRetry(() =>
+          getResultsSummary({
+            dateFrom: timeFrom,
+            dateTo: timeTo,
+            limit: 500,
+            hubId: hubId,
+          })
+        ),
       ]);
 
       setRawData({ tasks: tasksData || [], results: resultsData || [] });
@@ -328,8 +286,8 @@ export default function DashboardSummary({ driverData }) {
         else if (flow.includes('Pending GR')) flowPendingGR++;
 
         if (task.status === 'DONE' && task.startTime && task.doneTime) {
-          const startDateWIB = getWIBDateString(task.startTime);
-          const doneDateWIB = getWIBDateString(task.doneTime);
+          const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
+          const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
 
           if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
             const startDate = new Date(task.startTime);
@@ -379,80 +337,65 @@ export default function DashboardSummary({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [driverData, selectedDate]);
+  }, [driverData, selectedDate, fetchWithRetry]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
-    let attempt = 0;
-    while (true) {
-      try {
-        return await fn();
-      } catch (err) {
-        attempt++;
-        const status = err?.response?.status || err?.status || null;
-        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err;
-        }
-        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
-        await wait(delay);
+  const fetchYearlyData = useCallback(
+    async (hubId, year) => {
+      setIsYearlyLoading(true);
+      setYearlyTasks([]);
+
+      const monthlyRanges = [];
+      for (let i = 0; i < 12; i++) {
+        const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+
+        const localStart = new Date(year, i, 1, 0, 0, 0);
+        const localEnd = new Date(year, i, lastDayOfThisMonth, 23, 59, 59);
+
+        monthlyRanges.push({
+          start: formatToApiUtc(localStart),
+          end: formatToApiUtc(localEnd),
+        });
       }
-    }
-  }, []);
 
-  const fetchYearlyData = useCallback(async (hubId, year) => {
-    setIsYearlyLoading(true);
-    setYearlyTasks([]);
+      let allTasks = [];
+      try {
+        // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
+        const promises = monthlyRanges.map((range) =>
+          fetchWithRetry(() =>
+            getTasks({
+              hubId,
+              status: 'DONE',
+              timeFrom: range.start,
+              timeTo: range.end,
+              timeBy: 'startTime',
+              limit: 10000,
+            })
+          )
+        );
 
-    // 1. Generate 12 rentang waktu (Januari - Desember)
-    // Karena 1 bulan max 31 hari, ini aman dari limit API.
-    const monthlyRanges = [];
-    for (let i = 0; i < 12; i++) {
-      // Trik mendapatkan tanggal terakhir di bulan tersebut (28/29/30/31)
-      const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
+        const results = await Promise.all(promises);
 
-      const monthStr = String(i + 1).padStart(2, '0');
-      const lastDayStr = String(lastDayOfThisMonth).padStart(2, '0');
+        // 3. Gabungkan semua hasil
+        results.forEach((res) => {
+          if (Array.isArray(res)) allTasks = [...allTasks, ...res];
+          else if (res?.data) allTasks = [...allTasks, ...res.data];
+        });
 
-      monthlyRanges.push({
-        start: `${year}-${monthStr}-01 00:00:00`,
-        end: `${year}-${monthStr}-${lastDayStr} 23:59:59`,
-      });
-    }
-
-    let allTasks = [];
-    try {
-      // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
-      const promises = monthlyRanges.map((range) =>
-        getTasks({
-          hubId,
-          status: 'DONE',
-          timeFrom: range.start,
-          timeTo: range.end,
-          timeBy: 'startTime',
-          limit: 10000,
-        })
-      );
-
-      const results = await Promise.all(promises);
-
-      // 3. Gabungkan semua hasil
-      results.forEach((res) => {
-        if (Array.isArray(res)) allTasks = [...allTasks, ...res];
-        else if (res?.data) allTasks = [...allTasks, ...res.data];
-      });
-
-      setYearlyTasks(allTasks);
-      lastFetchedYear.current = year;
-      lastFetchedLocation.current = hubId;
-    } catch (err) {
-      console.error('Gagal ambil data tahunan', err);
-    } finally {
-      setIsYearlyLoading(false);
-    }
-  }, []);
+        setYearlyTasks(allTasks);
+        lastFetchedYear.current = year;
+        lastFetchedLocation.current = hubId;
+      } catch (err) {
+        toastError('Gagal ambil data tahunan', err);
+      } finally {
+        setIsYearlyLoading(false);
+      }
+    },
+    [fetchWithRetry]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -545,9 +488,7 @@ export default function DashboardSummary({ driverData }) {
         isEmpty={isCardEmpty}
       >
         <div className="flex-1 flex flex-col p-6 overflow-hidden">
-          {activeTab === 'Detail' && (
-            <DashboardDetailTab loading={loading} summaryData={summaryData} />
-          )}
+          {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
 
           {activeTab === 'RoutingVsActual' && (
             <RoutingVsActualTab
@@ -559,7 +500,12 @@ export default function DashboardSummary({ driverData }) {
           )}
 
           {activeTab === 'Diagram' && !isYearlyLoading && (
-            <DiagramTab yearlyTasks={yearlyTasks} hubId={currentHubId} />
+            <DiagramTab
+              yearlyTasks={yearlyTasks}
+              hubId={currentHubId}
+              driverData={driverData}
+              selectedDate={selectedDate}
+            />
           )}
         </div>
       </BodyCard>

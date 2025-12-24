@@ -33,6 +33,7 @@
 │       └── page.js
 ├── components
 │   ├── AppLayout.js
+│   ├── BaseModal.js
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
@@ -60,15 +61,24 @@
 ├── features
 │   ├── dashboard
 │   │   ├── components
-│   │   │   ├── DashboardDetailTab.js
-│   │   │   ├── RoutingVsActualTab.js
-│   │   │   ├── SequenceAccuracyChart.js
-│   │   │   └── ServiceLevelChart.js
+│   │   │   ├── chart
+│   │   │   │   ├── LoadCapacityChart.js
+│   │   │   │   ├── SequenceAccuracyChart.js
+│   │   │   │   └── ServiceLevelChart.js
+│   │   │   ├── ChartSkeleton.js
+│   │   │   ├── InfoCard.js
+│   │   │   └── MapViewSection.js
 │   │   ├── DashboardSummary.js
 │   │   ├── help.js
-│   │   └── modals
-│   │       ├── DailySequenceAccuracyModal.js
-│   │       └── DailyServiceLevelModal.js
+│   │   ├── modals
+│   │   │   ├── DailyLoadCapacityModal.js
+│   │   │   ├── DailySequenceAccuracyModal.js
+│   │   │   ├── DailyServiceLevelModal.js
+│   │   │   └── RoutingMapModal.js
+│   │   └── tab
+│   │       ├── DetailTab.js
+│   │       ├── DiagramTab.js
+│   │       └── RoutingVsActualTab.js
 │   ├── estimasiDelivery
 │   │   ├── components
 │   │   │   └── TableData.js
@@ -96,10 +106,11 @@
 │   │   └── SingleReportDownloader.js
 │   ├── updateLonglat
 │   │   ├── components
-│   │   │   ├── CustomerHistoryModal.js
 │   │   │   ├── UpdateLonglatTable.js
 │   │   │   └── UpdateMap.js
 │   │   ├── help.js
+│   │   ├── modal
+│   │   │   └── CustomerHistoryModal.js
 │   │   └── UpdateLonglatPage.js
 │   ├── userSelection
 │   │   └── UserSelectionGrid.js

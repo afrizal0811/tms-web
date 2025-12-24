@@ -1,5 +1,11 @@
 // File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
-import { formatDateUniversal, formatMinutesToHHMM, getUTC7DateString } from '@/lib/utils';
+import {
+  formatDateIndo,
+  formatDateUniversal,
+  formatDateWIB,
+  formatMinutesToHHMM,
+  getUTC7DateString,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
@@ -63,20 +69,8 @@ function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
-    const dateStr = d.toLocaleDateString('id-ID', {
-      timeZone: 'Asia/Jakarta',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    const timeStr = d
-      .toLocaleTimeString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-      .replace(/\./g, ':');
+    const dateStr = formatDateIndo(d);
+    const timeStr = formatDateWIB(d, 'HH:mm');
     return `${dateStr} ${timeStr}`;
   } catch {
     return '-';

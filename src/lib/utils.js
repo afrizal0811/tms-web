@@ -104,19 +104,13 @@ export function parseCustomerString(fullString) {
   if (!fullString || typeof fullString !== 'string') {
     return { name: '', id: null, location: null };
   }
-
   const parts = fullString.split(/\s+-\s+/);
-
   let id = parts.find((p) => /^C\d+/.test(p) && !p.includes(' '));
-
   if (!id && parts.length >= 2) {
     id = parts[1];
   }
-
   const location = parts.length > 2 ? parts[parts.length - 1] : null;
-
   const name = parts[0] && parts[0] !== id ? parts[0] : '';
-
   return { name, id, location };
 }
 
@@ -310,3 +304,57 @@ export const formatTimer = (seconds) => {
 
 // Memformat objek Date menjadi string format database (YYYY-MM-DD HH:mm:ss)
 export const formatToApiUtc = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
+
+// Mengubah input tanggal menjadi string sesuai pattern di zona waktu Asia/Jakarta.
+export function formatDateWIB(dateInput, pattern = 'YYYY-MM-DD') {
+  if (!dateInput) return '-';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '-';
+
+  // 1. Ambil bagian waktu spesifik Asia/Jakarta
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  // 2. Pecah menjadi object { year: '2025', month: '12', ... }
+  const parts = formatter.formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  // 3. Mapping pattern ke nilai
+  const map = {
+    YYYY: parts.year,
+    MM: parts.month,
+    DD: parts.day,
+    HH: parts.hour,
+    mm: parts.minute,
+    ss: parts.second,
+  };
+
+  // 4. Replace pattern
+  return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+}
+
+// Khusus untuk format teks panjang Indonesia (Contoh: "23 Desember 2025")
+// Ini jarang dipakai untuk logic, biasanya cuma untuk tampilan UI
+export function formatDateIndo(dateInput) {
+  if (!dateInput) return '-';
+  try {
+    return new Date(dateInput).toLocaleDateString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch (e) {
+    return '-';
+  }
+}

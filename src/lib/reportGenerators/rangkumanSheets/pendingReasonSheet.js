@@ -1,7 +1,7 @@
 // File: lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
+import { formatDateWIB, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
-
 // --- HELPER FUNCTIONS ---
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 function normalizeEmail(email) {
@@ -20,32 +20,13 @@ function formatSimpleTimeString(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return null;
   return timeStr.substring(0, 5);
 }
-function formatDateDDMMYYYY(dateObj) {
-  if (!dateObj) return '-';
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Jakarta',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-    .format(dateObj)
-    .split('/')
-    .join('-');
-}
-function formatTimeHHMM(dateObj) {
-  if (!dateObj) return null;
-  return dateObj.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Jakarta',
-  });
-}
+
 function getCustomerID(customerName) {
   if (!customerName) return '-';
   const match = customerName.match(/C0\d+/);
   return match ? match[0] : '-';
 }
+
 function getDriverStorageType(driver) {
   const typeStr = driver.type || '';
   const nameStr = driver.name || '';
@@ -125,13 +106,13 @@ export function calculatePendingReasonData(driverData, allTasks) {
           content: task.content,
           sortDateNum: sortDateNum,
           sortArrTimestamp: arrObj ? arrObj.getTime() : 9999999999999,
-          dateStr: formatDateDDMMYYYY(dateObj),
+          dateStr: formatDateWIB(dateObj, 'DD-MM-YYYY'),
           openStr: formatSimpleTimeString(task.openTime),
           closeStr: formatSimpleTimeString(task.closeTime),
           etaStr: formatSimpleTimeString(task.eta),
           etdStr: formatSimpleTimeString(task.etd || task.ETD),
-          arrStr: formatTimeHHMM(arrObj),
-          depStr: formatTimeHHMM(depObj),
+          arrStr: formatDateWIB(arrObj, 'HH:mm'),
+          depStr: formatDateWIB(depObj, 'HH:mm'),
           actualVisitMins: actualVisitMins,
         });
       }
@@ -215,7 +196,8 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     let pending = '';
     if (item.status === 'PENDING' || isWrongGR) pending = item.customerName;
     const pendingGR = item.status === 'PENDING GR' ? item.customerName : '';
-
+    const { id } = parseCustomerString(item.customerName);
+    
     const row = [
       item.flow || '-',
       item.dateStr,
@@ -236,7 +218,7 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
       item.depStr || '-',
       item.visitTime || '-',
       item.actualVisitMins,
-      getCustomerID(item.customerName),
+      id || '-',
       item.routePlannedOrder || '-',
       item.realSequence || '-',
       item.temp

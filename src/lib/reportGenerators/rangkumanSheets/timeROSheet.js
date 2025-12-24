@@ -1,29 +1,12 @@
+import { formatDateWIB } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { BASE_STYLES, HEADER_STYLES, COLORS } from './reportStyles';
-
-// ==========================
-// Helpers (sama dengan UI)
-// ==========================
-const formatTimeHHMM = (isoString) => {
-  if (!isoString) return '-';
-  try {
-    return new Date(isoString).toLocaleTimeString('id-ID', {
-      timeZone: 'Asia/Jakarta',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  } catch {
-    return '-';
-  }
-};
-
-const getDateKeyWIB = (dateObj) =>
-  dateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 
 const isSameDayWIB = (iso1, iso2) => {
   if (!iso1 || !iso2) return false;
-  return getDateKeyWIB(new Date(iso1)) === getDateKeyWIB(new Date(iso2));
+  return (
+    formatDateWIB(new Date(iso1), 'YYYY-MM-DD') === formatDateWIB(new Date(iso2), 'YYYY-MM-DD')
+  );
 };
 
 const createSafeDate = (dateStr) => {
@@ -40,17 +23,17 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
-  const lastDayKey = getDateKeyWIB(end);
+  const lastDayKey = formatDateWIB(end, 'YYYY-MM-DD');
   const nextDay = new Date(end);
   nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayKey = getDateKeyWIB(nextDay);
+  const nextDayKey = formatDateWIB(nextDay, 'YYYY-MM-DD');
 
   // =====================
   // Generate tanggal
   // =====================
   const current = new Date(start);
   while (current <= end) {
-    const key = getDateKeyWIB(current);
+    const key = formatDateWIB(current, 'YYYY-MM-DD');
     dataMap[key] = {
       dateDisplay: current.toLocaleDateString('id-ID', {
         day: 'numeric',
@@ -72,9 +55,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
       if (task.createdFrom !== 'API') return;
       if (!task.createdTime) return;
 
-      const taskDateKey = new Date(task.createdTime).toLocaleDateString('en-CA', {
-        timeZone: 'Asia/Jakarta',
-      });
+      const taskDateKey = formatDateWIB(task.createdTime, 'YYYY-MM-DD');
 
       const targetKey =
         taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
@@ -118,8 +99,8 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
         const validEnd = isSameDayWIB(row.minCreatedTime, row.minAssignedTime);
         excelData.push([
           row.dateDisplay,
-          formatTimeHHMM(row.minCreatedTime),
-          validEnd ? formatTimeHHMM(row.minAssignedTime) : '-',
+          formatDateWIB(row.minCreatedTime, 'HH:mm'),
+          validEnd ? formatDateWIB(row.minAssignedTime, 'HH:mm') : '-',
         ]);
       }
     });

@@ -5,16 +5,13 @@ export const downloadRoutingVsActual = (data) => {
     return;
   }
 
-  // 1. Sort Data: Driver A-Z, lalu Sequence 0-9
   const sortedData = [...data].sort((a, b) => {
     const driverA = a.driver || '';
     const driverB = b.driver || '';
 
-    // Sort by Driver Name
     if (driverA < driverB) return -1;
     if (driverA > driverB) return 1;
 
-    // Jika driver sama, Sort by Route Sequence
     return (a.routeSequence || 0) - (b.routeSequence || 0);
   });
 
@@ -53,18 +50,16 @@ export const downloadRoutingVsActual = (data) => {
     const isHubEnd = row.type === 'HUB_END';
     const isHub = isHubStart || isHubEnd;
 
-    // JIKA DRIVER BERUBAH (dan bukan baris pertama) -> Tambah Baris Kosong
     if (lastDriver !== null && currentDriver !== lastDriver) {
       sheetData.push(Array(16).fill(''));
     }
     lastDriver = currentDriver;
 
-    // --- MAPPING DATA ---
     const flow = isHub ? null : row.flow;
     const plat = isHub ? null : row.plat;
     const driver = isHub ? null : row.driver;
 
-    // Logika Customer: HUB
+
     let customer = row.customerName || '-';
     if (isHub) {
       customer = `HUB`;
@@ -205,4 +200,169 @@ export const downloadRoutingVsActual = (data) => {
   XLSX.utils.book_append_sheet(wb, ws, 'Routing vs Actual');
   const dateStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `Routing_vs_Actual_${dateStr}.xlsx`);
+};
+
+export const processLoadCapacityData = (tasks, driverData, year) => {
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
+  const driverMap = {};
+  if (Array.isArray(driverData)) {
+    driverData.forEach((d) => {
+      if (d.email) {
+        driverMap[d.email] = {
+          maxWeight: Math.abs(Number(d.maxWeight) || 0),
+          maxVolume: Math.abs(Number(d.maxVolume) || 0),
+          name: d.name,
+          plat: d.plat,
+        };
+      }
+    });
+  }
+
+  const monthlyData = months.map((m) => ({
+    name: m,
+    sangatRendah: 0,
+    rendah: 0,
+    optimal: 0,
+    penuh: 0,
+    overload: 0,
+    details: {},
+  }));
+
+  const taskList = Array.isArray(tasks) ? tasks : tasks?.data || [];
+  if (!taskList || taskList.length === 0) return monthlyData;
+  const trips = {};
+
+  taskList.forEach((task) => {
+    if (!task || !task.startTime) return;
+    const rawDate = new Date(task.startTime);
+    if (isNaN(rawDate)) return;
+
+    const wibOffset = 7 * 60 * 60 * 1000;
+    const wibDate = new Date(rawDate.getTime() + wibOffset);
+    if (wibDate.getUTCFullYear() !== year) return;
+
+    let driverEmail = task.assignedTo?.email;
+    if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
+      driverEmail = task.assignee[0];
+    }
+
+    if (!driverEmail) return;
+
+    const mapData = driverMap[driverEmail];
+    const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
+
+    if (vehiclePlat === 'Unknown') return;
+
+    const dateStr = wibDate.toISOString().split('T')[0];
+    const key = `${dateStr}_${driverEmail}`;
+
+    if (!trips[key]) {
+      const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
+
+      trips[key] = {
+        date: dateStr,
+        // Gunakan getUTCMonth karena wibDate sudah digeser
+        monthIndex: wibDate.getUTCMonth(),
+        email: driverEmail,
+        driverName: driverName,
+        vehicleName: vehiclePlat,
+        totalWeight: 0,
+        totalVolume: 0,
+        tasksCount: 0,
+      };
+    }
+
+    if (task.flow !== 'Pickup') {
+      trips[key].totalWeight += Math.abs(Number(task.weightKg || 0));
+      trips[key].totalVolume += Math.abs(Number(task.volumeCbm || 0));
+    }
+
+    trips[key].tasksCount += 1;
+  });
+
+  // 3. Kalkulasi Persentase
+  Object.values(trips).forEach((trip) => {
+    const specs = driverMap[trip.email];
+
+    const maxWeight = specs?.maxWeight && specs.maxWeight > 0 ? specs.maxWeight : 1;
+    const maxVolume = specs?.maxVolume && specs.maxVolume > 0 ? specs.maxVolume : 1;
+
+    const weightPct = (trip.totalWeight / maxWeight) * 100;
+    const volPct = (trip.totalVolume / maxVolume) * 100;
+
+    const maxPct = Math.max(weightPct, volPct);
+    const boundBy = weightPct >= volPct ? 'Weight' : 'Volume';
+
+    trip.maxPct = maxPct;
+    trip.weightPct = weightPct;
+    trip.volPct = volPct;
+    trip.maxWeight = maxWeight;
+    trip.maxVolume = maxVolume;
+    trip.boundBy = boundBy;
+    trip.isOverload = maxPct > 100;
+
+    const monthIdx = trip.monthIndex;
+
+    if (maxPct > 100) {
+      monthlyData[monthIdx].overload += 1;
+    } else if (maxPct >= 85) {
+      monthlyData[monthIdx].penuh += 1;
+    } else if (maxPct >= 60) {
+      monthlyData[monthIdx].optimal += 1;
+    } else if (maxPct >= 40) {
+      monthlyData[monthIdx].rendah += 1;
+    } else {
+      monthlyData[monthIdx].sangatRendah += 1;
+    }
+
+    const day = parseInt(trip.date.split('-')[2], 10);
+    if (!monthlyData[monthIdx].details[day]) {
+      monthlyData[monthIdx].details[day] = [];
+    }
+    monthlyData[monthIdx].details[day].push(trip);
+  });
+
+  return monthlyData;
+};
+
+export const getStatusBadge = (pct) => {
+  if (pct > 100)
+    return { label: 'OVERLOAD', classes: 'bg-red-50 text-red-600 border-red-200', range: '> 100%' };
+  if (pct >= 85)
+    return {
+      label: 'PENUH',
+      classes: 'bg-orange-50 text-orange-600 border-orange-200',
+      range: '85-100%',
+    };
+  if (pct >= 60)
+    return {
+      label: 'OPTIMAL',
+      classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      range: '60-85%',
+    };
+  if (pct >= 40)
+    return {
+      label: 'RENDAH',
+      classes: 'bg-blue-50 text-blue-600 border-blue-200',
+      range: '40-60%',
+    };
+  return {
+    label: 'SGT RENDAH',
+    classes: 'bg-slate-100 text-slate-600 border-slate-200',
+    range: '< 40%',
+  };
 };
