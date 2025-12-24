@@ -113,18 +113,17 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchDriverData() {
-      const storedDrivers = localStorage.getItem('driverData');
-      if (storedDrivers) {
-        setDriverData({ data: JSON.parse(storedDrivers) });
-        return;
-      }
+      setIsAnyLoading(true);
       try {
-        const data = await getOrFetchDriverData(selectedLocation);
+        const data = await getOrFetchDriverData(selectedLocation, true);
         setDriverData({ data: data });
       } catch (err) {
-        toastError(e.message);
+        toastError(err);
+      } finally {
+        setIsAnyLoading(false);
       }
     }
+
     if (selectedLocation) {
       fetchDriverData();
     }
