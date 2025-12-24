@@ -77,10 +77,12 @@ export const downloadRoutingVsActual = (data) => {
     const visitTime = isHub ? null : row.visitTime;
     const actVisit = isHub ? null : row.actualVisitTime;
 
-    const roSeq = isHub ? null : row.roSequence === 0 ? '-' : row.roSequence;
-    const realSeq = isHub ? null : row.realSequence === 0 ? '-' : row.realSequence;
-
+    const isRoSeqNull = row.roSequence === null || row.roSequence === 0;
+    const isRealSeqNull = row.realSequence === null || row.realSequence === 0;
+    const roSeq = isHub ? null : isRoSeqNull ? '-' : row.roSequence;
+    const realSeq = isHub ? null : isRealSeqNull ? '-' : row.realSequence;
     const isMatch = roSeq === realSeq;
+    const match = isHub ? null : isRealSeqNull ? '-' : isMatch ? 'SAMA' : 'BEDA';
 
     sheetData.push([
       flow,
@@ -98,7 +100,7 @@ export const downloadRoutingVsActual = (data) => {
       actVisit,
       roSeq,
       realSeq,
-      isHub ? null : isMatch ? 'SAMA' : 'BEDA',
+      match,
     ]);
   });
 

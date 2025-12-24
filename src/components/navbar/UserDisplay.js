@@ -1,5 +1,6 @@
 'use client';
 
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
 export default function UserDisplay() {
@@ -8,7 +9,7 @@ export default function UserDisplay() {
   useEffect(() => {
     // Membaca localStorage hanya di sisi client setelah komponen dimuat
     try {
-      const userStr = localStorage.getItem('selectedUser');
+      const { storedUser: userStr } = getLocalStorage();
       if (userStr) {
         const user = JSON.parse(userStr);
         //eslint-disable-next-line

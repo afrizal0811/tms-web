@@ -4,6 +4,8 @@
 import Spinner from '@/components/Spinner';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
+import { getLocalStorage } from '@/lib/localStorageHandler';
+
 export default function TaskSummaryTab({
   metrics,
   isLoading,
@@ -19,7 +21,7 @@ export default function TaskSummaryTab({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('masterTruck');
+        const { storedMasterTruck: stored } = getLocalStorage();
         if (stored) {
           //eslint-disable-next-line
           setMasterTruckData(JSON.parse(stored));

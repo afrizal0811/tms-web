@@ -2,6 +2,7 @@
 
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -25,9 +26,11 @@ export default function SessionGuard({ children }) {
     // 2. Jika kita di halaman LAIN (misal /laporan, /vehicles):
     // Cek localStorage.
     try {
-      const user = localStorage.getItem('selectedUser');
-      const location = localStorage.getItem('userLocation');
-      const locationName = localStorage.getItem('userLocationName');
+      const {
+        storedUser: user,
+        storedLocation: location,
+        storedLocationName: locationName,
+      } = getLocalStorage();
 
       // 3. Jika salah satu data penting tidak ada, redirect paksa.
       if (!user || !location || !locationName) {

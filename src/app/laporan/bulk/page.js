@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import BulkReportDownloader from '@/features/reportData/BulkReportDownloader';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
+import { useEffect, useState } from 'react';
 
 export default function LaporanBulkPage() {
   const [driverData, setDriverData] = useState([]);
@@ -16,7 +17,7 @@ export default function LaporanBulkPage() {
   useEffect(() => {
     async function loadDriverCache() {
       try {
-        const storedLocation = localStorage.getItem('userLocation');
+        const { storedLocation } = getLocalStorage();
         if (!storedLocation) {
           throw new Error('Lokasi tidak ditemukan, harap kembali ke Home.');
         }

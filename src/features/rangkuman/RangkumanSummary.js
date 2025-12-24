@@ -7,6 +7,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
   generateRangkumanDataPreview,
   generateRangkumanWorkbook,
@@ -66,15 +67,13 @@ export default function RangkumanSummary() {
   const [historyProgress, setHistoryProgress] = useState(0);
 
   useEffect(() => {
+    const { storedLocation, storedLocationName, storedMasterTruck } = getLocalStorage();
     if (typeof window !== 'undefined') {
-      const storedLocation = localStorage.getItem('userLocation');
-      const storedLocationName = localStorage.getItem('userLocationName');
       if (storedLocation) setSelectedLocation(storedLocation);
       if (storedLocationName) setSelectedLocationName(storedLocationName);
 
       try {
-        const storedMaster = localStorage.getItem('masterTruck');
-        if (storedMaster) setMasterTruckData(JSON.parse(storedMaster));
+        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMaster));
       } catch (e) {
         toastError(e);
       }

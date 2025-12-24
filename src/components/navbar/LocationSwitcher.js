@@ -1,13 +1,12 @@
 // File: features/location/LocationSwitcher.js
 'use client';
 
+import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
+import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { useEffect, useState } from 'react';
 import { toastError } from '../../lib/toastHelper';
 import LocationDropdown from '../LocationDropdown';
-
-// Hook & modal
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 
 export default function LocationSwitcher() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -23,11 +22,15 @@ export default function LocationSwitcher() {
     handleMappingCompleted,
   } = useVehicleTagCheck();
 
-  // Ambil user + allHubsList dari localStorage (hanya name & _id)
+  const {
+    storedUser: userStr,
+    storedLocationName: locationName,
+    storedHubs: allHubsStr,
+    storedLocation,
+  } = getLocalStorage();
+
   useEffect(() => {
     try {
-      const userStr = localStorage.getItem('selectedUser');
-      const locationName = localStorage.getItem('userLocationName');
       //eslint-disable-next-line
       if (locationName) setCurrentLocationName(locationName);
 
@@ -35,7 +38,6 @@ export default function LocationSwitcher() {
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
-        const allHubsStr = localStorage.getItem('allHubsList');
         if (allHubsStr) {
           try {
             const hubsRaw = JSON.parse(allHubsStr);
@@ -62,29 +64,21 @@ export default function LocationSwitcher() {
     } catch (e) {
       toastError('Gagal memuat data user/lokasi: ' + e.message);
     }
-  }, []);
+  }, [userStr, locationName, allHubsStr]);
 
-  // Handle location change:
-  //  - panggil triggerCheck(hubId, onSuccess)
-  //  - onSuccess: simpan userLocation & userLocationName di localStorage (sesuai permintaan)
   const handleLocationChange = (id, name) => {
     try {
       triggerCheck(id, () => {
-        // simpan perubahan di localStorage (hanya id & name)
-        localStorage.setItem('userLocation', id);
-        localStorage.setItem('userLocationName', name);
-        // opsi: jangan ubah allHubsList di sini — allHubsList tetap sumber kebenaran
-        // hapus driverData lama jika perlu (sesuai perilaku lama)
-        localStorage.removeItem('driverData');
-        // reload supaya app memakai lokasi baru
+        setLocalStorage('userLocation', id);
+        setLocalStorage('userLocationName', name);
+        removeLocalStorage('driverData');
         window.location.reload();
       });
     } catch (err) {
-      // fallback: apabila triggerCheck melempar error, tetap simpan agar user tidak terjebak
       toastError('triggerCheck error:', err);
-      localStorage.setItem('userLocation', id);
-      localStorage.setItem('userLocationName', name);
-      localStorage.removeItem('driverData');
+      setLocalStorage('userLocation', id);
+      setLocalStorage('userLocationName', name);
+      removeLocalStorage('driverData');
       window.location.reload();
     }
   };
@@ -105,7 +99,7 @@ export default function LocationSwitcher() {
         hubsToShow={allowedHubs} // hanya { _id, name }
         onChange={handleLocationChange}
         showPlaceholder={false}
-        value={localStorage.getItem('userLocation') || ''}
+        value={storedLocation || ''}
       />
 
       {/* Modal mapping jika hook meminta mapping.

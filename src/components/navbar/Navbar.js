@@ -2,6 +2,7 @@
 'use client';
 
 import { ROLE_ID } from '@/lib/constants';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -53,7 +54,7 @@ export default function Navbar() {
     if (typeof window === 'undefined') return false;
 
     try {
-      const raw = localStorage.getItem('selectedUser');
+      const { storedUser: raw } = getLocalStorage();
       if (!raw) return false;
 
       const user = JSON.parse(raw);
@@ -62,6 +63,7 @@ export default function Navbar() {
       return false;
     }
   });
+
   useEffect(() => {
     // close mobile menu on route change
     //eslint-disable-next-line
@@ -112,7 +114,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
             {/* Laporan as a non-clickable parent (category) - Option A */}
             <div ref={laporanRef} className="relative">
-              {/* header label - NOT a navigation link to page, only toggles dropdown on click */}
+              {/* header label */}
               <button
                 type="button"
                 aria-expanded={isLaporanOpen}
@@ -125,7 +127,7 @@ export default function Navbar() {
               >
                 <span>Laporan</span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${isLaporanOpen ? 'rotate-180' : 'rotate-0'}`}
+                  className={`w-4 h-4 transition-transform duration-200 ${isLaporanOpen ? 'rotate-180' : 'rotate-0'}`}
                   viewBox="0 0 20 20"
                   fill="none"
                   stroke="currentColor"
@@ -139,27 +141,29 @@ export default function Navbar() {
                 </svg>
               </button>
 
-              {/* dropdown (opens only by click toggle) */}
-              {isLaporanOpen && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                  <div className="py-1">
-                    <Link
-                      href="/laporan"
-                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-                      onClick={() => setIsLaporanOpen(false)}
-                    >
-                      Laporan Harian
-                    </Link>
-                    <Link
-                      href="/laporan/bulk"
-                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-                      onClick={() => setIsLaporanOpen(false)}
-                    >
-                      Laporan Periode
-                    </Link>
-                  </div>
+              {/* dropdown desktop */}
+              <div
+                className={`absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden transition-all duration-200 origin-top ${
+                  isLaporanOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'
+                }`}
+              >
+                <div className="py-1">
+                  <Link
+                    href="/laporan"
+                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                    onClick={() => setIsLaporanOpen(false)}
+                  >
+                    Laporan Harian
+                  </Link>
+                  <Link
+                    href="/laporan/bulk"
+                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
+                    onClick={() => setIsLaporanOpen(false)}
+                  >
+                    Laporan Periode
+                  </Link>
                 </div>
-              )}
+              </div>
             </div>
             {isSuperadmin && <NavLink href="/rangkuman">Rangkuman</NavLink>}
             <NavLink href="/update-longlat">
@@ -185,81 +189,87 @@ export default function Navbar() {
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
-            className="p-2 rounded-md text-slate-700 hover:bg-gray-100 cursor-pointer"
+            className="p-2 rounded-md text-slate-700 hover:bg-gray-100 cursor-pointer transition-colors duration-200"
           >
-            {isMobileMenuOpen ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
-              </svg>
-            )}
+            <div
+              className={`transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-90' : 'rotate-0'}`}
+            >
+              {isMobileMenuOpen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                  />
+                </svg>
+              )}
+            </div>
           </button>
         </div>
       </div>
 
-      {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
-          <div className="flex flex-col pt-2 pb-4 space-y-1">
-            <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
-            <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
-            {isSuperadmin && <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>}
-            <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
-            <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
-            <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
+      <div
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="flex flex-col pt-2 pb-4 space-y-1">
+          <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
+          <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
+          {isSuperadmin && <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>}
+          <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
+          <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
+          <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
 
-            <div className="pt-2 pb-1 px-3">
-              <div className="border-t border-gray-200"></div>
-            </div>
-            <a
-              href={plannerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-            >
-              Panduan - Planner
-            </a>
-            <a
-              href={driverUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-            >
-              Panduan - Driver
-            </a>
+          <div className="pt-2 pb-1 px-3">
+            <div className="border-t border-gray-200"></div>
+          </div>
+          <a
+            href={plannerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+          >
+            Panduan - Planner
+          </a>
+          <a
+            href={driverUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+          >
+            Panduan - Driver
+          </a>
 
-            <div className="pt-2 pb-1 px-3">
-              <div className="border-t border-gray-200"></div>
-            </div>
-            <div className="p-3">
-              <UserDisplay />
-            </div>
-            <div className="p-3 pt-0">
-              <LocationSwitcher />
-            </div>
+          <div className="pt-2 pb-1 px-3">
+            <div className="border-t border-gray-200"></div>
+          </div>
+          <div className="p-3">
+            <UserDisplay />
+          </div>
+          <div className="p-3 pt-0">
+            <LocationSwitcher />
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 }

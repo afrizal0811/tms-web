@@ -363,7 +363,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
               const isMatch = row.roSequence == row.realSequence;
               const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
-
+              const realSeq = row.realSequence ?? '-';
+              const realSeqEmpty = realSeq === '-'
+              const match = realSeqEmpty ? '-' : isMatch ? 'SAMA' : 'BEDA';
+              
               const cellContent = (
                 <>
                   <td className="px-4 py-2">{row.flow}</td>
@@ -388,13 +391,13 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                   <td className="px-4 py-2 text-center font-semibold">
                     {row.roSequence === 0 ? '-' : row.roSequence}
                   </td>
-                  <td className="px-4 py-2 text-center font-semibold">{row.realSequence ?? '-'}</td>
+                  <td className="px-4 py-2 text-center font-semibold">{realSeq}</td>
                   <td
                     className={`px-4 py-2 text-center font-bold ${
                       isMatch ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
-                    {isMatch ? 'SAMA' : 'BEDA'}
+                    {match}
                   </td>
                 </>
               );

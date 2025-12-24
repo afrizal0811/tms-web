@@ -6,6 +6,7 @@ import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isDateSunday, parseCustomerString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { getResultsSummary } from '../../lib/apiService';
@@ -58,7 +59,7 @@ export default function EstimasiDelivery() {
       setAllRoutes([]);
       setActiveVehicleId(null);
       try {
-        const userLocation = localStorage.getItem('userLocation');
+        const { storedLocation: userLocation } = getLocalStorage();
         if (!userLocation) {
           throw new Error('userLocation tidak ditemukan di localStorage.');
         }

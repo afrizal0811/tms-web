@@ -1,3 +1,4 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { formatDateUniversal, isDateSunday } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -59,8 +60,7 @@ export const bulkDownloader = async ({
   try {
     const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');
     const originalEndDateString = formatDateUniversal(endDate, 'DD.MM.YYYY');
-    const hubId = localStorage.getItem('userLocation');
-    const hubName = localStorage.getItem('userLocationName') || 'Lokasi';
+    const { storedLocation: hubId, storedLocationName: hubName } = getLocalStorage();
 
     if (!hubId) throw new Error('Data Hub tidak valid (ID Lokasi tidak ditemukan).');
 

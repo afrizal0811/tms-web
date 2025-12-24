@@ -1,5 +1,6 @@
 import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID, TAG_MAP_KEY, VEHICLE_TYPES } from './constants';
+import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
 
 const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
@@ -93,7 +94,7 @@ const updateMasterTruckStorage = (drivers, hubId) => {
   });
 
   // 4. Simpan ke Local Storage
-  localStorage.setItem('masterTruck', JSON.stringify(masterData));
+  setLocalStorage('masterTruck', JSON.stringify(masterData));
 };
 
 // --- FUNGSI BARU: CEK KENDARAAN BELUM TER-MAPPING (Untuk Login) ---
@@ -160,28 +161,27 @@ export async function checkUnmappedVehicles(hubId) {
 /**
  * Fungsi Utama: Ambil Data Driver (Cache/API)
  */
-export async function getOrFetchDriverData(selectedLocation) {
+export async function getOrFetchDriverData(selectedLocation, forceRefresh = false) {
   if (!selectedLocation) {
     throw new Error('Lokasi Hub tidak ditemukan.');
   }
 
-  // 1. Cek localStorage (Cache)
-  try {
-    const storedDrivers = localStorage.getItem('driverData');
-    if (storedDrivers) {
-      const parsed = JSON.parse(storedDrivers);
-
-      // Tetap update Master Truck saat load dari cache agar data selalu segar
-      updateMasterTruckStorage(parsed, selectedLocation);
-
-      return parsed;
+  if (!forceRefresh) {
+    try {
+      const { storedDrivers: storedDrivers } = getLocalStorage();
+      if (storedDrivers) {
+        const parsed = JSON.parse(storedDrivers);
+        // Tetap update Master Truck saat load dari cache
+        updateMasterTruckStorage(parsed, selectedLocation);
+        return parsed;
+      }
+    } catch (e) {
+      toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
     }
-  } catch (e) {
-    toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
   }
 
   try {
-    // 2. Fetch API Baru
+    // 2. Fetch API Baru (Logika tetap sama seperti sebelumnya)
     const rolesToFetch = [ROLE_ID.driver, ROLE_ID.driverJkt];
 
     const driverPromises = rolesToFetch.map((roleId) =>
@@ -194,6 +194,7 @@ export async function getOrFetchDriverData(selectedLocation) {
       vehiclePromise,
     ]);
 
+    // ... (Proses merging data driver dan vehicle tetap sama) ...
     // Proses Driver
     const rawDrivers = driverResponses.flat();
     const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
@@ -230,8 +231,8 @@ export async function getOrFetchDriverData(selectedLocation) {
       };
     });
 
-    // Simpan
-    localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+    // Simpan ke localStorage (Override data lama)
+    setLocalStorage('driverData', JSON.stringify(mergedDriverData));
 
     // Update Master Truck
     updateMasterTruckStorage(mergedDriverData, selectedLocation);
