@@ -1,5 +1,6 @@
 import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID, TAG_MAP_KEY, VEHICLE_TYPES } from './constants';
+import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
 
 const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
@@ -93,7 +94,7 @@ const updateMasterTruckStorage = (drivers, hubId) => {
   });
 
   // 4. Simpan ke Local Storage
-  localStorage.setItem('masterTruck', JSON.stringify(masterData));
+  setLocalStorage('masterTruck', JSON.stringify(masterData));
 };
 
 // --- FUNGSI BARU: CEK KENDARAAN BELUM TER-MAPPING (Untuk Login) ---
@@ -167,7 +168,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
 
   if (!forceRefresh) {
     try {
-      const storedDrivers = localStorage.getItem('driverData');
+      const { storedDrivers: storedDrivers } = getLocalStorage();
       if (storedDrivers) {
         const parsed = JSON.parse(storedDrivers);
         // Tetap update Master Truck saat load dari cache
@@ -231,7 +232,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
     });
 
     // Simpan ke localStorage (Override data lama)
-    localStorage.setItem('driverData', JSON.stringify(mergedDriverData));
+    setLocalStorage('driverData', JSON.stringify(mergedDriverData));
 
     // Update Master Truck
     updateMasterTruckStorage(mergedDriverData, selectedLocation);

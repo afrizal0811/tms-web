@@ -5,6 +5,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -62,7 +63,7 @@ export default function BulkReportDownloader({ driverData }) {
 
   const handleBulkRoutingSummary = () => {
     const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
-    const hubIdLocal = localStorage.getItem('userLocation');
+    const { storedLocation: hubIdLocal } = getLocalStorage();
     const hubTagMap = fullTagMap[hubIdLocal] || {};
 
     bulkDownloader({

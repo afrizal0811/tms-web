@@ -5,6 +5,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import SingleReportDownloader from '@/features/reportData/SingleReportDownloader';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper'; // Pastikan path ini benar
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -32,9 +33,7 @@ export default function LaporanPage() {
     async function loadLaporanData() {
       try {
         // 1. Ambil data sesi
-        const storedUser = localStorage.getItem('selectedUser');
-        const storedLocation = localStorage.getItem('userLocation');
-        const storedLocationName = localStorage.getItem('userLocationName');
+        const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
 
         // 2. Cek data sesi dasar
         if (!storedUser || !storedLocation || !storedLocationName) {

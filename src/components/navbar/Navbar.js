@@ -2,6 +2,7 @@
 'use client';
 
 import { ROLE_ID } from '@/lib/constants';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -53,7 +54,7 @@ export default function Navbar() {
     if (typeof window === 'undefined') return false;
 
     try {
-      const raw = localStorage.getItem('selectedUser');
+      const { storedUser: raw } = getLocalStorage();
       if (!raw) return false;
 
       const user = JSON.parse(raw);

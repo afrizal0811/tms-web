@@ -1,3 +1,4 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
@@ -65,7 +66,7 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading 
       toastError('Tidak ada data untuk diunduh.');
       return;
     } else {
-      const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
+      const { storedLocationName: locationName } = getLocalStorage() || '-';
       const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
       toastSuccess('File Estimasi Delivery berhasil diunduh!');

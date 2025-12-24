@@ -8,6 +8,7 @@ import Spinner from '@/components/Spinner';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserSelectionGrid from '@/features/userSelection/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
+import { getLocalStorage, setLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { useEffect, useState } from 'react';
 import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
@@ -54,7 +55,7 @@ export default function Home() {
           }));
 
         setAllHubsList(processedHubs);
-        localStorage.setItem('allHubsList', JSON.stringify(processedHubs));
+        setLocalStorage('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
         // toastError sudah di-handle oleh apiService
         setPageError(e.message);
@@ -64,10 +65,7 @@ export default function Home() {
 
       // --- LOGIKA SISA (sekarang bisa akses 'processedHubs') ---
       try {
-        const storedLocation = localStorage.getItem('userLocation');
-        const storedLocationName = localStorage.getItem('userLocationName');
-        const storedUser = localStorage.getItem('selectedUser');
-        const storedDrivers = localStorage.getItem('driverData');
+        const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
 
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -88,8 +86,8 @@ export default function Home() {
               setTempSelectedLocation(storedLocation);
               setTempSelectedLocationName(storedLocationName);
             } else {
-              localStorage.removeItem('userLocation');
-              localStorage.removeItem('userLocationName');
+              removeLocalStorage('userLocation');
+              removeLocalStorage('userLocationName');
             }
           }
         } else {
@@ -140,46 +138,31 @@ export default function Home() {
       return;
     }
     if (!selectedUser) {
-      localStorage.removeItem('selectedUser');
+      removeLocalStorage('selectedUser');
       setSelectedUser(null);
     }
-    localStorage.removeItem('driverData');
+    removeLocalStorage('driverData');
     setDriverData({ data: [] });
-    localStorage.setItem('userLocation', tempSelectedLocation);
-    localStorage.setItem('userLocationName', tempSelectedLocationName);
+    setLocalStorage('userLocation', tempSelectedLocation);
+    setLocalStorage('userLocationName', tempSelectedLocationName);
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
   const handleUserSelect = (user) => {
-    localStorage.setItem('selectedUser', JSON.stringify(user));
+    setLocalStorage('selectedUser', JSON.stringify(user));
     setSelectedUser(user);
   };
   const handleResetAll = () => {
-    localStorage.removeItem('userLocation');
-    localStorage.removeItem('userLocationName');
-    localStorage.removeItem('selectedUser');
-    localStorage.removeItem('driverData');
+    removeLocalStorage('userLocation');
+    removeLocalStorage('userLocationName');
+    removeLocalStorage('selectedUser');
+    removeLocalStorage('driverData');
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');
     setDriverData({ data: [] });
     setCurrentHubListView(allHubsList);
   };
-  const handleResetLocation = () => {
-    localStorage.removeItem('userLocation');
-    localStorage.removeItem('userLocationName');
-    localStorage.removeItem('driverData');
-    setSelectedLocation('');
-    setSelectedLocationName('');
-    setDriverData({ data: [] });
-    const allowed = allHubsList.filter((h) => selectedUser.hubId.includes(h._id));
-    const allowedWithNames = allowed.map((hub) => ({
-      _id: hub._id,
-      name: hub.name ? hub.name : hub._id,
-    }));
-    setCurrentHubListView(allowedWithNames);
-  };
-
   // --- TAMPILAN (RENDER) ---
 
   if (isPageLoading || allHubsList === null) {

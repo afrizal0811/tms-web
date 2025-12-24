@@ -7,6 +7,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import { getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
@@ -29,7 +30,7 @@ export default function UpdateLonglatPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const driverMapRef = useRef(new Map());
-  const hubName = localStorage.getItem('userLocationName');
+  const { storedLocationName: hubName } = getLocalStorage();
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -104,7 +105,7 @@ export default function UpdateLonglatPage() {
 
     try {
       if (typeof window === 'undefined') return;
-      const hubId = localStorage.getItem('userLocation');
+      const { storedLocation: hubId } = getLocalStorage();
       if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
 
       // 1. Ambil Data Driver

@@ -1,3 +1,4 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
@@ -101,7 +102,7 @@ export const handleConfirmDownload = ({
     if (wb.SheetNames.length === 0) {
       toastError('Pilih setidaknya satu sheet untuk diunduh.');
     } else {
-      const locationName = localStorage.getItem('userLocationName') || 'Lokasi_Tidak_Ditemukan';
+      const { storedLocationName: locationName } = getLocalStorage() || '-';
       const fileName = `Data Kendaraan - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
       toastSuccess('File Data Kendaraan berhasil diunduh!');

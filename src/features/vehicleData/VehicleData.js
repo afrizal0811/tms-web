@@ -6,6 +6,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
@@ -65,7 +66,8 @@ export default function VehicleData() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const userLocation = localStorage.getItem('userLocation');
+        const { storedLocation: userLocation, storedVehicleTag: storedMapString } =
+          getLocalStorage();
         if (!userLocation) {
           throw new Error('Lokasi user tidak ditemukan. Harap kembali ke Halaman Utama.');
         }
@@ -99,7 +101,6 @@ export default function VehicleData() {
         }));
 
         try {
-          const storedMapString = localStorage.getItem('vehicleTagMap');
           if (storedMapString) {
             const tagMap = JSON.parse(storedMapString);
             const hubMap = tagMap[userLocation];

@@ -6,6 +6,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatDateWIB, formatToApiUtc, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -51,6 +52,7 @@ export default function DashboardSummary({ driverData }) {
     RoutingVsActual: false,
   });
 
+  const { storedLocation: hubId } = getLocalStorage();
   const handleDateChange = (date) => {
     if (!date) return;
 
@@ -162,7 +164,6 @@ export default function DashboardSummary({ driverData }) {
     try {
       if (typeof window === 'undefined') return;
 
-      const hubId = localStorage.getItem('userLocation');
       if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
 
       const localStart = new Date(selectedDate);
@@ -337,7 +338,7 @@ export default function DashboardSummary({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [driverData, selectedDate, fetchWithRetry]);
+  }, [driverData, selectedDate, fetchWithRetry, hubId]);
 
   useEffect(() => {
     fetchData();
@@ -401,7 +402,6 @@ export default function DashboardSummary({ driverData }) {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
 
-    const hubId = localStorage.getItem('userLocation');
     if (!hubId) return;
 
     const year = selectedDate.getFullYear();
@@ -428,11 +428,11 @@ export default function DashboardSummary({ driverData }) {
     fetchYearlyData(hubId, year, cacheKey).finally(() => {
       inFlightYearFetchKey.current = null;
     });
-  }, [selectedDate, activeTab, fetchYearlyData]);
+  }, [selectedDate, activeTab, fetchYearlyData, hubId]);
 
   const isDiagramTab = activeTab === 'Diagram';
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
-  const currentHubId = typeof window !== 'undefined' ? localStorage.getItem('userLocation') : null;
+  const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
   const isDailyEmpty = !loading && (!rawData.tasks || rawData.tasks.length === 0);
   const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || yearlyTasks.length === 0);
