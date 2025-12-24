@@ -12,7 +12,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError } from '../../lib/toastHelper';
-import Pagination from './components/Pagination';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';
@@ -23,8 +22,6 @@ export default function VehicleData() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
@@ -214,22 +211,8 @@ export default function VehicleData() {
     });
   }, [sourceData, searchQuery, driverMap]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, activeTab]);
-
-  const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(value === 'all' ? 'all' : Number(value));
-    setCurrentPage(1);
-  };
 
   const totalItems = filteredData.length;
-  const paginatedData = useMemo(() => {
-    if (itemsPerPage === 'all') {
-      return filteredData;
-    }
-    return filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  }, [filteredData, currentPage, itemsPerPage]);
 
   const searchBar = (
     <SearchBar
@@ -332,33 +315,22 @@ export default function VehicleData() {
         loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
       >
-        <div className="flex-1 flex flex-col justify-between overflow-hidden m-6 border border-gray-300 rounded-xl">
+        <div className="flex-1 flex flex-col m-6 border border-gray-300 rounded-xl overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
-            // Kirim searchQuery ke komponen tab
             <VehicleTab
-              paginatedData={paginatedData}
+              paginatedData={filteredData} 
               driverMap={driverMap}
               searchQuery={searchQuery}
             />
           )}
           {activeTab === 'template' && (
-            // Kirim searchQuery ke komponen tab
             <TemplateTab
-              paginatedData={paginatedData}
+              paginatedData={filteredData}
               driverMap={driverMap}
               searchQuery={searchQuery}
             />
           )}
 
-          <div className="border-t border-gray-200 bg-white z-20 shrink-0">
-            <Pagination
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </div>
         </div>
       </BodyCard>
     </div>
