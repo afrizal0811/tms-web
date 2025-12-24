@@ -2,20 +2,20 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
+import ErrorPage from '@/components/ErrorPage';
 import LocationDropdown from '@/components/LocationDropdown';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserSelectionGrid from '@/features/userSelection/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
-import { getLocalStorage, setLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { useEffect, useState } from 'react';
 import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
 import { toastError } from '../lib/toastHelper';
 
 export default function Home() {
-  // === STATE UNTUK DATA ===
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
@@ -23,31 +23,20 @@ export default function Home() {
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [driverData, setDriverData] = useState({ data: [] });
 
-  // === STATE UNTUK KONTROL ===
   const [isPageLoading, setIsLoading] = useState(true); // Ini status loading awal
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
-  // State Kontrol UI dari TmsSummary
-  const [isAnyLoading, setIsAnyLoading] = useState(false);
-  const [isMapping, setIsMapping] = useState(false);
-
-  // ... (useEffect initializeApp dan fetchDriverData tetap SAMA) ...
   useEffect(() => {
     async function initializeApp() {
       setIsLoading(true);
       setPageError(null);
-
-      // --- PERBAIKAN: Deklarasikan 'processedHubs' di sini ---
       let processedHubs = [];
-      // ---------------------------------------------------
-
       try {
-        // 1. Ambil data hubs
         const hubs = await getHubs();
 
-        processedHubs = hubs // <-- Assign nilai, jangan deklarasi ulang
+        processedHubs = hubs
           .filter((hub) => hub.name !== 'Hub Demo')
           .map((hub) => ({
             ...hub,
@@ -57,13 +46,10 @@ export default function Home() {
         setAllHubsList(processedHubs);
         setLocalStorage('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
-        // toastError sudah di-handle oleh apiService
         setPageError(e.message);
         setIsLoading(false);
-        return; // Hentikan eksekusi jika hubs gagal dimuat
+        return;
       }
-
-      // --- LOGIKA SISA (sekarang bisa akses 'processedHubs') ---
       try {
         const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
 
@@ -71,8 +57,6 @@ export default function Home() {
           const user = JSON.parse(storedUser);
           setSelectedUser(user);
           const userHubIds = user.hubId || [];
-
-          // 'processedHubs' sekarang bisa diakses di sini
           const allowed =
             userHubIds.length > 1
               ? processedHubs.filter((h) => userHubIds.includes(h._id))
@@ -91,7 +75,6 @@ export default function Home() {
             }
           }
         } else {
-          // 'processedHubs' juga bisa diakses di sini
           setCurrentHubListView(processedHubs);
         }
 
@@ -99,7 +82,6 @@ export default function Home() {
           setDriverData({ data: JSON.parse(storedDrivers) });
         }
       } catch (e) {
-        // Tangani error jika JSON.parse atau localStorage gagal
         setPageError(e.message);
         toastError(e.message);
       } finally {
@@ -111,14 +93,11 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchDriverData() {
-      setIsAnyLoading(true);
       try {
         const data = await getOrFetchDriverData(selectedLocation, true);
         setDriverData({ data: data });
       } catch (err) {
         toastError(err);
-      } finally {
-        setIsAnyLoading(false);
       }
     }
 
@@ -127,7 +106,6 @@ export default function Home() {
     }
   }, [selectedLocation]);
 
-  // ... (handleLocationChange, handleSaveLocation, handleUserSelect, handleResetAll, handleResetLocation tetap SAMA) ...
   const handleLocationChange = (id, name) => {
     setTempSelectedLocation(id);
     setTempSelectedLocationName(name);
@@ -163,7 +141,6 @@ export default function Home() {
     setDriverData({ data: [] });
     setCurrentHubListView(allHubsList);
   };
-  // --- TAMPILAN (RENDER) ---
 
   if (isPageLoading || allHubsList === null) {
     return (
@@ -174,28 +151,12 @@ export default function Home() {
   }
 
   if (pageError) {
-    return (
-      <SelectionLayout>
-        <div className="text-center">
-          <p className="text-xl text-red-500">Gagal Memuat Aplikasi</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700"
-          >
-            Refresh Halaman
-          </button>
-        </div>
-      </SelectionLayout>
-    );
+    <ErrorPage />;
   }
 
-  // Alur Render BARU (Poin 1)
-
-  // 1. Jika LOKASI belum dipilih -> Tampilkan Layout Seleksi (Tanpa Navbar)
   if (!selectedLocation) {
     return (
       <SelectionLayout>
-        {/* --- TAMBAHKAN 'w-full' DI SINI --- */}
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold">SELAMAT DATANG!</h1>
           <h2 className="text-xl mt-2 text-gray-500">Silakan pilih lokasi cabang</h2>
@@ -219,7 +180,6 @@ export default function Home() {
     );
   }
 
-  // 2. Jika LOKASI ada, tapi USER belum -> Tampilkan Layout Seleksi (Tanpa Navbar)
   if (selectedLocation && !selectedUser) {
     return (
       <SelectionLayout>
