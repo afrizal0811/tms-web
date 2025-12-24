@@ -217,10 +217,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             resolveDisplayName={resolveDisplayName}
           />
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white text-slate-600 px-3 py-1 rounded-full shadow-md border border-gray-200 text-[10px] font-bold pointer-events-none uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Map Sync Active
-          </div>
         </>
       ) : (
         <div className="h-full flex items-center justify-center text-gray-500">
