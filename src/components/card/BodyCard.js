@@ -4,7 +4,7 @@
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { formatTimer } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 const LoadingState = ({ elapsed, text }) => (
   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 space-y-4 animate-in fade-in duration-200">
@@ -27,11 +27,93 @@ export default function BodyCard({
   onTabClick,
   customHeader = null,
   longLoadingContent = null,
-  timerStartTime = null, // <--- 1. TERIMA PROP BARU
+  timerStartTime = null,
 }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(null);
 
+  const cardWrapperRef = useRef(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const isHintDismissedRef = useRef(false);
+
+  // --- 1. DEFINISI FUNGSI DULU (Agar tidak error "Accessed before initialization") ---
+
+  const checkScrollState = useCallback((target) => {
+    if (!target) return;
+
+    // Jika user sudah pernah mentok bawah, jangan munculkan lagi
+    if (isHintDismissedRef.current) {
+      setShowScrollHint(false);
+      return;
+    }
+
+    const isScrollable = target.scrollHeight > target.clientHeight;
+    // Toleransi 10px
+    const isAtBottom =
+      Math.ceil(target.scrollTop + target.clientHeight) >= target.scrollHeight - 10;
+
+    if (isAtBottom) {
+      isHintDismissedRef.current = true; // Tandai sudah dibaca
+      setShowScrollHint(false);
+    } else {
+      setShowScrollHint(isScrollable);
+    }
+  }, []);
+
+  const scanForScrollableChild = useCallback(() => {
+    const wrapper = cardWrapperRef.current;
+    if (!wrapper) return;
+
+    // Cari anak elemen yang punya overflow dan isinya kepanjangan
+    const scrollableChild = Array.from(wrapper.querySelectorAll('*')).find(
+      (el) => el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== 'hidden'
+    );
+
+    if (scrollableChild) {
+      checkScrollState(scrollableChild);
+    } else {
+      setShowScrollHint(false);
+    }
+  }, [checkScrollState]);
+
+  // --- 2. EFFECT UTAMA (Baru dipanggil setelah fungsi didefinisikan) ---
+
+  // Effect: Reset ingatan saat ganti Tab
+  useEffect(() => {
+    isHintDismissedRef.current = false;
+    scanForScrollableChild();
+  }, [activeTabId, scanForScrollableChild]); // <-- Dependency sudah lengkap
+
+  // Effect: Event Listener & Resize Observer
+  useEffect(() => {
+    const wrapper = cardWrapperRef.current;
+    if (!wrapper) return;
+
+    const handleCaptureScroll = (e) => {
+      checkScrollState(e.target);
+    };
+    // Capture phase = true agar bisa deteksi scroll anak
+    wrapper.addEventListener('scroll', handleCaptureScroll, true);
+
+    const resizeObserver = new ResizeObserver(() => {
+      scanForScrollableChild();
+    });
+
+    resizeObserver.observe(wrapper);
+    if (wrapper.firstElementChild) {
+      resizeObserver.observe(wrapper.firstElementChild);
+    }
+
+    const t = setTimeout(scanForScrollableChild, 500);
+
+    return () => {
+      wrapper.removeEventListener('scroll', handleCaptureScroll, true);
+      resizeObserver.disconnect();
+      clearTimeout(t);
+    };
+  }, [children, isLoading, checkScrollState, scanForScrollableChild]);
+
+  // --- 3. LOGIC TIMER ---
   useEffect(() => {
     let interval = null;
     if (isLoading) {
@@ -40,7 +122,6 @@ export default function BodyCard({
       } else if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
       }
-
       setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       interval = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
@@ -49,7 +130,6 @@ export default function BodyCard({
       setElapsedTime(0);
       startTimeRef.current = null;
     }
-
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -63,7 +143,6 @@ export default function BodyCard({
         </div>
       );
     }
-
     if (tabs && tabs.length > 0) {
       return (
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative bg-white rounded-t-xl shrink-0">
@@ -84,13 +163,16 @@ export default function BodyCard({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full h-[600px]">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col w-full h-[600px] relative group">
       {renderHeader()}
-      <div className="flex-1 p-0 overflow-auto flex flex-col relative rounded-b-xl bg-white">
+
+      <div
+        ref={cardWrapperRef}
+        className="flex-1 p-0 flex flex-col relative rounded-b-xl bg-white overflow-hidden"
+      >
         {isLoading ? (
           <>
             <LoadingState elapsed={elapsedTime} text={loadingText} />
-
             {longLoadingContent && elapsedTime > 120 && (
               <div className="absolute top-36 left-0 right-0 z-50 flex justify-center pointer-events-none">
                 <div className="pointer-events-auto">{longLoadingContent}</div>
@@ -102,9 +184,37 @@ export default function BodyCard({
             <p>{emptyMessage}</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col min-h-full w-full">{children}</div>
+          <div className="flex-1 flex flex-col min-h-0 w-full">{children}</div>
         )}
       </div>
+
+      {/* --- SCROLL HINT OVERLAY --- */}
+      {!isLoading && !isEmpty && showScrollHint && (
+        // Menggunakan bg-linear-to-t sesuai warning linter terbaru
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white via-white/50 to-transparent pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
+          <div className="flex flex-col items-center animate-bounce">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-sky-600 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
+              Scroll Bawah
+            </span>
+            <div className="bg-white rounded-full p-1.5 shadow-sm border border-slate-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-sky-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
