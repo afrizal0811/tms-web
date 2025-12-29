@@ -3,6 +3,7 @@
 export const dictionary = {
   id: {
     common: {
+      language: 'Bahasa',
       loading: 'Memuat data...',
       preparing_chart: 'Menyiapkan Grafik...',
       no_data: 'Tidak ada data',
@@ -25,6 +26,20 @@ export const dictionary = {
       yearly_fetch_error: 'Gagal ambil data tahunan',
       user_load_error: 'Gagal memuat data user', // Tambahan untuk UserDisplay
       generic_error: 'Terjadi kesalahan sistem.', // Tambahan untuk error umum
+    },
+    navbar: {
+      report: 'Laporan',
+      daily_report: 'Laporan Harian',
+      period_report: 'Laporan Periode',
+      summary: 'Rangkuman',
+      update: 'Perbarui',
+      coordinate: 'Longlat',
+      estimate: 'Estimasi',
+      deliveries: 'Pengiriman',
+      vehicle: 'Kendaraan',
+      help: 'Bantuan',
+      planner_guide: 'Panduan - Perencana',
+      driver_guide: 'Panduan - Pengemudi',
     },
     dashboard: {
       title: 'Dashboard',
@@ -162,6 +177,7 @@ export const dictionary = {
   },
   en: {
     common: {
+      language: 'Language',
       loading: 'Loading data...',
       preparing_chart: 'Preparing Chart...',
       no_data: 'There is no data.',
@@ -184,6 +200,20 @@ export const dictionary = {
       yearly_fetch_error: 'Failed to fetch yearly data',
       user_load_error: 'Failed to load user data',
       generic_error: 'System error occurred.',
+    },
+    navbar: {
+      report: 'Reports',
+      daily_report: 'Daily Report',
+      period_report: 'Period Report',
+      summary: 'Summary',
+      update: 'Update',
+      coordinate: 'Coordinates',
+      estimate: 'Estimate',
+      deliveries: 'Deliveries',
+      vehicle: 'Vehicles',
+      help: 'Help',
+      planner_guide: 'Guide - Planner',
+      driver_guide: 'Guide - Driver',
     },
     dashboard: {
       title: 'Dashboard',

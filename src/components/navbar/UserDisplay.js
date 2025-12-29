@@ -6,8 +6,6 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { useEffect, useRef, useState } from 'react';
 
 export default function UserDisplay() {
-  // 1. LAZY INITIALIZATION (Solusi Error Cascading Render)
-  // Baca data langsung saat state dibuat, JANGAN di dalam useEffect terpisah.
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -26,10 +24,8 @@ export default function UserDisplay() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Ambil fungsi dari Context Bahasa
-  const { lang, switchLanguage } = useLanguage();
+  const { t, lang, switchLanguage } = useLanguage();
 
-  // Logic untuk menutup dropdown saat klik di luar
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -42,10 +38,6 @@ export default function UserDisplay() {
     };
   }, []);
 
-  // Jangan render jika tidak ada user
-  // Catatan: Jika ada warning "Hydration Mismatch" di console, itu wajar
-  // karena server merender kosong, tapi client merender nama user.
-  // Hal ini aman untuk komponen client-side seperti ini.
   if (!userName) {
     return null;
   }
@@ -56,17 +48,16 @@ export default function UserDisplay() {
   ];
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Tombol Trigger (Nama User) */}
+    <div className="relative inline-block text-left w-full lg:w-auto" ref={dropdownRef}>
+      {/* Tombol Trigger */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 text-sm font-medium transition-colors outline-none ${
+        className={`flex items-center justify-between lg:justify-start gap-2 text-sm font-medium transition-colors outline-none cursor-pointer w-full lg:w-auto ${
           isOpen ? 'text-sky-600' : 'text-slate-700 hover:text-slate-900'
         }`}
       >
         <span>{userName}</span>
-        {/* Ikon Panah Kecil */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
@@ -80,13 +71,18 @@ export default function UserDisplay() {
           />
         </svg>
       </button>
-
-      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100">
+        <div
+
+          className={`
+            mt-2 rounded-md ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100
+            relative w-full shadow-none border border-gray-100 bg-gray-50
+            lg:absolute lg:right-0 lg:w-40 lg:shadow-lg lg:border-none lg:bg-white
+          `}
+        >
           <div className="py-1">
-            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-100 mb-1">
-              Language
+            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-200 lg:border-gray-100 mb-1">
+              {t('common.language') || 'Language'}
             </div>
 
             {languages.map((item) => (
@@ -96,8 +92,10 @@ export default function UserDisplay() {
                   switchLanguage(item.code);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between group hover:bg-sky-50 transition-colors ${
-                  lang === item.code ? 'text-sky-700 font-medium bg-sky-50/50' : 'text-slate-700'
+                className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between group hover:bg-sky-50 transition-colors cursor-pointer ${
+                  lang === item.code
+                    ? 'text-sky-700 font-medium bg-sky-100/50 lg:bg-sky-50/50'
+                    : 'text-slate-700'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -105,7 +103,6 @@ export default function UserDisplay() {
                   <span>{item.label}</span>
                 </div>
 
-                {/* Tanda Ceklis jika aktif */}
                 {lang === item.code && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
