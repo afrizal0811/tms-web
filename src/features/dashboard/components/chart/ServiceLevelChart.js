@@ -1,7 +1,10 @@
 // File: features/dashboard/components/ServiceLevelChart.js
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
+import { processServiceLevelData } from '@/lib/dashboardHelper';
+import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -13,10 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
-import { processServiceLevelData } from '@/lib/dashboardHelper';
-
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, t }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -24,43 +24,43 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
 
         <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
-          <span>● Sukses</span>
+          <span>● {t('dashboard.charts.service_level.success')}</span>
           <span className="font-mono">{data.SUKSES}</span>
         </div>
         {data.PENDING > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-amber-400">
-            <span>● Pending</span>
+            <span>● {t('dashboard.charts.service_level.pending')}</span>
             <span className="font-mono">{data.PENDING}</span>
           </div>
         )}
         {data.BATAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● Batal</span>
+            <span>● {t('dashboard.charts.service_level.batal')}</span>
             <span className="font-mono">{data.BATAL}</span>
           </div>
         )}
         {data.PARTIAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-orange-400">
-            <span>● Partial</span>
+            <span>● {t('dashboard.charts.service_level.partial')}</span>
             <span className="font-mono">{data.PARTIAL}</span>
           </div>
         )}
         {data.PENDING_GR > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-yellow-600">
-            <span>● Pending GR</span>
+            <span>● {t('dashboard.charts.service_level.pending_gr')}</span>
             <span className="font-mono">{data.PENDING_GR}</span>
           </div>
         )}
 
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between text-white">
-          <span>Total Task</span>
+          <span>{t('common.total_task')}</span>
           <span>{data.total}</span>
         </div>
-        <div className="mt-2 border-slate-600 font-bold flex justify-between text-white">
-          <span>Success Rate</span>
+        <div className=" border-slate-600 font-bold flex justify-between text-white">
+          <span>{t('dashboard.charts.service_level.success_rate')}</span>
           <span>{data.rate}%</span>
         </div>
-        <p className="mt-2 text-[10px] text-slate-400 italic">Klik untuk detail harian</p>
+        <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
@@ -68,6 +68,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 function ServiceLevelChart({ allTasks, hubId }) {
+  const { t, lang } = useLanguage();
+
   const [monthlyData, setMonthlyData] = useState(null); // null = belum siap
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [dailyData, setDailyData] = useState([]);
@@ -86,6 +88,24 @@ function ServiceLevelChart({ allTasks, hubId }) {
     const result = processServiceLevelData(allTasks, 'monthly', null, hubId);
     setMonthlyData(result);
   }, [allTasks, hubId]);
+
+  const localizedData = useMemo(() => {
+    if (!monthlyData) return null;
+    return monthlyData.map((item) => {
+      // Asumsi item.key formatnya "YYYY-MM" (misal: "2023-10")
+      if (item.key && item.key.includes('-')) {
+        const [year, month] = item.key.split('-').map(Number);
+        const date = new Date(year, month - 1, 1);
+
+        // Format ulang label bulan sesuai bahasa aktif
+        return {
+          ...item,
+          label: date.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short' }),
+        };
+      }
+      return item;
+    });
+  }, [monthlyData, lang]);
 
   // === Hitung data harian saat user pilih bulan ===
   useEffect(() => {
@@ -124,10 +144,12 @@ function ServiceLevelChart({ allTasks, hubId }) {
     try {
       const [year, month] = selectedMonth.key.split('-');
       const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-      const fullMonth = dateObj.toLocaleDateString('id-ID', { month: 'long' });
-      return `Service Level ${fullMonth}`;
+      const fullMonth = dateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+        month: 'long',
+      });
+      return `${t('dashboard.charts.service_level.title')} ${fullMonth}`;
     } catch {
-      return `Service Level ${selectedMonth.label || selectedMonth.name || selectedMonth.key}`;
+      return `${t('dashboard.charts.service_level.title')} ${selectedMonth.label || selectedMonth.key}`;
     }
   };
 
@@ -139,28 +161,33 @@ function ServiceLevelChart({ allTasks, hubId }) {
       <div className="mb-6">
         <h3 className="text-lg font-bold text-slate-800">Service Level</h3>
         <p className="text-sm text-gray-500">
-          Persentase task <span className="font-bold text-emerald-600">Sukses</span> vs{' '}
-          <span className="font-bold text-red-600">Lainnya</span>.
+          {t('dashboard.charts.service_level.subtitle')}{' '}
+          <span className="font-bold text-emerald-600">
+            {t('dashboard.charts.service_level.success')}
+          </span>{' '}
+          vs{' '}
+          <span className="font-bold text-red-600">
+            {t('dashboard.charts.service_level.others')}
+          </span>
         </p>
       </div>
 
       <div className="h-[350px] w-full">
         {isPreparing ? (
-          // === SKELETON SAAT MENYIAPKAN DATA ===
           <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300">
             <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 animate-pulse" />
             <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 animate-pulse" />
             <p className="mt-4 text-xs font-semibold tracking-wide uppercase">
-              Menyiapkan Grafik...
+              {t('common.preparing_chart')}
             </p>
           </div>
         ) : !hasData ? (
           <div className="w-full h-full bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-sm">
-            Tidak ada data untuk tahun ini.
+            {t('common.no_data')}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData}>
+            <BarChart data={localizedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
                 dataKey="label"
@@ -170,7 +197,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dy={10}
               />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              <Tooltip content={<CustomTooltip t={t} />} cursor={{ fill: '#f1f5f9' }} />
               <Legend
                 iconType="circle"
                 layout="horizontal"
@@ -180,54 +207,54 @@ function ServiceLevelChart({ allTasks, hubId }) {
               />
 
               <Bar
-                name="Sukses"
+                cursor="pointer"
                 dataKey="SUKSES"
-                stackId="a"
                 fill="#22c55e"
-                radius={[0, 0, 0, 0]}
                 maxBarSize={50}
-                cursor="pointer"
+                name={t('dashboard.charts.service_level.success')}
                 onClick={handleBarClick}
+                radius={[0, 0, 0, 0]}
+                stackId="a"
               />
               <Bar
-                name="Pending"
+                cursor="pointer"
                 dataKey="PENDING"
-                stackId="a"
                 fill="#eab308"
-                radius={[0, 0, 0, 0]}
                 maxBarSize={50}
-                cursor="pointer"
+                name={t('dashboard.charts.service_level.pending')}
                 onClick={handleBarClick}
+                radius={[0, 0, 0, 0]}
+                stackId="a"
               />
               <Bar
-                name="Batal"
+                cursor="pointer"
                 dataKey="BATAL"
-                stackId="a"
                 fill="#ef4444"
-                radius={[0, 0, 0, 0]}
                 maxBarSize={50}
-                cursor="pointer"
+                name={t('dashboard.charts.service_level.batal')}
                 onClick={handleBarClick}
+                radius={[0, 0, 0, 0]}
+                stackId="a"
               />
               <Bar
-                name="Partial"
+                cursor="pointer"
                 dataKey="PARTIAL"
-                stackId="a"
                 fill="#f97316"
-                radius={[0, 0, 0, 0]}
                 maxBarSize={50}
-                cursor="pointer"
+                name={t('dashboard.charts.service_level.partial')}
                 onClick={handleBarClick}
+                radius={[0, 0, 0, 0]}
+                stackId="a"
               />
               <Bar
-                name="Pending GR"
-                dataKey="PENDING_GR"
-                stackId="a"
-                fill="#d97706"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={50}
                 cursor="pointer"
+                dataKey="PENDING_GR"
+                fill="#d97706"
+                maxBarSize={50}
+                name={t('dashboard.charts.service_level.pending_gr')}
                 onClick={handleBarClick}
+                radius={[4, 4, 0, 0]}
+                stackId="a"
               />
             </BarChart>
           </ResponsiveContainer>
@@ -235,7 +262,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
       </div>
 
       <p className="text-xs text-gray-400 mt-4 text-center italic">
-        Klik batang grafik untuk melihat detail per harinya.
+        {t('common.click_for_detail')}
       </p>
 
       <DailyServiceLevelModal

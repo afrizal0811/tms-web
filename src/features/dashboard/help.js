@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx-js-style';
 
-export const downloadRoutingVsActual = (data) => {
+export const downloadRoutingVsActual = (data, isIndo = false) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return;
   }
@@ -17,24 +17,44 @@ export const downloadRoutingVsActual = (data) => {
 
   const wb = XLSX.utils.book_new();
 
-  const headers = [
-    'Flow',
-    'Plat',
-    'Driver',
-    'Customer / Outlet Name',
-    'Status Delivery',
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'Actual Arrival',
-    'ETD',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit',
-    'Routing Sequence',
-    'Actual Sequence',
-    'Is Match?',
-  ];
+  const headers = isIndo
+    ? [
+        'Alur',
+        'Plat',
+        'Pengemudi',
+        'Pelanggan / Nama Outlet',
+        'Status Pengiriman',
+        'Waktu Buka',
+        'Waktu Tutup',
+        'ETA',
+        'Waktu Kedatangan',
+        'ETD',
+        'Waktu Keberangkatan',
+        'Perkiraan Waktu Kunjung',
+        'Aktual Waktu Kunjung',
+        'Perkiraan Urutan',
+        'Aktual Urutan',
+        'Sama?',
+      ]
+    : [
+        'Flow',
+        'License Plate',
+        'Driver',
+        'Customer / Outlet Name',
+        'Delivery Status',
+        'Open Time',
+        'Close Time',
+        'ETA',
+        'Actual Arrival',
+        'ETD',
+        'Actual Departure',
+        'Planned Visit Time',
+        'Actual Visit',
+        'Routing Sequence',
+        'Actual Sequence',
+        'Is Match?',
+      ];
+
 
   const sheetData = [headers];
 
@@ -59,7 +79,6 @@ export const downloadRoutingVsActual = (data) => {
     const plat = isHub ? null : row.plat;
     const driver = isHub ? null : row.driver;
 
-
     let customer = row.customerName || '-';
     if (isHub) {
       customer = `HUB`;
@@ -82,7 +101,9 @@ export const downloadRoutingVsActual = (data) => {
     const roSeq = isHub ? null : isRoSeqNull ? '-' : row.roSequence;
     const realSeq = isHub ? null : isRealSeqNull ? '-' : row.realSequence;
     const isMatch = roSeq === realSeq;
-    const match = isHub ? null : isRealSeqNull ? '-' : isMatch ? 'SAMA' : 'BEDA';
+    const matchText = isIndo ? 'Sama' : 'Match';
+    const mismatchText = isIndo ? 'Beda' : 'Mismatch';
+    const match = isHub ? null : isRealSeqNull ? '-' : isMatch ? matchText : mismatchText;
 
     sheetData.push([
       flow,
@@ -192,8 +213,8 @@ export const downloadRoutingVsActual = (data) => {
 
         // Cek Kolom Match (Index 15)
         if (C === 15) {
-          if (ws[cellRef].v === 'BEDA') ws[cellRef].s = redStyle;
-          else if (ws[cellRef].v === 'SAMA') ws[cellRef].s = greenStyle;
+          if (ws[cellRef].v === 'Beda' || ws[cellRef].v === 'Mismatch') ws[cellRef].s = redStyle;
+          else if (ws[cellRef].v === 'Sama' || ws[cellRef].v === 'Match') ws[cellRef].s = greenStyle;
         }
       }
     }
@@ -205,21 +226,6 @@ export const downloadRoutingVsActual = (data) => {
 };
 
 export const processLoadCapacityData = (tasks, driverData, year) => {
-  const months = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
-  ];
-
   const driverMap = {};
   if (Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -234,8 +240,9 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     });
   }
 
-  const monthlyData = months.map((m) => ({
-    name: m,
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    monthIndex: i,
+    key: `${year}-${String(i + 1).padStart(2, '0')}`,
     sangatRendah: 0,
     rendah: 0,
     optimal: 0,
@@ -277,7 +284,6 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
       trips[key] = {
         date: dateStr,
-        // Gunakan getUTCMonth karena wibDate sudah digeser
         monthIndex: wibDate.getUTCMonth(),
         email: driverEmail,
         driverName: driverName,
@@ -296,7 +302,6 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     trips[key].tasksCount += 1;
   });
 
-  // 3. Kalkulasi Persentase
   Object.values(trips).forEach((trip) => {
     const specs = driverMap[trip.email];
 
@@ -319,23 +324,25 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
     const monthIdx = trip.monthIndex;
 
-    if (maxPct > 100) {
-      monthlyData[monthIdx].overload += 1;
-    } else if (maxPct >= 85) {
-      monthlyData[monthIdx].penuh += 1;
-    } else if (maxPct >= 60) {
-      monthlyData[monthIdx].optimal += 1;
-    } else if (maxPct >= 40) {
-      monthlyData[monthIdx].rendah += 1;
-    } else {
-      monthlyData[monthIdx].sangatRendah += 1;
-    }
+    if (monthlyData[monthIdx]) {
+      if (maxPct > 100) {
+        monthlyData[monthIdx].overload += 1;
+      } else if (maxPct >= 85) {
+        monthlyData[monthIdx].penuh += 1;
+      } else if (maxPct >= 60) {
+        monthlyData[monthIdx].optimal += 1;
+      } else if (maxPct >= 40) {
+        monthlyData[monthIdx].rendah += 1;
+      } else {
+        monthlyData[monthIdx].sangatRendah += 1;
+      }
 
-    const day = parseInt(trip.date.split('-')[2], 10);
-    if (!monthlyData[monthIdx].details[day]) {
-      monthlyData[monthIdx].details[day] = [];
+      const day = parseInt(trip.date.split('-')[2], 10);
+      if (!monthlyData[monthIdx].details[day]) {
+        monthlyData[monthIdx].details[day] = [];
+      }
+      monthlyData[monthIdx].details[day].push(trip);
     }
-    monthlyData[monthIdx].details[day].push(trip);
   });
 
   return monthlyData;

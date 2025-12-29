@@ -1,12 +1,14 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
+import { useLanguage } from '@/context/LanguageContext';
 import { parseCoordinates, parseCustomerString } from '@/lib/utils';
 import L from 'leaflet';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
 
 export default function RoutingMapModal({ isOpen, onClose, data }) {
+  const { t } = useLanguage();
   // State untuk input user
   const [userSelectedDriver, setUserSelectedDriver] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
@@ -162,10 +164,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   const headerContent = (
     <div className="flex flex-col lg:flex-row gap-4 items-center justify-between w-full lg:pr-8">
       <div className="text-center lg:text-left">
-        <h2 className="text-xl font-bold text-slate-800">Peta Perbandingan Rute</h2>
-        <p className="text-xs text-slate-500 font-normal mt-0.5">
-          Bandingkan jalur Rencana vs Aktual
-        </p>
+        <h2 className="text-xl font-bold text-slate-800">{t('dashboard.map.title')}</h2>
+        <p className="text-xs text-slate-500 font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
       </div>
       <div className="flex flex-row gap-2 w-full lg:w-auto">
         <select
@@ -210,7 +210,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       {selectedDriver ? (
         <>
           <MapViewSection
-            title="Rencana (RO Sequence)"
+            title={t('dashboard.map.plan')}
             tasks={driverTasks}
             sequenceKey="roSequence"
             colorClass="bg-blue-600"
@@ -224,7 +224,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           />
 
           <MapViewSection
-            title="Aktual (Real Sequence)"
+            title={t('dashboard.map.real')}
             tasks={driverTasks}
             sequenceKey="realSequence"
             colorClass="bg-orange-600"
@@ -240,7 +240,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
         </>
       ) : (
         <div className="h-full flex items-center justify-center text-gray-500">
-          Silakan pilih driver terlebih dahulu.
+          {t('dashboard.map.select_driver')}
         </div>
       )}
     </BaseModal>

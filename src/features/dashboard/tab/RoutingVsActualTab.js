@@ -4,6 +4,7 @@ import DownloadButton from '@/components/DownloadButton';
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
+import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
 import { useMemo, useState } from 'react';
@@ -11,6 +12,8 @@ import { downloadRoutingVsActual } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
 
 export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
+  const { t, lang } = useLanguage();
+  const isIndo = lang === 'id';
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -249,7 +252,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     setIsDownloading(true);
     try {
       await new Promise((r) => setTimeout(r, 100));
-      downloadRoutingVsActual(processedData);
+      downloadRoutingVsActual(processedData, isIndo);
     } catch (e) {
       toastError('Gagal download:', e);
     } finally {
@@ -271,7 +274,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           <SearchBar
             disabled={loading || isDownloading}
             onChange={(val) => setSearchQuery(val)}
-            placeholder="Cari Plat, Driver, atau Customer"
+            placeholder={t('dashboard.tab.routingreal.search_placeholder')}
             value={searchQuery}
           />
         </div>
@@ -295,7 +298,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
               />
             </svg>
-            Lihat Peta
+            {t('dashboard.tab.routingreal.show_map')}
           </button>
         </div>
         <div className="w-full md:w-auto order-3">
@@ -303,6 +306,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
             onClick={handleDownload}
             disabled={loading || isDownloading || processedData.length === 0}
             width="w-full md:w-auto"
+            text={isIndo ? 'Unduh Excel' : 'Download Excel'}
           />
         </div>
       </div>
@@ -311,22 +315,44 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         <table className="min-w-full text-xs text-left">
           <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="px-4 py-3 border-b">Flow</th>
-              <th className="px-4 py-3 border-b">Plat</th>
-              <th className="px-4 py-3 border-b">Driver</th>
-              <th className="px-4 py-3 border-b">Customer</th>
-              <th className="px-4 py-3 border-b">Status</th>
-              <th className="px-4 py-3 border-b text-center">Open</th>
-              <th className="px-4 py-3 border-b text-center">Close</th>
-              <th className="px-4 py-3 border-b text-center">ETA</th>
-              <th className="px-4 py-3 border-b text-center">Arrival</th>
-              <th className="px-4 py-3 border-b text-center">ETD</th>
-              <th className="px-4 py-3 border-b text-center">Departure</th>
-              <th className="px-4 py-3 border-b text-center">Visit Time</th>
-              <th className="px-4 py-3 border-b text-center">Act Visit</th>
-              <th className="px-4 py-3 border-b text-center">RO Seq</th>
-              <th className="px-4 py-3 border-b text-center">Real Seq</th>
-              <th className="px-4 py-3 border-b text-center">Match?</th>
+              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.flow')}</th>
+              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.license')}</th>
+              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.driver')}</th>
+              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.customer')}</th>
+              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.status')}</th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.open_time')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.close_time')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.eta')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.actual_arrival')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.etd')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.actual_departure')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.visit_plan')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.visit_actual')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.ro_seq')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.actual_seq')}
+              </th>
+              <th className="px-4 py-3 border-b text-center">
+                {t('dashboard.tab.routingreal.is_same')}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -364,9 +390,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
               const isMatch = row.roSequence == row.realSequence;
               const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
               const realSeq = row.realSequence ?? '-';
-              const realSeqEmpty = realSeq === '-'
-              const match = realSeqEmpty ? '-' : isMatch ? 'SAMA' : 'BEDA';
-              
+              const realSeqEmpty = realSeq === '-';
+              const matchText = isIndo ? 'Sama' : 'Match';
+              const mismatchText = isIndo ? 'Beda' : 'Mismatch';
+              const match = realSeqEmpty ? '-' : isMatch ? matchText : mismatchText;
+
               const cellContent = (
                 <>
                   <td className="px-4 py-2">{row.flow}</td>
