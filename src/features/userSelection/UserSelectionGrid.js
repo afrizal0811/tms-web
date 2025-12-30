@@ -1,14 +1,13 @@
 'use client';
 
+import Spinner from '@/components/Spinner';
+import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import { useLanguage } from '@/context/LanguageContext';
+import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { getUsers } from '../../lib/apiService';
 import { toastSuccess } from '../../lib/toastHelper';
-
-// <-- IMPORT HOOK & UI -->
-import Spinner from '@/components/Spinner';
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 
 // Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
@@ -21,6 +20,7 @@ const ITEMS_PER_PAGE = 9;
 
 // --- (PERUBAHAN 1): Terima 'roleIds' (array) ---
 export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
+  const { t } = useLanguage();
   const [usersData, setUsersData] = useState({
     loading: true,
     data: [],
@@ -188,38 +188,35 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     return <p className="mt-6 text-gray-400">Tidak ada user ditemukan di lokasi ini.</p>;
   }
   const modalMessage = (
-    <div className='flex flex-col gap-2'>
+    <div className="flex flex-col gap-2">
       <div>
-        Anda yakin ingin memilih user <span className="font-bold">{userToConfirm?.name}</span>?
+        {t('home.confirmation.question')} <span className="font-bold">{userToConfirm?.name}</span>?
       </div>
-      <div className='underline'>User tidak bisa diubah kembali.</div>
+      <div className="underline">{t('home.confirmation.caution')}</div>
     </div>
   );
   // Tampilan Grid
   return (
     <div className="w-full max-w-2xl mt-6 mx-auto relative">
-      {showAll && (
-        <p className="text-center text-red-500 text-sm mb-4">
-          Mode Rahasia: Menampilkan semua user
-        </p>
-      )}
+      {showAll && <p className="text-center text-red-500 text-sm mb-4">{t('home.secret_mode')}</p>}
 
-      {/* Spinner overlay saat hook sedang cek */}
       {isChecking && (
         <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center">
             <Spinner />
-            <p className="mt-3 text-sm text-slate-600">Memeriksa konfigurasi kendaraan...</p>
+            <p className="mt-3 text-sm text-slate-600">{t('home.vehicle_check')}</p>
           </div>
         </div>
       )}
 
       <ConfirmModal
         isOpen={isConfirmOpen}
-        title="Konfirmasi Pilihan User"
+        title={t('home.confirmation.title')}
         message={modalMessage}
         onConfirm={handleConfirmSelection}
         onCancel={handleCancelSelection}
+        confirmText={t('home.confirmation.confirm')}
+        cancelText={t('home.confirmation.cancel')}
       />
 
       <div role="radiogroup" aria-label="Pilih User" className="grid grid-cols-3 gap-4">
@@ -253,23 +250,23 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6">
+        <div className="grid grid-cols-3 items-center mt-6">
           <button
             onClick={handlePrevPage}
             disabled={currentPage === 1}
-            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="justify-self-start px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sebelumnya
+            {t('home.previous')}
           </button>
-          <span className="text-sm text-gray-400">
-            Halaman {currentPage} dari {totalPages}
+          <span className="justify-self-center text-sm text-gray-400 whitespace-nowrap">
+            {t('home.page')} {currentPage} {t('home.from')} {totalPages}
           </span>
           <button
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
-            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="justify-self-end px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Selanjutnya
+            {t('home.next')}
           </button>
         </div>
       )}
