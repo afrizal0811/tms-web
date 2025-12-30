@@ -117,7 +117,7 @@ export default function PendingReasonsTab({ data, locationName }) {
   };
 
   return (
-    <div className="rounded-xl overflow-auto border border-gray-300 m-6">
+    <div className="rounded-b-xl overflow-auto border border-gray-300 m-0">
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-20">
           <tr>

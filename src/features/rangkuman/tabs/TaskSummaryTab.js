@@ -27,7 +27,7 @@ export default function TaskSummaryTab({
           setMasterTruckData(JSON.parse(stored));
         }
       } catch (e) {
-        toastError('Failed to load masterTruck from storage', e);
+        toastError(`Failed to load masterTruck from storage: ${e.message}`);
       }
     }
   }, []);
@@ -127,7 +127,7 @@ export default function TaskSummaryTab({
   const cViolet = 'bg-[#d9d2e9]';
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden p-6">
+    <div className="w-full h-full flex flex-col overflow-hidden p-0">
       {isLoading && (
         <div className="w-full h-1 bg-gray-100">
           <div
@@ -137,7 +137,7 @@ export default function TaskSummaryTab({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-white rounded-lg border border-gray-200 ">
+      <div className="flex-1 overflow-auto bg-white rounded-b-xl border border-gray-200 ">
         <table className="min-w-full text-xs text-center border-collapse text-gray-700 ">
           <thead className="text-xs text-gray-700 uppercase sticky top-0 z-10 font-bold">
             <tr>

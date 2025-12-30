@@ -25,7 +25,7 @@ export default function TimeDriverTab({ data }) {
   const stickyBodyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="rounded-xl overflow-auto border border-gray-300 m-6 h-full">
+    <div className="rounded-b-xl overflow-auto border border-gray-300 m-0 h-full">
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-30 bg-gray-100">
           {/* Row 1: Headers */}

@@ -315,7 +315,7 @@ export default function VehicleData() {
         loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
       >
-        <div className="flex-1 flex flex-col m-6 border border-gray-300 rounded-xl overflow-auto">
+        <div className="flex-1 flex flex-col m-0 border border-gray-300 rounded-b-xl overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab
               paginatedData={filteredData} 

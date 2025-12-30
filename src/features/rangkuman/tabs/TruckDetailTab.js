@@ -41,10 +41,10 @@ export default function TruckDetailTab({ data }) {
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 relative p-6">
+    <div className="w-full h-full flex flex-col gap-4 relative p-0">
       <TruckDetailModal isOpen={!!modalData} onClose={closeModal} data={modalData} />
 
-      <div className="overflow-auto flex-1 rounded-xl border border-gray-200">
+      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>

@@ -111,7 +111,7 @@ export default function Navbar() {
   );
 
   const navLinkDelivery = (
-    <NavLink href="/pengiriman">
+    <NavLink href="/vehicles">
       <span className={isIndo ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
       <span className={!isIndo ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
     </NavLink>
@@ -123,7 +123,7 @@ export default function Navbar() {
   );
 
   const mobileLinkDelivery = (
-    <MobileNavLink href="/pengiriman">
+    <MobileNavLink href="/vehicles">
       {primaryDeliveries} {secondaryDeliveries}
     </MobileNavLink>
   );

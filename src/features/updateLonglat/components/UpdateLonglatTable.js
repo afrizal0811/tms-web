@@ -25,19 +25,19 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
       <div className="flex flex-col h-full space-y-4">
         {data.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
-            <p>Tidak ada data update lokasi (klikLokasiClient) ditemukan.</p>
+            <p>Tidak ada data update lokasi ditemukan.</p>
           </div>
         ) : (
-          <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
+          <div className="overflow-auto h-full rounded-lg    bg-white">
             <table className="min-w-full text-xs text-left">
               <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-4 py-3 border-b w-[5%] text-center">No</th>
-                  <th className="px-4 py-3 border-b w-[30%]">Customer Name</th>
-                  <th className="px-4 py-3 border-b w-[15%]">Customer ID</th>
-                  <th className="px-4 py-3 border-b w-[15%]">Location ID</th>
-                  <th className="px-4 py-3 border-b w-[20%] text-center">New Longlat</th>
-                  <th className="px-4 py-3 border-b w-[15%] text-center">Beda Jarak (m)</th>
+                  <th className="px-4 py-3 w-[5%] text-center">No</th>
+                  <th className="px-4 py-3 w-[30%]">Customer Name</th>
+                  <th className="px-4 py-3 w-[15%]">Customer ID</th>
+                  <th className="px-4 py-3 w-[15%]">Location ID</th>
+                  <th className="px-4 py-3 w-[20%] text-center">New Longlat</th>
+                  <th className="px-4 py-3 w-[15%] text-center">Beda Jarak (m)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">

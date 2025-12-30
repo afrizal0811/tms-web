@@ -73,9 +73,9 @@ export default function RangkumanSummary() {
       if (storedLocationName) setSelectedLocationName(storedLocationName);
 
       try {
-        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMaster));
+        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMasterTruck));
       } catch (e) {
-        toastError(e);
+        toastError(e.message);
       }
     }
   }, []);
@@ -133,7 +133,7 @@ export default function RangkumanSummary() {
         attempt++;
         const status = err?.response?.status || err?.status || null;
         if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err;
+          throw err.message;
         }
         const backoff = baseMs * Math.pow(2, attempt - 1);
         const jitter = Math.floor(Math.random() * 100);
@@ -648,7 +648,7 @@ export default function RangkumanSummary() {
 
   const renderContent = () => {
     const renderTabContent = (Component, props) => (
-      <div className="w-full h-full flex flex-col">
+      <div className="w-full h-full flex flex-col ">
         <Component {...props} />
       </div>
     );

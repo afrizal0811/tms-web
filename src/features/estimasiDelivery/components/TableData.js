@@ -10,7 +10,7 @@ export default function TableData({ activeRoute, searchQuery }) {
 
   return (
     <table className="w-full border-collapse min-w-4xl">
-      <thead className="sticky top-0 z-10">
+      <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
         <tr>
           <Th widthClass="w-[5%]">No.</Th>
           <Th widthClass="w-[30%]">Visit</Th>

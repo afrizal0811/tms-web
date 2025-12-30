@@ -1,10 +1,10 @@
 // File: src/features/rangkuman/tabs/AverageKmTab.js
 export default function AverageKmTab({ data, monthTotals }) {
   return (
-    <div className="p-6">
-      <div className="w-full overflow-auto max-h-full">
+    <div className="h-full w-full overflow-y-auto p-0">
+      <div className="w-full overflow-x-auto">
         {/* TABEL 1: MONTHLY SUMMARY */}
-        <div className="rounded-xl overflow-hidden border border-gray-300 h-auto mb-4">
+        <div className="overflow-hidden border border-gray-300 h-auto mb-4">
           <table className="min-w-full border-collapse text-sm">
             <thead className="bg-gray-50">
               <tr>
@@ -61,7 +61,7 @@ export default function AverageKmTab({ data, monthTotals }) {
         </div>
 
         {/* TABEL 2: DAILY DETAILS */}
-        <div className="rounded-xl overflow-hidden border border-gray-300 mb-6">
+        <div className="rounded-b-xl overflow-hidden border border-gray-300">
           <table className="min-w-full border-collapse text-sm">
             <thead className="sticky top-0 bg-sky-600 text-white z-10">
               <tr>

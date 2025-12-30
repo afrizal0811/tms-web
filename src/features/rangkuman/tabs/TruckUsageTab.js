@@ -6,11 +6,11 @@ export default function TruckUsageTab({ data }) {
   const { summaryData, vehicleTypes } = data || {};
 
   return (
-    <div className="w-full h-full flex flex-col gap-8 pb-10 overflow-auto p-6 ">
+    <div className="w-full h-full flex flex-col gap-8 overflow-y-auto p-0 pt-2">
       {/* BLOCK 1: SUMMARY COUNT */}
       <div className="flex flex-col gap-2 min-w-max">
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">Truck Usage Summary (Count)</h3>
-        <div className="border border-gray-300 rounded-xl overflow-hidden">
+        <div className="border border-gray-300 overflow-hidden">
           <TruckUsageSummaryTable
             summaryData={summaryData}
             vehicleTypes={vehicleTypes}
@@ -24,7 +24,7 @@ export default function TruckUsageTab({ data }) {
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">
           Truck Usage Summary (Percentage)
         </h3>
-        <div className="border border-gray-300 rounded-xl overflow-hidden">
+        <div className="border border-gray-300 overflow-hidden">
           <TruckUsageSummaryTable
             summaryData={summaryData}
             vehicleTypes={vehicleTypes}
@@ -36,7 +36,7 @@ export default function TruckUsageTab({ data }) {
       {/* BLOCK 3: DAILY COUNT */}
       <div className="flex flex-col gap-2 min-w-max">
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">Daily Vehicle Usage (Count)</h3>
-        <div className="border border-gray-300 rounded-xl overflow-hidden">
+        <div className="border border-gray-300 overflow-hidden">
           <TruckUsageTable {...data} isPercentage={false} />
         </div>
       </div>
@@ -46,7 +46,7 @@ export default function TruckUsageTab({ data }) {
         <h3 className="font-bold text-slate-700 px-1 sticky left-0">
           Daily Vehicle Usage (Percentage)
         </h3>
-        <div className="border border-gray-300 rounded-xl overflow-hidden">
+        <div className="border border-gray-300 rounded-b-xl overflow-hidden">
           <TruckUsageTable {...data} isPercentage={true} />
         </div>
       </div>

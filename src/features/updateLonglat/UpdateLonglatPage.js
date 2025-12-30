@@ -361,7 +361,7 @@ export default function UpdateLonglatPage() {
         loadingText={loadingText}
         isEmpty={!loading && processedData.length === 0}
       >
-        <div className="p-6 h-full overflow-y-auto">
+        <div className="p-0 h-full overflow-y-auto">
           <UpdateLonglatTable
             data={processedData}
             historyMap={historyMap}
