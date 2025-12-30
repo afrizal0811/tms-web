@@ -19,11 +19,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UpdateLonglatTable from './components/UpdateLonglatTable';
 import { handleDownloadExcel } from './help';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function UpdateLonglatPage() {
+  const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [loadingText, setLoadingText] = useState('Memuat Data...');
   const [tasksData, setTasksData] = useState([]);
   const [historyMap, setHistoryMap] = useState(new Map());
   const [historyRange, setHistoryRange] = useState({ start: '', end: '' });
@@ -31,11 +32,12 @@ export default function UpdateLonglatPage() {
 
   const driverMapRef = useRef(new Map());
   const { storedLocationName: hubName } = getLocalStorage();
+  const isIndo = lang === 'id';
 
   const handleDateChange = (date) => {
     if (!date) return;
     if (date.getDay() === 0) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      toastError(t('longlat.toast.no_sunday'));
       return;
     }
     setSelectedDate(date);
@@ -93,7 +95,6 @@ export default function UpdateLonglatPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setLoadingText('Memuat Data Harian...');
     setTasksData([]);
     setHistoryMap(new Map());
     driverMapRef.current = new Map();
@@ -153,18 +154,14 @@ export default function UpdateLonglatPage() {
         return;
       }
 
-      // --- STEP 3: Setup History Chunks ---
-      setLoadingText('Memuat Riwayat...');
-
       const historyEndDate = new Date(selectedDate);
       const historyStartDate = new Date(selectedDate);
       historyStartDate.setMonth(historyStartDate.getMonth() - 2);
 
-      // Setup UI Range
       const displayOptions = { day: 'numeric', month: 'long', year: 'numeric' };
       setHistoryRange({
-        start: historyStartDate.toLocaleDateString('id-ID', displayOptions),
-        end: historyEndDate.toLocaleDateString('id-ID', displayOptions),
+        start: historyStartDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', displayOptions),
+        end: historyEndDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', displayOptions),
       });
 
       const createDateChunks = (start, end, daysPerChunk = 15) => {
@@ -190,8 +187,6 @@ export default function UpdateLonglatPage() {
 
       const dateChunks = createDateChunks(historyStartDate, historyEndDate, 15);
 
-      // --- Parallel Fetching dengan Status ---
-      // Kita memetakan promise agar mengembalikan status 'ok' atau 'failed'
       const chunkPromises = dateChunks.map((chunk) =>
         getTasks({
           status: 'DONE',
@@ -208,20 +203,14 @@ export default function UpdateLonglatPage() {
 
       const results = await Promise.all(chunkPromises);
 
-      // Pisahkan yang sukses dan gagal
       const successfulChunks = results.filter((r) => r.status === 'ok').flatMap((r) => r.data);
       const failedChunks = results.filter((r) => r.status === 'failed').map((r) => r.chunk);
-
-      // --- TAMPILKAN HASIL SEADANYA DULU (Biar user gak nunggu lama) ---
       const initialMap = processHistoryRawData(successfulChunks, uniqueCustomersWithUpdates);
       setHistoryMap(initialMap);
-      setLoading(false); // <--- UI TAMPIL DI SINI
-
-      // --- STEP 4: RETRY LOGIC (Background) ---
+      setLoading(false); 
       if (failedChunks.length > 0) {
-        toastWarning(`Mengulang ${failedChunks.length} chunk yang gagal...`);
+        toastWarning(t('longlat.toast.retry_chunk', { count: failedChunks.length }));
 
-        // Jalankan retry
         const retryPromises = failedChunks.map((chunk) =>
           getTasks({
             status: 'DONE',
@@ -234,8 +223,8 @@ export default function UpdateLonglatPage() {
           })
             .then((res) => res || [])
             .catch((err) => {
-              toastWarning('Retry masih gagal:', chunk.startStr);
-              return []; // Jika gagal lagi, ya sudah give up
+              toastError(t('longlat.toast.all_failed', { time: chunk.startStr }));
+              return [];
             })
         );
 
@@ -243,36 +232,20 @@ export default function UpdateLonglatPage() {
         const recoveredTasks = retryResults.flat();
 
         if (recoveredTasks.length > 0) {
-          // --- LOGIC MERGE ---
-          // Munculkan loading lagi seperti request
           setLoading(true);
-          setLoadingText('Menyinkronkan data tambahan...');
-
-          // Beri jeda dikit biar loading terlihat (UX)
           await new Promise((r) => setTimeout(r, 500));
-
-          // Proses data baru menjadi Map
           const newRecoveredMap = processHistoryRawData(recoveredTasks, uniqueCustomersWithUpdates);
-
-          // Gabungkan ke State yang sudah ada
           setHistoryMap((prevMap) => {
             const mergedMap = new Map(prevMap); // Clone map lama
-
             for (const [customerName, newItems] of newRecoveredMap.entries()) {
               if (mergedMap.has(customerName)) {
-                // Jika customer sudah ada, tambahkan item baru ke array existing
                 const existingItems = mergedMap.get(customerName);
                 const combined = [...existingItems, ...newItems];
-                // Sort ulang biar rapi
                 combined.sort((a, b) => {
-                  // parsing tanggal manual karena format string 'DD/MM/YYYY' agak tricky sortingnya
-                  // lebih aman pakai sorting by Date object original kalau disimpan,
-                  // tapi karena disini string, kita biarkan append atau sort simple.
                   return 0;
                 });
                 mergedMap.set(customerName, combined);
               } else {
-                // Jika customer belum ada (tapi aneh karena harusnya ada di list update hari ini)
                 mergedMap.set(customerName, newItems);
               }
             }
@@ -280,14 +253,14 @@ export default function UpdateLonglatPage() {
           });
 
           setLoading(false);
-          toastSuccess('Data riwayat berhasil dilengkapi.');
+          toastSuccess(t('longlat.toast.recovered', { count: recoveredTasks.length }));
         }
       }
     } catch (err) {
-      toastError('Gagal mengambil data task.');
+      toastError(t('longlat.toast.failed_get_data'));
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, isIndo, t]);
 
   useEffect(() => {
     fetchData();
@@ -334,31 +307,32 @@ export default function UpdateLonglatPage() {
 
   const downloadBtn = (
     <DownloadButton
-      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName)}
+      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
       disabled={loading || isDownloading || processedData.length === 0}
       isLoading={isDownloading}
       width="w-full md:w-auto"
+      text={t('common.download')}
     />
   );
 
   const headerItems = [
-    { label: 'Tanggal Pengiriman', component: datePicker, hideLabel: false },
+    { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
     { label: 'Action', component: downloadBtn, hideLabel: true },
   ];
 
   const subtitle = (
     <>
-      Daftar customer yang memerlukan{' '}
-      <span className="font-semibold text-sky-600">update koordinat lokasi</span>.
+      {t('longlat.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('longlat.highlight_subtitle')}</span>.
     </>
   );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      <HeaderCard title="Update Longlat" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('longlat.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
         isLoading={loading}
-        loadingText={loadingText}
+        loadingText={t('common.loading')}
         isEmpty={!loading && processedData.length === 0}
       >
         <div className="p-0 h-full overflow-y-auto">

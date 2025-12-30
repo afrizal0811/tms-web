@@ -1,9 +1,9 @@
 'use client';
 
-import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 
 // Fix default icon Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -70,7 +70,7 @@ function InitialFitBounds({ points }) {
   return null;
 }
 
-export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
+export default function UpdateMap({ data, activeCoords, highlightTrigger, t }) {
   const markerRefs = useRef({});
   const latestOldPoint = useMemo(() => {
     if (!data || data.length === 0) return null;
@@ -110,11 +110,9 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
         elements.push(
           <Marker key="old-latest" position={pos} icon={redIcon} opacity={0.7}>
             <Popup>
-              <strong>Lokasi Master (Lama)</strong>
+              <strong>{t('longlat.modal.old_loc')}</strong>
               <br />
-              Berlaku sejak:
-              <br />
-              <strong>{latestOldPoint.dateLabel}</strong>
+              {t('longlat.modal.valid_since')}: {latestOldPoint.dateLabel}
             </Popup>
           </Marker>
         );
@@ -144,11 +142,11 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
           }}
         >
           <Popup>
-            <strong>Lokasi Baru (Input User)</strong>
+            <strong>{t('longlat.modal.new_loc')}</strong>
             <br />
-            Driver: {item.driverName}
+            {t('longlat.modal.driver')}: {item.driverName}
             <br />
-            Tgl: {item.date}
+            {t('longlat.modal.date')}: {item.date}
           </Popup>
         </Marker>
       );
@@ -163,12 +161,14 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger }) {
     });
 
     return { mapElements: elements, allPoints: points };
-  }, [data, latestOldPoint]);
+  }, [data, latestOldPoint, t]);
 
   if (allPoints.length === 0) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100 text-gray-400 text-sm">
-        Data koordinat tidak valid untuk ditampilkan di peta.
+        {t
+          ? t('longlat.map.invalid_data')
+          : 'Data koordinat tidak valid untuk ditampilkan di peta.'}
       </div>
     );
   }

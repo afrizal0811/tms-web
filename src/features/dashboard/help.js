@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx-js-style';
+import { formatDateUniversal } from '@/lib/utils';
 
-export const downloadRoutingVsActual = (data, isIndo = false) => {
+export const downloadRoutingVsActual = (data, t) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return;
   }
@@ -17,44 +18,24 @@ export const downloadRoutingVsActual = (data, isIndo = false) => {
 
   const wb = XLSX.utils.book_new();
 
-  const headers = isIndo
-    ? [
-        'Alur',
-        'Plat',
-        'Pengemudi',
-        'Pelanggan / Nama Outlet',
-        'Status Pengiriman',
-        'Waktu Buka',
-        'Waktu Tutup',
-        'ETA',
-        'Waktu Kedatangan',
-        'ETD',
-        'Waktu Keberangkatan',
-        'Perkiraan Waktu Kunjung',
-        'Aktual Waktu Kunjung',
-        'Perkiraan Urutan',
-        'Aktual Urutan',
-        'Sama?',
-      ]
-    : [
-        'Flow',
-        'License Plate',
-        'Driver',
-        'Customer / Outlet Name',
-        'Delivery Status',
-        'Open Time',
-        'Close Time',
-        'ETA',
-        'Actual Arrival',
-        'ETD',
-        'Actual Departure',
-        'Planned Visit Time',
-        'Actual Visit',
-        'Routing Sequence',
-        'Actual Sequence',
-        'Is Match?',
-      ];
-
+  const headers = [
+    t('dashboard.tab.routingreal.flow'),
+    t('dashboard.tab.routingreal.license'),
+    t('dashboard.tab.routingreal.driver'),
+    t('dashboard.tab.routingreal.customer'),
+    t('dashboard.tab.routingreal.status'),
+    t('dashboard.tab.routingreal.open_time'),
+    t('dashboard.tab.routingreal.close_time'),
+    t('dashboard.tab.routingreal.eta'),
+    t('dashboard.tab.routingreal.actual_arrival'),
+    t('dashboard.tab.routingreal.etd'),
+    t('dashboard.tab.routingreal.actual_departure'),
+    t('dashboard.tab.routingreal.visit_plan'),
+    t('dashboard.tab.routingreal.visit_actual'),
+    t('dashboard.tab.routingreal.ro_seq'),
+    t('dashboard.tab.routingreal.actual_seq'),
+    t('dashboard.tab.routingreal.is_same'),
+  ];
 
   const sheetData = [headers];
 
@@ -101,9 +82,13 @@ export const downloadRoutingVsActual = (data, isIndo = false) => {
     const roSeq = isHub ? null : isRoSeqNull ? '-' : row.roSequence;
     const realSeq = isHub ? null : isRealSeqNull ? '-' : row.realSequence;
     const isMatch = roSeq === realSeq;
-    const matchText = isIndo ? 'Sama' : 'Match';
-    const mismatchText = isIndo ? 'Beda' : 'Mismatch';
-    const match = isHub ? null : isRealSeqNull ? '-' : isMatch ? matchText : mismatchText;
+    const match = isHub
+      ? null
+      : isRealSeqNull
+        ? '-'
+        : isMatch
+          ? t('dashboard.tab.routingreal.match')
+          : t('dashboard.tab.routingreal.mismatch');;
 
     sheetData.push([
       flow,
@@ -214,15 +199,16 @@ export const downloadRoutingVsActual = (data, isIndo = false) => {
         // Cek Kolom Match (Index 15)
         if (C === 15) {
           if (ws[cellRef].v === 'Beda' || ws[cellRef].v === 'Mismatch') ws[cellRef].s = redStyle;
-          else if (ws[cellRef].v === 'Sama' || ws[cellRef].v === 'Match') ws[cellRef].s = greenStyle;
+          else if (ws[cellRef].v === 'Sama' || ws[cellRef].v === 'Match')
+            ws[cellRef].s = greenStyle;
         }
       }
     }
   }
 
   XLSX.utils.book_append_sheet(wb, ws, 'Routing vs Actual');
-  const dateStr = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Routing_vs_Actual_${dateStr}.xlsx`);
+  const dateStr = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+  XLSX.writeFile(wb, `${t('dashboard.tabs.routing_vs_actual')} - ${dateStr}.xlsx`);
 };
 
 export const processLoadCapacityData = (tasks, driverData, year) => {

@@ -12,8 +12,7 @@ import { downloadRoutingVsActual } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
 
 export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
-  const { t, lang } = useLanguage();
-  const isIndo = lang === 'id';
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -252,7 +251,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     setIsDownloading(true);
     try {
       await new Promise((r) => setTimeout(r, 100));
-      downloadRoutingVsActual(processedData, isIndo);
+      downloadRoutingVsActual(processedData, t);
     } catch (e) {
       toastError('Gagal download:', e);
     } finally {
@@ -306,7 +305,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
             onClick={handleDownload}
             disabled={loading || isDownloading || processedData.length === 0}
             width="w-full md:w-auto"
-            text={isIndo ? 'Unduh Excel' : 'Download Excel'}
+            text={t('common.download')}
           />
         </div>
       </div>
@@ -391,9 +390,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
               const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
               const realSeq = row.realSequence ?? '-';
               const realSeqEmpty = realSeq === '-';
-              const matchText = isIndo ? 'Sama' : 'Match';
-              const mismatchText = isIndo ? 'Beda' : 'Mismatch';
-              const match = realSeqEmpty ? '-' : isMatch ? matchText : mismatchText;
+              const match = realSeqEmpty
+                ? '-'
+                : isMatch
+                  ? t('dashboard.tab.routingreal.match')
+                  : t('dashboard.tab.routingreal.mismatch');
 
               const cellContent = (
                 <>
@@ -432,7 +433,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
               if (row.isManualAssign) {
                 return (
-                  <Tooltip key={index} tooltipContent={t('dashboard.tab.routingreal.tooltip.manual')}>
+                  <Tooltip
+                    key={index}
+                    tooltipContent={t('dashboard.tab.routingreal.tooltip.manual')}
+                  >
                     <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
                       {cellContent}
                     </tr>

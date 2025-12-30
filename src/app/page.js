@@ -241,7 +241,7 @@ export default function Home() {
             onChange={handleLocationChange}
             hubsToShow={currentHubListView}
             className="mt-6 p-2 rounded border border-gray-300 w-64"
-            placeholder={`--${t('home.placeholder')}--`}
+            placeholder={`-- ${t('home.placeholder')} --`}
           />
           <div className="mt-4">
             <button
