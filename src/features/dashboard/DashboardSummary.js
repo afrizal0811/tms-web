@@ -59,7 +59,7 @@ export default function DashboardSummary({ driverData }) {
     if (!date) return;
 
     if (activeTab !== 'Diagram' && date.getDay() === 0) {
-      toastError(t('toast.sunday_error'));
+      toastError(t('dashboard.toast.sunday_error'));
       return;
     }
 
@@ -160,7 +160,7 @@ export default function DashboardSummary({ driverData }) {
         });
       }
     } catch (e) {
-      toastWarning(t('toast.driver_cache_warning'));
+      toastWarning(t('dashboard.toast.driver_cache_warning'));
     }
 
     try {
@@ -336,7 +336,7 @@ export default function DashboardSummary({ driverData }) {
 
       setSummaryData(summary);
     } catch (err) {
-      toastError(err.message || t('toast.daily_fetch_error'));
+      toastError(err.message || t('dashboard.toast.daily_fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -392,7 +392,7 @@ export default function DashboardSummary({ driverData }) {
         lastFetchedYear.current = year;
         lastFetchedLocation.current = hubId;
       } catch (err) {
-        toastError(t('toast.yearly_fetch_error'), err);
+        toastError(t('dashboard.toast.yearly_fetch_error'), err);
       } finally {
         setIsYearlyLoading(false);
       }
@@ -462,7 +462,7 @@ export default function DashboardSummary({ driverData }) {
 
   const headerItems = [
     {
-      label: isDiagramTab ? t('dashboard.year_performance') : t('dashboard.delivery_date'),
+      label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
       component: datePicker,
       hideLabel: false,
     },

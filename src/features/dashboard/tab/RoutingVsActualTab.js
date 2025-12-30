@@ -432,7 +432,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
               if (row.isManualAssign) {
                 return (
-                  <Tooltip key={index} tooltipContent="Manual Assign">
+                  <Tooltip key={index} tooltipContent={t('dashboard.tab.routingreal.tooltip.manual')}>
                     <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
                       {cellContent}
                     </tr>

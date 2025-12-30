@@ -3,6 +3,7 @@
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { TAG_MAP_KEY } from '@/lib/constants';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -24,6 +25,8 @@ const parseDate = (dateStr) => {
 };
 
 export default function BulkReportDownloader({ driverData }) {
+  const { t } = useLanguage();
+
   const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -61,7 +64,7 @@ export default function BulkReportDownloader({ driverData }) {
     setEndDate(end);
   };
 
-  const handleBulkRoutingSummary = () => {
+  const handleBulkRoutingSummary = (t) => {
     const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
     const { storedLocation: hubIdLocal } = getLocalStorage();
     const hubTagMap = fullTagMap[hubIdLocal] || {};
@@ -71,7 +74,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'routing',
-      zipPrefix: 'Bulk Routing Summary',
+      zipPrefix: `Bulk ${t('excel.routing.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -92,21 +95,23 @@ export default function BulkReportDownloader({ driverData }) {
             filteredResults,
             hubTagMap,
             dateForFile,
-            hubName
+            hubName,
+            t
           );
         }
         return null;
       },
+      t,
     });
   };
 
-  const handleBulkDeliverySummary = () => {
+  const handleBulkDeliverySummary = (t) => {
     bulkDownloader({
       startDate,
       endDate,
       driverData,
       reportType: 'delivery',
-      zipPrefix: 'Bulk Delivery Summary',
+      zipPrefix: `Bulk ${t('excel.delivery.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -146,21 +151,23 @@ export default function BulkReportDownloader({ driverData }) {
             dateForFile,
             apiDate,
             hubId,
-            hubName
+            hubName,
+            t
           );
         }
         return null;
       },
+      t,
     });
   };
 
-  const handleBulkTimeSummary = () => {
+  const handleBulkTimeSummary = (t) => {
     bulkDownloader({
       startDate,
       endDate,
       driverData,
       reportType: 'time',
-      zipPrefix: 'Bulk Time Summary',
+      zipPrefix: `Bulk ${t('excel.time.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubName }) => {
@@ -176,10 +183,11 @@ export default function BulkReportDownloader({ driverData }) {
         });
 
         if (allApiData.length > 0) {
-          return generateTimeSummaryWorkbook(driverData, allApiData, dateForFile, hubName);
+          return generateTimeSummaryWorkbook(driverData, allApiData, dateForFile, hubName, t);
         }
         return null;
       },
+      t,
     });
   };
 
@@ -188,11 +196,13 @@ export default function BulkReportDownloader({ driverData }) {
 
   return (
     <div className="w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">Laporan Periode</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">
+        {t('report.period_title')}
+      </h1>
       <div className="flex flex-col sm:flex-row justify-center items-center mb-8 gap-4">
         <div className="text-center w-full max-w-xs">
           <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
-            Rentang Tanggal Pengiriman
+            {t('common.range_delivery')}
           </label>
           <CustomDatePicker
             selectsRange
@@ -208,7 +218,7 @@ export default function BulkReportDownloader({ driverData }) {
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
         {/* Tombol Routing Summary */}
         <button
-          onClick={handleBulkRoutingSummary}
+          onClick={() => handleBulkRoutingSummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
             px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
@@ -222,13 +232,13 @@ export default function BulkReportDownloader({ driverData }) {
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Routing Summary'
+            t('report.routing_summary')
           )}
         </button>
 
         {/* Tombol Delivery Summary */}
         <button
-          onClick={handleBulkDeliverySummary}
+          onClick={() => handleBulkDeliverySummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
             px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
@@ -242,13 +252,11 @@ export default function BulkReportDownloader({ driverData }) {
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Delivery Summary'
+            t('report.delivery_summary')
           )}
         </button>
-
-        {/* Tombol Time Summary */}
         <button
-          onClick={handleBulkTimeSummary}
+          onClick={() => handleBulkTimeSummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
             px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
@@ -262,7 +270,7 @@ export default function BulkReportDownloader({ driverData }) {
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Time Summary'
+            t('report.time_summary')
           )}
         </button>
       </div>

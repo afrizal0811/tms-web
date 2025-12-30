@@ -12,7 +12,8 @@ function formatSimpleTime(timeStr) {
   return timeStr.substring(0, 5);
 }
 
-export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dateForFile, hubName) {
+export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dateForFile, hubName, t) {
+  const translate = t || ((key) => key);
   const driverMap = driverData.reduce((acc, driver) => {
     if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
     return acc;
@@ -242,16 +243,16 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
 
   // 3. LOGIKA BARU: Tambah Header
   const headers1 = [
-    'Plat',
-    'Driver',
-    'Weight Percentage',
-    'Volume Percentage',
-    'Total Distance (m)',
-    'Total Visits',
-    'Total Delivered',
-    'Ship Duration',
-    'ETA First Store', // Baru
-    'ETD Hub', // Baru
+    translate('excel.routing.headers.plate'),
+    translate('excel.routing.headers.driver'),
+    translate('excel.routing.headers.weight_pct'),
+    translate('excel.routing.headers.volume_pct'),
+    translate('excel.routing.headers.total_dist'),
+    translate('excel.routing.headers.total_visits'),
+    translate('excel.routing.headers.total_delivery'),
+    translate('excel.routing.headers.ship_dur'),
+    translate('excel.routing.headers.eta_first'),
+    translate('excel.routing.headers.etd_hub'),
   ];
 
   const validDriverData = driverData.filter((driver) => {
@@ -348,12 +349,12 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
 
   // Daftar nama header yang harus berwarna hijau
   const greenHeaders = [
-    'Weight Percentage',
-    'Volume Percentage',
-    'Total Distance (m)',
-    'Total Visits',
-    'Total Delivered',
-    'Ship Duration',
+    translate('excel.routing.headers.weight_pct'),
+    translate('excel.routing.headers.volume_pct'),
+    translate('excel.routing.headers.total_dist'),
+    translate('excel.routing.headers.total_visits'),
+    translate('excel.routing.headers.total_delivery'),
+    translate('excel.routing.headers.ship_dur'),
   ];
 
   for (let R = range1.s.r; R <= range1.e.r; ++R) {
@@ -399,13 +400,13 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   }));
   wsTruckDetail['!cols'] = colWidths1;
 
-  XLSX.utils.book_append_sheet(wb, wsTruckDetail, 'Truck Detail');
+  XLSX.utils.book_append_sheet(wb, wsTruckDetail, translate('excel.routing.sheets.truck_detail'));
 
   // --- SUMMARY SHEETS (Distance & Usage) - TIDAK BERUBAH ---
   const totalDryKm = totalDryDistance / 1000;
   const totalFrozenKm = totalFrozenDistance / 1000;
   const distanceSummaryData = [
-    ['DRY (km)', 'FROZEN (km)'],
+    [translate('excel.routing.headers.dry_km'), translate('excel.routing.headers.frozen_km')],
     [totalDryKm, totalFrozenKm],
   ];
   const wsDistanceSummary = XLSX.utils.aoa_to_sheet(distanceSummaryData);
@@ -418,14 +419,23 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
     t: 'n',
     z: '0.00',
   };
-  wsDistanceSummary['A1'] = { v: 'DRY (km)', t: 's', s: distanceHeaderStyle };
-  wsDistanceSummary['B1'] = { v: 'FROZEN (km)', t: 's', s: distanceHeaderStyle };
+ wsDistanceSummary['A1'] = { v: translate('excel.routing.headers.dry_km'), t: 's', s: distanceHeaderStyle };
+ wsDistanceSummary['B1'] = {
+   v: translate('excel.routing.headers.frozen_km'),
+   t: 's',
+   s: distanceHeaderStyle,
+ };
   wsDistanceSummary['A2'] = { v: totalDryKm, t: 'n', s: distanceDataStyle };
   wsDistanceSummary['B2'] = { v: totalFrozenKm, t: 'n', s: distanceDataStyle };
   wsDistanceSummary['!cols'] = [{ wch: 15 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsDistanceSummary, 'Total Distance Summary');
 
-  const usageHeader = ['Tipe Kendaraan', 'Jumlah (Dry)', 'Jumlah (Frozen)'];
+  XLSX.utils.book_append_sheet(wb, wsDistanceSummary, translate('excel.routing.sheets.dist_summary'));
+
+  const usageHeader = [
+    translate('excel.routing.headers.veh_type'),
+    translate('excel.routing.headers.count_dry'),
+    translate('excel.routing.headers.count_frozen'),
+  ];
   const usageDataRows = VEHICLE_TYPES.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
     const frozenCount = truckUsageCount[type]['Frozen'];
@@ -435,7 +445,7 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
   const lainFrozenCount = truckUsageCount['Lainnya']['Frozen'];
   if (lainDryCount > 0 || lainFrozenCount > 0) {
     usageDataRows.push([
-      'Lainnya',
+      translate('excel.routing.data.other'),
       lainDryCount > 0 ? lainDryCount : null,
       lainFrozenCount > 0 ? lainFrozenCount : null,
     ]);
@@ -461,10 +471,11 @@ export function generateRoutingWorkbook(driverData, filteredResults, tagMap, dat
     if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
   });
   wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsTruckUsage, 'Truck Usage');
+  XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
 
   const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
-  const excelFileName = `Routing Summary - ${formattedDate} - ${hubName}.xlsx`;
+  // Translate Nama File
+  const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
 
   return { wb, excelFileName, missingTimesFound };
 }
