@@ -318,6 +318,7 @@ export default function VehicleData() {
               driverMap={driverMap}
               paginatedData={filteredData}
               searchQuery={searchQuery}
+              t={t}
             />
           )}
         </div>
