@@ -9,7 +9,7 @@ export function parseSONumber(visitName) {
   return matches ? matches.join(', ') : null;
 }
 
-export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading }) => {
+export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading, t }) => {
   setIsDownloading(true);
   try {
     const wb = XLSX.utils.book_new();
@@ -24,12 +24,12 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading 
       }
       const headers = [
         'No.',
-        'Visit',
-        'Nomor SO',
-        'Jam Buka',
-        'Jam Tutup',
-        'Estimasi Sampai',
-        'Estimasi Berangkat',
+        t('estimation.visit'),
+        t('estimation.no_so'),
+        t('estimation.open_time'),
+        t('estimation.close_time'),
+        t('estimation.est_arrival'),
+        t('estimation.est_depart'),
       ];
       const dataForSheet = [];
       dataForSheet.push(headers.map((h) => ({ v: h, s: headerStyle })));
@@ -63,13 +63,13 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading 
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
     if (wb.SheetNames.length === 0) {
-      toastError('Tidak ada data untuk diunduh.');
+      toastError(t('estimation.toast.no_data'));
       return;
     } else {
       const { storedLocationName: locationName } = getLocalStorage() || '-';
-      const fileName = `Estimasi Delivery - ${locationName}.xlsx`;
+      const fileName = `${t('estimation.title')} - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      toastSuccess('File Estimasi Delivery berhasil diunduh!');
+      toastSuccess(t('estimation.toast.success'));
     }
   } catch (e) {
     toastError(e.message);

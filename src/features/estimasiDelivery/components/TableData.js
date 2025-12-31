@@ -5,7 +5,7 @@ import Th from '@/components/table/Th';
 import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import { parseSONumber } from '../help';
 
-export default function TableData({ activeRoute, searchQuery }) {
+export default function TableData({ activeRoute, searchQuery, t }) {
   // Hapus fungsi escapeRegExp dan HighlightText lokal yang lama
 
   return (
@@ -13,12 +13,12 @@ export default function TableData({ activeRoute, searchQuery }) {
       <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
         <tr>
           <Th widthClass="w-[5%]">No.</Th>
-          <Th widthClass="w-[30%]">Visit</Th>
-          <Th widthClass="w-[20%]">Nomor SO</Th>
-          <Th widthClass="w-[10%]">Jam Buka</Th>
-          <Th widthClass="w-[10%]">Jam Tutup</Th>
-          <Th widthClass="w-[12.5%]">Estimasi Sampai</Th>
-          <Th widthClass="w-[12.5%]">Estimasi Berangkat</Th>
+          <Th widthClass="w-[30%]">{t('estimation.visit')}</Th>
+          <Th widthClass="w-[20%]">{t('estimation.no_so')}</Th>
+          <Th widthClass="w-[10%]">{t('estimation.open_time')}</Th>
+          <Th widthClass="w-[10%]">{t('estimation.close_time')}</Th>
+          <Th widthClass="w-[12.5%]">{t('estimation.est_arrival')}</Th>
+          <Th widthClass="w-[12.5%]">{t('estimation.est_depart')}</Th>
         </tr>
       </thead>
       <tbody className="bg-white">

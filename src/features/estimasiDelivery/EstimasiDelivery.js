@@ -6,8 +6,9 @@ import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { isDateSunday, parseCustomerString } from '@/lib/utils';
+import { parseCustomerString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
@@ -25,12 +26,12 @@ export default function EstimasiDelivery() {
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   });
-
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { t } = useLanguage();
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -38,11 +39,6 @@ export default function EstimasiDelivery() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const newDateStr = `${year}-${month}-${day}`;
-
-    if (isDateSunday(newDateStr)) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
-      return;
-    }
     setSelectedDate(newDateStr);
   };
 
@@ -164,28 +160,29 @@ export default function EstimasiDelivery() {
     <SearchBar
       disabled={isLoading}
       onChange={(val) => setSearchQuery(val)}
-      placeholder="Cari Plat, Customer, atau SO"
+      placeholder={t('estimation.search_placeholder')}
       value={searchQuery}
     />
   );
 
   const downloadButton = (
     <DownloadButton
+      disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
+      isLoading={isLoading || isDownloading}
       onClick={() =>
         handleConfirmDownload({
           filteredVehicleRoutes,
           setIsDownloading,
+          t,
         })
       }
-      disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
-      isLoading={isLoading || isDownloading}
       width="w-full md:w-auto"
     />
   );
 
   const headerItems = [
-    { label: 'Filter', component: searchBar, hideLabel: true },
-    { label: 'Tanggal Routing', component: datePicker, hideLabel: false },
+    { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
@@ -197,27 +194,27 @@ export default function EstimasiDelivery() {
 
   const subtitle = (
     <>
-      Monitoring{' '}
-      <span className="font-semibold text-sky-600">rute kunjungan & jadwal pengiriman</span> harian.
+      {t('estimation.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('estimation.subtitle_highlight')}</span>
     </>
   );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      <HeaderCard title="Estimasi Pengiriman" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('estimation.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
-        className="min-h-[400px]"
-        isLoading={isLoading}
-        loadingText="Memuat Rute..."
-        isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
-        tabs={vehicleTabs}
         activeTabId={activeVehicleId}
+        className="min-h-[400px]"
+        isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
+        isLoading={isLoading}
+        loadingText={t('common.loading')}
         onTabClick={setActiveVehicleId}
+        tabs={vehicleTabs}
       >
         <div className="bg-white rounded-xl h-full flex flex-col border-none">
           <div className="overflow-y-auto grow h-full m-0 border border-gray-300 rounded-b-xl">
             {!isLoading && activeRoute && (
-              <TableData activeRoute={activeRoute} searchQuery={searchQuery} />
+              <TableData activeRoute={activeRoute} searchQuery={searchQuery} t={t} />
             )}
           </div>
         </div>
