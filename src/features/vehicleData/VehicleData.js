@@ -64,57 +64,55 @@ export default function VehicleData() {
       try {
         const { storedLocation: userLocation, storedVehicleTag: storedMapString } =
           getLocalStorage();
-        if (!userLocation) {
-          throw new Error('Lokasi user tidak ditemukan. Harap kembali ke Halaman Utama.');
-        }
+        if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
+
         const drivers = await getOrFetchDriverData(userLocation);
-        if (!drivers) {
-          throw new Error('Gagal memuat data driver.');
+        const localDriverMap = new Map();
+        if (drivers) {
+          drivers.forEach((d) => {
+            const normEmail = normalizeEmail(d.email);
+            if (normEmail) localDriverMap.set(normEmail, d.name);
+          });
         }
-        const map = new Map();
-        drivers.forEach((driver) => {
-          const normalizedEmail = normalizeEmail(driver.email);
-          if (normalizedEmail) map.set(normalizedEmail, driver.name);
-        });
-        setDriverMap(map);
-
-        const rawApiData = await getVehicles({
-          limit: 500,
-          hubId: userLocation,
-        });
-
-        if (rawApiData.length === 0) {
-          throw new Error('Tidak ada data yang ditemukan.');
-        }
-
+        setDriverMap(localDriverMap);
+        const rawApiData = await getVehicles({ limit: 500, hubId: userLocation });
+        if (!rawApiData || rawApiData.length === 0) throw new Error('Tidak ada data.');
         const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
-
         setTemplateData([...rawApiData].sort(sortByEmail));
-
-        let processedData = rawApiData.map((v) => ({
-          ...v,
-          tags: v.tags ? [...v.tags] : [],
-        }));
+        let processedData = rawApiData.map((v) => ({ ...v, tags: v.tags ? [...v.tags] : [] }));
 
         try {
           if (storedMapString) {
             const tagMap = JSON.parse(storedMapString);
             const hubMap = tagMap[userLocation];
-
             if (hubMap) {
               processedData.forEach((vehicle) => {
                 if (!vehicle.tags || vehicle.tags.length === 0 || !vehicle.name) return;
                 const originalTag = vehicle.tags[0];
                 const plate = vehicle.name;
                 const parts = originalTag.split('-');
+                let storagePrefix = '';
+                let currentType = '';
                 if (parts.length >= 2) {
-                  const storagePrefix = parts[0];
-                  const currentType = parts[1];
-                  if (hubMap[plate] && hubMap[plate][currentType]) {
-                    const mappedType = hubMap[plate][currentType];
-                    const newFullTag = `${storagePrefix}-${mappedType}`;
-                    vehicle.tags[0] = newFullTag;
-                  }
+                  storagePrefix = parts[0];
+                  currentType = parts[1];
+                } else {
+                  currentType = originalTag;
+                }
+                const emailKey = normalizeEmail(vehicle.assignee);
+                const driverName = localDriverMap.get(emailKey) || '';
+                const upperName = driverName.toUpperCase();
+
+                if (upperName.includes('FRZ') || upperName.includes('FROZEN')) {
+                  storagePrefix = 'FROZEN';
+                } else if (upperName.includes('DRY')) {
+                  storagePrefix = 'DRY';
+                }
+                if (hubMap[plate] && hubMap[plate][currentType]) {
+                  const mappedType = hubMap[plate][currentType];
+                  const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
+
+                  vehicle.tags[0] = newFullTag;
                 }
               });
             }
@@ -122,37 +120,25 @@ export default function VehicleData() {
         } catch (error) {
           toastError(t('vehicle.failed_mapping', { error }));
         }
-
         const emailToVehiclesMap = new Map();
-        for (const vehicle of processedData) {
-          const email = vehicle.assignee;
-          if (email) {
-            if (!emailToVehiclesMap.has(email)) {
-              emailToVehiclesMap.set(email, []);
-            }
-            emailToVehiclesMap.get(email).push(vehicle);
-          }
-        }
+        processedData.forEach((v) => {
+          if (!v.assignee) return;
+          if (!emailToVehiclesMap.has(v.assignee)) emailToVehiclesMap.set(v.assignee, []);
+          emailToVehiclesMap.get(v.assignee).push(v);
+        });
 
         const masterList = [];
         const conditionalList = [];
         const countSpaces = (str) => (str.match(/ /g) || []).length;
 
-        for (const [email, vehicles] of emailToVehiclesMap.entries()) {
+        for (const [_, vehicles] of emailToVehiclesMap.entries()) {
           if (vehicles.length === 1) {
-            const vehicle = vehicles[0];
-            masterList.push(vehicle);
+            masterList.push(vehicles[0]);
           } else {
-            const sortedVehicles = [...vehicles].sort((a, b) => {
-              return countSpaces(a.name) - countSpaces(b.name);
-            });
-            const masterVehicle = sortedVehicles[0];
-            masterList.push(masterVehicle);
-            for (let i = 1; i < sortedVehicles.length; i++) {
-              const vehicle = sortedVehicles[i];
-              if (countSpaces(vehicle.name) > 2) {
-                conditionalList.push(vehicle);
-              }
+            const sorted = [...vehicles].sort((a, b) => countSpaces(a.name) - countSpaces(b.name));
+            masterList.push(sorted[0]);
+            for (let i = 1; i < sorted.length; i++) {
+              if (countSpaces(sorted[i].name) > 2) conditionalList.push(sorted[i]);
             }
           }
         }
@@ -160,7 +146,7 @@ export default function VehicleData() {
         setMasterData(masterList.sort(sortByEmail));
         setConditionalData(conditionalList.sort(sortByEmail));
       } catch (err) {
-        toastError(err.message);
+        toastError(err.message); // Pastikan toastError aman
       } finally {
         setIsLoading(false);
       }
