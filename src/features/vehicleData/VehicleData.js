@@ -6,6 +6,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,11 +23,9 @@ export default function VehicleData() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
   const [templateData, setTemplateData] = useState([]);
-
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [sheetSelection, setSheetSelection] = useState({
     master: true,
@@ -34,15 +33,15 @@ export default function VehicleData() {
     template: true,
   });
   const downloadDropdownRef = useRef(null);
-
+  const { t } = useLanguage();
   const downloadOptions = [
-    { name: 'master', label: 'Master Vehicle' },
+    { name: 'master', label: t('vehicle.tabs.master_title') },
     {
       name: 'conditional',
-      label: 'Conditional Vehicle',
+      label: t('vehicle.tabs.conditional_title'),
       show: conditionalData.length > 0,
     },
-    { name: 'template', label: 'Template Vehicle' },
+    { name: 'template', label: t('vehicle.tabs.template_title') },
   ];
 
   const noSheetSelected = !(
@@ -121,7 +120,7 @@ export default function VehicleData() {
             }
           }
         } catch (error) {
-          toastError(`Gagal melakukan mapping vehicle tag: ${error}`);
+          toastError(t('vehicle.failed_mapping', { error }));
         }
 
         const emailToVehiclesMap = new Map();
@@ -167,7 +166,7 @@ export default function VehicleData() {
       }
     }
     fetchData();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -211,7 +210,6 @@ export default function VehicleData() {
     });
   }, [sourceData, searchQuery, driverMap]);
 
-
   const totalItems = filteredData.length;
 
   const searchBar = (
@@ -219,7 +217,7 @@ export default function VehicleData() {
       className="w-full lg:max-w-xs"
       disabled={isLoading}
       onChange={(val) => setSearchQuery(val)}
-      placeholder="Cari Plat, Customer, atau SO"
+      placeholder={t('vehicle.search_placeholder')}
       value={searchQuery}
     />
   );
@@ -227,9 +225,10 @@ export default function VehicleData() {
   const downloadButton = (
     <div className="w-full md:w-auto z-50" ref={downloadDropdownRef}>
       <DownloadButton
-        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
         disabled={isDownloading || isLoading}
         isLoading={isLoading || isDownloading}
+        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+        text={t('common.download_excel')}
         width="w-full md:w-auto"
       />
 
@@ -245,11 +244,11 @@ export default function VehicleData() {
                   className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
                 >
                   <input
-                    type="checkbox"
-                    name={option.name}
                     checked={sheetSelection[option.name]}
-                    onChange={handleToggleChange}
                     className="form-checkbox h-4 w-4 text-sky-600 rounded cursor-pointer"
+                    name={option.name}
+                    onChange={handleToggleChange}
+                    type="checkbox"
                   />
                   <span className="text-sm text-gray-800">{option.label}</span>
                 </label>
@@ -260,13 +259,13 @@ export default function VehicleData() {
             <button
               onClick={() =>
                 handleConfirmDownload({
-                  masterData,
-                  driverMap,
                   conditionalData,
+                  driverMap,
+                  masterData,
+                  setIsDownloadDropdownOpen,
+                  setIsDownloading,
                   sheetSelection,
                   templateData,
-                  setIsDownloading,
-                  setIsDownloadDropdownOpen,
                 })
               }
               disabled={isDownloading || noSheetSelected}
@@ -277,7 +276,7 @@ export default function VehicleData() {
                   <Spinner size="w-5 h-5 border-2" />
                 </div>
               ) : (
-                'Download'
+                t('common.download')
               )}
             </button>
           </div>
@@ -292,45 +291,48 @@ export default function VehicleData() {
   ];
 
   const tabs = [
-    { id: 'master', label: 'Master Vehicle' },
-    ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
-    { id: 'template', label: 'Template Vehicle' },
+    { id: 'master', label: t('vehicle.tabs.master_title') },
+    ...(conditionalData.length > 0
+      ? [{ id: 'conditional', label: t('vehicle.tabs.conditional_title') }]
+      : []),
+    { id: 'template', label: t('vehicle.tabs.template_title') },
   ];
 
   const subtitle = (
     <>
-      Manajemen daftar <span className="font-semibold text-sky-600">kendaraan</span>
+      {t('vehicle.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
     </>
   );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      <HeaderCard title="Data Kendaraan" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('vehicle.title')} subtitle={subtitle} items={headerItems} />
 
       <BodyCard
-        tabs={tabs}
         activeTabId={activeTab}
-        onTabClick={setActiveTab}
-        isLoading={isLoading}
-        loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
+        isLoading={isLoading}
+        loadingText={t('common.loading')}
+        onTabClick={setActiveTab}
+        tabs={tabs}
       >
         <div className="flex-1 flex flex-col m-0 border border-gray-300 rounded-b-xl overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab
-              paginatedData={filteredData} 
               driverMap={driverMap}
+              paginatedData={filteredData}
               searchQuery={searchQuery}
+              t={t}
             />
           )}
           {activeTab === 'template' && (
             <TemplateTab
-              paginatedData={filteredData}
               driverMap={driverMap}
+              paginatedData={filteredData}
               searchQuery={searchQuery}
             />
           )}
-
         </div>
       </BodyCard>
     </div>

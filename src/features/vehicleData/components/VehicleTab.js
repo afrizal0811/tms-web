@@ -5,16 +5,16 @@ import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import { normalizeEmail } from '@/lib/utils';
 
-export default function VehicleTab({ paginatedData, driverMap, searchQuery }) {
+export default function VehicleTab({ paginatedData, driverMap, searchQuery, t }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-4xl">
         <thead className="sticky top-0 z-10">
           <tr>
-            <Th>Plat</Th>
-            <Th>Type</Th>
-            <Th>Name</Th>
-            <Th>Email</Th>
+            <Th>{t('vehicle.tabs.license')}</Th>
+            <Th>{t('vehicle.tabs.type')}</Th>
+            <Th>{t('vehicle.tabs.name')}</Th>
+            <Th>{t('vehicle.tabs.email')}</Th>
           </tr>
         </thead>
         <tbody>

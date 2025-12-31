@@ -11,13 +11,13 @@ export const formatVolume = (vol) => {
 };
 
 export const handleConfirmDownload = ({
-  masterData,
-  driverMap,
   conditionalData,
+  driverMap,
+  masterData,
+  setIsDownloadDropdownOpen,
+  setIsDownloading,
   sheetSelection,
   templateData,
-  setIsDownloading,
-  setIsDownloadDropdownOpen,
 }) => {
   setIsDownloading(true);
   try {

@@ -297,21 +297,21 @@ export default function UpdateLonglatPage() {
 
   const datePicker = (
     <CustomDatePicker
-      selected={selectedDate}
-      onChange={handleDateChange}
-      isLoading={loading || isDownloading}
       className="md:w-48"
+      isLoading={loading || isDownloading}
+      onChange={handleDateChange}
+      selected={selectedDate}
       wrapperClassName="w-full"
     />
   );
 
   const downloadBtn = (
     <DownloadButton
-      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
       disabled={loading || isDownloading || processedData.length === 0}
       isLoading={isDownloading}
+      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
+      text={t('common.download_excel')}
       width="w-full md:w-auto"
-      text={t('common.download')}
     />
   );
 
@@ -331,9 +331,9 @@ export default function UpdateLonglatPage() {
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard title={t('longlat.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
+        isEmpty={!loading && processedData.length === 0}
         isLoading={loading}
         loadingText={t('common.loading')}
-        isEmpty={!loading && processedData.length === 0}
       >
         <div className="p-0 h-full overflow-y-auto">
           <UpdateLonglatTable
