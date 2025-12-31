@@ -46,6 +46,14 @@ export const dictionary = {
         title: 'Konfirmasi Pilihan User',
       },
     },
+    vehicle_tag: {
+      description: 'Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki',
+      license: 'Nomor Kendaraan',
+      message_choose: 'Pilih Tipe Standar',
+      save: 'Simpan',
+      tag: 'Tag Terdeteksi',
+      title: 'Peringatan',
+    },
     navbar: {
       coordinate: 'Longlat',
       daily_report: 'Laporan Harian',
@@ -393,7 +401,7 @@ export const dictionary = {
           break_start_time: 'Waktu Mulai Istirahat',
           cost_factor: 'Faktor Biaya',
           end_time: 'Waktu Selesai',
-          more: "lainnya",
+          more: 'lainnya',
           multiday: 'Multiday',
           name: 'Nama',
           odd_even: 'Ganjil Genap',
@@ -473,6 +481,14 @@ export const dictionary = {
         question: 'Are you sure to select',
         title: 'Confirmation User Selection',
       },
+    },
+    vehicle_tag: {
+      description: 'Some vehicles have non-standard types. Please change them',
+      license: 'License Plate',
+      message_choose: 'Choose Standard Type',
+      save: 'Save',
+      tag: 'Detected Tag',
+      title: 'Warning',
     },
     navbar: {
       coordinate: 'Coordinates',

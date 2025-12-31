@@ -1,12 +1,12 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckUsageSheet.js
-import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
+import { VEHICLE_TYPES } from '@/lib/constants';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { getMasterTruckData } from '@/lib/masterTruckHelper';
+import { toastError } from '@/lib/toastHelper';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
-import { toastError } from '@/lib/toastHelper';
 
-// --- HELPER FUNCTIONS (TIDAK BERUBAH) ---
 function formatMonthName(dateObj) {
   return dateObj.toLocaleDateString('en-GB', { month: 'long' });
 }
@@ -46,7 +46,6 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
   return specificType;
 }
 
-// --- LOGIKA HITUNG RANGKUMAN (TIDAK BERUBAH) ---
 function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
   const workingDays = dateKeys.filter((d) => !d.isSunday).length;
@@ -136,7 +135,7 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
   let tagMap = {};
   if (typeof window !== 'undefined') {
     try {
-      const storedMap = localStorage.getItem(TAG_MAP_KEY);
+      const { storedVehicleTag: storedMap } = getLocalStorage();
       if (storedMap) tagMap = JSON.parse(storedMap);
     } catch (e) {
       toastError(e);
@@ -195,9 +194,6 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
   return { dateMap, dateKeys, vehicleTypes: VEHICLE_TYPES, hubMasterData, summaryData };
 }
 
-/**
- * BAGIAN 2: GENERATOR EXCEL
- */
 export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } = calculateTruckUsageData(
     resultsData,
@@ -209,8 +205,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   const monthName = formatMonthName(new Date(startDateStr));
   const excelData = [];
   const merges = [];
-
-  // --- Helper Colors ---
   const getPctFill = (val) => {
     if (val > 1) return FILL_STYLES.alertRed;
     if (val >= 0.75) return { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };
@@ -218,9 +212,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     return { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
   };
 
-  // ==========================================
-  // 1. SUMMARY COUNT TABLE (FULL)
-  // ==========================================
   excelData.push(['SUMMARY (COUNT) - ' + monthName, '', '', '', '', '', '', '', '']);
   excelData.push(['Vehicle Types', 'TMS', 'Non TMS', 'TVU', 'TV', '% TVU', 'V', 'VU', 'IV']);
 
@@ -228,10 +219,8 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     vehicleTypes.forEach((type) => {
       const d = summaryData[cat].types[type];
       if (isPercentage) {
-        // SHORT TABLE: Only 4 Columns
         excelData.push([type, d.PctTMS, d.PctNonTMS, d.PctTVU]);
       } else {
-        // FULL TABLE
         excelData.push([
           type,
           d.TMS || 0,
@@ -260,11 +249,8 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   excelData.push(['OTV', otv.TMS, otv.NonTMS, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
 
   const summaryCountEndRow = excelData.length;
-  excelData.push([]); // Spacer
+  excelData.push([]); 
 
-  // ==========================================
-  // 2. SUMMARY PERCENTAGE TABLE (SHORT)
-  // ==========================================
   const summaryPctStartRow = excelData.length;
 
   excelData.push([`SUMMARY (%) - ${monthName}`, '', '', '']);
@@ -275,11 +261,8 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   excelData.push(['OTV', otv.PctTMS, otv.PctNonTMS, otv.PctTVU]);
 
   const summaryPctEndRow = excelData.length;
-  excelData.push([]); // Spacer
+  excelData.push([]); 
 
-  // ==========================================
-  // 3. DAILY TABLES (COUNT & PERCENT)
-  // ==========================================
   const table1StartRow = summaryPctEndRow + 1;
 
   const buildTableData = (isPercentage, startRowIndex) => {
@@ -377,21 +360,16 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
-  // --- MERGES SUMMARY 1 ---
   merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
   merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
-  // --- MERGES SUMMARY 2 ---
   merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
   merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
 
   ws['!merges'] = merges;
   ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: table1StartRow + 2 }];
 
-  // --- STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   const tableHeight = 2 + vehicleTypes.length + 1 + 1 + vehicleTypes.length + 1 + 1 + 1;
-
-  // Row Indices for Summary (Relative)
   const sumDryEnd = 2 + vehicleTypes.length;
   const sumDryTot = sumDryEnd;
   const sumFrzStart = sumDryTot + 1;
@@ -404,8 +382,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
-
-      // === A. SUMMARY TABLES STYLING ===
       const isSum1 = R < summaryCountEndRow;
       const isSum2 = R >= summaryPctStartRow && R < summaryPctEndRow;
 
@@ -455,7 +431,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
 
       if (R === summaryCountEndRow || R === summaryPctEndRow) continue;
 
-      // === B. DAILY TABLES STYLING ===
       let isTable1 = false,
         isTable2 = false,
         relR = -1;
@@ -478,8 +453,6 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
         const otvRow = frzTot + 1;
 
         cell.s = { ...BASE_STYLES.center };
-
-        // HEADER ROW (Daily)
         if (relR === 0 || relR === 1) {
           cell.s = { ...HEADER_STYLES.main };
           if (C === 3) cell.s.border.left = BORDERS.medium;

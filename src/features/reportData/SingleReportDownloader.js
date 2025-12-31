@@ -5,7 +5,6 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
-import { TAG_MAP_KEY } from '@/lib/constants';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -101,8 +100,8 @@ export default function TmsSummary({
         throw new Error(t('report.toast.no_routing'));
       }
 
-      // Tag map for mapping validation
-      const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+      const { storedVehicleTag } = getLocalStorage();
+      const fullTagMap = JSON.parse(storedVehicleTag || '{}');
       const hubTagMap = fullTagMap[selectedLocation] || {};
 
       const { wb, excelFileName, missingTimesFound } = generateRoutingWorkbook(

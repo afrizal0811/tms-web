@@ -1,15 +1,15 @@
 'use client';
 import BaseModal from '@/components/BaseModal';
-import { TAG_MAP_KEY, VEHICLE_TYPES } from '@/lib/constants';
+import { VEHICLE_TYPES } from '@/lib/constants';
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { useState } from 'react';
-
-export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
+export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {
   const [mappings, setMappings] = useState({});
 
   const handleSave = () => {
     let currentMap = {};
     try {
-      const stored = localStorage.getItem(TAG_MAP_KEY);
+      const { storedVehicleTag: stored } = getLocalStorage();
       if (stored) currentMap = JSON.parse(stored);
     } catch (e) {}
     unmappedData.forEach((item) => {
@@ -22,8 +22,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
         currentMap[hubId][plat][tag] = selectedType;
       }
     });
-
-    localStorage.setItem(TAG_MAP_KEY, JSON.stringify(currentMap));
+    setLocalStorage('vehicleTagMap', JSON.stringify(currentMap));
     onCompleted();
   };
 
@@ -37,7 +36,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
         disabled={!isAllSelected}
         className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
       >
-        Simpan
+        {t('vehicle_tag.save')}
       </button>
     </div>
   );
@@ -48,17 +47,14 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
       onClose={() => {}}
       title={
         <div>
-          <h2 className="text-xl font-bold">⚠️ PERINGATAN!</h2>
-          <p className="text-sm mt-1 font-normal">
-            Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki.
-          </p>
+          <h2 className="text-xl font-bold">⚠️ {t('vehicle_tag.title')}</h2>
+          <p className="text-sm mt-1 font-normal">{t('vehicle_tag.description')}</p>
         </div>
       }
       maxWidth="max-w-3xl"
       footer={footerContent}
       noClose={true}
     >
-      {/* Body Content */}
       <div>
         {unmappedData.map((info, idx) => (
           <div
@@ -67,11 +63,11 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
           >
             <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
               <div>
-                <p className="text-sm text-gray-500 text-left">Plat Nomor</p>
+                <p className="text-sm text-gray-500 text-left">{t('vehicle_tag.license')}</p>
                 <p className="font-bold text-lg text-slate-800">{info.plat}</p>
               </div>
               <div className="mt-3 sm:mt-0 text-left sm:text-right w-full sm:w-auto">
-                <p className="text-sm text-gray-500">Tag Terdeteksi</p>
+                <p className="text-sm text-gray-500">{t('vehicle_tag.tag')}</p>
                 <code className="bg-gray-200 px-2 py-1 rounded text-sm font-mono text-red-600 inline-block wrap-break-words max-w-full">
                   {info.fullTag}
                 </code>
@@ -79,7 +75,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted }) {
             </div>
             <div className="mt-2">
               <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide text-left">
-                Pilih Tipe Standar:
+                {t('vehicle_tag.message_choose')}:
               </p>
               <div className="flex flex-wrap gap-2">
                 {VEHICLE_TYPES.map((type) => (

@@ -8,8 +8,8 @@ import { useEffect, useState } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { getUsers } from '../../lib/apiService';
 import { toastSuccess } from '../../lib/toastHelper';
+import { ROLE_ID } from '@/lib/constants';
 
-// Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
   if (!str) return '';
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
@@ -90,8 +90,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
         }
 
         const forbiddenRoleIds = [
-          '6703410af6be892f3208ecde', // Driver
-          '68f74e1cff7fa2efdd0f6a38', // Driver JKT
+          ROLE_ID.driver,
+          ROLE_ID.driverJkt,
         ];
 
         let processedData = usersArray;
@@ -123,13 +123,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     }
 
     fetchUsers();
-    //eslint-disable-next-line
-  }, [hubId, showAll]); // <-- 'roleId' diganti 'roleIds'
-  // --- (SELESAI PERUBAHAN 2) ---
+  }, [hubId, showAll, roleIds]);
 
-  // ... (Sisa logika: pagination, handleChange, render... tetap sama) ...
-
-  // --- LOGIC PAGINATION ---
   const totalPages = Math.ceil(usersData.data.length / ITEMS_PER_PAGE);
   const paginatedUsers = usersData.data.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -156,13 +151,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       setIsConfirmOpen(false);
       return;
     }
-
-    // Tutup modal konfirmasi UI
     setIsConfirmOpen(false);
-
-    // Gunakan hook: triggerCheck menerima hubId dan callback success
     triggerCheck(hubId, () => {
-      // finalize selection jika check berhasil (atau hook memutuskan safe)
       setSelectedId(userToConfirm._id);
       onUserSelect(userToConfirm);
       toastSuccess(`Data berhasil disimpan!`);
@@ -175,9 +165,16 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     setUserToConfirm(null);
   };
 
-  // Tampilan Loading
+  const buttonPageClass =
+    'px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed';
+
   if (usersData.loading) {
-    return <p className="mt-6 text-gray-400">Mencari user...</p>;
+    return (
+      <div className="flex flex-col items-center">
+        <Spinner />
+        <p className="mt-3 text-sm text-slate-600">{t('common.loading')}</p>
+      </div>
+    );
   }
   // Tampilan Error
   if (usersData.error) {
@@ -210,30 +207,28 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       )}
 
       <ConfirmModal
-        isOpen={isConfirmOpen}
-        title={t('home.confirmation.title')}
-        message={modalMessage}
-        onConfirm={handleConfirmSelection}
-        onCancel={handleCancelSelection}
-        confirmText={t('home.confirmation.confirm')}
         cancelText={t('home.confirmation.cancel')}
+        confirmText={t('home.confirmation.confirm')}
+        isOpen={isConfirmOpen}
+        message={modalMessage}
+        onCancel={handleCancelSelection}
+        onConfirm={handleConfirmSelection}
+        title={t('home.confirmation.title')}
       />
 
       <div role="radiogroup" aria-label="Pilih User" className="grid grid-cols-3 gap-4">
         {paginatedUsers.map((user) => (
           <div key={user._id}>
             <input
-              type="radio"
+              checked={selectedId === user._id}
+              className="sr-only peer"
               id={user._id}
               name="userSelection"
-              value={user._id}
-              checked={selectedId === user._id}
               readOnly
-              className="sr-only peer"
+              type="radio"
+              value={user._id}
             />
             <label
-              htmlFor={user._id}
-              onClick={() => handleUserClick(user)}
               className={`
                 flex items-center justify-center w-full p-4 h-24
                 text-center border rounded-lg cursor-pointer
@@ -242,6 +237,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
                 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600
                 truncate transition-colors
               `}
+              htmlFor={user._id}
+              onClick={() => handleUserClick(user)}
             >
               {user.name}
             </label>
@@ -252,9 +249,9 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       {totalPages > 1 && (
         <div className="grid grid-cols-3 items-center mt-6">
           <button
-            onClick={handlePrevPage}
+            className={`justify-self-start ${buttonPageClass}`}
             disabled={currentPage === 1}
-            className="justify-self-start px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handlePrevPage}
           >
             {t('home.previous')}
           </button>
@@ -262,18 +259,20 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
             {t('home.page')} {currentPage} {t('home.from')} {totalPages}
           </span>
           <button
-            onClick={handleNextPage}
+            className={`justify-self-end ${buttonPageClass}`}
             disabled={currentPage === totalPages}
-            className="justify-self-end px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleNextPage}
           >
             {t('home.next')}
           </button>
         </div>
       )}
-
-      {/* Modal mapping kalau hook memutuskan perlu mapping */}
       {showModal && (
-        <VehicleTagMappingModal unmappedData={unmappedData} onCompleted={handleMappingCompleted} />
+        <VehicleTagMappingModal
+          onCompleted={handleMappingCompleted}
+          t={t} 
+          unmappedData={unmappedData}
+        />
       )}
     </div>
   );

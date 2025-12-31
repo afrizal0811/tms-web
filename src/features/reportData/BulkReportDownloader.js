@@ -5,7 +5,6 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
-import { TAG_MAP_KEY } from '@/lib/constants';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -17,7 +16,7 @@ import {
   formatTimer,
   formatToApiUtc,
 } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react'; // 2. Import useRef & useEffect
+import { useEffect, useRef, useState } from 'react';
 import { bulkDownloader } from './help';
 
 const parseDate = (dateStr) => {
@@ -25,18 +24,14 @@ const parseDate = (dateStr) => {
 };
 
 export default function BulkReportDownloader({ driverData }) {
-  const { t } = useLanguage();
-
   const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
-
   const [isLoading, setIsLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
-
-  // 3. State & Ref untuk Timer
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(null);
+  const { t } = useLanguage();
 
   // 4. Logic Timer
   useEffect(() => {
@@ -65,7 +60,8 @@ export default function BulkReportDownloader({ driverData }) {
   };
 
   const handleBulkRoutingSummary = (t) => {
-    const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+    const { storedVehicleTag } = getLocalStorage();
+    const fullTagMap = JSON.parse(storedVehicleTag || '{}');
     const { storedLocation: hubIdLocal } = getLocalStorage();
     const hubTagMap = fullTagMap[hubIdLocal] || {};
 
