@@ -16,17 +16,14 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { calculateTargetDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-
-// --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
+import TimeROTab from './tabs/TimeROTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
-// Tab Baru
-import TimeROTab from './tabs/TimeROTab';
 
 const getInitialDate = () => {
   const now = new Date();
@@ -52,19 +49,16 @@ export default function RangkumanSummary() {
     results: [],
     locations: [],
   });
-
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const fetchStartTimeRef = useRef(null);
   const [reportPreview, setReportPreview] = useState(null);
-
   const [activeTab, setActiveTab] = useState('Time RO');
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
   const [dismissedDots, setDismissedDots] = useState({});
-
   const [taskSummaryMetrics, setTaskSummaryMetrics] = useState({});
   const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
   const [historyProgress, setHistoryProgress] = useState(0);
+  const fetchStartTimeRef = useRef(null);
 
   useEffect(() => {
     const { storedLocation, storedLocationName, storedMasterTruck } = getLocalStorage();
@@ -702,22 +696,23 @@ export default function RangkumanSummary() {
 
   const datePicker = (
     <CustomDatePicker
-      selected={selectedDate}
-      onChange={handleDateChange}
-      isLoading={isLoading}
-      dateFormat="MMMM yyyy"
-      showMonthYearPicker
       className="md:w-48"
+      dateFormat="MMMM yyyy"
+      disableSunday={false}
+      isLoading={isLoading}
+      onChange={handleDateChange}
+      selected={selectedDate}
+      showMonthYearPicker
       wrapperClassName="w-full"
     />
   );
 
   const downloadButton = (
     <DownloadButton
-      width="w-full md:w-auto"
-      onClick={handleDownloadExcel}
       disabled={isLoading || rawData.tasks.length === 0}
       isLoading={isLoading}
+      onClick={handleDownloadExcel}
+      width="w-full md:w-auto"
     />
   );
 
@@ -768,12 +763,12 @@ export default function RangkumanSummary() {
       <HeaderCard title="Rangkuman" subtitle={subtitle} items={headerItems} />
 
       <BodyCard
-        tabs={cardTabs}
         activeTabId={activeTab}
-        onTabClick={handleTabClick}
+        isEmpty={isTabEmpty()}
         isLoading={isLoading}
         longLoadingContent={warningContent}
-        isEmpty={isTabEmpty()}
+        onTabClick={handleTabClick}
+        tabs={cardTabs}
       >
         {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
           <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">

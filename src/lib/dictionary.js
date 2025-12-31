@@ -20,6 +20,7 @@ export const dictionary = {
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
       download: 'Unduh Excel',
+      scroll_down: 'Scroll ke bawah',
     },
     home: {
       welcome: 'SELAMAT DATANG!',
@@ -392,6 +393,7 @@ export const dictionary = {
       total_task: 'Total Tasks',
       vehicle: 'Vehicle',
       download: 'Download Excel',
+      scroll_down: 'Scroll Down',
     },
     home: {
       welcome: 'WELCOME!',
@@ -540,7 +542,7 @@ export const dictionary = {
           actual_seq: 'Actual Sequence',
           is_same: 'Match?',
           match: 'Match',
-          misMatch: 'Mismatch',
+          mismatch: 'Mismatch',
           tooltip: {
             manual: 'Manual Assign',
           },
