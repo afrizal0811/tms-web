@@ -48,11 +48,26 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
 
 function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
+
+  // --- LOGIKA HARI KERJA ---
   const workingDays = dateKeys.filter((d) => {
-    if (d.isSunday) return false;
+    if (d.isSunday) return false; // Minggu tidak dihitung
     const hasData = (dateMap[d.str]?.OTV || 0) > 0;
     return hasData;
   }).length;
+
+  // --- DEBUG OPTIONAL ---
+  const skippedDates = dateKeys
+    .filter((d) => !d.isSunday && (dateMap[d.str]?.OTV || 0) === 0)
+    .map((d) => d.str);
+  if (skippedDates.length > 0) {
+    console.group('DEBUG: Perhitungan Hari Kerja (Truck Usage)');
+    console.log('Total Hari (Range):', dateKeys.length);
+    console.log('Hari Kerja Efektif:', workingDays);
+    console.log('Tanggal yang DILEWATI (Dianggap Libur/Kosong):', skippedDates);
+    console.groupEnd();
+  }
+
   const categories = ['Dry', 'Frozen'];
 
   categories.forEach((cat) => {
@@ -198,7 +213,14 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
   return { dateMap, dateKeys, vehicleTypes: VEHICLE_TYPES, hubMasterData, summaryData };
 }
 
-export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId) {
+export function generateTruckUsageSheet(
+  wb,
+  resultsData,
+  startDateStr,
+  endDateStr,
+  hubId,
+  translate
+) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } = calculateTruckUsageData(
     resultsData,
     startDateStr,
@@ -216,8 +238,29 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     return { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
   };
 
-  excelData.push(['SUMMARY (COUNT) - ' + monthName, '', '', '', '', '', '', '', '']);
-  excelData.push(['Vehicle Types', 'TMS', 'Non TMS', 'TVU', 'TV', '% TVU', 'V', 'VU', 'IV']);
+  excelData.push([
+    `${translate('summary.tabs.truck_usage.subtitle_1')} - ${monthName}`,
+    ,
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ]);
+  excelData.push([
+    translate('summary.tabs.truck_usage.vehicle_type'),
+    'TMS',
+    'Non TMS',
+    'TVU',
+    'TV',
+    '% TVU',
+    'V',
+    'VU',
+    'IV',
+  ]);
 
   const addSummarySection = (cat, isPercentage = false) => {
     vehicleTypes.forEach((type) => {
@@ -240,9 +283,24 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     });
     const t = summaryData[cat].total;
     if (isPercentage) {
-      excelData.push(['Total Used', t.PctTMS, t.PctNonTMS, t.PctTVU]);
+      excelData.push([
+        translate('summary.tabs.truck_usage.total_used'),
+        t.PctTMS,
+        t.PctNonTMS,
+        t.PctTVU,
+      ]);
     } else {
-      excelData.push(['Total Used', t.TMS, t.NonTMS, t.TVU, t.TV, t.PctTVU, t.V, t.VU, t.IV]);
+      excelData.push([
+        translate('summary.tabs.truck_usage.total_used'),
+        t.TMS,
+        t.NonTMS,
+        t.TVU,
+        t.TV,
+        t.PctTVU,
+        t.V,
+        t.VU,
+        t.IV,
+      ]);
     }
   };
 
@@ -253,19 +311,24 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   excelData.push(['OTV', otv.TMS, otv.NonTMS, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
 
   const summaryCountEndRow = excelData.length;
-  excelData.push([]); 
+  excelData.push([]);
 
   const summaryPctStartRow = excelData.length;
 
-  excelData.push([`SUMMARY (%) - ${monthName}`, '', '', '']);
-  excelData.push(['Vehicle Types', 'TMS', 'Non TMS', 'TVU']);
+  excelData.push([
+    `${translate('summary.tabs.truck_usage.subtitle_2')} - ${monthName}`,
+    '',
+    '',
+    '',
+  ]);
+  excelData.push([translate('summary.tabs.truck_usage.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
 
   addSummarySection('Dry', true);
   addSummarySection('Frozen', true);
   excelData.push(['OTV', otv.PctTMS, otv.PctNonTMS, otv.PctTVU]);
 
   const summaryPctEndRow = excelData.length;
-  excelData.push([]); 
+  excelData.push([]);
 
   const table1StartRow = summaryPctEndRow + 1;
 
@@ -274,7 +337,11 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     const row1 = [isPercentage ? `${monthName} (%)` : monthName, 'Date', 'Total'];
     dateKeys.forEach((d) => row1.push(d.day, '', ''));
     tableRows.push(row1);
-    const row2 = ['Vehicle Storage', 'Vehicle Types', ''];
+    const row2 = [
+      translate('summary.tabs.truck_usage.temp'),
+      translate('summary.tabs.truck_usage.vehicle_type'),
+      '',
+    ];
     dateKeys.forEach(() => row2.push('TMS', 'Non TMS', 'TVU'));
     tableRows.push(row2);
     const rowMasterTotals = {};
@@ -322,13 +389,19 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
     );
-    tableRows.push(createRow('Interbranch', '', 'Dry', rIdx++));
-    tableRows.push(createRow('Total Used', '', 'DryTotal', rIdx++));
+    tableRows.push(createRow(translate('summary.tabs.truck_usage.interbranch'), '', 'Dry', rIdx++));
+    tableRows.push(
+      createRow(translate('summary.tabs.truck_usage.total_used'), '', 'DryTotal', rIdx++)
+    );
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', rIdx++))
     );
-    tableRows.push(createRow('Interbranch', '', 'Frozen', rIdx++));
-    tableRows.push(createRow('Total Used', '', 'FrozenTotal', rIdx++));
+    tableRows.push(
+      createRow(translate('summary.tabs.truck_usage.interbranch'), '', 'Frozen', rIdx++)
+    );
+    tableRows.push(
+      createRow(translate('summary.tabs.truck_usage.total_used'), '', 'FrozenTotal', rIdx++)
+    );
     tableRows.push(createRow('OTV', '', 'OTV', rIdx++));
     const H1 = startRowIndex;
     const H2 = startRowIndex + 1;
@@ -362,6 +435,32 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   const table2 = buildTableData(true, table2StartRow);
   excelData.push(...table2.tableRows);
 
+  excelData.push([]);
+  excelData.push([translate('summary.tabs.truck_usage.explanation')]);
+  const legendTitleRow = excelData.length - 1; // Index baris judul
+
+  merges.push({ s: { r: legendTitleRow, c: 0 }, e: { r: legendTitleRow, c: 2 } });
+
+  const legendItems = [
+    { key: 'TMS', desc: translate('summary.tabs.truck_usage.tms') },
+    { key: 'Non TMS', desc: translate('summary.tabs.truck_usage.non_tms') },
+    { key: 'TVU', desc: translate('summary.tabs.truck_usage.tvu') },
+    { key: 'TV', desc: translate('summary.tabs.truck_usage.tv') },
+    { key: 'V', desc: translate('summary.tabs.truck_usage.vehicle') },
+    { key: 'VU', desc: translate('summary.tabs.truck_usage.vu') },
+    { key: 'IV', desc: translate('summary.tabs.truck_usage.iv') },
+    { key: 'OTV', desc: translate('summary.tabs.truck_usage.otv') },
+  ];
+
+  const legendItemStartRow = excelData.length;
+
+  legendItems.forEach((item, idx) => {
+    const keyText = item.key;
+    excelData.push([keyText, item.desc]);
+    const currentRow = legendItemStartRow + idx;
+    merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow, c: 4 } });
+  });
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
   merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
@@ -386,6 +485,22 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
+
+      // --- STYLE UNTUK LEGENDA ---
+      if (R >= legendTitleRow) {
+        if (R === legendTitleRow && C === 0) {
+          cell.s = {
+            font: { bold: true, underline: true },
+            alignment: { horizontal: 'left' },
+          };
+        } else if (R >= legendItemStartRow && C === 0) {
+          cell.s = {
+            alignment: { horizontal: 'left', wrapText: true, vertical: 'center' },
+          };
+        }
+        continue;
+      }
+
       const isSum1 = R < summaryCountEndRow;
       const isSum2 = R >= summaryPctStartRow && R < summaryPctEndRow;
 
@@ -540,5 +655,5 @@ export function generateTruckUsageSheet(wb, resultsData, startDateStr, endDateSt
   for (let i = 0; i < dateKeys.length * 3; i++) cols.push({ wch: 8 });
   ws['!cols'] = cols;
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Truck Usage');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.truck_usage.title'));
 }

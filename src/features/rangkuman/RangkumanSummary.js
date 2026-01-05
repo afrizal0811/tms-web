@@ -527,7 +527,7 @@ export default function RangkumanSummary() {
     if (date) setSelectedDate(date);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = (translate, language) => {
     if (!selectedDate) return;
     if (driverData.length === 0) {
       toastError('Data Driver belum siap/kosong.');
@@ -548,13 +548,15 @@ export default function RangkumanSummary() {
         selectedLocationName,
         selectedLocation,
         taskSummaryMetrics,
-        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } }
+        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
+        translate,
+        language 
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('Rangkuman berhasil di-download!');
+      toastSuccess(translate('summary.toast.success'));
     } catch (err) {
-      toastError('Gagal membuat Excel: ' + err.message);
+      toastError(translate('summary.toast.error', { err: err.message }));
     }
   };
 
@@ -730,7 +732,7 @@ export default function RangkumanSummary() {
     <DownloadButton
       disabled={isLoading || rawData.tasks.length === 0}
       isLoading={isLoading}
-      onClick={handleDownloadExcel}
+      onClick={() => handleDownloadExcel(t, lang)}
       width="w-full md:w-auto"
       text={t('common.download_excel')}
     />

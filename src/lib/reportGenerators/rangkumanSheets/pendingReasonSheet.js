@@ -149,7 +149,7 @@ export function calculatePendingReasonData(driverData, allTasks) {
   return processedData;
 }
 
-export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName) {
+export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName, translate) {
   const data = calculatePendingReasonData(driverData, allTasks);
   const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
@@ -159,29 +159,29 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
 
   // Headers
   let headers = [
-    'Flow',
-    'Date',
-    'License Plat',
-    'Driver',
-    'Faktur Batal/ Tolakan SO',
-    'Terkirim Sebagian',
-    'Pending',
+    translate('summary.tabs.pending_reasons.flow'),
+    translate('summary.tabs.pending_reasons.date'),
+    translate('summary.tabs.pending_reasons.lisence'),
+    translate('summary.tabs.pending_reasons.driver'),
+    translate('summary.tabs.pending_reasons.cancel'),
+    translate('summary.tabs.pending_reasons.partial'),
+    translate('summary.tabs.pending_reasons.pending'),
   ];
-  if (shouldShowPendingGR) headers.push('Pending GR');
+  if (shouldShowPendingGR) headers.push(translate('summary.tabs.pending_reasons.pending_gr'));
   headers.push(
-    'Reason',
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'ETD',
-    'Actual Arrival',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit Time',
-    'Customer ID',
-    'RO Sequence',
-    'Real Sequence',
-    'Temperature'
+    translate('summary.tabs.pending_reasons.reason'),
+    translate('summary.tabs.pending_reasons.open_time'),
+    translate('summary.tabs.pending_reasons.close_time'),
+    translate('summary.tabs.pending_reasons.eta'),
+    translate('summary.tabs.pending_reasons.etd'),
+    translate('summary.tabs.pending_reasons.actual_arrival'),
+    translate('summary.tabs.pending_reasons.actual_departure'),
+    translate('summary.tabs.pending_reasons.visit_plan'),
+    translate('summary.tabs.pending_reasons.visit_actual'),
+    translate('summary.tabs.pending_reasons.cust_id'),
+    translate('summary.tabs.pending_reasons.ro_seq'),
+    translate('summary.tabs.pending_reasons.real_seq'),
+    translate('summary.tabs.pending_reasons.temp')
   );
 
   const excelData = [headers];
@@ -197,7 +197,7 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     if (item.status === 'PENDING' || isWrongGR) pending = item.customerName;
     const pendingGR = item.status === 'PENDING GR' ? item.customerName : '';
     const { id } = parseCustomerString(item.customerName);
-    
+
     const row = [
       item.flow || '-',
       item.dateStr,
@@ -329,5 +329,5 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     { wch: 10 }
   );
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Pending Reasons');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.pending_reasons.title'));
 }

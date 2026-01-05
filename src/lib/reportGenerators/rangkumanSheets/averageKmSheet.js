@@ -3,18 +3,21 @@ import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
-function formatLongDate(dateObj) {
-  return dateObj.toLocaleDateString('en-GB', {
+function formatLongDate(dateObj, isIndo) {
+  return dateObj.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
 }
 
-function formatMonthRange(startDateStr, endDateStr) {
+function formatMonthRange(startDateStr, endDateStr, isIndo) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
-  const monthYear = start.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const monthYear = start.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+    month: 'long',
+    year: 'numeric',
+  });
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
@@ -37,7 +40,7 @@ function getDeliveryDateFromRouting(isoString) {
 /**
  * BAGIAN 1: LOGIKA PERHITUNGAN
  */
-export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
+export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo) {
   const dailyVehicleMap = {};
 
   if (resultsData && Array.isArray(resultsData)) {
@@ -70,7 +73,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
   const endDateObj = new Date(endDateStr);
 
   let monthTotals = {
-    range: formatMonthRange(startDateStr, endDateStr),
+    range: formatMonthRange(startDateStr, endDateStr, isIndo),
     dryKm: 0,
     frozenKm: 0,
     totalKm: 0,
@@ -80,7 +83,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 
   while (currentIterDate <= endDateObj) {
     const currentDateString = formatDateUniversal(currentIterDate);
-    const displayDate = formatLongDate(currentIterDate);
+    const displayDate = formatLongDate(currentIterDate, isIndo);
     const isSunday = currentIterDate.getDay() === 0;
 
     let rowData = {
@@ -139,20 +142,21 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr) {
 /**
  * BAGIAN 2: GENERATOR EXCEL (Merged + Styled, Minggu gabungan tanggal + label)
  */
-export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr) {
+export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo) {
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo
   );
 
   // --- CONTENT ---
   const monthHeader1 = [
-    'Date (Month)',
-    'KM Routing (Month)',
+    `${translate('summary.tabs.average_km.date')} (${translate('summary.tabs.average_km.month')})`,
+    translate('summary.tabs.average_km.km_routing'),
     '',
-    'Total KM Routing (Month)',
-    'Average KM (Month)',
+    translate('summary.tabs.average_km.total_km_routing'),
+    translate('summary.tabs.average_km.avg_km_routing'),
   ];
   const monthHeader2 = ['', 'Dry', 'Frozen', '', ''];
   const monthDataRow = [
@@ -164,13 +168,13 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   ];
 
   const dailyHeader1 = [
-    'Date',
-    'Total Vehicle',
+    translate('summary.tabs.average_km.date'),
+    translate('summary.tabs.average_km.total_vehicle'),
     '',
-    'KM Routing',
+    translate('summary.tabs.average_km.km_routing'),
     '',
-    'Total KM Routing',
-    'Average KM',
+    translate('summary.tabs.average_km.total_km_routing'),
+    translate('summary.tabs.average_km.avg_km_routing'),
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
@@ -245,7 +249,7 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
       const mergedCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 1 });
       ws[mergedCellRef] = {
         t: 's',
-        v: 'Libur (Minggu)',
+        v: translate('summary.tabs.average_km.holiday'),
         s: {
           ...BASE_STYLES.cellCenter,
           fill: FILL_STYLES.red,
@@ -374,5 +378,5 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     { wch: 15 },
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Average KM of Routing');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.average_km.title'));
 }

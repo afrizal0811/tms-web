@@ -2,9 +2,10 @@
 'use client';
 
 import Spinner from '@/components/Spinner';
+import Tooltip from '@/components/Tooltip';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 
 export default function TaskSummaryTab({
   metrics,
@@ -12,7 +13,7 @@ export default function TaskSummaryTab({
   progress,
   startDateStr,
   endDateStr,
-  translate
+  translate,
 }) {
   const [masterTruckData, setMasterTruckData] = useState({
     Dry: { Total: 0 },
@@ -127,6 +128,16 @@ export default function TaskSummaryTab({
   const cGray = 'bg-[#cccccc]';
   const cViolet = 'bg-[#d9d2e9]';
 
+  const headerData = (tootltip, color, text) => {
+    return (
+      <Tooltip tooltipContent={tootltip}>
+        <th className={`cursor-help px-2 py-3 border border-gray-300 min-w-[60px] ${color}`}>
+          {text}
+        </th>
+      </Tooltip>
+    );
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden p-0">
       {isLoading && (
@@ -148,54 +159,22 @@ export default function TaskSummaryTab({
               <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>
                 {translate('summary.tabs.task_summary.type')}
               </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cPink}`}>
-                {translate('summary.tabs.task_summary.dp')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>
-                {translate('summary.tabs.task_summary.dt')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>
-                {translate('summary.tabs.task_summary.dt_persentage')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>
-                {translate('summary.tabs.task_summary.ma')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>
-                {translate('summary.tabs.task_summary.ma_persentage')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>
-                {translate('summary.tabs.task_summary.rt')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>
-                {translate('summary.tabs.task_summary.rt_persentage')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>
-                {translate('summary.tabs.task_summary.co')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>
-                {translate('summary.tabs.task_summary.co_persentage')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>
-                {translate('summary.tabs.task_summary.pr')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>
-                {translate('summary.tabs.task_summary.pr_persentage')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>
-                {translate('summary.tabs.task_summary.mt')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>
-                {translate('summary.tabs.task_summary.tv')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>
-                {translate('summary.tabs.task_summary.va')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>
-                {translate('summary.tabs.task_summary.tvu')}
-              </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>
-                {translate('summary.tabs.task_summary.tvu_persentage')}
-              </th>
+              {headerData(translate('summary.tabs.task_summary.dp'), cPink, 'DP')}
+              {headerData(translate('summary.tabs.task_summary.dt'), cPink, 'DT')}
+              {headerData(translate('summary.tabs.task_summary.dt_persentage'), cPink, '% DT')}
+              {headerData(translate('summary.tabs.task_summary.ma'), cRed, 'MA')}
+              {headerData(translate('summary.tabs.task_summary.ma_persentage'), cRed, '% MA')}
+              {headerData(translate('summary.tabs.task_summary.rt'), cCyan, 'RT')}
+              {headerData(translate('summary.tabs.task_summary.rt_persentage'), cCyan, '% RT')}
+              {headerData(translate('summary.tabs.task_summary.co'), cBlue, 'CO')}
+              {headerData(translate('summary.tabs.task_summary.co_persentage'), cBlue, '% CO')}
+              {headerData(translate('summary.tabs.task_summary.pr'), cGray, 'PR')}
+              {headerData(translate('summary.tabs.task_summary.pr_persentage'), cGray, '% PR')}
+              {headerData(translate('summary.tabs.task_summary.mt'), cYellow, 'MT')}
+              {headerData(translate('summary.tabs.task_summary.tv'), cYellow, 'TV')}
+              {headerData(translate('summary.tabs.task_summary.va'), cYellow, 'VA')}
+              {headerData(translate('summary.tabs.task_summary.tvu'), cViolet, 'TVU')}
+              {headerData(translate('summary.tabs.task_summary.tvu_persentage'), cViolet, '% TVU')}
             </tr>
           </thead>
           <tbody>

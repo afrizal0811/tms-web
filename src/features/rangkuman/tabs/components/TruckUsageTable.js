@@ -188,17 +188,17 @@ export default function TruckUsageTable({
     const labelTable = (
       <td
         colSpan="2"
-        className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
+        className={`${tooltip && 'cursor-help'} ${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
         style={{ backgroundColor: bgColor }}
       >
         {label}
       </td>
     );
     const hasTooltip = tooltip ? (
-      <Tooltip tooltipContent={tooltip}>
-        {labelTable}
-      </Tooltip>
-    ) : labelTable;
+      <Tooltip tooltipContent={tooltip}>{labelTable}</Tooltip>
+    ) : (
+      labelTable
+    );
     return (
       <tr className={isBold ? 'font-bold' : ''}>
         {hasTooltip}
@@ -236,7 +236,18 @@ export default function TruckUsageTable({
       </tr>
     );
   };
-
+  const renderHeader = (data, tooltip, text, isLast = false) => {
+    return (
+      <Tooltip tooltipContent={tooltip}>
+        <th
+          className={`${thClass} ${isLast ? thickBorderClass : ''} cursor-help`}
+          style={{ backgroundColor: data.isSunday ? colorSunday : colorHeader }}
+        >
+          {text}
+        </th>
+      </Tooltip>
+    );
+  };
   return (
     <div className="w-full">
       <table className="border-collapse border-0 text-sm whitespace-nowrap">
@@ -277,26 +288,9 @@ export default function TruckUsageTable({
           <tr>
             {dateKeys.map((d, i) => (
               <Fragment key={i}>
-                <th
-                  className={thClass}
-                  style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
-                >
-                  TMS
-                </th>
-                <th
-                  className={thClass}
-                  style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
-                >
-                  Non TMS
-                </th>
-                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.tvu')}>
-                  <th
-                    className={`${thClass} ${thickBorderClass}`}
-                    style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
-                  >
-                    TVU
-                  </th>
-                </Tooltip>
+                {renderHeader(d, translate('summary.tabs.truck_usage.tms'), 'TMS')}
+                {renderHeader(d, translate('summary.tabs.truck_usage.non_tms'), 'Non TMS')}
+                {renderHeader(d, translate('summary.tabs.truck_usage.tvu'), 'TVU', true)}
               </Fragment>
             ))}
           </tr>
@@ -305,7 +299,12 @@ export default function TruckUsageTable({
           {/* DRY */}
           {renderSectionRows('Dry', colorDry, vehicleTypes)}
           {renderSpecialRow(translate('summary.tabs.truck_usage.interbranch'), 'Dry', colorDry)}
-          {renderSpecialRow('Total Used', 'DryTotal', colorDryTotal, true)}
+          {renderSpecialRow(
+            translate('summary.tabs.truck_usage.total_used'),
+            'DryTotal',
+            colorDryTotal,
+            true
+          )}
 
           {/* FROZEN */}
           {renderSectionRows('Frozen', colorFrozen, vehicleTypes)}
@@ -314,7 +313,12 @@ export default function TruckUsageTable({
             'Frozen',
             colorFrozen
           )}
-          {renderSpecialRow('Total Used', 'FrozenTotal', colorFrozenTotal, true)}
+          {renderSpecialRow(
+            translate('summary.tabs.truck_usage.total_used'),
+            'FrozenTotal',
+            colorFrozenTotal,
+            true
+          )}
 
           {/* OTV */}
           {renderSpecialRow(

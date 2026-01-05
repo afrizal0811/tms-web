@@ -144,7 +144,7 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
             <th className={thClass}>{translate('summary.tabs.pending_reasons.visit_actual')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.cust_id')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.ro_seq')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.actual_seq')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.real_seq')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.temp')}</th>
           </tr>
         </thead>
