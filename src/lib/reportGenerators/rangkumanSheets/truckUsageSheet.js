@@ -56,17 +56,9 @@ function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
     return hasData;
   }).length;
 
-  // --- DEBUG OPTIONAL ---
-  const skippedDates = dateKeys
-    .filter((d) => !d.isSunday && (dateMap[d.str]?.OTV || 0) === 0)
-    .map((d) => d.str);
-  if (skippedDates.length > 0) {
-    console.group('DEBUG: Perhitungan Hari Kerja (Truck Usage)');
-    console.log('Total Hari (Range):', dateKeys.length);
-    console.log('Hari Kerja Efektif:', workingDays);
-    console.log('Tanggal yang DILEWATI (Dianggap Libur/Kosong):', skippedDates);
-    console.groupEnd();
-  }
+  // const skippedDates = dateKeys
+  //   .filter((d) => !d.isSunday && (dateMap[d.str]?.OTV || 0) === 0)
+  //   .map((d) => d.str);
 
   const categories = ['Dry', 'Frozen'];
 
