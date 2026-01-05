@@ -2,14 +2,14 @@
 'use client';
 
 import { dictionary } from '@/lib/dictionary';
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { createContext, useContext, useState } from 'react';
-
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('app_lang');
+      const { storedLanguage: stored } = getLocalStorage();
       return stored ? stored.replace(/"/g, '') : 'en';
     }
     return 'en';
@@ -17,7 +17,7 @@ export function LanguageProvider({ children }) {
 
   const switchLanguage = (newLang) => {
     setLang(newLang);
-    localStorage.setItem('app_lang', newLang);
+    setLocalStorage('app_lang', newLang);
   };
 
   // Fungsi Translate Helper (t)
