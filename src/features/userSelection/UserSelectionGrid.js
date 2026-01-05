@@ -155,7 +155,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     triggerCheck(hubId, () => {
       setSelectedId(userToConfirm._id);
       onUserSelect(userToConfirm);
-      toastSuccess(`Data berhasil disimpan!`);
+      toastSuccess(t('home.toast.success'));
       setUserToConfirm(null);
     });
   };
@@ -270,7 +270,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       {showModal && (
         <VehicleTagMappingModal
           onCompleted={handleMappingCompleted}
-          t={t} 
+          t={t}
           unmappedData={unmappedData}
         />
       )}

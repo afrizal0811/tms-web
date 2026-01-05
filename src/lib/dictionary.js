@@ -45,6 +45,9 @@ export const dictionary = {
         question: 'Anda yakin ingin memilih user',
         title: 'Konfirmasi Pilihan User',
       },
+      toast: {
+        success: 'Data berhasil disimpan!',
+      },
     },
     vehicle_tag: {
       description: 'Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki',
@@ -621,6 +624,9 @@ export const dictionary = {
         confirm: 'Yes',
         question: 'Are you sure to select',
         title: 'Confirmation User Selection',
+      },
+      toast: {
+        success: 'Data has been saved!',
       },
     },
     vehicle_tag: {
