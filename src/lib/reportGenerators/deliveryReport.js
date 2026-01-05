@@ -14,8 +14,8 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
 // Definisikan konstanta yang dibutuhkan
+
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
@@ -26,10 +26,11 @@ export function generateDeliveryWorkbook(
   selectedDate, // Tanggal Asli (pilihan user, misal "2025-11-11")
   apiDate,
   selectedLocation,
-  selectedLocationName
+  selectedLocationName,
+  t
 ) {
   // --- (SEMUA LOGIC DARI DeliverySummary.js 'handleDeliverySummary' DIPINDAH KE SINI) ---
-
+  const translate = t || ((key) => key);
   // 1. Cek Hub Spesial
   const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
   const isSpecialHub = specialHubs.includes(selectedLocation);
@@ -246,7 +247,7 @@ export function generateDeliveryWorkbook(
   // Gunakan 'selectedDate' (tanggal asli pilihan user)
   const routingDate = formatYYYYMMDDToDDMMYYYY(apiDate);
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
-    ['ROUTING DATE'],
+    [translate('excel.delivery.headers.routing_date_title')],
     [routingDate, null, null, null, null, null, null],
   ]);
   wsRoutingDate['A1'].s = {
@@ -266,12 +267,12 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 2: Total Delivered ---
   const headers1 = [
-    'Plat',
-    'Driver',
-    'Total Outlet',
-    'Total Delivery',
-    'Info Manual Assign',
-    'Info Beda Hari',
+    translate('excel.delivery.headers.plate'),
+    translate('excel.delivery.headers.driver'),
+    translate('excel.delivery.headers.total_outlet'),
+    translate('excel.delivery.headers.total_delivery'),
+    translate('excel.delivery.headers.info_manual'),
+    translate('excel.delivery.headers.info_diff_day'),
   ];
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
@@ -392,34 +393,34 @@ export function generateDeliveryWorkbook(
       if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
     }
   });
-  XLSX.utils.book_append_sheet(wb, wsDelivered, 'Total Delivered');
+  XLSX.utils.book_append_sheet(wb, wsDelivered, translate('excel.delivery.sheets.total_delivered'));
 
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
-    'Flow',
-    'Date',
-    'Plat',
-    'Driver',
-    'Faktur Batal/ Tolakan SO',
-    'Terkirim Sebagian',
-    'Pending',
+    translate('excel.delivery.headers.flow'),
+    translate('excel.delivery.headers.date'),
+    translate('excel.delivery.headers.plate'),
+    translate('excel.delivery.headers.driver'),
+    translate('excel.delivery.headers.faktur_batal'),
+    translate('excel.delivery.headers.partial'),
+    translate('excel.delivery.headers.pending'),
   ];
-  if (isSpecialHub) headers2.push('Pending GR');
+  if (isSpecialHub) headers2.push(translate('excel.delivery.headers.pending_gr'));
   headers2.push(
-    'Reason',
+    translate('excel.delivery.headers.reason'),
     '',
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'ETD',
-    'Actual Arrival',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit Time',
-    'Customer ID',
-    'RO Sequence',
-    'Real Sequence',
-    'Temperature'
+    translate('excel.delivery.headers.open_time'),
+    translate('excel.delivery.headers.close_time'),
+    translate('excel.delivery.headers.eta'),
+    translate('excel.delivery.headers.etd'),
+    translate('excel.delivery.headers.act_arr'),
+    translate('excel.delivery.headers.act_dep'),
+    translate('excel.delivery.headers.visit_time'),
+    translate('excel.delivery.headers.act_visit_time'),
+    translate('excel.delivery.headers.cust_id'),
+    translate('excel.delivery.headers.ro_seq'),
+    translate('excel.delivery.headers.real_seq'),
+    translate('excel.delivery.headers.temp')
   );
   const finalSheetData2 = [
     headers2,
@@ -457,18 +458,18 @@ export function generateDeliveryWorkbook(
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
   const separatorColIndex = isSpecialHub ? 9 : 8;
   const centerAlignedIndices = [
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'ETD',
-    'Actual Arrival',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit Time',
-    'Customer ID',
-    'RO Sequence',
-    'Real Sequence',
-    'Temperature',
+    translate('excel.delivery.headers.open_time'),
+    translate('excel.delivery.headers.close_time'),
+    translate('excel.delivery.headers.eta'),
+    translate('excel.delivery.headers.etd'),
+    translate('excel.delivery.headers.act_arr'),
+    translate('excel.delivery.headers.act_dep'),
+    translate('excel.delivery.headers.visit_time'),
+    translate('excel.delivery.headers.act_visit_time'),
+    translate('excel.delivery.headers.cust_id'),
+    translate('excel.delivery.headers.ro_seq'),
+    translate('excel.delivery.headers.real_seq'),
+    translate('excel.delivery.headers.temp'),
   ];
   const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
   const colWidthsSO = headers2.map((header, i) => {
@@ -522,10 +523,16 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Hasil Pending SO');
+  XLSX.utils.book_append_sheet(wb, wsPendingSO, translate('excel.delivery.sheets.pending_so'));
 
   // --- Sheet 5: Update Longlat ---
-  const headers4 = ['Customer Name', 'Customer ID', 'Location ID', 'New Longlat', 'Beda Jarak (m)'];
+  const headers4 = [
+    translate('excel.delivery.headers.cust_name'),
+    translate('excel.delivery.headers.cust_id'),
+    translate('excel.delivery.headers.loc_id'),
+    translate('excel.delivery.headers.new_longlat'),
+    translate('excel.delivery.headers.dist_diff'),
+  ];
   updateLonglatData.sort((a, b) => {
     const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
     const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
@@ -560,7 +567,9 @@ export function generateDeliveryWorkbook(
       if (R === 0) {
         wsUpdateLonglat[cellRef].s = headerStyle;
         if (C === 4) {
-          wsUpdateLonglat[cellRef].c = [{ a: 'Info', t: 'Jarak secara garis lurus', h: true }];
+          wsUpdateLonglat[cellRef].c = [
+            { a: 'Info', t: translate('excel.delivery.data.longlat_info'), h: true },
+          ];
         }
       } else if (centerAlignedLonglat.includes(C)) {
         wsUpdateLonglat[cellRef].s = centerStyle;
@@ -570,26 +579,26 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, 'Update Longlat');
+  XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, translate('excel.delivery.sheets.update_longlat'));
 
   // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
-    'Flow',
-    'Plat',
-    'Driver',
-    'Customer',
-    'Status Delivery',
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'Actual Arrival',
-    'ETD',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit Time',
-    'RO Sequence',
-    'Real Sequence',
-    'Is Same Sequence',
+    translate('excel.delivery.headers.flow'),
+    translate('excel.delivery.headers.plate'),
+    translate('excel.delivery.headers.driver'),
+    translate('excel.delivery.headers.cust_name'),
+    translate('excel.delivery.headers.status_del'),
+    translate('excel.delivery.headers.open_time'),
+    translate('excel.delivery.headers.close_time'),
+    translate('excel.delivery.headers.eta'),
+    translate('excel.delivery.headers.act_arr'),
+    translate('excel.delivery.headers.etd'),
+    translate('excel.delivery.headers.act_dep'),
+    translate('excel.delivery.headers.visit_time'),
+    translate('excel.delivery.headers.act_visit_time'),
+    translate('excel.delivery.headers.ro_seq'),
+    translate('excel.delivery.headers.real_seq'),
+    translate('excel.delivery.headers.is_same_seq'),
   ];
   let finalSheetData3 = [headers3];
   const tasksByNameMap = new Map();
@@ -641,7 +650,7 @@ export function generateDeliveryWorkbook(
     for (const task of tasks) {
       const ro = task.roSequence;
       const real = task.realSequence;
-      const isSame = ro == real ? 'SAMA' : 'TIDAK SAMA';
+      const isSame = ro == real ? translate('excel.delivery.data.match') : translate('excel.delivery.data.mismatch');
       finalSheetData3.push([
         task.flow,
         task.plat,
@@ -748,6 +757,6 @@ export function generateDeliveryWorkbook(
   XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
 
   // --- 9. Kembalikan Hasil ---
-  const excelFileName = `Delivery Summary - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
+  const excelFileName = `${translate('excel.delivery.filename')} - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };
 }

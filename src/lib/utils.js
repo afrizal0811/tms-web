@@ -345,11 +345,10 @@ export function formatDateWIB(dateInput, pattern = 'YYYY-MM-DD') {
 
 // Khusus untuk format teks panjang Indonesia (Contoh: "23 Desember 2025")
 // Ini jarang dipakai untuk logic, biasanya cuma untuk tampilan UI
-export function formatDateIndo(dateInput) {
+export function formatLongDate(dateInput, language = 'id-ID') {
   if (!dateInput) return '-';
   try {
-    return new Date(dateInput).toLocaleDateString('id-ID', {
-      timeZone: 'Asia/Jakarta',
+    return new Date(dateInput).toLocaleDateString(language, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',

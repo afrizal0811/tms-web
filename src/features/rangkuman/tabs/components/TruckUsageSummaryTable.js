@@ -1,13 +1,17 @@
 // File: features/rangkuman/tabs/components/TruckUsageSummaryTable.js
+import Tooltip from '@/components/Tooltip';
+
 export default function TruckUsageSummaryTable({
-  summaryData,
-  vehicleTypes,
   isPercentage = false,
+  summaryData,
+  translate,
+  vehicleTypes,
 }) {
   if (!summaryData) return null;
 
   const thClass =
     'border border-gray-400 px-2 py-2 text-center text-xs font-bold text-slate-700 bg-[#d9d2e9]';
+  const thClassTooltip = `${thClass} cursor-help`;
   const tdClass = 'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700';
 
   const dryBg = 'bg-[#fae2d5]';
@@ -16,6 +20,17 @@ export default function TruckUsageSummaryTable({
   const frzTotBg = 'bg-[#c9daf8]';
   const otvBg = 'bg-[#d9f2d0]';
 
+  const headerTooltip = (tootltip, text, className, addClass = '') => {
+    return (
+      <Tooltip tooltipContent={tootltip}>
+        <td
+          className={`${className !== '' ? thClassTooltip : className} ${addClass && `${addClass} cursor-help`}`}
+        >
+          {text}
+        </td>
+      </Tooltip>
+    );
+  };
   // Color helper for percentage
   const getPctClass = (val) => {
     if (val > 1) return 'bg-[#ff0000] text-white font-bold';
@@ -68,7 +83,9 @@ export default function TruckUsageSummaryTable({
       return [
         ...rows,
         <tr key={`${cat}-Total`} className="font-bold">
-          <td className={`${tdClass} text-left ${totalBg}`}>Total Used</td>
+          <td className={`${tdClass} text-left ${totalBg}`}>
+            {translate('summary.tabs.truck_usage.total_used')}
+          </td>
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
@@ -86,7 +103,9 @@ export default function TruckUsageSummaryTable({
     return [
       ...rows,
       <tr key={`${cat}-Total`} className="font-bold">
-        <td className={`${tdClass} text-left ${totalBg}`}>Total Used</td>
+        <td className={`${tdClass} text-left ${totalBg}`}>
+          {translate('summary.tabs.truck_usage.total_used')}
+        </td>
         <td className={`${tdClass} ${totalBg}`}>{t.TMS || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.NonTMS || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.TVU || 0}</td>
@@ -106,7 +125,12 @@ export default function TruckUsageSummaryTable({
     if (isPercentage) {
       return (
         <tr key="OTV-Total" className="font-bold">
-          <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+          {headerTooltip(
+            translate('summary.tabs.truck_usage.otv'),
+            'OTV',
+            '',
+            `${tdClass} text-left ${otvBg}`
+          )}
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
@@ -122,7 +146,12 @@ export default function TruckUsageSummaryTable({
 
     return (
       <tr key="OTV-Total" className="font-bold">
-        <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+        {headerTooltip(
+          translate('summary.tabs.truck_usage.otv'),
+          'OTV',
+          '',
+          `${tdClass} text-left ${otvBg}`
+        )}
         <td className={`${tdClass} ${otvBg}`}>{t.TMS || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.NonTMS || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.TVU || 0}</td>
@@ -142,19 +171,21 @@ export default function TruckUsageSummaryTable({
       <table className="min-w-full border-collapse border-0 text-sm">
         <thead>
           <tr>
-            <th className={`${thClass} w-[200px]`}>Vehicle Types</th>
-            <th className={thClass}>TMS</th>
-            <th className={thClass}>Non TMS</th>
-            <th className={thClass}>TVU</th>
+            <th className={`${thClass} w-[200px]`}>
+              {translate('summary.tabs.truck_usage.vehicle_type')}
+            </th>
+            {headerTooltip(translate('summary.tabs.truck_usage.tms'), 'TMS')}
+            {headerTooltip(translate('summary.tabs.truck_usage.non_tms'), 'Non TMS')}
+            {headerTooltip(translate('summary.tabs.truck_usage.tvu'), 'TVU')}
 
             {/* HIDE COLUMNS FOR PERCENTAGE TABLE */}
             {!isPercentage && (
               <>
-                <th className={thClass}>TV</th>
-                <th className={thClass}>% TVU</th>
-                <th className={thClass}>V</th>
-                <th className={thClass}>VU</th>
-                <th className={thClass}>IV</th>
+                {headerTooltip(translate('summary.tabs.truck_usage.tv'), 'TV')}
+                {headerTooltip(translate('summary.tabs.truck_usage.tvu_percentage'), '% TVU')}
+                {headerTooltip(translate('summary.tabs.truck_usage.vehicle'), 'V')}
+                {headerTooltip(translate('summary.tabs.truck_usage.vu'), 'VU')}
+                {headerTooltip(translate('summary.tabs.truck_usage.iv'), 'IV')}
               </>
             )}
           </tr>

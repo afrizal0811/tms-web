@@ -13,6 +13,7 @@ import {
   calculateTimeDriverData,
   generateTimeDriverSheet,
 } from './rangkumanSheets/timeDriverSheet';
+import { generateTimeROSheet } from './rangkumanSheets/timeROSheet';
 import {
   calculateTruckDetailData,
   generateTruckDetailSheet,
@@ -21,7 +22,6 @@ import {
   calculateTruckUsageData,
   generateTruckUsageSheet,
 } from './rangkumanSheets/truckUsageSheet';
-import { generateTimeROSheet } from './rangkumanSheets/timeROSheet';
 // --- IMPORT TASK SUMMARY SHEET ---
 import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
 
@@ -83,21 +83,47 @@ export function generateRangkumanWorkbook(
   hubName,
   hubId,
   taskSummaryMetrics, // <--- Parameter Baru
-  masterTruckData // <--- Parameter Baru
+  masterTruckData, // <--- Parameter Baru
+  translate,
+  language
 ) {
   const wb = XLSX.utils.book_new();
-
-  generateTimeROSheet(wb, allTasks, startDateStr, endDateStr);
-  generateTaskSummarySheet(wb, taskSummaryMetrics, startDateStr, endDateStr, masterTruckData);
-  generatePendingReasonSheet(wb, driverData, allTasks, hubName);
-  generateTimeDriverSheet(wb, driverData, locationHistoryData, startDateStr, endDateStr);
-  generateTruckDetailSheet(wb, driverData, resultsData, allTasks, startDateStr, endDateStr);
-  generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId);
-  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr);
+  const isIndo = language === 'id';
+  generateTimeROSheet(wb, allTasks, startDateStr, endDateStr, translate, isIndo);
+  generateTaskSummarySheet(
+    wb,
+    taskSummaryMetrics,
+    startDateStr,
+    endDateStr,
+    masterTruckData,
+    translate
+  );
+  generatePendingReasonSheet(wb, driverData, allTasks, hubName, translate);
+  generateTimeDriverSheet(
+    wb,
+    driverData,
+    locationHistoryData,
+    startDateStr,
+    endDateStr,
+    translate,
+    isIndo
+  );
+  generateTruckDetailSheet(
+    wb,
+    driverData,
+    resultsData,
+    allTasks,
+    startDateStr,
+    endDateStr,
+    translate,
+    isIndo
+  );
+  generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
+  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo);
 
   const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);
   const formattedEnd = formatYYYYMMDDToDDMMYYYY(endDateStr);
-  const excelFileName = `Rangkuman TMS - ${hubName} - ${formattedStart} sd ${formattedEnd}.xlsx`;
+  const excelFileName = `${translate('summary.title')} - ${hubName} - ${formattedStart} sd ${formattedEnd}.xlsx`;
 
   return { wb, excelFileName };
 }

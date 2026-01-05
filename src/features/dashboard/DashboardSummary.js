@@ -3,6 +3,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
@@ -12,9 +13,9 @@ import { formatDateWIB, formatToApiUtc, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DiagramTab from './tab/DiagramTab';
 
-function processOrderInfo(rawOrderId) {
+function processOrderInfo(rawOrderId, t) {
   if (!rawOrderId || rawOrderId === 'N/A') {
-    return { tooltip: 'Tidak ada nomor SO', copyValue: null };
+    return { tooltip: t('dashboard.no_so'), copyValue: null }; // Pakai t()
   }
   const firstOrderId = rawOrderId.split(',')[0].trim();
   let copyValueToUse = null;
@@ -31,6 +32,7 @@ function processOrderInfo(rawOrderId) {
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function DashboardSummary({ driverData }) {
+  const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
@@ -57,7 +59,7 @@ export default function DashboardSummary({ driverData }) {
     if (!date) return;
 
     if (activeTab !== 'Diagram' && date.getDay() === 0) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      toastError(t('dashboard.toast.sunday_error'));
       return;
     }
 
@@ -158,7 +160,7 @@ export default function DashboardSummary({ driverData }) {
         });
       }
     } catch (e) {
-      toastWarning('Gagal memproses cache nama driver.');
+      toastWarning(t('dashboard.toast.driver_cache_warning'));
     }
 
     try {
@@ -239,7 +241,7 @@ export default function DashboardSummary({ driverData }) {
 
       for (const task of tasksData) {
         const flow = task.flow || 'N/A';
-        const orderInfo = processOrderInfo(task.orderId);
+        const orderInfo = processOrderInfo(task.orderId, t);
 
         const typeStorage = (task.typeStorage || '').toUpperCase();
         const isDry = typeStorage === 'DRY';
@@ -295,13 +297,13 @@ export default function DashboardSummary({ driverData }) {
             const doneDate = new Date(task.doneTime);
             const diffInMs = doneDate.getTime() - startDate.getTime();
             const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-
+            const datePlusText = lang === 'id' ? 'H+' : 'D+';
             const rawAssignee =
               task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
             const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
             crossDayTasks.push({
               customer: task.customerName || 'N/A',
-              doneDateDisplay: `${doneDateWIB} (H+${diffInDays})`,
+              doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
               driver: driverName,
               copyValue: orderInfo.copyValue,
               tooltip: orderInfo.tooltip,
@@ -334,11 +336,11 @@ export default function DashboardSummary({ driverData }) {
 
       setSummaryData(summary);
     } catch (err) {
-      toastError(err.message || 'Gagal mengambil data harian.');
+      toastError(err.message || t('dashboard.toast.daily_fetch_error'));
     } finally {
       setLoading(false);
     }
-  }, [driverData, selectedDate, fetchWithRetry, hubId]);
+  }, [driverData, selectedDate, fetchWithRetry, hubId, t, lang]);
 
   useEffect(() => {
     fetchData();
@@ -390,12 +392,12 @@ export default function DashboardSummary({ driverData }) {
         lastFetchedYear.current = year;
         lastFetchedLocation.current = hubId;
       } catch (err) {
-        toastError('Gagal ambil data tahunan', err);
+        toastError(t('dashboard.toast.yearly_fetch_error'), err);
       } finally {
         setIsYearlyLoading(false);
       }
     },
-    [fetchWithRetry]
+    [fetchWithRetry, t]
   );
 
   useEffect(() => {
@@ -442,7 +444,8 @@ export default function DashboardSummary({ driverData }) {
 
   const subtitle = (
     <>
-      Overview performa <span className="font-semibold text-sky-600">harian & tahunan</span>
+      {t('dashboard.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
     </>
   );
 
@@ -459,18 +462,18 @@ export default function DashboardSummary({ driverData }) {
 
   const headerItems = [
     {
-      label: isDiagramTab ? 'Tahun Performa' : 'Tanggal Pengiriman',
+      label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
       component: datePicker,
       hideLabel: false,
     },
   ];
 
   const cardTabs = [
-    { id: 'Diagram', label: 'Diagram', extraContent: getPingDot('Diagram') },
-    { id: 'Detail', label: 'Detail', extraContent: getPingDot('Detail') },
+    { id: 'Diagram', label: t('dashboard.tabs.diagram'), extraContent: getPingDot('Diagram') },
+    { id: 'Detail', label: t('dashboard.tabs.detail'), extraContent: getPingDot('Detail') },
     {
       id: 'RoutingVsActual',
-      label: 'Routing vs Aktual',
+      label: t('dashboard.tabs.routing_vs_actual'),
       extraContent: getPingDot('RoutingVsActual'),
     },
   ];
@@ -483,11 +486,11 @@ export default function DashboardSummary({ driverData }) {
         activeTabId={activeTab}
         onTabClick={handleTabClick}
         isLoading={isLoadingSelected}
-        loadingText="Memuat data..."
+        loadingText={t('common.loading')}
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
       >
-        <div className="flex-1 flex flex-col p-6 overflow-hidden">
+        <div className="flex-1 flex flex-col p-3 overflow-hidden">
           {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
 
           {activeTab === 'RoutingVsActual' && (

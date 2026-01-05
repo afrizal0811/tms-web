@@ -1,16 +1,15 @@
 'use client';
 
+import Spinner from '@/components/Spinner';
+import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import { useLanguage } from '@/context/LanguageContext';
+import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { getUsers } from '../../lib/apiService';
 import { toastSuccess } from '../../lib/toastHelper';
+import { ROLE_ID } from '@/lib/constants';
 
-// <-- IMPORT HOOK & UI -->
-import Spinner from '@/components/Spinner';
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
-
-// Fungsi helper untuk Capitalize
 function capitalizeWords(str) {
   if (!str) return '';
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
@@ -21,6 +20,7 @@ const ITEMS_PER_PAGE = 9;
 
 // --- (PERUBAHAN 1): Terima 'roleIds' (array) ---
 export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
+  const { t } = useLanguage();
   const [usersData, setUsersData] = useState({
     loading: true,
     data: [],
@@ -90,8 +90,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
         }
 
         const forbiddenRoleIds = [
-          '6703410af6be892f3208ecde', // Driver
-          '68f74e1cff7fa2efdd0f6a38', // Driver JKT
+          ROLE_ID.driver,
+          ROLE_ID.driverJkt,
         ];
 
         let processedData = usersArray;
@@ -123,13 +123,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     }
 
     fetchUsers();
-    //eslint-disable-next-line
-  }, [hubId, showAll]); // <-- 'roleId' diganti 'roleIds'
-  // --- (SELESAI PERUBAHAN 2) ---
+  }, [hubId, showAll, roleIds]);
 
-  // ... (Sisa logika: pagination, handleChange, render... tetap sama) ...
-
-  // --- LOGIC PAGINATION ---
   const totalPages = Math.ceil(usersData.data.length / ITEMS_PER_PAGE);
   const paginatedUsers = usersData.data.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -156,16 +151,11 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       setIsConfirmOpen(false);
       return;
     }
-
-    // Tutup modal konfirmasi UI
     setIsConfirmOpen(false);
-
-    // Gunakan hook: triggerCheck menerima hubId dan callback success
     triggerCheck(hubId, () => {
-      // finalize selection jika check berhasil (atau hook memutuskan safe)
       setSelectedId(userToConfirm._id);
       onUserSelect(userToConfirm);
-      toastSuccess(`Data berhasil disimpan!`);
+      toastSuccess(t('home.toast.success'));
       setUserToConfirm(null);
     });
   };
@@ -175,9 +165,16 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     setUserToConfirm(null);
   };
 
-  // Tampilan Loading
+  const buttonPageClass =
+    'px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed';
+
   if (usersData.loading) {
-    return <p className="mt-6 text-gray-400">Mencari user...</p>;
+    return (
+      <div className="flex flex-col items-center">
+        <Spinner />
+        <p className="mt-3 text-sm text-slate-600">{t('common.loading')}</p>
+      </div>
+    );
   }
   // Tampilan Error
   if (usersData.error) {
@@ -188,55 +185,50 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     return <p className="mt-6 text-gray-400">Tidak ada user ditemukan di lokasi ini.</p>;
   }
   const modalMessage = (
-    <div className='flex flex-col gap-2'>
+    <div className="flex flex-col gap-2">
       <div>
-        Anda yakin ingin memilih user <span className="font-bold">{userToConfirm?.name}</span>?
+        {t('home.confirmation.question')} <span className="font-bold">{userToConfirm?.name}</span>?
       </div>
-      <div className='underline'>User tidak bisa diubah kembali.</div>
+      <div className="underline">{t('home.confirmation.caution')}</div>
     </div>
   );
   // Tampilan Grid
   return (
     <div className="w-full max-w-2xl mt-6 mx-auto relative">
-      {showAll && (
-        <p className="text-center text-red-500 text-sm mb-4">
-          Mode Rahasia: Menampilkan semua user
-        </p>
-      )}
+      {showAll && <p className="text-center text-red-500 text-sm mb-4">{t('home.secret_mode')}</p>}
 
-      {/* Spinner overlay saat hook sedang cek */}
       {isChecking && (
         <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center">
             <Spinner />
-            <p className="mt-3 text-sm text-slate-600">Memeriksa konfigurasi kendaraan...</p>
+            <p className="mt-3 text-sm text-slate-600">{t('home.vehicle_check')}</p>
           </div>
         </div>
       )}
 
       <ConfirmModal
+        cancelText={t('home.confirmation.cancel')}
+        confirmText={t('home.confirmation.confirm')}
         isOpen={isConfirmOpen}
-        title="Konfirmasi Pilihan User"
         message={modalMessage}
-        onConfirm={handleConfirmSelection}
         onCancel={handleCancelSelection}
+        onConfirm={handleConfirmSelection}
+        title={t('home.confirmation.title')}
       />
 
       <div role="radiogroup" aria-label="Pilih User" className="grid grid-cols-3 gap-4">
         {paginatedUsers.map((user) => (
           <div key={user._id}>
             <input
-              type="radio"
+              checked={selectedId === user._id}
+              className="sr-only peer"
               id={user._id}
               name="userSelection"
-              value={user._id}
-              checked={selectedId === user._id}
               readOnly
-              className="sr-only peer"
+              type="radio"
+              value={user._id}
             />
             <label
-              htmlFor={user._id}
-              onClick={() => handleUserClick(user)}
               className={`
                 flex items-center justify-center w-full p-4 h-24
                 text-center border rounded-lg cursor-pointer
@@ -245,6 +237,8 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
                 peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600
                 truncate transition-colors
               `}
+              htmlFor={user._id}
+              onClick={() => handleUserClick(user)}
             >
               {user.name}
             </label>
@@ -253,30 +247,32 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6">
+        <div className="grid grid-cols-3 items-center mt-6">
           <button
-            onClick={handlePrevPage}
+            className={`justify-self-start ${buttonPageClass}`}
             disabled={currentPage === 1}
-            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handlePrevPage}
           >
-            Sebelumnya
+            {t('home.previous')}
           </button>
-          <span className="text-sm text-gray-400">
-            Halaman {currentPage} dari {totalPages}
+          <span className="justify-self-center text-sm text-gray-400 whitespace-nowrap">
+            {t('home.page')} {currentPage} {t('home.from')} {totalPages}
           </span>
           <button
-            onClick={handleNextPage}
+            className={`justify-self-end ${buttonPageClass}`}
             disabled={currentPage === totalPages}
-            className="px-6 py-3 rounded text-center cursor-pointer text-white font-bold bg-sky-600 hover:bg-sky-700 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleNextPage}
           >
-            Selanjutnya
+            {t('home.next')}
           </button>
         </div>
       )}
-
-      {/* Modal mapping kalau hook memutuskan perlu mapping */}
       {showModal && (
-        <VehicleTagMappingModal unmappedData={unmappedData} onCompleted={handleMappingCompleted} />
+        <VehicleTagMappingModal
+          onCompleted={handleMappingCompleted}
+          t={t}
+          unmappedData={unmappedData}
+        />
       )}
     </div>
   );

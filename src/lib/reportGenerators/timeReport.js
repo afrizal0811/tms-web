@@ -1,6 +1,6 @@
+// File: src/features/vehicleData/timeReport.js (sesuaikan path)
 'use client';
 
-// (PERHATIKAN PATH: Sesuaikan path ke 'constants' dan 'utils' jika perlu)
 import {
   calculateDurationAsQuotedHHMM,
   formatMinutesToHHMM,
@@ -14,10 +14,12 @@ import * as XLSX from 'xlsx-js-style';
 export function generateTimeSummaryWorkbook(
   driverData,
   allApiData,
-  selectedDate, // Tanggal Asli (pilihan user, misal "2025-11-11")
-  selectedLocationName
+  selectedDate,
+  selectedLocationName,
+  t // <--- 1. TERIMA PARAMETER t
 ) {
-  // --- (SEMUA LOGIC DARI StartFinishSummary.js 'handleStartFinishSummary' DIPINDAH KE SINI) ---
+  // Fallback translation function
+  const translate = t || ((key) => key);
 
   // 1. Buat Map Driver
   const emailToDriverMap = driverData.reduce((acc, driver) => {
@@ -38,35 +40,33 @@ export function generateTimeSummaryWorkbook(
     const driverInfo = emailToDriverMap[email];
     const startTime = item.startTime;
     const finishTime = item.finish?.finishTime;
-    const startDate = formatTimestampToDDMMYYYY_UTC7(startTime); // Format DD-MM-YYYY
+    const startDate = formatTimestampToDDMMYYYY_UTC7(startTime);
 
     return {
-      // Kriteria Filter
       email: email,
       trackedTime: Math.abs(item.trackedTime || 0),
       totalDistance: item.finish?.totalDistance || 0,
       emailExists: !!driverInfo,
       startDate: startDate,
-      // Data Tampilan
       plat: driverInfo?.plat || null,
       driver: driverInfo?.name || email,
       startTimeFormatted: formatTimestampToQuotedHHMM_UTC7(startTime),
       finishDate: formatTimestampToDDMMYYYY_UTC7(finishTime),
       finishTimeFormatted: formatTimestampToQuotedHHMM_UTC7(finishTime),
       duration: calculateDurationAsQuotedHHMM(startTime, finishTime),
-      travelTimeVal: item.finish?.totalDuration || 0, // Ambil durasi dalam menit
+      travelTimeVal: item.finish?.totalDuration || 0,
     };
   });
 
   const filteredApiData = processedApiData.filter((item) => {
     const criteriaMet = item.trackedTime >= 10 && item.totalDistance > 5;
     const emailExists = item.emailExists;
-    const dateMatches = item.startDate === formattedSelectedDate; // Cocokkan DD-MM-YYYY
+    const dateMatches = item.startDate === formattedSelectedDate;
     return criteriaMet && emailExists && dateMatches;
   });
 
   if (filteredApiData.length === 0)
-    return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' };
+    return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' }; // Error string ini bisa ditangani di UI level untuk translate
 
   const apiDataMap = filteredApiData.reduce((acc, item) => {
     if (item.email) {
@@ -98,8 +98,8 @@ export function generateTimeSummaryWorkbook(
         finishDate: null,
         finishTimeFormatted: null,
         duration: null,
-        travelTimeVal: 0, // Default 0 agar aman dihitung
-        totalDistance: 0, // Default 0 agar aman dihitung
+        travelTimeVal: 0,
+        totalDistance: 0,
       };
     }
   });
@@ -123,27 +123,28 @@ export function generateTimeSummaryWorkbook(
 
   // 7. Proses Sheet 1: Start-Finish Summary
   const wb = XLSX.utils.book_new();
+
+  // TRANSLATE HEADERS
   const headers = [
-    'Plat',
-    'Driver',
-    'Start Date',
-    'Start Time',
-    'Finish Date',
-    'Finish Time',
-    'Duration',
-    'Travel Time',
-    'Travel Distance (KM)',
+    translate('excel.time.headers.plate'),
+    translate('excel.time.headers.driver'),
+    translate('excel.time.headers.start_date'),
+    translate('excel.time.headers.start_time'),
+    translate('excel.time.headers.finish_date'),
+    translate('excel.time.headers.finish_time'),
+    translate('excel.time.headers.duration'),
+    translate('excel.time.headers.travel_time'),
+    translate('excel.time.headers.travel_dist'),
   ];
+
   const finalSheetData = [
     headers,
     ...excelDataObjects.map((item) => {
-      // A. Travel Time (Menit -> HH:mm)
       let displayTravelTime = null;
       if (item.travelTimeVal && item.travelTimeVal > 0) {
         displayTravelTime = formatMinutesToHHMM(item.travelTimeVal);
       }
 
-      // B. Travel Distance (2 Desimal)
       let displayTravelDist = null;
       if (item.totalDistance && item.totalDistance > 0) {
         displayTravelDist = Number(item.totalDistance.toFixed(2));
@@ -217,7 +218,9 @@ export function generateTimeSummaryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Start-Finish Summary');
+
+  // TRANSLATE SHEET NAME
+  XLSX.utils.book_append_sheet(wb, ws, translate('excel.time.sheets.start_finish'));
 
   // --- 9. LOGIC BARU: Sheet 2 - Travel Recap ---
 
@@ -227,6 +230,7 @@ export function generateTimeSummaryWorkbook(
   let frzDist = 0;
 
   excelDataObjects.forEach((item) => {
+    // Logic deteksi DRY/FRZ tetap menggunakan string internal (jangan di-translate)
     const driverName = (item.driver || '').toUpperCase();
     const tTime = item.travelTimeVal || 0;
     const tDist = item.totalDistance || 0;
@@ -243,11 +247,20 @@ export function generateTimeSummaryWorkbook(
   const totalTime = dryTime + frzTime;
   const totalDist = dryDist + frzDist;
 
+  // TRANSLATE DATA ROWS SHEET 2
   const recapData = [
-    ['Category', 'Travel Time', 'Travel Distance (KM)'],
-    ['Dry', formatMinutesToHHMM(dryTime), Number(dryDist.toFixed(2))],
-    ['Frozen', formatMinutesToHHMM(frzTime), Number(frzDist.toFixed(2))],
-    ['Total', formatMinutesToHHMM(totalTime), Number(totalDist.toFixed(2))],
+    [
+      translate('excel.time.headers.category'),
+      translate('excel.time.headers.travel_time'),
+      translate('excel.time.headers.travel_dist'),
+    ],
+    [translate('excel.time.data.dry'), formatMinutesToHHMM(dryTime), Number(dryDist.toFixed(2))],
+    [translate('excel.time.data.frozen'), formatMinutesToHHMM(frzTime), Number(frzDist.toFixed(2))],
+    [
+      translate('excel.time.data.total'),
+      formatMinutesToHHMM(totalTime),
+      Number(totalDist.toFixed(2)),
+    ],
   ];
 
   const wsRecap = XLSX.utils.aoa_to_sheet(recapData);
@@ -257,7 +270,7 @@ export function generateTimeSummaryWorkbook(
   const recapHeaderStyle = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center' },
-    fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } }, // Abu-abu muda
+    fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
     border: {
       top: { style: 'thin' },
       bottom: { style: 'thin' },
@@ -275,7 +288,6 @@ export function generateTimeSummaryWorkbook(
     },
   };
 
-  // Set lebar kolom manual agar rapi
   wsRecap['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 20 }];
 
   for (let R = recapRange.s.r; R <= recapRange.e.r; ++R) {
@@ -287,7 +299,6 @@ export function generateTimeSummaryWorkbook(
         wsRecap[cellRef].s = recapHeaderStyle;
       } else {
         wsRecap[cellRef].s = recapBodyStyle;
-        // Bold untuk baris Total (index 3 jika 0-based header)
         if (R === 3) {
           wsRecap[cellRef].s = { ...recapBodyStyle, font: { bold: true } };
         }
@@ -295,10 +306,11 @@ export function generateTimeSummaryWorkbook(
     }
   }
 
-  XLSX.utils.book_append_sheet(wb, wsRecap, 'Travel Recap');
+  // TRANSLATE SHEET NAME
+  XLSX.utils.book_append_sheet(wb, wsRecap, translate('excel.time.sheets.travel_recap'));
 
-  // 10. Kembalikan Hasil
+  // 10. Kembalikan Hasil & TRANSLATE FILENAME
   const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
-  const excelFileName = `Time Summary - ${formattedDate} - ${selectedLocationName}.xlsx`;
+  const excelFileName = `${translate('excel.time.filename')} - ${formattedDate} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };
 }

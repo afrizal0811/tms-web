@@ -3,9 +3,9 @@
 
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
+import { useLanguage } from '@/context/LanguageContext';
 import { formatTimer } from '@/lib/utils';
-import { useEffect, useRef, useState, useCallback } from 'react';
-
+import { useCallback, useEffect, useRef, useState } from 'react';
 const LoadingState = ({ elapsed, text }) => (
   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 space-y-4 animate-in fade-in duration-200">
     <Spinner />
@@ -21,7 +21,7 @@ export default function BodyCard({
   isLoading = false,
   loadingText = 'Sedang memuat data...',
   isEmpty = false,
-  emptyMessage = 'Tidak ada data ditemukan.',
+  emptyMessage,
   tabs = [],
   activeTabId,
   onTabClick,
@@ -29,14 +29,15 @@ export default function BodyCard({
   longLoadingContent = null,
   timerStartTime = null,
 }) {
+  const { t } = useLanguage();
   const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef(null);
-
-  const cardWrapperRef = useRef(null);
   const [showScrollHint, setShowScrollHint] = useState(false);
+  const startTimeRef = useRef(null);
+  const cardWrapperRef = useRef(null);
   const isHintDismissedRef = useRef(false);
 
-  // --- 1. DEFINISI FUNGSI DULU (Agar tidak error "Accessed before initialization") ---
+  const message = emptyMessage ? emptyMessage : t('common.no_data');
+  const isHasTabs = tabs && tabs.length > 0;
 
   const checkScrollState = useCallback((target) => {
     if (!target) return;
@@ -143,13 +144,13 @@ export default function BodyCard({
         </div>
       );
     }
-    if (tabs && tabs.length > 0) {
+    if (isHasTabs) {
       return (
         <div className="flex overflow-x-auto border-b border-gray-200 px-2 scrollbar-hide relative bg-white rounded-t-xl shrink-0">
           {tabs.map((tab) => (
             <TabButton
-              key={tab.id}
               isActive={activeTabId === tab.id}
+              key={tab.id}
               onClick={() => onTabClick && onTabClick(tab.id)}
             >
               <span>{tab.label}</span>
@@ -180,8 +181,10 @@ export default function BodyCard({
             )}
           </>
         ) : isEmpty ? (
-          <div className="flex-1 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-xl text-gray-400 m-6">
-            <p>{emptyMessage}</p>
+          <div
+            className={`flex-1 flex items-center justify-center bg-gray-50 border border-gray-300 text-gray-400 m-0 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
+          >
+            <p>{message}</p>
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 w-full">{children}</div>
@@ -194,21 +197,21 @@ export default function BodyCard({
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white via-white/50 to-transparent pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
           <div className="flex flex-col items-center animate-bounce">
             <span className="text-[10px] uppercase font-bold tracking-widest text-sky-600 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
-              Scroll Bawah
+              {t('common.scroll_down')}
             </span>
             <div className="bg-white rounded-full p-1.5 shadow-sm border border-slate-100">
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 className="h-4 w-4 text-sky-600"
                 fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
+                  d="M19 9l-7 7-7-7"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2.5}
-                  d="M19 9l-7 7-7-7"
                 />
               </svg>
             </div>

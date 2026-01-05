@@ -2,6 +2,7 @@
 'use client';
 
 import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import { useLanguage } from '@/context/LanguageContext';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { useEffect, useState } from 'react';
@@ -11,9 +12,9 @@ import LocationDropdown from '../LocationDropdown';
 export default function LocationSwitcher() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentLocationName, setCurrentLocationName] = useState('');
-  const [allowedHubs, setAllowedHubs] = useState([]); // hanya { _id, name }
+  const [allowedHubs, setAllowedHubs] = useState([]);
+  const { t } = useLanguage();
 
-  // Hook untuk cek tag/kendaraan
   const {
     isChecking, // tetap tersedia dari hook (tapi kita gak tampilkan spinner)
     showModal,
@@ -102,10 +103,9 @@ export default function LocationSwitcher() {
         value={storedLocation || ''}
       />
 
-      {/* Modal mapping jika hook meminta mapping.
-          Kita panggil handleMappingCompleted() yang disediakan hook agar hook bisa menjalankan onSuccess internalnya. */}
       {showModal && (
         <VehicleTagMappingModal
+          t={t}
           unmappedData={unmappedData}
           onCompleted={() => {
             try {

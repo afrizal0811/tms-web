@@ -47,7 +47,13 @@ function getDriverStorageType(driver) {
   return '-';
 }
 
-export function calculateTimeDriverData(driverData, locationHistoryData, startDateStr, endDateStr) {
+export function calculateTimeDriverData(
+  driverData,
+  locationHistoryData,
+  startDateStr,
+  endDateStr,
+  isIndo
+) {
   const driverMap = new Map();
   const driverEmails = [];
   if (driverData && Array.isArray(driverData)) {
@@ -67,8 +73,12 @@ export function calculateTimeDriverData(driverData, locationHistoryData, startDa
   while (currentIterDate <= endDateObj) {
     const dateStr = formatDateWIB(currentIterDate, 'YYYY-MM-DD');
     const dayNum = currentIterDate.getDate();
-    const monthName = currentIterDate.toLocaleDateString('en-GB', { month: 'long' });
-    const yearShort = currentIterDate.toLocaleDateString('en-GB', { year: '2-digit' });
+    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+      month: 'long',
+    });
+    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+      year: '2-digit',
+    });
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
@@ -136,15 +146,17 @@ export function generateTimeDriverSheet(
   driverData,
   locationHistoryData,
   startDateStr,
-  endDateStr
+  endDateStr,
+  translate,
+  isIndo
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTimeDriverData(
     driverData,
     locationHistoryData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo
   );
-
   // --- STYLES ---
   const headerStyle = {
     ...BASE_STYLES.center,
@@ -160,11 +172,19 @@ export function generateTimeDriverSheet(
   };
 
   // --- BUILD DATA ---
-  const row1 = ['Type of Truck', 'Licence No.', 'Driver'];
+  const row1 = [
+    translate('summary.tabs.time_driver.temp'),
+    translate('summary.tabs.time_driver.lisence'),
+    translate('summary.tabs.time_driver.driver'),
+  ];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {
     row1.push(d.display, '', '');
-    row2.push('Start Time', 'Finish Time', 'Duration');
+    row2.push(
+      translate('summary.tabs.time_driver.start_time'),
+      translate('summary.tabs.time_driver.finish_time'),
+      translate('summary.tabs.time_driver.duration')
+    );
   });
   const excelData = [row1, row2];
   driverEmails.forEach((email) => {
@@ -282,5 +302,5 @@ export function generateTimeDriverSheet(
   for (let i = 0; i < dateKeys.length * 3; i++) cols.push({ wch: 10 });
   ws['!cols'] = cols;
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Time Driver');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.time_driver.title'));
 }

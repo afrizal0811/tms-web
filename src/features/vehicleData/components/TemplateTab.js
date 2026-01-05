@@ -7,27 +7,27 @@ import Tooltip from '@/components/Tooltip';
 import { normalizeEmail } from '@/lib/utils';
 import { formatVolume } from '../help';
 
-export default function TemplateTab({ paginatedData, driverMap, searchQuery }) {
+export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-[1200px]">
         <thead className="sticky top-0 z-10">
           <tr>
-            <Th>Name*</Th>
-            <Th>Assignee</Th>
-            <Th>Start Time</Th>
-            <Th>End Time</Th>
-            <Th>Break Start</Th>
-            <Th>Break End</Th>
-            <Th>Multiday</Th>
-            <Th>Speed Km/h</Th>
-            <Th>Cost Factor</Th>
-            <Th>Vehicle Tags</Th>
-            <Th>Odd Even</Th>
-            <Th>Weight Min</Th>
-            <Th>Weight Max</Th>
-            <Th>Volume Min</Th>
-            <Th>Volume Max</Th>
+            <Th>{t('vehicle.tabs.template.name')}</Th>
+            <Th>{t('vehicle.tabs.template.assignee')}</Th>
+            <Th>{t('vehicle.tabs.template.start_time')}</Th>
+            <Th>{t('vehicle.tabs.template.end_time')}</Th>
+            <Th>{t('vehicle.tabs.template.break_start_time')}</Th>
+            <Th>{t('vehicle.tabs.template.break_end_time')}</Th>
+            <Th>{t('vehicle.tabs.template.multiday')}</Th>
+            <Th>{t('vehicle.tabs.template.speed')}</Th>
+            <Th>{t('vehicle.tabs.template.cost_factor')}</Th>
+            <Th>{t('vehicle.tabs.template.vehicle_tags')}</Th>
+            <Th>{t('vehicle.tabs.template.odd_even')}</Th>
+            <Th>{t('vehicle.tabs.template.weight_min')}</Th>
+            <Th>{t('vehicle.tabs.template.weight_max')}</Th>
+            <Th>{t('vehicle.tabs.template.volume_min')}</Th>
+            <Th>{t('vehicle.tabs.template.volume_max')}</Th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +60,7 @@ export default function TemplateTab({ paginatedData, driverMap, searchQuery }) {
                   return (
                     <Tooltip tooltipContent={remainingTags.join('\n')}>
                       <span>
-                        {firstTag}; (+{remainingCount} lainnya)
+                        {firstTag}; (+{remainingCount} {t('vehicle.tabs.template.more')})
                       </span>
                     </Tooltip>
                   );

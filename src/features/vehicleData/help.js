@@ -11,13 +11,14 @@ export const formatVolume = (vol) => {
 };
 
 export const handleConfirmDownload = ({
-  masterData,
-  driverMap,
   conditionalData,
-  sheetSelection,
-  templateData,
-  setIsDownloading,
+  driverMap,
+  masterData,
   setIsDownloadDropdownOpen,
+  setIsDownloading,
+  sheetSelection,
+  t,
+  templateData,
 }) => {
   setIsDownloading(true);
   try {
@@ -37,7 +38,7 @@ export const handleConfirmDownload = ({
       ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
         if (ws1[cell]) ws1[cell].s = headerStyle;
       });
-      XLSX.utils.book_append_sheet(wb, ws1, 'Master Vehicle');
+      XLSX.utils.book_append_sheet(wb, ws1, t('vehicle.tabs.master_title'));
     }
     if (sheetSelection.conditional && conditionalData.length > 0) {
       const headersC = ['Plat', 'Type', 'Name', 'Email'];
@@ -52,7 +53,7 @@ export const handleConfirmDownload = ({
       ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
         if (wsC[cell]) wsC[cell].s = headerStyle;
       });
-      XLSX.utils.book_append_sheet(wb, wsC, 'Conditional Vehicle');
+      XLSX.utils.book_append_sheet(wb, wsC, t('vehicle.tabs.conditional_title'));
     }
     if (sheetSelection.template) {
       // Template menggunakan templateData (Data Murni)
@@ -96,16 +97,16 @@ export const handleConfirmDownload = ({
         const cellRef = XLSX.utils.encode_cell({ c: i, r: 0 });
         if (ws2[cellRef]) ws2[cellRef].s = headerStyle;
       });
-      XLSX.utils.book_append_sheet(wb, ws2, 'Template Vehicle');
+      XLSX.utils.book_append_sheet(wb, ws2, t('vehicle.tabs.template_title'));
     }
 
     if (wb.SheetNames.length === 0) {
-      toastError('Pilih setidaknya satu sheet untuk diunduh.');
+      toastError(t('vehicle.toast.choose_one'));
     } else {
       const { storedLocationName: locationName } = getLocalStorage() || '-';
-      const fileName = `Data Kendaraan - ${locationName}.xlsx`;
+      const fileName = `${t('vehicle.title')} - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      toastSuccess('File Data Kendaraan berhasil diunduh!');
+      toastSuccess(t('vehicle.toast.success'));
     }
   } catch (err) {
     toastError(err.message);

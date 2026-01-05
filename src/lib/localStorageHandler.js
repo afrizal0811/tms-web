@@ -14,6 +14,7 @@ export function getLocalStorage() {
   const storedVehicleTag = localStorage.getItem('vehicleTagMap');
   const storedMasterTruck = localStorage.getItem('masterTruck');
   const storedUser = localStorage.getItem('selectedUser');
+  const storedLanguage = localStorage.getItem('app_lang');
 
   return {
     storedDrivers,
@@ -23,5 +24,6 @@ export function getLocalStorage() {
     storedVehicleTag,
     storedMasterTruck,
     storedUser,
+    storedLanguage,
   };
 }

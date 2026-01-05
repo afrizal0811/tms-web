@@ -1,6 +1,7 @@
 // File: src/components/Navbar.js
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { ROLE_ID } from '@/lib/constants';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
@@ -42,13 +43,15 @@ function MobileNavLink({ href, children }) {
 }
 
 export default function Navbar() {
+  const { t, lang } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
 
+  const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
-  const hiddenTextClassName = 'hidden [@media(min-width:1155px)]:inline';
+  const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
 
   const [isSuperadmin] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -95,6 +98,35 @@ export default function Navbar() {
 
   // toggle handler (click) for laporan
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
+  const primaryEstimate = isIndo ? t('navbar.estimate') : t('navbar.deliveries');
+  const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
+  const primaryDeliveries = isIndo ? 'Data' : t('navbar.vehicle');
+  const secondaryDeliveries = isIndo ? t('navbar.vehicle') : 'Data';
+
+  const navLinkEstimate = (
+    <NavLink href="/estimasi">
+      <span className={!isIndo ? hiddenTextClassName : ''}> {primaryEstimate} </span>
+      <span className={isIndo ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
+    </NavLink>
+  );
+
+  const navLinkDelivery = (
+    <NavLink href="/vehicles">
+      <span className={isIndo ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
+      <span className={!isIndo ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
+    </NavLink>
+  );
+  const mobileLinkEstimate = (
+    <MobileNavLink href="/estimasi">
+      {primaryEstimate} {secondaryEstimate}
+    </MobileNavLink>
+  );
+
+  const mobileLinkDelivery = (
+    <MobileNavLink href="/vehicles">
+      {primaryDeliveries} {secondaryDeliveries}
+    </MobileNavLink>
+  );
 
   return (
     <nav
@@ -125,7 +157,7 @@ export default function Navbar() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span>Laporan</span>
+                <span>{t('navbar.report')}</span>
                 <svg
                   className={`w-4 h-4 transition-transform duration-200 ${isLaporanOpen ? 'rotate-180' : 'rotate-0'}`}
                   viewBox="0 0 20 20"
@@ -153,28 +185,25 @@ export default function Navbar() {
                     className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
                     onClick={() => setIsLaporanOpen(false)}
                   >
-                    Laporan Harian
+                    {t('navbar.daily_report')}
                   </Link>
                   <Link
                     href="/laporan/bulk"
                     className="block px-4 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
                     onClick={() => setIsLaporanOpen(false)}
                   >
-                    Laporan Periode
+                    {t('navbar.period_report')}
                   </Link>
                 </div>
               </div>
             </div>
-            {isSuperadmin && <NavLink href="/rangkuman">Rangkuman</NavLink>}
+            {isSuperadmin && <NavLink href="/rangkuman">{t('navbar.summary')}</NavLink>}
             <NavLink href="/update-longlat">
-              <span className={hiddenTextClassName}>Update</span> Longlat
+              <span className={hiddenTextClassName}>{t('navbar.update')}</span>{' '}
+              {t('navbar.coordinate')}
             </NavLink>
-            <NavLink href="/estimasi">
-              Estimasi<span className={hiddenTextClassName}> Pengiriman</span>
-            </NavLink>
-            <NavLink href="/vehicles">
-              <span className={hiddenTextClassName}>Data</span> Kendaraan
-            </NavLink>
+            {navLinkEstimate}
+            {navLinkDelivery}
             <HelpDropdown />
           </div>
         </div>
@@ -232,13 +261,14 @@ export default function Navbar() {
         }`}
       >
         <div className="flex flex-col pt-2 pb-4 space-y-1">
-          <MobileNavLink href="/laporan">Laporan Harian</MobileNavLink>
-          <MobileNavLink href="/laporan/bulk">Laporan Periode</MobileNavLink>
-          {isSuperadmin && <MobileNavLink href="/rangkuman">Rangkuman</MobileNavLink>}
-          <MobileNavLink href="/update-longlat">Update Longlat</MobileNavLink>
-          <MobileNavLink href="/estimasi">Estimasi Pengantaran</MobileNavLink>
-          <MobileNavLink href="/vehicles">Data Kendaraan</MobileNavLink>
-
+          <MobileNavLink href="/laporan">{t('navbar.daily_report')}</MobileNavLink>
+          <MobileNavLink href="/laporan/bulk">{t('navbar.period_report')}</MobileNavLink>
+          {isSuperadmin && <MobileNavLink href="/rangkuman">{t('navbar.summary')}</MobileNavLink>}
+          <MobileNavLink href="/update-longlat">
+            {t('navbar.update')} {t('navbar.coordinate')}
+          </MobileNavLink>
+          {mobileLinkEstimate}
+          {mobileLinkDelivery}
           <div className="pt-2 pb-1 px-3">
             <div className="border-t border-gray-200"></div>
           </div>
@@ -248,7 +278,7 @@ export default function Navbar() {
             rel="noopener noreferrer"
             className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
           >
-            Panduan - Planner
+            {t('navbar.planner_guide')}
           </a>
           <a
             href={driverUrl}
@@ -256,7 +286,7 @@ export default function Navbar() {
             rel="noopener noreferrer"
             className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
           >
-            Panduan - Driver
+            {t('navbar.driver_guide')}
           </a>
 
           <div className="pt-2 pb-1 px-3">

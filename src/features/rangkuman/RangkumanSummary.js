@@ -5,6 +5,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -16,17 +17,14 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { calculateTargetDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-
-// --- IMPORT TABS ---
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import PlaceholderTab from './tabs/PlaceholderTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
+import TimeROTab from './tabs/TimeROTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
-// Tab Baru
-import TimeROTab from './tabs/TimeROTab';
 
 const getInitialDate = () => {
   const now = new Date();
@@ -52,19 +50,18 @@ export default function RangkumanSummary() {
     results: [],
     locations: [],
   });
-
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const fetchStartTimeRef = useRef(null);
   const [reportPreview, setReportPreview] = useState(null);
-
   const [activeTab, setActiveTab] = useState('Time RO');
   const [pendingEndpoints, setPendingEndpoints] = useState([]);
   const [dismissedDots, setDismissedDots] = useState({});
-
   const [taskSummaryMetrics, setTaskSummaryMetrics] = useState({});
   const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
   const [historyProgress, setHistoryProgress] = useState(0);
+
+  const fetchStartTimeRef = useRef(null);
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     const { storedLocation, storedLocationName, storedMasterTruck } = getLocalStorage();
@@ -73,9 +70,9 @@ export default function RangkumanSummary() {
       if (storedLocationName) setSelectedLocationName(storedLocationName);
 
       try {
-        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMaster));
+        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMasterTruck));
       } catch (e) {
-        toastError(e);
+        toastError(e.message);
       }
     }
   }, []);
@@ -83,16 +80,16 @@ export default function RangkumanSummary() {
   useEffect(() => {
     const initial = {};
     [
-      'Task Summary',
-      'Pending Reasons',
-      'Time Driver',
-      'Truck Detail',
-      'Truck Usage',
-      'Average KM',
-      'Time RO',
+      t('summary.tabs.time_ro.title'),
+      t('summary.tabs.task_summary.title'),
+      t('summary.tabs.pending_reasons.title'),
+      t('summary.tabs.time_driver.title'),
+      t('summary.tabs.truck_detail.title'),
+      t('summary.tabs.truck_usage.title'),
+      t('summary.tabs.average_km.title'),
     ].forEach((t) => (initial[t] = false));
     setDismissedDots(initial);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (isLoading) {
@@ -133,7 +130,7 @@ export default function RangkumanSummary() {
         attempt++;
         const status = err?.response?.status || err?.status || null;
         if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err;
+          throw err.message;
         }
         const backoff = baseMs * Math.pow(2, attempt - 1);
         const jitter = Math.floor(Math.random() * 100);
@@ -346,7 +343,6 @@ export default function RangkumanSummary() {
 
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
-      const endPlusOneStr = formatDateUniversal(endDatePlusOne);
 
       const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
       const { dateTo: routingEndStr } = calculateTargetDates(endStr);
@@ -531,7 +527,7 @@ export default function RangkumanSummary() {
     if (date) setSelectedDate(date);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = (translate, language) => {
     if (!selectedDate) return;
     if (driverData.length === 0) {
       toastError('Data Driver belum siap/kosong.');
@@ -552,13 +548,15 @@ export default function RangkumanSummary() {
         selectedLocationName,
         selectedLocation,
         taskSummaryMetrics,
-        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } }
+        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
+        translate,
+        language 
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('Rangkuman berhasil di-download!');
+      toastSuccess(translate('summary.toast.success'));
     } catch (err) {
-      toastError('Gagal membuat Excel: ' + err.message);
+      toastError(translate('summary.toast.error', { err: err.message }));
     }
   };
 
@@ -648,7 +646,7 @@ export default function RangkumanSummary() {
 
   const renderContent = () => {
     const renderTabContent = (Component, props) => (
-      <div className="w-full h-full flex flex-col">
+      <div className="w-full h-full flex flex-col ">
         <Component {...props} />
       </div>
     );
@@ -661,6 +659,14 @@ export default function RangkumanSummary() {
     const endStr = formatDateUniversal(new Date(year, month + 1, 0));
 
     switch (activeTab) {
+      case 'Time RO':
+        return renderTabContent(TimeROTab, {
+          tasks: rawData.tasks,
+          startDateStr: startStr,
+          endDateStr: endStr,
+          translate: t,
+          language: lang,
+        });
       case 'Task Summary':
         return renderTabContent(TaskSummaryTab, {
           metrics: taskSummaryMetrics,
@@ -669,18 +675,8 @@ export default function RangkumanSummary() {
           startDateStr: startStr,
           endDateStr: endStr,
           isHasData: Object.entries(taskSummaryMetrics).length > 0,
+          translate: t,
         });
-      case 'Truck Usage':
-        return renderTabContent(TruckUsageTab, { data: reportPreview.truckUsageData });
-      case 'Average KM':
-        return renderTabContent(AverageKmTab, {
-          data: reportPreview.averageKmData,
-          monthTotals: reportPreview.monthTotals,
-        });
-      case 'Truck Detail':
-        return renderTabContent(TruckDetailTab, { data: reportPreview.truckDetailData });
-      case 'Time Driver':
-        return renderTabContent(TimeDriverTab, { data: reportPreview.timeDriverData });
       case 'Pending Reasons':
         const filteredPendingData = (reportPreview?.pendingReasonsData || []).filter(
           (item) => formatDateUniversal(item.date || item.doneTime || item.createdTime) >= startStr
@@ -688,13 +684,32 @@ export default function RangkumanSummary() {
         return renderTabContent(PendingReasonsTab, {
           data: filteredPendingData,
           locationName: selectedLocationName,
+          translate: t,
         });
-      case 'Time RO':
-        return renderTabContent(TimeROTab, {
-          tasks: rawData.tasks,
-          startDateStr: startStr,
-          endDateStr: endStr,
+      case 'Time Driver':
+        return renderTabContent(TimeDriverTab, {
+          data: reportPreview.timeDriverData,
+          translate: t,
+          language: lang,
         });
+      case 'Truck Detail':
+        return renderTabContent(TruckDetailTab, {
+          data: reportPreview.truckDetailData,
+          translate: t,
+          language: lang,
+        });
+      case 'Truck Usage':
+        return renderTabContent(TruckUsageTab, {
+          data: reportPreview.truckUsageData,
+          translate: t,
+        });
+      case 'Average KM':
+        return renderTabContent(AverageKmTab, {
+          data: reportPreview.averageKmData,
+          monthTotals: reportPreview.monthTotals,
+          translate: t,
+        });
+
       default:
         return <PlaceholderTab tabName={activeTab} />;
     }
@@ -702,28 +717,30 @@ export default function RangkumanSummary() {
 
   const datePicker = (
     <CustomDatePicker
-      selected={selectedDate}
-      onChange={handleDateChange}
-      isLoading={isLoading}
-      dateFormat="MMMM yyyy"
-      showMonthYearPicker
       className="md:w-48"
+      dateFormat="MMMM yyyy"
+      disableSunday={false}
+      isLoading={isLoading}
+      onChange={handleDateChange}
+      selected={selectedDate}
+      showMonthYearPicker
       wrapperClassName="w-full"
     />
   );
 
   const downloadButton = (
     <DownloadButton
-      width="w-full md:w-auto"
-      onClick={handleDownloadExcel}
       disabled={isLoading || rawData.tasks.length === 0}
       isLoading={isLoading}
+      onClick={() => handleDownloadExcel(t, lang)}
+      width="w-full md:w-auto"
+      text={t('common.download_excel')}
     />
   );
 
   const headerItems = [
     {
-      label: 'Bulan Performa',
+      label: t('summary.label'),
       component: datePicker,
       hideLabel: false,
     },
@@ -735,13 +752,13 @@ export default function RangkumanSummary() {
   ];
 
   const tabConfig = [
-    { id: 'Time RO', label: 'Time RO' },
-    { id: 'Task Summary', label: 'Task Summary' },
-    { id: 'Pending Reasons', label: 'Pending Reasons' },
-    { id: 'Time Driver', label: 'Time Driver' },
-    { id: 'Truck Detail', label: 'Truck Detail' },
-    { id: 'Truck Usage', label: 'Truck Usage' },
-    { id: 'Average KM', label: 'Average KM of Routing' },
+    { id: 'Time RO', label: t('summary.tabs.time_ro.title') },
+    { id: 'Task Summary', label: t('summary.tabs.task_summary.title') },
+    { id: 'Pending Reasons', label: t('summary.tabs.pending_reasons.title') },
+    { id: 'Time Driver', label: t('summary.tabs.time_driver.title') },
+    { id: 'Truck Detail', label: t('summary.tabs.truck_detail.title') },
+    { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
+    { id: 'Average KM', label: t('summary.tabs.average_km.title') },
   ];
 
   const cardTabs = tabConfig.map((t) => ({
@@ -752,33 +769,40 @@ export default function RangkumanSummary() {
 
   const subtitle = (
     <>
-      Rekapitulasi <span className="font-semibold text-sky-600">performa tugas</span> tiap bulan
+      {t('summary.subtitle_1')}{' '}
+      <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>{' '}
+      {t('summary.subtitle_2')}
     </>
   );
 
   const warningContent =
     pendingEndpoints.length > 0 ? (
       <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
-        <p>Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
+        <p>
+          {t('summary.long_message')}
+          {pendingEndpoints.join(', ')}.
+        </p>
       </div>
     ) : null;
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
-      <HeaderCard title="Rangkuman" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('summary.title')} subtitle={subtitle} items={headerItems} />
 
       <BodyCard
-        tabs={cardTabs}
         activeTabId={activeTab}
-        onTabClick={handleTabClick}
+        isEmpty={isTabEmpty()}
         isLoading={isLoading}
         longLoadingContent={warningContent}
-        isEmpty={isTabEmpty()}
+        onTabClick={handleTabClick}
+        tabs={cardTabs}
       >
         {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
           <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse">
-              <p>Memproses banyak data di {pendingEndpoints.join(', ')}.</p>
+              <p>
+                {t('summary.long_message')} {pendingEndpoints.join(', ')}.
+              </p>
             </div>
           </div>
         )}

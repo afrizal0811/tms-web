@@ -1,7 +1,9 @@
+import { useLanguage } from '@/context/LanguageContext';
 import { parseCustomerString } from '@/lib/utils';
 import { useState } from 'react';
 
 const InfoCard = ({ task, onClose, customTitle }) => {
+  const { t } = useLanguage();
   const [isMinimized, setIsMinimized] = useState(false);
 
   if (!task) return null;
@@ -41,7 +43,9 @@ const InfoCard = ({ task, onClose, customTitle }) => {
 
         <div className={cardClasses}>
           <div className="bg-green-50 p-3 border-b border-green-100 flex justify-between items-center">
-            <h3 className="font-bold text-sm text-green-800">HUB LOCATION</h3>
+            <h3 className="font-bold text-sm text-green-800">
+              {t('dashboard.map.card.hub_location')}
+            </h3>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
@@ -87,7 +91,7 @@ const InfoCard = ({ task, onClose, customTitle }) => {
           {!isMinimized && (
             <>
               <div className="p-4 text-xs text-gray-600">
-                <p>Titik awal/akhir pengiriman (Hub/Depot).</p>
+                <p>{t('dashboard.map.card.hub_info')}</p>
                 <p className="mt-2 font-mono text-sm font-bold">{task.time}</p>
               </div>
               <div className="h-6 w-full bg-white md:hidden"></div>
@@ -115,26 +119,26 @@ const InfoCard = ({ task, onClose, customTitle }) => {
   const etdMin = timeToMin(task.etd);
   const arrMin = timeToMin(task.actualArrival);
 
-  let timeStatus = 'Belum Ada Data';
+  let timeStatus = t('dashboard.map.status.no_data');
   let timeStatusColor = 'text-gray-500';
   let statusBg = 'bg-gray-100';
   let statusBorder = 'border-gray-100';
 
   if (isManual) {
-    timeStatus = 'Tidak Diketahui';
+    timeStatus = t('dashboard.map.status.unknown');
   } else if (etaMin !== null && etdMin !== null && arrMin !== null) {
     if (arrMin <= etaMin) {
-      timeStatus = 'Tiba Lebih Awal';
+      timeStatus = t('dashboard.map.status.early');
       timeStatusColor = 'text-green-700';
       statusBg = 'bg-green-50';
       statusBorder = 'border-green-100';
     } else if (arrMin > etaMin && arrMin <= etdMin) {
-      timeStatus = 'Tiba Sesuai Rentang Waktu';
+      timeStatus = t('dashboard.map.status.ontime');
       timeStatusColor = 'text-green-700';
       statusBg = 'bg-green-50';
       statusBorder = 'border-green-100';
     } else {
-      timeStatus = 'Melewati Batas Waktu';
+      timeStatus = t('dashboard.map.status.late');
       timeStatusColor = 'text-red-700';
       statusBg = 'bg-red-50';
       statusBorder = 'border-red-100';
@@ -211,7 +215,7 @@ const InfoCard = ({ task, onClose, customTitle }) => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-blue-50 p-2 rounded border border-blue-100">
                   <span className="block text-[10px] text-blue-500 font-semibold mb-0.5">
-                    RENCANA
+                    {t('dashboard.map.card.plan')}
                   </span>
                   <span className="font-mono font-bold text-slate-700 text-sm">
                     {task.eta || '--:--'} - {task.etd || '--:--'}
@@ -219,7 +223,7 @@ const InfoCard = ({ task, onClose, customTitle }) => {
                 </div>
                 <div className="bg-orange-50 p-2 rounded border border-orange-100">
                   <span className="block text-[10px] text-orange-500 font-semibold mb-0.5">
-                    AKTUAL
+                    {t('dashboard.map.card.actual')}
                   </span>
                   <span className="font-mono font-bold text-slate-700 text-sm">
                     {task.actualArrival || '--:--'} - {task.actualDeparture || '--:--'}
@@ -230,7 +234,9 @@ const InfoCard = ({ task, onClose, customTitle }) => {
               <div
                 className={`flex items-center justify-between p-2.5 rounded border ${statusBorder} ${statusBg} border-opacity-50`}
               >
-                <span className="text-gray-500 font-semibold">Status Waktu</span>
+                <span className="text-gray-500 font-semibold">
+                  {t('dashboard.map.card.time_status')}
+                </span>
                 <span
                   className={`font-bold ${timeStatusColor} px-2 py-0.5 bg-white rounded shadow-sm text-[11px]`}
                 >
@@ -240,14 +246,20 @@ const InfoCard = ({ task, onClose, customTitle }) => {
 
               <div className="grid grid-cols-[1fr_auto] gap-2 items-center pt-3 border-t border-dashed border-gray-200">
                 <div>
-                  <span className="block text-gray-500 text-[11px]">Visit Plan</span>
-                  <span className="font-semibold text-slate-700 text-sm">{planVisit} menit</span>
+                  <span className="block text-gray-500 text-[11px]">
+                    {t('dashboard.map.card.visit_plan')}
+                  </span>
+                  <span className="font-semibold text-slate-700 text-sm">
+                    {planVisit} {t('common.minute')}
+                  </span>
                 </div>
                 <div className="text-right">
-                  <span className="block text-gray-500 text-[11px]">Actual Visit</span>
+                  <span className="block text-gray-500 text-[11px]">
+                    {t('dashboard.map.card.visit_actual')}
+                  </span>
                   <div className="flex items-center justify-end gap-2">
                     <span className="font-bold text-slate-700 text-sm">
-                      {actVisit > 0 ? actVisit : '-'} menit
+                      {actVisit > 0 ? actVisit : '-'} {t('common.minute')}
                     </span>
                     {actVisit > 0 && (
                       <span

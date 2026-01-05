@@ -88,7 +88,7 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
   );
 };
 
-export default function PendingReasonsTab({ data, locationName }) {
+export default function PendingReasonsTab({ data, locationName, translate }) {
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
     (locationName || '').toLowerCase().includes(loc.toLowerCase())
   );
@@ -117,31 +117,35 @@ export default function PendingReasonsTab({ data, locationName }) {
   };
 
   return (
-    <div className="rounded-xl overflow-auto border border-gray-300 m-6">
+    <div className="rounded-b-xl overflow-auto border border-gray-300 m-0">
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-20">
           <tr>
-            <th className={thClass}>Flow</th>
-            <th className={thClass}>Date</th>
-            <th className={thClass}>License Plat</th>
-            <th className={thClass}>Driver</th>
-            <th className={thClass}>Faktur Batal</th>
-            <th className={thClass}>Terkirim Sebagian</th>
-            <th className={thClass}>Pending</th>
-            {shouldShowPendingGR && <th className={thClass}>Pending GR</th>}
-            <th className={thClass}>Reason</th>
-            <th className={thClass}>Open Time</th>
-            <th className={thClass}>Close Time</th>
-            <th className={thClass}>ETA</th>
-            <th className={thClass}>ETD</th>
-            <th className={thClass}>Actual Arrival</th>
-            <th className={thClass}>Actual Departure</th>
-            <th className={thClass}>Visit Time</th>
-            <th className={thClass}>Actual Visit Time</th>
-            <th className={thClass}>Customer ID</th>
-            <th className={thClass}>RO Seq</th>
-            <th className={thClass}>Real Seq</th>
-            <th className={thClass}>Temperature</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.flow')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.date')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.lisence')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.driver')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.cancel')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.partial')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.pending')}</th>
+            {shouldShowPendingGR && (
+              <th className={thClass}>{translate('summary.tabs.pending_reasons.pending_gr')}</th>
+            )}
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.reason')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.open_time')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.close_time')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.eta')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.etd')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.actual_arrival')}</th>
+            <th className={thClass}>
+              {translate('summary.tabs.pending_reasons.actual_departure')}
+            </th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.visit_plan')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.visit_actual')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.cust_id')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.ro_seq')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.real_seq')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.temp')}</th>
           </tr>
         </thead>
         <tbody className="bg-white">
@@ -156,12 +160,7 @@ export default function PendingReasonsTab({ data, locationName }) {
             const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
 
             // --- UPDATE: PESAN ERROR MENGGUNAKAN JSX (UNDERLINE) ---
-            const errorMsg = (
-              <span>
-                Driver memilih status yang salah. Seharusnya memilih <u>Pending</u>, bukan{' '}
-                <u>Pending GR</u>.
-              </span>
-            );
+            const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
 
             const textBatal = item.status === 'BATAL' ? item.customerName : '';
             const textParsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';

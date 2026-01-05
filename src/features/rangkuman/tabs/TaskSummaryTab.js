@@ -2,9 +2,10 @@
 'use client';
 
 import Spinner from '@/components/Spinner';
+import Tooltip from '@/components/Tooltip';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 
 export default function TaskSummaryTab({
   metrics,
@@ -12,6 +13,7 @@ export default function TaskSummaryTab({
   progress,
   startDateStr,
   endDateStr,
+  translate,
 }) {
   const [masterTruckData, setMasterTruckData] = useState({
     Dry: { Total: 0 },
@@ -27,7 +29,7 @@ export default function TaskSummaryTab({
           setMasterTruckData(JSON.parse(stored));
         }
       } catch (e) {
-        toastError('Failed to load masterTruck from storage', e);
+        toastError(`Failed to load masterTruck from storage: ${e.message}`);
       }
     }
   }, []);
@@ -110,7 +112,7 @@ export default function TaskSummaryTab({
         colSpan={17}
         className="px-2 py-2 border border-gray-300 font-bold text-center align-middle"
       >
-        Libur (Minggu)
+        {translate('summary.tabs.task_summary.holiday')}
       </td>
     </tr>,
     <tr key={`${key}-sun-2`} className="bg-red-200 text-red-900"></tr>,
@@ -126,8 +128,18 @@ export default function TaskSummaryTab({
   const cGray = 'bg-[#cccccc]';
   const cViolet = 'bg-[#d9d2e9]';
 
+  const headerData = (tootltip, color, text) => {
+    return (
+      <Tooltip tooltipContent={tootltip}>
+        <th className={`cursor-help px-2 py-3 border border-gray-300 min-w-[60px] ${color}`}>
+          {text}
+        </th>
+      </Tooltip>
+    );
+  };
+
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden p-6">
+    <div className="w-full h-full flex flex-col overflow-hidden p-0">
       {isLoading && (
         <div className="w-full h-1 bg-gray-100">
           <div
@@ -137,28 +149,32 @@ export default function TaskSummaryTab({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-white rounded-lg border border-gray-200 ">
+      <div className="flex-1 overflow-auto bg-white rounded-b-xl border border-gray-200 ">
         <table className="min-w-full text-xs text-center border-collapse text-gray-700 ">
-          <thead className="text-xs text-gray-700 uppercase sticky top-0 z-10 font-bold">
+          <thead className="text-xs text-gray-700 capitalize  sticky top-0 z-10 font-bold">
             <tr>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>Date</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>Type</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cPink}`}>DP</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>DT</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGreen}`}>% DT</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>MA</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cRed}`}>% MA</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>RT</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cCyan}`}>% RT</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>CO</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cBlue}`}>% CO</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>PR</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cGray}`}>% PR</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>MT</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>TV</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cYellow}`}>VA</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>TVU</th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[60px] ${cViolet}`}>% TVU</th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>
+                {translate('summary.tabs.task_summary.date')}
+              </th>
+              <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>
+                {translate('summary.tabs.task_summary.type')}
+              </th>
+              {headerData(translate('summary.tabs.task_summary.dp'), cPink, 'DP')}
+              {headerData(translate('summary.tabs.task_summary.dt'), cPink, 'DT')}
+              {headerData(translate('summary.tabs.task_summary.dt_persentage'), cPink, '% DT')}
+              {headerData(translate('summary.tabs.task_summary.ma'), cRed, 'MA')}
+              {headerData(translate('summary.tabs.task_summary.ma_persentage'), cRed, '% MA')}
+              {headerData(translate('summary.tabs.task_summary.rt'), cCyan, 'RT')}
+              {headerData(translate('summary.tabs.task_summary.rt_persentage'), cCyan, '% RT')}
+              {headerData(translate('summary.tabs.task_summary.co'), cBlue, 'CO')}
+              {headerData(translate('summary.tabs.task_summary.co_persentage'), cBlue, '% CO')}
+              {headerData(translate('summary.tabs.task_summary.pr'), cGray, 'PR')}
+              {headerData(translate('summary.tabs.task_summary.pr_persentage'), cGray, '% PR')}
+              {headerData(translate('summary.tabs.task_summary.mt'), cYellow, 'MT')}
+              {headerData(translate('summary.tabs.task_summary.tv'), cYellow, 'TV')}
+              {headerData(translate('summary.tabs.task_summary.va'), cYellow, 'VA')}
+              {headerData(translate('summary.tabs.task_summary.tvu'), cViolet, 'TVU')}
+              {headerData(translate('summary.tabs.task_summary.tvu_persentage'), cViolet, '% TVU')}
             </tr>
           </thead>
           <tbody>

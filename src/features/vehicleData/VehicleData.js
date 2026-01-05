@@ -6,6 +6,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,11 +23,9 @@ export default function VehicleData() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
   const [templateData, setTemplateData] = useState([]);
-
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [sheetSelection, setSheetSelection] = useState({
     master: true,
@@ -34,15 +33,15 @@ export default function VehicleData() {
     template: true,
   });
   const downloadDropdownRef = useRef(null);
-
+  const { t } = useLanguage();
   const downloadOptions = [
-    { name: 'master', label: 'Master Vehicle' },
+    { name: 'master', label: t('vehicle.tabs.master_title') },
     {
       name: 'conditional',
-      label: 'Conditional Vehicle',
+      label: t('vehicle.tabs.conditional_title'),
       show: conditionalData.length > 0,
     },
-    { name: 'template', label: 'Template Vehicle' },
+    { name: 'template', label: t('vehicle.tabs.template_title') },
   ];
 
   const noSheetSelected = !(
@@ -65,95 +64,81 @@ export default function VehicleData() {
       try {
         const { storedLocation: userLocation, storedVehicleTag: storedMapString } =
           getLocalStorage();
-        if (!userLocation) {
-          throw new Error('Lokasi user tidak ditemukan. Harap kembali ke Halaman Utama.');
-        }
+        if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
+
         const drivers = await getOrFetchDriverData(userLocation);
-        if (!drivers) {
-          throw new Error('Gagal memuat data driver.');
+        const localDriverMap = new Map();
+        if (drivers) {
+          drivers.forEach((d) => {
+            const normEmail = normalizeEmail(d.email);
+            if (normEmail) localDriverMap.set(normEmail, d.name);
+          });
         }
-        const map = new Map();
-        drivers.forEach((driver) => {
-          const normalizedEmail = normalizeEmail(driver.email);
-          if (normalizedEmail) map.set(normalizedEmail, driver.name);
-        });
-        setDriverMap(map);
-
-        const rawApiData = await getVehicles({
-          limit: 500,
-          hubId: userLocation,
-        });
-
-        if (rawApiData.length === 0) {
-          throw new Error('Tidak ada data yang ditemukan.');
-        }
-
+        setDriverMap(localDriverMap);
+        const rawApiData = await getVehicles({ limit: 500, hubId: userLocation });
+        if (!rawApiData || rawApiData.length === 0) throw new Error('Tidak ada data.');
         const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
-
         setTemplateData([...rawApiData].sort(sortByEmail));
-
-        let processedData = rawApiData.map((v) => ({
-          ...v,
-          tags: v.tags ? [...v.tags] : [],
-        }));
+        let processedData = rawApiData.map((v) => ({ ...v, tags: v.tags ? [...v.tags] : [] }));
 
         try {
           if (storedMapString) {
             const tagMap = JSON.parse(storedMapString);
             const hubMap = tagMap[userLocation];
-
             if (hubMap) {
               processedData.forEach((vehicle) => {
                 if (!vehicle.tags || vehicle.tags.length === 0 || !vehicle.name) return;
                 const originalTag = vehicle.tags[0];
                 const plate = vehicle.name;
                 const parts = originalTag.split('-');
+                let storagePrefix = '';
+                let currentType = '';
                 if (parts.length >= 2) {
-                  const storagePrefix = parts[0];
-                  const currentType = parts[1];
-                  if (hubMap[plate] && hubMap[plate][currentType]) {
-                    const mappedType = hubMap[plate][currentType];
-                    const newFullTag = `${storagePrefix}-${mappedType}`;
-                    vehicle.tags[0] = newFullTag;
-                  }
+                  storagePrefix = parts[0];
+                  currentType = parts[1];
+                } else {
+                  currentType = originalTag;
+                }
+                const emailKey = normalizeEmail(vehicle.assignee);
+                const driverName = localDriverMap.get(emailKey) || '';
+                const upperName = driverName.toUpperCase();
+
+                if (upperName.includes('FRZ') || upperName.includes('FROZEN')) {
+                  storagePrefix = 'FROZEN';
+                } else if (upperName.includes('DRY')) {
+                  storagePrefix = 'DRY';
+                }
+                if (hubMap[plate] && hubMap[plate][currentType]) {
+                  const mappedType = hubMap[plate][currentType];
+                  const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
+
+                  vehicle.tags[0] = newFullTag;
                 }
               });
             }
           }
         } catch (error) {
-          toastError(`Gagal melakukan mapping vehicle tag: ${error}`);
+          toastError(t('vehicle.failed_mapping', { error }));
         }
-
         const emailToVehiclesMap = new Map();
-        for (const vehicle of processedData) {
-          const email = vehicle.assignee;
-          if (email) {
-            if (!emailToVehiclesMap.has(email)) {
-              emailToVehiclesMap.set(email, []);
-            }
-            emailToVehiclesMap.get(email).push(vehicle);
-          }
-        }
+        processedData.forEach((v) => {
+          if (!v.assignee) return;
+          if (!emailToVehiclesMap.has(v.assignee)) emailToVehiclesMap.set(v.assignee, []);
+          emailToVehiclesMap.get(v.assignee).push(v);
+        });
 
         const masterList = [];
         const conditionalList = [];
         const countSpaces = (str) => (str.match(/ /g) || []).length;
 
-        for (const [email, vehicles] of emailToVehiclesMap.entries()) {
+        for (const [_, vehicles] of emailToVehiclesMap.entries()) {
           if (vehicles.length === 1) {
-            const vehicle = vehicles[0];
-            masterList.push(vehicle);
+            masterList.push(vehicles[0]);
           } else {
-            const sortedVehicles = [...vehicles].sort((a, b) => {
-              return countSpaces(a.name) - countSpaces(b.name);
-            });
-            const masterVehicle = sortedVehicles[0];
-            masterList.push(masterVehicle);
-            for (let i = 1; i < sortedVehicles.length; i++) {
-              const vehicle = sortedVehicles[i];
-              if (countSpaces(vehicle.name) > 2) {
-                conditionalList.push(vehicle);
-              }
+            const sorted = [...vehicles].sort((a, b) => countSpaces(a.name) - countSpaces(b.name));
+            masterList.push(sorted[0]);
+            for (let i = 1; i < sorted.length; i++) {
+              if (countSpaces(sorted[i].name) > 2) conditionalList.push(sorted[i]);
             }
           }
         }
@@ -161,13 +146,13 @@ export default function VehicleData() {
         setMasterData(masterList.sort(sortByEmail));
         setConditionalData(conditionalList.sort(sortByEmail));
       } catch (err) {
-        toastError(err.message);
+        toastError(err.message); // Pastikan toastError aman
       } finally {
         setIsLoading(false);
       }
     }
     fetchData();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -211,7 +196,6 @@ export default function VehicleData() {
     });
   }, [sourceData, searchQuery, driverMap]);
 
-
   const totalItems = filteredData.length;
 
   const searchBar = (
@@ -219,7 +203,7 @@ export default function VehicleData() {
       className="w-full lg:max-w-xs"
       disabled={isLoading}
       onChange={(val) => setSearchQuery(val)}
-      placeholder="Cari Plat, Customer, atau SO"
+      placeholder={t('vehicle.search_placeholder')}
       value={searchQuery}
     />
   );
@@ -227,9 +211,10 @@ export default function VehicleData() {
   const downloadButton = (
     <div className="w-full md:w-auto z-50" ref={downloadDropdownRef}>
       <DownloadButton
-        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
         disabled={isDownloading || isLoading}
         isLoading={isLoading || isDownloading}
+        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+        text={t('common.download_excel')}
         width="w-full md:w-auto"
       />
 
@@ -245,11 +230,11 @@ export default function VehicleData() {
                   className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
                 >
                   <input
-                    type="checkbox"
-                    name={option.name}
                     checked={sheetSelection[option.name]}
-                    onChange={handleToggleChange}
                     className="form-checkbox h-4 w-4 text-sky-600 rounded cursor-pointer"
+                    name={option.name}
+                    onChange={handleToggleChange}
+                    type="checkbox"
                   />
                   <span className="text-sm text-gray-800">{option.label}</span>
                 </label>
@@ -260,13 +245,14 @@ export default function VehicleData() {
             <button
               onClick={() =>
                 handleConfirmDownload({
-                  masterData,
-                  driverMap,
                   conditionalData,
-                  sheetSelection,
-                  templateData,
-                  setIsDownloading,
+                  driverMap,
+                  masterData,
                   setIsDownloadDropdownOpen,
+                  setIsDownloading,
+                  sheetSelection,
+                  t,
+                  templateData,
                 })
               }
               disabled={isDownloading || noSheetSelected}
@@ -277,7 +263,7 @@ export default function VehicleData() {
                   <Spinner size="w-5 h-5 border-2" />
                 </div>
               ) : (
-                'Download'
+                t('common.download')
               )}
             </button>
           </div>
@@ -292,45 +278,49 @@ export default function VehicleData() {
   ];
 
   const tabs = [
-    { id: 'master', label: 'Master Vehicle' },
-    ...(conditionalData.length > 0 ? [{ id: 'conditional', label: 'Conditional Vehicle' }] : []),
-    { id: 'template', label: 'Template Vehicle' },
+    { id: 'master', label: t('vehicle.tabs.master_title') },
+    ...(conditionalData.length > 0
+      ? [{ id: 'conditional', label: t('vehicle.tabs.conditional_title') }]
+      : []),
+    { id: 'template', label: t('vehicle.tabs.template_title') },
   ];
 
   const subtitle = (
     <>
-      Manajemen daftar <span className="font-semibold text-sky-600">kendaraan</span>
+      {t('vehicle.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
     </>
   );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      <HeaderCard title="Data Kendaraan" subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('vehicle.title')} subtitle={subtitle} items={headerItems} />
 
       <BodyCard
-        tabs={tabs}
         activeTabId={activeTab}
-        onTabClick={setActiveTab}
-        isLoading={isLoading}
-        loadingText="Memuat Data Kendaraan..."
         isEmpty={!isLoading && totalItems === 0}
+        isLoading={isLoading}
+        loadingText={t('common.loading')}
+        onTabClick={setActiveTab}
+        tabs={tabs}
       >
-        <div className="flex-1 flex flex-col m-6 border border-gray-300 rounded-xl overflow-auto">
+        <div className="flex-1 flex flex-col m-0 border border-gray-300 rounded-b-xl overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab
-              paginatedData={filteredData} 
               driverMap={driverMap}
+              paginatedData={filteredData}
               searchQuery={searchQuery}
+              t={t}
             />
           )}
           {activeTab === 'template' && (
             <TemplateTab
-              paginatedData={filteredData}
               driverMap={driverMap}
+              paginatedData={filteredData}
               searchQuery={searchQuery}
+              t={t}
             />
           )}
-
         </div>
       </BodyCard>
     </div>

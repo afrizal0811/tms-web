@@ -1,7 +1,13 @@
 import Spinner from './Spinner';
 
 export default function DownloadButton(props) {
-  const { onClick, isLoading = false, disabled = false, width = 'w-full sm:w-auto ' } = props;
+  const {
+    onClick,
+    isLoading = false,
+    disabled = false,
+    width = 'w-full sm:w-auto ',
+    text = 'Download Excel',
+  } = props;
   return (
     <button
       onClick={onClick}
@@ -30,7 +36,7 @@ export default function DownloadButton(props) {
           />
         </svg>
       )}
-      <span>Download Excel</span>
+      <span>{text}</span>
     </button>
   );
 }

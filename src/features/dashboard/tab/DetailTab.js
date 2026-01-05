@@ -3,6 +3,7 @@
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
+import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { forwardRef } from 'react';
 
@@ -31,17 +32,19 @@ StatCard.displayName = 'StatCard';
 // ========== MAIN DETAIL TAB ==========
 
 export default function DetailTab({ loading, summaryData }) {
+  const { t } = useLanguage();
+
   const handleCopy = (task) => {
     if (!task.copyValue) {
-      toastWarning('Tidak ada nomor SO untuk disalin');
+      toastWarning(t('dashboard.no_so'));
       return;
     }
     navigator.clipboard.writeText(task.copyValue).then(
       () => {
-        toastSuccess(`Salin: ${task.tooltip}`);
+        toastSuccess(`${t('dashboard.copy')}: ${task.tooltip}`);
       },
       (err) => {
-        toastError('Gagal menyalin ke clipboard: ', err);
+        toastError(t('dashboard.unable_copy'), err);
       }
     );
   };
@@ -64,7 +67,7 @@ export default function DetailTab({ loading, summaryData }) {
             valueClassName="text-5xl"
             tooltipContent={
               <div className="space-y-1 text-xs">
-                <div>Total semua task (Selesai, Berjalan, &amp; Belum Assign).</div>
+                <div>{t('dashboard.tab.detail.tooltip.total_task')}</div>
                 <div>Total Dry : {totalDry}</div>
                 <div>Total Frozen : {totalFrozen}</div>
               </div>
@@ -78,7 +81,7 @@ export default function DetailTab({ loading, summaryData }) {
             valueClassName="text-5xl"
             tooltipContent={
               <div className="space-y-1 text-xs">
-                <div>Total task yang sudah di-assign ke driver.</div>
+                <div>{t('dashboard.tab.detail.tooltip.total_assigned')}</div>
                 <div>Total Dry : {assignedDry}</div>
                 <div>Total Frozen : {assignedFrozen}</div>
               </div>
@@ -89,52 +92,52 @@ export default function DetailTab({ loading, summaryData }) {
         {/* Grid kecil */}
         <div className="lg:col-span-2 lg:order-1 grid grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
           <StatCard
-            title="Belum Assign"
+            title={t('dashboard.tab.detail.unassigned')}
             value={summaryData?.unassigned}
             isLoading={loading}
-            tooltipContent="Jumlah task 'UNASSIGNED'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.unassigned')}
           />
           <StatCard
-            title="Berjalan"
+            title={t('dashboard.tab.detail.ongoing')}
             value={summaryData?.ongoing}
             isLoading={loading}
-            tooltipContent="Jumlah task 'ONGOING'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
           />
           <StatCard
-            title="Selesai"
+            title={t('dashboard.tab.detail.done')}
             value={summaryData?.done}
             isLoading={loading}
-            tooltipContent="Jumlah task 'DONE'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.done')}
           />
           <StatCard
-            title="Manual Assign"
+            title={t('dashboard.tab.detail.manual')}
             value={summaryData?.manualAssignList?.length}
             isLoading={loading}
-            tooltipContent="Task tanpa proses routing."
+            tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
           />
           <StatCard
-            title="Beda Hari"
+            title={t('dashboard.tab.detail.diff_day')}
             value={summaryData?.crossDayTasks?.length}
             isLoading={loading}
-            tooltipContent="Task selesai di hari berbeda."
+            tooltipContent={t('dashboard.tab.detail.tooltip.diff_day')}
           />
           <StatCard
-            title="Delivery"
+            title={t('dashboard.tab.detail.delivery')}
             value={summaryData?.flowDelivery}
             isLoading={loading}
-            tooltipContent="Flow 'Delivery'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.delivery')}
           />
           <StatCard
-            title="Re-Delivery"
+            title={t('dashboard.tab.detail.redelivery')}
             value={summaryData?.flowReDelivery}
             isLoading={loading}
-            tooltipContent="Flow 'Re Delivery'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.redelivery')}
           />
           <StatCard
-            title="Pending GR"
+            title={t('dashboard.tab.detail.pending_gr')}
             value={summaryData?.flowPendingGR}
             isLoading={loading}
-            tooltipContent="Flow 'Pending GR'."
+            tooltipContent={t('dashboard.tab.detail.tooltip.pending_gr')}
           />
         </div>
 
@@ -143,7 +146,7 @@ export default function DetailTab({ loading, summaryData }) {
           {/* Unassigned */}
           <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
             <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-              Daftar Belum Assign
+              {t('dashboard.tab.detail.unassigned_list')}
             </h3>
             {loading ? (
               <div className="flex justify-center items-center grow">
@@ -155,10 +158,10 @@ export default function DetailTab({ loading, summaryData }) {
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Flow
+                        {t('dashboard.tab.detail.flow')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
+                        {t('dashboard.tab.detail.cust_name')}
                       </th>
                     </tr>
                   </thead>
@@ -178,7 +181,7 @@ export default function DetailTab({ loading, summaryData }) {
               </div>
             ) : (
               <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                Kosong
+                {t('common.no_data')}
               </div>
             )}
           </div>
@@ -186,7 +189,7 @@ export default function DetailTab({ loading, summaryData }) {
           {/* Manual Assign */}
           <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
             <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-              Daftar Manual Assign
+              {t('dashboard.tab.detail.manual_list')}
             </h3>
             {loading ? (
               <div className="flex justify-center items-center grow">
@@ -198,13 +201,13 @@ export default function DetailTab({ loading, summaryData }) {
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Flow
+                        {t('dashboard.tab.detail.flow')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
+                        {t('dashboard.tab.detail.cust_name')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Driver
+                        {t('dashboard.tab.detail.driver')}
                       </th>
                     </tr>
                   </thead>
@@ -226,7 +229,7 @@ export default function DetailTab({ loading, summaryData }) {
               </div>
             ) : (
               <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                Kosong
+                {t('common.no_data')}
               </div>
             )}
           </div>
@@ -234,7 +237,7 @@ export default function DetailTab({ loading, summaryData }) {
           {/* Cross Day */}
           <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64">
             <h3 className="text-sm font-bold text-gray-700 bg-gray-50 p-3 border-b">
-              Daftar Beda Hari
+              {t('dashboard.tab.detail.diff_day_list')}
             </h3>
             {loading ? (
               <div className="flex justify-center items-center grow">
@@ -246,13 +249,13 @@ export default function DetailTab({ loading, summaryData }) {
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Customer Name
+                        {t('dashboard.tab.detail.cust_name')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Tgl. Selesai
+                        {t('dashboard.tab.detail.done_date')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Driver
+                        {t('dashboard.tab.detail.driver')}
                       </th>
                     </tr>
                   </thead>
@@ -273,7 +276,7 @@ export default function DetailTab({ loading, summaryData }) {
               </div>
             ) : (
               <div className="p-4 text-center text-xs text-gray-400 grow flex items-center justify-center">
-                Kosong
+                {t('common.no_data')}
               </div>
             )}
           </div>

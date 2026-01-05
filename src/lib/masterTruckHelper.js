@@ -33,7 +33,7 @@ export const getMasterTotalForType = (rowName, storageCategory, masterData = nul
   const config = data[storageCategory];
 
   // 1. Cek Total Global (Baris "Total Used")
-  if (rowName === 'Total Used') {
+  if (rowName === 'Total Used' || rowName === 'Total Digunakan') {
     return config.Total || null;
   }
 

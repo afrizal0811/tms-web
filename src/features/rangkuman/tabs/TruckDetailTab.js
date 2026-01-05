@@ -1,11 +1,12 @@
 // File: features/rangkuman/tabs/TruckDetailTab.js
-import { formatMinutesToHHMM } from '@/lib/utils';
+import { formatLongDate, formatMinutesToHHMM } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TruckDetailModal from './modals/TruckDetailModal';
 
-export default function TruckDetailTab({ data }) {
+export default function TruckDetailTab({ data, translate, language }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const [modalData, setModalData] = useState(null);
+  const indoLang = language === 'id' ? 'id-ID' : 'en-GB';
 
   const handleCellClick = (metrics, driverName, dateStr) => {
     if (metrics && metrics.taskList && metrics.taskList.length > 0) {
@@ -41,34 +42,41 @@ export default function TruckDetailTab({ data }) {
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 relative p-6">
-      <TruckDetailModal isOpen={!!modalData} onClose={closeModal} data={modalData} />
-
-      <div className="overflow-auto flex-1 rounded-xl border border-gray-200">
+    <div className="w-full h-full flex flex-col gap-4 relative p-0">
+      <TruckDetailModal
+        data={modalData}
+        isOpen={!!modalData}
+        language={indoLang}
+        onClose={closeModal}
+        translate={translate}
+      />
+      <a href="a"></a>
+      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>
               <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
-                Type
+                {translate('summary.tabs.truck_detail.temp')}
               </th>
               <th rowSpan="2" className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}>
-                Licence No.
+                {translate('summary.tabs.truck_detail.license')}
               </th>
               <th
                 rowSpan="2"
                 className={`${thClass} min-w-[200px] sticky left-[180px] z-40 ${COLOR_A} border-r-2 border-slate-400`}
               >
-                Driver
+                {translate('summary.tabs.truck_detail.driver')}
               </th>
               {dateKeys.map((d, i) => {
                 const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
+                const date = formatLongDate(d.str, indoLang);
                 return (
                   <th
                     key={i}
                     colSpan="7"
                     className={`${thClass} border-l-2 border-l-gray-400 ${headerColor}`}
                   >
-                    {d.display}
+                    {date}
                   </th>
                 );
               })}
@@ -79,14 +87,26 @@ export default function TruckDetailTab({ data }) {
                 return (
                   <Fragment key={i}>
                     <th className={`${thMetricClass} ${metricColor} border-l-2 border-l-gray-400`}>
-                      Weight
+                      {translate('summary.tabs.truck_detail.weight')}
                     </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Vol</th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Dist (m)</th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Outlets</th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Deliv</th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Duration</th>
-                    <th className={`${thMetricClass} ${metricColor}`}>Deliv %</th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.volume')}
+                    </th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.distance')}
+                    </th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.total_outlet')}
+                    </th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.total_delivery')}
+                    </th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.ship_duration')}
+                    </th>
+                    <th className={`${thMetricClass} ${metricColor}`}>
+                      {translate('summary.tabs.truck_detail.delivered')}
+                    </th>
                   </Fragment>
                 );
               })}
@@ -187,21 +207,30 @@ export default function TruckDetailTab({ data }) {
 
       {/* LEGENDA WARNA BARU */}
       <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
-        <h4 className="text-xs font-bold mb-2 underline text-slate-700">KETERANGAN WARNA</h4>
-        <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 text-xs text-slate-600">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_MANUAL}`}
-            ></span>
-            <span>Ada task yang manual assign (tanpa routing)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_DATE}`}></span>
-            <span>Ada task yang tanggal Start dan Done berbeda</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_BOTH}`}></span>
-            <span>Ada manual assign dan beda tanggal Start-Done</span>
+        <div>
+          <h4 className="text-xs font-bold mb-2 underline text-slate-700">
+            {translate('summary.tabs.truck_detail.color_exp')}
+          </h4>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_MANUAL}`} />
+                <span>{translate('summary.tabs.truck_detail.blue')}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_DATE}`} />
+                <span>{translate('summary.tabs.truck_detail.magenta')}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_BOTH}`} />
+                <span>{translate('summary.tabs.truck_detail.indigo')}</span>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 italic">
+              *{translate('summary.tabs.truck_detail.click_row_hint')}
+            </div>
           </div>
         </div>
       </div>

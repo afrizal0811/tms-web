@@ -1,4 +1,4 @@
-// File: lib/reportGenerators/rangkumanSheets/taskSummarySheet.js
+// File: src/lib/reportGenerators/rangkumanSheets/taskSummarySheet.js
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -23,26 +23,33 @@ function calculatePct(num, den) {
   return n / d;
 }
 
-export function generateTaskSummarySheet(wb, metrics, startDateStr, endDateStr, masterTruckData) {
+export function generateTaskSummarySheet(
+  wb,
+  metrics,
+  startDateStr,
+  endDateStr,
+  masterTruckData,
+  translate
+) {
   const headers = [
-    'Date',
-    'Type',
-    'Drop Point (DP)',
-    'Drop Task (DT)',
-    '% Drop Task (%DT)',
-    'Manual Assign (MA)',
-    '% Manual Assign (%MA)',
-    'Redelivery Task (RT)',
-    '% Redelivery Task (%RT)',
-    'Cancelled Order (CO)',
-    '% Cancel Order (%CO)',
-    'Partial Received (PR)',
-    '% Partial Received (%PR)',
-    'Master Truck (MT)',
-    'TMS Vehicle (TV)',
-    'Vehicle Adjusted (VA)',
-    'Total Vehicled Used (TVU)',
-    '% Total Vehicled Used (%TVU)',
+    translate('summary.tabs.task_summary.date'),
+    translate('summary.tabs.task_summary.type'),
+    'DP',
+    'DT',
+    '%DT',
+    'MA',
+    '%MA',
+    'RT',
+    '%RT',
+    'CO',
+    '%CO',
+    'PR',
+    '%PR',
+    'MT',
+    'TV',
+    'VA',
+    'TVU',
+    '%TVU',
   ];
 
   const excelData = [headers];
@@ -67,7 +74,11 @@ export function generateTaskSummarySheet(wb, metrics, startDateStr, endDateStr, 
 
     // 1. MINGGU
     if (isSunday) {
-      excelData.push([displayDate, 'Libur (Minggu)', ...Array(16).fill('')]);
+      excelData.push([
+        displayDate,
+        translate('summary.tabs.task_summary.holiday'),
+        ...Array(16).fill(''),
+      ]);
       excelData.push(['', '', ...Array(16).fill('')]); // Dummy row for merge
 
       // Merge Date Column
@@ -138,80 +149,157 @@ export function generateTaskSummarySheet(wb, metrics, startDateStr, endDateStr, 
     current.setDate(current.getDate() + 1);
   }
 
+  excelData.push([]);
+
+  // --- BAGIAN LEGENDA ---
+  excelData.push([translate('summary.tabs.task_summary.explanation')]);
+  const legendTitleRow = excelData.length - 1;
+
+  merges.push({ s: { r: legendTitleRow, c: 0 }, e: { r: legendTitleRow, c: 2 } });
+
+  const legendMap = [
+    { label: 'DP', key: 'dp' },
+    { label: 'DT', key: 'dt' },
+    { label: 'MA', key: 'ma' },
+    { label: 'RT', key: 'rt' },
+    { label: 'CO', key: 'co' },
+    { label: 'PR', key: 'pr' },
+    { label: 'MT', key: 'mt' },
+    { label: 'TV', key: 'tv' },
+    { label: 'VA', key: 'va' },
+    { label: 'TVU', key: 'tvu' },
+  ];
+
+  const legendStartRow = excelData.length;
+
+  legendMap.forEach((item, idx) => {
+    // Label Kolom A (misal: "DP")
+    const label = `${item.label}`;
+    // Deskripsi Kolom B
+    const desc = translate(`summary.tabs.task_summary.${item.key}`);
+
+    excelData.push([label, desc]);
+
+    // Merge Deskripsi (Kolom B sampai R)
+    const r = legendStartRow + idx;
+    merges.push({ s: { r: r, c: 1 }, e: { r: r, c: 17 } });
+  });
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   ws['!merges'] = merges;
 
   // --- STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
-
-  // Define styles map by column index
   const headerFills = {
-    0: FILL_STYLES.taskYellow, // Date
-    1: FILL_STYLES.taskYellow, // Type
-    2: FILL_STYLES.taskPink, // DP
-    3: FILL_STYLES.taskGreen, // DT
-    4: FILL_STYLES.taskGreen, // %DT
-    5: FILL_STYLES.taskRed, // MA
-    6: FILL_STYLES.taskRed, // %MA
-    7: FILL_STYLES.taskCyan, // RT
-    8: FILL_STYLES.taskCyan, // %RT
-    9: FILL_STYLES.taskBlue, // CO
-    10: FILL_STYLES.taskBlue, // %CO
-    11: FILL_STYLES.taskGray, // PR
-    12: FILL_STYLES.taskGray, // %PR
-    13: FILL_STYLES.taskYellow, // MT
-    14: FILL_STYLES.taskYellow, // TV
-    15: FILL_STYLES.taskYellow, // VA
-    16: FILL_STYLES.taskViolet, // TVU
-    17: FILL_STYLES.taskViolet, // %TVU
+    0: FILL_STYLES.taskYellow,
+    1: FILL_STYLES.taskYellow,
+    2: FILL_STYLES.taskPink,
+    3: FILL_STYLES.taskGreen,
+    4: FILL_STYLES.taskGreen,
+    5: FILL_STYLES.taskRed,
+    6: FILL_STYLES.taskRed,
+    7: FILL_STYLES.taskCyan,
+    8: FILL_STYLES.taskCyan,
+    9: FILL_STYLES.taskBlue,
+    10: FILL_STYLES.taskBlue,
+    11: FILL_STYLES.taskGray,
+    12: FILL_STYLES.taskGray,
+    13: FILL_STYLES.taskYellow,
+    14: FILL_STYLES.taskYellow,
+    15: FILL_STYLES.taskYellow,
+    16: FILL_STYLES.taskViolet,
+    17: FILL_STYLES.taskViolet,
   };
-
-  // Percentage Columns Indices (0-based) -> Apply fill to data cells
   const pctCols = [4, 6, 8, 10, 12, 17];
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' }; // Ensure empty cells exist for styling
+      if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // 1. HEADER (Row 0)
+      // --- STYLE LEGENDA ---
+      if (R >= legendTitleRow) {
+        if (R === legendTitleRow && C === 0) {
+          // Style Judul Legenda
+          cell.s = { font: { bold: true, underline: true }, alignment: { horizontal: 'left' } };
+        } else if (R >= legendStartRow) {
+          if (C === 0) {
+            // KOLOM A: LABEL (DP, DT, dll) dengan WARNA BACKGROUND
+            const legendIndex = R - legendStartRow;
+            const legendKey = legendMap[legendIndex]?.key;
+
+            // Tentukan warna berdasarkan Key (Mapping Manual agar sesuai Header)
+            let legendFill = null;
+            switch (legendKey) {
+              case 'dp':
+                legendFill = FILL_STYLES.taskPink;
+                break;
+              case 'dt':
+                legendFill = FILL_STYLES.taskGreen;
+                break;
+              case 'ma':
+                legendFill = FILL_STYLES.taskRed;
+                break;
+              case 'rt':
+                legendFill = FILL_STYLES.taskCyan;
+                break;
+              case 'co':
+                legendFill = FILL_STYLES.taskBlue;
+                break;
+              case 'pr':
+                legendFill = FILL_STYLES.taskGray;
+                break;
+              case 'mt':
+              case 'tv':
+              case 'va':
+                legendFill = FILL_STYLES.taskYellow;
+                break;
+              case 'tvu':
+                legendFill = FILL_STYLES.taskViolet;
+                break;
+              default:
+                legendFill = null;
+            }
+
+            cell.s = {
+              font: { bold: true },
+              alignment: { horizontal: 'center', vertical: 'top' },
+              fill: legendFill,
+              border: BORDERS.thin, // Tambah border agar terlihat rapi seperti tombol/header
+            };
+          } else if (C === 1) {
+            // KOLOM B: DESKRIPSI
+            cell.s = { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } };
+          }
+        }
+        continue;
+      }
+      // ---------------------
+
+      // STYLE HEADER & DATA (Sama seperti sebelumnya)
       if (R === 0) {
         cell.s = {
           ...HEADER_STYLES.main,
           fill: headerFills[C] || HEADER_STYLES.main.fill,
           border: BORDERS.thin,
         };
-      }
-      // 2. DATA ROWS
-      else {
-        // Base Style
+      } else {
         cell.s = { ...BASE_STYLES.center };
-
-        // Minggu Style
         if (sundayRows.has(R)) {
           cell.s.fill = FILL_STYLES.red;
-          cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '990000' } }; // Red text
-          if (C === 1) {
-            // Kolom merged "Libur"
-            cell.s.alignment = { horizontal: 'center', vertical: 'center' };
-          }
-        }
-        // Hari Biasa Style
-        else {
-          // Date & Type alignment
+          cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '990000' } };
+          if (C === 1) cell.s.alignment = { horizontal: 'center', vertical: 'center' };
+        } else {
           if (C === 0)
             cell.s = {
               ...BASE_STYLES.center,
               alignment: { vertical: 'center', horizontal: 'center' },
             };
           if (C === 1) cell.s.font = FONT_STYLES.bold;
-
-          // Percentage Formatting
           if (pctCols.includes(C)) {
             cell.t = 'n';
             cell.s.numFmt = '0.00%';
-            // Apply Column Background Color (as per request point 2)
             cell.s.fill = headerFills[C];
           }
         }
@@ -219,7 +307,6 @@ export function generateTaskSummarySheet(wb, metrics, startDateStr, endDateStr, 
     }
   }
 
-  // Column Widths
   ws['!cols'] = [
     { wch: 12 },
     { wch: 10 },
@@ -241,5 +328,5 @@ export function generateTaskSummarySheet(wb, metrics, startDateStr, endDateStr, 
     { wch: 12 },
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Task Summary');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.task_summary.title'));
 }

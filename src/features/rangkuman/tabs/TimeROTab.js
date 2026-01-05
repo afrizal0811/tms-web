@@ -4,6 +4,10 @@
 import { formatDateWIB, isDateSunday } from '@/lib/utils'; // Pastikan import ini ada
 import { useMemo } from 'react';
 
+const violetColor = 'bg-[#d9d2e9]';
+const headerClass = 'px-6 py-3 border-r border-b border-gray-300 font-bold w-1/3 text-center';
+const dataClass =
+  'px-6 py-4 font-medium text-gray-900 border-r border-b border-gray-200 text-center';
 // Fungsi helper untuk membandingkan apakah Tanggal, Bulan, Tahun sama
 const isSameDayWIB = (isoString1, isoString2) => {
   if (!isoString1 || !isoString2) return false;
@@ -12,7 +16,8 @@ const isSameDayWIB = (isoString1, isoString2) => {
   return d1 === d2;
 };
 
-export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
+export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, language }) {
+  const isIndo = language === 'id';
   // Proses data menggunakan useMemo agar tidak render ulang jika data tidak berubah
   const processedData = useMemo(() => {
     const dataMap = {};
@@ -31,7 +36,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
     while (current <= end) {
       const dateKey = formatDateWIB(current, 'YYYY-MM-DD');
       // Format tampilan tanggal (contoh: 28 Oct 2025)
-      const displayDate = current.toLocaleDateString('id-ID', {
+      const displayDate = current.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -92,17 +97,23 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
     return Object.keys(dataMap)
       .sort()
       .map((key) => dataMap[key]);
-  }, [tasks, startDateStr, endDateStr]);
+  }, [tasks, startDateStr, endDateStr, isIndo]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-auto">
+    <div className="w-full h-full flex flex-col bg-white rounded-b-lx shadow-sm border border-gray-200 p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
-        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0 rounded-xl">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10">
+        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0">
+          <thead className={`text-xs text-gray-700 uppercase sticky top-0 z-10 ${violetColor}`}>
             <tr>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Tanggal RO</th>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">Start RO</th>
-              <th className="px-6 py-3 border-b border-gray-300 font-bold w-1/3">End RO</th>
+              <th className={headerClass}>
+                {translate('summary.tabs.time_ro.date_ro')}
+              </th>
+              <th className={headerClass}>
+                {translate('summary.tabs.time_ro.start_ro')}
+              </th>
+              <th className={headerClass}>
+                {translate('summary.tabs.time_ro.end_ro')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -112,12 +123,12 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
               // Jika Minggu: Background Merah & Merge Cells
               if (isSunday) {
                 return (
-                  <tr key={idx} className="bg-red-200 border-b border-red-300 text-red-900">
+                  <tr key={idx} className="bg-red-200 border-b border-red-300 text-red-900 text-center">
                     <td className="px-6 py-4 font-medium border-r border-red-300">
                       {row.dateDisplay}
                     </td>
                     <td colSpan={2} className="px-6 py-4 font-bold text-center">
-                      Libur (Minggu)
+                      {translate('summary.tabs.time_ro.holiday')}
                     </td>
                   </tr>
                 );
@@ -129,13 +140,15 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr }) {
 
               return (
                 <tr key={idx} className="bg-white border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900 border-r border-gray-200">
+                  <td className={dataClass}>
                     {row.dateDisplay}
                   </td>
-                  <td className="px-6 py-4 text-gray-700 border-r border-gray-200">
+                  <td className={dataClass}>
                     {formatDateWIB(row.minCreatedTime, 'HH:mm')}
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{endRODisplay}</td>
+                  <td className={dataClass}>
+                    {endRODisplay}
+                  </td>
                 </tr>
               );
             })}

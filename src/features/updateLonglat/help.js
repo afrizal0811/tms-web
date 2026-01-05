@@ -2,9 +2,9 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName) => {
+export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName, t) => {
   if (processedData.length === 0) {
-    toastWarning('Tidak ada data untuk diunduh.');
+    toastWarning(t('report.toast.no_data'));
     return;
   }
   const yyyyMmDd = selectedDate.toISOString().slice(0, 10);
@@ -14,11 +14,11 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const wb = XLSX.utils.book_new();
     const headers = [
       'No',
-      'Customer Name',
-      'Customer ID',
-      'Location ID',
-      'New Longlat',
-      'Beda Jarak (m)',
+      t('longlat.table.cust_name'),
+      t('longlat.table.cust_id'),
+      t('longlat.table.loc_id'),
+      t('longlat.table.new_longlat'),
+      t('longlat.table.diff_dist'),
     ];
     const sheetData = [headers];
 
@@ -62,12 +62,12 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       }
     }
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Update Longlat');
-    const fileName = `Update Longlat - ${formatYYYYMMDDToDDMMYYYY(yyyyMmDd)} ${hubName && `- ${hubName}`}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, t('longlat.title'));
+    const fileName = `${t('longlat.title')} - ${formatYYYYMMDDToDDMMYYYY(yyyyMmDd)} ${hubName && `- ${hubName}`}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toastSuccess('Berhasil mengunduh data.');
+    toastSuccess(t('report.toast.success'));
   } catch (e) {
-    toastError('Gagal membuat Excel.');
+    toastError(t('report.toast.failed'));
   } finally {
     setIsDownloading(false);
   }

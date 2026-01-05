@@ -3,7 +3,15 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
+export default function ConfirmModal({
+  cancelText = 'Tidak',
+  confirmText = 'Ya',
+  isOpen,
+  message,
+  onCancel,
+  onConfirm,
+  title,
+}) {
   // Efek untuk disable scroll di background saat modal terbuka
   useEffect(() => {
     if (isOpen) {
@@ -64,13 +72,13 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onCanc
             onClick={onCancel}
             className="px-6 py-2 rounded-md font-semibold cursor-pointer text-white bg-gray-600 hover:bg-gray-700"
           >
-            Batal
+            {cancelText}
           </button>
           <button
             onClick={onConfirm}
             className="px-6 py-2 rounded-md  cursor-pointer font-semibold text-white bg-sky-600 hover:bg-sky-700"
           >
-            Ya, Yakin
+            {confirmText}
           </button>
         </div>
       </div>

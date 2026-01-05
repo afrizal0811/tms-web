@@ -17,9 +17,8 @@ const createSafeDate = (dateStr) => {
 // ==========================
 // MAIN
 // ==========================
-export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
+export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, isIndo) {
   const dataMap = {};
-
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
@@ -35,7 +34,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
   while (current <= end) {
     const key = formatDateWIB(current, 'YYYY-MM-DD');
     dataMap[key] = {
-      dateDisplay: current.toLocaleDateString('id-ID', {
+      dateDisplay: current.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -78,7 +77,13 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
   // =====================
   // Build Excel
   // =====================
-  const excelData = [['Tanggal RO', 'Start RO', 'End RO']];
+  const excelData = [
+    [
+      translate('summary.tabs.time_ro.date_ro'),
+      translate('summary.tabs.time_ro.start_ro'),
+      translate('summary.tabs.time_ro.end_ro'),
+    ],
+  ];
   const merges = [];
 
   Object.keys(dataMap)
@@ -88,7 +93,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
 
       if (row.isSunday) {
         const rowIndex = excelData.length;
-        excelData.push([row.dateDisplay, 'Libur (Minggu)', '']);
+        excelData.push([row.dateDisplay, translate('summary.tabs.time_ro.holiday'), '']);
 
         // 🔴 MERGE Start RO & End RO (B:C)
         merges.push({
@@ -121,7 +126,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
 
   // Body
   for (let R = 1; R <= range.e.r; R++) {
-    const isSunday = excelData[R][1] === 'Libur (Minggu)';
+    const isSunday = excelData[R][1] === 'Libur (Minggu)' || excelData[R][1] === 'Holiday (Sunday)';
     for (let C = 0; C <= 2; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (!cell) continue;
@@ -135,5 +140,5 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr) {
 
   ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }];
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Time RO');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.time_ro.title'));
 }

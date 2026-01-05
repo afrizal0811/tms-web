@@ -3,7 +3,6 @@ import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHe
 import { formatDateUniversal, isDateSunday } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
-
 /**
  * Helper untuk mendapatkan array tanggal di antara dua tanggal
  */
@@ -29,6 +28,7 @@ export const bulkDownloader = async ({
   setIsLoading,
   setCurrentReport,
   processDateCallback,
+  t,
 }) => {
   let isRangeInvalid = false;
   if (!startDate || !endDate) {
@@ -41,21 +41,21 @@ export const bulkDownloader = async ({
 
   if (isRangeInvalid) {
     if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
-      toastError('Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.');
+      toastError(t('report.toast.select_diff_date'));
     } else {
-      toastError('Rentang tanggal tidak valid. Pastikan awal <= akhir dan berbeda tanggal.');
+      toastError(t('report.toast.invalid_date'));
     }
     return;
   }
 
   if (!driverData || driverData.length === 0) {
-    toastError('Data Driver tidak valid.');
+    toastError(t('report.toast.invalid_driver'));
     return;
   }
 
   setIsLoading(true);
   setCurrentReport(reportType);
-  toastInfo('Memulai proses...');
+  toastInfo(t('report.toast.processing'));
 
   try {
     const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');
@@ -95,25 +95,25 @@ export const bulkDownloader = async ({
           skippedDates.push(dateForFile);
         }
       } catch (err) {
-        toastError(`Gagal memproses ${dateForFile}: ${err.message}`);
+        toastError(
+          t('report.toast.failed_prossesing', { dateForFile: dateForFile, err: err.message })
+        );
       }
     }
 
     if (filesGenerated === 0) {
       if (skippedDates.length > 0) {
-        toastWarning(`Tidak ada data ditemukan untuk semua tanggal dalam rentang ini.`);
+        toastWarning(t('report.toast.no_data'));
       } else {
-        toastError(`Tidak ada file ${zipPrefix} yang berhasil dibuat.`);
+        toastError(t('report.toast.failed_zip', { zipPrefix: zipPrefix }));
       }
       return;
     }
 
     if (sundaysSkipped > 0 && skippedDates.length === 0) {
-      toastWarning(`Melewati ${sundaysSkipped} tanggal untuk hari Minggu.`);
+      toastWarning(t('report.toast.skip_sunday', { sundaysSkipped: sundaysSkipped }));
     } else if (sundaysSkipped > 0) {
-      toastWarning(
-        `Terdapat ${skippedDates.length} tanggal yang tidak memiliki data (termasuk hari Minggu).`
-      );
+      toastWarning(t('report.toast.skip_data', { skippedDates: skippedDates.length }));
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -123,7 +123,7 @@ export const bulkDownloader = async ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toastSuccess(`Berhasil! ${filesGenerated} file telah di-zip dan diunduh.`);
+    toastSuccess(t('report.toast.success'));
   } catch (e) {
     toastError(e.message);
   } finally {

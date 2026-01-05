@@ -3,12 +3,12 @@
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
-import { TAG_MAP_KEY } from '@/lib/constants';
+import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
+import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
+import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { useEffect, useRef, useState } from 'react';
-import * as XLSX from 'xlsx-js-style';
-
 import {
   calculateStartFinishDates,
   calculateTargetDates,
@@ -17,10 +17,8 @@ import {
   formatToApiUtc,
   isDateSunday,
 } from '@/lib/utils';
-
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import { useEffect, useRef, useState } from 'react';
+import * as XLSX from 'xlsx-js-style';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -33,6 +31,8 @@ export default function TmsSummary({
   setIsAnyLoading,
   setIsMapping,
 }) {
+  const { t } = useLanguage();
+
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [currentRunning, setCurrentRunning] = useState(null);
@@ -74,11 +74,6 @@ export default function TmsSummary({
 
   // ---------- Handlers (gabungan) ----------
   const handleRouting = async () => {
-    if (isDateInvalid) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain.');
-      return;
-    }
-
     try {
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
@@ -102,11 +97,11 @@ export default function TmsSummary({
 
       const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
       if (filteredResults.length === 0) {
-        throw new Error('Tidak ada data Routing untuk tanggal ini.');
+        throw new Error(t('report.toast.no_routing'));
       }
 
-      // Tag map for mapping validation
-      const fullTagMap = JSON.parse(localStorage.getItem(TAG_MAP_KEY) || '{}');
+      const { storedVehicleTag } = getLocalStorage();
+      const fullTagMap = JSON.parse(storedVehicleTag || '{}');
       const hubTagMap = fullTagMap[selectedLocation] || {};
 
       const { wb, excelFileName, missingTimesFound } = generateRoutingWorkbook(
@@ -114,17 +109,16 @@ export default function TmsSummary({
         filteredResults,
         hubTagMap,
         selectedDateString,
-        selectedLocationName
+        selectedLocationName,
+        t
       );
 
       if (missingTimesFound) {
-        toastWarning(
-          'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!'
-        );
+        toastWarning(t('report.toast.missing_times'));
       }
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Routing Summary berhasil diunduh!');
+      toastSuccess(t('report.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -135,11 +129,6 @@ export default function TmsSummary({
   };
 
   const handleDelivery = async () => {
-    if (isDateInvalid) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain.');
-      return;
-    }
-
     try {
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('delivery');
@@ -180,7 +169,7 @@ export default function TmsSummary({
       const [allTasks, resultsData] = await Promise.all([tasksPromise, resultsPromise]);
 
       if (!Array.isArray(allTasks) || allTasks.length === 0) {
-        throw new Error('Tidak ada data Delivery untuk tanggal ini.');
+        throw new Error(t('report.toast.no_delivery'));
       }
 
       const { wb, excelFileName } = generateDeliveryWorkbook(
@@ -190,11 +179,12 @@ export default function TmsSummary({
         selectedDateString,
         apiDate,
         selectedLocation,
-        selectedLocationName
+        selectedLocationName,
+        t
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Delivery Summary berhasil diunduh!');
+      toastSuccess(t('report.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -204,11 +194,6 @@ export default function TmsSummary({
   };
 
   const handleTime = async () => {
-    if (isDateInvalid) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain.');
-      return;
-    }
-
     try {
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('time');
@@ -229,22 +214,23 @@ export default function TmsSummary({
       });
 
       if (!Array.isArray(allApiData) || allApiData.length === 0) {
-        throw new Error('Tidak ada data Start/Finish untuk tanggal ini.');
+        throw new Error(t('report.toast.no_time'));
       }
 
       const { wb, excelFileName, error } = generateTimeSummaryWorkbook(
         driverData,
         allApiData,
         selectedDateString,
-        selectedLocationName
+        selectedLocationName,
+        t
       );
 
       if (error) {
-        throw new Error('Tidak ada data Start/Finish untuk tanggal ini.');
+        throw new Error(t('report.toast.no_time'));
       }
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess('File Time Summary berhasil diunduh!');
+      toastSuccess(t('report.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -256,31 +242,30 @@ export default function TmsSummary({
 
   const handleDateChange = (date) => {
     if (!date) {
-      toastError('Pilih tanggal pengiriman');
-      return;
-    }
-    // allow selecting any date in picker but warn on Sunday selection
-    if (date.getDay() === 0) {
-      toastError('Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain');
+      toastError(t('report.toast.select_date'));
       return;
     }
     setSelectedDate(date);
   };
 
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">Laporan Harian</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">{t('report.daily_title')}</h1>
 
       <div className="mb-8 text-center w-full max-w-xs cursor-pointer">
         <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
-          Tanggal Pengiriman
+          {t('common.delivery_date')}
         </label>
         <CustomDatePicker
-          id="shippingDate"
-          selected={selectedDate}
-          onChange={handleDateChange}
-          disabled={disabledCommon}
           className="max-w-xs"
+          disabled={disabledCommon}
+          id="shippingDate"
+          maxDate={tomorrow}
+          onChange={handleDateChange}
+          selected={selectedDate}
         />
       </div>
 
@@ -298,7 +283,7 @@ export default function TmsSummary({
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Routing Summary'
+            t('report.routing_summary')
           )}
         </button>
 
@@ -316,7 +301,7 @@ export default function TmsSummary({
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Delivery Summary'
+            t('report.delivery_summary')
           )}
         </button>
 
@@ -333,7 +318,7 @@ export default function TmsSummary({
               <span>{formatTimer(elapsedTime)}</span>
             </div>
           ) : (
-            'Time Summary'
+            t('report.time_summary')
           )}
         </button>
       </div>

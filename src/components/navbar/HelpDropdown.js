@@ -2,8 +2,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function HelpDropdown() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -35,7 +37,7 @@ export default function HelpDropdown() {
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        Bantuan
+        {t('navbar.help')}
         {/* Ikon panah bawah (chevron-down) */}
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : 'rotate-0'}`}
@@ -57,7 +59,7 @@ export default function HelpDropdown() {
               rel="noopener noreferrer"
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600"
             >
-              Panduan - Planner
+              {t('navbar.planner_guide')}
             </a>
             <a
               href={driverUrl}
@@ -65,7 +67,7 @@ export default function HelpDropdown() {
               rel="noopener noreferrer"
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600"
             >
-              Panduan - Driver
+              {t('navbar.driver_guide')}
             </a>
           </div>
         </div>

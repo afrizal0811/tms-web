@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx-js-style';
+import { formatDateUniversal } from '@/lib/utils';
 
-export const downloadRoutingVsActual = (data) => {
+export const downloadRoutingVsActual = (data, t) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return;
   }
@@ -18,22 +19,22 @@ export const downloadRoutingVsActual = (data) => {
   const wb = XLSX.utils.book_new();
 
   const headers = [
-    'Flow',
-    'Plat',
-    'Driver',
-    'Customer / Outlet Name',
-    'Status Delivery',
-    'Open Time',
-    'Close Time',
-    'ETA',
-    'Actual Arrival',
-    'ETD',
-    'Actual Departure',
-    'Visit Time',
-    'Actual Visit',
-    'Routing Sequence',
-    'Actual Sequence',
-    'Is Match?',
+    t('dashboard.tab.routingreal.flow'),
+    t('dashboard.tab.routingreal.license'),
+    t('dashboard.tab.routingreal.driver'),
+    t('dashboard.tab.routingreal.customer'),
+    t('dashboard.tab.routingreal.status'),
+    t('dashboard.tab.routingreal.open_time'),
+    t('dashboard.tab.routingreal.close_time'),
+    t('dashboard.tab.routingreal.eta'),
+    t('dashboard.tab.routingreal.actual_arrival'),
+    t('dashboard.tab.routingreal.etd'),
+    t('dashboard.tab.routingreal.actual_departure'),
+    t('dashboard.tab.routingreal.visit_plan'),
+    t('dashboard.tab.routingreal.visit_actual'),
+    t('dashboard.tab.routingreal.ro_seq'),
+    t('dashboard.tab.routingreal.actual_seq'),
+    t('dashboard.tab.routingreal.is_same'),
   ];
 
   const sheetData = [headers];
@@ -59,7 +60,6 @@ export const downloadRoutingVsActual = (data) => {
     const plat = isHub ? null : row.plat;
     const driver = isHub ? null : row.driver;
 
-
     let customer = row.customerName || '-';
     if (isHub) {
       customer = `HUB`;
@@ -82,7 +82,13 @@ export const downloadRoutingVsActual = (data) => {
     const roSeq = isHub ? null : isRoSeqNull ? '-' : row.roSequence;
     const realSeq = isHub ? null : isRealSeqNull ? '-' : row.realSequence;
     const isMatch = roSeq === realSeq;
-    const match = isHub ? null : isRealSeqNull ? '-' : isMatch ? 'SAMA' : 'BEDA';
+    const match = isHub
+      ? null
+      : isRealSeqNull
+        ? '-'
+        : isMatch
+          ? t('dashboard.tab.routingreal.match')
+          : t('dashboard.tab.routingreal.mismatch');;
 
     sheetData.push([
       flow,
@@ -192,34 +198,20 @@ export const downloadRoutingVsActual = (data) => {
 
         // Cek Kolom Match (Index 15)
         if (C === 15) {
-          if (ws[cellRef].v === 'BEDA') ws[cellRef].s = redStyle;
-          else if (ws[cellRef].v === 'SAMA') ws[cellRef].s = greenStyle;
+          if (ws[cellRef].v === 'Beda' || ws[cellRef].v === 'Mismatch') ws[cellRef].s = redStyle;
+          else if (ws[cellRef].v === 'Sama' || ws[cellRef].v === 'Match')
+            ws[cellRef].s = greenStyle;
         }
       }
     }
   }
 
   XLSX.utils.book_append_sheet(wb, ws, 'Routing vs Actual');
-  const dateStr = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Routing_vs_Actual_${dateStr}.xlsx`);
+  const dateStr = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+  XLSX.writeFile(wb, `${t('dashboard.tabs.routing_vs_actual')} - ${dateStr}.xlsx`);
 };
 
 export const processLoadCapacityData = (tasks, driverData, year) => {
-  const months = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
-  ];
-
   const driverMap = {};
   if (Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -234,8 +226,9 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     });
   }
 
-  const monthlyData = months.map((m) => ({
-    name: m,
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    monthIndex: i,
+    key: `${year}-${String(i + 1).padStart(2, '0')}`,
     sangatRendah: 0,
     rendah: 0,
     optimal: 0,
@@ -277,7 +270,6 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
       trips[key] = {
         date: dateStr,
-        // Gunakan getUTCMonth karena wibDate sudah digeser
         monthIndex: wibDate.getUTCMonth(),
         email: driverEmail,
         driverName: driverName,
@@ -296,7 +288,6 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     trips[key].tasksCount += 1;
   });
 
-  // 3. Kalkulasi Persentase
   Object.values(trips).forEach((trip) => {
     const specs = driverMap[trip.email];
 
@@ -319,23 +310,25 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
     const monthIdx = trip.monthIndex;
 
-    if (maxPct > 100) {
-      monthlyData[monthIdx].overload += 1;
-    } else if (maxPct >= 85) {
-      monthlyData[monthIdx].penuh += 1;
-    } else if (maxPct >= 60) {
-      monthlyData[monthIdx].optimal += 1;
-    } else if (maxPct >= 40) {
-      monthlyData[monthIdx].rendah += 1;
-    } else {
-      monthlyData[monthIdx].sangatRendah += 1;
-    }
+    if (monthlyData[monthIdx]) {
+      if (maxPct > 100) {
+        monthlyData[monthIdx].overload += 1;
+      } else if (maxPct >= 85) {
+        monthlyData[monthIdx].penuh += 1;
+      } else if (maxPct >= 60) {
+        monthlyData[monthIdx].optimal += 1;
+      } else if (maxPct >= 40) {
+        monthlyData[monthIdx].rendah += 1;
+      } else {
+        monthlyData[monthIdx].sangatRendah += 1;
+      }
 
-    const day = parseInt(trip.date.split('-')[2], 10);
-    if (!monthlyData[monthIdx].details[day]) {
-      monthlyData[monthIdx].details[day] = [];
+      const day = parseInt(trip.date.split('-')[2], 10);
+      if (!monthlyData[monthIdx].details[day]) {
+        monthlyData[monthIdx].details[day] = [];
+      }
+      monthlyData[monthIdx].details[day].push(trip);
     }
-    monthlyData[monthIdx].details[day].push(trip);
   });
 
   return monthlyData;

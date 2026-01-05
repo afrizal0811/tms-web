@@ -1,6 +1,6 @@
 // File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
-  formatDateIndo,
+  // formatDateIndo,
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
@@ -69,7 +69,7 @@ function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
-    const dateStr = formatDateIndo(d);
+    const dateStr = formatDateUniversal(d, 'DD/MM/YYYY');
     const timeStr = formatDateWIB(d, 'HH:mm');
     return `${dateStr} ${timeStr}`;
   } catch {
@@ -91,7 +91,8 @@ export function calculateTruckDetailData(
   resultsData,
   allTasks,
   startDateStr,
-  endDateStr
+  endDateStr,
+  isIndo
 ) {
   const driverMap = new Map();
   const driverEmails = [];
@@ -118,8 +119,8 @@ export function calculateTruckDetailData(
   while (currentIterDate <= endDateObj) {
     const dateStr = formatDateUniversal(currentIterDate);
     const dayNum = currentIterDate.getDate();
-    const monthName = currentIterDate.toLocaleDateString('en-GB', { month: 'long' });
-    const yearShort = currentIterDate.toLocaleDateString('en-GB', { year: '2-digit' });
+    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
+    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { year: '2-digit' });
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
@@ -331,14 +332,17 @@ export function generateTruckDetailSheet(
   resultsData,
   allTasks,
   startDateStr,
-  endDateStr
+  endDateStr,
+  translate,
+  isIndo
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTruckDetailData(
     driverData,
     resultsData,
     allTasks,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo
   );
   const headerStyle = {
     ...BASE_STYLES.cellCenter,
@@ -350,18 +354,22 @@ export function generateTruckDetailSheet(
     font: { name: 'Calibri', sz: 11 },
   };
 
-  const row1 = ['Type of Truck', 'Licence No.', 'Driver'];
+  const row1 = [
+    translate('summary.tabs.truck_detail.temp'),
+    translate('summary.tabs.truck_detail.license'),
+    translate('summary.tabs.truck_detail.driver'),
+  ];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {
     row1.push(d.display, '', '', '', '', '', '');
     row2.push(
-      'Weight',
-      'Volume',
-      'Distance (m)',
-      'Total Outlets',
-      'Total Delivered',
-      'Ship Duration',
-      'Delivered'
+      translate('summary.tabs.truck_detail.weight'),
+      translate('summary.tabs.truck_detail.volume'),
+      translate('summary.tabs.truck_detail.distance'),
+      translate('summary.tabs.truck_detail.total_outlet'),
+      translate('summary.tabs.truck_detail.total_delivery'),
+      translate('summary.tabs.truck_detail.ship_duration'),
+      translate('summary.tabs.truck_detail.delivered')
     );
   });
   const excelData = [row1, row2];
@@ -393,11 +401,11 @@ export function generateTruckDetailSheet(
   // --- LEGEND DATA ---
   excelData.push([]);
   const legendStartRow = excelData.length; // Index baris untuk Judul Legend
-  excelData.push(['KETERANGAN WARNA']); // Row 0
-  excelData.push(['', 'Ada task yang manual assign (tanpa routing)']); // Row 1
-  excelData.push(['', 'Ada task yang tanggal Start dan Done berbeda']); // Row 2
-  excelData.push(['', 'Ada manual assign dan beda tanggal Start-Done']); // Row 3
-  excelData.push(['Untuk lebih lengkap, buka Truck Detail di website']); // Row 4
+  excelData.push([translate('summary.tabs.truck_detail.color_exp')]); // Row 0
+  excelData.push(['', translate('summary.tabs.truck_detail.blue')]); // Row 1
+  excelData.push(['', translate('summary.tabs.truck_detail.magenta')]); // Row 2
+  excelData.push(['', translate('summary.tabs.truck_detail.indigo')]); // Row 3
+  excelData.push([translate('summary.tabs.truck_detail.more_exp')]); // Row 4
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
@@ -544,5 +552,5 @@ export function generateTruckDetailSheet(
   const cols = [{ wch: 12 }, { wch: 15 }, { wch: 30 }];
   for (let i = 0; i < dateKeys.length * 7; i++) cols.push({ wch: 12 });
   ws['!cols'] = cols;
-  XLSX.utils.book_append_sheet(wb, ws, 'Truck Detail');
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.truck_detail.title'));
 }

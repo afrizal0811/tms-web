@@ -20,6 +20,3 @@ export const VEHICLE_TYPES = [
     "FUSO-LONG"
 ];
 
-// Kunci localStorage untuk menyimpan pemetaan
-export const TAG_MAP_KEY = 'vehicleTagMap';
-

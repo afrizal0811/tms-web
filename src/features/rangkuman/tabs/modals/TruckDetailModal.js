@@ -1,28 +1,12 @@
 // File: features/rangkuman/tabs/components/TruckDetailModal.js
-import Tooltip from '@/components/Tooltip';
 import BaseModal from '@/components/BaseModal';
+import Tooltip from '@/components/Tooltip';
+import { formatLongDate } from '@/lib/utils';
 
-export default function TruckDetailModal({ isOpen, onClose, data }) {
+export default function TruckDetailModal({ isOpen, onClose, data, translate, language }) {
   if (!isOpen || !data) return null;
 
   const { driverName, dateStr, tasks } = data;
-
-  const formatHeaderDate = (str) => {
-    if (!str) return '-';
-    try {
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return str;
-      return new Intl.DateTimeFormat('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-        .format(d)
-        .replace(/\//g, '-');
-    } catch {
-      return str;
-    }
-  };
 
   const STATUS_COLORS = {
     SUKSES: 'bg-[#16a34a] text-white',
@@ -32,12 +16,19 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
     'PENDING GR': 'bg-[#d97706] text-white',
     DEFAULT: 'bg-slate-100 text-slate-600',
   };
+  const STATUS_LANGUAGE = {
+    SUKSES: translate('summary.tabs.truck_detail.modal.success'),
+    PENDING: translate('summary.tabs.truck_detail.modal.pending'),
+    'TERIMA SEBAGIAN': translate('summary.tabs.truck_detail.modal.pending_gr'),
+    BATAL: translate('summary.tabs.truck_detail.modal.cancel'),
+    'PENDING GR': translate('summary.tabs.truck_detail.modal.pending_gr'),
+  };
 
   const ERROR_COLORS = {
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
   };
-
+  const getStatus = (status) => (status ? STATUS_LANGUAGE[status].toUpperCase() : null);
   const getStatusClass = (status) => {
     if (!status) return STATUS_COLORS.DEFAULT;
     const s = status.toUpperCase();
@@ -59,7 +50,7 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
       title={
         <div>
           <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-300 text-sm font-normal">{formatHeaderDate(dateStr)}</p>
+          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, language)}</p>
         </div>
       }
       bodyClassName="p-0 bg-gray-50" // Override padding body
@@ -86,8 +77,9 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
                   <Tooltip
                     tooltipContent={
                       <span>
-                        Urutan Routing: <b>{displayRO}</b> <br />
-                        Urutan Aktual: <b>{displayReal}</b>
+                        {translate('summary.tabs.truck_detail.modal.ro_seq')}: <b>{displayRO}</b>{' '}
+                        <br />
+                        {translate('summary.tabs.truck_detail.modal.act_seq')}: <b>{displayReal}</b>
                       </span>
                     }
                   >
@@ -104,21 +96,21 @@ export default function TruckDetailModal({ isOpen, onClose, data }) {
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)}`}
                     >
-                      {task.status}
+                      {getStatus(task.status)}
                     </span>
                   )}
                   {task.isManual && (
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.MANUAL}`}
                     >
-                      MANUAL ASSIGN
+                      {translate('summary.tabs.truck_detail.modal.manual').toUpperCase()}
                     </span>
                   )}
                   {task.isDateDiff && (
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.DATE_DIFF}`}
                     >
-                      BEDA HARI
+                      {translate('summary.tabs.truck_detail.modal.diff_day').toUpperCase()}
                     </span>
                   )}
                 </div>

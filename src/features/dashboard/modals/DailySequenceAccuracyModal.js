@@ -1,37 +1,40 @@
-// File: features/rangkuman/tabs/modals/DailySequenceAccuracyModal.js
+// File: src/features/dashboard/modals/DailySequenceAccuracyModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext'; // Import Hook
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-const DailyTooltip = ({ active, payload, label }) => {
+const DailyTooltip = ({ active, payload, label, t }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
-        <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">Tanggal {label}</p>
+        <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">
+          {t('common.date')} {label}
+        </p>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-blue-400">● Manual</span>
+          <span className="text-blue-400">● {t('dashboard.charts.sequence.manual')}</span>
           <span className="font-mono">{data.manual}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-emerald-400">● Sesuai</span>
+          <span className="text-emerald-400">● {t('dashboard.charts.sequence.match')}</span>
           <span className="font-mono">{data.match}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-red-400">● Mismatch</span>
+          <span className="text-red-400">● {t('dashboard.charts.sequence.mismatch')}</span>
           <span className="font-mono">{data.mismatch}</span>
         </div>
 
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex flex-col gap-0.5">
           <div className="flex justify-between gap-4">
-            <span>Total Task</span>
+            <span>{t('common.total_task')}</span>
             <span>{data.total}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span>Akurasi</span>
+            <span>{t('common.accuracy')}</span>
             <span>{data.rate}%</span>
           </div>
         </div>
@@ -42,7 +45,8 @@ const DailyTooltip = ({ active, payload, label }) => {
 };
 
 function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading }) {
-  // kalau modal tertutup, jangan render apa pun
+  const { t } = useLanguage(); // Panggil Hook
+
   if (!isOpen) return null;
 
   const hasData = Array.isArray(data) && data.length > 0;
@@ -50,16 +54,16 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
   const footerContent = (
     <div className="flex gap-4 font-medium text-xs text-gray-500">
       <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
-        <span>Sesuai</span>
+        <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
+        <span>{t('dashboard.charts.sequence.manual')}</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
-        <span>Manual Assign</span>
+        <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
+        <span>{t('dashboard.charts.sequence.match')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-        <span>Tidak Sesuai</span>
+        <span>{t('dashboard.charts.sequence.mismatch')}</span>
       </div>
     </div>
   );
@@ -79,21 +83,21 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
           </div>
         ) : hasData ? (
           <ResponsiveContainer width="100%" height="100%">
-            {/* ... BarChart Logic ... */}
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
                 dataKey="name"
-                name="Tanggal"
+                name={t('common.date')}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#64748b', fontSize: 12 }}
                 dy={10}
               />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              {/* Passing props t ke tooltip */}
+              <Tooltip content={<DailyTooltip t={t} />} cursor={{ fill: '#f1f5f9' }} />
               <Bar
-                name="Sesuai"
+                name={t('dashboard.charts.sequence.match')}
                 dataKey="match"
                 stackId="a"
                 fill="#22c55e"
@@ -101,7 +105,7 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
                 maxBarSize={40}
               />
               <Bar
-                name="Manual Assign"
+                name={t('dashboard.charts.sequence.manual')}
                 dataKey="manual"
                 stackId="a"
                 fill="#3b82f6"
@@ -109,7 +113,7 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
                 maxBarSize={40}
               />
               <Bar
-                name="Tidak Sesuai"
+                name={t('dashboard.charts.sequence.mismatch')}
                 dataKey="mismatch"
                 stackId="a"
                 fill="#ef4444"
@@ -120,7 +124,7 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading })
           </ResponsiveContainer>
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">
-            Tidak ada data untuk bulan ini.
+            {t('common.no_data_month')}
           </div>
         )}
       </div>
