@@ -48,7 +48,11 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
 
 function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
-  const workingDays = dateKeys.filter((d) => !d.isSunday).length;
+  const workingDays = dateKeys.filter((d) => {
+    if (d.isSunday) return false;
+    const hasData = (dateMap[d.str]?.OTV || 0) > 0;
+    return hasData;
+  }).length;
   const categories = ['Dry', 'Frozen'];
 
   categories.forEach((cat) => {

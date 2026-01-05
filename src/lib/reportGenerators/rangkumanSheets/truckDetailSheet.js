@@ -1,6 +1,6 @@
 // File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
-  formatDateIndo,
+  // formatDateIndo,
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
@@ -69,7 +69,7 @@ function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
-    const dateStr = formatDateIndo(d);
+    const dateStr = formatDateUniversal(d, 'DD/MM/YYYY');
     const timeStr = formatDateWIB(d, 'HH:mm');
     return `${dateStr} ${timeStr}`;
   } catch {

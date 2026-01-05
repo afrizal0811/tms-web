@@ -1,4 +1,5 @@
 // File: features/rangkuman/tabs/components/TruckUsageTable.js
+import Tooltip from '@/components/Tooltip';
 import { Fragment } from 'react';
 
 export default function TruckUsageTable({
@@ -7,6 +8,7 @@ export default function TruckUsageTable({
   vehicleTypes,
   hubMasterData,
   isPercentage = false,
+  translate,
 }) {
   // --- COLORS ---
   const colorHeader = '#d9d2e9';
@@ -33,10 +35,6 @@ export default function TruckUsageTable({
   const colStorageClass = 'w-[100px] min-w-[100px] max-w-[100px]';
   const colTypeClass = 'w-[150px] min-w-[150px] max-w-[150px]';
   const colTotalClass = 'w-[60px] min-w-[60px]';
-
-  const getBgStyle = (baseColor, isSunday) => ({
-    backgroundColor: isSunday ? colorSunday : baseColor,
-  });
 
   const getCellClass = (isLastCol) => {
     return isLastCol ? `${tdClass} ${thickBorderClass}` : tdClass;
@@ -185,17 +183,25 @@ export default function TruckUsageTable({
   };
 
   // Render Special Row (Total/Interbranch/OTV)
-  const renderSpecialRow = (label, cat, bgColor, isBold = false) => {
+  const renderSpecialRow = (label, cat, bgColor, isBold = false, tooltip) => {
     const masterTotal = getMasterVal(cat);
+    const labelTable = (
+      <td
+        colSpan="2"
+        className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
+        style={{ backgroundColor: bgColor }}
+      >
+        {label}
+      </td>
+    );
+    const hasTooltip = tooltip ? (
+      <Tooltip tooltipContent={tooltip}>
+        {labelTable}
+      </Tooltip>
+    ) : labelTable;
     return (
       <tr className={isBold ? 'font-bold' : ''}>
-        <td
-          colSpan="2"
-          className={`${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
-          style={{ backgroundColor: bgColor }}
-        >
-          {label}
-        </td>
+        {hasTooltip}
         <td
           className={`${tdClass} ${colTotalClass} sticky left-[250px] z-30 ${thickBorderClass}`}
           style={{ backgroundColor: bgColor }}
@@ -241,14 +247,14 @@ export default function TruckUsageTable({
               className={`${thClass} ${colStorageClass} sticky left-0 z-50`}
               style={{ backgroundColor: colorHeader }}
             >
-              Vehicle Storage
+              {translate('summary.tabs.truck_usage.temp')}
             </th>
             <th
               rowSpan="2"
               className={`${thClass} ${colTypeClass} sticky left-[100px] z-50`}
               style={{ backgroundColor: colorHeader }}
             >
-              Vehicle Types
+              {translate('summary.tabs.truck_usage.vehicle_type')}
             </th>
             <th
               rowSpan="2"
@@ -283,12 +289,14 @@ export default function TruckUsageTable({
                 >
                   Non TMS
                 </th>
-                <th
-                  className={`${thClass} ${thickBorderClass}`}
-                  style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
-                >
-                  TVU
-                </th>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.tvu')}>
+                  <th
+                    className={`${thClass} ${thickBorderClass}`}
+                    style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
+                  >
+                    TVU
+                  </th>
+                </Tooltip>
               </Fragment>
             ))}
           </tr>
@@ -296,16 +304,26 @@ export default function TruckUsageTable({
         <tbody>
           {/* DRY */}
           {renderSectionRows('Dry', colorDry, vehicleTypes)}
-          {renderSpecialRow('Interbranch', 'Dry', colorDry)}
+          {renderSpecialRow(translate('summary.tabs.truck_usage.interbranch'), 'Dry', colorDry)}
           {renderSpecialRow('Total Used', 'DryTotal', colorDryTotal, true)}
 
           {/* FROZEN */}
           {renderSectionRows('Frozen', colorFrozen, vehicleTypes)}
-          {renderSpecialRow('Interbranch', 'Frozen', colorFrozen)}
+          {renderSpecialRow(
+            translate('summary.tabs.truck_usage.interbranch'),
+            'Frozen',
+            colorFrozen
+          )}
           {renderSpecialRow('Total Used', 'FrozenTotal', colorFrozenTotal, true)}
 
           {/* OTV */}
-          {renderSpecialRow('OTV', 'OTV', colorOTV, true)}
+          {renderSpecialRow(
+            'OTV',
+            'OTV',
+            colorOTV,
+            true,
+            translate('summary.tabs.truck_usage.otv')
+          )}
         </tbody>
       </table>
     </div>

@@ -50,7 +50,7 @@ const CustomTooltip = ({ active, payload, label, t }) => {
           <span className="font-mono">{data.rendah}</span>
         </div>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-blue-400">
+          <span className="text-slate-400">
             ● {t('dashboard.charts.load_capacity.very_low')} (&lt;40%)
           </span>
           <span className="font-mono">{data.sangatRendah}</span>

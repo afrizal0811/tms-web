@@ -1,8 +1,11 @@
 // File: features/rangkuman/tabs/components/TruckUsageSummaryTable.js
+import Tooltip from '@/components/Tooltip';
+
 export default function TruckUsageSummaryTable({
-  summaryData,
-  vehicleTypes,
   isPercentage = false,
+  summaryData,
+  translate,
+  vehicleTypes,
 }) {
   if (!summaryData) return null;
 
@@ -68,7 +71,9 @@ export default function TruckUsageSummaryTable({
       return [
         ...rows,
         <tr key={`${cat}-Total`} className="font-bold">
-          <td className={`${tdClass} text-left ${totalBg}`}>Total Used</td>
+          <td className={`${tdClass} text-left ${totalBg}`}>
+            {translate('summary.tabs.truck_usage.total')}
+          </td>
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
@@ -86,7 +91,9 @@ export default function TruckUsageSummaryTable({
     return [
       ...rows,
       <tr key={`${cat}-Total`} className="font-bold">
-        <td className={`${tdClass} text-left ${totalBg}`}>Total Used</td>
+        <td className={`${tdClass} text-left ${totalBg}`}>
+          {translate('summary.tabs.truck_usage.total')}
+        </td>
         <td className={`${tdClass} ${totalBg}`}>{t.TMS || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.NonTMS || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.TVU || 0}</td>
@@ -106,7 +113,9 @@ export default function TruckUsageSummaryTable({
     if (isPercentage) {
       return (
         <tr key="OTV-Total" className="font-bold">
-          <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+          <Tooltip tooltipContent={translate('summary.tabs.truck_usage.otv')}>
+            <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+          </Tooltip>
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
@@ -122,7 +131,9 @@ export default function TruckUsageSummaryTable({
 
     return (
       <tr key="OTV-Total" className="font-bold">
-        <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+        <Tooltip tooltipContent={translate('summary.tabs.truck_usage.otv')}>
+          <td className={`${tdClass} text-left ${otvBg}`}>OTV</td>
+        </Tooltip>
         <td className={`${tdClass} ${otvBg}`}>{t.TMS || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.NonTMS || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.TVU || 0}</td>
@@ -142,19 +153,33 @@ export default function TruckUsageSummaryTable({
       <table className="min-w-full border-collapse border-0 text-sm">
         <thead>
           <tr>
-            <th className={`${thClass} w-[200px]`}>Vehicle Types</th>
+            <th className={`${thClass} w-[200px]`}>
+              {translate('summary.tabs.truck_usage.vehicle_type')}
+            </th>
             <th className={thClass}>TMS</th>
             <th className={thClass}>Non TMS</th>
-            <th className={thClass}>TVU</th>
+            <Tooltip tooltipContent={translate('summary.tabs.truck_usage.tvu')}>
+              <th className={thClass}>TVU</th>
+            </Tooltip>
 
             {/* HIDE COLUMNS FOR PERCENTAGE TABLE */}
             {!isPercentage && (
               <>
-                <th className={thClass}>TV</th>
-                <th className={thClass}>% TVU</th>
-                <th className={thClass}>V</th>
-                <th className={thClass}>VU</th>
-                <th className={thClass}>IV</th>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.tv')}>
+                  <th className={thClass}>TV</th>
+                </Tooltip>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.percentage_tvu')}>
+                  <th className={thClass}>% TVU</th>
+                </Tooltip>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.vehicle')}>
+                  <th className={thClass}>V</th>
+                </Tooltip>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.vu')}>
+                  <th className={thClass}>VU</th>
+                </Tooltip>
+                <Tooltip tooltipContent={translate('summary.tabs.truck_usage.iv')}>
+                  <th className={thClass}>IV</th>
+                </Tooltip>
               </>
             )}
           </tr>

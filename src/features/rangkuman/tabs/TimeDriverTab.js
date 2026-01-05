@@ -1,9 +1,11 @@
 // File: features/rangkuman/tabs/TimeDriverTab.js
+import { formatLongDate } from '@/lib/utils';
 import { Fragment } from 'react';
 
-export default function TimeDriverTab({ data }) {
+export default function TimeDriverTab({ data, translate, language }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
-  // Helpers & Constants
+  const indoLang = language === 'id' ? 'id-ID' : 'en-GB';
+
   const isSunday = (dateStr) => {
     const d = new Date(dateStr);
     return d.getUTCDay() === 0;
@@ -31,27 +33,28 @@ export default function TimeDriverTab({ data }) {
           {/* Row 1: Headers */}
           <tr>
             <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
-              Type
+              {translate('summary.tabs.time_driver.type')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              Licence No.
+              {translate('summary.tabs.time_driver.lisence')}
             </th>
             <th
               rowSpan="2"
               className={`${thClass} min-w-[200px] ${stickyHeaderDriver} ${COLOR_A} border-r-2 border-slate-400`}
             >
-              Driver
+              {translate('summary.tabs.time_driver.driver')}
             </th>
 
             {dateKeys.map((d, i) => {
               const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
+              const date = formatLongDate(d.str, indoLang);
               return (
                 <th
                   key={i}
                   colSpan="3"
                   className={`${thClass} border-l-2 border-l-gray-400 ${headerColor}`}
                 >
-                  {d.display}
+                  {date}
                 </th>
               );
             })}
@@ -63,10 +66,14 @@ export default function TimeDriverTab({ data }) {
               return (
                 <Fragment key={i}>
                   <th className={`${thClass} ${metricColor} border-l-2 border-l-gray-400`}>
-                    Start
+                    {translate('summary.tabs.time_driver.start_time')}
                   </th>
-                  <th className={`${thClass} ${metricColor}`}>Finish</th>
-                  <th className={`${thClass} ${metricColor}`}>Duration</th>
+                  <th className={`${thClass} ${metricColor}`}>
+                    {translate('summary.tabs.time_driver.finish_time')}
+                  </th>
+                  <th className={`${thClass} ${metricColor}`}>
+                    {translate('summary.tabs.time_driver.duration')}
+                  </th>
                 </Fragment>
               );
             })}
