@@ -5,6 +5,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -114,7 +115,7 @@ export default function TmsSummary({
       );
 
       if (missingTimesFound) {
-        toastWarning(t('report.toast.missing_times'));
+        toastWarning(t('report.toast.missing_time'));
       }
 
       XLSX.writeFile(wb, excelFileName);
