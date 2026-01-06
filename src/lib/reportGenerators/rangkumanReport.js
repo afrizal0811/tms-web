@@ -32,14 +32,17 @@ export function generateRangkumanDataPreview(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  hubId
+  hubId,
+  language
 ) {
-  // ... (Bagian preview ini TIDAK BERUBAH) ...
-  // 1. Average KM
+  console.log('language :', language);
+  const isIndo = language === 'id';
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo,
+    driverData
   );
   // 2. Truck Usage
   const truckUsageData = calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);

@@ -505,7 +505,8 @@ export default function RangkumanSummary() {
         newRawData.locations,
         startStr,
         endStr,
-        selectedLocation
+        selectedLocation,
+        lang
       );
       setReportPreview(preview);
 
@@ -708,6 +709,7 @@ export default function RangkumanSummary() {
           data: reportPreview.averageKmData,
           monthTotals: reportPreview.monthTotals,
           translate: t,
+          language: lang,
         });
 
       default:

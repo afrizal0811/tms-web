@@ -45,7 +45,12 @@ export default function TimeDriverTab({ data, translate, language }) {
 
   return (
     <div className="rounded-b-xl overflow-auto border border-gray-300 m-0 h-full relative">
-      <TimeDriverModal isOpen={!!modalData} onClose={closeModal} data={modalData} translate={translate} />
+      <TimeDriverModal
+        isOpen={!!modalData}
+        onClose={closeModal}
+        data={modalData}
+        translate={translate}
+      />
 
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-30 bg-gray-100">
@@ -55,7 +60,7 @@ export default function TimeDriverTab({ data, translate, language }) {
               {translate('summary.tabs.time_driver.temp')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              {translate('summary.tabs.time_driver.lisence')}
+              {translate('summary.tabs.time_driver.license')}
             </th>
             <th
               rowSpan="2"
@@ -144,7 +149,7 @@ export default function TimeDriverTab({ data, translate, language }) {
                         onClick={() => handleCellClick(metrics, driver.name, d.str)}
                         className={`${tdClass} border-l-2 border-l-gray-400 bg-red-500 text-white font-bold cursor-pointer hover:opacity-80 transition-opacity`}
                       >
-                        {translate('common.click_for_detail')} 
+                        {translate('common.click_for_detail')}
                       </td>
                     );
                   }

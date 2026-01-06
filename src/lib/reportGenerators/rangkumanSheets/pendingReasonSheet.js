@@ -161,7 +161,7 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
   let headers = [
     translate('summary.tabs.pending_reasons.flow'),
     translate('summary.tabs.pending_reasons.date'),
-    translate('summary.tabs.pending_reasons.lisence'),
+    translate('summary.tabs.pending_reasons.license'),
     translate('summary.tabs.pending_reasons.driver'),
     translate('summary.tabs.pending_reasons.cancel'),
     translate('summary.tabs.pending_reasons.partial'),

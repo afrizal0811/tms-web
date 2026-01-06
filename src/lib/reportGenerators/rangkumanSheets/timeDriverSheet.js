@@ -194,7 +194,7 @@ export function generateTimeDriverSheet(
 
   const row1 = [
     translate('summary.tabs.time_driver.temp'),
-    translate('summary.tabs.time_driver.lisence'),
+    translate('summary.tabs.time_driver.license'),
     translate('summary.tabs.time_driver.driver'),
   ];
   const row2 = ['', '', ''];
@@ -298,7 +298,7 @@ export function generateTimeDriverSheet(
         else if (C > 2 && (C - 2) % 3 === 0)
           cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
       } else {
-        cell.s = { ...dataStyle, font: fontStyle }; 
+        cell.s = { ...dataStyle, font: fontStyle };
         if (cellFill) cell.s.fill = cellFill;
 
         if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
