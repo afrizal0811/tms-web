@@ -191,7 +191,9 @@ export default function TruckUsageTable({
         className={`${tooltip && 'cursor-help'} ${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
         style={{ backgroundColor: bgColor }}
       >
-        {label}
+        <span className={tooltip && `border-b-[1.5px] border-dashed border-gray-600 pb-px`}>
+          {label}
+        </span>
       </td>
     );
     const hasTooltip = tooltip ? (
