@@ -53,7 +53,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
           <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, language)}</p>
         </div>
       }
-      bodyClassName="p-0 bg-gray-50" // Override padding body
+      bodyClassName="p-0 bg-gray-50 overflow-y-auto" // Override padding body
     >
       {/* Content */}
       {tasks && tasks.length > 0 ? (
@@ -119,7 +119,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
           })}
         </div>
       ) : (
-        <div className="p-8 text-center text-gray-500">Tidak ada data detail pengiriman.</div>
+        <div className="p-8 text-center text-gray-500">{translate('common.no_data')}</div>
       )}
     </BaseModal>
   );

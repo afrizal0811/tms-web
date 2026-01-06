@@ -48,8 +48,8 @@ export default function BodyCard({
       return;
     }
 
-    const isScrollable = target.scrollHeight > target.clientHeight;
-    // Toleransi 10px
+    const isScrollable =
+      target.scrollHeight > target.clientHeight && target.scrollHeight - target.clientHeight > 50;
     const isAtBottom =
       Math.ceil(target.scrollTop + target.clientHeight) >= target.scrollHeight - 10;
 

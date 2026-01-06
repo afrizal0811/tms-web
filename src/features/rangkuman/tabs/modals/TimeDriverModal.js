@@ -7,18 +7,36 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   if (!data) return null;
 
   const { driverName, dateStr, entries } = data;
+  // Helper untuk mengubah string "HH:mm" atau "H:m" menjadi total menit
+  const parseDurationToMinutes = (str) => {
+    if (!str) return 0;
+    const [hours, minutes] = str.split(':').map(Number);
+    return hours * 60 + (minutes || 0);
+  };
 
+  // Hitung akumulasi
+  const totalMinutes = entries.reduce((acc, curr) => {
+    return acc + parseDurationToMinutes(curr.durationDisplay);
+  }, 0);
+
+  const totalDistance = entries.reduce((acc, curr) => acc + (curr.distance || 0), 0);
+
+  // Format kembali ke HH:mm
+  const totalHours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  const totalDurationFormatted = `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${translate('summary.tabs.time_driver.modal.title')}: ${driverName}`}
-    >
-      <div className="">
-        <div className="mb-4 text-lg text-gray-600">
-          <strong>{dateStr}</strong>
+      title={
+        <div>
+          <h3 className="text-lg font-bold">{driverName}</h3>
+          <p className="text-slate-300 text-sm font-normal">{dateStr}</p>
         </div>
-
+      }
+    >
+      <div>
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="min-w-full text-sm text-left">
             <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
@@ -60,6 +78,17 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
                 </tr>
               ))}
             </tbody>
+            <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
+              <tr>
+                <td className="px-4 py-3 text-center text-gray-600 uppercase text-[10px] tracking-wider   ">
+                  Total
+                </td>
+                <td></td>
+                <td></td>
+                <td className="px-4 py-3 text-center text-slate-800">{totalDurationFormatted}</td>
+                <td className="px-4 py-3 text-center text-slate-800">{totalDistance.toFixed(2)}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
         <div className="mt-3 text-xs text-slate-500 italic">
