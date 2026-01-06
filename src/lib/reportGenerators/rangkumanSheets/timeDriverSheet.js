@@ -115,7 +115,6 @@ export function calculateTimeDriverData(
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
 
-        // Data Entry Tunggal
         const entry = {
           startTimeISO: item.startTime,
           finishTimeISO: item.finish?.finishTime,
@@ -124,32 +123,25 @@ export function calculateTimeDriverData(
           durationDisplay: durationStr,
           dayDiff: dayDiff,
           hasData: true,
-          // Simpan raw data untuk modal jika perlu
           distance: totalDistance,
           trackedTime: trackedTime,
         };
 
-        // --- LOGIKA BARU: Simpan Array Entries ---
         if (!dataMatrix[dateKey][email]) {
-          // Jika belum ada data, buat baru dengan array entries
           dataMatrix[dateKey][email] = {
-            ...entry, // Properties utama (default yang terakhir/satu-satunya)
-            entries: [entry], // Array penampung semua data
+            ...entry,
+            entries: [entry],
           };
         } else {
-          // Jika sudah ada, tambahkan ke array entries
           const currentData = dataMatrix[dateKey][email];
           currentData.entries.push(entry);
 
-          // Urutkan berdasarkan jam mulai (Ascending)
           currentData.entries.sort((a, b) => {
             const dA = new Date(a.startTimeISO || 0);
             const dB = new Date(b.startTimeISO || 0);
             return dA - dB;
           });
 
-          // Update data utama tampilan (selalu ambil yang paling akhir/malam)
-          // Agar tampilan default (jika tidak diklik) tetap konsisten menampilkan trip terakhir
           const latestEntry = currentData.entries[currentData.entries.length - 1];
           Object.assign(currentData, latestEntry);
         }
@@ -176,7 +168,6 @@ export function calculateTimeDriverData(
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
-// ... (Fungsi generateTimeDriverSheet untuk Excel tetap sama seperti sebelumnya, tidak perlu diubah karena sudah mengambil data utama dari objek) ...
 export function generateTimeDriverSheet(
   wb,
   driverData,
@@ -195,7 +186,11 @@ export function generateTimeDriverSheet(
   );
 
   const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };
-  const dataStyle = { ...BASE_STYLES.center, font: { name: 'Calibri', sz: 11 } };
+  const dataStyle = {
+    ...BASE_STYLES.center,
+    font: { name: 'Calibri', sz: 11 },
+    alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+  };
 
   const row1 = [
     translate('summary.tabs.time_driver.temp'),
@@ -218,10 +213,25 @@ export function generateTimeDriverSheet(
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
+
       if (metrics && metrics.hasData) {
-        let finishText = metrics.finishDisplay;
-        if (metrics.dayDiff > 0) finishText += ` (+${metrics.dayDiff})`;
-        row.push(metrics.startDisplay, finishText, metrics.durationDisplay);
+        if (metrics.entries && metrics.entries.length > 1) {
+          const startText = metrics.entries.map((e) => e.startDisplay).join('\n');
+          const finishText = metrics.entries
+            .map((e) => {
+              let f = e.finishDisplay;
+              if (e.dayDiff > 0) f += ` (+${e.dayDiff})`;
+              return f;
+            })
+            .join('\n');
+          const durationText = metrics.entries.map((e) => e.durationDisplay).join('\n');
+
+          row.push(startText, finishText, durationText);
+        } else {
+          let finishText = metrics.finishDisplay;
+          if (metrics.dayDiff > 0) finishText += ` (+${metrics.dayDiff})`;
+          row.push(metrics.startDisplay, finishText, metrics.durationDisplay);
+        }
       } else {
         row.push(null, null, null);
       }
@@ -248,19 +258,39 @@ export function generateTimeDriverSheet(
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
       let cellFill = null;
+      let fontStyle = dataStyle.font; // Default font
+
       if (C <= 2) {
         if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
       } else {
         const dateIdx = Math.floor((C - 3) / 3);
+
         if (dateKeys[dateIdx]) {
           const dObj = new Date(dateKeys[dateIdx].str);
-          if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
-          else {
+
+          // Style Header Hari Minggu
+          if (dObj.getUTCDay() === 0) {
+            cellFill = FILL_STYLES.red;
+          } else {
             if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
             if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
           }
+          if (R >= 2) {
+            const driverIdx = R - 2;
+            const driverEmail = driverEmails[driverIdx];
+            const dateStr = dateKeys[dateIdx].str;
+
+            if (driverEmail && dateStr) {
+              const m = dataMatrix[dateStr][driverEmail];
+              if (m && m.entries && m.entries.length > 1) {
+                cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
+                fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+              }
+            }
+          }
         }
       }
+
       if (R === 0 || R === 1) {
         cell.s = { ...headerStyle };
         if (cellFill) cell.s.fill = cellFill;
@@ -268,9 +298,11 @@ export function generateTimeDriverSheet(
         else if (C > 2 && (C - 2) % 3 === 0)
           cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
       } else {
-        cell.s = { ...dataStyle };
+        cell.s = { ...dataStyle, font: fontStyle }; 
         if (cellFill) cell.s.fill = cellFill;
+
         if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+
         let borderLeft = { style: 'none' };
         let borderRight = { style: 'none' };
         const borderTop = { style: 'none' };
