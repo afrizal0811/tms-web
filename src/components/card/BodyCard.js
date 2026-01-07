@@ -19,7 +19,7 @@ const LoadingState = ({ elapsed, text }) => (
 export default function BodyCard({
   children,
   isLoading = false,
-  loadingText = 'Sedang memuat data...',
+  loadingText = '',
   isEmpty = false,
   emptyMessage,
   tabs = [],
@@ -173,7 +173,7 @@ export default function BodyCard({
       >
         {isLoading ? (
           <>
-            <LoadingState elapsed={elapsedTime} text={loadingText} />
+            <LoadingState elapsed={elapsedTime} text={loadingText || t('common.loading')} />
             {longLoadingContent && elapsedTime > 120 && (
               <div className="absolute top-36 left-0 right-0 z-50 flex justify-center pointer-events-none">
                 <div className="pointer-events-auto">{longLoadingContent}</div>
