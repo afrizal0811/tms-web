@@ -39,6 +39,20 @@ const getInitialDate = () => {
   return targetDate;
 };
 
+// --- FIX 1: Pindahkan helper function ke luar komponen agar tidak trigger re-render ---
+const getRoutingDateKeyFromDateStr = (dateStr) => {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  let offset = 1;
+  if (d.getDay() === 1) offset = 2;
+  d.setDate(d.getDate() - offset);
+  if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const da = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${da}`;
+};
+
 export default function RangkumanSummary() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
@@ -149,20 +163,8 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  const getRoutingDateKeyFromDateStr = (dateStr) => {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
-    let offset = 1;
-    if (d.getDay() === 1) offset = 2;
-    d.setDate(d.getDate() - offset);
-    if (d.getDay() === 0) d.setDate(d.getDate() - 1);
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const da = d.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${da}`;
-  };
-
-  const processTaskSummaryMetrics = async (allTasks, allResults) => {
+  // --- FIX 2: Bungkus processTaskSummaryMetrics dengan useCallback ---
+  const processTaskSummaryMetrics = useCallback(async (allTasks, allResults) => {
     setIsCalculatingMetrics(true);
     setHistoryProgress(0);
     const tempMetrics = {};
@@ -211,6 +213,7 @@ export default function RangkumanSummary() {
       allTasks.forEach((task) => {
         if (!task.doneTime) return;
         const deliveryDateStr = task.doneTime.substring(0, 10);
+        // Menggunakan helper yang sudah dipindah ke luar
         const dateKey = getRoutingDateKeyFromDateStr(deliveryDateStr);
         if (!dateKey) return;
 
@@ -320,7 +323,7 @@ export default function RangkumanSummary() {
 
     setTaskSummaryMetrics(tempMetrics);
     setIsCalculatingMetrics(false);
-  };
+  }, []); // Dependencies kosong karena hanya menggunakan setter state dan helper luar
 
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
@@ -350,40 +353,40 @@ export default function RangkumanSummary() {
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
 
-      // 1. Buffer Date (H-2)
       const bufferDate = new Date(startDate);
       bufferDate.setDate(bufferDate.getDate() - 2);
-      // const bufferStr = formatDateUniversal(bufferDate); // Tidak dipakai stringnya lagi
 
-      // locTimeFrom (Jam 22:00 H-2)
       const locStartObj = new Date(bufferDate);
       locStartObj.setHours(22, 0, 0, 0);
       const locTimeFrom = formatToApiUtc(locStartObj);
 
-      // tasksTimeFrom (Jam 00:00 H-2)
       const taskStartObj = new Date(bufferDate);
       taskStartObj.setHours(0, 0, 0, 0);
       const tasksTimeFrom = formatToApiUtc(taskStartObj);
 
-      // finalTimeTo (Jam 23:59 End Date + 1)
       const finalEndObj = new Date(endDatePlusOne);
       finalEndObj.setHours(23, 59, 59, 999);
       const finalTimeTo = formatToApiUtc(finalEndObj);
 
-      // --- Split Logic ---
+      const bufferStartObj = new Date(finalEndObj);
+      bufferStartObj.setDate(bufferStartObj.getDate() + 1);
+      bufferStartObj.setHours(0, 0, 0, 0);
+      const bufferStartTime = formatToApiUtc(bufferStartObj);
+
+      const bufferEndObj = new Date(bufferStartObj);
+      bufferEndObj.setDate(bufferEndObj.getDate() + 4);
+      bufferEndObj.setHours(23, 59, 59, 999);
+      const bufferEndTime = formatToApiUtc(bufferEndObj);
+
       const midDateObj = new Date(year, month, 15);
       const midNextObj = new Date(year, month, 16);
 
-      // splitTimeEnd (Tgl 15 Jam 23:59 UTC) -> Pengganti midDateStr
       midDateObj.setHours(23, 59, 59, 999);
       const splitTimeEnd = formatToApiUtc(midDateObj);
 
-      // splitTimeStart (Tgl 16 Jam 00:00 UTC) -> Pengganti midNextStr
       midNextObj.setHours(0, 0, 0, 0);
       const splitTimeStart = formatToApiUtc(midNextObj);
 
-      // --- PERSIAPAN TIME ROUTING (UTC) ---
-      // Kita perlu konversi routingStartStr (YYYY-MM-DD) ke UTC Full Timestamp
       const routingStartObj = new Date(routingStartStr);
       routingStartObj.setHours(0, 0, 0, 0);
       const routingStartUtc = formatToApiUtc(routingStartObj);
@@ -404,7 +407,7 @@ export default function RangkumanSummary() {
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
       const pTasks = fetchWithTracker(async () => {
-        const [part1, part2] = await Promise.all([
+        const [part1, part2, partExtra] = await Promise.all([
           fetchWithRetry(() =>
             getTasks({
               hubId: selectedLocation,
@@ -425,28 +428,36 @@ export default function RangkumanSummary() {
               timeTo: finalTimeTo,
             })
           ),
+          fetchWithRetry(() =>
+            getTasks({
+              hubId: selectedLocation,
+              status: 'DONE',
+              timeBy: 'startTime',
+              limit: 10000,
+              timeFrom: bufferStartTime,
+              timeTo: bufferEndTime,
+            })
+          ),
         ]);
-        return mergeResults([part1, part2]);
-      }, 'Monthly Tasks (Split)');
+        return mergeResults([part1, part2, partExtra]);
+      }, 'Monthly Tasks (Split + Buffer)');
 
-      // 3. ROUTING / RESULTS (Split 2 Request)
-      // UPDATE: Gunakan variable UTC yang baru (routingStartUtc, splitTimeEnd, dll)
       const pRouting = fetchWithTracker(async () => {
         const [part1, part2] = await Promise.all([
           fetchWithRetry(() =>
             getResultsSummary({
               hubId: selectedLocation,
               limit: 10000,
-              dateFrom: routingStartUtc, // Ganti routingStartStr
-              dateTo: splitTimeEnd, // Ganti midDateStr
+              dateFrom: routingStartUtc,
+              dateTo: splitTimeEnd,
             })
           ),
           fetchWithRetry(() =>
             getResultsSummary({
               hubId: selectedLocation,
               limit: 10000,
-              dateFrom: splitTimeStart, // Ganti midNextStr
-              dateTo: routingEndUtc, // Ganti routingEndStr
+              dateFrom: splitTimeStart,
+              dateTo: routingEndUtc,
             })
           ),
         ]);
@@ -454,7 +465,6 @@ export default function RangkumanSummary() {
         return combined.filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
       }, 'Routing (Split)');
 
-      // 4. HISTORY (Split 2 Request)
       const pHistory = fetchWithTracker(async () => {
         const params = {
           limit: 10000,
@@ -481,7 +491,6 @@ export default function RangkumanSummary() {
         return mergeResults([part1, part2]);
       }, 'History (Split)');
 
-      // --- EXECUTE ALL ---
       const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all([
         pDrivers,
         pTasks,
@@ -517,8 +526,15 @@ export default function RangkumanSummary() {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line
-  }, [selectedLocation, selectedDate, fetchWithRetry, fetchWithTracker]);
+    // --- FIX 3: Tambahkan processTaskSummaryMetrics ke dependency array ---
+  }, [
+    selectedLocation,
+    selectedDate,
+    fetchWithRetry,
+    fetchWithTracker,
+    processTaskSummaryMetrics,
+    lang,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -551,7 +567,7 @@ export default function RangkumanSummary() {
         taskSummaryMetrics,
         masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
         translate,
-        language 
+        language
       );
 
       XLSX.writeFile(wb, excelFileName);
@@ -588,7 +604,6 @@ export default function RangkumanSummary() {
   const isTabEmpty = () => {
     if (isLoading) return false;
 
-    // Default check untuk tab yang butuh reportPreview
     if (activeTab !== 'Task Summary' && activeTab !== 'Time RO' && !reportPreview) return true;
 
     switch (activeTab) {
@@ -626,7 +641,6 @@ export default function RangkumanSummary() {
       }
 
       case 'Pending Reasons': {
-        // Filter logic duplikasi dari renderContent agar konsisten
         const year = selectedDate.getFullYear();
         const month = selectedDate.getMonth();
         const startStr = formatDateUniversal(new Date(year, month, 1));
@@ -637,7 +651,6 @@ export default function RangkumanSummary() {
       }
 
       case 'Time RO':
-        // Cek apakah ada task dari API
         return !(rawData.tasks && rawData.tasks.some((t) => t.createdFrom === 'API'));
 
       default:
@@ -652,10 +665,8 @@ export default function RangkumanSummary() {
       </div>
     );
 
-    // Hitung tanggal untuk props tab (menggunakan format YYYY-MM-DD)
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
-    // Gunakan formatDateUniversal agar format konsisten 'YYYY-MM-DD'
     const startStr = formatDateUniversal(new Date(year, month, 1));
     const endStr = formatDateUniversal(new Date(year, month + 1, 0));
 

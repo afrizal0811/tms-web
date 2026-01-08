@@ -35,7 +35,6 @@ export function generateRangkumanDataPreview(
   hubId,
   language
 ) {
-  console.log('language :', language);
   const isIndo = language === 'id';
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
