@@ -28,7 +28,6 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
   };
-  const getStatus = (status) => (status ? STATUS_LANGUAGE[status].toUpperCase() : null);
   const getStatusClass = (status) => {
     if (!status) return STATUS_COLORS.DEFAULT;
     const s = status.toUpperCase();
@@ -96,7 +95,9 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)}`}
                     >
-                      {getStatus(task.status)}
+                      {STATUS_LANGUAGE[task.status]
+                        ? STATUS_LANGUAGE[task.status].toUpperCase()
+                        : '-'}
                     </span>
                   )}
                   {task.isManual && (

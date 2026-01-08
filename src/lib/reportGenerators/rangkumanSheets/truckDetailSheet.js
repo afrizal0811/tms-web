@@ -1,6 +1,5 @@
-// File: lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
+// File: src/lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
-  // formatDateIndo,
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
@@ -14,17 +13,14 @@ const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 // --- WARNA KHUSUS ERROR (Fill Background) ---
 const ERROR_STYLES = {
-  // Manual Assign (Blue-ish)
   manual: {
     fill: { patternType: 'solid', fgColor: { rgb: '4F76C7' } },
     font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
   },
-  // Beda Hari (Pink-ish)
   date: {
     fill: { patternType: 'solid', fgColor: { rgb: 'C85D86' } },
     font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
   },
-  // Both (Purple-ish)
   both: {
     fill: { patternType: 'solid', fgColor: { rgb: '5C5FB2' } },
     font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
@@ -40,13 +36,18 @@ function getDeliveryDateFromRouting(isoString) {
     const dateWIB = new Date(wibTimestamp);
     const routingDay = dateWIB.getUTCDay();
     let offsetDays = 1;
+    // Logika Standar: Sabtu -> Senin (Loncat Minggu)
     if (routingDay === 6) offsetDays = 2;
+    // PENTING: Tidak ada hardcode tanggal libur di sini.
+    // Ditangani oleh logika Lookback di bawah.
+
     const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
     return new Date(deliveryTimestamp).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
 }
+
 function getDateFromTask(isoString) {
   if (!isoString) return null;
   return isoString.substring(0, 10);
@@ -64,7 +65,6 @@ function getDriverStorageType(driver) {
   return '-';
 }
 
-// Helper Format Waktu (DD/MM HH:mm)
 function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
@@ -77,7 +77,6 @@ function formatDateTimeWIB(isoString) {
   }
 }
 
-// Helper Parsing Date untuk Timestamp
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -119,8 +118,12 @@ export function calculateTruckDetailData(
   while (currentIterDate <= endDateObj) {
     const dateStr = formatDateUniversal(currentIterDate);
     const dayNum = currentIterDate.getDate();
-    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
-    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { year: '2-digit' });
+    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+      month: 'long',
+    });
+    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+      year: '2-digit',
+    });
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
@@ -135,7 +138,8 @@ export function calculateTruckDetailData(
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
       if (isDone && dispatch.result && Array.isArray(dispatch.result.routing)) {
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
-        if (dateKey && dataMatrix[dateKey]) {
+
+        if (dateKey && dateKey >= startDateStr && dateKey <= endDateStr && dataMatrix[dateKey]) {
           dispatch.result.routing.forEach((route) => {
             const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
             if (!email || !driverMap.has(email)) return;
@@ -202,9 +206,16 @@ export function calculateTruckDetailData(
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
       const dateKey = getDateFromTask(task.doneTime);
+
+      if (!dateKey) return;
+      if (startDateStr && endDateStr) {
+        if (dateKey < startDateStr || dateKey > endDateStr) return;
+      }
+
       const assigneeArr = task.assignee || [];
       const email = assigneeArr.length > 0 ? assigneeArr[0].toLowerCase().trim() : null;
-      if (dateKey && email && dataMatrix[dateKey]) {
+
+      if (email && dataMatrix[dateKey]) {
         if (!driverMap.has(email)) return;
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
@@ -276,16 +287,82 @@ export function calculateTruckDetailData(
     });
   }
 
+  // --- 6. [UPDATE] LOGIKA LOOKBACK + STRICT VALIDATION ---
+  const LOOKBACK_LIMIT = 3;
+  const sortedDateKeys = dateKeys.map((d) => d.str).sort();
+
+  sortedDateKeys.forEach((currDateKey, idx) => {
+    if (idx === 0) return; // Skip hari pertama
+
+    driverEmails.forEach((email) => {
+      const currData = dataMatrix[currDateKey][email];
+      if (!currData) return;
+
+      const hasTasks = currData.outlets > 0;
+      const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
+
+      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur atau Error)
+      if (hasTasks && !hasRouting) {
+        let foundRouting = false;
+
+        // 1. Cek Mundur (Lookback)
+        for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
+          const prevIdx = idx - back;
+          if (prevIdx < 0) break;
+
+          const prevDateKey = sortedDateKeys[prevIdx];
+          const prevData = dataMatrix[prevDateKey][email];
+
+          if (prevData) {
+            const prevHasRouting = prevData.dist > 0 || prevData.weight > 0 || prevData.volume > 0;
+            const prevHasTasks = prevData.outlets > 0;
+
+            // SYARAT: Hari sebelumnya punya Routing TAPI Tidak ada Task
+            if (prevHasRouting && !prevHasTasks) {
+              // FOUND! Pindahkan data
+              currData.weight = prevData.weight;
+              currData.maxWeight = prevData.maxWeight;
+              currData.volume = prevData.volume;
+              currData.maxVolume = prevData.maxVolume;
+              currData.dist = prevData.dist;
+              currData.duration = prevData.duration;
+
+              // Bersihkan data lama
+              prevData.weight = 0;
+              prevData.maxWeight = 0;
+              prevData.volume = 0;
+              prevData.maxVolume = 0;
+              prevData.dist = 0;
+              prevData.duration = 0;
+
+              foundRouting = true;
+              break;
+            }
+          }
+        }
+
+        // 2. [NEW] JIKA TETAP TIDAK KETEMU SETELAH 3 HARI
+        if (!foundRouting) {
+          // HAPUS DATA TASK HARI INI (Dianggap Invalid/Salah Input)
+          // Dengan mereset outlets ke 0, data ini tidak akan dirender di Excel/Table
+          currData.outlets = 0;
+          currData.delivered = 0;
+          currData.taskList = [];
+          currData.hasManualError = false;
+          currData.hasBedaHariError = false;
+        }
+      }
+    });
+  });
+
   // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
   Object.keys(dataMatrix).forEach((dateKey) => {
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];
-
       if (entry.taskList && entry.taskList.length > 0) {
         const sortedByTime = [...entry.taskList].sort((a, b) => {
           return a.arrivalTimestamp - b.arrivalTimestamp;
         });
-
         const realRankMap = new Map();
         sortedByTime.forEach((item, index) => {
           realRankMap.set(item._tempId, index + 1);
@@ -293,14 +370,10 @@ export function calculateTruckDetailData(
         entry.taskList.forEach((item) => {
           item.realSequence = realRankMap.get(item._tempId);
         });
-
         entry.taskList.sort((a, b) => {
           const roA = a.roSequence === null || a.roSequence === undefined ? -1 : a.roSequence;
           const roB = b.roSequence === null || b.roSequence === undefined ? -1 : b.roSequence;
-
-          if (roA !== roB) {
-            return roA - roB;
-          }
+          if (roA !== roB) return roA - roB;
           return (a.realSequence || 0) - (b.realSequence || 0);
         });
       }
@@ -344,6 +417,7 @@ export function generateTruckDetailSheet(
     endDateStr,
     isIndo
   );
+
   const headerStyle = {
     ...BASE_STYLES.cellCenter,
     font: FONT_STYLES.bold,
@@ -398,14 +472,13 @@ export function generateTruckDetailSheet(
     excelData.push(row);
   });
 
-  // --- LEGEND DATA ---
   excelData.push([]);
-  const legendStartRow = excelData.length; // Index baris untuk Judul Legend
-  excelData.push([translate('summary.tabs.truck_detail.color_exp')]); // Row 0
-  excelData.push(['', translate('summary.tabs.truck_detail.blue')]); // Row 1
-  excelData.push(['', translate('summary.tabs.truck_detail.magenta')]); // Row 2
-  excelData.push(['', translate('summary.tabs.truck_detail.indigo')]); // Row 3
-  excelData.push([translate('summary.tabs.truck_detail.more_exp')]); // Row 4
+  const legendStartRow = excelData.length;
+  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
+  excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
+  excelData.push(['', translate('summary.tabs.truck_detail.indigo')]);
+  excelData.push([translate('summary.tabs.truck_detail.more_exp')]);
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
@@ -418,14 +491,10 @@ export function generateTruckDetailSheet(
     colIdx += 7;
   });
 
-  // --- 2. MERGE UNTUK LEGEND ---
-  // Merge judul
   merges.push({ s: { r: legendStartRow, c: 0 }, e: { r: legendStartRow, c: 5 } });
-  // Merge deskripsi (Kolom B sampai F)
   merges.push({ s: { r: legendStartRow + 1, c: 1 }, e: { r: legendStartRow + 1, c: 6 } });
   merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
   merges.push({ s: { r: legendStartRow + 3, c: 1 }, e: { r: legendStartRow + 3, c: 6 } });
-  // Merge footer
   merges.push({ s: { r: legendStartRow + 4, c: 0 }, e: { r: legendStartRow + 4, c: 6 } });
 
   ws['!merges'] = merges;
@@ -443,14 +512,11 @@ export function generateTruckDetailSheet(
       if (R < dataEndRow) {
         let cellFill = null;
         let currentFontStyle = dataStyle.font;
-
-        // --- DEFAULT BORDER: None ---
         let borderTop = { style: 'none' };
         let borderBottom = { style: 'none' };
         let borderLeft = { style: 'none' };
         let borderRight = { style: 'none' };
 
-        // 1. HEADER (Row 0 & 1)
         if (R === 0 || R === 1) {
           cell.s = { ...headerStyle };
           if (C === 2) cell.s.border.right = BORDERS.medium;
@@ -469,9 +535,7 @@ export function generateTruckDetailSheet(
               }
             }
           }
-        }
-        // 2. DATA ROWS (Row >= 2)
-        else {
+        } else {
           if (C <= 2) {
             borderLeft = BORDERS.thin;
             borderRight = BORDERS.thin;
@@ -531,7 +595,6 @@ export function generateTruckDetailSheet(
         if (cellFill) cell.s.fill = cellFill;
       } else if (R >= legendStartRow) {
         const relR = R - legendStartRow;
-
         if (relR === 0 && C === 0) {
           cell.s = { font: { bold: true, underline: true } };
         } else if (relR >= 1 && relR <= 3) {
