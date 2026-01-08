@@ -47,6 +47,7 @@ export const dictionary = {
       },
       toast: {
         success: 'Data berhasil disimpan!',
+        error: 'Gagal memuat data: {err}',
       },
     },
     vehicle_tag: {
@@ -644,6 +645,7 @@ export const dictionary = {
       },
       toast: {
         success: 'Data has been saved!',
+        error: 'Failed to load data: {err}',
       },
     },
     vehicle_tag: {

@@ -11,7 +11,6 @@ import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './report
 // Status yang dianggap GAGAL / BELUM SELESAI
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
-// --- WARNA KHUSUS ERROR (Fill Background) ---
 const ERROR_STYLES = {
   manual: {
     fill: { patternType: 'solid', fgColor: { rgb: '4F76C7' } },
@@ -27,19 +26,18 @@ const ERROR_STYLES = {
   },
 };
 
-// --- HELPERS ---
+// --- HELPER DATE ---
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
     const date = new Date(isoString);
+    // Manual adjustment +7 Jam (WIB) untuk calculation
     const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
     const dateWIB = new Date(wibTimestamp);
+
     const routingDay = dateWIB.getUTCDay();
     let offsetDays = 1;
-    // Logika Standar: Sabtu -> Senin (Loncat Minggu)
-    if (routingDay === 6) offsetDays = 2;
-    // PENTING: Tidak ada hardcode tanggal libur di sini.
-    // Ditangani oleh logika Lookback di bawah.
+    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
 
     const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
     return new Date(deliveryTimestamp).toISOString().split('T')[0];
@@ -111,26 +109,33 @@ export function calculateTruckDetailData(
     });
   }
 
-  // 2. Init Date Range
+  // 2. Init Date Range (UTC FIX)
   const dateKeys = [];
-  const currentIterDate = new Date(startDateStr);
-  const endDateObj = new Date(endDateStr);
-  while (currentIterDate <= endDateObj) {
-    const dateStr = formatDateUniversal(currentIterDate);
-    const dayNum = currentIterDate.getDate();
-    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
-      month: 'long',
-    });
-    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
-      year: '2-digit',
-    });
-    dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
-    currentIterDate.setDate(currentIterDate.getDate() + 1);
-  }
   const dataMatrix = {};
-  dateKeys.forEach((d) => {
-    dataMatrix[d.str] = {};
-  });
+
+  const [sY, sM, sD] = startDateStr.split('-').map(Number);
+  const [eY, eM, eD] = endDateStr.split('-').map(Number);
+
+  const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
+  const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
+
+  while (currentIterDate <= endDateObj) {
+    const y = currentIterDate.getUTCFullYear();
+    const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+
+    // Display Date
+    const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
+    const dayNum = safeDate.getDate();
+    const monthName = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
+    const yearShort = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { year: '2-digit' });
+
+    dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
+    dataMatrix[dateStr] = {};
+
+    currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
+  }
 
   // 4. Process Routing (Results)
   if (resultsData && Array.isArray(resultsData)) {
@@ -287,7 +292,7 @@ export function calculateTruckDetailData(
     });
   }
 
-  // --- 6. [UPDATE] LOGIKA LOOKBACK + STRICT VALIDATION ---
+  // --- 6. LOGIKA LOOKBACK (STRICT VALIDATION RESTORED) ---
   const LOOKBACK_LIMIT = 3;
   const sortedDateKeys = dateKeys.map((d) => d.str).sort();
 
@@ -301,7 +306,7 @@ export function calculateTruckDetailData(
       const hasTasks = currData.outlets > 0;
       const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
 
-      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur atau Error)
+      // KONDISI: Ada Task TAPI Tidak Ada Routing
       if (hasTasks && !hasRouting) {
         let foundRouting = false;
 
@@ -319,7 +324,7 @@ export function calculateTruckDetailData(
 
             // SYARAT: Hari sebelumnya punya Routing TAPI Tidak ada Task
             if (prevHasRouting && !prevHasTasks) {
-              // FOUND! Pindahkan data
+              // FOUND!
               currData.weight = prevData.weight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
@@ -341,10 +346,8 @@ export function calculateTruckDetailData(
           }
         }
 
-        // 2. [NEW] JIKA TETAP TIDAK KETEMU SETELAH 3 HARI
+        // 2. STRICT VALIDATION: Jika tetap tidak ketemu, hapus data task
         if (!foundRouting) {
-          // HAPUS DATA TASK HARI INI (Dianggap Invalid/Salah Input)
-          // Dengan mereset outlets ke 0, data ini tidak akan dirender di Excel/Table
           currData.outlets = 0;
           currData.delivered = 0;
           currData.taskList = [];
@@ -355,7 +358,7 @@ export function calculateTruckDetailData(
     });
   });
 
-  // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
+  // --- 7. POST-PROCESSING ---
   Object.keys(dataMatrix).forEach((dateKey) => {
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];

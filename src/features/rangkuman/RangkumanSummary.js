@@ -1,4 +1,3 @@
-// File: src/features/rangkuman/RangkumanSummary.js
 'use client';
 
 import BodyCard from '@/components/card/BodyCard';
@@ -14,7 +13,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { calculateTargetDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
+import { formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageKmTab from './tabs/AverageKmTab';
@@ -39,7 +38,7 @@ const getInitialDate = () => {
   return targetDate;
 };
 
-// --- FIX 1: Pindahkan helper function ke luar komponen agar tidak trigger re-render ---
+// Helper di luar komponen
 const getRoutingDateKeyFromDateStr = (dateStr) => {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return null;
@@ -163,7 +162,6 @@ export default function RangkumanSummary() {
     }
   }, []);
 
-  // --- FIX 2: Bungkus processTaskSummaryMetrics dengan useCallback ---
   const processTaskSummaryMetrics = useCallback(async (allTasks, allResults) => {
     setIsCalculatingMetrics(true);
     setHistoryProgress(0);
@@ -213,7 +211,6 @@ export default function RangkumanSummary() {
       allTasks.forEach((task) => {
         if (!task.doneTime) return;
         const deliveryDateStr = task.doneTime.substring(0, 10);
-        // Menggunakan helper yang sudah dipindah ke luar
         const dateKey = getRoutingDateKeyFromDateStr(deliveryDateStr);
         if (!dateKey) return;
 
@@ -323,7 +320,7 @@ export default function RangkumanSummary() {
 
     setTaskSummaryMetrics(tempMetrics);
     setIsCalculatingMetrics(false);
-  }, []); // Dependencies kosong karena hanya menggunakan setter state dan helper luar
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
@@ -347,8 +344,20 @@ export default function RangkumanSummary() {
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
 
-      const { dateFrom: routingStartStr } = calculateTargetDates(startStr);
-      const { dateTo: routingEndStr } = calculateTargetDates(endStr);
+      // --- [FIX] PERLEBAR JENDELA BUFFER AWAL UNTUK ROUTING ---
+      const routingStartObj = new Date(startDate);
+      // Sebelumnya -1, sekarang -4 agar mencakup H-2 (Sabtu) atau libur panjang awal bulan
+      routingStartObj.setDate(routingStartObj.getDate() - 4);
+      routingStartObj.setHours(0, 0, 0, 0);
+
+      // Buffer Akhir (+2 hari)
+      const routingEndObj = new Date(endDate);
+      routingEndObj.setDate(routingEndObj.getDate() + 2);
+      routingEndObj.setHours(23, 59, 59, 999);
+
+      const routingStartUtc = formatToApiUtc(routingStartObj);
+      const routingEndUtc = formatToApiUtc(routingEndObj);
+      // -------------------------------------------------------
 
       const locStartDate = new Date(startDate);
       locStartDate.setDate(locStartDate.getDate() - 1);
@@ -386,14 +395,6 @@ export default function RangkumanSummary() {
 
       midNextObj.setHours(0, 0, 0, 0);
       const splitTimeStart = formatToApiUtc(midNextObj);
-
-      const routingStartObj = new Date(routingStartStr);
-      routingStartObj.setHours(0, 0, 0, 0);
-      const routingStartUtc = formatToApiUtc(routingStartObj);
-
-      const routingEndObj = new Date(routingEndStr);
-      routingEndObj.setHours(23, 59, 59, 999);
-      const routingEndUtc = formatToApiUtc(routingEndObj);
 
       const mergeResults = (resArray) => {
         let merged = [];
@@ -526,7 +527,6 @@ export default function RangkumanSummary() {
     } finally {
       setIsLoading(false);
     }
-    // --- FIX 3: Tambahkan processTaskSummaryMetrics ke dependency array ---
   }, [
     selectedLocation,
     selectedDate,

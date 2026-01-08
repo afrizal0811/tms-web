@@ -3,9 +3,13 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
+import { toastError } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
 
 export default function UserDisplay() {
+  const { t, lang, switchLanguage } = useLanguage();
+  const dropdownRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -15,16 +19,11 @@ export default function UserDisplay() {
           return user.name || '';
         }
       } catch (e) {
-        console.error('Gagal memuat user', e);
+        toastError(t('home.toast.error', { err: e.message }));
       }
     }
     return '';
   });
-
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const { t, lang, switchLanguage } = useLanguage();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -73,7 +72,6 @@ export default function UserDisplay() {
       </button>
       {isOpen && (
         <div
-
           className={`
             mt-2 rounded-md ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100
             relative w-full shadow-none border border-gray-100 bg-gray-50
