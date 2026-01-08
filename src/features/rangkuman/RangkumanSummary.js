@@ -641,13 +641,7 @@ export default function RangkumanSummary() {
       }
 
       case 'Pending Reasons': {
-        const year = selectedDate.getFullYear();
-        const month = selectedDate.getMonth();
-        const startStr = formatDateUniversal(new Date(year, month, 1));
-        const filtered = (reportPreview?.pendingReasonsData || []).filter(
-          (item) => formatDateUniversal(item.date || item.doneTime || item.createdTime) >= startStr
-        );
-        return filtered.length === 0;
+        return (reportPreview?.pendingReasonsData || []).length === 0;
       }
 
       case 'Time RO':
@@ -690,9 +684,7 @@ export default function RangkumanSummary() {
           translate: t,
         });
       case 'Pending Reasons':
-        const filteredPendingData = (reportPreview?.pendingReasonsData || []).filter(
-          (item) => formatDateUniversal(item.date || item.doneTime || item.createdTime) >= startStr
-        );
+        const filteredPendingData = reportPreview?.pendingReasonsData || [];
         return renderTabContent(PendingReasonsTab, {
           data: filteredPendingData,
           locationName: selectedLocationName,

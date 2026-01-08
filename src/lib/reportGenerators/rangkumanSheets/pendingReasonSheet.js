@@ -1,8 +1,8 @@
-// File: lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
+// File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
 import { formatDateWIB, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
-// --- HELPER FUNCTIONS ---
+
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 function normalizeEmail(email) {
   return email ? email.toLowerCase().trim() : '';
@@ -39,7 +39,8 @@ function getDriverStorageType(driver) {
   return '-';
 }
 
-export function calculatePendingReasonData(driverData, allTasks) {
+// --- UPDATE: Tambahkan startDateStr & endDateStr ---
+export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
   const processedData = [];
   const driverMap = new Map();
   if (driverData && Array.isArray(driverData)) {
@@ -55,6 +56,20 @@ export function calculatePendingReasonData(driverData, allTasks) {
   const rawTasks = [];
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
+      // --- LOGIKA FILTER TANGGAL ---
+      // Cek apakah tanggal task berada dalam range laporan (Desember)
+      // Abaikan jika task berasal dari buffer (Januari)
+      if (startDateStr && endDateStr) {
+        const dObj = parseApiDateString(task.doneTime || task.createdTime);
+        if (dObj) {
+          const wibDate = formatDateWIB(dObj, 'YYYY-MM-DD');
+          if (wibDate < startDateStr || wibDate > endDateStr) {
+            return; // SKIP data di luar range
+          }
+        }
+      }
+      // -----------------------------
+
       const status = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : '';
       if (TARGET_STATUSES.includes(status)) {
         const email =
@@ -149,15 +164,24 @@ export function calculatePendingReasonData(driverData, allTasks) {
   return processedData;
 }
 
-export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubName, translate) {
-  const data = calculatePendingReasonData(driverData, allTasks);
+// --- UPDATE: Tambahkan startDateStr & endDateStr ke parameter ---
+export function generatePendingReasonSheet(
+  wb,
+  driverData,
+  allTasks,
+  currentHubName,
+  translate,
+  startDateStr,
+  endDateStr
+) {
+  // Pass tanggal ke calculation function
+  const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
   const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
   const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
     (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
   );
 
-  // Headers
   let headers = [
     translate('summary.tabs.pending_reasons.flow'),
     translate('summary.tabs.pending_reasons.date'),
@@ -238,7 +262,6 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     },
   ];
 
-  // --- STYLING ---
   const shift = shouldShowPendingGR ? 0 : -1;
   const idxPending = 6;
   const idxETA = 11 + shift;
@@ -254,29 +277,20 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
       if (!ws[cellRef]) continue;
       const cell = ws[cellRef];
 
-      // HEADER (Row 0)
       if (R === 0) {
         cell.s = HEADER_STYLES.blueHeader;
-      }
-      // DATA ROWS
-      else {
+      } else {
         const dataIdx = R - 1;
         const item = data[dataIdx];
         const nextItem = data[dataIdx + 1];
 
-        // Cek apakah ini baris terakhir untuk tanggal tersebut
         const isLastInDate = !nextItem || item.dateStr !== nextItem.dateStr;
-
-        // Border Bawah: Medium jika ganti tanggal, None jika masih tanggal sama
         const bottomBorder = isLastInDate ? BORDERS.medium : { style: 'none' };
-
-        // Border Atas: Thin jika Baris Pertama data, None jika bukan (biar nyambung)
         const topBorder = R === 1 ? BORDERS.thin : { style: 'none' };
 
         let currentStyle = {
           ...BASE_STYLES.cellCenter,
           border: {
-            // --- 2. HAPUS BORDER KIRI & KANAN (SESUAI PERMINTAAN) ---
             left: { style: 'none' },
             right: { style: 'none' },
             top: topBorder,
@@ -302,7 +316,6 @@ export function generatePendingReasonSheet(wb, driverData, allTasks, currentHubN
     }
   }
 
-  // --- 3. SET COL WIDTHS ---
   ws['!cols'] = [
     { wch: 10 },
     { wch: 12 },
