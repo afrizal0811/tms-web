@@ -4,6 +4,7 @@ import {
   formatDateWIB,
   formatMinutesToHHMM,
   getUTC7DateString,
+  parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
@@ -246,7 +247,13 @@ export function calculateTruckDetailData(
         }
         const entry = dataMatrix[dateKey][email];
         entry.outlets += 1;
-        const status = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : '';
+        const flow = task.flow || '';
+        const status =
+          flow !== 'Pickup'
+            ? task.statusDelivery && task.statusDelivery.length > 0
+              ? task.statusDelivery[0].toUpperCase()
+              : ''
+            : task.status && task.status.toUpperCase();
         if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
 
         const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
@@ -268,7 +275,6 @@ export function calculateTruckDetailData(
         const rawSO = task.content || '-';
         const formattedSO = rawSO.replace(/,/g, ', ');
 
-        const flow = task.flow || '';
         const isGR = flow.toUpperCase().includes('GR');
         let arrivalSource;
         if (isGR) {
@@ -281,10 +287,11 @@ export function calculateTruckDetailData(
         const realStartTimeStr = arrivalSource
           ? formatDateTimeWIB(arrivalSource)
           : formatDateTimeWIB(task.startTime);
+        const { name: customerName } = parseCustomerString(task.customerOrder);
 
         entry.taskList.push({
           _tempId: Math.random().toString(36).substr(2, 9),
-          customerName: task.customerName,
+          customerName: customerName,
           soNumber: formattedSO,
           flow: flow,
           status: status,

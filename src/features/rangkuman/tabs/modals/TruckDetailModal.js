@@ -15,19 +15,25 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
     BATAL: 'bg-[#dc2626] text-white',
     'PENDING GR': 'bg-[#d97706] text-white',
     DEFAULT: 'bg-slate-100 text-slate-600',
+    DONE: 'bg-[#16a34a] text-white',
+    ONGOING: 'bg-[#ca8a04] text-white',
   };
+
   const STATUS_LANGUAGE = {
     SUKSES: translate('summary.tabs.truck_detail.modal.success'),
     PENDING: translate('summary.tabs.truck_detail.modal.pending'),
     'TERIMA SEBAGIAN': translate('summary.tabs.truck_detail.modal.pending_gr'),
     BATAL: translate('summary.tabs.truck_detail.modal.cancel'),
     'PENDING GR': translate('summary.tabs.truck_detail.modal.pending_gr'),
+    DONE: translate('summary.tabs.truck_detail.modal.done'),
+    ONGOING: translate('summary.tabs.truck_detail.modal.ongoing'),
   };
 
   const ERROR_COLORS = {
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
   };
+
   const getStatusClass = (status) => {
     if (!status) return STATUS_COLORS.DEFAULT;
     const s = status.toUpperCase();
