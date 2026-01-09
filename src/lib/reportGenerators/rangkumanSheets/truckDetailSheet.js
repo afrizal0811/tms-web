@@ -26,21 +26,27 @@ const ERROR_STYLES = {
   },
 };
 
-// --- HELPER DATE ---
+// --- HELPER DATE (ORIGINAL LOGIC - ROBUST) ---
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
     const date = new Date(isoString);
-    // Manual adjustment +7 Jam (WIB) untuk calculation
-    const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
-    const dateWIB = new Date(wibTimestamp);
+    // Geser ke WIB (UTC+7) dalam miliseconds
+    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
 
-    const routingDay = dateWIB.getUTCDay();
+    // Ambil hari (0=Minggu, 6=Sabtu)
+    const routingDay = wibDate.getUTCDay();
+
     let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
+    // Jika Sabtu (6) -> Senin (+2 hari)
+    if (routingDay === 6) offsetDays = 2;
 
-    const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryTimestamp).toISOString().split('T')[0];
+    // Tambahkan offset
+    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
+
+    // Return YYYY-MM-DD
+    return new Date(deliveryMs).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
@@ -109,7 +115,7 @@ export function calculateTruckDetailData(
     });
   }
 
-  // 2. Init Date Range (UTC FIX)
+  // 2. Init Date Range (UTC Loop)
   const dateKeys = [];
   const dataMatrix = {};
 
@@ -125,7 +131,7 @@ export function calculateTruckDetailData(
     const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
 
-    // Display Date
+    // Format Display
     const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
     const dayNum = safeDate.getDate();
     const monthName = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
@@ -137,11 +143,12 @@ export function calculateTruckDetailData(
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
-  // 4. Process Routing (Results)
+  // 4. Process Routing (Results) - LOGIKA H+1 KEMBALI DIGUNAKAN
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
       if (isDone && dispatch.result && Array.isArray(dispatch.result.routing)) {
+        // GUNAKAN HELPER (H+1 logic)
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
 
         if (dateKey && dateKey >= startDateStr && dateKey <= endDateStr && dataMatrix[dateKey]) {
@@ -292,7 +299,7 @@ export function calculateTruckDetailData(
     });
   }
 
-  // --- 6. LOGIKA LOOKBACK (STRICT VALIDATION RESTORED) ---
+  // --- 6. LOGIKA LOOKBACK + STRICT VALIDATION ---
   const LOOKBACK_LIMIT = 3;
   const sortedDateKeys = dateKeys.map((d) => d.str).sort();
 
@@ -306,7 +313,7 @@ export function calculateTruckDetailData(
       const hasTasks = currData.outlets > 0;
       const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
 
-      // KONDISI: Ada Task TAPI Tidak Ada Routing
+      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur/Error)
       if (hasTasks && !hasRouting) {
         let foundRouting = false;
 
@@ -324,7 +331,7 @@ export function calculateTruckDetailData(
 
             // SYARAT: Hari sebelumnya punya Routing TAPI Tidak ada Task
             if (prevHasRouting && !prevHasTasks) {
-              // FOUND!
+              // FOUND! Pindahkan data
               currData.weight = prevData.weight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
@@ -346,7 +353,7 @@ export function calculateTruckDetailData(
           }
         }
 
-        // 2. STRICT VALIDATION: Jika tetap tidak ketemu, hapus data task
+        // 2. STRICT VALIDATION: Jika setelah Lookback tetap tidak ketemu -> HAPUS DATA TASK
         if (!foundRouting) {
           currData.outlets = 0;
           currData.delivered = 0;
@@ -358,7 +365,7 @@ export function calculateTruckDetailData(
     });
   });
 
-  // --- 7. POST-PROCESSING ---
+  // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
   Object.keys(dataMatrix).forEach((dateKey) => {
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];

@@ -194,7 +194,7 @@ export default function BodyCard({
       {/* --- SCROLL HINT OVERLAY --- */}
       {!isLoading && !isEmpty && showScrollHint && (
         // Menggunakan bg-linear-to-t sesuai warning linter terbaru
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white via-white/50 to-transparent pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
           <div className="flex flex-col items-center animate-bounce">
             <span className="text-[10px] uppercase font-bold tracking-widest text-sky-600 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
               {t('common.scroll_down')}
