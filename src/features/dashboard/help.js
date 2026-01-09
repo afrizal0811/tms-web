@@ -1,5 +1,5 @@
-import * as XLSX from 'xlsx-js-style';
 import { formatDateUniversal } from '@/lib/utils';
+import * as XLSX from 'xlsx-js-style';
 
 export const downloadRoutingVsActual = (data, t) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -88,7 +88,7 @@ export const downloadRoutingVsActual = (data, t) => {
         ? '-'
         : isMatch
           ? t('dashboard.tab.routingreal.match')
-          : t('dashboard.tab.routingreal.mismatch');;
+          : t('dashboard.tab.routingreal.mismatch');
 
     sheetData.push([
       flow,
@@ -334,29 +334,33 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
   return monthlyData;
 };
 
-export const getStatusBadge = (pct) => {
+export const getStatusBadge = (pct, t) => {
   if (pct > 100)
-    return { label: 'OVERLOAD', classes: 'bg-red-50 text-red-600 border-red-200', range: '> 100%' };
+    return {
+      label: t('dashboard.charts.load_capacity.overload'),
+      classes: 'bg-red-50 text-red-600 border-red-200',
+      range: '> 100%',
+    };
   if (pct >= 85)
     return {
-      label: 'PENUH',
+      label: t('dashboard.charts.load_capacity.full'),
       classes: 'bg-orange-50 text-orange-600 border-orange-200',
       range: '85-100%',
     };
   if (pct >= 60)
     return {
-      label: 'OPTIMAL',
+      label: t('dashboard.charts.load_capacity.optimal'),
       classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
       range: '60-85%',
     };
   if (pct >= 40)
     return {
-      label: 'RENDAH',
+      label: t('dashboard.charts.load_capacity.low'),
       classes: 'bg-blue-50 text-blue-600 border-blue-200',
       range: '40-60%',
     };
   return {
-    label: 'SGT RENDAH',
+    label: t('dashboard.charts.load_capacity.very_low'),
     classes: 'bg-slate-100 text-slate-600 border-slate-200',
     range: '< 40%',
   };

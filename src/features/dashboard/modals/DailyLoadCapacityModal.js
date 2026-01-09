@@ -140,7 +140,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                 <RechartsTooltip
                   cursor={{ fill: '#f1f5f9' }}
                   content={({ active, payload, label }) => {
-                    /* ... tooltip content ... */ if (active && payload && payload.length) {
+                    if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-slate-800 text-white text-xs p-2 rounded shadow-lg z-50 min-w-[150px]">
@@ -248,7 +248,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                   const volVal = Number(trip.totalVolume || 0);
                   const maxVolVal = Number(trip.maxVolume || 1);
                   const volPct = Number(trip.volPct || 0);
-                  const status = getStatusBadge(trip.maxPct);
+                  const status = getStatusBadge(trip.maxPct, t);
 
                   return (
                     <div
