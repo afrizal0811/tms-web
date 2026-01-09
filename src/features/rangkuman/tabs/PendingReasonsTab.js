@@ -123,7 +123,7 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
           <tr>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.flow')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.date')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.lisence')}</th>
+            <th className={thClass}>{translate('summary.tabs.pending_reasons.license')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.driver')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.cancel')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.partial')}</th>

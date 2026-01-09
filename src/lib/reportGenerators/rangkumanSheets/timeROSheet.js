@@ -14,9 +14,6 @@ const createSafeDate = (dateStr) => {
   return new Date(y, m - 1, d, 12, 0, 0);
 };
 
-// ==========================
-// MAIN
-// ==========================
 export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, isIndo) {
   const dataMap = {};
   const start = createSafeDate(startDateStr);
@@ -27,9 +24,6 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   nextDay.setDate(nextDay.getDate() + 1);
   const nextDayKey = formatDateWIB(nextDay, 'YYYY-MM-DD');
 
-  // =====================
-  // Generate tanggal
-  // =====================
   const current = new Date(start);
   while (current <= end) {
     const key = formatDateWIB(current, 'YYYY-MM-DD');
@@ -46,15 +40,18 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
     current.setDate(current.getDate() + 1);
   }
 
-  // =====================
-  // Mapping tasks
-  // =====================
   if (Array.isArray(tasks)) {
     tasks.forEach((task) => {
       if (task.createdFrom !== 'API') return;
       if (!task.createdTime) return;
 
-      const taskDateKey = formatDateWIB(task.createdTime, 'YYYY-MM-DD');
+      let taskDateKey = formatDateWIB(task.createdTime, 'YYYY-MM-DD');
+
+      // --- UPDATE LOGIKA RE-MAPPING EXCEL ---
+      // Pindahkan 2 Jan ke 31 Des HANYA JIKA '2025-12-31' ada di range sheet ini.
+      if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
+        taskDateKey = '2025-12-31';
+      }
 
       const targetKey =
         taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
@@ -74,9 +71,6 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
     });
   }
 
-  // =====================
-  // Build Excel
-  // =====================
   const excelData = [
     [
       translate('summary.tabs.time_ro.date_ro'),
@@ -95,7 +89,6 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
         const rowIndex = excelData.length;
         excelData.push([row.dateDisplay, translate('summary.tabs.time_ro.holiday'), '']);
 
-        // 🔴 MERGE Start RO & End RO (B:C)
         merges.push({
           s: { r: rowIndex, c: 1 },
           e: { r: rowIndex, c: 2 },
@@ -113,18 +106,13 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   ws['!merges'] = merges;
 
-  // =====================
-  // Styling
-  // =====================
   const range = XLSX.utils.decode_range(ws['!ref']);
 
-  // Header
   for (let C = 0; C <= 2; C++) {
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
     if (cell) cell.s = HEADER_STYLES.main;
   }
 
-  // Body
   for (let R = 1; R <= range.e.r; R++) {
     const isSunday = excelData[R][1] === 'Libur (Minggu)' || excelData[R][1] === 'Holiday (Sunday)';
     for (let C = 0; C <= 2; C++) {

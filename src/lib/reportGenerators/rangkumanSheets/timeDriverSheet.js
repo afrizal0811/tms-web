@@ -1,4 +1,4 @@
-// File: lib/reportGenerators/rangkumanSheets/timeDriverSheet.js
+// File: src/lib/reportGenerators/rangkumanSheets/timeDriverSheet.js
 import { formatDateWIB, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
@@ -35,6 +35,7 @@ function getDayDifferenceWIB(startObj, finishObj) {
   const diffTime = Math.abs(f - s);
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
+
 function getDriverStorageType(driver) {
   const typeStr = driver.type || '';
   const nameStr = driver.name || '';
@@ -82,29 +83,29 @@ export function calculateTimeDriverData(
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
+
   const dataMatrix = {};
   dateKeys.forEach((d) => {
     dataMatrix[d.str] = {};
   });
+
   if (locationHistoryData && Array.isArray(locationHistoryData)) {
     locationHistoryData.forEach((item) => {
       const email = normalizeEmail(item.email);
       if (!email || !driverMap.has(email)) return;
+
       const trackedTime = Math.abs(item.trackedTime || 0);
       const totalDistance = item.finish ? item.finish.totalDistance || 0 : 0;
+
+      // Filter Logika
       if (trackedTime < 10) return;
       if (totalDistance <= 5) return;
+
       const startObj = parseApiDateString(item.startTime);
       const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
       const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
+
       if (dateKey && dataMatrix[dateKey]) {
-        const existingEntry = dataMatrix[dateKey][email];
-        if (existingEntry) {
-          const existingStartObj = parseApiDateString(existingEntry.startTimeISO);
-          if (existingStartObj && existingStartObj.getTime() >= startObj.getTime()) {
-            return;
-          }
-        }
         const startStr = formatDateWIB(startObj, 'HH:mm');
         const finishStr = formatDateWIB(finishObj, 'HH:mm');
         let durationStr = '-';
@@ -113,23 +114,48 @@ export function calculateTimeDriverData(
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
-        dataMatrix[dateKey][email] = {
+
+        const entry = {
           startTimeISO: item.startTime,
+          finishTimeISO: item.finish?.finishTime,
           startDisplay: startStr,
           finishDisplay: finishStr,
           durationDisplay: durationStr,
           dayDiff: dayDiff,
           hasData: true,
+          distance: totalDistance,
+          trackedTime: trackedTime,
         };
+
+        if (!dataMatrix[dateKey][email]) {
+          dataMatrix[dateKey][email] = {
+            ...entry,
+            entries: [entry],
+          };
+        } else {
+          const currentData = dataMatrix[dateKey][email];
+          currentData.entries.push(entry);
+
+          currentData.entries.sort((a, b) => {
+            const dA = new Date(a.startTimeISO || 0);
+            const dB = new Date(b.startTimeISO || 0);
+            return dA - dB;
+          });
+
+          const latestEntry = currentData.entries[currentData.entries.length - 1];
+          Object.assign(currentData, latestEntry);
+        }
       }
     });
   }
+
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
     if (p.includes('SEWA')) return 2;
     return 1;
   };
+
   driverEmails.sort((a, b) => {
     const driverA = driverMap.get(a);
     const driverB = driverMap.get(b);
@@ -138,6 +164,7 @@ export function calculateTimeDriverData(
     if (prioA !== prioB) return prioA - prioB;
     return (driverA.name || '').localeCompare(driverB.name || '');
   });
+
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
@@ -157,24 +184,17 @@ export function generateTimeDriverSheet(
     endDateStr,
     isIndo
   );
-  // --- STYLES ---
-  const headerStyle = {
-    ...BASE_STYLES.center,
-    font: FONT_STYLES.bold,
-    // Header tetap pakai box border agar rapi
-    border: BORDERS.thin,
-  };
 
-  // Style Base untuk Data (Alignment Center)
+  const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };
   const dataStyle = {
     ...BASE_STYLES.center,
     font: { name: 'Calibri', sz: 11 },
+    alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
   };
 
-  // --- BUILD DATA ---
   const row1 = [
     translate('summary.tabs.time_driver.temp'),
-    translate('summary.tabs.time_driver.lisence'),
+    translate('summary.tabs.time_driver.license'),
     translate('summary.tabs.time_driver.driver'),
   ];
   const row2 = ['', '', ''];
@@ -187,24 +207,39 @@ export function generateTimeDriverSheet(
     );
   });
   const excelData = [row1, row2];
+
   driverEmails.forEach((email) => {
     const driver = driverMap.get(email);
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
+
       if (metrics && metrics.hasData) {
-        let finishText = metrics.finishDisplay;
-        if (metrics.dayDiff > 0) finishText += ` (+${metrics.dayDiff})`;
-        row.push(metrics.startDisplay, finishText, metrics.durationDisplay);
+        if (metrics.entries && metrics.entries.length > 1) {
+          const startText = metrics.entries.map((e) => e.startDisplay).join('\n');
+          const finishText = metrics.entries
+            .map((e) => {
+              let f = e.finishDisplay;
+              if (e.dayDiff > 0) f += ` (+${e.dayDiff})`;
+              return f;
+            })
+            .join('\n');
+          const durationText = metrics.entries.map((e) => e.durationDisplay).join('\n');
+
+          row.push(startText, finishText, durationText);
+        } else {
+          let finishText = metrics.finishDisplay;
+          if (metrics.dayDiff > 0) finishText += ` (+${metrics.dayDiff})`;
+          row.push(metrics.startDisplay, finishText, metrics.durationDisplay);
+        }
       } else {
         row.push(null, null, null);
       }
     });
     excelData.push(row);
   });
-  const ws = XLSX.utils.aoa_to_sheet(excelData);
 
-  // --- MERGES ---
+  const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
   merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
   merges.push({ s: { r: 0, c: 1 }, e: { r: 1, c: 1 } });
@@ -216,78 +251,71 @@ export function generateTimeDriverSheet(
   });
   ws['!merges'] = merges;
 
-  // --- STYLING LOOP ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
-
       let cellFill = null;
+      let fontStyle = dataStyle.font; // Default font
 
-      // Tentukan Warna Header (Sama seperti sebelumnya)
       if (C <= 2) {
-        if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry }; // Peach
+        if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
       } else {
         const dateIdx = Math.floor((C - 3) / 3);
+
         if (dateKeys[dateIdx]) {
           const dObj = new Date(dateKeys[dateIdx].str);
-          if (dObj.getUTCDay() === 0)
-            cellFill = FILL_STYLES.red; // Minggu
-          else {
-            if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen }; // Biru
-            if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry }; // Peach
+
+          // Style Header Hari Minggu
+          if (dObj.getUTCDay() === 0) {
+            cellFill = FILL_STYLES.red;
+          } else {
+            if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
+            if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
+          }
+          if (R >= 2) {
+            const driverIdx = R - 2;
+            const driverEmail = driverEmails[driverIdx];
+            const dateStr = dateKeys[dateIdx].str;
+
+            if (driverEmail && dateStr) {
+              const m = dataMatrix[dateStr][driverEmail];
+              if (m && m.entries && m.entries.length > 1) {
+                cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
+                fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+              }
+            }
           }
         }
       }
 
-      // --- HEADER (Row 0 & 1) ---
       if (R === 0 || R === 1) {
         cell.s = { ...headerStyle };
         if (cellFill) cell.s.fill = cellFill;
-
-        // Tambah border kanan tebal untuk pemisah grup di header
         if (C === 2) cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
         else if (C > 2 && (C - 2) % 3 === 0)
           cell.s.border = { ...BORDERS.thin, right: BORDERS.medium };
-      }
-
-      // --- DATA ROWS (Row >= 2) ---
-      else {
-        cell.s = { ...dataStyle };
+      } else {
+        cell.s = { ...dataStyle, font: fontStyle };
         if (cellFill) cell.s.fill = cellFill;
 
-        // Alignment untuk kolom Info
         if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
 
-        // --- LOGIKA BORDER BARU (Tanpa Atas Bawah, Grouping Kanan Kiri) ---
         let borderLeft = { style: 'none' };
         let borderRight = { style: 'none' };
         const borderTop = { style: 'none' };
         const borderBottom = { style: 'none' };
-
-        // 1. Kolom Info (0, 1, 2)
         if (C <= 2) {
           borderLeft = { style: 'thin' };
           borderRight = { style: 'thin' };
-          // Kolom Driver (idx 2) dikasih batas kanan tebal
           if (C === 2) borderRight = BORDERS.medium;
+        } else {
+          const relIdx = (C - 3) % 3;
+          if (relIdx === 0) borderLeft = BORDERS.medium;
+          if (relIdx === 2) borderRight = BORDERS.medium;
         }
-        // 2. Kolom Tanggal (3, 4, 5 | 6, 7, 8 | ...)
-        else {
-          const relIdx = (C - 3) % 3; // 0=Start, 1=Finish, 2=Duration
-
-          // Awal Grup Tanggal (Start Time) -> Border Kiri Medium
-          if (relIdx === 0) {
-            borderLeft = BORDERS.medium;
-          }
-          // Akhir Grup Tanggal (Duration) -> Border Kanan Medium
-          if (relIdx === 2) {
-            borderRight = BORDERS.medium;
-          }
-        }
-
         cell.s.border = {
           top: borderTop,
           bottom: borderBottom,
@@ -297,10 +325,8 @@ export function generateTimeDriverSheet(
       }
     }
   }
-
   const cols = [{ wch: 12 }, { wch: 15 }, { wch: 30 }];
   for (let i = 0; i < dateKeys.length * 3; i++) cols.push({ wch: 10 });
   ws['!cols'] = cols;
-
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.time_driver.title'));
 }

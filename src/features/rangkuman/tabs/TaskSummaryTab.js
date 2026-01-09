@@ -128,11 +128,11 @@ export default function TaskSummaryTab({
   const cGray = 'bg-[#cccccc]';
   const cViolet = 'bg-[#d9d2e9]';
 
-  const headerData = (tootltip, color, text) => {
+  const headerData = (tooltip, color, text) => {
     return (
-      <Tooltip tooltipContent={tootltip}>
+      <Tooltip tooltipContent={tooltip}>
         <th className={`cursor-help px-2 py-3 border border-gray-300 min-w-[60px] ${color}`}>
-          {text}
+          <span className="border-b-[1.5px] border-dashed border-gray-600 pb-px">{text}</span>
         </th>
       </Tooltip>
     );

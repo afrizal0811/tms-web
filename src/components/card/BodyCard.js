@@ -19,7 +19,7 @@ const LoadingState = ({ elapsed, text }) => (
 export default function BodyCard({
   children,
   isLoading = false,
-  loadingText = 'Sedang memuat data...',
+  loadingText = '',
   isEmpty = false,
   emptyMessage,
   tabs = [],
@@ -48,8 +48,8 @@ export default function BodyCard({
       return;
     }
 
-    const isScrollable = target.scrollHeight > target.clientHeight;
-    // Toleransi 10px
+    const isScrollable =
+      target.scrollHeight > target.clientHeight && target.scrollHeight - target.clientHeight > 50;
     const isAtBottom =
       Math.ceil(target.scrollTop + target.clientHeight) >= target.scrollHeight - 10;
 
@@ -173,7 +173,7 @@ export default function BodyCard({
       >
         {isLoading ? (
           <>
-            <LoadingState elapsed={elapsedTime} text={loadingText} />
+            <LoadingState elapsed={elapsedTime} text={loadingText || t('common.loading')} />
             {longLoadingContent && elapsedTime > 120 && (
               <div className="absolute top-36 left-0 right-0 z-50 flex justify-center pointer-events-none">
                 <div className="pointer-events-auto">{longLoadingContent}</div>
@@ -194,7 +194,7 @@ export default function BodyCard({
       {/* --- SCROLL HINT OVERLAY --- */}
       {!isLoading && !isEmpty && showScrollHint && (
         // Menggunakan bg-linear-to-t sesuai warning linter terbaru
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white via-white/50 to-transparent pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
           <div className="flex flex-col items-center animate-bounce">
             <span className="text-[10px] uppercase font-bold tracking-widest text-sky-600 mb-1 bg-white/50 px-2 rounded backdrop-blur-sm">
               {t('common.scroll_down')}

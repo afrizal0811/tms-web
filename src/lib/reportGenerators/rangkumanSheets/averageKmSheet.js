@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
-import { formatDateUniversal } from '@/lib/utils';
+import { normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -21,26 +21,41 @@ function formatMonthRange(startDateStr, endDateStr, isIndo) {
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-function getDeliveryDateFromRouting(isoString) {
-  if (!isoString) return null;
+function determineTargetDate(createdTimeStr, apiRoutingDate) {
+  if (!createdTimeStr) return null;
+
   try {
-    const date = new Date(isoString);
-    const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
-    const dateWIB = new Date(wibTimestamp);
-    const routingDay = dateWIB.getUTCDay();
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2;
-    const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryTimestamp).toISOString().split('T')[0];
+    const d = new Date(createdTimeStr);
+    const wibMs = d.getTime() + 7 * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
+    const dayOfWeek = wibDate.getUTCDay(); // 0=Minggu, 6=Sabtu
+
+    if (dayOfWeek === 6) {
+      const mondayMs = wibMs + 2 * 24 * 60 * 60 * 1000;
+      return new Date(mondayMs).toISOString().split('T')[0];
+    }
+
+    if (apiRoutingDate) {
+      return apiRoutingDate;
+    }
+
+    const tomorrowMs = wibMs + 1 * 24 * 60 * 60 * 1000;
+    return new Date(tomorrowMs).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
 }
 
-/**
- * BAGIAN 1: LOGIKA PERHITUNGAN
- */
-export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo) {
+export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo, driverData) {
+  const driverMap = new Map();
+  if (driverData && Array.isArray(driverData)) {
+    driverData.forEach((d) => {
+      if (d.email) {
+        driverMap.set(normalizeEmail(d.email), d.name);
+      }
+    });
+  }
+
   const dailyVehicleMap = {};
 
   if (resultsData && Array.isArray(resultsData)) {
@@ -49,7 +64,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
       const hasResult = dispatch.result && Array.isArray(dispatch.result.routing);
 
       if (isDone && hasResult) {
-        const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
+        const dateKey = determineTargetDate(dispatch.createdTime, dispatch.routingDate);
         const dispatchTimestamp = new Date(dispatch.createdTime).getTime();
 
         if (dateKey) {
@@ -60,6 +75,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
             const vehicleId = route.vehicleId || route.vehicleName;
             const existingEntry = dailyVehicleMap[dateKey].get(vehicleId);
             if (!existingEntry || dispatchTimestamp > existingEntry.dispatchTimestamp) {
+              route.dispatchTimestamp = dispatchTimestamp;
               dailyVehicleMap[dateKey].set(vehicleId, route);
             }
           });
@@ -69,8 +85,12 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
   }
 
   const summaryData = [];
-  const currentIterDate = new Date(startDateStr);
-  const endDateObj = new Date(endDateStr);
+
+  const [sY, sM, sD] = startDateStr.split('-').map(Number);
+  const [eY, eM, eD] = endDateStr.split('-').map(Number);
+
+  const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
+  const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
   let monthTotals = {
     range: formatMonthRange(startDateStr, endDateStr, isIndo),
@@ -82,9 +102,14 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
   };
 
   while (currentIterDate <= endDateObj) {
-    const currentDateString = formatDateUniversal(currentIterDate);
-    const displayDate = formatLongDate(currentIterDate, isIndo);
-    const isSunday = currentIterDate.getDay() === 0;
+    const y = currentIterDate.getUTCFullYear();
+    const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
+    const currentDateString = `${y}-${m}-${d}`;
+
+    const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
+    const displayDate = formatLongDate(safeDate, isIndo);
+    const isSunday = currentIterDate.getUTCDay() === 0;
 
     let rowData = {
       date: displayDate,
@@ -95,6 +120,8 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
       frozenKm: 0,
       totalKm: 0,
       avgKm: 0,
+      dryDetails: [],
+      frozenDetails: [],
     };
 
     if (!isSunday) {
@@ -104,21 +131,61 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
           const hasTrips = route.trips && route.trips.length > 0;
           if (hasTrips) {
             const tags = route.vehicleTags || [];
-            const distMeter = route.totalDistance || 0;
+
+            let distMeter = route.totalDistance || 0;
+
+            if (distMeter === 0 && Array.isArray(route.trips)) {
+              distMeter = route.trips.reduce((acc, trip) => {
+                if (!trip.isHub) {
+                  return acc + (trip.distance || 0);
+                }
+                return acc;
+              }, 0);
+            }
+
+            const distKm = distMeter / 1000;
+
             const isFrozen = tags.some(
               (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
             );
 
+            const rawEmail = route.assignee || route.email;
+            let finalDriverName = '-';
+
+            if (rawEmail) {
+              const normalized = normalizeEmail(rawEmail);
+              if (driverMap.has(normalized)) {
+                finalDriverName = driverMap.get(normalized);
+              } else {
+                finalDriverName = route.driverProfile?.name || rawEmail;
+              }
+            } else {
+              finalDriverName = route.driverProfile?.name || '-';
+            }
+
+            const detailItem = {
+              plate: route.vehicleName || route.vehicleId,
+              driverName: finalDriverName,
+              distance: distKm,
+              visit: route.trips.length,
+            };
+
             if (isFrozen) {
               rowData.frozenCount++;
-              rowData.frozenKm += distMeter / 1000;
+              rowData.frozenKm += distKm;
+              rowData.frozenDetails.push(detailItem);
             } else {
               rowData.dryCount++;
-              rowData.dryKm += distMeter / 1000;
+              rowData.dryKm += distKm;
+              rowData.dryDetails.push(detailItem);
             }
           }
         });
       }
+
+      rowData.dryDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+      rowData.frozenDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+
       rowData.totalKm = rowData.dryKm + rowData.frozenKm;
       const dailyTotalVehicle = rowData.dryCount + rowData.frozenCount;
       rowData.avgKm = dailyTotalVehicle > 0 ? rowData.totalKm / dailyTotalVehicle : 0;
@@ -129,7 +196,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
     }
 
     summaryData.push(rowData);
-    currentIterDate.setDate(currentIterDate.getDate() + 1);
+    currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
   monthTotals.totalKm = monthTotals.dryKm + monthTotals.frozenKm;
@@ -139,20 +206,24 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
   return { summaryData, monthTotals };
 }
 
-/**
- * BAGIAN 2: GENERATOR EXCEL (Merged + Styled, Minggu gabungan tanggal + label)
- */
-export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo) {
+export function generateAverageKmSheet(
+  wb,
+  resultsData,
+  startDateStr,
+  endDateStr,
+  translate,
+  isIndo
+) {
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr,
-    isIndo
+    isIndo,
+    []
   );
 
-  // --- CONTENT ---
   const monthHeader1 = [
-    `${translate('summary.tabs.average_km.date')} (${translate('summary.tabs.average_km.month')})`,
+    `${translate('summary.tabs.average_km.date') || 'Routing Date'} (${translate('summary.tabs.average_km.month')})`,
     translate('summary.tabs.average_km.km_routing'),
     '',
     translate('summary.tabs.average_km.total_km_routing'),
@@ -168,7 +239,7 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   ];
 
   const dailyHeader1 = [
-    translate('summary.tabs.average_km.date'),
+    translate('summary.tabs.average_km.date') || 'Routing Date',
     translate('summary.tabs.average_km.total_vehicle'),
     '',
     translate('summary.tabs.average_km.km_routing'),
@@ -178,16 +249,8 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
-  const excelData = [
-    monthHeader1,
-    monthHeader2,
-    monthDataRow,
-    [''], // Spacer
-    dailyHeader1,
-    dailyHeader2,
-  ];
+  const excelData = [monthHeader1, monthHeader2, monthDataRow, [''], dailyHeader1, dailyHeader2];
 
-  // Isi baris harian — tanggal tetap dimasukkan (untuk Minggu kita pakai tanggal kemudian override isi merged cell)
   const excelRows = excelData;
   summaryData.forEach((row) => {
     if (row.isSunday) {
@@ -205,17 +268,13 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
     }
   });
 
-  // buat sheet dari array
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
 
-  // --- STATIC MERGES (table headers dll) ---
   const staticMerges = [
-    // Table 1
     { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
     { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
     { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
     { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
-    // Table 2 (Start Row 4)
     { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } },
     { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } },
     { s: { r: 4, c: 3 }, e: { r: 4, c: 4 } },
@@ -229,14 +288,10 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
   summaryData.forEach((row, idx) => {
     if (row.isSunday) {
       const rowIndex = 6 + idx;
-
-      // Merge B..G
       ws['!merges'].push({
         s: { r: rowIndex, c: 1 },
         e: { r: rowIndex, c: 6 },
       });
-
-      // Kolom A → tanggal tetap tampil + merah
       const dateCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
       ws[dateCellRef].s = {
         ...BASE_STYLES.cellCenter,
@@ -244,8 +299,6 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
         font: { bold: true },
         alignment: { horizontal: 'center', vertical: 'center' },
       };
-
-      // Kolom B merged → isi Libur (Minggu)
       const mergedCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 1 });
       ws[mergedCellRef] = {
         t: 's',
@@ -257,23 +310,17 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
           alignment: { horizontal: 'center', vertical: 'center' },
         },
       };
-
-      // Kosongkan C..G
       for (let c = 2; c <= 6; c++) {
         const emptyRef = XLSX.utils.encode_cell({ r: rowIndex, c });
         ws[emptyRef] = {
           t: 's',
           v: '',
-          s: {
-            ...BASE_STYLES.cellCenter,
-            fill: FILL_STYLES.red,
-          },
+          s: { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red },
         };
       }
     }
   });
 
-  // --- STYLING SELURUH SHEET (headers, angka, kolom warna, dsb) ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -281,41 +328,24 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // 1. TABLE 1 (MONTHLY) - Rows 0-2
       if (R < 3) {
-        // --- MODIFIKASI: JANGAN BERI STYLE JIKA KOLOM > 4 (E) ---
         if (C > 4) continue;
-        // --------------------------------------------------------
-
         cell.s = { ...BASE_STYLES.cellCenter };
-
-        if (R === 0 || R === 1) {
-          cell.s = { ...HEADER_STYLES.main };
-        }
-
+        if (R === 0 || R === 1) cell.s = { ...HEADER_STYLES.main };
         if (R === 2 && C >= 1) {
           cell.t = 'n';
           cell.s = { ...cell.s, numFmt: '#,##0.000' };
           if (C === 1) cell.s.fill = FILL_STYLES.dry;
           if (C === 2) cell.s.fill = FILL_STYLES.frozen;
         }
-      }
-
-      // 2. TABLE 2 (DAILY) - Rows 4+
-      else if (R >= 4) {
-        // Headers (Row 4 & 5)
+      } else if (R >= 4) {
         if (R === 4 || R === 5) {
           cell.s = { ...HEADER_STYLES.main };
-        }
-        // Data Rows (Row 6+)
-        else {
+        } else {
           const dataIndex = R - 6;
           const rowData = summaryData[dataIndex];
-
-          // Jika baris Minggu (sudah kita merge & set style pada sel A), berikan style khusus
           if (rowData && rowData.isSunday) {
             if (C === 0) {
-              // kolom A (tanggal) — sudah di-set sebelumnya; pastikan tetap pakai fill merah & centered
               cell.s = {
                 ...((ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter),
                 fill: FILL_STYLES.red,
@@ -324,8 +354,6 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
               };
               cell.t = 's';
             } else if (C === 1) {
-              // kolom B (awal merged cell) — jangan overwrite jika style sudah ada,
-              // tapi pastikan alignment & wrapText disetel
               const existing = (ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter;
               cell.s = {
                 ...existing,
@@ -335,19 +363,12 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
               };
               cell.t = 's';
             } else {
-              // kolom C..G tetap kosong tampilannya tapi warna ikut merah
-              cell.s = {
-                ...BASE_STYLES.cellCenter,
-                fill: FILL_STYLES.red,
-              };
+              cell.s = { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red };
               cell.t = 's';
             }
-            continue; // skip numeric formatting
+            continue;
           }
-
-          // bukan Minggu: normal formatting
           cell.s = { ...BASE_STYLES.cellCenter };
-
           if (rowData) {
             if (C >= 1) {
               cell.t = 'n';
@@ -356,7 +377,6 @@ export function generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr
               } else {
                 cell.s.numFmt = '#,##0.000';
               }
-
               if (C === 3) cell.s.fill = FILL_STYLES.dry;
               if (C === 4) cell.s.fill = FILL_STYLES.frozen;
             } else {

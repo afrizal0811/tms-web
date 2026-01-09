@@ -96,6 +96,8 @@
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
+│   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── TimeDriverModal.js
 │   │       │   └── TruckDetailModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── PlaceholderTab.js

@@ -1,48 +1,95 @@
 // File: src/features/rangkuman/tabs/AverageKmTab.js
-export default function AverageKmTab({ data, monthTotals, translate }) {
-  const violetColor = 'bg-[#d9d2e9]';
+'use client';
+
+import { formatLongDate } from '@/lib/utils';
+import { useState } from 'react';
+import AverageKmDetailModal from './modals/AverageKmDetailModal';
+
+export default function AverageKmTab({ data, monthTotals, translate, language }) {
+  const indoCode = language === 'id' ? 'id-ID' : 'en-GB';
   const defaultClass = 'border border-gray-400 px-4 py-3 text-center text-slate-700';
+  const defaultVioletClass = `${defaultClass} bg-[#d9d2e9]`;
+
+  // State untuk Modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState([]);
+  const [modalTitle, setModalTitle] = useState('');
+  // Handler Klik
+  const handleCellClick = (details, dateStr, type) => {
+    if (details && details.length > 0) {
+      setModalData(details);
+      setModalTitle(
+        <div>
+          <h3 className="text-lg font-bold">
+            {translate('summary.tabs.average_km.modal.title')} - {type}
+          </h3>
+          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, indoCode)}</p>
+        </div>
+      );
+      setModalOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalData([]);
+  };
+
+  const distanceConverter = (data) => {
+    const distance = data.toLocaleString(indoCode, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return distance;
+  };
+
   return (
-    <div className="h-full w-full overflow-y-auto p-0">
+    <div className="h-full w-full overflow-y-auto p-0 relative">
+      {/* Render Modal */}
+      <AverageKmDetailModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        data={modalData}
+        title={modalTitle}
+        translate={translate}
+        language={language}
+      />
+
       <div className="w-full overflow-x-auto">
         <div className="overflow-hidden border border-gray-300 h-auto mb-4">
           <table className="min-w-full border-collapse text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.date')} (
                   {translate('summary.tabs.average_km.month')})
                 </th>
-                <th colSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th colSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.km_routing')} (KM)
                 </th>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.total_km_routing')} (KM)
                 </th>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.avg_km_routing')} (KM)
                 </th>
               </tr>
               <tr>
-                <th className={`${defaultClass} ${violetColor}`}>Dry</th>
-                <th className={`${defaultClass} ${violetColor}`}>Frozen</th>
+                <th className={defaultVioletClass}>Dry</th>
+                <th className={defaultVioletClass}>Frozen</th>
               </tr>
             </thead>
             <tbody className="bg-white">
               <tr>
-                <td className={defaultClass}>{monthTotals?.range || '-'}</td>
+                <td className={defaultClass}>{monthTotals?.range}</td>
                 <td className={`${defaultClass} bg-red-100`}>
-                  {monthTotals?.dryKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                  {distanceConverter(monthTotals?.dryKm)}
                 </td>
                 <td className={`${defaultClass} bg-blue-100`}>
-                  {monthTotals?.frozenKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
+                  {distanceConverter(monthTotals?.frozenKm)}
                 </td>
-                <td className={defaultClass}>
-                  {monthTotals?.totalKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
-                <td className={defaultClass}>
-                  {monthTotals?.avgKm?.toLocaleString('en-US', { minimumFractionDigits: 3 })}
-                </td>
+                <td className={defaultClass}>{distanceConverter(monthTotals?.totalKm)}</td>
+                <td className={defaultClass}>{distanceConverter(monthTotals?.avgKm)}</td>
               </tr>
             </tbody>
           </table>
@@ -53,27 +100,27 @@ export default function AverageKmTab({ data, monthTotals, translate }) {
           <table className="min-w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10">
               <tr>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('common.delivery_date')}
                 </th>
-                <th colSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th colSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.total_vehicle')}
                 </th>
-                <th colSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th colSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.km_routing')} (KM)
                 </th>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.total_km_routing')} (KM)
                 </th>
-                <th rowSpan="2" className={`${defaultClass} ${violetColor}`}>
+                <th rowSpan="2" className={defaultVioletClass}>
                   {translate('summary.tabs.average_km.avg_km_routing')} (KM)
                 </th>
               </tr>
               <tr>
-                <th className={`${defaultClass} ${violetColor}`}>Dry</th>
-                <th className={`${defaultClass} ${violetColor}`}>Frozen</th>
-                <th className={`${defaultClass} ${violetColor}`}>Dry</th>
-                <th className={`${defaultClass} ${violetColor}`}>Frozen</th>
+                <th className={defaultVioletClass}>Dry</th>
+                <th className={defaultVioletClass}>Frozen</th>
+                <th className={defaultVioletClass}>Dry</th>
+                <th className={defaultVioletClass}>Frozen</th>
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -83,7 +130,7 @@ export default function AverageKmTab({ data, monthTotals, translate }) {
                   className={` ${row.isSunday ? 'bg-red-200 text-red-900 border-b' : 'hover:bg-gray-50'}`}
                 >
                   <td className="border border-gray-300 px-4 py-2 text-center whitespace-nowrap font-medium">
-                    {row.date}
+                    {formatLongDate(row.date, indoCode)}
                   </td>
                   {row.isSunday ? (
                     <>
@@ -102,29 +149,42 @@ export default function AverageKmTab({ data, monthTotals, translate }) {
                       <td className="border border-gray-300 px-4 py-2 text-center">
                         {row.frozenCount}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center bg-red-100">
-                        {row.dryKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+
+                      {/* --- KOLOM DRY KM (Clickable) --- */}
+                      <td
+                        onClick={() => handleCellClick(row.dryDetails, row.date, 'Dry')}
+                        className={`border border-gray-300 px-4 py-2 text-center bg-red-100 ${row.dryKm > 0 ? 'cursor-pointer hover:bg-red-200' : ''}`}
+                        title={row.dryKm > 0 ? 'Klik untuk detail' : ''}
+                      >
+                        {row.dryKm > 0 ? (
+                          <span className="border-b-2 border-dotted border-slate-700 pb-0.5">
+                            {distanceConverter(row.dryKm)}
+                          </span>
+                        ) : (
+                          distanceConverter(row.dryKm)
+                        )}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center bg-blue-100">
-                        {row.frozenKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+
+                      {/* --- KOLOM FROZEN KM (Clickable) --- */}
+                      <td
+                        onClick={() => handleCellClick(row.frozenDetails, row.date, 'Frozen')}
+                        className={`border border-gray-300 px-4 py-2 text-center bg-blue-100 ${row.frozenKm > 0 ? 'cursor-pointer hover:bg-blue-200' : ''}`}
+                        title={row.frozenKm > 0 ? 'Klik untuk detail' : ''}
+                      >
+                        {row.frozenKm > 0 ? (
+                          <span className="border-b-2 border-dotted border-slate-700 pb-0.5">
+                            {distanceConverter(row.frozenKm)}
+                          </span>
+                        ) : (
+                          distanceConverter(row.frozenKm)
+                        )}
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center font-medium">
-                        {row.totalKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+
+                      <td className="border border-gray-300 px-4 py-2 text-center">
+                        {distanceConverter(row.totalKm)}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        {row.avgKm.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {distanceConverter(row.avgKm)}
                       </td>
                     </>
                   )}

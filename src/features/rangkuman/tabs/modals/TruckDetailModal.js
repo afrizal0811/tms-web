@@ -15,20 +15,25 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
     BATAL: 'bg-[#dc2626] text-white',
     'PENDING GR': 'bg-[#d97706] text-white',
     DEFAULT: 'bg-slate-100 text-slate-600',
+    DONE: 'bg-[#16a34a] text-white',
+    ONGOING: 'bg-[#ca8a04] text-white',
   };
+
   const STATUS_LANGUAGE = {
     SUKSES: translate('summary.tabs.truck_detail.modal.success'),
     PENDING: translate('summary.tabs.truck_detail.modal.pending'),
     'TERIMA SEBAGIAN': translate('summary.tabs.truck_detail.modal.pending_gr'),
     BATAL: translate('summary.tabs.truck_detail.modal.cancel'),
     'PENDING GR': translate('summary.tabs.truck_detail.modal.pending_gr'),
+    DONE: translate('summary.tabs.truck_detail.modal.done'),
+    ONGOING: translate('summary.tabs.truck_detail.modal.ongoing'),
   };
 
   const ERROR_COLORS = {
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
   };
-  const getStatus = (status) => (status ? STATUS_LANGUAGE[status].toUpperCase() : null);
+
   const getStatusClass = (status) => {
     if (!status) return STATUS_COLORS.DEFAULT;
     const s = status.toUpperCase();
@@ -53,7 +58,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
           <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, language)}</p>
         </div>
       }
-      bodyClassName="p-0 bg-gray-50" // Override padding body
+      bodyClassName="p-0 bg-gray-50 overflow-y-auto" // Override padding body
     >
       {/* Content */}
       {tasks && tasks.length > 0 ? (
@@ -96,7 +101,9 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)}`}
                     >
-                      {getStatus(task.status)}
+                      {STATUS_LANGUAGE[task.status]
+                        ? STATUS_LANGUAGE[task.status].toUpperCase()
+                        : '-'}
                     </span>
                   )}
                   {task.isManual && (
@@ -119,7 +126,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
           })}
         </div>
       ) : (
-        <div className="p-8 text-center text-gray-500">Tidak ada data detail pengiriman.</div>
+        <div className="p-8 text-center text-gray-500">{translate('common.no_data')}</div>
       )}
     </BaseModal>
   );

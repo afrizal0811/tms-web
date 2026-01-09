@@ -15,7 +15,6 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
-// Pastikan path ini sesuai dengan file help.js kamu
 import { processLoadCapacityData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t }) => {
@@ -126,7 +125,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
           {isEmpty ? (
             <div className="h-full flex items-center justify-center text-gray-400 italic bg-slate-50 rounded-lg border border-dashed border-gray-300">
               <div className="text-center">
-                <p>{t('common.no_data_year')}</p>
+                <p>{t('common.no_data')}</p>
               </div>
             </div>
           ) : (

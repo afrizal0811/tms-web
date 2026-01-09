@@ -1,10 +1,27 @@
-// File: features/rangkuman/tabs/TimeDriverTab.js
+// File: src/features/rangkuman/tabs/TimeDriverTab.js
+'use client';
+
 import { formatLongDate } from '@/lib/utils';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
+import TimeDriverModal from './modals/TimeDriverModal';
 
 export default function TimeDriverTab({ data, translate, language }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const indoLang = language === 'id' ? 'id-ID' : 'en-GB';
+
+  const [modalData, setModalData] = useState(null);
+
+  const handleCellClick = (metrics, driverName, dateStr) => {
+    if (metrics && metrics.entries && metrics.entries.length > 1) {
+      setModalData({
+        driverName,
+        dateStr: formatLongDate(dateStr, indoLang),
+        entries: metrics.entries,
+      });
+    }
+  };
+
+  const closeModal = () => setModalData(null);
 
   const isSunday = (dateStr) => {
     const d = new Date(dateStr);
@@ -27,7 +44,14 @@ export default function TimeDriverTab({ data, translate, language }) {
   const stickyBodyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="rounded-b-xl overflow-auto border border-gray-300 m-0 h-full">
+    <div className="rounded-b-xl overflow-auto border border-gray-300 m-0 h-full relative">
+      <TimeDriverModal
+        isOpen={!!modalData}
+        onClose={closeModal}
+        data={modalData}
+        translate={translate}
+      />
+
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-30 bg-gray-100">
           {/* Row 1: Headers */}
@@ -36,7 +60,7 @@ export default function TimeDriverTab({ data, translate, language }) {
               {translate('summary.tabs.time_driver.temp')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              {translate('summary.tabs.time_driver.lisence')}
+              {translate('summary.tabs.time_driver.license')}
             </th>
             <th
               rowSpan="2"
@@ -97,9 +121,15 @@ export default function TimeDriverTab({ data, translate, language }) {
                 {dateKeys.map((d, i) => {
                   const metrics = dataMatrix[d.str][email];
                   const isSun = isSunday(d.str);
-                  const cellBg = isSun ? COLOR_C : '';
+
+                  // Default Colors
+                  let cellBg = isSun ? COLOR_C : '';
                   const emptyBg = isSun ? COLOR_C : 'bg-gray-50';
 
+                  // Cek Multiple Entries
+                  const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
+
+                  // 1. KONDISI: DATA KOSONG
                   if (!metrics || !metrics.hasData) {
                     return (
                       <Fragment key={i}>
@@ -110,6 +140,21 @@ export default function TimeDriverTab({ data, translate, language }) {
                     );
                   }
 
+                  // 2. KONDISI: MULTIPLE DATA (MERGE CELLS)
+                  if (hasMultiple) {
+                    return (
+                      <td
+                        key={i}
+                        colSpan={3} // Merge 3 Kolom
+                        onClick={() => handleCellClick(metrics, driver.name, d.str)}
+                        className={`${tdClass} border-l-2 border-l-gray-400 bg-red-500 text-white font-bold cursor-pointer hover:opacity-80 transition-opacity`}
+                      >
+                        {translate('common.click_for_detail')}
+                      </td>
+                    );
+                  }
+
+                  // 3. KONDISI: SINGLE DATA (NORMAL)
                   return (
                     <Fragment key={i}>
                       <td className={`${tdClass} border-l-2 border-l-gray-400 ${cellBg}`}>

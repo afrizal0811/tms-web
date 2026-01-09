@@ -1,4 +1,4 @@
-// File: lib/reportGenerators/rangkumanReport.js
+// File: src/lib/reportGenerators/rangkumanReport.js
 'use client';
 
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
@@ -9,6 +9,7 @@ import {
   calculatePendingReasonData,
   generatePendingReasonSheet,
 } from './rangkumanSheets/pendingReasonSheet';
+import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
 import {
   calculateTimeDriverData,
   generateTimeDriverSheet,
@@ -22,8 +23,6 @@ import {
   calculateTruckUsageData,
   generateTruckUsageSheet,
 } from './rangkumanSheets/truckUsageSheet';
-// --- IMPORT TASK SUMMARY SHEET ---
-import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
 
 export function generateRangkumanDataPreview(
   driverData,
@@ -32,14 +31,16 @@ export function generateRangkumanDataPreview(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  hubId
+  hubId,
+  language
 ) {
-  // ... (Bagian preview ini TIDAK BERUBAH) ...
-  // 1. Average KM
+  const isIndo = language === 'id';
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo,
+    driverData
   );
   // 2. Truck Usage
   const truckUsageData = calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
@@ -58,8 +59,13 @@ export function generateRangkumanDataPreview(
     startDateStr,
     endDateStr
   );
-  // 5. Pending Reason
-  const pendingReasonData = calculatePendingReasonData(driverData, allTasks);
+  // 5. Pending Reason (UPDATE: Pass Dates)
+  const pendingReasonData = calculatePendingReasonData(
+    driverData,
+    allTasks,
+    startDateStr,
+    endDateStr
+  );
 
   return {
     averageKmData: summaryData,
@@ -72,7 +78,6 @@ export function generateRangkumanDataPreview(
   };
 }
 
-// --- UPDATE FUNGSI INI: Tambahkan parameter taskSummaryMetrics & masterTruckData ---
 export function generateRangkumanWorkbook(
   driverData,
   allTasks,
@@ -82,8 +87,8 @@ export function generateRangkumanWorkbook(
   endDateStr,
   hubName,
   hubId,
-  taskSummaryMetrics, // <--- Parameter Baru
-  masterTruckData, // <--- Parameter Baru
+  taskSummaryMetrics,
+  masterTruckData,
   translate,
   language
 ) {
@@ -98,7 +103,17 @@ export function generateRangkumanWorkbook(
     masterTruckData,
     translate
   );
-  generatePendingReasonSheet(wb, driverData, allTasks, hubName, translate);
+  // UPDATE: Pass Dates ke Sheet Generator
+  generatePendingReasonSheet(
+    wb,
+    driverData,
+    allTasks,
+    hubName,
+    translate,
+    startDateStr,
+    endDateStr
+  );
+
   generateTimeDriverSheet(
     wb,
     driverData,
