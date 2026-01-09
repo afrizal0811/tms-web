@@ -184,7 +184,7 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
                         {distanceConverter(row.totalKm)}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        {distanceConverter(row.totalKm)}
+                        {distanceConverter(row.avgKm)}
                       </td>
                     </>
                   )}

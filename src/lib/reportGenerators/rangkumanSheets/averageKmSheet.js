@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
-import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
+import { normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -21,33 +21,32 @@ function formatMonthRange(startDateStr, endDateStr, isIndo) {
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-function getDeliveryDateFromRouting(isoString) {
-  if (!isoString) return null;
+function determineTargetDate(createdTimeStr, apiRoutingDate) {
+  if (!createdTimeStr) return null;
+
   try {
-    const date = new Date(isoString);
-    const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
-    const dateWIB = new Date(wibTimestamp);
-    const routingDay = dateWIB.getUTCDay();
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2;
-    const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryTimestamp).toISOString().split('T')[0];
+    const d = new Date(createdTimeStr);
+    const wibMs = d.getTime() + 7 * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
+    const dayOfWeek = wibDate.getUTCDay(); // 0=Minggu, 6=Sabtu
+
+    if (dayOfWeek === 6) {
+      const mondayMs = wibMs + 2 * 24 * 60 * 60 * 1000;
+      return new Date(mondayMs).toISOString().split('T')[0];
+    }
+
+    if (apiRoutingDate) {
+      return apiRoutingDate;
+    }
+
+    const tomorrowMs = wibMs + 1 * 24 * 60 * 60 * 1000;
+    return new Date(tomorrowMs).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
 }
 
-/**
- * BAGIAN 1: LOGIKA PERHITUNGAN
- */
-export function calculateAverageKmData(
-  resultsData,
-  startDateStr,
-  endDateStr,
-  isIndo,
-  driverData // <--- Tambahkan parameter driverData
-) {
-  // 1. Buat Map untuk Driver (Email -> Nama Asli)
+export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo, driverData) {
   const driverMap = new Map();
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -65,7 +64,7 @@ export function calculateAverageKmData(
       const hasResult = dispatch.result && Array.isArray(dispatch.result.routing);
 
       if (isDone && hasResult) {
-        const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
+        const dateKey = determineTargetDate(dispatch.createdTime, dispatch.routingDate);
         const dispatchTimestamp = new Date(dispatch.createdTime).getTime();
 
         if (dateKey) {
@@ -86,8 +85,12 @@ export function calculateAverageKmData(
   }
 
   const summaryData = [];
-  const currentIterDate = new Date(startDateStr);
-  const endDateObj = new Date(endDateStr);
+
+  const [sY, sM, sD] = startDateStr.split('-').map(Number);
+  const [eY, eM, eD] = endDateStr.split('-').map(Number);
+
+  const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
+  const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
   let monthTotals = {
     range: formatMonthRange(startDateStr, endDateStr, isIndo),
@@ -99,9 +102,14 @@ export function calculateAverageKmData(
   };
 
   while (currentIterDate <= endDateObj) {
-    const currentDateString = formatDateUniversal(currentIterDate);
-    const displayDate = formatLongDate(currentIterDate, isIndo);
-    const isSunday = currentIterDate.getDay() === 0;
+    const y = currentIterDate.getUTCFullYear();
+    const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
+    const currentDateString = `${y}-${m}-${d}`;
+
+    const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
+    const displayDate = formatLongDate(safeDate, isIndo);
+    const isSunday = currentIterDate.getUTCDay() === 0;
 
     let rowData = {
       date: displayDate,
@@ -123,15 +131,24 @@ export function calculateAverageKmData(
           const hasTrips = route.trips && route.trips.length > 0;
           if (hasTrips) {
             const tags = route.vehicleTags || [];
-            const distMeter = route.totalDistance || 0;
+
+            let distMeter = route.totalDistance || 0;
+
+            if (distMeter === 0 && Array.isArray(route.trips)) {
+              distMeter = route.trips.reduce((acc, trip) => {
+                if (!trip.isHub) {
+                  return acc + (trip.distance || 0);
+                }
+                return acc;
+              }, 0);
+            }
+
             const distKm = distMeter / 1000;
 
             const isFrozen = tags.some(
               (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
             );
 
-            // Mapping Nama Driver
-            // Prioritas: 1. Map Lokal (driverData), 2. Profile dari Route, 3. Assignee (Email/Raw)
             const rawEmail = route.assignee || route.email;
             let finalDriverName = '-';
 
@@ -166,7 +183,6 @@ export function calculateAverageKmData(
         });
       }
 
-      // SORTING: Urutkan detail berdasarkan Nama Driver (A-Z)
       rowData.dryDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
       rowData.frozenDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
 
@@ -180,7 +196,7 @@ export function calculateAverageKmData(
     }
 
     summaryData.push(rowData);
-    currentIterDate.setDate(currentIterDate.getDate() + 1);
+    currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
   monthTotals.totalKm = monthTotals.dryKm + monthTotals.frozenKm;
@@ -190,9 +206,6 @@ export function calculateAverageKmData(
   return { summaryData, monthTotals };
 }
 
-/**
- * BAGIAN 2: GENERATOR EXCEL
- */
 export function generateAverageKmSheet(
   wb,
   resultsData,
@@ -201,21 +214,16 @@ export function generateAverageKmSheet(
   translate,
   isIndo
 ) {
-  // Karena generateAverageKmSheet untuk Excel jarang pakai driverData (kecuali mau detail di excel),
-  // kita pass [] atau null jika tidak diperlukan, atau pass driverData jika tersedia di caller.
-  // Untuk amannya, logic excel menggunakan data seadanya dulu.
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr,
     isIndo,
-    [] // Empty driverData untuk Excel generator jika data driver tidak di-pass ke fungsi ini
+    []
   );
 
-  // ... (SISA KODE generateAverageKmSheet SAMA SEPERTI SEBELUMNYA) ...
-  // --- CONTENT ---
   const monthHeader1 = [
-    `${translate('summary.tabs.average_km.date')} (${translate('summary.tabs.average_km.month')})`,
+    `${translate('summary.tabs.average_km.date') || 'Routing Date'} (${translate('summary.tabs.average_km.month')})`,
     translate('summary.tabs.average_km.km_routing'),
     '',
     translate('summary.tabs.average_km.total_km_routing'),
@@ -231,7 +239,7 @@ export function generateAverageKmSheet(
   ];
 
   const dailyHeader1 = [
-    translate('summary.tabs.average_km.date'),
+    translate('summary.tabs.average_km.date') || 'Routing Date',
     translate('summary.tabs.average_km.total_vehicle'),
     '',
     translate('summary.tabs.average_km.km_routing'),
@@ -241,14 +249,7 @@ export function generateAverageKmSheet(
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
-  const excelData = [
-    monthHeader1,
-    monthHeader2,
-    monthDataRow,
-    [''], // Spacer
-    dailyHeader1,
-    dailyHeader2,
-  ];
+  const excelData = [monthHeader1, monthHeader2, monthDataRow, [''], dailyHeader1, dailyHeader2];
 
   const excelRows = excelData;
   summaryData.forEach((row) => {
