@@ -431,6 +431,7 @@ export const dictionary = {
       close_time: 'Waktu Tutup',
       est_arrival: 'Estimasi Datang',
       est_depart: 'Estimasi Keluar',
+      manual_assign: 'Penugasan Manual',
       no_so: 'Nomor SO',
       open_time: 'Waktu Buka',
       search_placeholder: 'Cari Plat, Customer, atau SO',
@@ -1042,6 +1043,7 @@ export const dictionary = {
       subtitle_highlight: 'visit routes & delivery schedules',
       title: 'Deliveries Estimate',
       visit: 'Visit',
+      manual_assign: 'Manual Assignment',
       toast: {
         no_data: 'No data to download',
         success: 'Estimation data has been downloaded successfully!',

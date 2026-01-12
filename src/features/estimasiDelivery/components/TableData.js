@@ -1,13 +1,12 @@
 // File: src/features/estimasiDelivery/components/TableData.js
-import HighlightText from '@/components/HighlightText'; // Import komponen baru
+import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
+import Tooltip from '@/components/Tooltip'; // 1. Import Tooltip
+import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils';
 import { parseSONumber } from '../help';
 
 export default function TableData({ activeRoute, searchQuery, t }) {
-  // Hapus fungsi escapeRegExp dan HighlightText lokal yang lama
-
   return (
     <table className="w-full border-collapse min-w-4xl">
       <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
@@ -28,7 +27,13 @@ export default function TableData({ activeRoute, searchQuery, t }) {
           const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
           const redText = isHub ? 'text-red-600' : '';
           const outletName = isHub ? null : parseCustomerString(trip.visitName).name;
-          const soNumber = isHub ? null : parseSONumber(trip.visitName);
+          let soNumber = isHub
+            ? null
+            : parseSONumber(trip.visitGroup) || parseSONumber(trip.visitName);
+
+          // Logika Manual Assign
+          const isManualAssign = isEmpty(soNumber) && !isHub;
+          soNumber = isManualAssign ? '-' : soNumber;
 
           let isMatch = false;
           if (searchQuery && !isHub) {
@@ -38,9 +43,13 @@ export default function TableData({ activeRoute, searchQuery, t }) {
           }
 
           const rowClass = isMatch ? 'bg-yellow-100' : '';
+          const manualAssignCLass = isManualAssign
+            ? 'bg-red-100 hover:cursor-help'
+            : 'hover:bg-gray-50 ';
 
-          return (
-            <tr key={`${trip.visitId}-${trip.order}`} className={`hover:bg-gray-50 ${rowClass}`}>
+          // Definisi konten baris (Cells) dipisah agar rapi
+          const rowContent = (
+            <>
               <Td>
                 <p className={redText}>{trip.order}</p>
               </Td>
@@ -48,18 +57,10 @@ export default function TableData({ activeRoute, searchQuery, t }) {
                 {isHub ? (
                   <strong className={redText}>HUB</strong>
                 ) : (
-                  // Gunakan Komponen Global
                   <HighlightText text={outletName} highlight={searchQuery} />
                 )}
               </Td>
-              <Td>
-                {isHub ? (
-                  ''
-                ) : (
-                  // Gunakan Komponen Global
-                  <HighlightText text={soNumber} highlight={searchQuery} />
-                )}
-              </Td>
+              <Td>{isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}</Td>
               <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
               <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
               <Td>
@@ -68,6 +69,27 @@ export default function TableData({ activeRoute, searchQuery, t }) {
               <Td>
                 <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
               </Td>
+            </>
+          );
+
+          // 2. Jika Manual Assign, bungkus tr dengan Tooltip
+          if (isManualAssign) {
+            return (
+              <Tooltip
+                key={`${trip.visitId}-${trip.order}`}
+                tooltipContent={t('estimation.manual_assign')}
+              >
+                <tr className={`${rowClass} ${manualAssignCLass}`}>{rowContent}</tr>
+              </Tooltip>
+            );
+          }
+
+          return (
+            <tr
+              key={`${trip.visitId}-${trip.order}`}
+              className={`${rowClass} ${manualAssignCLass}`}
+            >
+              {rowContent}
             </tr>
           );
         })}
