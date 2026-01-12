@@ -25,7 +25,7 @@ const getAngle = (lat1, lng1, lat2, lng2) => {
 };
 
 const createArrowIcon = (angle, color, isHighlight = false) => {
-  const size = isHighlight ? 24 : 16; // Lebih besar jika highlight
+  const size = isHighlight ? 24 : 16;
   const fontSize = isHighlight ? '20px' : '14px';
 
   return new L.DivIcon({
@@ -44,7 +44,7 @@ const createArrowIcon = (angle, color, isHighlight = false) => {
       </div>
     `,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2], // Center anchor dynamic
+    iconAnchor: [size / 2, size / 2],
   });
 };
 
@@ -163,6 +163,13 @@ function FitBounds({ coords }) {
   return null;
 }
 
+const LegendItem = ({ color, label }) => (
+  <div className="flex items-center gap-1.5">
+    <span className={`w-3 h-3 rounded-full ${color}`}></span>
+    <span className="whitespace-nowrap">{label}</span>
+  </div>
+);
+
 const MapViewSection = ({
   title,
   tasks,
@@ -191,7 +198,14 @@ const MapViewSection = ({
     return applyJitter(valid);
   }, [tasks, sequenceKey]);
 
-  // FIX ERROR 2: Gunakan disable-line jika linter salah deteksi, tapi pastikan variabel benar-benar dipakai
+  // REQ 1: Hitung Completed Pickups
+  const { pickupCount, completedPickupCount } = useMemo(() => {
+    if (!tasks) return { pickupCount: 0, completedPickupCount: 0 };
+    const pickups = tasks.filter((t) => t.flow === 'Pickup');
+    const done = pickups.filter((t) => !isEmpty(t.realSequence));
+    return { pickupCount: pickups.length, completedPickupCount: done.length };
+  }, [tasks]);
+
   const pathSegments = useMemo(() => {
     if (isEmpty(sortedTasks)) return [];
 
@@ -202,23 +216,36 @@ const MapViewSection = ({
     const routeTasks = sortedTasks.filter((t) => t.type !== 'HUB_START' && t.type !== 'HUB_END');
     let points = [];
 
-    // Menggunakan isActualMap
+    // REQ 3: Logic Panah Actual Map
     if (!isActualMap) {
-      points.push({ coords: hubCoords, name: 'HUB' });
+      // PLAN MAP (Semua connected sesuai roSequence)
+      points.push({ coords: hubCoords, name: 'HUB', flow: 'HUB' });
       routeTasks.forEach((t) => {
-        // Menggunakan resolveDisplayName
-        const displayName = resolveDisplayName(t.customerName);
-        points.push({ coords: [t.lat, t.lng], name: displayName });
+        const displayName = resolveDisplayName(t.customerName, t.flow);
+        points.push({ coords: [t.lat, t.lng], name: displayName, flow: t.flow });
       });
-      points.push({ coords: hubCoords, name: 'HUB_END' });
+      points.push({ coords: hubCoords, name: 'HUB_END', flow: 'HUB' });
     } else {
-      points.push({ coords: hubCoords, name: 'HUB' });
-      const doneTasks = routeTasks.filter((t) => !!t.actualArrival);
+      // ACTUAL MAP
+      // 1. Mulai dari HUB
+      points.push({ coords: hubCoords, name: 'HUB', flow: 'HUB' });
+
+      // 2. Ambil hanya task yang sudah punya realSequence (sudah dikunjungi)
+      const doneTasks = routeTasks.filter((t) => !isEmpty(t.realSequence));
+
+      // 3. Urutkan berdasarkan realSequence (1, 2, 3...)
+      doneTasks.sort((a, b) => (a.realSequence || 0) - (b.realSequence || 0));
+
       doneTasks.forEach((t) => {
-        const displayName = resolveDisplayName(t.customerName);
-        points.push({ coords: [t.lat, t.lng], name: displayName });
+        const displayName = resolveDisplayName(t.customerName, t.flow);
+        points.push({ coords: [t.lat, t.lng], name: displayName, flow: t.flow });
       });
-      points.push({ coords: hubCoords, name: 'HUB_END' });
+
+      // 4. Cek apakah SEMUA task sudah selesai?
+      // Jika jumlah yang selesai == total route tasks, baru tarik garis balik ke HUB
+      if (doneTasks.length === routeTasks.length && routeTasks.length > 0) {
+        points.push({ coords: hubCoords, name: 'HUB_END', flow: 'HUB' });
+      }
     }
 
     let segments = [];
@@ -227,10 +254,11 @@ const MapViewSection = ({
       const nextPoint = points[i + 1];
       let isHighlight = false;
 
-      // Menggunakan selectedCustomer
       if (selectedCustomer) {
         if (selectedCustomer === 'HUB') {
           if (currentPoint.name === 'HUB') isHighlight = true;
+        } else if (selectedCustomer === 'Pickup') {
+          if (currentPoint.flow === 'Pickup') isHighlight = true;
         } else {
           if (currentPoint.name === selectedCustomer) isHighlight = true;
         }
@@ -245,13 +273,13 @@ const MapViewSection = ({
     return segments;
   }, [sortedTasks, isActualMap, selectedCustomer, resolveDisplayName]);
 
-  // FIX ERROR 3: Sama, suppress jika perlu
   const activeTask = useMemo(() => {
     if (!selectedCustomer) return null;
     return sortedTasks.find((t) => {
-      const displayName = resolveDisplayName(t.customerName);
+      const displayName = resolveDisplayName(t.customerName, t.flow);
       if (selectedCustomer === 'HUB' && (t.type === 'HUB_START' || t.type === 'HUB_END'))
         return true;
+      if (selectedCustomer === 'Pickup' && t.flow === 'Pickup') return true;
       return displayName === selectedCustomer;
     });
   }, [selectedCustomer, sortedTasks, resolveDisplayName]);
@@ -273,7 +301,14 @@ const MapViewSection = ({
         <InfoCard
           task={activeTask}
           onClose={onCloseCard}
-          customTitle={resolveDisplayName(activeTask.customerName)}
+          customTitle={
+            selectedCustomer === 'Pickup'
+              ? 'Pickup'
+              : resolveDisplayName(activeTask.customerName, activeTask.flow)
+          }
+          pickupCount={pickupCount}
+          completedPickupCount={completedPickupCount} // REQ 1: Pass Prop
+          isActualMap={isActualMap}
         />
       )}
 
@@ -293,26 +328,58 @@ const MapViewSection = ({
               <MapRef setMap={setMap} />
               <FitBounds coords={coordsForZoom} />
               <ArrowPolyline segments={pathSegments} defaultColor={lineColor} />
+
               {sortedTasks.map((task, idx) => {
                 const seqNum = task[sequenceKey] ?? '?';
-                let finalColorClass = colorClass;
                 let finalContent = seqNum;
-                let isHub = task.type === 'HUB_START' || task.type === 'HUB_END';
+                let markerBgClass = 'bg-[#2563EB]';
+
+                const isHub = task.type === 'HUB_START' || task.type === 'HUB_END';
+                const flow = (task.flow || '').toLowerCase();
+                const isCompleted = !isEmpty(task.realSequence);
+
                 if (isHub) {
-                  finalColorClass = 'bg-green-600';
+                  markerBgClass = 'bg-[#000000]';
                   finalContent = 'HUB';
-                } else if (task.isManualAssign) {
-                  finalColorClass = 'bg-gray-400';
-                  finalContent = isActualMap ? seqNum : '-';
-                } else if (task.flow && task.flow.toLowerCase().includes('pickup')) {
-                  finalColorClass = 'bg-purple-600';
+                } else if (isCompleted) {
+                  if (flow.includes('pickup')) {
+                    // REQ 1: Pickup hanya hijau jika SEMUA pickup sudah selesai
+                    const allPickupDone = pickupCount > 0 && completedPickupCount === pickupCount;
+                    if (allPickupDone) {
+                      markerBgClass = isActualMap ? 'bg-[#16A34A]' : 'bg-[#0D9488]';
+                    } else {
+                      // Jika belum semua selesai, tetap Ungu meski yang ini sudah selesai
+                      markerBgClass = 'bg-[#9333EA]';
+                    }
+                  } else {
+                    // Flow Lain: Langsung Hijau/Teal jika completed
+                    if (isActualMap) {
+                      markerBgClass = 'bg-[#16A34A]';
+                    } else {
+                      markerBgClass = 'bg-[#0D9488]';
+                    }
+                  }
+                } else {
+                  // Not Completed
+                  if (task.isManualAssign) {
+                    markerBgClass = 'bg-[#64748B]';
+                    finalContent = isActualMap ? seqNum : '-';
+                  } else if (flow.includes('pickup')) {
+                    markerBgClass = 'bg-[#9333EA]';
+                  } else if (flow.includes('re delivery')) {
+                    markerBgClass = 'bg-[#F97316]';
+                  } else if (flow.includes('pending gr')) {
+                    markerBgClass = 'bg-[#FFDE21]';
+                  } else {
+                    markerBgClass = 'bg-[#2563EB]';
+                  }
                 }
 
                 return (
                   <Marker
                     key={`${sequenceKey}-${idx}`}
                     position={[task.lat, task.lng]}
-                    icon={createNumberedIcon(finalContent, finalColorClass)}
+                    icon={createNumberedIcon(finalContent, markerBgClass)}
                     zIndexOffset={isHub ? 200 : 100}
                     eventHandlers={{
                       click: () => {
@@ -331,25 +398,24 @@ const MapViewSection = ({
         )}
       </div>
 
-      <div className="px-4 py-2 bg-gray-50 border-t flex flex-wrap gap-4 text-[10px] text-gray-600 font-medium z-10 shrink-0">
-        <div className="flex items-center gap-1">
-          <span className={`w-3 h-3 rounded-full ${colorClass}`}></span>
-          <span>
-            {t('dashboard.map.completed')} {title.includes('Rencana') ? '(RO)' : '(Real)'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-green-600"></span>
-          <span>{t('dashboard.map.hub')}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-purple-600"></span>
-          <span>{t('dashboard.map.pickup')}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-gray-400"></span>
-          <span>{t('dashboard.map.manual')}</span>
-        </div>
+      <div className="px-4 py-2 bg-gray-50 border-t flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
+        {!isActualMap ? (
+          <LegendItem color="bg-[#0D9488]" label={t('dashboard.map.plan_completed') || 'Plan'} />
+        ) : (
+          <LegendItem
+            color="bg-[#16A34A]"
+            label={t('dashboard.map.actual_completed') || 'Actual'}
+          />
+        )}
+
+        <div className="w-px h-3 bg-gray-300 mx-1 self-center"></div>
+
+        <LegendItem color="bg-[#000000]" label="HUB" />
+        <LegendItem color="bg-[#2563EB]" label="Delivery" />
+        <LegendItem color="bg-[#F97316]" label="Re Delivery" />
+        <LegendItem color="bg-[#FFDE21]" label="Pending GR" />
+        <LegendItem color="bg-[#9333EA]" label="Pickup" />
+        <LegendItem color="bg-[#64748B]" label="Manual Assign" />
       </div>
     </div>
   );

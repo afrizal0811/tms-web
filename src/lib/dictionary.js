@@ -87,6 +87,7 @@ export const dictionary = {
         hub_not_found: 'Lokasi Hub tidak ditemukan. Harap login ulang.',
         sunday_error: 'Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain',
         user_load_error: 'Gagal memuat data user',
+        view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
         yearly_fetch_error: 'Gagal ambil data tahunan',
       },
       tabs: {
@@ -190,12 +191,14 @@ export const dictionary = {
       },
       map: {
         completed: 'Selesai',
+        dropdown_driver: 'Sopir',
+        dropdown_task: 'Tugas',
         hub: 'HUB',
         manual: 'Penugasan Manual',
         no_coordinate: 'Tidak ada koordinat',
         pickup: 'Pickup',
-        plan: 'Rencana (RO Sequence)',
-        real: 'Aktual (Real Sequence)',
+        plan: 'Urutan Rencana',
+        real: 'Urutan Aktual',
         select_driver: 'Silakan pilih driver terlebih dahulu.',
         subtitle: 'Bandingkan jalur Rencana vs Aktual',
         title: 'Peta Perbandingan Rute',
@@ -687,6 +690,8 @@ export const dictionary = {
         hub_not_found: 'Hub location not found. Please login again.',
         sunday_error: 'No deliveries on Sunday. Please choose another date',
         user_load_error: 'Failed to load user data',
+        view_map_warning:
+          'It is recommended to open the map on Desktop or Tablet for the best experience.',
         yearly_fetch_error: 'Failed to fetch yearly data',
       },
       tabs: {
@@ -789,14 +794,17 @@ export const dictionary = {
         },
       },
       map: {
+        dropdown_driver: 'Driver',
+        dropdown_task: 'Task',
         completed: 'Completed',
         hub: 'HUB',
         manual: 'Manual Assign',
         no_coordinate: 'No coordinate',
         pickup: 'Pickup',
-        plan: 'Plan (RO Sequence)',
-        real: 'Actual (Real Sequence)',
+        plan: 'Plan Sequence',
+        real: 'Actual Sequence',
         select_driver: 'Please select a driver first.',
+        sequence: 'Sequence',
         subtitle: 'Compare Planned vs Actual routes',
         title: 'Route Comparison Map',
         status: {

@@ -2,20 +2,16 @@
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { parseCoordinates, parseCustomerString } from '@/lib/utils';
+import { isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
 import L from 'leaflet';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
 
 export default function RoutingMapModal({ isOpen, onClose, data }) {
   const { t } = useLanguage();
-  // State untuk input user
   const [userSelectedDriver, setUserSelectedDriver] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
-
-  // State pelacak untuk pola "Adjust State during Render"
   const [prevDriver, setPrevDriver] = useState(null);
-
   const [mapRo, setMapRo] = useState(null);
   const [mapReal, setMapReal] = useState(null);
 
@@ -43,14 +39,12 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     };
   }, [mapRo, mapReal]);
 
-  // --- Logic Drivers ---
   const drivers = useMemo(() => {
     if (!data) return [];
     const unique = new Set(data.map((d) => d.driver).filter(Boolean));
     return Array.from(unique).sort();
   }, [data]);
 
-  // --- Derived State: Selected Driver ---
   const selectedDriver = useMemo(() => {
     if (userSelectedDriver && drivers.includes(userSelectedDriver)) {
       return userSelectedDriver;
@@ -58,17 +52,13 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     return drivers.length > 0 ? drivers[0] : '';
   }, [userSelectedDriver, drivers]);
 
-  // --- Adjust Customer State saat Driver Berubah (Render Phase) ---
   if (selectedDriver !== prevDriver) {
     setPrevDriver(selectedDriver);
-
-    // Reset Logic saat driver berubah
     const tasks = data ? data.filter((d) => d.driver === selectedDriver) : [];
     const hasHub = tasks.some((t) => t.type === 'HUB_START');
     setSelectedCustomer(hasHub ? 'HUB' : '');
   }
 
-  // --- Filter Tasks ---
   const driverTasks = useMemo(() => {
     if (!selectedDriver || !data) return [];
     return data.filter((d) => d.driver === selectedDriver);
@@ -85,7 +75,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   }, [driverTasks]);
 
   const resolveDisplayName = useCallback(
-    (originalCustomerString) => {
+    (originalCustomerString, flow) => {
+      if (flow === 'Pickup') return 'Pickup';
       if (!originalCustomerString || originalCustomerString === 'HUB') return 'HUB';
       const { name, location } = parseCustomerString(originalCustomerString);
       if (!name) return '-';
@@ -100,20 +91,41 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
 
   const customerOptions = useMemo(() => {
     if (!driverTasks.length) return [];
+
     const sortedTasks = [...driverTasks].sort(
       (a, b) => (a.realSequence ?? 999999) - (b.realSequence ?? 999999)
     );
+
     const options = [];
     const seen = new Set();
+
     sortedTasks.forEach((t) => {
       if (!t.customerName || t.customerName === 'HUB') return;
-      const displayName = resolveDisplayName(t.customerName);
-      if (!seen.has(displayName)) {
-        seen.add(displayName);
-        options.push(displayName);
+
+      // Cek apakah task ini pending (belum dikunjungi)
+      const isPending = isEmpty(t.realSequence);
+
+      if (t.flow === 'Pickup') {
+        if (!seen.has('Pickup')) {
+          seen.add('Pickup');
+          options.push({ value: 'Pickup', label: 'Pickup', isPending: false });
+        }
+      } else {
+        const displayName = resolveDisplayName(t.customerName, t.flow);
+        if (!seen.has(displayName)) {
+          seen.add(displayName);
+          // Kirim status isPending untuk styling
+          options.push({
+            value: displayName,
+            label: displayName, // Label tetap bersih tanpa "(Pending)"
+            isPending: isPending,
+          });
+        }
       }
     });
-    return driverTasks.some((t) => t.type === 'HUB_START') ? ['HUB', ...options] : options;
+
+    const hasHub = driverTasks.some((t) => t.type === 'HUB_START');
+    return hasHub ? [{ value: 'HUB', label: 'HUB', isPending: false }, ...options] : options;
   }, [driverTasks, resolveDisplayName]);
 
   const handleFocusCustomer = (val) => {
@@ -121,7 +133,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     if (!val) return;
     const targetTask = driverTasks.find((t) => {
       if (val === 'HUB' && t.type === 'HUB_START') return true;
-      return resolveDisplayName(t.customerName) === val;
+      if (val === 'Pickup' && t.flow === 'Pickup') return true;
+      return resolveDisplayName(t.customerName, t.flow) === val;
     });
 
     if (targetTask) {
@@ -129,7 +142,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       if (coords && mapRo) {
         const zoomLevel = 16;
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
         if (isMobile) {
           const mapSize = mapRo.getSize();
           const targetPoint = mapRo.project([coords.lat, coords.lon], zoomLevel);
@@ -138,7 +150,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           const newCenterLatLng = mapRo.unproject(newCenterPoint, zoomLevel);
           mapRo.setView(newCenterLatLng, zoomLevel, { animate: true, duration: 1.0 });
         } else {
-          // Desktop: Center normal
           mapRo.setView([coords.lat, coords.lon], zoomLevel, { animate: true, duration: 1.0 });
         }
       }
@@ -150,7 +161,12 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       handleFocusCustomer('HUB');
       return;
     }
-    if (task && task.customerName) handleFocusCustomer(resolveDisplayName(task.customerName));
+    if (task.flow === 'Pickup') {
+      handleFocusCustomer('Pickup');
+      return;
+    }
+    if (task && task.customerName)
+      handleFocusCustomer(resolveDisplayName(task.customerName, task.flow));
   };
 
   const handleCloseInfo = () => setSelectedCustomer('');
@@ -167,32 +183,51 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
         <h2 className="text-xl font-bold text-slate-800">{t('dashboard.map.title')}</h2>
         <p className="text-xs text-slate-500 font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
       </div>
-      <div className="flex flex-row gap-2 w-full lg:w-auto">
-        <select
-          value={selectedDriver}
-          onChange={(e) => handleDriverChange(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          className="w-1/2 lg:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 outline-none bg-gray-50 cursor-pointer"
-        >
-          {drivers.map((driver) => (
-            <option key={driver} value={driver}>
-              {driver}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedCustomer}
-          onChange={(e) => handleFocusCustomer(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          disabled={!selectedDriver}
-          className="w-1/2 lg:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none bg-gray-50 cursor-pointer disabled:opacity-50"
-        >
-          {customerOptions.map((cust, i) => (
-            <option key={`${cust}-${i}`} value={cust}>
-              {cust}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-row gap-2 w-full lg:w-auto items-end">
+        {/* Label Driver */}
+        <div className="flex flex-col w-1/2 lg:w-64 gap-1">
+          <label className="text-[10px] font-bold text-gray-500 tracking-wide">
+            {t('dashboard.map.dropdown_driver')}
+          </label>
+          <select
+            value={selectedDriver}
+            onChange={(e) => handleDriverChange(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 outline-none bg-gray-50 cursor-pointer"
+          >
+            {drivers.map((driver) => (
+              <option key={driver} value={driver}>
+                {driver}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Label Task */}
+        <div className="flex flex-col w-1/2 lg:w-64 gap-1">
+          <label className="text-[10px] font-bold text-gray-500 tracking-wide">
+            {`${t('dashboard.map.dropdown_task')}  (${t('dashboard.map.real')})`}
+          </label>
+          <select
+            value={selectedCustomer}
+            onChange={(e) => handleFocusCustomer(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            disabled={!selectedDriver}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none bg-gray-50 cursor-pointer disabled:opacity-50"
+          >
+            {customerOptions.map((opt, i) => (
+              <option
+                key={`${opt.value}-${i}`}
+                value={opt.value}
+                // UPDATE: Logic warna merah soft (#EF4444) jika Pending
+                className={opt.isPending ? 'text-red-500 font-medium' : 'text-slate-700'}
+                style={opt.isPending ? { color: '#EF4444' } : {}}
+              >
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );
@@ -213,8 +248,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             title={t('dashboard.map.plan')}
             tasks={driverTasks}
             sequenceKey="roSequence"
-            colorClass="bg-blue-600"
-            lineColor="#2563eb"
+            colorClass="bg-[#0D9488]" // Teal
+            lineColor="#FF0000"
             setMap={setMapRo}
             onMarkerClick={onMarkerClick}
             selectedCustomer={selectedCustomer}
@@ -227,8 +262,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             title={t('dashboard.map.real')}
             tasks={driverTasks}
             sequenceKey="realSequence"
-            colorClass="bg-orange-600"
-            lineColor="#ea580c"
+            colorClass="bg-[#16A34A]" // Green
+            lineColor="#FF0000"
             setMap={setMapReal}
             onMarkerClick={onMarkerClick}
             selectedCustomer={selectedCustomer}

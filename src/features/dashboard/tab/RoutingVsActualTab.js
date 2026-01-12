@@ -97,6 +97,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       if (flow && flow.toUpperCase().includes('GR')) {
         actualArrival = task.page1DoneTime;
         actualDeparture = task.page1DoneTime;
+      } else if (flow && flow.toUpperCase().includes('PICKUP')) {
+        actualArrival = task.klikJikaAndaSudahSampaiDiGudang;
+        actualDeparture = task.page1DoneTime;
       } else {
         actualArrival = task.klikJikaSudahSampai;
         actualDeparture = task.page3DoneTime;
@@ -227,13 +230,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         customerName: 'HUB',
       });
 
+      // FIX: Mengubah sorting agar murni berdasarkan Planned Sequence (roSequence)
+      // Ini memperbaiki masalah urutan sequence yang melompat karena sebelumnya dipengaruhi status actual
       matchingTasks.sort((a, b) => {
-        const realA = isEmpty(a.realSequence) ? a.realSequence : 999999;
-        const realB = isEmpty(b.realSequence) ? b.realSequence : 999999;
-        if (realA !== realB) {
-          return realA - realB;
-        }
-        return a.roSequence - b.roSequence;
+        return (a.roSequence || 0) - (b.roSequence || 0);
       });
 
       matchingTasks.forEach((t) => {
@@ -274,7 +274,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
   const handleOpenMap = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      toastWarning('Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.');
+      toastWarning(t('dashboard.toast.view_map_warning'));
     }
     setIsMapModalOpen(true);
   };
@@ -292,7 +292,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
         <div className="w-full md:w-auto order-2">
           <button
-            onClick={handleOpenMap} // CLUE: Gunakan handler baru
+            onClick={handleOpenMap}
             disabled={loading || isEmpty(processedData)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
           >
@@ -323,7 +323,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
       </div>
       <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
-        {/* ... (Tabel Tetap Sama) ... */}
         <table className="min-w-full text-xs text-left">
           <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
             <tr>

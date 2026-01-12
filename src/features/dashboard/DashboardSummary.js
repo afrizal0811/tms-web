@@ -180,6 +180,14 @@ export default function DashboardSummary({ driverData }) {
       setSummaryData(null);
       fetchStartTimeRef.current = Date.now();
 
+      const routingStart = new Date(localStart);
+      if (routingStart.getDay() === 1) {
+        routingStart.setDate(routingStart.getDate() - 2);
+      } else {
+        routingStart.setDate(routingStart.getDate() - 1);
+      }
+      const routingTimeFrom = formatToApiUtc(routingStart);
+
       const [tasksData, resultsData] = await Promise.all([
         fetchWithRetry(() =>
           getTasks({
@@ -193,7 +201,7 @@ export default function DashboardSummary({ driverData }) {
         ),
         fetchWithRetry(() =>
           getResultsSummary({
-            dateFrom: timeFrom,
+            dateFrom: routingTimeFrom,
             dateTo: timeTo,
             limit: 500,
             hubId: hubId,
