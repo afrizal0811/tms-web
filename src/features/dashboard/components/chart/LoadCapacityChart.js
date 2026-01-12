@@ -15,6 +15,7 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
+import { isEmpty } from '@/lib/utils';
 import { processLoadCapacityData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t }) => {
@@ -104,8 +105,6 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
     return `${t('dashboard.charts.load_capacity.title')} ${fullMonthName} ${year}`;
   };
 
-  const isEmpty = chartData.length === 0;
-
   return (
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
       <div className="mb-4">
@@ -122,7 +121,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
 
       <div className="w-full flex flex-col gap-4">
         <div className="w-full h-[350px]">
-          {isEmpty ? (
+          {isEmpty(chartData) ? (
             <div className="h-full flex items-center justify-center text-gray-400 italic bg-slate-50 rounded-lg border border-dashed border-gray-300">
               <div className="text-center">
                 <p>{t('common.no_data')}</p>
@@ -202,7 +201,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
           )}
         </div>
 
-        {!isEmpty && (
+        {!isEmpty(chartData) && (
           <p className="text-xs text-gray-400 text-center italic">{t('common.click_for_detail')}</p>
         )}
 

@@ -1,5 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { normalizeEmail } from '@/lib/utils';
+import { isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 
@@ -100,7 +100,7 @@ export const handleConfirmDownload = ({
       XLSX.utils.book_append_sheet(wb, ws2, t('vehicle.tabs.template_title'));
     }
 
-    if (wb.SheetNames.length === 0) {
+    if (isEmpty(wb.SheetNames)) {
       toastError(t('vehicle.toast.choose_one'));
     } else {
       const { storedLocationName: locationName } = getLocalStorage() || '-';

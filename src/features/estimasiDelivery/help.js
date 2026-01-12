@@ -1,5 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
+import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 
@@ -62,7 +62,7 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading,
       ];
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
-    if (wb.SheetNames.length === 0) {
+    if (isEmpty(wb.SheetNames)) {
       toastError(t('estimation.toast.no_data'));
       return;
     } else {

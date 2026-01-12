@@ -4,7 +4,7 @@ import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
-import { normalizeEmail } from '@/lib/utils';
+import { isEmpty, normalizeEmail } from '@/lib/utils';
 import { formatVolume } from '../help';
 
 export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }) {
@@ -52,7 +52,7 @@ export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }
               <Td>
                 {(() => {
                   const tags = v.tags || [];
-                  if (tags.length === 0) return null;
+                  if (isEmpty(tags)) return null;
                   const firstTag = tags[0];
                   const remainingTags = tags.slice(1);
                   const remainingCount = remainingTags.length;

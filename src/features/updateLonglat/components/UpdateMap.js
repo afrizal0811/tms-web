@@ -1,5 +1,6 @@
 'use client';
 
+import { isEmpty } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef } from 'react';
@@ -62,7 +63,7 @@ function InitialFitBounds({ points }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!points || points.length === 0) return;
+    if (!points || isEmpty(points)) return;
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [50, 50] });
   }, [map, points]);
@@ -73,7 +74,7 @@ function InitialFitBounds({ points }) {
 export default function UpdateMap({ data, activeCoords, highlightTrigger, t }) {
   const markerRefs = useRef({});
   const latestOldPoint = useMemo(() => {
-    if (!data || data.length === 0) return null;
+    if (!data || isEmpty(data)) return null;
 
     let latest = null;
 
@@ -163,7 +164,7 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger, t }) {
     return { mapElements: elements, allPoints: points };
   }, [data, latestOldPoint, t]);
 
-  if (allPoints.length === 0) {
+  if (isEmpty(allPoints)) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100 text-gray-400 text-sm">
         {t

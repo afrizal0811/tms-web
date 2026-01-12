@@ -7,6 +7,7 @@ import {
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
   formatYYYYMMDDToDDMMYYYY,
+  isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -65,8 +66,7 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (filteredApiData.length === 0)
-    return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' }; // Error string ini bisa ditangani di UI level untuk translate
+  if (isEmpty(filteredApiData)) return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' }; // Error string ini bisa ditangani di UI level untuk translate
 
   const apiDataMap = filteredApiData.reduce((acc, item) => {
     if (item.email) {
@@ -78,7 +78,7 @@ export function generateTimeSummaryWorkbook(
   // 4. Filter Master List
   const masterDriverList = driverData.filter((driver) => {
     const plat = driver.plat || '';
-    if (plat === '') return false;
+    if (isEmpty(plat)) return false;
     if (plat.toUpperCase().includes('DEMO')) return false;
     return true;
   });

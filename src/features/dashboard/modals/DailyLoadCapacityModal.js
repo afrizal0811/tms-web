@@ -3,6 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
+import { isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import {
   Bar,
@@ -238,7 +239,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-3">
               {/* ... (Isi Mapping Vehicle List Sama Persis) ... */}
-              {vehicleList.length === 0 ? (
+              {isEmpty(vehicleList) ? (
                 <p className="text-center text-gray-400 text-sm py-4">{t('common.no_data')}</p>
               ) : (
                 vehicleList.map((trip, idx) => {

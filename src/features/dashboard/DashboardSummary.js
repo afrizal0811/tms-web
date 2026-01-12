@@ -9,7 +9,7 @@ import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatDateWIB, formatToApiUtc, normalizeEmail } from '@/lib/utils';
+import { formatDateWIB, formatToApiUtc, isEmpty, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DiagramTab from './tab/DiagramTab';
 
@@ -203,7 +203,7 @@ export default function DashboardSummary({ driverData }) {
 
       setRawData({ tasks: tasksData || [], results: resultsData || [] });
 
-      if (!tasksData || tasksData.length === 0) {
+      if (!tasksData || isEmpty(tasksData)) {
         const emptySummary = {
           totalTasks: 0,
           unassigned: 0,
@@ -436,8 +436,8 @@ export default function DashboardSummary({ driverData }) {
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
-  const isDailyEmpty = !loading && (!rawData.tasks || rawData.tasks.length === 0);
-  const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || yearlyTasks.length === 0);
+  const isDailyEmpty = !loading && (!rawData.tasks || isEmpty(rawData.tasks));
+  const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || isEmpty(yearlyTasks));
 
   // Tentukan kosong berdasarkan Tab Aktif
   const isCardEmpty = isDiagramTab ? isYearlyEmpty : isDailyEmpty;

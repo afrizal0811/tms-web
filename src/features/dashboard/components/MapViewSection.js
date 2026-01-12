@@ -1,5 +1,5 @@
 import { useLanguage } from '@/context/LanguageContext';
-import { parseCoordinates } from '@/lib/utils';
+import { isEmpty, parseCoordinates } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import dynamic from 'next/dynamic';
@@ -50,12 +50,12 @@ const createArrowIcon = (angle, color, isHighlight = false) => {
 
 const createNumberedIcon = (content, bgClassName) => {
   let fontSize = 'text-xs';
-  if (content === '-' || content === '?') fontSize = 'text-lg';
+  if (isEmpty(content) || content === '?') fontSize = 'text-lg';
   if (content === 'HUB') fontSize = 'text-[8px] tracking-tighter';
 
   return new L.DivIcon({
     className: 'custom-div-icon',
-    html: `
+    html: ` 
       <div class="${bgClassName} w-7 h-7 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white font-bold ${fontSize} z-50 relative box-border overflow-hidden">
         ${content}
       </div>
@@ -85,7 +85,7 @@ const applyJitter = (tasks) => {
 };
 
 const ArrowPolyline = ({ segments, defaultColor }) => {
-  if (!segments || segments.length === 0) return null;
+  if (!segments || isEmpty(segments)) return null;
   return (
     <>
       {segments.map((seg, i) => {
@@ -193,7 +193,7 @@ const MapViewSection = ({
 
   // FIX ERROR 2: Gunakan disable-line jika linter salah deteksi, tapi pastikan variabel benar-benar dipakai
   const pathSegments = useMemo(() => {
-    if (sortedTasks.length === 0) return [];
+    if (isEmpty(sortedTasks)) return [];
 
     const hubTask = sortedTasks.find((t) => t.type === 'HUB_START');
     if (!hubTask || !hubTask.lat || !hubTask.lng) return [];

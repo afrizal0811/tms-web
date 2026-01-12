@@ -1,6 +1,7 @@
 // File: features/rangkuman/tabs/PendingReasonsTab.js
 import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
+import { isEmpty } from '@/lib/utils';
 import { useRef, useState } from 'react';
 
 // --- KONFIGURASI DINAMIS ---
@@ -26,7 +27,7 @@ const ReasonCell = ({ text, className }) => {
 
   return (
     <td className={`${className} text-left max-w-[200px]`}>
-      {text && text !== '-' ? (
+      {text && !isEmpty(text) ? (
         isTruncated ? (
           <Tooltip tooltipContent={text}>{innerContent}</Tooltip>
         ) : (
@@ -109,8 +110,7 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
   const yellowCellStyle = 'text-slate-900 bg-yellow-200 font-bold';
 
   const renderRedIfEmpty = (val, baseClass) => {
-    const isEmpty = !val || val === '-' || val === '';
-    if (isEmpty) {
+    if (isEmpty(val)) {
       return <td className={`${baseClass} ${redCellStyle}`}>-</td>;
     }
     return <td className={baseClass}>{val}</td>;

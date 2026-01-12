@@ -8,7 +8,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { parseCustomerString } from '@/lib/utils';
+import { isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { getResultsSummary } from '../../lib/apiService';
 import { toastError } from '../../lib/toastHelper';
@@ -82,7 +82,7 @@ export default function EstimasiDelivery() {
         const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
         const getHubEtd = (route) => {
-          if (!route.trips || route.trips.length === 0) return Infinity;
+          if (!route.trips || isEmpty(route.trips)) return Infinity;
           const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
           if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
             const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
@@ -167,7 +167,7 @@ export default function EstimasiDelivery() {
 
   const downloadButton = (
     <DownloadButton
-      disabled={isDownloading || isLoading || filteredVehicleRoutes.length === 0}
+      disabled={isDownloading || isLoading || isEmpty(filteredVehicleRoutes)}
       isLoading={isLoading || isDownloading}
       onClick={() =>
         handleConfirmDownload({
@@ -205,7 +205,7 @@ export default function EstimasiDelivery() {
       <BodyCard
         activeTabId={activeVehicleId}
         className="min-h-[400px]"
-        isEmpty={!isLoading && (filteredVehicleRoutes.length === 0 || !activeRoute)}
+        isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
         isLoading={isLoading}
         loadingText={t('common.loading')}
         onTabClick={setActiveVehicleId}

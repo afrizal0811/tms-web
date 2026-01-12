@@ -2,7 +2,7 @@
 'use client';
 
 import { VEHICLE_TYPES } from '@/lib/constants';
-import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
+import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 // Helper kecil untuk memformat jam (HH:mm:ss -> HH:mm)
@@ -207,8 +207,10 @@ export function generateRoutingWorkbook(
         ),
         totalDistance: Math.max(existing.totalDistance, row.totalDistance),
         shipDurationRaw: Math.max(existing.shipDurationRaw, row.shipDurationRaw),
-        etaFirstStore: existing.etaFirstStore !== '-' ? existing.etaFirstStore : row.etaFirstStore,
-        etdHub: existing.etdHub !== '-' ? existing.etdHub : row.etdHub,
+        etaFirstStore: !isEmpty(existing.etaFirstStore)
+          ? existing.etaFirstStore
+          : row.etaFirstStore,
+        etdHub: !isEmpty(existing.etdHub) ? existing.etdHub : row.etdHub,
 
         hasTrips: existing.hasTrips || row.hasTrips,
         totalTravelTime: existing.totalTravelTime && row.totalTravelTime,
@@ -251,7 +253,7 @@ export function generateRoutingWorkbook(
 
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
-    if (plat === '') return false;
+    if (isEmpty(plat)) return false;
     if (plat.toUpperCase().includes('DEMO')) return false;
     return true;
   });

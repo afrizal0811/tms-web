@@ -1,7 +1,7 @@
 // File: features/rangkuman/tabs/components/TruckDetailModal.js
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate } from '@/lib/utils';
+import { formatLongDate, isEmpty } from '@/lib/utils';
 
 export default function TruckDetailModal({ isOpen, onClose, data, translate, language }) {
   if (!isOpen || !data) return null;
@@ -41,8 +41,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
   };
 
   const getSeqColor = (ro, real) => {
-    if (ro === null || ro === undefined || ro === '-')
-      return 'bg-red-100 text-red-600 border border-red-200';
+    if (isEmpty(ro)) return 'bg-red-100 text-red-600 border border-red-200';
     if (ro == real) return 'bg-green-100 text-green-600 border border-green-200';
     return 'bg-red-100 text-red-600 border border-red-200';
   };
@@ -91,7 +90,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                     <div
                       className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(displayRO, displayReal)}`}
                     >
-                      {displayRO === '-' ? '-' : `#${displayRO}`} &rarr; #{displayReal}
+                      {isEmpty(displayRO) ? '-' : `#${displayRO}`} &rarr; #{displayReal}
                     </div>
                   </Tooltip>
                 </div>

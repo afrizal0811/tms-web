@@ -1,4 +1,4 @@
-import { formatDateUniversal } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export const downloadRoutingVsActual = (data, t) => {
@@ -184,7 +184,7 @@ export const downloadRoutingVsActual = (data, t) => {
         }
 
         if (
-          (!ws[firstCellRef] || ws[firstCellRef].v === '') &&
+          (!ws[firstCellRef] || isEmpty(ws[firstCellRef].v)) &&
           !(ws[XLSX.utils.encode_cell({ r: R, c: 3 })]?.v === 'HUB')
         ) {
           continue;

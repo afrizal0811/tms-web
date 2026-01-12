@@ -16,6 +16,7 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
 import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
+import { isEmpty } from '@/lib/utils';
 
 const CustomTooltip = ({ active, payload, label, t }) => {
   if (active && payload && payload.length) {
@@ -64,7 +65,7 @@ function SequenceAccuracyChart({ allTasks }) {
   const [isModalLoading, setIsModalLoading] = useState(false);
   // === Hitung data bulanan setelah render pertama ===
   useEffect(() => {
-    if (!allTasks || allTasks.length === 0) {
+    if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setMonthlyData([]);
       setDailyData([]);
@@ -94,7 +95,7 @@ function SequenceAccuracyChart({ allTasks }) {
   }, [monthlyData, lang]);
   // === Hitung harian saat user pilih bulan ===
   useEffect(() => {
-    if (!selectedMonth || !allTasks || allTasks.length === 0) {
+    if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setDailyData([]);
       setIsModalLoading(false);

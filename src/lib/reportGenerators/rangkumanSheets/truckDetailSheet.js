@@ -4,6 +4,7 @@ import {
   formatDateWIB,
   formatMinutesToHHMM,
   getUTC7DateString,
+  isEmpty,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -105,7 +106,7 @@ export function calculateTruckDetailData(
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '-';
-      if (plat === '-' || plat.toUpperCase().includes('DEMO')) {
+      if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) {
         return;
       }
       const email = d.email ? d.email.toLowerCase().trim() : null;
@@ -247,13 +248,14 @@ export function calculateTruckDetailData(
         }
         const entry = dataMatrix[dateKey][email];
         entry.outlets += 1;
-        const flow = task.flow || '';
-        const status =
+        const flow = task.flow || '-';
+        let status =
           flow !== 'Pickup'
             ? task.statusDelivery && task.statusDelivery.length > 0
               ? task.statusDelivery[0].toUpperCase()
-              : ''
+              : '-'
             : task.status && task.status.toUpperCase();
+        status = status !== 'ONGOING' ? status : '-';
         if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
 
         const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
@@ -287,7 +289,7 @@ export function calculateTruckDetailData(
         const realStartTimeStr = arrivalSource
           ? formatDateTimeWIB(arrivalSource)
           : formatDateTimeWIB(task.startTime);
-        const { name: customerName } = parseCustomerString(task.customerOrder);
+        const { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
 
         entry.taskList.push({
           _tempId: Math.random().toString(36).substr(2, 9),

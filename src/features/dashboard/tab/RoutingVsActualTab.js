@@ -6,7 +6,13 @@ import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatSimpleTime, formatTimestampToHHMM, normalizeEmail } from '@/lib/utils';
+import {
+  formatSimpleTime,
+  formatTimestampToHHMM,
+  isEmpty,
+  normalizeEmail,
+  parseCustomerString,
+} from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
@@ -37,7 +43,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
             const driverEmail = normalizeEmail(route.assignee);
             const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
             const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-            if (!driverName || !Array.isArray(route.trips) || route.trips.length === 0) continue;
+            if (!driverName || !Array.isArray(route.trips) || isEmpty(route.trips)) continue;
 
             const hubTrips = route.trips.filter((trip) => trip.isHub === true);
             if (hubTrips.length > 0) {
@@ -60,14 +66,21 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
     const allTaskData = [];
 
     for (const task of tasks) {
+      const flow = task.flow;
       const emailString =
         Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
       const driverEmail = normalizeEmail(emailString);
       const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
       const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-      const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
-      const customerName = task.customerName || '';
-      const flow = task.flow;
+      let statusLabel =
+        flow !== 'Pickup'
+          ? task.statusDelivery && task.statusDelivery.length > 0
+            ? task.statusDelivery[0].toUpperCase()
+            : '-'
+          : task.status && task.status.toUpperCase();
+      statusLabel = statusLabel !== 'ONGOING' ? statusLabel : '-';
+      let { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
+      if (isEmpty(customerName)) customerName = task.customerName;
 
       if (driverName !== 'N/A') {
         const stats = driverStats.get(driverName) || {
@@ -203,7 +216,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         return t.customerName && t.customerName.toLowerCase().includes(query);
       });
 
-      if (matchingTasks.length === 0 && !isDriverMatch) continue;
+      if (isEmpty(matchingTasks) && !isDriverMatch) continue;
 
       finalRows.push({
         type: 'HUB_START',
@@ -215,8 +228,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       });
 
       matchingTasks.sort((a, b) => {
-        const realA = a.realSequence !== null ? a.realSequence : 999999;
-        const realB = b.realSequence !== null ? b.realSequence : 999999;
+        const realA = isEmpty(a.realSequence) ? a.realSequence : 999999;
+        const realB = isEmpty(b.realSequence) ? b.realSequence : 999999;
         if (realA !== realB) {
           return realA - realB;
         }
@@ -246,7 +259,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
   }, [loading, tasks, results, drivers, searchQuery]);
 
   const handleDownload = async () => {
-    if (processedData.length === 0) return;
+    if (isEmpty(processedData)) return;
 
     setIsDownloading(true);
     try {
@@ -280,7 +293,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         <div className="w-full md:w-auto order-2">
           <button
             onClick={handleOpenMap} // CLUE: Gunakan handler baru
-            disabled={loading || processedData.length === 0}
+            disabled={loading || isEmpty(processedData)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
           >
             <svg
@@ -302,7 +315,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         </div>
         <div className="w-full md:w-auto order-3">
           <DownloadButton
-            disabled={loading || isDownloading || processedData.length === 0}
+            disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleDownload}
             text={t('common.download_excel')}
             width="w-full md:w-auto"
@@ -389,7 +402,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
               const isMatch = row.roSequence == row.realSequence;
               const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
               const realSeq = row.realSequence ?? '-';
-              const realSeqEmpty = realSeq === '-';
+              const realSeqEmpty = isEmpty(realSeq);
               const match = realSeqEmpty
                 ? '-'
                 : isMatch
@@ -418,7 +431,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                   <td className="px-4 py-2 text-center">{row.visitTime}</td>
                   <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
                   <td className="px-4 py-2 text-center font-semibold">
-                    {row.roSequence === 0 ? '-' : row.roSequence}
+                    {isEmpty(row.roSequence) ? '-' : row.roSequence}
                   </td>
                   <td className="px-4 py-2 text-center font-semibold">{realSeq}</td>
                   <td

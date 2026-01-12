@@ -1,12 +1,13 @@
 // File: src/components/HighlightText.js
 'use client';
 
+import { isEmpty } from '@/lib/utils';
 import { useMemo } from 'react';
 
 export default function HighlightText({ text, highlight, className = '' }) {
   const parts = useMemo(() => {
     if (!text) return [];
-    if (!highlight || highlight.trim() === '') return [text];
+    if (!highlight || isEmpty(highlight.trim())) return [text];
 
     // Escape karakter regex spesial (seperti *, +, ?, dll) agar tidak error
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

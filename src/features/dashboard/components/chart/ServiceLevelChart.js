@@ -4,6 +4,7 @@
 import { useLanguage } from '@/context/LanguageContext';
 import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
 import { processServiceLevelData } from '@/lib/dashboardHelper';
+import { isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -76,7 +77,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
   const [isModalLoading, setIsModalLoading] = useState(false);
   // === Hitung data bulanan SETELAH render pertama (supaya tab nggak freeze) ===
   useEffect(() => {
-    if (!allTasks || allTasks.length === 0) {
+    if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setMonthlyData([]);
       setDailyData([]);
@@ -109,7 +110,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
 
   // === Hitung data harian saat user pilih bulan ===
   useEffect(() => {
-    if (!selectedMonth || !allTasks || allTasks.length === 0) {
+    if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setDailyData([]);
       setIsModalLoading(false);
