@@ -403,7 +403,7 @@ export default function DashboardSummary({ driverData }) {
               allTasks = [...allTasks, ...data.data];
             }
           } else {
-            console.warn('Partial yearly fetch failed:', res.reason);
+            toastWarning('dashboard.toast.partial_warning', { err: res.reason });
             failureCount++;
           }
         });

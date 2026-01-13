@@ -59,11 +59,12 @@ const CustomTooltip = ({ active, payload, label, t }) => {
 function SequenceAccuracyChart({ allTasks }) {
   const { t, lang } = useLanguage();
 
-  const [monthlyData, setMonthlyData] = useState(null); // null = belum siap
+  const [monthlyData, setMonthlyData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [dailyData, setDailyData] = useState([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
-  // === Hitung data bulanan setelah render pertama ===
+
+  // === Hitung data bulanan ===
   useEffect(() => {
     if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -72,7 +73,6 @@ function SequenceAccuracyChart({ allTasks }) {
       setSelectedMonth(null);
       return;
     }
-
     const result = processSequenceAccuracyData(allTasks, 'monthly');
     setMonthlyData(result);
   }, [allTasks]);
@@ -80,11 +80,9 @@ function SequenceAccuracyChart({ allTasks }) {
   const localizedData = useMemo(() => {
     if (!monthlyData) return null;
     return monthlyData.map((item) => {
-      // Asumsi item.key formatnya "YYYY-MM"
       if (item.key && item.key.includes('-')) {
         const [year, month] = item.key.split('-').map(Number);
         const date = new Date(year, month - 1, 1);
-
         return {
           ...item,
           name: date.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short' }),
@@ -93,7 +91,8 @@ function SequenceAccuracyChart({ allTasks }) {
       return item;
     });
   }, [monthlyData, lang]);
-  // === Hitung harian saat user pilih bulan ===
+
+  // === Hitung harian ===
   useEffect(() => {
     if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -101,16 +100,13 @@ function SequenceAccuracyChart({ allTasks }) {
       setIsModalLoading(false);
       return;
     }
-
     const key = selectedMonth.key;
     if (!key) {
       setDailyData([]);
       setIsModalLoading(false);
       return;
     }
-
     setIsModalLoading(true);
-
     setTimeout(() => {
       const result = processSequenceAccuracyData(allTasks, 'daily', key);
       setDailyData(result);
@@ -124,18 +120,37 @@ function SequenceAccuracyChart({ allTasks }) {
     setSelectedMonth(payload);
   };
 
-  const getModalTitle = () => {
-    if (!selectedMonth) return '';
+  // --- PERBAIKAN: Siapkan object Date untuk dikirim ke Modal ---
+  const selectedDateObj = useMemo(() => {
+    if (!selectedMonth || !selectedMonth.key) return null;
     try {
-      const [year, month] = selectedMonth.key.split('-');
-      const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-      const fullMonth = dateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
-        month: 'long',
-      });
+      const [year, month] = selectedMonth.key.split('-').map(Number);
+      // Buat tanggal 1 pada bulan tersebut
+      return new Date(year, month - 1, 1);
+    } catch {
+      return null;
+    }
+  }, [selectedMonth]);
 
-      return `${t('dashboard.charts.sequence.title')} ${fullMonth} ${year}`;
-    } catch (e) {
-      return `${t('dashboard.charts.sequence.title')} ${selectedMonth.name || selectedMonth.key}`;
+  const getModalTitle = () => {
+    if (!selectedDateObj) return ''; // Gunakan selectedDateObj yang sudah dibuat
+    try {
+      const fullMonth = selectedDateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+        month: 'long',
+        year: 'numeric',
+      });
+      return (
+        <div>
+          <h3 className="text-lg font-bold">{t('dashboard.charts.sequence.title')}</h3>
+          <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
+        </div>
+      );
+    } catch {
+      return (
+        <div>
+          <h3 className="text-lg font-bold">{t('dashboard.charts.sequence.title')}</h3>
+        </div>
+      );
     }
   };
 
@@ -157,7 +172,6 @@ function SequenceAccuracyChart({ allTasks }) {
 
       <div className="h-[350px] w-full">
         {isPreparing ? (
-          // === SKELETON SAAT MENYIAPKAN DATA ===
           <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300">
             <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 animate-pulse" />
             <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 animate-pulse" />
@@ -189,7 +203,6 @@ function SequenceAccuracyChart({ allTasks }) {
                 align="right"
                 wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
               />
-
               <Bar
                 cursor="pointer"
                 dataKey="match"
@@ -225,16 +238,13 @@ function SequenceAccuracyChart({ allTasks }) {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-4 text-center italic">
-        {t('common.click_for_detail')}
-      </p>
-
       <DailySequenceAccuracyModal
         isOpen={!!selectedMonth}
         onClose={() => setSelectedMonth(null)}
         title={getModalTitle()}
         data={dailyData}
         isLoading={isModalLoading}
+        selectedDate={selectedDateObj} // PERBAIKAN: Kirim props ini
       />
     </div>
   );

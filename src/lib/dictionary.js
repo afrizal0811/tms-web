@@ -85,6 +85,8 @@ export const dictionary = {
         driver_cache_warning: 'Gagal memproses cache nama driver.',
         generic_error: 'Terjadi kesalahan sistem.',
         hub_not_found: 'Lokasi Hub tidak ditemukan. Harap login ulang.',
+        parsing_date_error: 'Gagal memproses tanggal untuk tooltip: {err}',
+        partial_warning: 'Gagal memuat sebagian data tahunan: {err}',
         sunday_error: 'Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain',
         user_load_error: 'Gagal memuat data user',
         view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
@@ -690,6 +692,8 @@ export const dictionary = {
         driver_cache_warning: 'Failed to process driver name cache.',
         generic_error: 'System error occurred.',
         hub_not_found: 'Hub location not found. Please login again.',
+        parsing_date_error: 'Error parsing date for tooltip: {err}',
+        partial_warning: 'Partial yearly fetch failed: {err}',
         sunday_error: 'No deliveries on Sunday. Please choose another date',
         user_load_error: 'Failed to load user data',
         view_map_warning:

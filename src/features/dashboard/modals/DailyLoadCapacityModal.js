@@ -15,9 +15,10 @@ import {
   YAxis,
 } from 'recharts';
 import { getStatusBadge } from '../help';
+import { toastError } from '@/lib/toastHelper';
 
 const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage(); // Tambahkan lang
   const [selectedDay, setSelectedDay] = useState(null);
 
   // Logic 1: Chart Data Agregasi 5 Kategori
@@ -119,7 +120,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={typeof title === 'function' ? title(selectedDay) : title} // Handle jika title berupa function
+      title={typeof title === 'function' ? title(selectedDay) : title}
       maxWidth="max-w-4xl"
       footer={footerContent}
     >
@@ -143,46 +144,60 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
+                      let dayName = '';
+                      if (monthData && monthData.key) {
+                        try {
+                          const [yearStr, monthStr] = monthData.key.split('-');
+                          const year = parseInt(yearStr, 10);
+                          const month = parseInt(monthStr, 10) - 1; // 0-indexed
+                          const day = parseInt(label, 10);
+                          const dateObj = new Date(year, month, day);
+
+                          const locale = lang === 'id' ? 'id-ID' : 'en-GB';
+                          dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
+                        } catch (e) {
+                          toastError(t('dashboard.toast.parsing_date_error', { err: e.message }));
+                        }
+                      }
+
                       return (
                         <div className="bg-slate-800 text-white text-xs p-2 rounded shadow-lg z-50 min-w-[150px]">
-                          {' '}
-                          <p className="font-bold mb-1">
-                            {t('common.date')}: {label}
-                          </p>{' '}
-                          <div className="flex justify-between gap-3">
+                          <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">
+                            {t('common.date')} {label} {dayName && `(${dayName})`}
+                          </p>
+                          <div className="flex justify-between gap-4 mb-1">
                             <span className="text-red-400">
                               {t('dashboard.charts.load_capacity.overload')}:
                             </span>{' '}
                             {data.overload}
-                          </div>{' '}
-                          <div className="flex justify-between gap-3">
+                          </div>
+                          <div className="flex justify-between gap-4 mb-1">
                             <span className="text-orange-400">
                               {t('dashboard.charts.load_capacity.full')}:
                             </span>{' '}
                             {data.penuh}
-                          </div>{' '}
-                          <div className="flex justify-between gap-3">
+                          </div>
+                          <div className="flex justify-between gap-4 mb-1">
                             <span className="text-emerald-400">
                               {t('dashboard.charts.load_capacity.optimal')}:
                             </span>{' '}
                             {data.optimal}
-                          </div>{' '}
-                          <div className="flex justify-between gap-3">
+                          </div>
+                          <div className="flex justify-between gap-4 mb-1">
                             <span className="text-blue-400">
                               {t('dashboard.charts.load_capacity.low')}:
                             </span>{' '}
                             {data.rendah}
-                          </div>{' '}
-                          <div className="flex justify-between gap-3">
+                          </div>
+                          <div className="flex justify-between gap-4 mb-1">
                             <span className="text-slate-400">
                               {t('dashboard.charts.load_capacity.very_low')}:
                             </span>{' '}
                             {data.sangatRendah}
-                          </div>{' '}
+                          </div>
                           <div className="mt-2 text-[10px] text-slate-400 border-t border-slate-600 pt-1 italic text-center">
-                            {' '}
-                            {t('common.click_for_detail')}{' '}
-                          </div>{' '}
+                            {t('common.click_for_detail')}
+                          </div>
                         </div>
                       );
                     }
@@ -238,7 +253,6 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
         {selectedDay ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-3">
-              {/* ... (Isi Mapping Vehicle List Sama Persis) ... */}
               {isEmpty(vehicleList) ? (
                 <p className="text-center text-gray-400 text-sm py-4">{t('common.no_data')}</p>
               ) : (
@@ -254,9 +268,10 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                   return (
                     <div
                       key={`${trip.date}-${trip.email}-${idx}`}
-                      className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:shadow-md transition-shadow"
+                      // Layout: Mobile Grid (Driver+Status atas, Bar bawah), Desktop Flex
+                      className="bg-slate-50 border border-slate-200 rounded-lg p-4 grid grid-cols-[1fr_auto] md:flex md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow"
                     >
-                      <div className="min-w-[180px]">
+                      <div className="min-w-0 md:w-40 md:shrink-0 overflow-hidden">
                         <p
                           className="font-bold text-slate-700 text-sm truncate"
                           title={trip.driverName}
@@ -264,7 +279,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                           {trip.driverName}
                         </p>
                         <div className="flex flex-col items-start gap-1 mt-1">
-                          <p className="text-xs text-slate-500 font-mono font-bold bg-slate-200 inline-block px-1 rounded">
+                          <p className="text-xs text-slate-500 font-mono font-bold bg-slate-200 inline-block px-1 rounded truncate max-w-full">
                             {trip.vehicleName}
                           </p>
                           <p className="text-xs text-slate-400">
@@ -272,10 +287,23 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Weight & Volume Bars (Same code) */}
+
+                      <div className="flex flex-col items-end md:w-[120px] md:shrink-0 md:order-last">
+                        <Tooltip tooltipContent={status.range}>
+                          <span
+                            className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide cursor-help ${status.classes}`}
+                          >
+                            {status.label}
+                          </span>
+                        </Tooltip>
+                        <span className="text-[10px] text-slate-400 mt-1 text-right">
+                          {t('dashboard.charts.load_capacity.bound_by')}: {trip.boundBy}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 w-full md:flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <div className="flex justify-between text-xs mb-1">
+                          <div className="flex flex-row md:flex-col lg:flex-row justify-between text-xs mb-1">
                             <span className="text-slate-600 font-medium">
                               {t('dashboard.charts.load_capacity.weight')}
                             </span>
@@ -293,7 +321,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                           </div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-xs mb-1">
+                          <div className="flex flex-row md:flex-col lg:flex-row justify-between text-xs mb-1">
                             <span className="text-slate-600 font-medium">
                               {t('dashboard.charts.load_capacity.volume')}
                             </span>
@@ -310,18 +338,6 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData }) => {
                             />
                           </div>
                         </div>
-                      </div>
-                      <div className="min-w-[100px] flex flex-col items-end">
-                        <Tooltip tooltipContent={status.range}>
-                          <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide cursor-help ${status.classes}`}
-                          >
-                            {status.label}
-                          </span>
-                        </Tooltip>
-                        <span className="text-[10px] text-slate-400 mt-1">
-                          {t('dashboard.charts.load_capacity.bound_by')}: {trip.boundBy}
-                        </span>
                       </div>
                     </div>
                   );

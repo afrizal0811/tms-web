@@ -98,11 +98,16 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear }) => {
 
     const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
     const dateObj = new Date(year, monthItem.monthIndex, 1);
-    const fullMonthName = dateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+    const fullMonth = dateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
       month: 'long',
+      year: 'numeric',
     });
-
-    return `${t('dashboard.charts.load_capacity.title')} ${fullMonthName} ${year}`;
+    return (
+      <div>
+        <h3 className="text-lg font-bold">{t('dashboard.charts.load_capacity.title')}</h3>
+        <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
+      </div>
+    );
   };
 
   return (
