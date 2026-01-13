@@ -294,7 +294,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           <button
             onClick={handleOpenMap}
             disabled={loading || isEmpty(processedData)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-42 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white shadow-sm w-full md:w-42 cursor-pointer"
           >
             <svg
               className="h-5 w-5"

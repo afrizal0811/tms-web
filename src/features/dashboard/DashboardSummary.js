@@ -15,7 +15,7 @@ import DiagramTab from './tab/DiagramTab';
 
 function processOrderInfo(rawOrderId, t) {
   if (!rawOrderId || rawOrderId === 'N/A') {
-    return { tooltip: t('dashboard.no_so'), copyValue: null }; // Pakai t()
+    return { tooltip: t('dashboard.no_so'), copyValue: null };
   }
   const firstOrderId = rawOrderId.split(',')[0].trim();
   let copyValueToUse = null;
@@ -37,7 +37,6 @@ export default function DashboardSummary({ driverData }) {
   const [loading, setLoading] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
-
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
 
@@ -209,9 +208,13 @@ export default function DashboardSummary({ driverData }) {
         ),
       ]);
 
-      setRawData({ tasks: tasksData || [], results: resultsData || [] });
+      // Pastikan data tersimpan sebagai array
+      const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
+      const resultsArray = Array.isArray(resultsData) ? resultsData : resultsData?.data || [];
 
-      if (!tasksData || isEmpty(tasksData)) {
+      setRawData({ tasks: tasksArray, results: resultsArray });
+
+      if (isEmpty(tasksArray)) {
         const emptySummary = {
           totalTasks: 0,
           unassigned: 0,
@@ -247,7 +250,7 @@ export default function DashboardSummary({ driverData }) {
       let assignedDry = 0;
       let assignedFrozen = 0;
 
-      for (const task of tasksData) {
+      for (const task of tasksArray) {
         const flow = task.flow || 'N/A';
         const orderInfo = processOrderInfo(task.orderId, t);
 
@@ -325,7 +328,7 @@ export default function DashboardSummary({ driverData }) {
       crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
 
       const summary = {
-        totalTasks: tasksData.length,
+        totalTasks: tasksArray.length,
         unassigned,
         manualAssignList,
         unassignedList,
@@ -354,6 +357,7 @@ export default function DashboardSummary({ driverData }) {
     fetchData();
   }, [fetchData]);
 
+  // --- FETCH YEARLY DATA (ROBUST VERSION) ---
   const fetchYearlyData = useCallback(
     async (hubId, year) => {
       setIsYearlyLoading(true);
@@ -362,7 +366,6 @@ export default function DashboardSummary({ driverData }) {
       const monthlyRanges = [];
       for (let i = 0; i < 12; i++) {
         const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
-
         const localStart = new Date(year, i, 1, 0, 0, 0);
         const localEnd = new Date(year, i, lastDayOfThisMonth, 23, 59, 59);
 
@@ -374,7 +377,6 @@ export default function DashboardSummary({ driverData }) {
 
       let allTasks = [];
       try {
-        // 2. Tembak 12 request secara parallel (lebih cepat daripada satu-satu)
         const promises = monthlyRanges.map((range) =>
           fetchWithRetry(() =>
             getTasks({
@@ -388,17 +390,34 @@ export default function DashboardSummary({ driverData }) {
           )
         );
 
-        const results = await Promise.all(promises);
+        // Menggunakan allSettled agar robust terhadap kegagalan parsial
+        const results = await Promise.allSettled(promises);
 
-        // 3. Gabungkan semua hasil
+        let failureCount = 0;
         results.forEach((res) => {
-          if (Array.isArray(res)) allTasks = [...allTasks, ...res];
-          else if (res?.data) allTasks = [...allTasks, ...res.data];
+          if (res.status === 'fulfilled') {
+            const data = res.value;
+            if (Array.isArray(data)) {
+              allTasks = [...allTasks, ...data];
+            } else if (data?.data) {
+              allTasks = [...allTasks, ...data.data];
+            }
+          } else {
+            console.warn('Partial yearly fetch failed:', res.reason);
+            failureCount++;
+          }
         });
+
+        if (failureCount === 12) {
+          throw new Error('Gagal mengambil seluruh data tahunan.');
+        }
 
         setYearlyTasks(allTasks);
         lastFetchedYear.current = year;
         lastFetchedLocation.current = hubId;
+
+        const cacheKey = `${hubId}:${year}`;
+        yearlyCacheRef.current[cacheKey] = allTasks;
       } catch (err) {
         toastError(t('dashboard.toast.yearly_fetch_error'), err);
       } finally {
@@ -444,11 +463,22 @@ export default function DashboardSummary({ driverData }) {
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
-  const isDailyEmpty = !loading && (!rawData.tasks || isEmpty(rawData.tasks));
-  const isYearlyEmpty = !isYearlyLoading && (!yearlyTasks || isEmpty(yearlyTasks));
+  let isCardEmpty = false;
 
-  // Tentukan kosong berdasarkan Tab Aktif
-  const isCardEmpty = isDiagramTab ? isYearlyEmpty : isDailyEmpty;
+  if (activeTab === 'Diagram') {
+    isCardEmpty = !isYearlyLoading && (!yearlyTasks || isEmpty(yearlyTasks));
+  } else if (activeTab === 'Detail') {
+    isCardEmpty =
+      !loading &&
+      (!summaryData ||
+        isEmpty(summaryData.totalTasks) ||
+        (isEmpty(summaryData.done) && isEmpty(summaryData.ongoing)));
+  } else if (activeTab === 'RoutingVsActual') {
+    const noOngoingAndDone = !rawData.tasks?.some(
+      (t) => t?.status === 'ONGOING' || t?.status === 'DONE'
+    );
+    isCardEmpty = !loading && noOngoingAndDone;
+  }
 
   const subtitle = (
     <>
