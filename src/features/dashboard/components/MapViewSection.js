@@ -309,6 +309,7 @@ const MapViewSection = ({
           pickupCount={pickupCount}
           completedPickupCount={completedPickupCount} // REQ 1: Pass Prop
           isActualMap={isActualMap}
+          t={t}
         />
       )}
 
@@ -398,18 +399,18 @@ const MapViewSection = ({
         )}
       </div>
 
-      <div className="px-4 py-2 bg-gray-50 border-t flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
+      <div className="hidden md:flex flex-wrap px-4 py-2 bg-gray-50 border-t  gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
         {!isActualMap ? (
-          <LegendItem color="bg-[#0D9488]" label={t('dashboard.map.plan_completed') || 'Plan'} />
+          <LegendItem
+            color="bg-[#0D9488]"
+            label={`${t('dashboard.map.plan')} ${t('dashboard.map.completed')}`}
+          />
         ) : (
           <LegendItem
             color="bg-[#16A34A]"
-            label={t('dashboard.map.actual_completed') || 'Actual'}
+            label={`${t('dashboard.map.real')} ${t('dashboard.map.completed')}`}
           />
         )}
-
-        <div className="w-px h-3 bg-gray-300 mx-1 self-center"></div>
-
         <LegendItem color="bg-[#000000]" label="HUB" />
         <LegendItem color="bg-[#2563EB]" label="Delivery" />
         <LegendItem color="bg-[#F97316]" label="Re Delivery" />

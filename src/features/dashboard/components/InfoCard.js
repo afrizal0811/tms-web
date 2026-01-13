@@ -1,4 +1,3 @@
-import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty, parseCustomerString } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 
@@ -47,8 +46,8 @@ const InfoCard = ({
   pickupCount,
   completedPickupCount,
   isActualMap,
+  t,
 }) => {
-  const { t } = useLanguage();
   const [isMinimized, setIsMinimized] = useState(false);
 
   // --- HELPER: Styles berdasarkan Flow & Status ---
@@ -161,9 +160,8 @@ const InfoCard = ({
   const displayTitle = customTitle || cleanName;
 
   const cardClasses = `
-    z-[2000] bg-white overflow-hidden shadow-2xl transition-all duration-300
-    border-l-4 ${style.border} 
-    fixed bottom-0 left-0 right-0 w-full rounded-t-2xl border-t border-gray-200
+    z-[2000] bg-white overflow-hidden shadow-2xl transition-all duration-300 ${style.border} 
+    fixed bottom-0 left-0 right-0 w-full rounded-t-2xl border-gray-200
     animate-in slide-in-from-bottom-full fade-in
     md:absolute md:right-2 md:bottom-auto md:left-auto md:w-72
     md:rounded-lg md:border
@@ -179,8 +177,8 @@ const InfoCard = ({
         )}
         <div className={cardClasses}>
           <HeaderComponent
-            title={t('dashboard.map.card.hub_location')}
-            subtitle="HUB"
+            title="HUB"
+            subtitle={t('dashboard.map.card.hub_location')}
             style={style}
             isMinimized={isMinimized}
             onToggleMinimize={() => setIsMinimized(!isMinimized)}
@@ -207,7 +205,7 @@ const InfoCard = ({
         <div className={cardClasses}>
           <HeaderComponent
             title="PICKUP"
-            subtitle="Task Group"
+            subtitle={t('dashboard.map.card.subtitle')}
             style={style}
             isMinimized={isMinimized}
             onToggleMinimize={() => setIsMinimized(!isMinimized)}
@@ -215,7 +213,6 @@ const InfoCard = ({
           />
           {!isMinimized && (
             <div className="p-6 flex flex-col items-center justify-center space-y-2">
-              {/* REQ 2: Menghapus style.bgHeader dari sini */}
               <div className={`p-3 rounded-full bg-purple-50 ${style.iconColor} mb-1`}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -233,7 +230,6 @@ const InfoCard = ({
                 </svg>
               </div>
               <span className="text-sm text-gray-500 font-medium">Total Task Pickup</span>
-              {/* REQ 1: Menambahkan Counter */}
               <span className="text-3xl font-bold text-slate-700">
                 {completedPickupCount}/{pickupCount}
               </span>
@@ -315,7 +311,9 @@ const InfoCard = ({
                   {t('dashboard.map.card.actual')}
                 </span>
                 <span className="font-mono font-bold text-slate-700 text-sm">
-                  {task.actualArrival || '--:--'} - {task.actualDeparture || '--:--'}
+                  {!(isEmpty(task.actualArrival) || isEmpty(task.actualDeparture))
+                    ? `${task.actualArrival} - ${task.actualDeparture}`
+                    : '-'}
                 </span>
               </div>
             </div>
@@ -348,7 +346,10 @@ const InfoCard = ({
                 </span>
                 <div className="flex items-center justify-end gap-2">
                   <span className="font-bold text-slate-700 text-sm">
-                    {actVisit > 0 ? actVisit : '-'} {t('common.minute')}
+                    {actVisit >= 0 &&
+                    !(isEmpty(task.actualArrival) || isEmpty(task.actualDeparture))
+                      ? `${actVisit} ${t('common.minute')}`
+                      : '-'}
                   </span>
                   {actVisit > 0 && (
                     <span

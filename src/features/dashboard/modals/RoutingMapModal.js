@@ -108,16 +108,15 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       if (t.flow === 'Pickup') {
         if (!seen.has('Pickup')) {
           seen.add('Pickup');
-          options.push({ value: 'Pickup', label: 'Pickup', isPending: false });
+          options.push({ value: 'Pickup', label: 'PICKUP', isPending: false });
         }
       } else {
         const displayName = resolveDisplayName(t.customerName, t.flow);
         if (!seen.has(displayName)) {
           seen.add(displayName);
-          // Kirim status isPending untuk styling
           options.push({
             value: displayName,
-            label: displayName, // Label tetap bersih tanpa "(Pending)"
+            label: displayName,
             isPending: isPending,
           });
         }
@@ -176,17 +175,18 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     setPrevDriver(null);
     onClose();
   };
+  const headerTitle = (
+    <div className="text-left">
+      <h2 className="text-xl font-bold">{t('dashboard.map.title')}</h2>
+      <p className="text-xs font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
+    </div>
+  );
 
   const headerContent = (
-    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between w-full lg:pr-8">
-      <div className="text-center lg:text-left">
-        <h2 className="text-xl font-bold text-slate-800">{t('dashboard.map.title')}</h2>
-        <p className="text-xs text-slate-500 font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
-      </div>
-      <div className="flex flex-row gap-2 w-full lg:w-auto items-end">
-        {/* Label Driver */}
+    <div className="flex flex-col lg:flex-row items-end justify-between w-full">
+      <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
-          <label className="text-[10px] font-bold text-gray-500 tracking-wide">
+          <label className="text-[10px] font-boldtracking-wide">
             {t('dashboard.map.dropdown_driver')}
           </label>
           <select
@@ -203,9 +203,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           </select>
         </div>
 
-        {/* Label Task */}
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
-          <label className="text-[10px] font-bold text-gray-500 tracking-wide">
+          <label className="text-[10px] font-bold tracking-wide">
             {`${t('dashboard.map.dropdown_task')}  (${t('dashboard.map.real')})`}
           </label>
           <select
@@ -236,11 +235,11 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     <BaseModal
       isOpen={isOpen}
       onClose={handleCloseModal}
-      title={headerContent}
+      title={headerTitle}
+      headerContent={headerContent}
       maxWidth="max-w-6xl"
-      headerClassName="bg-white border-b border-gray-200 py-3"
       contentClassName="h-[90vh]"
-      bodyClassName="p-4 bg-slate-100 flex flex-col gap-4 overflow-hidden h-full"
+      bodyClassName="p-4 flex flex-col gap-4 overflow-hidden h-full"
     >
       {selectedDriver ? (
         <>
