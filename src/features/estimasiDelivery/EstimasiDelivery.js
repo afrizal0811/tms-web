@@ -8,30 +8,48 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { isEmpty, parseCustomerString } from '@/lib/utils';
-import { useEffect, useMemo, useState } from 'react';
-import { getResultsSummary } from '../../lib/apiService';
-import { toastError } from '../../lib/toastHelper';
+import {
+  calculateStartFinishDates,
+  formatDateUniversal,
+  isEmpty,
+  normalizeEmail,
+  parseCustomerString,
+} from '@/lib/utils';
+import { pdf } from '@react-pdf/renderer';
+import JSZip from 'jszip';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getLocationHistories, getResultsSummary } from '../../lib/apiService';
+import { toastError, toastSuccess } from '../../lib/toastHelper';
+import ReportTerimaFaktur from './components/ReportTerimaFaktur';
 import TableData from './components/TableData';
-import { handleConfirmDownload, parseSONumber } from './help';
+import { handleConfirmDownload, parseSONumber, processDriverTimeMap } from './help';
 
 export default function EstimasiDelivery() {
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const date = new Date();
-    const daysToSubtract = date.getDay() === 1 ? 2 : 1;
-    date.setDate(date.getDate() - daysToSubtract);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  });
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const [driverMap, setDriverMap] = useState(new Map());
+  const [timeMap, setTimeMap] = useState(new Map());
+
+  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
+  const downloadDropdownRef = useRef(null);
+
   const { t } = useLanguage();
+
+  useEffect(() => {
+    setIsClient(true);
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    setSelectedDate(`${y}-${m}-${d}`);
+  }, []);
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -43,8 +61,135 @@ export default function EstimasiDelivery() {
   };
 
   useEffect(() => {
-    const date = new Date(selectedDate.replace(/-/g, '/'));
-    if (date.getDay() === 0) {
+    function handleClickOutside(event) {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
+        setIsDownloadDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [downloadDropdownRef]);
+
+  useEffect(() => {
+    try {
+      const { storedDrivers } = getLocalStorage();
+      if (storedDrivers) {
+        const parsedDrivers = JSON.parse(storedDrivers);
+        const map = new Map();
+        if (Array.isArray(parsedDrivers)) {
+          parsedDrivers.forEach((d) => {
+            const email = normalizeEmail(d.email);
+            if (email) map.set(email, d.name);
+          });
+        }
+        setDriverMap(map);
+      }
+    } catch (error) {
+      console.error('Gagal load driver data:', error);
+    }
+  }, []);
+
+  const handleDownloadPdfZip = async () => {
+    if (isEmpty(filteredVehicleRoutes)) {
+      toastError('Tidak ada data rute untuk diunduh');
+      return;
+    }
+
+    setIsDownloading(true);
+    setIsDownloadDropdownOpen(false);
+
+    try {
+      const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+      const { storedLocationName } = getLocalStorage();
+      const locationName = storedLocationName || 'Cabang';
+
+      // KASUS 1: HANYA 1 DATA -> DOWNLOAD LANGSUNG PDF
+      if (filteredVehicleRoutes.length === 1) {
+        const route = filteredVehicleRoutes[0];
+        const normalizedAssignee = normalizeEmail(route.assignee);
+        const realDriverName = driverMap.get(normalizedAssignee) || route.vehicleName;
+        const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '-', jamKembali: '-' };
+
+        const blob = await pdf(
+          <ReportTerimaFaktur
+            data={route}
+            selectedDate={selectedDate}
+            driverNameOverride={realDriverName}
+            jamBerangkat={timeData.jamBerangkat}
+            jamKembali={timeData.jamKembali}
+          />
+        ).toBlob();
+
+        const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Tanda Terima Faktur - ${safeName} - ${dateForFilename}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toastSuccess('Berhasil mengunduh file laporan PDF.');
+      } else {
+        // KASUS 2: BANYAK DATA -> DOWNLOAD ZIP
+        const zip = new JSZip();
+
+        const pdfPromises = filteredVehicleRoutes.map(async (route) => {
+          const normalizedAssignee = normalizeEmail(route.assignee);
+          const realDriverName = driverMap.get(normalizedAssignee) || route.vehicleName;
+          const timeData = timeMap.get(normalizedAssignee) || {
+            jamBerangkat: '-',
+            jamKembali: '-',
+          };
+
+          const blob = await pdf(
+            <ReportTerimaFaktur
+              data={route}
+              selectedDate={selectedDate}
+              driverNameOverride={realDriverName}
+              jamBerangkat={timeData.jamBerangkat}
+              jamKembali={timeData.jamKembali}
+            />
+          ).toBlob();
+
+          const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+          return { name: `${safeName} - ${dateForFilename}.pdf`, blob };
+        });
+
+        const generatedFiles = await Promise.all(pdfPromises);
+
+        generatedFiles.forEach((file) => {
+          zip.file(file.name, file.blob);
+        });
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        // Penamaan ZIP: Tanda Terima Faktur - {Cabang} - {Tanggal}.zip
+        link.download = `Tanda Terima Faktur - ${locationName} - ${dateForFilename}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toastSuccess(`Berhasil mengunduh ${generatedFiles.length} file laporan dalam ZIP.`);
+      }
+    } catch (error) {
+      console.error('Gagal generate Report:', error);
+      toastError('Gagal mengunduh file laporan');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const deliveryDateObj = new Date(selectedDate);
+    if (deliveryDateObj.getDay() === 0) {
       setAllRoutes([]);
       setIsLoading(false);
       return;
@@ -54,22 +199,48 @@ export default function EstimasiDelivery() {
       setIsLoading(true);
       setAllRoutes([]);
       setActiveVehicleId(null);
+      setTimeMap(new Map());
+
       try {
         const { storedLocation: userLocation } = getLocalStorage();
         if (!userLocation) {
           throw new Error('userLocation tidak ditemukan di localStorage.');
         }
-        const dateFrom = `${selectedDate} 00:00:00`;
-        const dateTo = `${selectedDate} 23:59:59`;
 
-        const resultsData = await getResultsSummary({
-          hubId: userLocation,
-          limit: 100,
-          dateFrom: dateFrom,
-          dateTo: dateTo,
-        });
+        const routingDate = new Date(deliveryDateObj);
+        if (deliveryDateObj.getDay() === 1) {
+          routingDate.setDate(deliveryDateObj.getDate() - 2);
+        } else {
+          routingDate.setDate(deliveryDateObj.getDate() - 1);
+        }
 
-        const allDoneRoutingsRaw = resultsData
+        const ry = routingDate.getFullYear();
+        const rm = String(routingDate.getMonth() + 1).padStart(2, '0');
+        const rd = String(routingDate.getDate()).padStart(2, '0');
+        const routingDateStr = `${ry}-${rm}-${rd}`;
+        const dateFrom = `${routingDateStr} 00:00:00`;
+        const dateTo = `${routingDateStr} 23:59:59`;
+
+        const { timeFrom, timeTo } = calculateStartFinishDates(selectedDate);
+
+        const [resultsData, historyData] = await Promise.all([
+          getResultsSummary({
+            hubId: userLocation,
+            limit: 100,
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+          }),
+          getLocationHistories({
+            timeFrom,
+            timeTo,
+            limit: 5000,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
+          }),
+        ]);
+
+        const allDoneRoutingsRaw = (resultsData || [])
           .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
           .flatMap((item) => item.result.routing);
 
@@ -93,7 +264,6 @@ export default function EstimasiDelivery() {
         };
 
         allDoneRoutings.sort((routeA, routeB) => getHubEtd(routeA) - getHubEtd(routeB));
-
         setAllRoutes(allDoneRoutings);
 
         if (allDoneRoutings.length > 0) {
@@ -101,6 +271,9 @@ export default function EstimasiDelivery() {
         } else {
           setActiveVehicleId(null);
         }
+
+        const processedTime = processDriverTimeMap(historyData, selectedDate);
+        setTimeMap(processedTime);
       } catch (err) {
         toastError(err.message);
       } finally {
@@ -145,12 +318,13 @@ export default function EstimasiDelivery() {
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
+  if (!isClient) return null;
+
   const datePicker = (
     <CustomDatePicker
       id="estimasiDate"
       className="md:w-48"
       isLoading={isLoading}
-      maxDate={new Date()}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
       wrapperClassName="w-full"
@@ -166,18 +340,70 @@ export default function EstimasiDelivery() {
   );
 
   const downloadButton = (
-    <DownloadButton
-      disabled={isDownloading || isLoading || isEmpty(filteredVehicleRoutes)}
-      isLoading={isLoading || isDownloading}
-      onClick={() =>
-        handleConfirmDownload({
-          filteredVehicleRoutes,
-          setIsDownloading,
-          t,
-        })
-      }
-      width="w-full md:w-auto"
-    />
+    <div className="w-full md:w-auto z-50 relative" ref={downloadDropdownRef}>
+      <DownloadButton
+        disabled={isDownloading || isLoading || isEmpty(filteredVehicleRoutes)}
+        isLoading={isLoading || isDownloading}
+        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+        text={t('common.download')}
+        width="w-full md:w-auto"
+      />
+
+      {isDownloadDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          <div className="py-1">
+            <button
+              onClick={() => {
+                setIsDownloadDropdownOpen(false);
+                handleConfirmDownload({
+                  filteredVehicleRoutes,
+                  setIsDownloading,
+                  t,
+                });
+              }}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors cursor-pointer"
+            >
+              <svg
+                className="w-5 h-5 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span>Estimasi Delivery</span>
+            </button>
+
+            <div className="border-t border-gray-100 my-1"></div>
+
+            <button
+              onClick={handleDownloadPdfZip}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors cursor-pointer"
+            >
+              <svg
+                className="w-5 h-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
+              </svg>
+              <span>Tanda Terima Faktur</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 
   const headerItems = [
@@ -186,7 +412,6 @@ export default function EstimasiDelivery() {
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
-  // Map data kendaraan menjadi Tabs yang dimengerti Card.js
   const vehicleTabs = filteredVehicleRoutes.map((route) => ({
     id: route.vehicleId,
     label: route.vehicleName,

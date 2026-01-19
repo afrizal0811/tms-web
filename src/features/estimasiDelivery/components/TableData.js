@@ -2,7 +2,6 @@
 import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import Tooltip from '@/components/Tooltip'; // 1. Import Tooltip
 import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils';
 import { parseSONumber } from '../help';
 
@@ -29,11 +28,7 @@ export default function TableData({ activeRoute, searchQuery, t }) {
           const outletName = isHub ? null : parseCustomerString(trip.visitName).name;
           let soNumber = isHub
             ? null
-            : parseSONumber(trip.visitGroup) || parseSONumber(trip.visitName);
-
-          // Logika Manual Assign
-          const isManualAssign = isEmpty(soNumber) && !isHub;
-          soNumber = isManualAssign ? '-' : soNumber;
+            : parseSONumber(trip.visitName) || parseSONumber(trip.visitGroup) || '-';
 
           let isMatch = false;
           if (searchQuery && !isHub) {
@@ -43,9 +38,6 @@ export default function TableData({ activeRoute, searchQuery, t }) {
           }
 
           const rowClass = isMatch ? 'bg-yellow-100' : '';
-          const manualAssignCLass = isManualAssign
-            ? 'bg-red-100 hover:cursor-help'
-            : 'hover:bg-gray-50 ';
 
           // Definisi konten baris (Cells) dipisah agar rapi
           const rowContent = (
@@ -72,23 +64,8 @@ export default function TableData({ activeRoute, searchQuery, t }) {
             </>
           );
 
-          // 2. Jika Manual Assign, bungkus tr dengan Tooltip
-          if (isManualAssign) {
-            return (
-              <Tooltip
-                key={`${trip.visitId}-${trip.order}`}
-                tooltipContent={t('estimation.manual_assign')}
-              >
-                <tr className={`${rowClass} ${manualAssignCLass}`}>{rowContent}</tr>
-              </Tooltip>
-            );
-          }
-
           return (
-            <tr
-              key={`${trip.visitId}-${trip.order}`}
-              className={`${rowClass} ${manualAssignCLass}`}
-            >
+            <tr key={`${trip.visitId}-${trip.order}`} className={`${rowClass}`}>
               {rowContent}
             </tr>
           );
