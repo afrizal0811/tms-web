@@ -150,13 +150,13 @@ export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading,
     });
 
     if (wb.SheetNames.length === 0) {
-      toastError(t('estimation.toast.no_data'));
+      toastError(t('estimation.toast.no_data_downloaded'));
       return;
     } else {
       const { storedLocationName: locationName } = getLocalStorage() || '-';
       const fileName = `${t('estimation.title')} - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      toastSuccess(t('estimation.toast.success'));
+      toastSuccess(t('estimation.toast.success_excel'));
     }
   } catch (e) {
     console.error('Download Error:', e);

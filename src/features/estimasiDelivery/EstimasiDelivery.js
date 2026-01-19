@@ -40,7 +40,8 @@ export default function EstimasiDelivery() {
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const downloadDropdownRef = useRef(null);
 
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isIndo = lang === 'id';
 
   useEffect(() => {
     setIsClient(true);
@@ -87,13 +88,13 @@ export default function EstimasiDelivery() {
         setDriverMap(map);
       }
     } catch (error) {
-      console.error('Gagal load driver data:', error);
+      toastError(t('estimation.toast.no_driver_data', { err: error.message }));
     }
-  }, []);
+  }, [t]);
 
   const handleDownloadPdfZip = async () => {
     if (isEmpty(filteredVehicleRoutes)) {
-      toastError('Tidak ada data rute untuk diunduh');
+      toastError(t('estimation.toast.no_data_downloaded'));
       return;
     }
 
@@ -131,10 +132,8 @@ export default function EstimasiDelivery() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-
-        toastSuccess('Berhasil mengunduh file laporan PDF.');
+        toastSuccess(t('estimation.toast.success_pdf'));
       } else {
-        // KASUS 2: BANYAK DATA -> DOWNLOAD ZIP
         const zip = new JSZip();
 
         const pdfPromises = filteredVehicleRoutes.map(async (route) => {
@@ -169,18 +168,16 @@ export default function EstimasiDelivery() {
         const url = URL.createObjectURL(content);
         const link = document.createElement('a');
         link.href = url;
-        // Penamaan ZIP: Tanda Terima Faktur - {Cabang} - {Tanggal}.zip
-        link.download = `Tanda Terima Faktur - ${locationName} - ${dateForFilename}.zip`;
+        link.download = `${t('estimation.invoice_receipt')} - ${locationName} - ${dateForFilename}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        toastSuccess(`Berhasil mengunduh ${generatedFiles.length} file laporan dalam ZIP.`);
+        toastSuccess(t('estimation.toast.success_zip', { length: generatedFiles.length }));
       }
     } catch (error) {
-      console.error('Gagal generate Report:', error);
-      toastError('Gagal mengunduh file laporan');
+      toastError(t('estimation.toast.download_failed', { err: error.message }));
     } finally {
       setIsDownloading(false);
     }
@@ -376,7 +373,7 @@ export default function EstimasiDelivery() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span>Estimasi Delivery</span>
+              <span>{t('estimation.title')}</span>
             </button>
 
             <div className="border-t border-gray-100 my-1"></div>
@@ -398,7 +395,9 @@ export default function EstimasiDelivery() {
                   d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                 />
               </svg>
-              <span>Tanda Terima Faktur</span>
+              <span>
+                {t('estimation.invoice_receipt')} {!isIndo && '(Indonesia)'}
+              </span>
             </button>
           </div>
         </div>
