@@ -443,6 +443,7 @@ export const dictionary = {
       subtitle_highlight: 'rute kunjungan & jadwal pengiriman',
       title: 'Estimasi Pengiriman',
       visit: 'Kunjungan',
+      hub_eta_short: 'Estimasi tidak akurat',
       toast: {
         download_failed: 'Gagal mengunduh file laporan: {err}',
         no_data_downloaded: 'Tidak ada data untuk diunduh',
@@ -450,6 +451,10 @@ export const dictionary = {
         success_excel: 'Berhasil mengunduh data Estimasi Pengiriman!',
         success_pdf: 'Berhasil mengunduh data Tanda Terima Faktur!',
         success_zip: 'Berhasil mengunduh {length} data Tanda Terima Faktur dalam ZIP',
+      },
+      tooltip: {
+        manual_assign: 'Penugasan Manual',
+        hub_eta: 'Terdapat task yang manual assign. Estimasi menjadi tidak akurat',
       },
     },
     summary: {
@@ -1056,6 +1061,7 @@ export const dictionary = {
       subtitle_highlight: 'visit routes & delivery schedules',
       title: 'Deliveries Estimate',
       visit: 'Visit',
+      hub_eta_short: 'Estimation is not accurate',
       toast: {
         download_failed: 'Failed to download report file: {err}',
         no_data_downloaded: 'No data available for download',
@@ -1063,6 +1069,10 @@ export const dictionary = {
         success_excel: 'Delivery Estimation data downloaded successfully!',
         success_pdf: 'Invoice Receipt data downloaded successfully!',
         success_zip: 'Successfully downloaded {length} Invoice Receipt files in a ZIP archive',
+      },
+      tooltip: {
+        manual_assign: 'Manual Assign',
+        hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
       },
     },
     summary: {

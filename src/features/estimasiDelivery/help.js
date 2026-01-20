@@ -1,9 +1,11 @@
 // File: src/features/estimasiDelivery/help.js
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
+  formatDateUniversal,
   formatSimpleTime,
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
+  getUTC7DateString,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
@@ -11,12 +13,19 @@ import {
 import { StyleSheet } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-
 export function parseSONumber(visitName) {
   if (!visitName) return '';
   const str = String(visitName);
   const matches = str.match(/(SO|SS)\d{4}-\d+/g);
   return matches ? matches.join(', ') : '';
+}
+
+export function getDriverName(route, driverData) {
+  if (!route) return '';
+
+  const email = normalizeEmail(route.assignee);
+  const storedDriver = driverData ? driverData[email] : null;
+  return storedDriver?.name || route.assigneeName || route.vehicleName || '-';
 }
 
 export function processDriverTimeMap(apiData, selectedDateStr) {
@@ -37,130 +46,227 @@ export function processDriverTimeMap(apiData, selectedDateStr) {
     const startDateFormatted = formatTimestampToDDMMYYYY_UTC7(startTime);
 
     if (startDateFormatted !== targetDateFormatted) return;
+
+    const email = normalizeEmail(item.email);
+    if (!email) return;
+
     const rawStart = formatTimestampToQuotedHHMM_UTC7(startTime);
     const startDisplay = rawStart ? rawStart.replace("'", '') : '-';
+
     const finishTime = item.finish?.finishTime;
     const rawFinish = formatTimestampToQuotedHHMM_UTC7(finishTime);
-    const finishDisplay = rawFinish ? rawFinish.replace("'", '') : '-';
-    const email = normalizeEmail(item.email);
-    if (email) {
+    let finishDisplay = rawFinish ? rawFinish.replace("'", '') : '-';
+
+    if (startTime && finishTime) {
+      const sDate = new Date(getUTC7DateString(startTime));
+      const fDate = new Date(getUTC7DateString(finishTime));
+      const d1 = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+      const d2 = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate());
+
+      const diffTime = d2 - d1;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        finishDisplay = `${finishDisplay} (+${diffDays})`;
+      }
+    }
+    if (!timeMap.has(email)) {
       timeMap.set(email, {
         jamBerangkat: startDisplay,
         jamKembali: finishDisplay,
+        _rawStart: new Date(startTime),
+        _rawFinish: finishTime ? new Date(finishTime) : null,
       });
+    } else {
+      const current = timeMap.get(email);
+      const newStart = new Date(startTime);
+      const newFinish = finishTime ? new Date(finishTime) : null;
+      if (newStart < current._rawStart) {
+        current._rawStart = newStart;
+        current.jamBerangkat = startDisplay;
+      }
+      if (newFinish && (!current._rawFinish || newFinish > current._rawFinish)) {
+        current._rawFinish = newFinish;
+        const d1 = new Date(
+          current._rawStart.getFullYear(),
+          current._rawStart.getMonth(),
+          current._rawStart.getDate()
+        );
+        const d2 = new Date(newFinish.getFullYear(), newFinish.getMonth(), newFinish.getDate());
+        const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+
+        const updatedRawFinish = formatTimestampToQuotedHHMM_UTC7(finishTime).replace("'", '');
+        current.jamKembali =
+          diffDays > 0 ? `${updatedRawFinish} (H+${diffDays})` : updatedRawFinish;
+      }
+
+      timeMap.set(email, current);
     }
   });
-
   return timeMap;
 }
 
-function sanitizeSheetName(name, existingNames) {
-  if (!name) return 'Sheet';
-  let safeName = String(name).replace(/[:*?\/\\\[\]]/g, ' ');
-  safeName = safeName.replace(/\s+/g, ' ').trim();
-  if (!safeName) safeName = 'Sheet';
-  let candidateName = safeName.substring(0, 31);
-  let counter = 1;
-  while (existingNames.has(candidateName)) {
-    const suffix = ` (${counter})`;
-    const maxBaseLength = 31 - suffix.length;
-    candidateName = `${safeName.substring(0, maxBaseLength)}${suffix}`;
-    counter++;
-  }
-  existingNames.add(candidateName);
-  return candidateName;
-}
-
-function createCell(value, style) {
-  const safeValue = value === null || value === undefined ? '' : value;
-  const cell = { v: safeValue };
-  if (style && Object.keys(style).length > 0) {
-    cell.s = style;
-  }
-  return cell;
-}
-
-export const handleConfirmDownload = ({ filteredVehicleRoutes, setIsDownloading, t }) => {
+export const handleConfirmDownload = async ({
+  filteredVehicleRoutes,
+  setIsDownloading,
+  t,
+  driverData,
+}) => {
   setIsDownloading(true);
   try {
     const wb = XLSX.utils.book_new();
-    const usedSheetNames = new Set();
-
-    const headerStyle = { font: { bold: true } };
-    const redBoldStyle = { font: { color: { rgb: 'FF0000' }, bold: true } };
-    const redNormalStyle = { font: { color: { rgb: 'FF0000' } } };
-
     filteredVehicleRoutes.forEach((route) => {
-      const sheetName = sanitizeSheetName(route.vehicleName || 'Vehicle', usedSheetNames);
+      const cleanName = (route.vehicleName || 'Vehicle')
+        .replace(/[\\/:*?\[\]]/g, '')
+        .substring(0, 30);
+      const driverName = getDriverName(route, driverData);
 
-      const headers = [
-        'No.',
-        t('estimation.visit'),
-        t('estimation.no_so'),
-        t('estimation.open_time'),
-        t('estimation.close_time'),
-        t('estimation.est_arrival'),
-        t('estimation.est_depart'),
+      const hasManualInRoute = route.trips?.some((t) => t.isManual);
+      const wsData = [
+        ['Kendaraan', route.vehicleName], // Baris 1
+        ['Driver', driverName], // Baris 2
+        [], // Baris 3 (Spacer)
+        [
+          'No.',
+          t('estimation.visit'),
+          t('estimation.no_so'),
+          t('estimation.open_time'),
+          t('estimation.close_time'),
+          t('estimation.est_arrival'),
+          t('estimation.est_depart'),
+        ],
       ];
+      const stylingMeta = [];
+      stylingMeta.push(
+        { row: 0, col: 0, style: { font: { bold: true } } }, // Label 'Kendaraan'
+        { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } }, // Value Kendaraan
+        { row: 1, col: 0, style: { font: { bold: true } } } // Label 'Driver'
+      );
 
-      const dataForSheet = [];
-      dataForSheet.push(headers.map((h) => createCell(h, headerStyle)));
+      const headerRowIndex = 3;
+      for (let i = 0; i < 7; i++) {
+        stylingMeta.push({
+          row: headerRowIndex,
+          col: i,
+          style: {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '4F46E5' } }, // Indigo
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' },
+            },
+          },
+        });
+      }
 
-      route.trips.forEach((trip, tripIndex) => {
+      let currentRowIndex = 4;
+      route.trips.forEach((trip, index) => {
         const isHub = trip.isHub;
-        const isFirstHub = isHub && trip.order === 0;
-        const isLastHub = isHub && tripIndex === route.trips.length - 1;
+        const isFirstHub = index === 0 && isHub;
+        const isLastHub = index === route.trips.length - 1 && isHub;
 
-        const rowStyle = isHub ? redNormalStyle : null;
-        const hubNameStyle = isHub ? redBoldStyle : null;
+        let outletName = '';
+        if (isHub) {
+          outletName = 'HUB';
+        } else if (trip.flow === 'Pickup' && trip.warehouseName) {
+          outletName = trip.warehouseName;
+        } else {
+          const parsed = parseCustomerString(trip.visitName);
+          outletName = parsed?.name || trip.visitName;
+        }
 
-        const visitName = isHub ? 'HUB' : parseCustomerString(trip.visitName).name;
-        const soNumber = isHub ? '' : parseSONumber(trip.visitName);
-        const openTime = isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime);
-        const closeTime = isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime);
-        const estArr = isFirstHub ? '' : formatSimpleTime(trip.eta);
-        const estDep = isLastHub ? '' : formatSimpleTime(trip.etd);
+        let soNumber = isHub ? '' : parseSONumber(trip.visitName);
 
-        const row = [
-          createCell(trip.order, rowStyle),
-          createCell(visitName, hubNameStyle || rowStyle),
-          createCell(soNumber, rowStyle),
-          createCell(openTime, rowStyle),
-          createCell(closeTime, rowStyle),
-          createCell(estArr, rowStyle),
-          createCell(estDep, rowStyle),
-        ];
+        if (!isHub && isEmpty(soNumber)) {
+          const rawOrderId = trip.orderId;
+          const standardRegex = /^(SO|SC|SE)\d{4}-\d+$/;
+          if (rawOrderId && standardRegex.test(rawOrderId)) {
+            soNumber = rawOrderId;
+          } else {
+            soNumber = '-';
+          }
+        } else if (!isHub && isEmpty(soNumber)) {
+          soNumber = '-';
+        }
 
-        dataForSheet.push(row);
+        const noVal = trip.isManual ? '-' : trip.routePlannedOrder;
+        const openVal = isHub ? '' : trip.openTime || '-';
+        const closeVal = isHub ? '' : trip.closeTime || '-';
+
+        let etaVal = isFirstHub ? '' : trip.eta ? formatSimpleTime(trip.eta) : '-';
+        const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
+
+        if (isLastHub && hasManualInRoute && trip.eta) {
+          etaVal = `${formatSimpleTime(trip.eta)} ${t('estimation.hub_eta_short')}`;
+        }
+
+        wsData.push([noVal, outletName, soNumber, openVal, closeVal, etaVal, etdVal]);
+        const cellStyle = {
+          border: {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' },
+          },
+        };
+
+        if (trip.isManual) {
+          cellStyle.fill = { fgColor: { rgb: 'FEE2E2' } };
+          cellStyle.font = { color: { rgb: '991B1B' } };
+        }
+
+        if (isHub) {
+          cellStyle.font = { color: { rgb: 'DC2626' }, bold: true };
+        }
+
+        for (let c = 0; c < 7; c++) {
+          stylingMeta.push({
+            row: currentRowIndex,
+            col: c,
+            style: cellStyle,
+          });
+        }
+
+        currentRowIndex++;
       });
 
-      const ws = XLSX.utils.aoa_to_sheet(dataForSheet, { cellStyles: true });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      stylingMeta.forEach((meta) => {
+        const cellRef = XLSX.utils.encode_cell({ r: meta.row, c: meta.col });
+        if (!ws[cellRef]) ws[cellRef] = { v: '' };
+        ws[cellRef].s = { ...(ws[cellRef].s || {}), ...meta.style };
+      });
+
       ws['!cols'] = [
-        { wch: 5 },
-        { wch: 40 },
-        { wch: 25 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 18 },
-        { wch: 20 },
+        { wch: 5 }, // No
+        { wch: 40 }, // Visit
+        { wch: 20 }, // SO
+        { wch: 10 }, // Open
+        { wch: 10 }, // Close
+        { wch: 30 }, // ETA
+        { wch: 15 }, // ETD
       ];
-      StyleSheet;
 
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      let finalSheetName = cleanName;
+      let counter = 1;
+      while (wb.SheetNames.includes(finalSheetName)) {
+        finalSheetName = `${cleanName.substring(0, 25)}_${counter}`;
+        counter++;
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
     });
+    const { storedLocationName: locationName } = getLocalStorage() || '-';
+    const timestamp = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+    const fileName = `${t('estimation.title')} - ${locationName} - ${timestamp}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 
-    if (wb.SheetNames.length === 0) {
-      toastError(t('estimation.toast.no_data_downloaded'));
-      return;
-    } else {
-      const { storedLocationName: locationName } = getLocalStorage() || '-';
-      const fileName = `${t('estimation.title')} - ${locationName}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      toastSuccess(t('estimation.toast.success_excel'));
-    }
+    toastSuccess(t('estimation.toast.success_excel', { err: e.message }));
   } catch (e) {
-    console.error('Download Error:', e);
-    toastError(e.message || 'Gagal mengunduh file');
+    toastError(t('estimation.toast.download_failed', { err: e.message }));
   } finally {
     setIsDownloading(false);
   }
@@ -416,3 +522,5 @@ export const styles = StyleSheet.create({
     borderRightWidth: 0,
   },
 });
+
+// --- UPDATE: Logic Excel Download Multi-Sheet ---

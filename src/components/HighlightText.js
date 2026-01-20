@@ -1,31 +1,55 @@
 // File: src/components/HighlightText.js
 'use client';
 
-import { isEmpty } from '@/lib/utils';
 import { useMemo } from 'react';
 
 export default function HighlightText({ text, highlight, className = '' }) {
-  const parts = useMemo(() => {
-    if (!text) return [];
-    if (!highlight || isEmpty(highlight.trim())) return [text];
+  const { parts, isTextEmpty } = useMemo(() => {
+    let strText = '';
 
-    // Escape karakter regex spesial (seperti *, +, ?, dll) agar tidak error
-    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (text === null || text === undefined) {
+      return { parts: [], isTextEmpty: true };
+    }
 
-    const safeHighlight = escapeRegExp(highlight);
+    if (typeof text === 'object') {
+      try {
+        if (Array.isArray(text)) {
+          strText = text
+            .map((item) => (item === null || item === undefined ? '' : String(item)))
+            .join(', ');
+        } else {
+          if (text.name) strText = String(text.name);
+          else if (text.label) strText = String(text.label);
+          else strText = JSON.stringify(text);
+        }
+      } catch (e) {
+        strText = String(text);
+      }
+    } else {
+      strText = String(text);
+    }
+
+    if (!strText || strText.trim() === '') {
+      return { parts: [strText], isTextEmpty: true };
+    }
+    if (!highlight || String(highlight).trim() === '') {
+      return { parts: [strText], isTextEmpty: false };
+    }
+
+    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+    const safeHighlight = escapeRegExp(String(highlight));
     const regex = new RegExp(`(${safeHighlight})`, 'gi');
 
-    // Split text berdasarkan regex, tapi simpan delimiter-nya (bagian yg match)
-    return text.toString().split(regex);
+    return { parts: strText.split(regex), isTextEmpty: false };
   }, [text, highlight]);
 
-  if (!text) return null;
+  if (isTextEmpty && (!parts || parts.length === 0)) return null;
 
   return (
     <span className={className}>
       {parts.map((part, i) => {
-        // Cek apakah bagian ini cocok dengan highlight (case-insensitive)
-        const isMatch = part.toLowerCase() === highlight?.toLowerCase();
+        const isMatch =
+          highlight && part && String(part).toLowerCase() === String(highlight).toLowerCase();
 
         return isMatch ? (
           <strong key={i} className="bg-yellow-300 text-black rounded-sm px-0.5">

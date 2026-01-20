@@ -1,11 +1,14 @@
 // File: src/features/estimasiDelivery/components/TableData.js
 import HighlightText from '@/components/HighlightText';
+import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils';
+import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils'; // Pastikan isEmpty diimport
 import { parseSONumber } from '../help';
 
 export default function TableData({ activeRoute, searchQuery, t }) {
+  const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
+
   return (
     <table className="w-full border-collapse min-w-4xl">
       <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
@@ -20,55 +23,112 @@ export default function TableData({ activeRoute, searchQuery, t }) {
         </tr>
       </thead>
       <tbody className="bg-white">
-        {activeRoute.trips.map((trip, tripIndex) => {
+        {activeRoute.trips.map((trip, index) => {
+          const tripIndex = index + 1;
           const isHub = trip.isHub;
-          const isFirstHub = isHub && trip.order === 0;
-          const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
-          const redText = isHub ? 'text-red-600' : '';
-          const outletName = isHub ? null : parseCustomerString(trip.visitName).name;
-          let soNumber = isHub
-            ? null
-            : parseSONumber(trip.visitName) || parseSONumber(trip.visitGroup) || '-';
-
-          let isMatch = false;
-          if (searchQuery && !isHub) {
-            const lowerQuery = searchQuery.toLowerCase();
-            if (outletName && outletName.toLowerCase().includes(lowerQuery)) isMatch = true;
-            if (soNumber && soNumber.toLowerCase().includes(lowerQuery)) isMatch = true;
+          const isFirstHub = index === 0 && isHub;
+          const isLastHub = index === activeRoute.trips.length - 1 && isHub;
+          let outletName;
+          if (isHub) {
+            outletName = trip.visitName;
+          } else if (trip.flow === 'Pickup' && trip.warehouseName) {
+            outletName = trip.warehouseName;
+          } else {
+            outletName = parseCustomerString(trip.visitName);
           }
 
-          const rowClass = isMatch ? 'bg-yellow-100' : '';
+          let soNumber = isHub ? '' : parseSONumber(trip.visitName);
+          if (!isHub && isEmpty(soNumber)) {
+            const rawOrderId = trip.orderId;
+            const standardRegex = /^(SO|SC|SE)\d{4}-\d+$/;
 
-          // Definisi konten baris (Cells) dipisah agar rapi
-          const rowContent = (
-            <>
+            if (rawOrderId && standardRegex.test(rawOrderId)) {
+              soNumber = rawOrderId;
+            } else {
+              soNumber = '-';
+            }
+          } else if (!isHub && isEmpty(soNumber)) {
+            soNumber = '-';
+          }
+
+          let textClass = '';
+          if (isHub) {
+            textClass = 'text-red-600 font-semibold';
+          } else if (trip.isManual) {
+            textClass = 'text-red-600 font-medium';
+          }
+
+          const rowClass = `
+            transition-colors border-b border-gray-100
+            ${trip.isManual ? 'bg-red-100 hover:bg-red-200' : 'hover:bg-gray-50'}
+          `;
+
+          const RowContent = (
+            <tr key={`${trip.visitId}-${tripIndex}`} className={rowClass}>
+              {/* Kolom No */}
               <Td>
-                <p className={redText}>{trip.order}</p>
+                <p className={textClass}>{trip.isManual ? '-' : trip.routePlannedOrder}</p>
               </Td>
+
+              {/* Kolom Visit */}
               <Td>
                 {isHub ? (
-                  <strong className={redText}>HUB</strong>
+                  <strong className={textClass}>HUB</strong>
                 ) : (
-                  <HighlightText text={outletName} highlight={searchQuery} />
+                  <HighlightText text={outletName || ''} highlight={searchQuery} />
                 )}
               </Td>
-              <Td>{isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}</Td>
-              <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
-              <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
-              <Td>
-                <p className={redText}>{isFirstHub ? '' : formatSimpleTime(trip.eta)}</p>
-              </Td>
-              <Td>
-                <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
-              </Td>
-            </>
-          );
 
-          return (
-            <tr key={`${trip.visitId}-${trip.order}`} className={`${rowClass}`}>
-              {rowContent}
+              {/* Kolom SO */}
+              <Td>
+                {/* Tampilkan SO atau strip jika kosong/tidak valid */}
+                {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
+              </Td>
+
+              {/* Kolom Open/Close */}
+              <Td>{isHub ? '' : trip.openTime || '-'}</Td>
+              <Td>{isHub ? '' : trip.closeTime || '-'}</Td>
+
+              {/* Kolom ETA */}
+              <Td>
+                {isFirstHub
+                  ? ''
+                  : (() => {
+                      const timeStr = trip.eta ? formatSimpleTime(trip.eta) : '-';
+                      if (isLastHub && hasManualTaskInRoute && trip.eta) {
+                        return (
+                          <Tooltip tooltipContent={t('estimation.tooltip.hub_eta')}>
+                            <span className="underline decoration-dashed decoration-red-400 cursor-help text-red-700 font-bold underline-offset-4">
+                              {timeStr}
+                            </span>
+                          </Tooltip>
+                        );
+                      }
+                      return <p className={textClass}>{timeStr}</p>;
+                    })()}
+              </Td>
+
+              {/* Kolom ETD */}
+              <Td>
+                <p className={textClass}>
+                  {isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-'}
+                </p>
+              </Td>
             </tr>
           );
+
+          if (trip.isManual) {
+            return (
+              <Tooltip
+                key={`${trip.visitId}-${tripIndex}`}
+                tooltipContent={t('estimation.tooltip.manual_assign')}
+              >
+                {RowContent}
+              </Tooltip>
+            );
+          }
+
+          return RowContent;
         })}
       </tbody>
     </table>

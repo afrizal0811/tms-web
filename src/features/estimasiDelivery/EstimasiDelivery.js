@@ -4,25 +4,26 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
+import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
   calculateStartFinishDates,
+  convertWibToUtc,
   formatDateUniversal,
   isEmpty,
   normalizeEmail,
-  parseCustomerString,
 } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLocationHistories, getResultsSummary } from '../../lib/apiService';
+import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/apiService';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import ReportTerimaFaktur from './components/ReportTerimaFaktur';
 import TableData from './components/TableData';
-import { handleConfirmDownload, parseSONumber, processDriverTimeMap } from './help';
+import { getDriverName, handleConfirmDownload, processDriverTimeMap } from './help';
 
 export default function EstimasiDelivery() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -31,6 +32,7 @@ export default function EstimasiDelivery() {
   const [allRoutes, setAllRoutes] = useState([]);
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [driverData, setDriverData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -50,7 +52,26 @@ export default function EstimasiDelivery() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     setSelectedDate(`${y}-${m}-${d}`);
-  }, []);
+
+    const ls = getLocalStorage();
+    if (ls && ls.storedDrivers) {
+      try {
+        const rawDrivers = JSON.parse(ls.storedDrivers);
+        if (Array.isArray(rawDrivers)) {
+          const driverObjMap = {};
+          rawDrivers.forEach((d) => {
+            if (d.email) {
+              const normEmail = normalizeEmail(d.email);
+              driverObjMap[normEmail] = d;
+            }
+          });
+          setDriverData(driverObjMap);
+        }
+      } catch (e) {
+        toastError(t('estimation.toast.no_driver_data', { err: e.message }));
+      }
+    }
+  }, [t]);
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -82,7 +103,7 @@ export default function EstimasiDelivery() {
         if (Array.isArray(parsedDrivers)) {
           parsedDrivers.forEach((d) => {
             const email = normalizeEmail(d.email);
-            if (email) map.set(email, d.name);
+            if (email) map.set(email, d.plat);
           });
         }
         setDriverMap(map);
@@ -106,14 +127,13 @@ export default function EstimasiDelivery() {
       const { storedLocationName } = getLocalStorage();
       const locationName = storedLocationName || 'Cabang';
 
-      // KASUS 1: HANYA 1 DATA -> DOWNLOAD LANGSUNG PDF
-      if (filteredVehicleRoutes.length === 1) {
-        const route = filteredVehicleRoutes[0];
+      const generatePdfBlob = async (route) => {
         const normalizedAssignee = normalizeEmail(route.assignee);
-        const realDriverName = driverMap.get(normalizedAssignee) || route.vehicleName;
-        const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '-', jamKembali: '-' };
+        const realDriverName = getDriverName(route, driverData);
 
-        const blob = await pdf(
+        const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
+
+        return await pdf(
           <ReportTerimaFaktur
             data={route}
             selectedDate={selectedDate}
@@ -122,8 +142,13 @@ export default function EstimasiDelivery() {
             jamKembali={timeData.jamKembali}
           />
         ).toBlob();
+      };
 
+      if (filteredVehicleRoutes.length === 1) {
+        const route = filteredVehicleRoutes[0];
+        const blob = await generatePdfBlob(route);
         const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -135,34 +160,14 @@ export default function EstimasiDelivery() {
         toastSuccess(t('estimation.toast.success_pdf'));
       } else {
         const zip = new JSZip();
-
         const pdfPromises = filteredVehicleRoutes.map(async (route) => {
-          const normalizedAssignee = normalizeEmail(route.assignee);
-          const realDriverName = driverMap.get(normalizedAssignee) || route.vehicleName;
-          const timeData = timeMap.get(normalizedAssignee) || {
-            jamBerangkat: '-',
-            jamKembali: '-',
-          };
-
-          const blob = await pdf(
-            <ReportTerimaFaktur
-              data={route}
-              selectedDate={selectedDate}
-              driverNameOverride={realDriverName}
-              jamBerangkat={timeData.jamBerangkat}
-              jamKembali={timeData.jamKembali}
-            />
-          ).toBlob();
-
+          const blob = await generatePdfBlob(route);
           const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
           return { name: `${safeName} - ${dateForFilename}.pdf`, blob };
         });
 
         const generatedFiles = await Promise.all(pdfPromises);
-
-        generatedFiles.forEach((file) => {
-          zip.file(file.name, file.blob);
-        });
+        generatedFiles.forEach((file) => zip.file(file.name, file.blob));
 
         const content = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(content);
@@ -173,7 +178,6 @@ export default function EstimasiDelivery() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-
         toastSuccess(t('estimation.toast.success_zip', { length: generatedFiles.length }));
       }
     } catch (error) {
@@ -185,7 +189,9 @@ export default function EstimasiDelivery() {
 
   useEffect(() => {
     if (!selectedDate) return;
+
     const deliveryDateObj = new Date(selectedDate);
+
     if (deliveryDateObj.getDay() === 0) {
       setAllRoutes([]);
       setIsLoading(false);
@@ -210,61 +216,165 @@ export default function EstimasiDelivery() {
         } else {
           routingDate.setDate(deliveryDateObj.getDate() - 1);
         }
-
         const ry = routingDate.getFullYear();
         const rm = String(routingDate.getMonth() + 1).padStart(2, '0');
         const rd = String(routingDate.getDate()).padStart(2, '0');
-        const routingDateStr = `${ry}-${rm}-${rd}`;
-        const dateFrom = `${routingDateStr} 00:00:00`;
-        const dateTo = `${routingDateStr} 23:59:59`;
+        const dateFromRouting = `${ry}-${rm}-${rd} 00:00:00`;
+        const dateToRouting = `${ry}-${rm}-${rd} 23:59:59`;
 
-        const { timeFrom, timeTo } = calculateStartFinishDates(selectedDate);
+        const startD = new Date(selectedDate);
+        startD.setHours(0, 0, 0, 0);
+        const endD = new Date(selectedDate);
+        endD.setHours(23, 59, 59, 999);
+        const timeFrom = convertWibToUtc(startD);
+        const timeTo = convertWibToUtc(endD);
 
-        const [resultsData, historyData] = await Promise.all([
+        const { timeFrom: historyFrom, timeTo: historyTo } =
+          calculateStartFinishDates(selectedDate);
+
+        const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResultsSummary({
             hubId: userLocation,
             limit: 100,
-            dateFrom: dateFrom,
-            dateTo: dateTo,
+            dateFrom: dateFromRouting,
+            dateTo: dateToRouting,
           }),
           getLocationHistories({
-            timeFrom,
-            timeTo,
+            timeFrom: historyFrom,
+            timeTo: historyTo,
             limit: 5000,
             startFinish: 'true',
             fields: 'finish,startTime,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
           }),
+          getTasks({
+            hubId: userLocation,
+            limit: 2000,
+            timeFrom: timeFrom,
+            timeTo: timeTo,
+            timeBy: 'startTime',
+            status: 'DONE,ONGOING,UNASSIGNED',
+          }),
         ]);
 
+        const rawTasks = tasksResponse;
+
+        const filteredTasks = (Array.isArray(rawTasks) ? rawTasks : []).filter((task) => {
+          const assignee = task?.assignee;
+          return Array.isArray(assignee) && assignee.length > 0;
+        });
+
+        const tasksByPlat = filteredTasks.reduce((groups, task) => {
+          const rawEmail = task?.assignee[0];
+          const email = normalizeEmail(rawEmail);
+
+          const plat = driverMap.get(email) || 'Unassigned';
+
+          if (!groups[plat]) {
+            groups[plat] = {
+              plat: plat,
+              email: email,
+              assigneeName: task.user?.name || task.courierName || rawEmail,
+              tasks: [],
+            };
+          }
+          groups[plat].tasks.push(task);
+          return groups;
+        }, {});
+
+        const resultHubsByPlat = new Map();
         const allDoneRoutingsRaw = (resultsData || [])
           .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
           .flatMap((item) => item.result.routing);
 
-        const uniqueRoutesMap = new Map();
         allDoneRoutingsRaw.forEach((route) => {
-          if (route.vehicleId) {
-            uniqueRoutesMap.set(route.vehicleId, route);
+          const plat = route.vehicleName;
+          if (plat) {
+            const hubs = (route.trips || []).filter((t) => t.isHub);
+            if (hubs.length > 0) {
+              resultHubsByPlat.set(plat, {
+                startHub: hubs.find((t) => t.order === 0),
+                endHub: hubs[hubs.length - 1],
+              });
+            }
           }
         });
-        const allDoneRoutings = Array.from(uniqueRoutesMap.values());
 
-        const getHubEtd = (route) => {
-          if (!route.trips || isEmpty(route.trips)) return Infinity;
-          const hubTrip = route.trips.find((trip) => trip.isHub && trip.order === 0);
-          if (hubTrip && hubTrip.etd && typeof hubTrip.etd === 'string') {
-            const fullEtdString = `${selectedDate}T${hubTrip.etd}`;
-            const etdTime = new Date(fullEtdString).getTime();
-            if (!isNaN(etdTime)) return etdTime;
+        const finalRoutes = Object.values(tasksByPlat).map((group) => {
+          const { plat, tasks, email, assigneeName } = group;
+
+          tasks.sort((a, b) => {
+            const orderA =
+              a.routePlannedOrder !== null && a.routePlannedOrder !== undefined
+                ? a.routePlannedOrder
+                : Infinity;
+            const orderB =
+              b.routePlannedOrder !== null && b.routePlannedOrder !== undefined
+                ? b.routePlannedOrder
+                : Infinity;
+            return orderA - orderB;
+          });
+
+          const taskTrips = tasks.map((task) => ({
+            visitId: task._id || task.taskId,
+            routePlannedOrder: task.routePlannedOrder,
+            visitName: task.customerOrder || task.customerName || '',
+
+            orderId: task.orderId,
+            flow: task.flow,
+            warehouseName: task.flow === 'Pickup' ? task['warehouseName-1'] : '',
+
+            openTime: task.openTime,
+            closeTime: task.closeTime,
+            eta: task.eta,
+            etd: task.etd,
+            weight: task.weightKg,
+            volume: task.volumeCbm,
+            isHub: false,
+            isManual: task.routePlannedOrder === null || task.routePlannedOrder === undefined,
+          }));
+
+          const hubData = resultHubsByPlat.get(plat);
+          const finalTrips = [];
+
+          if (hubData?.startHub) {
+            finalTrips.push({ ...hubData.startHub, isHub: true, visitName: 'HUB' });
           }
-          return Infinity;
-        };
 
-        allDoneRoutings.sort((routeA, routeB) => getHubEtd(routeA) - getHubEtd(routeB));
-        setAllRoutes(allDoneRoutings);
+          finalTrips.push(...taskTrips);
 
-        if (allDoneRoutings.length > 0) {
-          setActiveVehicleId(allDoneRoutings[0].vehicleId);
+          if (hubData?.endHub) {
+            finalTrips.push({ ...hubData.endHub, isHub: true, visitName: 'HUB' });
+          }
+
+          return {
+            vehicleId: plat,
+            vehicleName: plat,
+            assignee: email,
+            assigneeName: assigneeName,
+            trips: finalTrips,
+          };
+        });
+
+        finalRoutes.sort((a, b) => {
+          const getStartEtd = (route) => {
+            const firstHub = route.trips?.find((t) => t.isHub);
+            return firstHub?.etd || null;
+          };
+          const etdA = getStartEtd(a);
+          const etdB = getStartEtd(b);
+          if (!etdA && etdB) return 1;
+          if (etdA && !etdB) return -1;
+          if (!etdA && !etdB) return 0;
+          if (etdA < etdB) return -1;
+          if (etdA > etdB) return 1;
+          return 0;
+        });
+
+        setAllRoutes(finalRoutes);
+
+        if (finalRoutes.length > 0) {
+          setActiveVehicleId(finalRoutes[0].vehicleId);
         } else {
           setActiveVehicleId(null);
         }
@@ -278,20 +388,40 @@ export default function EstimasiDelivery() {
       }
     }
     fetchData();
-  }, [selectedDate]);
+  }, [selectedDate, driverMap]);
 
   const filteredVehicleRoutes = useMemo(() => {
-    if (!searchQuery) return allRoutes;
-    const lowerCaseQuery = searchQuery.toLowerCase();
-    return allRoutes.filter((route) => {
-      if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery))
-        return true;
-      return route.trips.some((trip) => {
-        if (trip.isHub) return false;
-        const outlet = parseCustomerString(trip.visitName).name?.toLowerCase();
-        const so = parseSONumber(trip.visitName)?.toLowerCase();
-        return (outlet && outlet.includes(lowerCaseQuery)) || (so && so.includes(lowerCaseQuery));
+    let routes = allRoutes;
+
+    if (searchQuery) {
+      const lowerCaseQuery = searchQuery.toLowerCase();
+      routes = routes.filter((route) => {
+        if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery))
+          return true;
+        return route.trips.some((trip) => {
+          if (trip.isHub) return false;
+          const outlet = trip.visitName?.toLowerCase();
+          return outlet.includes(lowerCaseQuery);
+        });
       });
+    }
+
+    return [...routes].sort((a, b) => {
+      const getStartEtd = (route) => {
+        const firstHub = route.trips?.find((t) => t.isHub);
+        return firstHub?.etd || null;
+      };
+
+      const etdA = getStartEtd(a);
+      const etdB = getStartEtd(b);
+
+      if (!etdA && etdB) return 1;
+      if (etdA && !etdB) return -1;
+      if (!etdA && !etdB) return 0;
+
+      if (etdA < etdB) return -1;
+      if (etdA > etdB) return 1;
+      return 0;
     });
   }, [allRoutes, searchQuery]);
 
@@ -314,8 +444,6 @@ export default function EstimasiDelivery() {
     if (!activeVehicleId) return null;
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
-
-  if (!isClient) return null;
 
   const datePicker = (
     <CustomDatePicker
@@ -356,6 +484,7 @@ export default function EstimasiDelivery() {
                   filteredVehicleRoutes,
                   setIsDownloading,
                   t,
+                  driverData,
                 });
               }}
               className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors cursor-pointer"
@@ -411,10 +540,29 @@ export default function EstimasiDelivery() {
     { label: 'Action', component: downloadButton, hideLabel: true },
   ];
 
-  const vehicleTabs = filteredVehicleRoutes.map((route) => ({
-    id: route.vehicleId,
-    label: route.vehicleName,
-  }));
+  const vehicleTabs = useMemo(() => {
+    if (!filteredVehicleRoutes) return [];
+
+    return filteredVehicleRoutes.map((route) => {
+      // UPDATE: Gunakan getDriverName agar seragam
+      const tooltipName = getDriverName(route, driverData);
+
+      const hasManual = route.trips?.some((t) => t.isManual);
+
+      const labelClass = hasManual
+        ? 'cursor-help block w-full h-full text-red-700 bg-red-100 rounded px-2 py-0.5 border border-red-200'
+        : 'cursor-help block w-full h-full';
+
+      return {
+        id: route.vehicleId,
+        label: (
+          <Tooltip tooltipContent={tooltipName}>
+            <span className={labelClass}>{route.vehicleName}</span>
+          </Tooltip>
+        ),
+      };
+    });
+  }, [filteredVehicleRoutes, driverData]);
 
   const subtitle = (
     <>
@@ -422,6 +570,8 @@ export default function EstimasiDelivery() {
       <span className="font-semibold text-sky-600">{t('estimation.subtitle_highlight')}</span>
     </>
   );
+
+  if (!isClient) return null;
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">

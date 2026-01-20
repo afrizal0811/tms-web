@@ -194,8 +194,7 @@ const ReportTerimaFaktur = ({
             </View>
 
             {chunk.map((trip, idx) => {
-              const { name, location } = parseCustomerString(trip.visitName);
-              const outletDisplay = location ? `${name} (${location})` : name;
+              const { name: outletDisplay } = parseCustomerString(trip.visitName);
               const soNumbers = parseSONumber(trip.visitName) || '';
 
               return (
