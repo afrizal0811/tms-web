@@ -268,7 +268,7 @@ export default function EstimasiDelivery() {
           const rawEmail = task?.assignee[0];
           const email = normalizeEmail(rawEmail);
 
-          const plat = driverMap.get(email) || 'Unassigned';
+          const plat = driverMap.get(email) || 'Other';
 
           if (!groups[plat]) {
             groups[plat] = {
@@ -390,8 +390,69 @@ export default function EstimasiDelivery() {
     fetchData();
   }, [selectedDate, driverMap]);
 
+  const enrichedRoutes = useMemo(() => {
+    if (isEmpty(allRoutes)) return [];
+
+    const soTracker = {};
+    allRoutes.forEach((route) => {
+      route.trips.forEach((trip) => {
+        if (trip.isHub || !trip.orderId) return;
+        const individualSOs = trip.orderId
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        individualSOs.forEach((so) => {
+          if (!soTracker[so]) soTracker[so] = { Pickup: null, Delivery: null };
+          soTracker[so][trip.flow] = route.vehicleName;
+        });
+      });
+    });
+
+    const pairToLetter = {};
+    let currentLetterCode = 65; // Dimulai dari 'A'
+
+    return allRoutes.map((route) => {
+      const tripsWithSyncStatus = route.trips.map((trip) => {
+        if (trip.isHub || !trip.orderId) return trip;
+
+        const pickupVehicle = soTracker[trip.orderId]?.Pickup;
+        const deliveryVehicle = soTracker[trip.orderId]?.Delivery;
+        const isUnsync = pickupVehicle && deliveryVehicle && pickupVehicle !== deliveryVehicle;
+
+        let partnerVehicle = null;
+        let groupLetter = null;
+
+        if (isUnsync) {
+          partnerVehicle = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
+
+          const pairKey = [route.vehicleName, partnerVehicle].sort().join('|');
+
+          if (!pairToLetter[pairKey]) {
+            pairToLetter[pairKey] = String.fromCharCode(currentLetterCode);
+            currentLetterCode++;
+          }
+          groupLetter = pairToLetter[pairKey];
+        }
+
+        return { ...trip, isUnsync, partnerVehicle, groupLetter };
+      });
+
+      const uniqueLetters = [
+        ...new Set(tripsWithSyncStatus.map((t) => t.groupLetter).filter(Boolean)),
+      ];
+
+      return {
+        ...route,
+        trips: tripsWithSyncStatus,
+        hasManual: tripsWithSyncStatus.some((t) => t.isManual),
+        hasUnsync: tripsWithSyncStatus.some((t) => t.isUnsync),
+        groupLetters: uniqueLetters,
+      };
+    });
+  }, [allRoutes]);
+
   const filteredVehicleRoutes = useMemo(() => {
-    let routes = allRoutes;
+    let routes = enrichedRoutes;
 
     if (searchQuery) {
       const lowerCaseQuery = searchQuery.toLowerCase();
@@ -423,7 +484,7 @@ export default function EstimasiDelivery() {
       if (etdA > etdB) return 1;
       return 0;
     });
-  }, [allRoutes, searchQuery]);
+  }, [searchQuery, enrichedRoutes]);
 
   useEffect(() => {
     if (activeVehicleId) {
@@ -542,22 +603,34 @@ export default function EstimasiDelivery() {
 
   const vehicleTabs = useMemo(() => {
     if (!filteredVehicleRoutes) return [];
-
     return filteredVehicleRoutes.map((route) => {
-      // UPDATE: Gunakan getDriverName agar seragam
       const tooltipName = getDriverName(route, driverData);
 
-      const hasManual = route.trips?.some((t) => t.isManual);
+      let tabClass =
+        'cursor-help block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ';
 
-      const labelClass = hasManual
-        ? 'cursor-help block w-full h-full text-red-700 bg-red-100 rounded px-2 py-0.5 border border-red-200'
-        : 'cursor-help block w-full h-full';
+      if (route.hasManual && route.hasUnsync) {
+        tabClass += 'bg-red-100 border-blue-400 text-red-800';
+      } else if (route.hasManual) {
+        tabClass += 'bg-red-100 border-transparent text-red-800';
+      } else if (route.hasUnsync) {
+        tabClass += 'bg-transparent border-blue-400 text-gray-700';
+      } else {
+        tabClass += 'bg-transparent border-transparent';
+      }
 
       return {
         id: route.vehicleId,
         label: (
           <Tooltip tooltipContent={tooltipName}>
-            <span className={labelClass}>{route.vehicleName}</span>
+            <span className={tabClass}>
+              {route.vehicleName}
+              {route.hasUnsync && route.groupLetters.length > 0 && (
+                <div className="absolute -top-2 -right-2 bg-blue-400 text-black text-[10px] font-bold px-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center shadow-sm border border-white">
+                  {route.groupLetters.join(', ')}
+                </div>
+              )}
+            </span>
           </Tooltip>
         ),
       };

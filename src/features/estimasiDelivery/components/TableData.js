@@ -24,7 +24,6 @@ export default function TableData({ activeRoute, searchQuery, t }) {
       </thead>
       <tbody className="bg-white">
         {activeRoute.trips.map((trip, index) => {
-          const tripIndex = index + 1;
           const isHub = trip.isHub;
           const isFirstHub = index === 0 && isHub;
           const isLastHub = index === activeRoute.trips.length - 1 && isHub;
@@ -58,22 +57,60 @@ export default function TableData({ activeRoute, searchQuery, t }) {
             textClass = 'text-red-600 font-medium';
           }
 
-          const rowClass = `
-            transition-colors border-b border-gray-100
-            ${trip.isManual ? 'bg-red-100 hover:bg-red-200' : 'hover:bg-gray-50'}
-          `;
+          const isManual = trip.isManual;
+          const isUnsync = trip.isUnsync;
+
+          let rowClass = 'transition-colors ';
+          let rowStyle = {};
+
+          if (isManual) {
+            rowClass += 'bg-red-100 hover:bg-red-200 ';
+          } else {
+            rowClass += 'hover:bg-gray-50 ';
+          }
+
+          if (isUnsync) {
+            rowStyle = {
+              boxShadow:
+                'inset 0 2px 0 0 #60a5fa, inset 0 -2px 0 0 #60a5fa, inset 2px 0 0 0 #60a5fa, inset -2px 0 0 0 #60a5fa',
+              position: 'relative',
+              zIndex: 1,
+            };
+          } else {
+            rowClass += 'border-b border-gray-100 ';
+          }
+
+          let tooltipMsg = '';
+          const partnerText = isUnsync ? `Grup ${trip.groupLetter} - ${trip.partnerVehicle}` : '';
+
+          if (isManual && isUnsync) {
+            tooltipMsg = `${t('estimation.tooltip.manual_assign')} (${partnerText})`;
+          } else if (isManual) {
+            tooltipMsg = t('estimation.tooltip.manual_assign');
+          } else if (isUnsync) {
+            tooltipMsg = `Tidak sinkron: ${partnerText}`;
+          }
 
           const RowContent = (
-            <tr key={`${trip.visitId}-${tripIndex}`} className={rowClass}>
-              {/* Kolom No */}
+            <tr key={`${trip.visitId}-${index}`} className={rowClass} style={rowStyle}>
               <Td>
-                <p className={textClass}>{trip.isManual ? '-' : trip.routePlannedOrder}</p>
+                <p className={isManual || isUnsync ? 'text-red-600 font-medium' : ''}>
+                  {trip.isManual ? '-' : trip.routePlannedOrder}
+                </p>
               </Td>
 
               {/* Kolom Visit */}
               <Td>
                 {isHub ? (
-                  <strong className={textClass}>HUB</strong>
+                  <strong
+                    className={
+                      trip.isManual || trip.isUnsync || trip.isHub
+                        ? 'text-red-600 font-semibold'
+                        : ''
+                    }
+                  >
+                    HUB
+                  </strong>
                 ) : (
                   <HighlightText text={outletName || ''} highlight={searchQuery} />
                 )}
@@ -117,12 +154,9 @@ export default function TableData({ activeRoute, searchQuery, t }) {
             </tr>
           );
 
-          if (trip.isManual) {
+          if (isManual || isUnsync) {
             return (
-              <Tooltip
-                key={`${trip.visitId}-${tripIndex}`}
-                tooltipContent={t('estimation.tooltip.manual_assign')}
-              >
+              <Tooltip key={trip.visitId} tooltipContent={tooltipMsg}>
                 {RowContent}
               </Tooltip>
             );

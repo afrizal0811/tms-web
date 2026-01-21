@@ -215,7 +215,16 @@ export const handleConfirmDownload = async ({
 
         if (trip.isManual) {
           cellStyle.fill = { fgColor: { rgb: 'FEE2E2' } };
-          cellStyle.font = { color: { rgb: '991B1B' } };
+        }
+
+        if (trip.isUnsync) {
+          const blue400 = { style: 'medium', color: { rgb: '60A5FA' } };
+          cellStyle.border = {
+            top: blue400,
+            bottom: blue400,
+            left: blue400,
+            right: blue400,
+          };
         }
 
         if (isHub) {
@@ -223,13 +232,8 @@ export const handleConfirmDownload = async ({
         }
 
         for (let c = 0; c < 7; c++) {
-          stylingMeta.push({
-            row: currentRowIndex,
-            col: c,
-            style: cellStyle,
-          });
+          stylingMeta.push({ row: currentRowIndex, col: c, style: cellStyle });
         }
-
         currentRowIndex++;
       });
 
@@ -264,7 +268,7 @@ export const handleConfirmDownload = async ({
     const fileName = `${t('estimation.title')} - ${locationName} - ${timestamp}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    toastSuccess(t('estimation.toast.success_excel', { err: e.message }));
+    toastSuccess(t('estimation.toast.success_excel'));
   } catch (e) {
     toastError(t('estimation.toast.download_failed', { err: e.message }));
   } finally {
