@@ -14,6 +14,7 @@ export const dictionary = {
       loading: 'Memuat data...',
       minute: 'Menit',
       no_data: 'Tidak ada data',
+      others: 'Lainnya',
       point: 'Titik',
       preparing_chart: 'Menyiapkan Grafik...',
       range_delivery: 'Rentang Tanggal Pengiriman',
@@ -100,7 +101,6 @@ export const dictionary = {
       charts: {
         service_level: {
           batal: 'Batal',
-          others: 'Lainnya',
           partial: 'Terima Sebagian',
           pending: 'Pending',
           pending_gr: 'Pending GR',
@@ -436,6 +436,7 @@ export const dictionary = {
       est_depart: 'Estimasi Keluar',
       invoice_receipt: 'Tanda Terima Faktur',
       manual_assign: 'Penugasan Manual',
+      no_driver: 'Tidak ada data sopir',
       no_so: 'Nomor SO',
       open_time: 'Waktu Buka',
       search_placeholder: 'Cari Plat, Customer, atau SO',
@@ -631,6 +632,7 @@ export const dictionary = {
       loading: 'Loading data...',
       minute: 'Minute',
       no_data: 'There is no data.',
+      others: 'Others',
       point: 'Point',
       preparing_chart: 'Preparing Chart...',
       range_delivery: 'Range Delivery Date',
@@ -718,7 +720,6 @@ export const dictionary = {
       charts: {
         service_level: {
           batal: 'Cancelled',
-          others: 'Others',
           partial: 'Partial',
           pending: 'Pending',
           pending_gr: 'Pending GR',
@@ -1055,6 +1056,7 @@ export const dictionary = {
       invoice_receipt: 'Invoice Receipt',
       manual_assign: 'Manual Assignment',
       no_so: 'SO Number',
+      no_driver: 'No driver data',
       open_time: 'Open Time',
       search_placeholder: 'Search Plate, Customer, or SO Number',
       subtitle: 'Monitoring estimation of',

@@ -298,11 +298,9 @@ export default function UpdateLonglatPage() {
 
   const datePicker = (
     <CustomDatePicker
-      className="md:w-48"
       isLoading={loading || isDownloading}
       onChange={handleDateChange}
       selected={selectedDate}
-      wrapperClassName="w-full"
     />
   );
 
@@ -312,7 +310,6 @@ export default function UpdateLonglatPage() {
       isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
       text={t('common.download_excel')}
-      width="w-full md:w-auto"
     />
   );
 

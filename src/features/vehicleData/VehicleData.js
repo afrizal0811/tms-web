@@ -215,7 +215,6 @@ export default function VehicleData() {
         isLoading={isLoading || isDownloading}
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
         text={t('common.download_excel')}
-        width="w-full md:w-auto"
       />
 
       {isDownloadDropdownOpen && (

@@ -1,3 +1,6 @@
+// File: src/components/DownloadButton.js
+'use client';
+
 import Spinner from './Spinner';
 
 export default function DownloadButton(props) {
@@ -5,14 +8,16 @@ export default function DownloadButton(props) {
     onClick,
     isLoading = false,
     disabled = false,
-    width = 'w-full sm:w-auto ',
+    width = 'w-full lg:w-auto',
     text = 'Download Excel',
   } = props;
+
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${width} px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer`}
+      // Class width akan mengikuti prop di atas
+      className={`${width} px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap`}
     >
       {isLoading ? (
         <Spinner

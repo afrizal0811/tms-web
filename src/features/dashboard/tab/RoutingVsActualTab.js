@@ -318,7 +318,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
             disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleDownload}
             text={t('common.download_excel')}
-            width="w-full md:w-auto"
           />
         </div>
       </div>

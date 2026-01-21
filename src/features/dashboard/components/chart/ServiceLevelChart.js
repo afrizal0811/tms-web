@@ -180,7 +180,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
           </span>{' '}
           vs{' '}
           <span className="font-bold text-red-600">
-            {t('dashboard.charts.service_level.others')}
+            {t('common.others')}
           </span>
         </p>
       </div>

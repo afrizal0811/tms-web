@@ -25,7 +25,7 @@ export function getDriverName(route, driverData) {
 
   const email = normalizeEmail(route.assignee);
   const storedDriver = driverData ? driverData[email] : null;
-  return storedDriver?.name || route.assigneeName || route.vehicleName || '-';
+  return storedDriver?.name || '-';
 }
 
 export function processDriverTimeMap(apiData, selectedDateStr) {
@@ -111,6 +111,7 @@ export const handleConfirmDownload = async ({
   setIsDownloading,
   t,
   driverData,
+  fileNamePrefix,
 }) => {
   setIsDownloading(true);
   try {
@@ -265,7 +266,11 @@ export const handleConfirmDownload = async ({
     });
     const { storedLocationName: locationName } = getLocalStorage() || '-';
     const timestamp = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-    const fileName = `${t('estimation.title')} - ${locationName} - ${timestamp}.xlsx`;
+    let fileName = `${t('estimation.title')} - ${locationName} - ${timestamp}.xlsx`;
+    if (fileNamePrefix) {
+      fileName = `${t('estimation.title')} (${fileNamePrefix}) - ${locationName} - ${timestamp}.xlsx`;
+    }
+
     XLSX.writeFile(wb, fileName);
 
     toastSuccess(t('estimation.toast.success_excel'));

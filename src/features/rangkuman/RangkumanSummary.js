@@ -721,15 +721,13 @@ export default function RangkumanSummary() {
   };
 
   const datePicker = (
-    <CustomDatePicker
-      className="md:w-48"
+    <CustomDatePicker 
       dateFormat="MMMM yyyy"
       disableSunday={false}
       isLoading={isLoading}
       onChange={handleDateChange}
       selected={selectedDate}
       showMonthYearPicker
-      wrapperClassName="w-full"
     />
   );
 
@@ -738,7 +736,6 @@ export default function RangkumanSummary() {
       disabled={isLoading || isEmpty(rawData.tasks)}
       isLoading={isLoading}
       onClick={() => handleDownloadExcel(t, lang)}
-      width="w-full md:w-auto"
       text={t('common.download_excel')}
     />
   );
