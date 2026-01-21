@@ -20,6 +20,7 @@ import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/apiService';
+import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import ReportTerimaFaktur from './components/ReportTerimaFaktur';
 import TableData from './components/TableData';
@@ -186,9 +187,7 @@ export default function EstimasiDelivery() {
 
   useEffect(() => {
     if (!selectedDate) return;
-
     const deliveryDateObj = new Date(selectedDate);
-
     if (deliveryDateObj.getDay() === 0) {
       setAllRoutes([]);
       setIsLoading(false);
@@ -206,6 +205,19 @@ export default function EstimasiDelivery() {
         if (!userLocation) {
           throw new Error('userLocation tidak ditemukan di localStorage.');
         }
+
+        const rawDrivers = await getOrFetchDriverData(userLocation);
+        const dataObj = {};
+        const mapObj = new Map();
+        if (Array.isArray(rawDrivers)) {
+          rawDrivers.forEach((d) => {
+            const email = normalizeEmail(d.email);
+            dataObj[email] = d;
+            mapObj.set(email, d.plat || 'Other');
+          });
+        }
+        setDriverData(dataObj);
+        setDriverMap(mapObj);
 
         const routingDate = new Date(deliveryDateObj);
         if (deliveryDateObj.getDay() === 1) {
@@ -264,8 +276,7 @@ export default function EstimasiDelivery() {
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
           const rawEmail = task?.assignee[0];
           const email = normalizeEmail(rawEmail);
-
-          const plat = driverMap.get(email) || t('common.others');
+          const plat = mapObj.get(email) || t('common.others');
 
           if (!groups[plat]) {
             groups[plat] = {
@@ -320,6 +331,7 @@ export default function EstimasiDelivery() {
             orderId: task.orderId,
             flow: task.flow,
             warehouseName: task.flow === 'Pickup' ? task['warehouseName-1'] : '',
+            locationName: task.locationName || null,
 
             openTime: task.openTime,
             closeTime: task.closeTime,
@@ -385,7 +397,7 @@ export default function EstimasiDelivery() {
       }
     }
     fetchData();
-  }, [selectedDate, driverMap, t]);
+  }, [selectedDate, t]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];
@@ -452,16 +464,29 @@ export default function EstimasiDelivery() {
     let routes = enrichedRoutes;
 
     if (searchQuery) {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      routes = routes.filter((route) => {
-        if (route.vehicleName && route.vehicleName.toLowerCase().includes(lowerCaseQuery))
-          return true;
-        return route.trips.some((trip) => {
-          if (trip.isHub) return false;
-          const outlet = trip.visitName?.toLowerCase();
-          return outlet.includes(lowerCaseQuery);
-        });
-      });
+      const lowerQuery = searchQuery.toLowerCase();
+
+      routes = routes
+        .map((route) => {
+          const matchingTrips = route.trips.filter((trip) => {
+            const vName = (trip.visitName || '').toLowerCase();
+            const wName = (trip.warehouseName || '').toLowerCase();
+            const so = (trip.orderId || '').toLowerCase();
+            const no = (trip.routePlannedOrder || '').toString().toLowerCase();
+            return (
+              vName.includes(lowerQuery) ||
+              wName.includes(lowerQuery) ||
+              so.includes(lowerQuery) ||
+              no.includes(lowerQuery)
+            );
+          });
+
+          if (matchingTrips.length > 0) {
+            return { ...route, trips: matchingTrips };
+          }
+          return null;
+        })
+        .filter(Boolean);
     }
 
     return [...routes].sort((a, b) => {
