@@ -1,27 +1,9 @@
 // File: components/LocationDropdown.js
 'use client';
 
-import { useEffect, useState } from 'react';
 import { toastError } from '@/lib/toastHelper';
-
-/**
- * Simple, reusable LocationDropdown (fixed: no invalid DOM props)
- *
- * Props:
- * - value
- * - onChange(id, label)
- * - hubsToShow
- * - fetchHubsFn
- * - optionValueField (default '_id')
- * - optionLabelField (default 'name')
- * - placeholder (default '-- Pilih Lokasi --')
- * - compact (boolean) => header mode (no placeholder shown)
- * - saveToLocalStorageKey
- * - disabled
- * - className
- *
- * IMPORTANT: any custom props (like showPlaceholder) must NOT be spread into the DOM element.
- */
+import { isEmpty } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 export default function LocationDropdown({
   value,
   onChange,
@@ -47,7 +29,7 @@ export default function LocationDropdown({
 
   // init localValue from localStorage if key provided and no explicit value
   useEffect(() => {
-    if (saveToLocalStorageKey && (value === undefined || value === null || value === '')) {
+    if (saveToLocalStorageKey && isEmpty(value)) {
       try {
         const stored = localStorage.getItem(saveToLocalStorageKey);
         if (stored) setLocalValue(stored);
@@ -107,7 +89,7 @@ export default function LocationDropdown({
     if (!compact) return;
     if (loading) return;
     if (error) return;
-    if ((localValue === '' || localValue === null || localValue === undefined) && data.length > 0) {
+    if (isEmpty(localValue) && data.length > 0) {
       const first = data[0];
       const val = String(first[optionValueField] ?? first.id ?? '');
       const label = first[optionLabelField] ?? first.name ?? '';
@@ -139,7 +121,8 @@ export default function LocationDropdown({
   const paddingClass = compact ? 'px-3 py-1 text-sm' : 'px-3 py-2';
   const disabledClass =
     disabled || loading || error ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white';
-  const base = 'rounded-md border transition border-gray-300 text-gray-700 cursor-pointer hover:bg-gray-50';
+  const base =
+    'rounded-md border transition border-gray-300 text-gray-700 cursor-pointer hover:bg-gray-50';
 
   return (
     <select
@@ -156,7 +139,7 @@ export default function LocationDropdown({
           {/* show placeholder only when NOT compact (i.e., page mode) */}
           {!compact && placeholder && <option value="">{placeholder}</option>}
 
-          {data.length === 0 && <option value="">{'-- Tidak ada lokasi --'}</option>}
+          {isEmpty(data) && <option value="">{'-- Tidak ada lokasi --'}</option>}
 
           {data.map((hub) => {
             const val = String(hub[optionValueField] ?? hub.id ?? '');

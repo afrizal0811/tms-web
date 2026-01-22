@@ -5,6 +5,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
+import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -13,13 +14,13 @@ import {
   calculateHaversineDistance,
   formatCoordinates,
   formatToApiUtc,
+  isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UpdateLonglatTable from './components/UpdateLonglatTable';
 import { handleDownloadExcel } from './help';
-import { useLanguage } from '@/context/LanguageContext';
 
 export default function UpdateLonglatPage() {
   const { t, lang } = useLanguage();
@@ -207,7 +208,7 @@ export default function UpdateLonglatPage() {
       const failedChunks = results.filter((r) => r.status === 'failed').map((r) => r.chunk);
       const initialMap = processHistoryRawData(successfulChunks, uniqueCustomersWithUpdates);
       setHistoryMap(initialMap);
-      setLoading(false); 
+      setLoading(false);
       if (failedChunks.length > 0) {
         toastWarning(t('longlat.toast.retry_chunk', { count: failedChunks.length }));
 
@@ -268,7 +269,7 @@ export default function UpdateLonglatPage() {
 
   // --- PROCESSING DATA ---
   const processedData = useMemo(() => {
-    if (loading && tasksData.length === 0) return []; // Only block if no data at all
+    if (loading && isEmpty(tasksData)) return []; // Only block if no data at all
 
     const updateList = [];
 
@@ -297,21 +298,18 @@ export default function UpdateLonglatPage() {
 
   const datePicker = (
     <CustomDatePicker
-      className="md:w-48"
       isLoading={loading || isDownloading}
       onChange={handleDateChange}
       selected={selectedDate}
-      wrapperClassName="w-full"
     />
   );
 
   const downloadBtn = (
     <DownloadButton
-      disabled={loading || isDownloading || processedData.length === 0}
+      disabled={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
       text={t('common.download_excel')}
-      width="w-full md:w-auto"
     />
   );
 
@@ -331,7 +329,7 @@ export default function UpdateLonglatPage() {
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard title={t('longlat.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
-        isEmpty={!loading && processedData.length === 0}
+        isEmpty={!loading && isEmpty(processedData)}
         isLoading={loading}
         loadingText={t('common.loading')}
       >

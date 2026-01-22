@@ -1,6 +1,6 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatDateUniversal, isDateSunday } from '@/lib/utils';
+import { formatDateUniversal, isDateSunday, isEmpty } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 /**
@@ -48,7 +48,7 @@ export const bulkDownloader = async ({
     return;
   }
 
-  if (!driverData || driverData.length === 0) {
+  if (!driverData || isEmpty(driverData)) {
     toastError(t('report.toast.invalid_driver'));
     return;
   }
@@ -110,7 +110,7 @@ export const bulkDownloader = async ({
       return;
     }
 
-    if (sundaysSkipped > 0 && skippedDates.length === 0) {
+    if (sundaysSkipped > 0 && isEmpty(skippedDates)) {
       toastWarning(t('report.toast.skip_sunday', { sundaysSkipped: sundaysSkipped }));
     } else if (sundaysSkipped > 0) {
       toastWarning(t('report.toast.skip_data', { skippedDates: skippedDates.length }));

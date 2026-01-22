@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/timeDriverSheet.js
-import { formatDateWIB, normalizeEmail } from '@/lib/utils';
+import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
@@ -60,7 +60,7 @@ export function calculateTimeDriverData(
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '';
-      if (!plat || plat.trim() === '' || plat.toUpperCase().includes('DEMO')) return;
+      if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
         driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });

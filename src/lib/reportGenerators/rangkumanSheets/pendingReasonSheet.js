@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
-import { formatDateWIB, parseCustomerString } from '@/lib/utils';
+import { formatDateWIB, isEmpty, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -46,7 +46,7 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '';
-      if (!plat || plat.trim() === '' || plat.toUpperCase().includes('DEMO')) return;
+      if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
         driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
@@ -304,8 +304,7 @@ export function generatePendingReasonSheet(
           currentStyle = { ...currentStyle, font: { color: COLORS.alert, bold: true } };
         }
         if ([idxETA, idxETD, idxRO].includes(C)) {
-          if (!val || val === '-' || val === '')
-            currentStyle = { ...currentStyle, fill: FILL_STYLES.red };
+          if (isEmpty(val)) currentStyle = { ...currentStyle, fill: FILL_STYLES.red };
         }
         if (C === idxVisitTime) {
           if (val === 0 || val === '0')

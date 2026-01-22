@@ -7,13 +7,28 @@ import { useLanguage } from '@/context/LanguageContext';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-const DailyTooltip = ({ active, payload, label, t }) => {
+// Update parameter: terima lang dan selectedDate
+const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    let dayName = '';
+    if (selectedDate) {
+      try {
+        const year = selectedDate.getFullYear();
+        const month = selectedDate.getMonth();
+        const day = parseInt(label, 10);
+        const dateObj = new Date(year, month, day);
+        const locale = lang === 'id' ? 'id-ID' : 'en-GB';
+        dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
+      } catch (e) {
+        toastError(t('dashboard.toast.parsing_date_error', { err: e.message }));
+      }
+    }
+
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">
-          {t('common.date')} {label}
+          {t('common.date')} {label} {dayName && `(${dayName})`}
         </p>
 
         <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
@@ -55,15 +70,15 @@ const DailyTooltip = ({ active, payload, label, t }) => {
   return null;
 };
 
-function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
-  const { t } = useLanguage();
+// Update props: terima selectedDate
+function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selectedDate }) {
+  const { t, lang } = useLanguage(); // Ambil lang
 
   if (!isOpen) return null;
 
   const hasData = Array.isArray(data) && data.length > 0;
   const hasPendingGR = hasData && data.some((d) => d.PENDING_GR > 0);
 
-  // Membuat Legend di Footer agar konsisten dengan modal lainnya
   const footerContent = (
     <div className="flex flex-wrap gap-4 font-medium text-xs text-gray-500">
       <div className="flex items-center gap-1.5">
@@ -117,9 +132,11 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading }) {
                 dy={10}
               />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <Tooltip content={<DailyTooltip t={t} />} cursor={{ fill: '#f1f5f9' }} />
-
-              {/* Legend di Chart dihapus, diganti dengan Footer */}
+              {/* Passing props lang & selectedDate ke tooltip */}
+              <Tooltip
+                content={<DailyTooltip t={t} lang={lang} selectedDate={selectedDate} />}
+                cursor={{ fill: '#f1f5f9' }}
+              />
 
               <Bar
                 name={t('dashboard.charts.service_level.success')}

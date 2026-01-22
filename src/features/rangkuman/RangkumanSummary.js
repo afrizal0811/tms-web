@@ -13,7 +13,7 @@ import {
   generateRangkumanWorkbook,
 } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { formatDateUniversal, formatToApiUtc } from '@/lib/utils';
+import { formatDateUniversal, formatToApiUtc, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageKmTab from './tabs/AverageKmTab';
@@ -546,7 +546,7 @@ export default function RangkumanSummary() {
 
   const handleDownloadExcel = (translate, language) => {
     if (!selectedDate) return;
-    if (driverData.length === 0) {
+    if (isEmpty(driverData)) {
       toastError('Data Driver belum siap/kosong.');
       return;
     }
@@ -608,7 +608,7 @@ export default function RangkumanSummary() {
 
     switch (activeTab) {
       case 'Task Summary':
-        return Object.keys(taskSummaryMetrics).length === 0;
+        return isEmpty(Object.keys(taskSummaryMetrics));
 
       case 'Truck Usage': {
         const { dateMap } = reportPreview?.truckUsageData || {};
@@ -623,7 +623,7 @@ export default function RangkumanSummary() {
       case 'Average KM': {
         const data = reportPreview?.averageKmData;
         const hasRouting = data && data.some((row) => (row.totalKm || 0) > 0);
-        return !data || data.length === 0 || !hasRouting;
+        return !data || isEmpty(data) || !hasRouting;
       }
 
       case 'Truck Detail': {
@@ -641,7 +641,7 @@ export default function RangkumanSummary() {
       }
 
       case 'Pending Reasons': {
-        return (reportPreview?.pendingReasonsData || []).length === 0;
+        return isEmpty(reportPreview?.pendingReasonsData || []);
       }
 
       case 'Time RO':
@@ -721,24 +721,21 @@ export default function RangkumanSummary() {
   };
 
   const datePicker = (
-    <CustomDatePicker
-      className="md:w-48"
+    <CustomDatePicker 
       dateFormat="MMMM yyyy"
       disableSunday={false}
       isLoading={isLoading}
       onChange={handleDateChange}
       selected={selectedDate}
       showMonthYearPicker
-      wrapperClassName="w-full"
     />
   );
 
   const downloadButton = (
     <DownloadButton
-      disabled={isLoading || rawData.tasks.length === 0}
+      disabled={isLoading || isEmpty(rawData.tasks)}
       isLoading={isLoading}
       onClick={() => handleDownloadExcel(t, lang)}
-      width="w-full md:w-auto"
       text={t('common.download_excel')}
     />
   );

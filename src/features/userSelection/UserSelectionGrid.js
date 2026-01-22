@@ -3,12 +3,13 @@
 import Spinner from '@/components/Spinner';
 import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { ROLE_ID } from '@/lib/constants';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
+import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { getUsers } from '../../lib/apiService';
 import { toastSuccess } from '../../lib/toastHelper';
-import { ROLE_ID } from '@/lib/constants';
 
 function capitalizeWords(str) {
   if (!str) return '';
@@ -68,7 +69,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
           usersArray = await getUsers({ hubId: hubId, status: 'active' });
         } else {
           // --- Mode Normal: Ambil SEMUA roleIds yang diminta ---
-          if (!Array.isArray(roleIds) || roleIds.length === 0) {
+          if (!Array.isArray(roleIds) || isEmpty(roleIds)) {
             throw new Error('Role tidak disediakan atau kosong.');
           }
 
@@ -89,10 +90,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
           throw new Error('Data user yang diterima bukanlah array.');
         }
 
-        const forbiddenRoleIds = [
-          ROLE_ID.driver,
-          ROLE_ID.driverJkt,
-        ];
+        const forbiddenRoleIds = [ROLE_ID.driver, ROLE_ID.driverJkt];
 
         let processedData = usersArray;
 
@@ -181,7 +179,7 @@ export default function UserSelectionGrid({ hubId, roleIds, onUserSelect }) {
     return <p className="mt-6 text-red-500">{usersData.error}</p>;
   }
   // Tampilan jika tidak ada user
-  if (usersData.data.length === 0) {
+  if (isEmpty(usersData.data)) {
     return <p className="mt-6 text-gray-400">Tidak ada user ditemukan di lokasi ini.</p>;
   }
   const modalMessage = (

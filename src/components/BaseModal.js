@@ -7,6 +7,7 @@ export default function BaseModal({
   contentClassName = '',
   footer,
   headerClassName = 'bg-slate-800 text-white',
+  headerContent = '',
   isOpen,
   maxWidth = 'max-w-4xl',
   noClose = false,
@@ -26,18 +27,24 @@ export default function BaseModal({
       >
         {/* Header */}
         <div
-          className={`px-6 py-4 flex justify-between items-center shrink-0 border-b border-transparent ${headerClassName}`}
+          className={`px-6 py-4 flex justify-between shrink-0 border-b border-transparent ${headerClassName}`}
         >
-          <div className="text-lg font-bold truncate flex-1">{title}</div>
-          {!noClose && (
-            <button
-              onClick={onClose}
-              className="ml-4 text-inherit opacity-70 hover:opacity-100 text-2xl leading-none transition-opacity cursor-pointer"
-              aria-label="Close"
-            >
-              &times;
-            </button>
-          )}
+          <div className="flex-column lg:flex items-center gap-4 justify-between w-full">
+            <div className="text-lg font-bold truncate flex-1">{title}</div>
+            {headerContent && <div className="flex items-center py-3 ">{headerContent}</div>}
+          </div>
+          <div className="flex-column lg:flex items-start gap-4 justify-between">
+            {!noClose && (
+              <button
+                onClick={onClose}
+                className="ml-4 text-inherit opacity-70 hover:opacity-100 text-2xl leading-none transition-opacity cursor-pointer"
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            )}
+          </div>
+          <div></div>
         </div>
 
         {/* Body */}

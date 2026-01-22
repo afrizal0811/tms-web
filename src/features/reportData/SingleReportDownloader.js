@@ -17,6 +17,7 @@ import {
   formatTimer,
   formatToApiUtc,
   isDateSunday,
+  isEmpty,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
@@ -65,7 +66,7 @@ export default function TmsSummary({
   const disabledCommon = isAnyLoading || isMapping;
 
   const safeEnsureDriverData = () => {
-    if (!Array.isArray(driverData) || driverData.length === 0) {
+    if (!Array.isArray(driverData) || isEmpty(driverData)) {
       throw new Error('Data driver belum dimuat. Mohon muat data driver terlebih dahulu.');
     }
     if (!selectedLocation) {
@@ -97,7 +98,7 @@ export default function TmsSummary({
       });
 
       const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
-      if (filteredResults.length === 0) {
+      if (isEmpty(filteredResults)) {
         throw new Error(t('report.toast.no_routing'));
       }
 
@@ -169,7 +170,7 @@ export default function TmsSummary({
 
       const [allTasks, resultsData] = await Promise.all([tasksPromise, resultsPromise]);
 
-      if (!Array.isArray(allTasks) || allTasks.length === 0) {
+      if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
         throw new Error(t('report.toast.no_delivery'));
       }
 
@@ -214,7 +215,7 @@ export default function TmsSummary({
         timeBy: 'createdTime',
       });
 
-      if (!Array.isArray(allApiData) || allApiData.length === 0) {
+      if (!Array.isArray(allApiData) || isEmpty(allApiData)) {
         throw new Error(t('report.toast.no_time'));
       }
 

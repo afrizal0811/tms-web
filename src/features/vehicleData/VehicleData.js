@@ -8,7 +8,7 @@ import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { normalizeEmail } from '@/lib/utils';
+import { isEmpty, normalizeEmail } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
@@ -76,7 +76,7 @@ export default function VehicleData() {
         }
         setDriverMap(localDriverMap);
         const rawApiData = await getVehicles({ limit: 500, hubId: userLocation });
-        if (!rawApiData || rawApiData.length === 0) throw new Error('Tidak ada data.');
+        if (!rawApiData || isEmpty(rawApiData)) throw new Error('Tidak ada data.');
         const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
         setTemplateData([...rawApiData].sort(sortByEmail));
         let processedData = rawApiData.map((v) => ({ ...v, tags: v.tags ? [...v.tags] : [] }));
@@ -87,7 +87,7 @@ export default function VehicleData() {
             const hubMap = tagMap[userLocation];
             if (hubMap) {
               processedData.forEach((vehicle) => {
-                if (!vehicle.tags || vehicle.tags.length === 0 || !vehicle.name) return;
+                if (!vehicle.tags || isEmpty(vehicle.tags) || !vehicle.name) return;
                 const originalTag = vehicle.tags[0];
                 const plate = vehicle.name;
                 const parts = originalTag.split('-');
@@ -209,13 +209,12 @@ export default function VehicleData() {
   );
 
   const downloadButton = (
-    <div className="w-full md:w-auto z-50" ref={downloadDropdownRef}>
+    <div className="w-full z-50" ref={downloadDropdownRef}>
       <DownloadButton
         disabled={isDownloading || isLoading}
         isLoading={isLoading || isDownloading}
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
         text={t('common.download_excel')}
-        width="w-full md:w-auto"
       />
 
       {isDownloadDropdownOpen && (

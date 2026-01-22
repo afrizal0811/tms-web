@@ -38,14 +38,14 @@ export default function CustomerHistoryModal({ isOpen, onClose, data, customerNa
   const totalUpdates = data ? data.length : 0;
   const headerContent = (
     <div>
-      <h3 className="text-lg font-bold text-gray-900">
+      <h3 className="text-lg font-bold">
         {t('longlat.modal.title')}{' '}
         <span className="text-sky-600">
           ({dateRange?.start} - {dateRange?.end})
         </span>
       </h3>
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-1 font-normal">
-        <p className="text-sm text-gray-600 font-medium break-all">{customerName}</p>
+        <p className="text-sm text-gray-200 font-medium break-all">{customerName}</p>
         <p className="text-xs text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm inline-block w-fit">
           {t('longlat.modal.total_update')}:{' '}
           <span className="font-bold text-slate-800">
@@ -62,7 +62,6 @@ export default function CustomerHistoryModal({ isOpen, onClose, data, customerNa
       onClose={onClose}
       title={headerContent}
       maxWidth="max-w-7xl"
-      headerClassName="bg-gray-50 border-b border-gray-100"
       contentClassName="h-[80vh]"
       bodyClassName="p-0 flex flex-col lg:flex-row overflow-hidden h-full"
     >

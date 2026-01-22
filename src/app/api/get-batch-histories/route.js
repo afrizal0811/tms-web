@@ -1,4 +1,5 @@
 // File: app/api/get-batch-histories/route.js
+import { isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -14,7 +15,7 @@ export async function POST(request) {
     const body = await request.json();
     const { resultIds } = body; // Ekspektasi: ["id1", "id2", "id3", ...]
 
-    if (!resultIds || !Array.isArray(resultIds) || resultIds.length === 0) {
+    if (!resultIds || !Array.isArray(resultIds) || isEmpty(resultIds)) {
       return NextResponse.json({ data: [] });
     }
 

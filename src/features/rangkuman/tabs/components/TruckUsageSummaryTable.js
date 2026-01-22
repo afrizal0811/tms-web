@@ -1,5 +1,6 @@
 // File: features/rangkuman/tabs/components/TruckUsageSummaryTable.js
 import Tooltip from '@/components/Tooltip';
+import { isEmpty } from '@/lib/utils';
 
 export default function TruckUsageSummaryTable({
   isPercentage = false,
@@ -24,7 +25,7 @@ export default function TruckUsageSummaryTable({
     return (
       <Tooltip tooltipContent={tootltip}>
         <td
-          className={`${className !== '' ? thClassTooltip : className} ${addClass && `${addClass} cursor-help`}`}
+          className={`${!isEmpty(className) ? thClassTooltip : className} ${addClass && `${addClass} cursor-help`}`}
         >
           <span className="border-b-[1.5px] border-dashed border-gray-600 pb-px">{text}</span>
         </td>

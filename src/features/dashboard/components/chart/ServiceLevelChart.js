@@ -4,6 +4,7 @@
 import { useLanguage } from '@/context/LanguageContext';
 import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
 import { processServiceLevelData } from '@/lib/dashboardHelper';
+import { isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -70,21 +71,20 @@ const CustomTooltip = ({ active, payload, label, t }) => {
 function ServiceLevelChart({ allTasks, hubId }) {
   const { t, lang } = useLanguage();
 
-  const [monthlyData, setMonthlyData] = useState(null); // null = belum siap
+  const [monthlyData, setMonthlyData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [dailyData, setDailyData] = useState([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
-  // === Hitung data bulanan SETELAH render pertama (supaya tab nggak freeze) ===
+
+  // === Hitung data bulanan ===
   useEffect(() => {
-    if (!allTasks || allTasks.length === 0) {
+    if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setMonthlyData([]);
       setDailyData([]);
       setSelectedMonth(null);
       return;
     }
-
-    // proses berat di sini
     const result = processServiceLevelData(allTasks, 'monthly', null, hubId);
     setMonthlyData(result);
   }, [allTasks, hubId]);
@@ -92,12 +92,9 @@ function ServiceLevelChart({ allTasks, hubId }) {
   const localizedData = useMemo(() => {
     if (!monthlyData) return null;
     return monthlyData.map((item) => {
-      // Asumsi item.key formatnya "YYYY-MM" (misal: "2023-10")
       if (item.key && item.key.includes('-')) {
         const [year, month] = item.key.split('-').map(Number);
         const date = new Date(year, month - 1, 1);
-
-        // Format ulang label bulan sesuai bahasa aktif
         return {
           ...item,
           label: date.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short' }),
@@ -107,24 +104,21 @@ function ServiceLevelChart({ allTasks, hubId }) {
     });
   }, [monthlyData, lang]);
 
-  // === Hitung data harian saat user pilih bulan ===
+  // === Hitung data harian ===
   useEffect(() => {
-    if (!selectedMonth || !allTasks || allTasks.length === 0) {
+    if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
       setDailyData([]);
       setIsModalLoading(false);
       return;
     }
-
     const key = selectedMonth.key;
     if (!key) {
       setDailyData([]);
       setIsModalLoading(false);
       return;
     }
-
     setIsModalLoading(true);
-
     setTimeout(() => {
       const result = processServiceLevelData(allTasks, 'daily', key, hubId);
       setDailyData(result);
@@ -139,17 +133,36 @@ function ServiceLevelChart({ allTasks, hubId }) {
     setSelectedMonth(entry);
   };
 
-  const getModalTitle = () => {
-    if (!selectedMonth) return '';
+  // --- PERBAIKAN: Siapkan object Date untuk dikirim ke Modal ---
+  const selectedDateObj = useMemo(() => {
+    if (!selectedMonth || !selectedMonth.key) return null;
     try {
-      const [year, month] = selectedMonth.key.split('-');
-      const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-      const fullMonth = dateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
-        month: 'long',
-      });
-      return `${t('dashboard.charts.service_level.title')} ${fullMonth}`;
+      const [year, month] = selectedMonth.key.split('-').map(Number);
+      return new Date(year, month - 1, 1);
     } catch {
-      return `${t('dashboard.charts.service_level.title')} ${selectedMonth.label || selectedMonth.key}`;
+      return null;
+    }
+  }, [selectedMonth]);
+
+  const getModalTitle = () => {
+    if (!selectedDateObj) return ''; // Gunakan selectedDateObj
+    try {
+      const fullMonth = selectedDateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+        month: 'long',
+        year: 'numeric',
+      });
+      return (
+        <div>
+          <h3 className="text-lg font-bold">{t('dashboard.charts.service_level.title')}</h3>
+          <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
+        </div>
+      );
+    } catch {
+      return (
+        <div>
+          <h3 className="text-lg font-bold">{t('dashboard.charts.service_level.title')}</h3>
+        </div>
+      );
     }
   };
 
@@ -167,7 +180,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
           </span>{' '}
           vs{' '}
           <span className="font-bold text-red-600">
-            {t('dashboard.charts.service_level.others')}
+            {t('common.others')}
           </span>
         </p>
       </div>
@@ -271,6 +284,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
         title={getModalTitle()}
         data={dailyData}
         isLoading={isModalLoading}
+        selectedDate={selectedDateObj} // PERBAIKAN: Kirim props ini
       />
     </div>
   );

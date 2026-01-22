@@ -1,9 +1,9 @@
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
+import { formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName, t) => {
-  if (processedData.length === 0) {
+  if (isEmpty(processedData)) {
     toastWarning(t('report.toast.no_data'));
     return;
   }

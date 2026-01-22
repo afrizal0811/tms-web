@@ -11,6 +11,7 @@ import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserSelectionGrid from '@/features/userSelection/UserSelectionGrid';
 import { ROLE_ID } from '@/lib/constants';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react'; // Tambah useRef
 import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
@@ -137,7 +138,7 @@ export default function Home() {
           setCurrentHubListView(allowed);
 
           if (storedLocation && storedLocationName) {
-            if (userHubIds.length === 0 || userHubIds.includes(storedLocation)) {
+            if (isEmpty(userHubIds) || userHubIds.includes(storedLocation)) {
               setSelectedLocation(storedLocation);
               setSelectedLocationName(storedLocationName);
               setTempSelectedLocation(storedLocation);

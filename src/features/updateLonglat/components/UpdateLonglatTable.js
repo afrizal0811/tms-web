@@ -1,10 +1,11 @@
 // File: src/features/updateLonglat/components/UpdateLonglatTable.js
 'use client';
 
+import Tooltip from '@/components/Tooltip';
+import { useLanguage } from '@/context/LanguageContext';
+import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
-import { useLanguage } from '@/context/LanguageContext';
-import Tooltip from '@/components/Tooltip';
 
 export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
   const { t } = useLanguage();
@@ -26,7 +27,7 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
   return (
     <>
       <div className="flex flex-col h-full space-y-4">
-        {data.length === 0 ? (
+        {isEmpty(data) ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
             <p>{t('longlat.table.no_data')}</p>
           </div>

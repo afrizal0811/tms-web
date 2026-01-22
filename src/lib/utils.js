@@ -104,14 +104,26 @@ export function parseCustomerString(fullString) {
   if (!fullString || typeof fullString !== 'string') {
     return { name: '', id: null, location: null };
   }
+
   const parts = fullString.split(/\s+-\s+/);
+
   let id = parts.find((p) => /^C\d+/.test(p) && !p.includes(' '));
   if (!id && parts.length >= 2) {
     id = parts[1];
   }
-  const location = parts.length > 2 ? parts[parts.length - 1] : null;
+  id = id !== undefined ? id : '';
+
+  let location = null;
+  if (parts.length > 2) {
+    const rawLocation = parts[parts.length - 1];
+    location = rawLocation.split(',')[0].trim();
+  }
+  location = location !== null ? location : '';
+
   const name = parts[0] && parts[0] !== id ? parts[0] : '';
-  return { name, id, location };
+  const fullCustomerName = id !== '' || location !== '' ? `${name} - ${id} - ${location}` : name;
+
+  return { name, id, location, fullCustomerName };
 }
 
 // Menyederhanakan string waktu (HH:mm:ss) menjadi format HH:mm
@@ -356,4 +368,25 @@ export function formatLongDate(dateInput, language = 'id-ID') {
   } catch (e) {
     return '-';
   }
+}
+
+export function isEmpty(value) {
+  if (Array.isArray(value)) return value.length === 0;
+  return (
+    value === undefined ||
+    value === null ||
+    value === '' ||
+    value === false ||
+    value === 0 ||
+    value === '0' ||
+    value === '-'
+  );
+}
+
+export function convertWibToUtc(dateInput) {
+  if (!dateInput) return null;
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return null;
+
+  return date.toISOString().slice(0, 19).replace('T', ' ');
 }

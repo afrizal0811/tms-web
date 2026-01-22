@@ -10,6 +10,7 @@ import {
   formatTimestampToHHMM,
   formatYYYYMMDDToDDMMYYYY,
   getUTC7DateString,
+  isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
@@ -57,7 +58,7 @@ export function generateDeliveryWorkbook(
           const driverEmail = normalizeEmail(route.assignee);
           const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
           const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-          if (!driverName || !Array.isArray(route.trips) || route.trips.length === 0) continue;
+          if (!driverName || !Array.isArray(route.trips) || isEmpty(route.trips)) continue;
 
           const hubTrips = route.trips.filter((trip) => trip.isHub === true);
           if (hubTrips.length > 0) {
@@ -276,7 +277,7 @@ export function generateDeliveryWorkbook(
   ];
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
-    if (plat === '') return false;
+    if (isEmpty(plat)) return false;
     if (plat.toUpperCase().includes('DEMO')) return false;
     return true;
   });
@@ -579,7 +580,11 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, translate('excel.delivery.sheets.update_longlat'));
+  XLSX.utils.book_append_sheet(
+    wb,
+    wsUpdateLonglat,
+    translate('excel.delivery.sheets.update_longlat')
+  );
 
   // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
@@ -650,7 +655,10 @@ export function generateDeliveryWorkbook(
     for (const task of tasks) {
       const ro = task.roSequence;
       const real = task.realSequence;
-      const isSame = ro == real ? translate('excel.delivery.data.match') : translate('excel.delivery.data.mismatch');
+      const isSame =
+        ro == real
+          ? translate('excel.delivery.data.match')
+          : translate('excel.delivery.data.mismatch');
       finalSheetData3.push([
         task.flow,
         task.plat,

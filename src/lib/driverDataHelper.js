@@ -2,6 +2,7 @@ import { getUsers, getVehicles } from './apiService';
 import { ROLE_ID, VEHICLE_TYPES } from './constants';
 import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
+import { isEmpty } from './utils';
 
 const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
   if (!rawTag) return null;
@@ -54,7 +55,7 @@ const updateMasterTruckStorage = (drivers, hubId) => {
     const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
 
-    if (!plat || plat.trim() === '' || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
+    if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
       return;
     }
 
@@ -98,7 +99,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     vehicles.forEach((v) => {
       const tags = v.tags || v.vehicleTags || [];
-      if (tags.length === 0) return;
+      if (isEmpty(tags)) return;
 
       const rawTag = String(tags[0]).toUpperCase();
       const plat = v.name || v.plateNumber;

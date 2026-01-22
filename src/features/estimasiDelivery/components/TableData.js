@@ -1,12 +1,13 @@
 // File: src/features/estimasiDelivery/components/TableData.js
-import HighlightText from '@/components/HighlightText'; // Import komponen baru
+import HighlightText from '@/components/HighlightText';
+import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
+import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils'; // Pastikan isEmpty diimport
 import { parseSONumber } from '../help';
 
 export default function TableData({ activeRoute, searchQuery, t }) {
-  // Hapus fungsi escapeRegExp dan HighlightText lokal yang lama
+  const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
 
   return (
     <table className="w-full border-collapse min-w-4xl">
@@ -22,54 +23,146 @@ export default function TableData({ activeRoute, searchQuery, t }) {
         </tr>
       </thead>
       <tbody className="bg-white">
-        {activeRoute.trips.map((trip, tripIndex) => {
+        {activeRoute.trips.map((trip, index) => {
           const isHub = trip.isHub;
-          const isFirstHub = isHub && trip.order === 0;
-          const isLastHub = isHub && tripIndex === activeRoute.trips.length - 1;
-          const redText = isHub ? 'text-red-600' : '';
-          const outletName = isHub ? null : parseCustomerString(trip.visitName).name;
-          const soNumber = isHub ? null : parseSONumber(trip.visitName);
-
-          let isMatch = false;
-          if (searchQuery && !isHub) {
-            const lowerQuery = searchQuery.toLowerCase();
-            if (outletName && outletName.toLowerCase().includes(lowerQuery)) isMatch = true;
-            if (soNumber && soNumber.toLowerCase().includes(lowerQuery)) isMatch = true;
+          const isFirstHub = index === 0 && isHub;
+          const isLastHub = index === activeRoute.trips.length - 1 && isHub;
+          let outletName;
+          if (isHub) {
+            outletName = trip.visitName;
+          } else if (trip.flow === 'Pickup' && trip.warehouseName) {
+            outletName = trip.warehouseName;
+          } else {
+            outletName = parseCustomerString(trip.visitName);
           }
 
-          const rowClass = isMatch ? 'bg-yellow-100' : '';
+          let soNumber = isHub ? '' : parseSONumber(trip.visitName);
+          if (!isHub && isEmpty(soNumber)) {
+            const rawOrderId = trip.orderId;
+            const standardRegex = /^(SO|SC|SE)\d{4}-\d+$/;
 
-          return (
-            <tr key={`${trip.visitId}-${trip.order}`} className={`hover:bg-gray-50 ${rowClass}`}>
+            if (rawOrderId && standardRegex.test(rawOrderId)) {
+              soNumber = rawOrderId;
+            } else {
+              soNumber = '-';
+            }
+          } else if (!isHub && isEmpty(soNumber)) {
+            soNumber = '-';
+          }
+
+          let textClass = '';
+          if (isHub) {
+            textClass = 'text-red-600 font-semibold';
+          } else if (trip.isManual) {
+            textClass = 'text-red-600 font-medium';
+          }
+
+          const isManual = trip.isManual;
+          const isUnsync = trip.isUnsync;
+
+          let rowClass = 'transition-colors ';
+          let rowStyle = {};
+
+          if (isManual) {
+            rowClass += 'bg-red-100 hover:bg-red-200 ';
+          } else {
+            rowClass += 'hover:bg-gray-50 ';
+          }
+
+          if (isUnsync) {
+            rowStyle = {
+              boxShadow:
+                'inset 0 2px 0 0 #60a5fa, inset 0 -2px 0 0 #60a5fa, inset 2px 0 0 0 #60a5fa, inset -2px 0 0 0 #60a5fa',
+              position: 'relative',
+              zIndex: 1,
+            };
+          } else {
+            rowClass += 'border-b border-gray-100 ';
+          }
+
+          let tooltipMsg = '';
+          const partnerText = isUnsync ? `Grup ${trip.groupLetter} - ${trip.partnerVehicle}` : '';
+
+          if (isManual && isUnsync) {
+            tooltipMsg = `${t('estimation.tooltip.manual_assign')} (${partnerText})`;
+          } else if (isManual) {
+            tooltipMsg = t('estimation.tooltip.manual_assign');
+          } else if (isUnsync) {
+            tooltipMsg = `Tidak sinkron: ${partnerText}`;
+          }
+
+          const RowContent = (
+            <tr key={`${trip.visitId}-${index}`} className={rowClass} style={rowStyle}>
               <Td>
-                <p className={redText}>{trip.order}</p>
+                <p className={isManual || isUnsync ? 'text-red-600 font-medium' : ''}>
+                  {trip.isManual ? '-' : trip.routePlannedOrder}
+                </p>
               </Td>
+
+              {/* Kolom Visit */}
               <Td>
                 {isHub ? (
-                  <strong className={redText}>HUB</strong>
+                  <strong
+                    className={
+                      trip.isManual || trip.isUnsync || trip.isHub
+                        ? 'text-red-600 font-semibold'
+                        : ''
+                    }
+                  >
+                    HUB
+                  </strong>
                 ) : (
-                  // Gunakan Komponen Global
-                  <HighlightText text={outletName} highlight={searchQuery} />
+                  <HighlightText text={outletName || ''} highlight={searchQuery} />
                 )}
               </Td>
+
+              {/* Kolom SO */}
               <Td>
-                {isHub ? (
-                  ''
-                ) : (
-                  // Gunakan Komponen Global
-                  <HighlightText text={soNumber} highlight={searchQuery} />
-                )}
+                {/* Tampilkan SO atau strip jika kosong/tidak valid */}
+                {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
               </Td>
-              <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.startTime)}</Td>
-              <Td>{isHub ? '' : formatSimpleTime(trip.timeWindow?.endTime)}</Td>
+
+              {/* Kolom Open/Close */}
+              <Td>{isHub ? '' : trip.openTime || '-'}</Td>
+              <Td>{isHub ? '' : trip.closeTime || '-'}</Td>
+
+              {/* Kolom ETA */}
               <Td>
-                <p className={redText}>{isFirstHub ? '' : formatSimpleTime(trip.eta)}</p>
+                {isFirstHub
+                  ? ''
+                  : (() => {
+                      const timeStr = trip.eta ? formatSimpleTime(trip.eta) : '-';
+                      if (isLastHub && hasManualTaskInRoute && trip.eta) {
+                        return (
+                          <Tooltip tooltipContent={t('estimation.tooltip.hub_eta')}>
+                            <span className="underline decoration-dashed decoration-red-400 cursor-help text-red-700 font-bold underline-offset-4">
+                              {timeStr}
+                            </span>
+                          </Tooltip>
+                        );
+                      }
+                      return <p className={textClass}>{timeStr}</p>;
+                    })()}
               </Td>
+
+              {/* Kolom ETD */}
               <Td>
-                <p className={redText}>{isLastHub ? '' : formatSimpleTime(trip.etd)}</p>
+                <p className={textClass}>
+                  {isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-'}
+                </p>
               </Td>
             </tr>
           );
+
+          if (isManual || isUnsync) {
+            return (
+              <Tooltip key={trip.visitId} tooltipContent={tooltipMsg}>
+                {RowContent}
+              </Tooltip>
+            );
+          }
+
+          return RowContent;
         })}
       </tbody>
     </table>

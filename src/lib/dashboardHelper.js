@@ -1,5 +1,7 @@
 // File: lib/dashboardHelper.js
 
+import { isEmpty } from './utils';
+
 function parseDateSafe(dateStr) {
   if (!dateStr) return null;
   let iso = dateStr.replace(' ', 'T');
@@ -15,7 +17,7 @@ export function processServiceLevelData(
   selectedMonthKey = null,
   hubId = null
 ) {
-  if (!allTasks || allTasks.length === 0) return [];
+  if (!allTasks || isEmpty(allTasks)) return [];
 
   // Cek Hub Spesial untuk Pending GR
   const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2']; // Cikarang & Daan Mogot
@@ -25,7 +27,7 @@ export function processServiceLevelData(
 
   allTasks.forEach((task) => {
     // Filter: Hanya task yang punya driver (assignee) — sama seperti sebelumnya
-    if (!task.assignee || task.assignee.length === 0) return;
+    if (!task.assignee || isEmpty(task.assignee)) return;
 
     // Jika hubId diberikan, coba cocokkan dari beberapa kemungkinan field di task
     if (hubId) {
@@ -125,7 +127,7 @@ export function processServiceLevelData(
 // tapi pastikan processServiceLevelData diganti dengan yang di atas)
 
 export function processSequenceAccuracyData(allTasks, view = 'monthly', selectedMonthKey = null) {
-  if (!allTasks || allTasks.length === 0) return [];
+  if (!allTasks || isEmpty(allTasks)) return [];
   const driverDateMap = {};
   allTasks.forEach((task) => {
     const email = task.assignee && task.assignee[0] ? task.assignee[0].toLowerCase() : null;
@@ -205,7 +207,7 @@ export function processExceptionData(
   selectedMonthKey = null,
   hubId = null
 ) {
-  if (!allTasks || allTasks.length === 0) return [];
+  if (!allTasks || isEmpty(allTasks)) return [];
   const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
   const isSpecialHub = hubId && SPECIAL_HUBS.includes(hubId);
   const grouped = {};
