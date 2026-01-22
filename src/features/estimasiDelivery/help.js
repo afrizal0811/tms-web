@@ -13,6 +13,7 @@ import {
 import { StyleSheet } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
+
 export function parseSONumber(visitName) {
   if (!visitName) return '';
   const str = String(visitName);
@@ -201,7 +202,7 @@ export const handleConfirmDownload = async ({
         const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
 
         if (isLastHub && hasManualInRoute && trip.eta) {
-          etaVal = `${formatSimpleTime(trip.eta)} ${t('estimation.hub_eta_short')}`;
+          etaVal = `${formatSimpleTime(trip.eta)} (${t('estimation.hub_eta_short')})`;
         }
 
         wsData.push([noVal, outletName, soNumber, openVal, closeVal, etaVal, etdVal]);
@@ -211,6 +212,10 @@ export const handleConfirmDownload = async ({
             bottom: { style: 'thin' },
             left: { style: 'thin' },
             right: { style: 'thin' },
+          },
+          alignment: {
+            vertical: 'center',
+            wrapText: true, 
           },
         };
 
@@ -419,9 +424,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // --- 3. UPDATE WIDTHS (REVISI) ---
-  colFaktur: { width: '15%' }, // Update: 15%
-  colOutlet: { width: '18%' }, // Update: 18%
+  colFaktur: { width: '15%' },
+  colOutlet: { width: '18%' },
   colQty: { width: '5%', textAlign: 'center' },
   colBiayaParent: { width: '37%', padding: 0 },
   colJml: { width: '10%', textAlign: 'center' },
@@ -531,5 +535,3 @@ export const styles = StyleSheet.create({
     borderRightWidth: 0,
   },
 });
-
-// --- UPDATE: Logic Excel Download Multi-Sheet ---

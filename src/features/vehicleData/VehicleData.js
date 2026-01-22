@@ -209,7 +209,7 @@ export default function VehicleData() {
   );
 
   const downloadButton = (
-    <div className="w-full md:w-auto z-50" ref={downloadDropdownRef}>
+    <div className="w-full z-50" ref={downloadDropdownRef}>
       <DownloadButton
         disabled={isDownloading || isLoading}
         isLoading={isLoading || isDownloading}

@@ -1,16 +1,16 @@
 // File: src/components/CustomDatePicker.js
 'use client';
 
-import DatePicker, { registerLocale } from 'react-datepicker';
 import { useLanguage } from '@/context/LanguageContext';
-import id from 'date-fns/locale/id';
 import enUS from 'date-fns/locale/en-US';
+import id from 'date-fns/locale/id';
+import DatePicker, { registerLocale } from 'react-datepicker';
 
 registerLocale('id', id);
 registerLocale('en', enUS);
 
 export default function CustomDatePicker({
-  className = 'w-full lg:w-[200px]! ',
+  className = 'w-full xl:w-[200px]! ',
   dateFormat = 'dd MMMM yyyy',
   disableSunday = true,
   disabled = false,
@@ -20,7 +20,7 @@ export default function CustomDatePicker({
   onChange,
   placeholderText = '',
   selected,
-  wrapperClassName = 'w-full lg:w-auto',
+  wrapperClassName = 'w-full',
   ...props
 }) {
   const isDisabled = isLoading || disabled;

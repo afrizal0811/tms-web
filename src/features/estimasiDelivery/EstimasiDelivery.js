@@ -112,7 +112,7 @@ export default function EstimasiDelivery() {
     }
   }, [t]);
 
-  const handleDownloadPdfZip = async () => {
+  const handleDeliveryDownload = async () => {
     if (isEmpty(filteredVehicleRoutes)) {
       toastError(t('estimation.toast.no_data_downloaded'));
       return;
@@ -171,7 +171,7 @@ export default function EstimasiDelivery() {
         const url = URL.createObjectURL(content);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${t('estimation.invoice_receipt')} - ${locationName} - ${dateForFilename}.zip`;
+        link.download = `${t('estimation.delivery_form')} - ${locationName} - ${dateForFilename}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -546,7 +546,7 @@ export default function EstimasiDelivery() {
   );
 
   const excelDownloadButton = (
-    <div className="w-full md:w-auto z-50 relative" ref={excelDropdownRef}>
+    <div className="w-full z-50 relative" ref={excelDropdownRef}>
       <DownloadButton
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
         isLoading={isDownloadingExcel}
@@ -555,7 +555,7 @@ export default function EstimasiDelivery() {
       />
 
       {isExcelDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-xl border border-gray-200 z-10 p-4 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 bg-white rounded-md shadow-xl border border-gray-200 z-10 p-4 animate-in fade-in zoom-in-95 duration-100 w-full">
           <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 tracking-wider">
             Filter
           </p>
@@ -583,7 +583,6 @@ export default function EstimasiDelivery() {
               </span>
             </label>
 
-            {/* UPDATE POIN 3: Styling button disamakan dengan DownloadButton reusable */}
             <button
               onClick={() => {
                 setIsExcelDropdownOpen(false);
@@ -634,12 +633,12 @@ export default function EstimasiDelivery() {
     </div>
   );
 
-  const pdfDownloadButton = (
+  const deliveryDownloadButton = (
     <DownloadButton
       disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
       isLoading={isDownloadingPdf}
-      onClick={handleDownloadPdfZip}
-      text={t('estimation.invoice_receipt')}
+      onClick={handleDeliveryDownload}
+      text={t('estimation.delivery_form')}
     />
   );
 
@@ -647,7 +646,7 @@ export default function EstimasiDelivery() {
     { label: 'Filter', component: searchBar, hideLabel: false },
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
     { label: 'Export Excel', component: excelDownloadButton, hideLabel: true },
-    { label: 'Export PDF', component: pdfDownloadButton, hideLabel: true },
+    { label: 'Export PDF', component: deliveryDownloadButton, hideLabel: true },
   ];
 
   const vehicleTabs = useMemo(() => {

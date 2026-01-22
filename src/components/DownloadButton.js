@@ -8,7 +8,7 @@ export default function DownloadButton(props) {
     onClick,
     isLoading = false,
     disabled = false,
-    width = 'w-full lg:w-auto',
+    width = 'w-full',
     text = 'Download Excel',
   } = props;
 

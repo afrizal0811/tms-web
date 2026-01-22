@@ -5,13 +5,12 @@ export default function SearchBar({
   value,
   onChange,
   placeholder = 'Search...',
-  className = '',
+  className = 'w-full',
   disabled = false,
+  width = 'w-full xl:w-[250px]! ',
 }) {
   return (
-    // UPDATE: Ubah md:w-60 menjadi lg:w-60
-    // Saat layar < lg (termasuk md), dia akan w-full
-    <div className={`relative w-full lg:w-60 shrink-0 ${className}`}>
+    <div className={`relative shrink-0 ${className} ${width}`}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg
           className="h-5 w-5 text-gray-400"
