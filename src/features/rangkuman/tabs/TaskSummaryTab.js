@@ -160,8 +160,8 @@ export default function TaskSummaryTab({
                 {translate('summary.tabs.task_summary.type')}
               </th>
               {headerData(translate('summary.tabs.task_summary.dp'), cPink, 'DP')}
-              {headerData(translate('summary.tabs.task_summary.dt'), cPink, 'DT')}
-              {headerData(translate('summary.tabs.task_summary.dt_persentage'), cPink, '% DT')}
+              {headerData(translate('summary.tabs.task_summary.dt'), cGreen, 'DT')}
+              {headerData(translate('summary.tabs.task_summary.dt_persentage'), cGreen, '% DT')}
               {headerData(translate('summary.tabs.task_summary.ma'), cRed, 'MA')}
               {headerData(translate('summary.tabs.task_summary.ma_persentage'), cRed, '% MA')}
               {headerData(translate('summary.tabs.task_summary.rt'), cCyan, 'RT')}

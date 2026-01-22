@@ -266,7 +266,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       await new Promise((r) => setTimeout(r, 100));
       downloadRoutingVsActual(processedData, t);
     } catch (e) {
-      toastError('Gagal download:', e);
+      toastError(t('dashboard.error_download', { err: e.message }));
     } finally {
       setIsDownloading(false);
     }

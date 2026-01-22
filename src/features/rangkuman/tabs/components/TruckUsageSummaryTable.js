@@ -21,11 +21,11 @@ export default function TruckUsageSummaryTable({
   const frzTotBg = 'bg-[#c9daf8]';
   const otvBg = 'bg-[#d9f2d0]';
 
-  const headerTooltip = (tootltip, text, className, addClass = '') => {
+  const headerTooltip = (tootltip, text, className = '', addClass = '') => {
     return (
       <Tooltip tooltipContent={tootltip}>
         <td
-          className={`${!isEmpty(className) ? thClassTooltip : className} ${addClass && `${addClass} cursor-help`}`}
+          className={`${isEmpty(className) ? thClassTooltip : className} ${addClass && `${addClass}`}`}
         >
           <span className="border-b-[1.5px] border-dashed border-gray-600 pb-px">{text}</span>
         </td>

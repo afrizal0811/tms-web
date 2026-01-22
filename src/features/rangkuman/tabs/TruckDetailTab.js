@@ -42,7 +42,7 @@ export default function TruckDetailTab({ data, translate, language }) {
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 relative p-0">
+    <div className="w-full h-full flex flex-col relative p-0">
       <TruckDetailModal
         data={modalData}
         isOpen={!!modalData}

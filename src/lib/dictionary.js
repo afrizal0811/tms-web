@@ -23,9 +23,12 @@ export const dictionary = {
       task: 'Tugas',
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
+      toast: {
+        error: 'Proses gagal: {err}',
+        success: 'Proses berhasil!',
+      },
     },
     home: {
-      alert_select_branch: 'Silakan pilih lokasi cabang.',
       back_btn: 'Kembali',
       from: 'dari',
       location_label: 'Lokasi',
@@ -34,7 +37,7 @@ export const dictionary = {
       placeholder: 'Pilih Lokasi',
       previous: 'Sebelumnya',
       secret_mode: 'Mode Rahasia: Menampilkan semua user',
-      select_branch_instruction: 'Silakan pilih lokasi cabang',
+      select_branch: 'Silakan pilih lokasi cabang.',
       select_btn: 'Pilih',
       select_user_title: 'PILIH PENGGUNA',
       vehicle_check: 'Memeriksa konfigurasi kendaraan...',
@@ -49,10 +52,11 @@ export const dictionary = {
       toast: {
         success: 'Data berhasil disimpan!',
         error: 'Gagal memuat data: {err}',
+        no_session: 'Harap pilih user dan lokasi terlebih dahulu',
       },
     },
     vehicle_tag: {
-      description: 'Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki',
+      description: 'Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki!',
       license: 'Nomor Kendaraan',
       message_choose: 'Pilih Tipe Standar',
       save: 'Simpan',
@@ -92,6 +96,7 @@ export const dictionary = {
         user_load_error: 'Gagal memuat data user',
         view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
         yearly_fetch_error: 'Gagal ambil data tahunan',
+        error_download: 'Gagal mengunduh data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -469,6 +474,7 @@ export const dictionary = {
       toast: {
         success: 'Data rangkuman berhasil diunduh!',
         error: 'Data rangkuman gagal dibuat: {err}',
+        no_driver_data: 'Data sopir tidak ditemukan',
       },
       tabs: {
         time_ro: {
@@ -643,9 +649,12 @@ export const dictionary = {
       task: 'Task',
       total_task: 'Total Tasks',
       vehicle: 'Vehicle',
+      toast: {
+        error: 'Process failed: {err}',
+        success: 'Process successfully!',
+      },
     },
     home: {
-      alert_select_branch: 'Please select a branch location.',
       back_btn: 'Back',
       from: 'from',
       location_label: 'Location',
@@ -654,7 +663,7 @@ export const dictionary = {
       placeholder: 'Select Location',
       previous: 'Previous',
       secret_mode: 'Secret Mode: Show all users',
-      select_branch_instruction: 'Please select a branch location',
+      select_branch: 'Please select a branch location',
       select_btn: 'Select',
       select_user_title: 'SELECT USER',
       vehicle_check: 'Checking vehicle configuration...',
@@ -669,10 +678,11 @@ export const dictionary = {
       toast: {
         success: 'Data has been saved!',
         error: 'Failed to load data: {err}',
+        no_session: 'Please select user and location first',
       },
     },
     vehicle_tag: {
-      description: 'Some vehicles have non-standard types. Please change them',
+      description: 'Some vehicles have non-standard types. Please change them!',
       license: 'License Plate',
       message_choose: 'Choose Standard Type',
       save: 'Save',
@@ -713,6 +723,7 @@ export const dictionary = {
         view_map_warning:
           'It is recommended to open the map on Desktop or Tablet for the best experience.',
         yearly_fetch_error: 'Failed to fetch yearly data',
+        error_download: 'Failed to download data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -1091,6 +1102,7 @@ export const dictionary = {
       toast: {
         success: 'Summary data has been downloaded successfully!',
         error: 'Failed to generate summary data: {err}',
+        no_driver_data: 'No driver data',
       },
       tabs: {
         time_ro: {

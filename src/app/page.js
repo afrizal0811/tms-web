@@ -186,7 +186,7 @@ export default function Home() {
   };
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) {
-      alert(t('home.alert_select_branch'));
+      toastError(t('home.select_branch'));
       return;
     }
     if (!selectedUser) {
@@ -235,7 +235,7 @@ export default function Home() {
         <LanguageFloater />
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
-          <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch_instruction')}</h2>
+          <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch')}</h2>
 
           <LocationDropdown
             value={tempSelectedLocation}
