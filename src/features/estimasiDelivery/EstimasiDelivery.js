@@ -520,7 +520,7 @@ export default function EstimasiDelivery() {
       if (etdA > etdB) return 1;
       return 0;
     });
-  }, [searchQuery, enrichedRoutes]);
+  }, [searchQuery, enrichedRoutes, driverData]);
 
   useEffect(() => {
     if (activeVehicleId) {
