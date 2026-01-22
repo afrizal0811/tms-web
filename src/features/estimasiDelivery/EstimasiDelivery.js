@@ -465,19 +465,33 @@ export default function EstimasiDelivery() {
 
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-
       routes = routes
         .map((route) => {
+          const driverName = (getDriverName(route, driverData) || '').toLowerCase();
+          const vehicleName = (route.vehicleName || '').toLowerCase();
+          const vehicleId = (route.vehicleId || '').toLowerCase();
+
+          if (
+            driverName.includes(lowerQuery) ||
+            vehicleName.includes(lowerQuery) ||
+            vehicleId.includes(lowerQuery)
+          ) {
+            return route;
+          }
+
           const matchingTrips = route.trips.filter((trip) => {
             const vName = (trip.visitName || '').toLowerCase();
-            const wName = (trip.warehouseName || '').toLowerCase();
+            const lName = (trip.locationName || '').toLowerCase();
             const so = (trip.orderId || '').toLowerCase();
             const no = (trip.routePlannedOrder || '').toString().toLowerCase();
+            const warehouse = (trip.warehouseName || '').toLowerCase();
+
             return (
               vName.includes(lowerQuery) ||
-              wName.includes(lowerQuery) ||
+              lName.includes(lowerQuery) ||
               so.includes(lowerQuery) ||
-              no.includes(lowerQuery)
+              no.includes(lowerQuery) ||
+              warehouse.includes(lowerQuery)
             );
           });
 
