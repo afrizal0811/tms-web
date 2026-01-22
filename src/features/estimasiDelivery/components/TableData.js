@@ -81,18 +81,24 @@ export default function TableData({ activeRoute, searchQuery, t }) {
           }
 
           let tooltipMsg = '';
-          const partnerText = isUnsync ? `Grup ${trip.groupLetter} - ${trip.partnerVehicle}` : '';
+          const partnerText = isUnsync
+            ? `${t('estimation.group')} ${trip.groupLetter} - ${trip.partnerVehicle}`
+            : '';
 
           if (isManual && isUnsync) {
             tooltipMsg = `${t('estimation.tooltip.manual_assign')} (${partnerText})`;
           } else if (isManual) {
             tooltipMsg = t('estimation.tooltip.manual_assign');
           } else if (isUnsync) {
-            tooltipMsg = `Tidak sinkron: ${partnerText}`;
+            tooltipMsg = `${t('estimation.no_match')}: ${partnerText}`;
           }
 
           const RowContent = (
-            <tr key={`${trip.visitId}-${index}`} className={rowClass} style={rowStyle}>
+            <tr
+              key={`${trip.visitId}-${index}`}
+              className={`${rowClass} ${tooltipMsg ? 'cursor-help' : ''}`}
+              style={rowStyle}
+            >
               <Td>
                 <p className={isManual || isUnsync ? 'text-red-600 font-medium' : ''}>
                   {trip.isManual ? '-' : trip.routePlannedOrder}

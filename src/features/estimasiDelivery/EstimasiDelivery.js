@@ -481,16 +481,12 @@ export default function EstimasiDelivery() {
 
           const matchingTrips = route.trips.filter((trip) => {
             const vName = (trip.visitName || '').toLowerCase();
-            const lName = (trip.locationName || '').toLowerCase();
             const so = (trip.orderId || '').toLowerCase();
-            const no = (trip.routePlannedOrder || '').toString().toLowerCase();
             const warehouse = (trip.warehouseName || '').toLowerCase();
 
             return (
               vName.includes(lowerQuery) ||
-              lName.includes(lowerQuery) ||
               so.includes(lowerQuery) ||
-              no.includes(lowerQuery) ||
               warehouse.includes(lowerQuery)
             );
           });
