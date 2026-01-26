@@ -22,7 +22,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-import ReportTerimaFaktur from './components/ReportTerimaFaktur';
+import FormPengiriman from './components/FormPengiriman';
 import TableData from './components/TableData';
 import { getDriverName, handleConfirmDownload, processDriverTimeMap } from './help';
 
@@ -132,7 +132,7 @@ export default function EstimasiDelivery() {
         const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
 
         return await pdf(
-          <ReportTerimaFaktur
+          <FormPengiriman
             data={route}
             selectedDate={selectedDate}
             driverNameOverride={realDriverName}

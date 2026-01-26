@@ -215,7 +215,7 @@ export const handleConfirmDownload = async ({
           },
           alignment: {
             vertical: 'center',
-            wrapText: true, 
+            wrapText: true,
           },
         };
 
@@ -370,7 +370,7 @@ export const styles = StyleSheet.create({
     height: 15,
   },
   miniTableHeader: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
     flexDirection: 'row',
@@ -405,7 +405,7 @@ export const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   tableHeaderRow: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -459,7 +459,7 @@ export const styles = StyleSheet.create({
   nestedSubCellLast: { borderRightWidth: 0 },
 
   footerLabelCell: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 7,
     justifyContent: 'center',
@@ -473,12 +473,52 @@ export const styles = StyleSheet.create({
     padding: 4,
     flexDirection: 'row',
     gap: 10,
-    alignSelf: 'flex-start',
+    width: '100%',
   },
   infoTextColumn: {
     flexDirection: 'column',
     gap: 1,
+    width: '30%',
   },
+
+  // ADD: Style baru untuk container Keterangan
+  legendContainer: {
+    flex: 1, // Mengambil sisa ruang di sebelah kanan
+    flexDirection: 'row', // Untuk membagi menjadi 2 kolom (kiri-kanan)
+    justifyContent: 'space-between',
+    borderLeftWidth: 1, // Opsional: Garis pemisah antara info Asli dan Keterangan
+    borderColor: '#000',
+    paddingLeft: 8,
+  },
+
+  // ADD: Style untuk kolom di dalam keterangan
+  legendColumn: {
+    width: '48%', // Bagi 2 kolom (sedikit kurang dari 50% untuk gap)
+    flexDirection: 'column',
+    gap: 1,
+  },
+
+  // ADD: Style untuk baris item keterangan
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 1,
+  },
+
+  // ADD: Style untuk bullet point
+  bullet: {
+    width: 8,
+    fontSize: 7,
+    marginTop: -1, // Sedikit penyesuaian posisi vertikal
+  },
+
+  // ADD: Style untuk teks konten keterangan
+  legendTextContent: {
+    fontSize: 6, // Ukuran font sedikit lebih kecil agar muat
+    fontFamily: 'Helvetica',
+    flex: 1,
+  },
+
   infoText: {
     fontSize: 7,
     fontFamily: 'Helvetica',
@@ -509,7 +549,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#000',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
     height: 15,
   },
   sigRowBody: {
