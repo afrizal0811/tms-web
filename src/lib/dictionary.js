@@ -5,6 +5,7 @@ export const dictionary = {
     common: {
       accuracy: 'Akurasi',
       click_for_detail: 'Klik untuk detail',
+      copyright: 'Dibuat oleh',
       date: 'Tanggal',
       delivery_date: 'Tanggal Pengiriman',
       download: 'Unduh',
@@ -631,6 +632,7 @@ export const dictionary = {
     common: {
       accuracy: 'Accuracy',
       click_for_detail: 'Click for details',
+      copyright: 'Made by',
       date: 'Date',
       delivery_date: 'Delivery Date',
       download: 'Download',
