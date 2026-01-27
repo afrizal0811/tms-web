@@ -538,12 +538,16 @@ export default function EstimasiDelivery() {
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   const datePicker = (
     <CustomDatePicker
       id="estimasiDate"
       isLoading={isLoading}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
+      maxDate={tomorrow}
     />
   );
   const searchBar = (
