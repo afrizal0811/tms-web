@@ -47,7 +47,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       onClose={() => {}}
       title={
         <div>
-          <h2 className="text-xl font-bold">⚠️ {t('vehicle_tag.title')}</h2>
+          <h2 className="text-xl font-bold">{t('common.warning')}</h2>
           <p className="text-sm mt-1 font-normal">{t('vehicle_tag.description')}</p>
         </div>
       }

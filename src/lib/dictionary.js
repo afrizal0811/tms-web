@@ -24,9 +24,16 @@ export const dictionary = {
       task: 'Tugas',
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
+      warning: '⚠️ Peringatan!',
       toast: {
         error: 'Proses gagal: {err}',
         success: 'Proses berhasil!',
+      },
+      modal: {
+        already_exp: 'Token API Anda telah kadaluarsa {remaining} hari yang lalu.',
+        contact_edp: 'Harap segera hubungi tim EDP terkait!',
+        exp_remaining: 'Masa aktif token API Anda akan berakhir dalam',
+        exp_remaining_days: '{remaining} hari',
       },
     },
     home: {
@@ -651,9 +658,16 @@ export const dictionary = {
       task: 'Task',
       total_task: 'Total Tasks',
       vehicle: 'Vehicle',
+      warning: '⚠️ Warning!',
       toast: {
         error: 'Process failed: {err}',
         success: 'Process successfully!',
+      },
+      modal: {
+        already_exp: 'Your API token expired {remaining} days ago.',
+        contact_edp: 'Please contact the EDP team immediately!',
+        exp_remaining: 'Your API token validity will expire in',
+        exp_remaining_days: '{remaining} days',
       },
     },
     home: {

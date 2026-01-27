@@ -1,6 +1,7 @@
 // File: src/app/layout.js
 
 import SessionGuard from '@/components/SessionGuard';
+import TokenExpirationModal from '@/components/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
               duration: 4000,
             }}
           />
+          <TokenExpirationModal />
           <SessionGuard>
             <main className="p-0">{children}</main>
           </SessionGuard>
