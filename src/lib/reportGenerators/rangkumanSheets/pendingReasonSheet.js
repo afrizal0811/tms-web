@@ -205,7 +205,7 @@ export function generatePendingReasonSheet(
     translate('common.customer_id'),
     translate('summary.tabs.pending_reasons.ro_seq'),
     translate('summary.tabs.pending_reasons.real_seq'),
-    translate('summary.tabs.pending_reasons.temp')
+    translate('common.storage_type')
   );
 
   const excelData = [headers];

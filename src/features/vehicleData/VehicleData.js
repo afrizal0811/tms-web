@@ -244,7 +244,7 @@ export default function VehicleData() {
 
   const headerItems = [
     { label: t('common.search'), component: searchBar, hideLabel: true },
-    { label: 'Storage Type', component: storageFilterComponent, hideLabel: false },
+    { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
     { label: t('common.download'), component: downloadBtn, hideLabel: true },
   ];
 

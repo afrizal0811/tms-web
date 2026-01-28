@@ -145,7 +145,7 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
             <th className={thClass}>{translate('common.customer_id')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.ro_seq')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.real_seq')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.temp')}</th>
+            <th className={thClass}>{translate('common.storage_type')}</th>
           </tr>
         </thead>
         <tbody className="bg-white">

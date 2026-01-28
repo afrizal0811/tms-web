@@ -421,7 +421,7 @@ export function generateDeliveryWorkbook(
     translate('common.customer_id'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.temp')
+    translate('common.storage_type')
   );
   const finalSheetData2 = [
     headers2,
@@ -470,7 +470,7 @@ export function generateDeliveryWorkbook(
     translate('common.customer_id'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.temp'),
+    translate('common.storage_type'),
   ];
   const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
   const colWidthsSO = headers2.map((header, i) => {

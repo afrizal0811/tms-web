@@ -532,7 +532,7 @@ export default function DashboardSummary({ driverData }) {
   // UPDATED: Posisi Storage Filter ditukar menjadi index 0 (pertama)
   const headerItems = [
     {
-      label: 'Storage Type',
+      label: t('common.storage_type'),
       component: storageFilterComponent,
       hideLabel: false,
     },

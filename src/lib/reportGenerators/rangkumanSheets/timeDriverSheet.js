@@ -193,7 +193,7 @@ export function generateTimeDriverSheet(
   };
 
   const row1 = [
-    translate('summary.tabs.time_driver.temp'),
+    translate('common.storage_type'),
     translate('common.number_plates'),
     translate('common.driver'),
   ];

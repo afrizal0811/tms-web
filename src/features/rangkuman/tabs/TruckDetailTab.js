@@ -56,7 +56,7 @@ export default function TruckDetailTab({ data, translate, language }) {
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>
               <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
-                {translate('summary.tabs.truck_detail.temp')}
+                {translate('common.storage_type')}
               </th>
               <th rowSpan="2" className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}>
                 {translate('common.number_plates')}

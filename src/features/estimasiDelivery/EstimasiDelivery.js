@@ -638,7 +638,7 @@ export default function EstimasiDelivery() {
 
   const headerItems = [
     { label: 'Filter', component: searchBar, hideLabel: false },
-    { label: 'Storage Type', component: storageFilterComponent, hideLabel: false },
+    { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
     { label: 'Export', component: downloadMenu, hideLabel: true },
   ];

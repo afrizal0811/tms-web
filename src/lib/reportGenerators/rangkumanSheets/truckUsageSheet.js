@@ -330,7 +330,7 @@ export function generateTruckUsageSheet(
     dateKeys.forEach((d) => row1.push(d.day, '', ''));
     tableRows.push(row1);
     const row2 = [
-      translate('summary.tabs.truck_usage.temp'),
+      translate('common.storage_type'),
       translate('summary.tabs.truck_usage.vehicle_type'),
       '',
     ];

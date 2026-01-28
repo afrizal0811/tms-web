@@ -448,7 +448,7 @@ export function generateTruckDetailSheet(
   };
 
   const row1 = [
-    translate('summary.tabs.truck_detail.temp'),
+    translate('common.storage_type'),
     translate('common.number_plates'),
     translate('common.driver'),
   ];

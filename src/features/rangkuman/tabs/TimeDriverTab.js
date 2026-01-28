@@ -57,7 +57,7 @@ export default function TimeDriverTab({ data, translate, language }) {
           {/* Row 1: Headers */}
           <tr>
             <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
-              {translate('summary.tabs.time_driver.temp')}
+              {translate('common.storage_type')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
               {translate('common.number_plates')}
