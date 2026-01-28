@@ -449,8 +449,8 @@ export function generateTruckDetailSheet(
 
   const row1 = [
     translate('summary.tabs.truck_detail.temp'),
-    translate('summary.tabs.truck_detail.license'),
-    translate('summary.tabs.truck_detail.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
   ];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {

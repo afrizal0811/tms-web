@@ -317,7 +317,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           <DownloadButton
             disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleDownload}
-            text={t('common.download_excel')}
+            text={t('common.download') + ' Excel'}
           />
         </div>
       </div>
@@ -326,9 +326,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
           <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.flow')}</th>
-              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.license')}</th>
-              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.driver')}</th>
-              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.customer')}</th>
+              <th className="px-4 py-3 border-b">{t('common.number_plates')}</th>
+              <th className="px-4 py-3 border-b">{t('common.driver')}</th>
+              <th className="px-4 py-3 border-b">{t('common.customer_name')}</th>
               <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.status')}</th>
               <th className="px-4 py-3 border-b text-center">
                 {t('dashboard.tab.routingreal.open_time')}
@@ -336,15 +336,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
               <th className="px-4 py-3 border-b text-center">
                 {t('dashboard.tab.routingreal.close_time')}
               </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.eta')}
-              </th>
+              <th className="px-4 py-3 border-b text-center">{t('common.eta')}</th>
               <th className="px-4 py-3 border-b text-center">
                 {t('dashboard.tab.routingreal.actual_arrival')}
               </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.etd')}
-              </th>
+              <th className="px-4 py-3 border-b text-center">{t('common.etd')}</th>
               <th className="px-4 py-3 border-b text-center">
                 {t('dashboard.tab.routingreal.actual_departure')}
               </th>

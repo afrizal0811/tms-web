@@ -194,8 +194,8 @@ export function generateTimeDriverSheet(
 
   const row1 = [
     translate('summary.tabs.time_driver.temp'),
-    translate('summary.tabs.time_driver.license'),
-    translate('summary.tabs.time_driver.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
   ];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {

@@ -14,12 +14,8 @@ export default function AverageKmDetailModal({ isOpen, onClose, data, title, tra
             <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-center w-12">#</th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.average_km.modal.license')}
-                </th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.average_km.modal.driver')}
-                </th>
+                <th className="px-4 py-3 text-center">{translate('common.number_plates')}</th>
+                <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
                 <th className="px-4 py-3 text-center">
                   {translate('summary.tabs.average_km.modal.total_visit')}
                 </th>

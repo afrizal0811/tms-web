@@ -60,13 +60,13 @@ export default function TimeDriverTab({ data, translate, language }) {
               {translate('summary.tabs.time_driver.temp')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              {translate('summary.tabs.time_driver.license')}
+              {translate('common.number_plates')}
             </th>
             <th
               rowSpan="2"
               className={`${thClass} min-w-[200px] ${stickyHeaderDriver} ${COLOR_A} border-r-2 border-slate-400`}
             >
-              {translate('summary.tabs.time_driver.driver')}
+              {translate('common.driver')}
             </th>
 
             {dateKeys.map((d, i) => {

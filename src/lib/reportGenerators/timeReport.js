@@ -126,8 +126,8 @@ export function generateTimeSummaryWorkbook(
 
   // TRANSLATE HEADERS
   const headers = [
-    translate('excel.time.headers.plate'),
-    translate('excel.time.headers.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
     translate('excel.time.headers.start_date'),
     translate('excel.time.headers.start_time'),
     translate('excel.time.headers.finish_date'),

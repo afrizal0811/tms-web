@@ -736,7 +736,7 @@ export default function RangkumanSummary() {
       disabled={isLoading || isEmpty(rawData.tasks)}
       isLoading={isLoading}
       onClick={() => handleDownloadExcel(t, lang)}
-      text={t('common.download_excel')}
+      text={t('common.download') + ' Excel'}
     />
   );
 

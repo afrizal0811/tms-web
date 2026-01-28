@@ -123,8 +123,8 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
           <tr>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.flow')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.date')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.license')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.driver')}</th>
+            <th className={thClass}>{translate('common.number_plates')}</th>
+            <th className={thClass}>{translate('common.driver')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.cancel')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.partial')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.pending')}</th>
@@ -134,15 +134,15 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
             <th className={thClass}>{translate('summary.tabs.pending_reasons.reason')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.open_time')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.close_time')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.eta')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.etd')}</th>
+            <th className={thClass}>{translate('common.eta')}</th>
+            <th className={thClass}>{translate('common.etd')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.actual_arrival')}</th>
             <th className={thClass}>
               {translate('summary.tabs.pending_reasons.actual_departure')}
             </th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.visit_plan')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.visit_actual')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.cust_id')}</th>
+            <th className={thClass}>{translate('common.customer_id')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.ro_seq')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.real_seq')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.temp')}</th>

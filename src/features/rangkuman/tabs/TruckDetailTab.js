@@ -59,13 +59,13 @@ export default function TruckDetailTab({ data, translate, language }) {
                 {translate('summary.tabs.truck_detail.temp')}
               </th>
               <th rowSpan="2" className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}>
-                {translate('summary.tabs.truck_detail.license')}
+                {translate('common.number_plates')}
               </th>
               <th
                 rowSpan="2"
                 className={`${thClass} min-w-[200px] sticky left-[180px] z-40 ${COLOR_A} border-r-2 border-slate-400`}
               >
-                {translate('summary.tabs.truck_detail.driver')}
+                {translate('common.driver')}
               </th>
               {dateKeys.map((d, i) => {
                 const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;

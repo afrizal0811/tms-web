@@ -63,7 +63,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
           >
             <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
               <div>
-                <p className="text-sm text-gray-500 text-left">{t('vehicle_tag.license')}</p>
+                <p className="text-sm text-gray-500 text-left">{t('common.number_plates')}</p>
                 <p className="font-bold text-lg text-slate-800">{info.plat}</p>
               </div>
               <div className="mt-3 sm:mt-0 text-left sm:text-right w-full sm:w-auto">

@@ -72,7 +72,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, data, customerNa
               <thead className="bg-white font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 border-b w-[20%]">{t('longlat.modal.date')}</th>
-                  <th className="px-4 py-3 border-b w-[25%]">{t('longlat.modal.driver')}</th>
+                  <th className="px-4 py-3 border-b w-[25%]">{t('common.driver')}</th>
                   <th className="px-4 py-3 border-b w-[35%] text-center">
                     {t('longlat.modal.new_longlat')}
                   </th>

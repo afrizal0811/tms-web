@@ -14,8 +14,8 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const wb = XLSX.utils.book_new();
     const headers = [
       'No',
-      t('longlat.table.cust_name'),
-      t('longlat.table.cust_id'),
+      t('common.customer_name'),
+      t('common.customer_id'),
       t('longlat.table.loc_id'),
       t('longlat.table.new_longlat'),
       t('longlat.table.diff_dist'),

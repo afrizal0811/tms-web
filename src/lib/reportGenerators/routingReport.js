@@ -239,8 +239,8 @@ export function generateRoutingWorkbook(
   };
 
   const headers1 = [
-    translate('excel.routing.headers.plate'),
-    translate('excel.routing.headers.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
     translate('excel.routing.headers.weight_pct'),
     translate('excel.routing.headers.volume_pct'),
     translate('excel.routing.headers.total_dist'),

@@ -561,7 +561,7 @@ export default function EstimasiDelivery() {
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
         isLoading={isDownloadingExcel}
         onClick={() => setIsExcelDropdownOpen((prev) => !prev)}
-        text={t('common.download_excel')}
+        text={t('common.download') + ' Excel'}
       />
 
       {isExcelDropdownOpen && (
