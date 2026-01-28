@@ -1,15 +1,14 @@
-// File: src/features/vehicleData/VehicleData.js
 'use client';
 
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
-import Spinner from '@/components/Spinner';
+import StorageTypeFilter from '@/components/StorageTypeFilter'; // 1. Import Component
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty, normalizeEmail } from '@/lib/utils';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getVehicles } from '../../lib/apiService';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError } from '../../lib/toastHelper';
@@ -18,45 +17,19 @@ import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';
 
 export default function VehicleData() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('master');
   const [driverMap, setDriverMap] = useState(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // 2. State untuk Filter Storage
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
+
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
   const [templateData, setTemplateData] = useState([]);
-  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
-  const [sheetSelection, setSheetSelection] = useState({
-    master: true,
-    conditional: true,
-    template: true,
-  });
-  const downloadDropdownRef = useRef(null);
-  const { t } = useLanguage();
-  const downloadOptions = [
-    { name: 'master', label: t('vehicle.tabs.master_title') },
-    {
-      name: 'conditional',
-      label: t('vehicle.tabs.conditional_title'),
-      show: conditionalData.length > 0,
-    },
-    { name: 'template', label: t('vehicle.tabs.template_title') },
-  ];
-
-  const noSheetSelected = !(
-    sheetSelection.master ||
-    sheetSelection.template ||
-    (conditionalData.length > 0 && sheetSelection.conditional)
-  );
-
-  const handleToggleChange = (e) => {
-    const { name, checked } = e.target;
-    setSheetSelection((prev) => ({
-      ...prev,
-      [name]: checked,
-    }));
-  };
 
   useEffect(() => {
     async function fetchData() {
@@ -154,127 +127,128 @@ export default function VehicleData() {
     fetchData();
   }, [t]);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
-        setIsDownloadDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [downloadDropdownRef]);
+  // 3. Helper Fungsi Filter Storage (Reusable)
+  const applyStorageFilter = useCallback(
+    (list) => {
+      return list.filter((item) => {
+        // Jika semua dipilih atau tidak ada (fallback), tampilkan semua
+        if (storageFilter.length === 2) return true;
+        if (storageFilter.length === 0) return false;
 
-  const sourceData = useMemo(() => {
-    switch (activeTab) {
-      case 'master':
-        return masterData;
-      case 'conditional':
-        return conditionalData;
-      case 'template':
-        return templateData;
-      default:
-        return [];
-    }
-  }, [activeTab, masterData, conditionalData, templateData]);
+        // Ambil nama driver dari map
+        const driverName = (driverMap.get(normalizeEmail(item.assignee)) || '').toUpperCase();
 
+        // Cek keyword DRY atau FRZ
+        const isDry = driverName.includes("'DRY'");
+        const isFrz = driverName.includes("'FRZ'");
+
+        if (storageFilter.includes('DRY') && isDry) return true;
+        if (storageFilter.includes('FROZEN') && isFrz) return true;
+
+        return false;
+      });
+    },
+    [storageFilter, driverMap]
+  );
+
+  // 4. Update Filtered Data untuk Tampilan
   const filteredData = useMemo(() => {
-    return sourceData.filter((v) => {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      const vehicleType = v.tags?.[0] || '';
+    let data = [];
+    if (activeTab === 'master') data = masterData;
+    else if (activeTab === 'conditional') data = conditionalData;
+    else if (activeTab === 'template') data = templateData;
 
-      const searchableString = [
-        v.name,
-        v.assignee,
-        driverMap.get(normalizeEmail(v.assignee)),
-        vehicleType,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return searchableString.includes(lowerCaseQuery);
+    // A. Apply Storage Filter
+    data = applyStorageFilter(data);
+
+    // B. Apply Search Filter
+    if (!searchQuery) return data;
+
+    const lowerQuery = searchQuery.toLowerCase();
+    return data.filter((v) => {
+      const name = (v.name || '').toLowerCase();
+      const assigneeName = (driverMap.get(normalizeEmail(v.assignee)) || '').toLowerCase();
+      const tags = (v.tags || []).join(' ').toLowerCase();
+      const type = (v.vehicleType || '').toLowerCase();
+
+      return (
+        name.includes(lowerQuery) ||
+        assigneeName.includes(lowerQuery) ||
+        tags.includes(lowerQuery) ||
+        type.includes(lowerQuery)
+      );
     });
-  }, [sourceData, searchQuery, driverMap]);
+  }, [
+    activeTab,
+    masterData,
+    conditionalData,
+    templateData,
+    searchQuery,
+    driverMap,
+    applyStorageFilter, // Dependency baru
+  ]);
 
-  const totalItems = filteredData.length;
+  const handleExcelDownload = () => {
+    // 5. Filter data sebelum didownload agar sesuai dengan pilihan storage
+    const filteredMaster = applyStorageFilter(masterData);
+    const filteredConditional = applyStorageFilter(conditionalData);
+    const filteredTemplate = applyStorageFilter(templateData);
+
+    // Tentukan prefix nama file (opsional, untuk kerapian file output)
+    let filePrefix = '';
+    if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) filePrefix = 'DRY';
+    if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) filePrefix = 'FRZ';
+
+    handleConfirmDownload({
+      masterData: filteredMaster,
+      conditionalData: filteredConditional,
+      templateData: filteredTemplate,
+      driverMap,
+      setIsDownloading,
+      sheetSelection: { master: true, conditional: true, template: true }, // Download semua tab yg relevan
+      t,
+      fileNamePrefix: filePrefix, // Kirim prefix ke helper (jika helper support, atau diabaikan tidak masalah)
+    });
+  };
 
   const searchBar = (
     <SearchBar
-      className="w-full lg:max-w-xs"
-      disabled={isLoading}
-      onChange={(val) => setSearchQuery(val)}
-      placeholder={t('vehicle.search_placeholder')}
       value={searchQuery}
+      onChange={setSearchQuery}
+      placeholder={t('vehicle.search_placeholder')}
+      disabled={isLoading}
     />
   );
 
-  const downloadButton = (
-    <div className="w-full z-50" ref={downloadDropdownRef}>
-      <DownloadButton
-        disabled={isDownloading || isLoading}
-        isLoading={isLoading || isDownloading}
-        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-        text={t('common.download') + ' Excel'}
-      />
+  const downloadBtn = (
+    <DownloadButton
+      onClick={handleExcelDownload}
+      isLoading={isDownloading}
+      disabled={
+        isLoading ||
+        isDownloading ||
+        (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
+      }
+      text={t('common.download') + ' Excel'}
+      width="w-auto"
+    />
+  );
 
-      {isDownloadDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-          <div className="p-3">
-            <p className="text-sm font-semibold text-gray-700 mb-2">Pilih sheet untuk diunduh:</p>
-            {downloadOptions.map((option) => {
-              if (option.show === false) return null;
-              return (
-                <label
-                  key={option.name}
-                  className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    checked={sheetSelection[option.name]}
-                    className="form-checkbox h-4 w-4 text-sky-600 rounded cursor-pointer"
-                    name={option.name}
-                    onChange={handleToggleChange}
-                    type="checkbox"
-                  />
-                  <span className="text-sm text-gray-800">{option.label}</span>
-                </label>
-              );
-            })}
-          </div>
-          <div className="border-t border-gray-200 p-2">
-            <button
-              onClick={() =>
-                handleConfirmDownload({
-                  conditionalData,
-                  driverMap,
-                  masterData,
-                  setIsDownloadDropdownOpen,
-                  setIsDownloading,
-                  sheetSelection,
-                  t,
-                  templateData,
-                })
-              }
-              disabled={isDownloading || noSheetSelected}
-              className="w-full px-4 py-2 cursor-pointer text-center bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isDownloading ? (
-                <div className="flex justify-center items-center">
-                  <Spinner size="w-5 h-5 border-2" />
-                </div>
-              ) : (
-                t('common.download')
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+  const storageFilterComponent = (
+    <StorageTypeFilter
+      selectedTypes={storageFilter}
+      onApply={setStorageFilter}
+      disabled={isLoading || isDownloading}
+    />
   );
 
   const headerItems = [
-    { label: 'Filter', component: searchBar, hideLabel: false },
-    { label: 'Action', component: downloadButton, hideLabel: true },
+    { label: t('common.search'), component: searchBar, hideLabel: true },
+    { label: 'Storage Type', component: storageFilterComponent, hideLabel: false },
+    { label: t('common.download'), component: downloadBtn, hideLabel: true },
   ];
+
+  const totalItems = filteredData.length;
 
   const tabs = [
     { id: 'master', label: t('vehicle.tabs.master_title') },
