@@ -3,7 +3,7 @@
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
 
-export default function StorageTypeFilter({ selectedTypes, onApply }) {
+export default function StorageTypeFilter({ selectedTypes, onApply, disabled = false }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [tempSelected, setTempSelected] = useState(selectedTypes);
@@ -66,8 +66,15 @@ export default function StorageTypeFilter({ selectedTypes, onApply }) {
   return (
     <div className="relative w-full xl:w-48" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-md shadow-sm border border-gray-300 hover:bg-gray-50 transition-all text-sm font-medium text-slate-700 w-full"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center justify-between gap-2 px-3 py-2 rounded-md shadow-sm border transition-all text-sm font-medium w-full
+          ${
+            disabled
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-white text-slate-700 border-gray-300 hover:bg-gray-50 cursor-pointer'
+          }
+        `}
       >
         <span className="truncate">{getLabel()}</span>
         <svg
@@ -82,7 +89,7 @@ export default function StorageTypeFilter({ selectedTypes, onApply }) {
         </svg>
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute right-0 mt-2 w-full bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
           <div className="p-3 flex flex-col gap-2">
             <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors select-none">

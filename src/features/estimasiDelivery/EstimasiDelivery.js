@@ -1,9 +1,9 @@
-// File: src/features/estimasiDelivery/EstimasiDelivery.js
 'use client';
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
+import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
@@ -31,17 +31,19 @@ export default function EstimasiDelivery() {
   const [allRoutes, setAllRoutes] = useState([]);
   const [driverData, setDriverData] = useState({});
   const [driverMap, setDriverMap] = useState(new Map());
-  const [excelFilter, setExcelFilter] = useState({ dry: true, frozen: true });
+
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
+  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
+
   const [isClient, setIsClient] = useState(false);
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [isExcelDropdownOpen, setIsExcelDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [timeMap, setTimeMap] = useState(new Map());
 
-  const excelDropdownRef = useRef(null);
+  const downloadDropdownRef = useRef(null);
   const isAnyDownloading = isDownloadingExcel || isDownloadingPdf;
 
   const { t } = useLanguage();
@@ -85,8 +87,8 @@ export default function EstimasiDelivery() {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (excelDropdownRef.current && !excelDropdownRef.current.contains(event.target)) {
-        setIsExcelDropdownOpen(false);
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
+        setIsDownloadDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -119,6 +121,7 @@ export default function EstimasiDelivery() {
     }
 
     setIsDownloadingPdf(true);
+    setIsDownloadDropdownOpen(false);
 
     try {
       const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
@@ -183,6 +186,22 @@ export default function EstimasiDelivery() {
     } finally {
       setIsDownloadingPdf(false);
     }
+  };
+
+  const handleExcelDownload = () => {
+    setIsDownloadDropdownOpen(false);
+
+    let filePrefix = '';
+    if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) filePrefix = 'DRY';
+    if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) filePrefix = 'FRZ';
+
+    handleConfirmDownload({
+      filteredVehicleRoutes: filteredVehicleRoutes,
+      setIsDownloading: setIsDownloadingExcel,
+      t,
+      driverData,
+      fileNamePrefix: filePrefix,
+    });
   };
 
   useEffect(() => {
@@ -418,7 +437,7 @@ export default function EstimasiDelivery() {
     });
 
     const pairToLetter = {};
-    let currentLetterCode = 65; // Dimulai dari 'A'
+    let currentLetterCode = 65;
 
     return allRoutes.map((route) => {
       const tripsWithSyncStatus = route.trips.map((trip) => {
@@ -499,6 +518,20 @@ export default function EstimasiDelivery() {
         .filter(Boolean);
     }
 
+    routes = routes.filter((route) => {
+      if (storageFilter.length === 2) return true;
+      if (storageFilter.length === 0) return false;
+
+      const driverName = getDriverName(route, driverData);
+      const isDry = driverName.includes("'DRY'");
+      const isFrz = driverName.includes("'FRZ'");
+
+      if (storageFilter.includes('DRY') && isDry) return true;
+      if (storageFilter.includes('FROZEN') && isFrz) return true;
+
+      return false;
+    });
+
     return [...routes].sort((a, b) => {
       const getStartEtd = (route) => {
         const firstHub = route.trips?.find((t) => t.isHub);
@@ -516,7 +549,7 @@ export default function EstimasiDelivery() {
       if (etdA > etdB) return 1;
       return 0;
     });
-  }, [searchQuery, enrichedRoutes, driverData]);
+  }, [searchQuery, enrichedRoutes, driverData, storageFilter]);
 
   useEffect(() => {
     if (activeVehicleId) {
@@ -538,108 +571,64 @@ export default function EstimasiDelivery() {
     return filteredVehicleRoutes.find((route) => route.vehicleId === activeVehicleId);
   }, [filteredVehicleRoutes, activeVehicleId]);
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const datePicker = (
-    <CustomDatePicker
-      id="estimasiDate"
-      isLoading={isLoading}
-      onChange={handleDateChange}
-      selected={selectedDate ? new Date(selectedDate) : new Date()}
-      maxDate={tomorrow}
-    />
-  );
   const searchBar = (
     <SearchBar
-      disabled={isLoading}
+      disabled={isLoading || isAnyDownloading}
       onChange={(val) => setSearchQuery(val)}
       placeholder={t('estimation.search_placeholder')}
       value={searchQuery}
     />
   );
 
-  const excelDownloadButton = (
-    <div className="w-full z-50 relative" ref={excelDropdownRef}>
+  const storageFilterComponent = (
+    <StorageTypeFilter
+      selectedTypes={storageFilter}
+      onApply={setStorageFilter}
+      disabled={isLoading || isAnyDownloading}
+    />
+  );
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const datePicker = (
+    <CustomDatePicker
+      id="estimasiDate"
+      isLoading={isLoading || isAnyDownloading}
+      onChange={handleDateChange}
+      selected={selectedDate ? new Date(selectedDate) : new Date()}
+      maxDate={tomorrow}
+    />
+  );
+
+  const downloadMenu = (
+    <div className="w-full z-50 relative" ref={downloadDropdownRef}>
       <DownloadButton
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
-        isLoading={isDownloadingExcel}
-        onClick={() => setIsExcelDropdownOpen((prev) => !prev)}
-        text={t('common.download') + ' Excel'}
+        isLoading={isAnyDownloading}
+        onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+        text={t('common.download')}
       />
 
-      {isExcelDropdownOpen && (
-        <div className="absolute right-0 mt-2 bg-white rounded-md shadow-xl border border-gray-200 z-10 p-4 animate-in fade-in zoom-in-95 duration-100 w-full">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 tracking-wider">
-            Filter
-          </p>
-          <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={excelFilter.dry}
-                onChange={() => setExcelFilter((prev) => ({ ...prev, dry: !prev.dry }))}
-                className="w-4 h-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-              />
-              <span className="text-sm text-gray-700 group-hover:text-sky-600 transition-colors">
-                Dry
-              </span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={excelFilter.frozen}
-                onChange={() => setExcelFilter((prev) => ({ ...prev, frozen: !prev.frozen }))}
-                className="w-4 h-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-              />
-              <span className="text-sm text-gray-700 group-hover:text-sky-600 transition-colors">
-                Frozen
-              </span>
-            </label>
+      {isDownloadDropdownOpen && (
+        <div className="absolute right-0 mt-2 bg-white rounded-md shadow-xl border border-gray-200 z-10 p-2 animate-in fade-in zoom-in-95 duration-100 w-full min-w-40">
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={handleExcelDownload}
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer rounded-md text-slate-700 font-medium"
+            >
+              <span className="text-green-600 font-bold">XLS</span>
+              <span>Excel</span>
+            </button>
 
             <button
-              onClick={() => {
-                setIsExcelDropdownOpen(false);
-                const routesToDownload = filteredVehicleRoutes.filter((route) => {
-                  const driverName = getDriverName(route, driverData);
-                  const isDry = driverName.includes("'DRY'");
-                  const isFrz = driverName.includes("'FRZ'");
-                  if (excelFilter.dry && excelFilter.frozen) return true;
-                  if (excelFilter.dry && isDry) return true;
-                  if (excelFilter.frozen && isFrz) return true;
-                  return false;
-                });
-
-                let filePrefix = '';
-                if (excelFilter.dry && !excelFilter.frozen) filePrefix = 'DRY';
-                if (!excelFilter.dry && excelFilter.frozen) filePrefix = 'FRZ';
-
-                handleConfirmDownload({
-                  filteredVehicleRoutes: routesToDownload,
-                  setIsDownloading: setIsDownloadingExcel, // Set loading state excel
-                  t,
-                  driverData,
-                  fileNamePrefix: filePrefix,
-                });
-              }}
-              disabled={!excelFilter.dry && !excelFilter.frozen}
-              className="mt-2 px-4 h-[38px] bg-sky-600 text-white text-xs font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              onClick={handleDeliveryDownload}
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer rounded-md text-slate-700 font-medium border-t border-gray-100"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              {t('common.download')}
+              <span className="text-red-600 font-bold">
+                {filteredVehicleRoutes.length === 1 ? 'PDF' : 'ZIP'}
+              </span>
+              <span>{t('estimation.delivery_form')}</span>
             </button>
           </div>
         </div>
@@ -647,20 +636,11 @@ export default function EstimasiDelivery() {
     </div>
   );
 
-  const deliveryDownloadButton = (
-    <DownloadButton
-      disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
-      isLoading={isDownloadingPdf}
-      onClick={handleDeliveryDownload}
-      text={t('estimation.delivery_form')}
-    />
-  );
-
   const headerItems = [
     { label: 'Filter', component: searchBar, hideLabel: false },
+    { label: 'Storage Type', component: storageFilterComponent, hideLabel: false },
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
-    { label: 'Export Excel', component: excelDownloadButton, hideLabel: true },
-    { label: 'Export PDF', component: deliveryDownloadButton, hideLabel: true },
+    { label: 'Export', component: downloadMenu, hideLabel: true },
   ];
 
   const vehicleTabs = useMemo(() => {
