@@ -36,7 +36,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         disabled={!isAllSelected}
         className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
       >
-        {t('vehicle_tag.save')}
+        {t('common.save')}
       </button>
     </div>
   );

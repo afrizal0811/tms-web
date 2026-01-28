@@ -3,6 +3,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
@@ -10,7 +11,7 @@ import { getResultsSummary, getTasks } from '@/lib/apiService';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatDateWIB, formatToApiUtc, isEmpty, normalizeEmail } from '@/lib/utils';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DiagramTab from './tab/DiagramTab';
 
 function processOrderInfo(rawOrderId, t) {
@@ -31,11 +32,146 @@ function processOrderInfo(rawOrderId, t) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Fungsi kalkulasi dipisah agar lebih bersih
+const calculateDashboardSummary = (tasksArray, driverMap, t, lang) => {
+  if (isEmpty(tasksArray)) {
+    return {
+      totalTasks: 0,
+      unassigned: 0,
+      manualAssignList: [],
+      unassignedList: [],
+      done: 0,
+      ongoing: 0,
+      assignedTasks: 0,
+      flowDelivery: 0,
+      flowReDelivery: 0,
+      flowPendingGR: 0,
+      crossDayTasks: [],
+      totalDry: 0,
+      totalFrozen: 0,
+      assignedDry: 0,
+      assignedFrozen: 0,
+    };
+  }
+
+  let manualAssignList = [];
+  let crossDayTasks = [];
+  let unassignedList = [];
+  let done = 0;
+  let ongoing = 0;
+  let unassigned = 0;
+  let flowDelivery = 0;
+  let flowReDelivery = 0;
+  let flowPendingGR = 0;
+  let totalDry = 0;
+  let totalFrozen = 0;
+  let assignedDry = 0;
+  let assignedFrozen = 0;
+
+  for (const task of tasksArray) {
+    const flow = task.flow || 'N/A';
+    const orderInfo = processOrderInfo(task.orderId, t);
+
+    const typeStorage = (task.typeStorage || '').toUpperCase();
+    const isDry = typeStorage === 'DRY';
+    const isFrozen = typeStorage === 'FROZEN';
+
+    if (isDry) totalDry++;
+    if (isFrozen) totalFrozen++;
+
+    if (task.status === 'DONE') done++;
+    else if (task.status === 'ONGOING') ongoing++;
+    else if (task.status === 'UNASSIGNED') {
+      unassigned++;
+      unassignedList.push({
+        customer: task.customerName || 'N/A',
+        flow,
+        copyValue: orderInfo.copyValue,
+        tooltip: orderInfo.tooltip,
+      });
+    }
+
+    const isAssigned = task.status !== 'UNASSIGNED';
+
+    if (isAssigned) {
+      if (isDry) assignedDry++;
+      if (isFrozen) assignedFrozen++;
+    }
+
+    const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
+    if (manualCategory && isAssigned) {
+      const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+      let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+      if (finalAssignee === 'N/A') finalAssignee = '-';
+
+      manualAssignList.push({
+        customer: task.customerName || 'N/A',
+        driver: finalAssignee,
+        flow,
+        copyValue: orderInfo.copyValue,
+        tooltip: orderInfo.tooltip,
+      });
+    }
+
+    if (flow === 'Delivery') flowDelivery++;
+    else if (flow.includes('Re Delivery')) flowReDelivery++;
+    else if (flow.includes('Pending GR')) flowPendingGR++;
+
+    if (task.status === 'DONE' && task.startTime && task.doneTime) {
+      const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
+      const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
+
+      if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
+        const startDate = new Date(task.startTime);
+        const doneDate = new Date(task.doneTime);
+        const diffInMs = doneDate.getTime() - startDate.getTime();
+        const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+        const datePlusText = lang === 'id' ? 'H+' : 'D+';
+        const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+        const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+        crossDayTasks.push({
+          customer: task.customerName || 'N/A',
+          doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
+          driver: driverName,
+          copyValue: orderInfo.copyValue,
+          tooltip: orderInfo.tooltip,
+        });
+      }
+    }
+  }
+
+  unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+  manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+  crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+
+  return {
+    totalTasks: tasksArray.length,
+    unassigned,
+    manualAssignList,
+    unassignedList,
+    done,
+    ongoing,
+    assignedTasks: done + ongoing,
+    flowDelivery,
+    flowReDelivery,
+    flowPendingGR,
+    crossDayTasks,
+    totalDry,
+    totalFrozen,
+    assignedDry,
+    assignedFrozen,
+  };
+};
+
 export default function DashboardSummary({ driverData }) {
   const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [summaryData, setSummaryData] = useState(null);
+
+  // State Filter & Loading
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
+  const [isFiltering, setIsFiltering] = useState(false);
+
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
@@ -54,14 +190,28 @@ export default function DashboardSummary({ driverData }) {
   });
 
   const { storedLocation: hubId } = getLocalStorage();
+
+  // Handler khusus untuk Apply Filter dengan Loading Buatan
+  const handleApplyFilter = (newSelectedTypes) => {
+    // 1. Reset timer loading di BodyCard
+    fetchStartTimeRef.current = Date.now();
+
+    // 2. Set state loading filter
+    setIsFiltering(true);
+
+    // 3. Gunakan setTimeout agar React merender state loading (spinner) DULU
+    setTimeout(() => {
+      setStorageFilter(newSelectedTypes);
+      setIsFiltering(false);
+    }, 200); // Delay 200ms
+  };
+
   const handleDateChange = (date) => {
     if (!date) return;
-
     if (activeTab !== 'Diagram' && date.getDay() === 0) {
       toastError(t('dashboard.toast.sunday_error'));
       return;
     }
-
     if (activeTab === 'Diagram') {
       const newYear = date.getFullYear();
       const updatedDate = new Date(selectedDate);
@@ -128,43 +278,12 @@ export default function DashboardSummary({ driverData }) {
   const fetchData = useCallback(async () => {
     if (selectedDate.getDay() === 0) {
       setLoading(false);
-      setSummaryData({
-        totalTasks: 0,
-        unassigned: 0,
-        manualAssignList: [],
-        unassignedList: [],
-        done: 0,
-        ongoing: 0,
-        assignedTasks: 0,
-        flowDelivery: 0,
-        flowReDelivery: 0,
-        flowPendingGR: 0,
-        crossDayTasks: [],
-        totalDry: 0,
-        totalFrozen: 0,
-        assignedDry: 0,
-        assignedFrozen: 0,
-      });
       setRawData({ tasks: [], results: [] });
       return;
     }
 
-    const driverMap = new Map();
-    try {
-      if (driverData) {
-        driverData.forEach((driver) => {
-          if (driver.email && driver.name) {
-            driverMap.set(normalizeEmail(driver.email), driver.name);
-          }
-        });
-      }
-    } catch (e) {
-      toastWarning(t('dashboard.toast.driver_cache_warning'));
-    }
-
     try {
       if (typeof window === 'undefined') return;
-
       if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
 
       const localStart = new Date(selectedDate);
@@ -176,7 +295,6 @@ export default function DashboardSummary({ driverData }) {
       const timeTo = formatToApiUtc(localEnd);
 
       setLoading(true);
-      setSummaryData(null);
       fetchStartTimeRef.current = Date.now();
 
       const routingStart = new Date(localStart);
@@ -208,156 +326,21 @@ export default function DashboardSummary({ driverData }) {
         ),
       ]);
 
-      // Pastikan data tersimpan sebagai array
       const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
       const resultsArray = Array.isArray(resultsData) ? resultsData : resultsData?.data || [];
 
       setRawData({ tasks: tasksArray, results: resultsArray });
-
-      if (isEmpty(tasksArray)) {
-        const emptySummary = {
-          totalTasks: 0,
-          unassigned: 0,
-          manualAssignList: [],
-          unassignedList: [],
-          done: 0,
-          ongoing: 0,
-          assignedTasks: 0,
-          flowDelivery: 0,
-          flowReDelivery: 0,
-          flowPendingGR: 0,
-          crossDayTasks: [],
-          totalDry: 0,
-          totalFrozen: 0,
-          assignedDry: 0,
-          assignedFrozen: 0,
-        };
-        setSummaryData(emptySummary);
-        return;
-      }
-
-      let manualAssignList = [];
-      let crossDayTasks = [];
-      let unassignedList = [];
-      let done = 0;
-      let ongoing = 0;
-      let unassigned = 0;
-      let flowDelivery = 0;
-      let flowReDelivery = 0;
-      let flowPendingGR = 0;
-      let totalDry = 0;
-      let totalFrozen = 0;
-      let assignedDry = 0;
-      let assignedFrozen = 0;
-
-      for (const task of tasksArray) {
-        const flow = task.flow || 'N/A';
-        const orderInfo = processOrderInfo(task.orderId, t);
-
-        const typeStorage = (task.typeStorage || '').toUpperCase();
-        const isDry = typeStorage === 'DRY';
-        const isFrozen = typeStorage === 'FROZEN';
-
-        if (isDry) totalDry++;
-        if (isFrozen) totalFrozen++;
-
-        if (task.status === 'DONE') done++;
-        else if (task.status === 'ONGOING') ongoing++;
-        else if (task.status === 'UNASSIGNED') {
-          unassigned++;
-          unassignedList.push({
-            customer: task.customerName || 'N/A',
-            flow,
-            copyValue: orderInfo.copyValue,
-            tooltip: orderInfo.tooltip,
-          });
-        }
-
-        const isAssigned = task.status !== 'UNASSIGNED';
-
-        if (isAssigned) {
-          if (isDry) assignedDry++;
-          if (isFrozen) assignedFrozen++;
-        }
-
-        const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
-        if (manualCategory && isAssigned) {
-          const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-          let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-          if (finalAssignee === 'N/A') finalAssignee = '-';
-
-          manualAssignList.push({
-            customer: task.customerName || 'N/A',
-            driver: finalAssignee,
-            flow,
-            copyValue: orderInfo.copyValue,
-            tooltip: orderInfo.tooltip,
-          });
-        }
-
-        if (flow === 'Delivery') flowDelivery++;
-        else if (flow.includes('Re Delivery')) flowReDelivery++;
-        else if (flow.includes('Pending GR')) flowPendingGR++;
-
-        if (task.status === 'DONE' && task.startTime && task.doneTime) {
-          const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
-          const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
-
-          if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
-            const startDate = new Date(task.startTime);
-            const doneDate = new Date(task.doneTime);
-            const diffInMs = doneDate.getTime() - startDate.getTime();
-            const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-            const datePlusText = lang === 'id' ? 'H+' : 'D+';
-            const rawAssignee =
-              task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-            const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-            crossDayTasks.push({
-              customer: task.customerName || 'N/A',
-              doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
-              driver: driverName,
-              copyValue: orderInfo.copyValue,
-              tooltip: orderInfo.tooltip,
-            });
-          }
-        }
-      }
-
-      unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
-      manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-      crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
-
-      const summary = {
-        totalTasks: tasksArray.length,
-        unassigned,
-        manualAssignList,
-        unassignedList,
-        done,
-        ongoing,
-        assignedTasks: done + ongoing,
-        flowDelivery,
-        flowReDelivery,
-        flowPendingGR,
-        crossDayTasks,
-        totalDry,
-        totalFrozen,
-        assignedDry,
-        assignedFrozen,
-      };
-
-      setSummaryData(summary);
     } catch (err) {
       toastError(err.message || t('dashboard.toast.daily_fetch_error'));
     } finally {
       setLoading(false);
     }
-  }, [driverData, selectedDate, fetchWithRetry, hubId, t, lang]);
+  }, [selectedDate, fetchWithRetry, hubId, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // --- FETCH YEARLY DATA (ROBUST VERSION) ---
   const fetchYearlyData = useCallback(
     async (hubId, year) => {
       setIsYearlyLoading(true);
@@ -390,9 +373,7 @@ export default function DashboardSummary({ driverData }) {
           )
         );
 
-        // Menggunakan allSettled agar robust terhadap kegagalan parsial
         const results = await Promise.allSettled(promises);
-
         let failureCount = 0;
         results.forEach((res) => {
           if (res.status === 'fulfilled') {
@@ -459,14 +440,60 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData, hubId]);
 
+  // Memoized Driver Map
+  const driverMap = useMemo(() => {
+    const map = new Map();
+    if (driverData) {
+      driverData.forEach((driver) => {
+        if (driver.email && driver.name) {
+          map.set(normalizeEmail(driver.email), driver.name);
+        }
+      });
+    }
+    return map;
+  }, [driverData]);
+
+  // FILTER LOGIC - CLIENT SIDE
+  const filteredDailyTasks = useMemo(() => {
+    if (isEmpty(rawData.tasks)) return [];
+    if (storageFilter.length === 0) return [];
+    if (storageFilter.length === 2) return rawData.tasks;
+
+    return rawData.tasks.filter((t) => {
+      const type = (t.typeStorage || '').toUpperCase();
+      return storageFilter.includes(type);
+    });
+  }, [rawData.tasks, storageFilter]);
+
+  const filteredYearlyTasks = useMemo(() => {
+    if (isEmpty(yearlyTasks)) return [];
+    if (storageFilter.length === 0) return [];
+    if (storageFilter.length === 2) return yearlyTasks;
+
+    return yearlyTasks.filter((t) => {
+      const type = (t.typeStorage || '').toUpperCase();
+      return storageFilter.includes(type);
+    });
+  }, [yearlyTasks, storageFilter]);
+
+  // Calculate Summary from Filtered Data
+  const summaryData = useMemo(() => {
+    return calculateDashboardSummary(filteredDailyTasks, driverMap, t, lang);
+  }, [filteredDailyTasks, driverMap, t, lang]);
+
   const isDiagramTab = activeTab === 'Diagram';
-  const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
+
+  // UPDATED: Logic isLoadingSelected agar spinner muncul di semua tab saat filter berubah
+  // (isDiagramTab ? isYearlyLoading : loading) => Logika asli per-tab
+  // || isFiltering => Override jika sedang filter client-side
+  const isLoadingSelected = (isDiagramTab ? isYearlyLoading : loading) || isFiltering;
+
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
   let isCardEmpty = false;
 
   if (activeTab === 'Diagram') {
-    isCardEmpty = !isYearlyLoading && (!yearlyTasks || isEmpty(yearlyTasks));
+    isCardEmpty = !isYearlyLoading && (!filteredYearlyTasks || isEmpty(filteredYearlyTasks));
   } else if (activeTab === 'Detail') {
     isCardEmpty =
       !loading &&
@@ -474,7 +501,7 @@ export default function DashboardSummary({ driverData }) {
         isEmpty(summaryData.totalTasks) ||
         (isEmpty(summaryData.done) && isEmpty(summaryData.ongoing)));
   } else if (activeTab === 'RoutingVsActual') {
-    const noOngoingAndDone = !rawData.tasks?.some(
+    const noOngoingAndDone = !filteredDailyTasks?.some(
       (t) => t?.status === 'ONGOING' || t?.status === 'DONE'
     );
     isCardEmpty = !loading && noOngoingAndDone;
@@ -498,7 +525,17 @@ export default function DashboardSummary({ driverData }) {
     />
   );
 
+  const storageFilterComponent = (
+    <StorageTypeFilter selectedTypes={storageFilter} onApply={handleApplyFilter} />
+  );
+
+  // UPDATED: Posisi Storage Filter ditukar menjadi index 0 (pertama)
   const headerItems = [
+    {
+      label: 'Storage Type',
+      component: storageFilterComponent,
+      hideLabel: false,
+    },
     {
       label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
       component: datePicker,
@@ -534,7 +571,7 @@ export default function DashboardSummary({ driverData }) {
           {activeTab === 'RoutingVsActual' && (
             <RoutingVsActualTab
               loading={loading}
-              tasks={rawData.tasks}
+              tasks={filteredDailyTasks}
               results={rawData.results}
               drivers={driverData}
             />
@@ -542,7 +579,7 @@ export default function DashboardSummary({ driverData }) {
 
           {activeTab === 'Diagram' && !isYearlyLoading && (
             <DiagramTab
-              yearlyTasks={yearlyTasks}
+              yearlyTasks={filteredYearlyTasks}
               hubId={currentHubId}
               driverData={driverData}
               selectedDate={selectedDate}
