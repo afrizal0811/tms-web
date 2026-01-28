@@ -604,6 +604,13 @@ export const dictionary = {
         },
       },
     },
+    not_found: {
+      back_to_hub: 'Kembali ke Hub',
+      description:
+        'Sistem gagal melacak koordinat halaman yang kamu tuju. Kemungkinan tautan rusak, halaman sudah dihapus, atau sopir salah belok.',
+      note: 'Menghitung rute optimal ke dashboard...',
+      title: 'Sinyal GPS Hilang',
+    },
   },
   en: {
     common: {
@@ -1207,6 +1214,13 @@ export const dictionary = {
           },
         },
       },
+    },
+    not_found: {
+      back_to_hub: 'Back to Hub',
+      description:
+        'The system failed to track the coordinates of the page you want to go. It is possible that the link is broken, the page has been deleted, or the driver made a wrong turn.',
+      note: 'Calculating the optimal route to the dashboard...',
+      title: 'GPS Signal Lost',
     },
   },
 };

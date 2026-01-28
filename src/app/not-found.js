@@ -1,8 +1,12 @@
 // File: src/app/not-found.js
+'use client';
+
 import Footer from '@/components/Footer';
+import { useLanguage } from '@/context/LanguageContext';
 import Link from 'next/link';
 
 export default function NotFound() {
+  const { t } = useLanguage();
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 px-4 relative overflow-hidden font-sans">
       {/* --- Background Radar Effect --- */}
@@ -31,7 +35,7 @@ export default function NotFound() {
 
       {/* --- Headline --- */}
       <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-2 tracking-tight z-10 text-center">
-        GPS SIGNAL LOST
+        {t('not_found.title')}
       </h1>
 
       {/* --- Info Box --- */}
@@ -41,17 +45,14 @@ export default function NotFound() {
           <span className="text-slate-400">LAT: -- | LNG: --</span>
         </div>
 
-        <p className="text-slate-600 mb-4 leading-relaxed">
-          Sistem gagal melacak koordinat halaman yang kamu tuju. Kemungkinan link rusak, halaman
-          sudah dihapus, atau driver salah belok.
-        </p>
+        <p className="text-slate-600 mb-4 leading-relaxed">{t('not_found.description')}</p>
 
         <div className="flex justify-center items-center gap-2 text-xs font-mono bg-slate-50 py-1.5 rounded text-slate-500">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
           </span>
-          Recalculating route to dashboard...
+          {t('not_found.note')}
         </div>
       </div>
 
@@ -80,7 +81,7 @@ export default function NotFound() {
             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
           />
         </svg>
-        Kembali ke Hub
+        {t('not_found.back_to_hub')}
       </Link>
 
       {/* --- Footer Fixed --- */}
