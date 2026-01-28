@@ -36,7 +36,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         disabled={!isAllSelected}
         className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
       >
-        {t('vehicle_tag.save')}
+        {t('common.save')}
       </button>
     </div>
   );
@@ -47,7 +47,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       onClose={() => {}}
       title={
         <div>
-          <h2 className="text-xl font-bold">⚠️ {t('vehicle_tag.title')}</h2>
+          <h2 className="text-xl font-bold">{t('common.warning')}</h2>
           <p className="text-sm mt-1 font-normal">{t('vehicle_tag.description')}</p>
         </div>
       }
@@ -63,7 +63,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
           >
             <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
               <div>
-                <p className="text-sm text-gray-500 text-left">{t('vehicle_tag.license')}</p>
+                <p className="text-sm text-gray-500 text-left">{t('common.number_plates')}</p>
                 <p className="font-bold text-lg text-slate-800">{info.plat}</p>
               </div>
               <div className="mt-3 sm:mt-0 text-left sm:text-right w-full sm:w-auto">

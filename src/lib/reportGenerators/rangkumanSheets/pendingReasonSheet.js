@@ -185,8 +185,8 @@ export function generatePendingReasonSheet(
   let headers = [
     translate('summary.tabs.pending_reasons.flow'),
     translate('summary.tabs.pending_reasons.date'),
-    translate('summary.tabs.pending_reasons.license'),
-    translate('summary.tabs.pending_reasons.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
     translate('summary.tabs.pending_reasons.cancel'),
     translate('summary.tabs.pending_reasons.partial'),
     translate('summary.tabs.pending_reasons.pending'),
@@ -196,16 +196,16 @@ export function generatePendingReasonSheet(
     translate('summary.tabs.pending_reasons.reason'),
     translate('summary.tabs.pending_reasons.open_time'),
     translate('summary.tabs.pending_reasons.close_time'),
-    translate('summary.tabs.pending_reasons.eta'),
-    translate('summary.tabs.pending_reasons.etd'),
+    translate('common.eta'),
+    translate('common.etd'),
     translate('summary.tabs.pending_reasons.actual_arrival'),
     translate('summary.tabs.pending_reasons.actual_departure'),
     translate('summary.tabs.pending_reasons.visit_plan'),
     translate('summary.tabs.pending_reasons.visit_actual'),
-    translate('summary.tabs.pending_reasons.cust_id'),
+    translate('common.customer_id'),
     translate('summary.tabs.pending_reasons.ro_seq'),
     translate('summary.tabs.pending_reasons.real_seq'),
-    translate('summary.tabs.pending_reasons.temp')
+    translate('common.storage_type')
   );
 
   const excelData = [headers];

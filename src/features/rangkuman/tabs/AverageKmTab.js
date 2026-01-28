@@ -1,6 +1,7 @@
 // File: src/features/rangkuman/tabs/AverageKmTab.js
 'use client';
 
+import Tooltip from '@/components/Tooltip';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
 import AverageKmDetailModal from './modals/AverageKmDetailModal';
@@ -41,6 +42,31 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
       maximumFractionDigits: 2,
     });
     return distance;
+  };
+
+  const distanceTable = (typeDetails, typeDate, typeDist, title) => {
+    const tdData = (
+      <td
+        onClick={() => handleCellClick(typeDetails, typeDate, title)}
+        className={`border border-gray-300 px-4 py-2 text-center ${title === 'Dry' ? `bg-red-100 hover:bg-red-200` : 'bg-blue-100 hover:bg-blue-200'} ${typeDist > 0 && 'cursor-pointer'}`}
+      >
+        {typeDist > 0 ? (
+          <span className="border-b-2 border-dotted border-slate-700 pb-0.5">
+            {distanceConverter(typeDist)}
+          </span>
+        ) : (
+          distanceConverter(typeDist)
+        )}
+      </td>
+    );
+
+    return typeDist > 0 ? (
+      <Tooltip tooltipContent={typeDist > 0 ? translate('common.click_for_detail') : ''}>
+        {tdData}
+      </Tooltip>
+    ) : (
+      tdData
+    );
   };
 
   return (
@@ -95,7 +121,6 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
           </table>
         </div>
 
-        {/* TABEL 2: DAILY DETAILS */}
         <div className="rounded-b-xl overflow-hidden border border-gray-300">
           <table className="min-w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10">
@@ -149,36 +174,8 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
                       <td className="border border-gray-300 px-4 py-2 text-center">
                         {row.frozenCount}
                       </td>
-
-                      {/* --- KOLOM DRY KM (Clickable) --- */}
-                      <td
-                        onClick={() => handleCellClick(row.dryDetails, row.date, 'Dry')}
-                        className={`border border-gray-300 px-4 py-2 text-center bg-red-100 ${row.dryKm > 0 ? 'cursor-pointer hover:bg-red-200' : ''}`}
-                        title={row.dryKm > 0 ? 'Klik untuk detail' : ''}
-                      >
-                        {row.dryKm > 0 ? (
-                          <span className="border-b-2 border-dotted border-slate-700 pb-0.5">
-                            {distanceConverter(row.dryKm)}
-                          </span>
-                        ) : (
-                          distanceConverter(row.dryKm)
-                        )}
-                      </td>
-
-                      {/* --- KOLOM FROZEN KM (Clickable) --- */}
-                      <td
-                        onClick={() => handleCellClick(row.frozenDetails, row.date, 'Frozen')}
-                        className={`border border-gray-300 px-4 py-2 text-center bg-blue-100 ${row.frozenKm > 0 ? 'cursor-pointer hover:bg-blue-200' : ''}`}
-                        title={row.frozenKm > 0 ? 'Klik untuk detail' : ''}
-                      >
-                        {row.frozenKm > 0 ? (
-                          <span className="border-b-2 border-dotted border-slate-700 pb-0.5">
-                            {distanceConverter(row.frozenKm)}
-                          </span>
-                        ) : (
-                          distanceConverter(row.frozenKm)
-                        )}
-                      </td>
+                      {distanceTable(row.dryDetails, row.date, row.dryKm, 'Dry')}
+                      {distanceTable(row.frozenDetails, row.date, row.frozenKm, 'Frozen')}
 
                       <td className="border border-gray-300 px-4 py-2 text-center">
                         {distanceConverter(row.totalKm)}

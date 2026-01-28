@@ -43,7 +43,7 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
         )}
         {data.BATAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('dashboard.charts.service_level.batal')}</span>
+            <span>● {t('dashboard.charts.service_level.cancel')}</span>
             <span className="font-mono">{data.BATAL}</span>
           </div>
         )}
@@ -91,7 +91,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-        <span>{t('dashboard.charts.service_level.batal')}</span>
+        <span>{t('dashboard.charts.service_level.cancel')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#f97316] rounded-sm" />
@@ -155,7 +155,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
                 maxBarSize={40}
               />
               <Bar
-                name={t('dashboard.charts.service_level.batal')}
+                name={t('dashboard.charts.service_level.cancel')}
                 dataKey="BATAL"
                 stackId="a"
                 fill="#ef4444"

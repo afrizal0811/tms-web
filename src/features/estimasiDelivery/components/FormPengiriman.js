@@ -1,4 +1,4 @@
-// File: src/features/estimasiDelivery/components/ReportTerimaFaktur.js
+// File: src/features/estimasiDelivery/components/FormPengiriman.js
 import { parseCustomerString } from '@/lib/utils';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { parseSONumber, styles } from '../help';
@@ -54,13 +54,7 @@ const chunkArrayWeighted = (data, maxTotalWeight = 15) => {
   return chunks;
 };
 
-const ReportTerimaFaktur = ({
-  data,
-  selectedDate,
-  driverNameOverride,
-  jamBerangkat,
-  jamKembali,
-}) => {
+const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, jamKembali }) => {
   const rawDriverName = driverNameOverride || data?.vehicleName || '';
   const driverName = cleanDriverName(rawDriverName);
   const rawVehiclePlate = data?.vehicleName || '';
@@ -79,6 +73,33 @@ const ReportTerimaFaktur = ({
 
   const dataChunks = chunkArrayWeighted(validTrips, 15);
   if (dataChunks.length === 0) dataChunks.push([]);
+
+  const legendsLeft = [
+    { label: 'Qty', desc: 'Total barang terkirim sesuai faktur.' },
+    { label: 'Parkir', desc: 'Biaya parkir outlet.' },
+    { label: 'Tol', desc: 'Biaya tol perjalanan.' },
+    {
+      label: 'K. Aman / Rupa-Rupa',
+      desc: 'Biaya tambahan (pak ogah), sesuai kebijakan & konfirmasi.',
+    },
+  ];
+
+  const legendsRight = [
+    { label: 'D. Helper', desc: 'Biaya kirim via helper (kondisional).' },
+    { label: 'KL. Luar', desc: 'Biaya TKBM luar, wajib konfirmasi.' },
+    { label: 'Bon', desc: 'Kasbon sebelumnya.' },
+    { label: 'Dibayar/Dikembalikan', desc: 'Pengeluaran - bon.' },
+  ];
+
+  const renderLegendItem = (item, idx) => (
+    <View key={idx} style={styles.legendItem}>
+      <Text style={styles.bullet}>•</Text>
+      <Text style={styles.legendTextContent}>
+        <Text style={{ fontWeight: 'bold' }}>{item.label}: </Text>
+        {item.desc}
+      </Text>
+    </View>
+  );
 
   return (
     <Document>
@@ -265,7 +286,6 @@ const ReportTerimaFaktur = ({
                   styles.cell,
                   {
                     width: '38%',
-                    backgroundColor: '#E5E7EB',
                     paddingLeft: 5,
                     justifyContent: 'center',
                   },
@@ -343,6 +363,7 @@ const ReportTerimaFaktur = ({
           </View>
 
           <View style={styles.infoBox}>
+            {/* Bagian Kiri: Info Kertas (Asli/Copy) - Existing */}
             <View style={styles.infoTextColumn}>
               <View style={{ flexDirection: 'row' }}>
                 <Text style={[styles.infoText, { width: 25 }]}>Asli</Text>
@@ -365,6 +386,11 @@ const ReportTerimaFaktur = ({
                 <Text style={[styles.infoText, { width: 20 }]}>Utk</Text>
                 <Text style={styles.infoText}>Insentif</Text>
               </View>
+            </View>
+
+            <View style={styles.legendContainer}>
+              <View style={styles.legendColumn}>{legendsLeft.map(renderLegendItem)}</View>
+              <View style={styles.legendColumn}>{legendsRight.map(renderLegendItem)}</View>
             </View>
           </View>
 
@@ -417,4 +443,4 @@ const ReportTerimaFaktur = ({
   );
 };
 
-export default ReportTerimaFaktur;
+export default FormPengiriman;

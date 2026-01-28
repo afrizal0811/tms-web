@@ -9,10 +9,11 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function LaporanPage() {
   const router = useRouter();
-
+  const { t } = useLanguage();
   // State untuk menyimpan data dari localStorage
   const [data, setData] = useState({
     selectedUser: null,
@@ -37,7 +38,7 @@ export default function LaporanPage() {
 
         // 2. Cek data sesi dasar
         if (!storedUser || !storedLocation || !storedLocationName) {
-          toastError('Harap pilih user dan lokasi terlebih dahulu.');
+          toastError(t('home.toast.no_session'));
           router.push('/');
           return;
         }
@@ -58,7 +59,7 @@ export default function LaporanPage() {
           driverData: drivers, // <-- Gunakan data dari 'drivers'
         });
       } catch (e) {
-        toastError('Gagal memuat data sesi: ' + e.message);
+        toastError(t('home.toast.error', { err: e.message }));
         router.push('/');
       } finally {
         setIsLoading(false);
@@ -66,7 +67,7 @@ export default function LaporanPage() {
     }
 
     loadLaporanData(); // Panggil fungsi async
-  }, [router]); // 'router' sebagai dependensi sudah benar
+  }, [router, t]); // 'router' sebagai dependensi sudah benar
 
   // Tampilan loading selagi cek localStorage
   if (isLoading) {

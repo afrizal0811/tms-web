@@ -288,7 +288,7 @@ export default function RangkumanSummary() {
         }
       }
     } catch (err) {
-      toastError('Gagal mengambil data history (Batch).');
+      toastError(t('summary.toast.error', { err: err.message }));
     }
 
     Object.keys(tempMetrics).forEach((dateKey) => {
@@ -320,7 +320,7 @@ export default function RangkumanSummary() {
 
     setTaskSummaryMetrics(tempMetrics);
     setIsCalculatingMetrics(false);
-  }, []);
+  }, [t]);
 
   const fetchData = useCallback(async () => {
     if (!selectedLocation || !selectedDate) return;
@@ -547,7 +547,7 @@ export default function RangkumanSummary() {
   const handleDownloadExcel = (translate, language) => {
     if (!selectedDate) return;
     if (isEmpty(driverData)) {
-      toastError('Data Driver belum siap/kosong.');
+      toastError(t('summary.toast.no_driver_data'));
       return;
     }
     const year = selectedDate.getFullYear();
@@ -721,7 +721,7 @@ export default function RangkumanSummary() {
   };
 
   const datePicker = (
-    <CustomDatePicker 
+    <CustomDatePicker
       dateFormat="MMMM yyyy"
       disableSunday={false}
       isLoading={isLoading}
@@ -736,7 +736,7 @@ export default function RangkumanSummary() {
       disabled={isLoading || isEmpty(rawData.tasks)}
       isLoading={isLoading}
       onClick={() => handleDownloadExcel(t, lang)}
-      text={t('common.download_excel')}
+      text={t('common.download') + ' Excel'}
     />
   );
 

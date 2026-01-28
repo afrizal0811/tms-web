@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload, label, t }) => {
         )}
         {data.BATAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('dashboard.charts.service_level.batal')}</span>
+            <span>● {t('dashboard.charts.service_level.cancel')}</span>
             <span className="font-mono">{data.BATAL}</span>
           </div>
         )}
@@ -178,10 +178,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
           <span className="font-bold text-emerald-600">
             {t('dashboard.charts.service_level.success')}
           </span>{' '}
-          vs{' '}
-          <span className="font-bold text-red-600">
-            {t('common.others')}
-          </span>
+          vs <span className="font-bold text-red-600">{t('common.others')}</span>
         </p>
       </div>
 
@@ -244,7 +241,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="BATAL"
                 fill="#ef4444"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.batal')}
+                name={t('dashboard.charts.service_level.cancel')}
                 onClick={handleBarClick}
                 radius={[0, 0, 0, 0]}
                 stackId="a"

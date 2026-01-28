@@ -161,7 +161,7 @@ export default function DetailTab({ loading, summaryData }) {
                         {t('dashboard.tab.detail.flow')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        {t('dashboard.tab.detail.cust_name')}
+                        {t('common.customer_name')}
                       </th>
                     </tr>
                   </thead>
@@ -204,10 +204,10 @@ export default function DetailTab({ loading, summaryData }) {
                         {t('dashboard.tab.detail.flow')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        {t('dashboard.tab.detail.cust_name')}
+                        {t('common.customer_name')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        {t('dashboard.tab.detail.driver')}
+                        {t('common.driver')}
                       </th>
                     </tr>
                   </thead>
@@ -249,13 +249,13 @@ export default function DetailTab({ loading, summaryData }) {
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        {t('dashboard.tab.detail.cust_name')}
+                        {t('common.customer_name')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
                         {t('dashboard.tab.detail.done_date')}
                       </th>
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        {t('dashboard.tab.detail.driver')}
+                        {t('common.driver')}
                       </th>
                     </tr>
                   </thead>

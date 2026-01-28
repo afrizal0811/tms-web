@@ -260,7 +260,7 @@ export default function TruckUsageTable({
               className={`${thClass} ${colStorageClass} sticky left-0 z-50`}
               style={{ backgroundColor: colorHeader }}
             >
-              {translate('summary.tabs.truck_usage.temp')}
+              {translate('common.storage_type')}
             </th>
             <th
               rowSpan="2"

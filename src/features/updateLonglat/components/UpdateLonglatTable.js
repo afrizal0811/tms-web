@@ -37,8 +37,8 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
               <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 w-[5%] text-center">No</th>
-                  <th className="px-4 py-3 w-[30%]">{t('longlat.table.cust_name')}</th>
-                  <th className="px-4 py-3 w-[15%]">{t('longlat.table.cust_id')}</th>
+                  <th className="px-4 py-3 w-[30%]">{t('common.customer_name')}</th>
+                  <th className="px-4 py-3 w-[15%]">{t('common.customer_id')}</th>
                   <th className="px-4 py-3 w-[15%]">{t('longlat.table.loc_id')}</th>
                   <th className="px-4 py-3 w-[20%] text-center">
                     {t('longlat.table.new_longlat')}

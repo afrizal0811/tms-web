@@ -145,7 +145,7 @@ export default function UpdateMap({ data, activeCoords, highlightTrigger, t }) {
           <Popup>
             <strong>{t('longlat.modal.new_loc')}</strong>
             <br />
-            {t('longlat.modal.driver')}: {item.driverName}
+            {t('common.driver')}: {item.driverName}
             <br />
             {t('longlat.modal.date')}: {item.date}
           </Popup>

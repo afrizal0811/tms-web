@@ -268,8 +268,8 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 2: Total Delivered ---
   const headers1 = [
-    translate('excel.delivery.headers.plate'),
-    translate('excel.delivery.headers.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
     translate('excel.delivery.headers.total_outlet'),
     translate('excel.delivery.headers.total_delivery'),
     translate('excel.delivery.headers.info_manual'),
@@ -400,8 +400,8 @@ export function generateDeliveryWorkbook(
   const headers2 = [
     translate('excel.delivery.headers.flow'),
     translate('excel.delivery.headers.date'),
-    translate('excel.delivery.headers.plate'),
-    translate('excel.delivery.headers.driver'),
+    translate('common.number_plates'),
+    translate('common.driver'),
     translate('excel.delivery.headers.faktur_batal'),
     translate('excel.delivery.headers.partial'),
     translate('excel.delivery.headers.pending'),
@@ -412,16 +412,16 @@ export function generateDeliveryWorkbook(
     '',
     translate('excel.delivery.headers.open_time'),
     translate('excel.delivery.headers.close_time'),
-    translate('excel.delivery.headers.eta'),
-    translate('excel.delivery.headers.etd'),
+    translate('common.eta'),
+    translate('common.etd'),
     translate('excel.delivery.headers.act_arr'),
     translate('excel.delivery.headers.act_dep'),
     translate('excel.delivery.headers.visit_time'),
     translate('excel.delivery.headers.act_visit_time'),
-    translate('excel.delivery.headers.cust_id'),
+    translate('common.customer_id'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.temp')
+    translate('common.storage_type')
   );
   const finalSheetData2 = [
     headers2,
@@ -461,16 +461,16 @@ export function generateDeliveryWorkbook(
   const centerAlignedIndices = [
     translate('excel.delivery.headers.open_time'),
     translate('excel.delivery.headers.close_time'),
-    translate('excel.delivery.headers.eta'),
-    translate('excel.delivery.headers.etd'),
+    translate('common.eta'),
+    translate('common.etd'),
     translate('excel.delivery.headers.act_arr'),
     translate('excel.delivery.headers.act_dep'),
     translate('excel.delivery.headers.visit_time'),
     translate('excel.delivery.headers.act_visit_time'),
-    translate('excel.delivery.headers.cust_id'),
+    translate('common.customer_id'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.temp'),
+    translate('common.storage_type'),
   ];
   const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
   const colWidthsSO = headers2.map((header, i) => {
@@ -528,8 +528,8 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 5: Update Longlat ---
   const headers4 = [
-    translate('excel.delivery.headers.cust_name'),
-    translate('excel.delivery.headers.cust_id'),
+    translate('common.customer_name'),
+    translate('common.customer_id'),
     translate('excel.delivery.headers.loc_id'),
     translate('excel.delivery.headers.new_longlat'),
     translate('excel.delivery.headers.dist_diff'),
@@ -589,15 +589,15 @@ export function generateDeliveryWorkbook(
   // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
     translate('excel.delivery.headers.flow'),
-    translate('excel.delivery.headers.plate'),
-    translate('excel.delivery.headers.driver'),
-    translate('excel.delivery.headers.cust_name'),
+    translate('common.number_plates'),
+    translate('common.driver'),
+    translate('common.customer_name'),
     translate('excel.delivery.headers.status_del'),
     translate('excel.delivery.headers.open_time'),
     translate('excel.delivery.headers.close_time'),
-    translate('excel.delivery.headers.eta'),
+    translate('common.eta'),
     translate('excel.delivery.headers.act_arr'),
-    translate('excel.delivery.headers.etd'),
+    translate('common.eta'),
     translate('excel.delivery.headers.act_dep'),
     translate('excel.delivery.headers.visit_time'),
     translate('excel.delivery.headers.act_visit_time'),

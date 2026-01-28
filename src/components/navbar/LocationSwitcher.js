@@ -57,15 +57,15 @@ export default function LocationSwitcher() {
                 : hubsSimple;
             setAllowedHubs(allowed);
           } catch (e) {
-            toastError('allHubsList parse error', e);
+            toastError(t('common.error', { err: e.message }));
             setAllowedHubs([]);
           }
         }
       }
     } catch (e) {
-      toastError('Gagal memuat data user/lokasi: ' + e.message);
+      toastError(t('common.error', { err: e.message }));
     }
-  }, [userStr, locationName, allHubsStr]);
+  }, [userStr, locationName, allHubsStr, t]);
 
   const handleLocationChange = (id, name) => {
     try {
@@ -76,7 +76,7 @@ export default function LocationSwitcher() {
         window.location.reload();
       });
     } catch (err) {
-      toastError('triggerCheck error:', err);
+      toastError(t('common.error', { err: e.message }));
       setLocalStorage('userLocation', id);
       setLocalStorage('userLocationName', name);
       removeLocalStorage('driverData');
@@ -111,7 +111,7 @@ export default function LocationSwitcher() {
             try {
               handleMappingCompleted();
             } catch (err) {
-              toastError('handleMappingCompleted error:', err);
+              toastError(t('common.error', { err: e.message }));
             }
           }}
         />

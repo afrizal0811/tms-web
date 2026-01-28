@@ -2,6 +2,7 @@
 
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,7 +11,7 @@ import { useEffect, useState } from 'react';
 export default function SessionGuard({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-
+  const { t } = useLanguage();
   // State untuk melacak apakah sesi sudah diverifikasi
   const [isVerified, setIsVerified] = useState(false);
 
@@ -34,7 +35,7 @@ export default function SessionGuard({ children }) {
 
       // 3. Jika salah satu data penting tidak ada, redirect paksa.
       if (!user || !location || !locationName) {
-        toastError('Harap pilih user dan lokasi terlebih dahulu.');
+        toastError(t('home.toast.no_session'));
         router.push('/'); // <-- Redirect ke Halaman "Selamat Datang"
       } else {
         // 4. Jika semua data ada, loloskan.
@@ -42,12 +43,12 @@ export default function SessionGuard({ children }) {
       }
     } catch (e) {
       // (Jaga-jaga jika localStorage tidak bisa diakses)
-      toastError('Gagal membaca sesi. Silakan login ulang.');
+       toastError(t('home.toast.error', { err: e.message }));
       router.push('/');
     }
 
     // Efek ini berjalan setiap kali halaman (pathname) berubah
-  }, [pathname, router]);
+  }, [pathname, router, t]);
 
   // Selagi 'useEffect' di atas sedang memeriksa localStorage,
   // kita tampilkan loading spinner. Ini mencegah "flash"

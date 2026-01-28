@@ -69,7 +69,6 @@
 │   │   │   │   ├── LoadCapacityChart.js
 │   │   │   │   ├── SequenceAccuracyChart.js
 │   │   │   │   └── ServiceLevelChart.js
-│   │   │   ├── ChartSkeleton.js
 │   │   │   ├── InfoCard.js
 │   │   │   └── MapViewSection.js
 │   │   ├── DashboardSummary.js
@@ -85,6 +84,7 @@
 │   │       └── RoutingVsActualTab.js
 │   ├── estimasiDelivery
 │   │   ├── components
+│   │   │   ├── FormPengiriman.js
 │   │   │   └── TableData.js
 │   │   ├── EstimasiDelivery.js
 │   │   └── help.js
@@ -119,7 +119,7 @@
 │   │   │   └── CustomerHistoryModal.js
 │   │   └── UpdateLonglatPage.js
 │   ├── userSelection
-│   │   └── UserSelectionGrid.js
+│   │   └── UserLogin.js
 │   └── vehicleData
 │       ├── components
 │       │   ├── TemplateTab.js

@@ -42,7 +42,7 @@ export default function TruckDetailTab({ data, translate, language }) {
   const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 relative p-0">
+    <div className="w-full h-full flex flex-col relative p-0">
       <TruckDetailModal
         data={modalData}
         isOpen={!!modalData}
@@ -56,16 +56,16 @@ export default function TruckDetailTab({ data, translate, language }) {
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>
               <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
-                {translate('summary.tabs.truck_detail.temp')}
+                {translate('common.storage_type')}
               </th>
               <th rowSpan="2" className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}>
-                {translate('summary.tabs.truck_detail.license')}
+                {translate('common.number_plates')}
               </th>
               <th
                 rowSpan="2"
                 className={`${thClass} min-w-[200px] sticky left-[180px] z-40 ${COLOR_A} border-r-2 border-slate-400`}
               >
-                {translate('summary.tabs.truck_detail.driver')}
+                {translate('common.driver')}
               </th>
               {dateKeys.map((d, i) => {
                 const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;

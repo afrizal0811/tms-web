@@ -309,7 +309,7 @@ export default function UpdateLonglatPage() {
       disabled={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
-      text={t('common.download_excel')}
+      text={t('common.download') + ' Excel'}
     />
   );
 

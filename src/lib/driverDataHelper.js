@@ -36,7 +36,7 @@ const updateMasterTruckStorage = (drivers, hubId) => {
     const { storedVehicleTag: storedMap } = getLocalStorage();
     if (storedMap) tagMap = JSON.parse(storedMap);
   } catch (e) {
-    toastError('Gagal load vehicleTagMap', e);
+    return e;
   }
 
   const masterData = {
@@ -126,8 +126,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     return unmappedList;
   } catch (error) {
-    toastError('Gagal mengecek kendaraan:', error);
-    return [];
+    return error;
   }
 }
 

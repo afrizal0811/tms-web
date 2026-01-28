@@ -26,7 +26,7 @@ import {
 
 export function generateRangkumanDataPreview(
   driverData,
-  allTasks,
+  taskData,
   resultsData,
   locationHistoryData,
   startDateStr,
@@ -48,7 +48,7 @@ export function generateRangkumanDataPreview(
   const truckDetailRaw = calculateTruckDetailData(
     driverData,
     resultsData,
-    allTasks,
+    taskData,
     startDateStr,
     endDateStr
   );
@@ -62,7 +62,7 @@ export function generateRangkumanDataPreview(
   // 5. Pending Reason (UPDATE: Pass Dates)
   const pendingReasonData = calculatePendingReasonData(
     driverData,
-    allTasks,
+    taskData,
     startDateStr,
     endDateStr
   );
@@ -74,13 +74,12 @@ export function generateRangkumanDataPreview(
     truckDetailData: { ...truckDetailRaw, driverMap: Object.fromEntries(truckDetailRaw.driverMap) },
     timeDriverData: { ...timeDriverRaw, driverMap: Object.fromEntries(timeDriverRaw.driverMap) },
     pendingReasonsData: pendingReasonData,
-    taskSummaryData: [],
   };
 }
 
 export function generateRangkumanWorkbook(
   driverData,
-  allTasks,
+  taskData,
   resultsData,
   locationHistoryData,
   startDateStr,
@@ -94,7 +93,7 @@ export function generateRangkumanWorkbook(
 ) {
   const wb = XLSX.utils.book_new();
   const isIndo = language === 'id';
-  generateTimeROSheet(wb, allTasks, startDateStr, endDateStr, translate, isIndo);
+  generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, isIndo);
   generateTaskSummarySheet(
     wb,
     taskSummaryMetrics,
@@ -107,7 +106,7 @@ export function generateRangkumanWorkbook(
   generatePendingReasonSheet(
     wb,
     driverData,
-    allTasks,
+    taskData,
     hubName,
     translate,
     startDateStr,
@@ -127,7 +126,7 @@ export function generateRangkumanWorkbook(
     wb,
     driverData,
     resultsData,
-    allTasks,
+    taskData,
     startDateStr,
     endDateStr,
     translate,
