@@ -1,66 +1,61 @@
-# 🚛 Logistics Operation Dashboard
+# 🚛 Logistics Operation Dashboard & Fleet Management
 
-Sistem manajemen operasional logistik berbasis web yang dirancang untuk memantau pergerakan armada, performa pengiriman, dan manajemen data kendaraan secara *real-time*. Aplikasi ini memfasilitasi Planner dan Admin dalam mengelola berbagai Cabang (Hub) dengan fitur analisis mendalam (Dry vs Frozen).
+Aplikasi manajemen operasional logistik berbasis web yang komprehensif, dirancang untuk membantu Planner dan Admin dalam memonitor pergerakan armada, menganalisis performa pengiriman, memvalidasi koordinat pelanggan, hingga pelaporan mendalam mengenai penggunaan truk dan kinerja driver.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC) ![Status](https://img.shields.io/badge/Status-Active-green)
+![Next.js](https://img.shields.io/badge/Next.js-14-black) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC) ![Leaflet](https://img.shields.io/badge/Maps-Leaflet-green)
 
 ## 🌟 Fitur Utama
 
-### 1. 🔐 Manajemen Akses & Lokasi
-* **Multi-Hub Selection:** Pengguna memilih lokasi operasional (Hub) saat pertama kali masuk.
-* **Login by Email:** Autentikasi cepat menggunakan email terdaftar.
-* **Role Validation:** Pembatasan akses (misal: akun tipe *Driver* tidak diizinkan login ke dashboard web).
+### 1. 🔐 Manajemen Akses & Lokasi (Multi-Hub)
+* **Hub Selection:** Pengguna wajib memilih lokasi operasional (Cabang) saat masuk. Data lokasi disinkronkan dengan API vendor.
+* **Role-Based Login:** Sistem login berbasis email dengan validasi role yang ketat (User dengan role *Driver* diblokir dari akses web).
+* **Session Guard:** Proteksi rute otomatis untuk memastikan pengguna memiliki sesi lokasi yang valid.
 
-### 2. 📊 Dashboard Analitik
-Visualisasi data performa operasional menggunakan grafik interaktif:
+### 2. 📊 Dashboard Operasional (Real-time Analytics)
+Visualisasi performa harian dan tahunan menggunakan grafik interaktif:
 * **Service Level:** Memantau status pengiriman (Sukses, Batal, Pending, Partial).
-* **Sequence Accuracy:** Membandingkan urutan rute rencana (Routing) vs aktual lapangan.
-* **Load Capacity:** Analisis keterisian truk (Full, Optimal, Overload) yang dipisahkan berdasarkan tipe storage (**Dry** vs **Frozen**).
+* **Sequence Accuracy:** Mengukur kepatuhan driver terhadap urutan rute yang direncanakan.
+* **Load Capacity:** Analisis keterisian truk (Full, Optimal, Overload) dengan filter spesifik untuk tipe storage **Dry** dan **Frozen**.
 
-### 3. 🚚 Estimasi Delivery (Tracking)
-* **Routing vs Actual:** Tabel komparasi detail antara rencana planner dengan eksekusi driver.
-* **Storage Filter:** Filter data berdasarkan kategori muatan (Dry/Frozen).
-* **Export Data:**
-    * **PDF/Zip:** Generate surat jalan atau tanda terima faktur secara massal.
-    * **Excel:** Unduh rekapitulasi data pengiriman.
+### 3. 🚚 Estimasi Delivery & Tracking
+* **Routing vs Actual:** Tabel komparasi antara rencana sistem (TMS) dengan eksekusi lapangan.
+* **Smart Filtering:** Filter data berdasarkan pencarian teks dan Tipe Storage (Dry/Frozen).
+* **Document Generation:**
+    * **PDF Generator:** Membuat Surat Jalan/Tanda Terima Faktur siap cetak (satuan atau *Batch Zip*).
+    * **Excel Export:** Mengunduh data rekapitulasi pengiriman.
 
-### 4. 🚛 Manajemen Data Kendaraan (Vehicle Master)
-* **Master Data:** Daftar lengkap kendaraan beserta driver utama (assignee).
-* **Smart Filtering:** Pencarian cepat dan filter berdasarkan tipe storage.
-* **Vehicle Tag Mapping:** Fitur untuk memetakan tag kendaraan yang belum terdaftar (misal: mapping `L300` atau `CDE-LONG` secara manual).
+### 4. 📍 Pembaruan Koordinat (Update Longlat)
+Fitur untuk memvalidasi dan memperbaiki data lokasi pelanggan:
+* **Interactive Map:** Visualisasi peta (Leaflet) yang menampilkan pergeseran dari titik lama ke titik baru.
+* **Distance Calculation:** Perhitungan otomatis selisih jarak (dalam meter) antara koordinat lama dan baru.
+* **History Log:** Melihat riwayat perubahan titik koordinat pelanggan.
 
-### 5. 🌐 Internalisasi (i18n)
-* Mendukung dua bahasa (**Bahasa Indonesia** & **English**) yang dapat diganti secara instan melalui *Language Floater*.
+### 5. 📈 Rangkuman & Laporan (Summary Reports)
+Modul pelaporan mendalam untuk analisis efisiensi armada:
+* **Truck Usage:** Analisis penggunaan truk (TMS vs Non-TMS, TVU, Interbranch).
+* **Average KM:** Laporan rata-rata kilometer tempuh armada per hari.
+* **Time Analysis:**
+    * **Time Driver:** Durasi kerja driver (Jam Berangkat vs Jam Pulang).
+    * **Time RO:** Analisis waktu pembuatan Release Order.
+* **Bulk Downloader:** Fitur unduh laporan bulanan/harian secara massal untuk kebutuhan audit.
+
+### 6. 🚛 Manajemen Data Kendaraan (Vehicle Master)
+* **Master Data:** Daftar lengkap kendaraan beserta driver utama (*assignee*).
+* **Tag Mapping System:** Fitur untuk memetakan tag kendaraan dari vendor (misal: `BOX-BESAR`) ke standar internal (misal: `CDD-LONG`).
+* **Conditional Data:** Menangani data kendaraan dengan kondisi operasional khusus.
+
+### 7. 🌐 Fitur Pendukung
+* **Multi-Language (i18n):** Dukungan Bahasa Indonesia & Inggris.
+* **Token Expiry Alert:** Notifikasi otomatis jika sesi API token akan segera habis.
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+## 🛠️ Teknologi Utama
 
-* **Framework:** [Next.js 14](https://nextjs.org/) (App Router)
-* **Language:** JavaScript (ES6+)
+* **Frontend:** [Next.js 14](https://nextjs.org/) (App Router), [React](https://react.dev/)
 * **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-* **State Management:** React Context API & LocalStorage
-* **Charts:** [Recharts](https://recharts.org/)
-* **Maps:** [React Leaflet](https://react-leaflet.js.org/)
-* **PDF Generation:** `@react-pdf/renderer`
-* **Excel Processing:** `xlsx-js-style`
+* **Visualization:** [Recharts](https://recharts.org/) (Grafik), [React Leaflet](https://react-leaflet.js.org/) (Peta)
+* **Documents:** `@react-pdf/renderer` (PDF), `xlsx-js-style` (Excel), `jszip` (Kompresi)
+* **State Management:** React Context API & LocalStorage Strategy
 
----
-
-## 📂 Struktur Project
-
-```bash
-├── app/
-│   ├── api/                  # API Routes (Proxy ke Backend Eksternal)
-│   ├── estimasi/             # Halaman Estimasi Delivery
-│   ├── vehicles/             # Halaman Master Data Kendaraan
-│   ├── page.js               # Halaman Utama (Login & Pilih Lokasi)
-│   └── layout.js             # Root Layout
-├── components/               # Komponen UI Reusable (Cards, Modals, Inputs)
-├── context/                  # Context Provider (LanguageContext)
-├── features/                 # Logika Bisnis per Modul
-│   ├── dashboard/            # Komponen Grafik & Tab Dashboard
-│   ├── estimasiDelivery/     # Logika Tracking & Generate PDF
-│   ├── userLogin/            # Logika Login User
-│   └── vehicleData/          # Logika Table Data Kendaraan
-└── lib/                      # Helper Functions, Constants, API Service
+Copyright © 2025 EDP - Afi. All rights reserved.
