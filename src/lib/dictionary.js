@@ -71,6 +71,8 @@ export const dictionary = {
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
         no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
+        login_success: 'Login berhasil!',
+        login_failed: 'Gagal login: {err}',
       },
     },
     vehicle_tag: {
@@ -682,6 +684,8 @@ export const dictionary = {
         no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
         success: 'Data has been saved!',
+        login_success: 'Login success!',
+        login_failed: 'Login failed: {err}',
       },
     },
     vehicle_tag: {

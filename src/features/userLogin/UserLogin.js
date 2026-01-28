@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getUsersByEmail } from '@/lib/apiService';
 import { ROLE_ID } from '@/lib/constants';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
@@ -27,7 +28,6 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     e.preventDefault();
     if (!emailInput) return;
 
-    // VALIDASI: Pastikan hubId (lokasi) ada dari props
     if (!hubId) {
       toastError(t('home.toast.no_session'));
       return;
@@ -59,37 +59,32 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     }
   };
 
-  const handleConfirmSelection = async () => {
-    if (!userToConfirm) {
+  const handleConfirmLogin = async () => {
+    if (!userToConfirm) return;
+    const { storedLocation } = getLocalStorage();
+    const targetCheckHubId = storedLocation || hubId;
+
+    if (!targetCheckHubId) {
+      toastError(t('home.toast.no_session'));
       setIsConfirmOpen(false);
       return;
     }
-
-    const targetHubId =
-      Array.isArray(userToConfirm.hubId) && userToConfirm.hubId.length > 0
-        ? userToConfirm.hubId[0]
-        : hubId;
+    await triggerCheck(targetCheckHubId, async () => {
+      try {
+        onUserSelect(userToConfirm);
+        toastSuccess(t('home.toast.login_success'));
+      } catch (err) {
+        toastError(t('home.toast.login_failed', { err: err.message }));
+      }
+    });
 
     setIsConfirmOpen(false);
-
-    if (!targetHubId) {
-      onUserSelect(userToConfirm);
-      toastSuccess(t('home.toast.success'));
-      return;
-    }
-
-    triggerCheck(targetHubId, () => {
-      onUserSelect(userToConfirm);
-      toastSuccess(t('home.toast.success'));
-      setUserToConfirm(null);
-    });
   };
 
-  const handleCancelSelection = () => {
+  const handleCancelConfirm = () => {
     setIsConfirmOpen(false);
     setUserToConfirm(null);
   };
-
   if (loading) {
     return (
       <div className="flex flex-col items-center">
@@ -125,8 +120,8 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
         confirmText={t('home.confirmation.confirm')}
         isOpen={isConfirmOpen}
         message={modalMessage}
-        onCancel={handleCancelSelection}
-        onConfirm={handleConfirmSelection}
+        onCancel={handleCancelConfirm}
+        onConfirm={handleConfirmLogin}
         title={t('home.confirmation.title')}
       />
 
