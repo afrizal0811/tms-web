@@ -8,7 +8,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext'; // 1. IMPORT CONTEXT
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
-import UserSelectionGrid from '@/features/userSelection/UserSelectionGrid';
+import UserLogin from '@/features/userLogin/UserLogin';
 import { ROLE_ID } from '@/lib/constants';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
@@ -264,14 +264,10 @@ export default function Home() {
       <SelectionLayout>
         <LanguageFloater />
         <div className="text-center w-full">
-          <h1 className="text-3xl font-bold">{t('home.select_user_title')}</h1>
-          <h2 className="text-lg mt-2 text-gray-500">
-            {t('home.location_label')}: <strong>{selectedLocationName}</strong>
-          </h2>
-          <UserSelectionGrid
+          <UserLogin
             hubId={selectedLocation}
-            roleIds={[ROLE_ID.planner, ROLE_ID.adminPlanner, ROLE_ID.plannerJkt, ROLE_ID.admin]}
             onUserSelect={handleUserSelect}
+            locationId={selectedLocationName}
           />
           <button
             onClick={handleResetAll}

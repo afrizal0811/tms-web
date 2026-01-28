@@ -2,7 +2,6 @@ import { toastError } from './toastHelper';
 
 /**
  * Helper internal untuk menangani fetch, parsing, dan error.
- * Ini menstandardisasi semua respons API Anda yang berbeda-beda.
  */
 async function apiFetch(url, errorMessage) {
   try {
@@ -12,9 +11,6 @@ async function apiFetch(url, errorMessage) {
     if (!response.ok) {
       throw new Error(data.error || errorMessage);
     }
-
-    // Menangani berbagai format respons API Anda:
-    // (Penting: Urutan pengecekan ini harus dari yang paling spesifik)
 
     // Untuk get-tasks, get-location-histories
     if (data && data.tasks && Array.isArray(data.tasks.data)) {
@@ -32,28 +28,22 @@ async function apiFetch(url, errorMessage) {
     if (Array.isArray(data)) {
       return data;
     }
-    // Fallback jika API mengembalikan 'data: null' atau 'tasks: null'
+
     if ((data && data.data === null) || (data && data.tasks === null)) {
-      return []; // Kembalikan array kosong
+      return [];
     }
 
     throw new Error(`Format data API tidak dikenal dari ${url}`);
   } catch (err) {
-    toastError(err.message); // Tampilkan error ke user
-    throw err; // Lempar error lagi agar komponen pemanggil bisa stop loading
+    toastError(err.message);
+    throw err;
   }
 }
 
-/**
- * Mengambil daftar semua Hub.
- */
 export async function getHubs() {
   return await apiFetch('/api/get-hubs', 'Gagal mengambil data hubs');
 }
 
-/**
- * Mengambil daftar Users berdasarkan filter.
- */
 export async function getUsers({ hubId, roleId, status }) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -64,8 +54,24 @@ export async function getUsers({ hubId, roleId, status }) {
 }
 
 /**
- * Mengambil daftar Vehicles berdasarkan filter.
+ * Mengambil data user berdasarkan email (q).
  */
+export async function getUsersByEmail(email, hubId) {
+  const params = new URLSearchParams();
+  params.append('q', email);
+  params.append('status', 'active');
+
+  // Tambahkan hubId agar pencarian terbatas pada lokasi yang dipilih
+  if (hubId) {
+    params.append('hubId', hubId);
+  }
+
+  return await apiFetch(
+    `/api/get-users?${params.toString()}`,
+    'Email tidak ditemukan di lokasi ini atau akun tidak aktif'
+  );
+}
+
 export async function getVehicles({ hubId, limit }) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -74,9 +80,6 @@ export async function getVehicles({ hubId, limit }) {
   return await apiFetch(`/api/get-vehicles?${params.toString()}`, 'Gagal mengambil data vehicles');
 }
 
-/**
- * Mengambil data summary hasil routing.
- */
 export async function getResultsSummary({ dateFrom, dateTo, hubId, limit }) {
   const params = new URLSearchParams();
   if (dateFrom) params.append('dateFrom', dateFrom);
@@ -90,9 +93,6 @@ export async function getResultsSummary({ dateFrom, dateTo, hubId, limit }) {
   );
 }
 
-/**
- * Mengambil data tasks (untuk DeliverySummary).
- */
 export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit }) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -105,9 +105,6 @@ export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit 
   return await apiFetch(`/api/get-tasks?${params.toString()}`, 'Gagal mengambil data tasks');
 }
 
-/**
- * Mengambil data location histories (untuk StartFinishSummary).
- */
 export async function getLocationHistories({
   timeFrom,
   timeTo,

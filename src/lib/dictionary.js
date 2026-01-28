@@ -38,8 +38,11 @@ export const dictionary = {
     },
     home: {
       back_btn: 'Kembali',
+      email: 'Surel',
       from: 'dari',
+      input_email_title: 'Masukkan Surel',
       location_label: 'Lokasi',
+      login: 'Masuk',
       next: 'Selanjutnya',
       page: 'Halaman',
       placeholder: 'Pilih Lokasi',
@@ -47,9 +50,9 @@ export const dictionary = {
       secret_mode: 'Mode Rahasia: Menampilkan semua user',
       select_branch: 'Silakan pilih lokasi cabang.',
       select_btn: 'Pilih',
-      select_user_title: 'PILIH PENGGUNA',
       vehicle_check: 'Memeriksa konfigurasi kendaraan...',
       welcome: 'SELAMAT DATANG!',
+      note: 'Gunakan surel yang sama dengan MileApp',
       confirmation: {
         cancel: 'Batal',
         caution: 'User tidak bisa diubah kembali',
@@ -61,6 +64,8 @@ export const dictionary = {
         success: 'Data berhasil disimpan!',
         error: 'Gagal memuat data: {err}',
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
+        no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
+        driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
       },
     },
     vehicle_tag: {
@@ -672,8 +677,11 @@ export const dictionary = {
     },
     home: {
       back_btn: 'Back',
+      email: 'Email',
       from: 'from',
+      input_email_title: 'Input Email',
       location_label: 'Location',
+      login: 'Login',
       next: 'Next',
       page: 'Page',
       placeholder: 'Select Location',
@@ -681,9 +689,9 @@ export const dictionary = {
       secret_mode: 'Secret Mode: Show all users',
       select_branch: 'Please select a branch location',
       select_btn: 'Select',
-      select_user_title: 'SELECT USER',
       vehicle_check: 'Checking vehicle configuration...',
       welcome: 'WELCOME!',
+      note: 'Use the same email as MileApp',
       confirmation: {
         cancel: 'No',
         caution: 'User cannot be changed later',
@@ -692,9 +700,11 @@ export const dictionary = {
         title: 'Confirmation User Selection',
       },
       toast: {
-        success: 'Data has been saved!',
+        driver_error: `The driver can’t log in. Please use another account`,
         error: 'Failed to load data: {err}',
+        no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
+        success: 'Data has been saved!',
       },
     },
     vehicle_tag: {
