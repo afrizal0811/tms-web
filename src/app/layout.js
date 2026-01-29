@@ -25,6 +25,12 @@ export default function RootLayout({ children }) {
         <LanguageProvider>
           <Toaster
             position="top-right"
+            containerStyle={{
+              top: 80,
+              left: 20,
+              bottom: 20,
+              right: 20,
+            }}
             toastOptions={{
               duration: 4000,
             }}

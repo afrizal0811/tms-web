@@ -32,7 +32,7 @@ export default function ConfirmModal({
   return createPortal(
     <div
       // Backdrop (Overlay)
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-999 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div

@@ -1,3 +1,4 @@
+// File: src/components/SessionGuard.js
 'use client';
 
 import SelectionLayout from '@/components/SelectionLayout';
@@ -12,20 +13,17 @@ export default function SessionGuard({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
-  // State untuk melacak apakah sesi sudah diverifikasi
+
   const [isVerified, setIsVerified] = useState(false);
 
+  const publicPaths = ['/', '/help'];
+  const isPublicPage = publicPaths.includes(pathname);
+
   useEffect(() => {
-    // 1. Jika kita ada di halaman Home ('/'),
-    // kita tidak perlu cek apa-apa. Langsung loloskan.
-    if (pathname === '/') {
-      //eslint-disable-next-line
-      setIsVerified(true);
+    if (isPublicPage) {
       return;
     }
 
-    // 2. Jika kita di halaman LAIN (misal /laporan, /vehicles):
-    // Cek localStorage.
     try {
       const {
         storedUser: user,
@@ -33,26 +31,25 @@ export default function SessionGuard({ children }) {
         storedLocationName: locationName,
       } = getLocalStorage();
 
-      // 3. Jika salah satu data penting tidak ada, redirect paksa.
+      // 3. Validasi
       if (!user || !location || !locationName) {
         toastError(t('home.toast.no_session'));
-        router.push('/'); // <-- Redirect ke Halaman "Selamat Datang"
+        router.push('/');
       } else {
-        // 4. Jika semua data ada, loloskan.
-        setIsVerified(true);
+        setTimeout(() => {
+          setIsVerified(true);
+        }, 0);
       }
     } catch (e) {
-      // (Jaga-jaga jika localStorage tidak bisa diakses)
-       toastError(t('home.toast.error', { err: e.message }));
+      toastError(t('home.toast.error', { err: e.message }));
       router.push('/');
     }
+  }, [pathname, router, t, isPublicPage]);
 
-    // Efek ini berjalan setiap kali halaman (pathname) berubah
-  }, [pathname, router, t]);
+  if (isPublicPage) {
+    return <>{children}</>;
+  }
 
-  // Selagi 'useEffect' di atas sedang memeriksa localStorage,
-  // kita tampilkan loading spinner. Ini mencegah "flash"
-  // halaman yang error sebelum redirect.
   if (!isVerified) {
     return (
       <SelectionLayout>
@@ -61,6 +58,5 @@ export default function SessionGuard({ children }) {
     );
   }
 
-  // Jika sudah terverifikasi (atau ada di '/'), tampilkan halaman
   return <>{children}</>;
 }
