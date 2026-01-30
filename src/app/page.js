@@ -11,7 +11,7 @@ import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
 import { toastError, toastInfo } from '../lib/toastHelper';
@@ -29,7 +29,8 @@ export default function Home() {
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     async function initializeApp() {
@@ -55,6 +56,7 @@ export default function Home() {
       }
       try {
         const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
+  
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setSelectedUser(user);
@@ -78,9 +80,15 @@ export default function Home() {
           }
         } else {
           setCurrentHubListView(processedHubs);
-          setTimeout(() => {
-            toastInfo(t('home.toast.info_tutorial'));
-          }, 500);
+          const hasShownSession = sessionStorage.getItem('hasShownHelpToast');
+          if (!hasShownSession && !toastShownRef.current) {
+            toastShownRef.current = true;
+            sessionStorage.setItem('hasShownHelpToast', 'true');
+
+            setTimeout(() => {
+              toastInfo(t('home.toast.info_tutorial'));
+            }, 500);
+          }
         }
 
         if (storedLocation && storedDrivers) {
@@ -137,7 +145,6 @@ export default function Home() {
   const handleUserSelect = (user) => {
     setLocalStorage('selectedUser', JSON.stringify(user));
     setSelectedUser(user);
-    // 2. Kode Toast DIHAPUS dari sini, agar tidak muncul setelah login
   };
 
   const handleResetAll = () => {
