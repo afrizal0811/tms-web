@@ -5,9 +5,9 @@ import ContentBlockRenderer from '@/components/ContentBlockRenderer';
 import ImageLightbox from '@/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
-import { pdf } from '@react-pdf/renderer';
 import { useMemo, useState } from 'react';
 import { helpTopics } from './data';
+import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
 
 export default function HelpPage() {
@@ -19,26 +19,54 @@ export default function HelpPage() {
   const [zoomedImage, setZoomedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedIds, setExpandedIds] = useState(new Set());
 
-  // Filter Topik
+  // --- HELPER: Ambil semua ID yang harus dibuka (Level 1 & Level 2) ---
+  const getAllExpandedIds = (category) => {
+    const catTopics = helpTopics.filter((t) => t.category === category);
+
+    // Level 1: Main Topics
+    const level1Ids = new Set(catTopics.map((t) => t.id));
+
+    // Level 2: Sub Topics (Hanya jika punya anak/SubSubTopic, atau buka semua subtopic juga boleh)
+    // Di sini saya buat "Buka Semua Subtopic" agar sub-sub-topic terlihat langsung.
+    const level2Ids = new Set();
+    catTopics.forEach((topic) => {
+      if (topic.subTopics) {
+        topic.subTopics.forEach((sub) => {
+          // Cek jika punya subSubTopics, maka parent-nya (sub.id) harus dibuka
+          if (sub.subSubTopics && sub.subSubTopics.length > 0) {
+            level2Ids.add(sub.id);
+          }
+        });
+      }
+    });
+
+    return { level1: level1Ids, level2: level2Ids };
+  };
+
+  // 1. INITIAL STATE: Langsung panggil helper untuk kategori awal ('planner')
+  const [expandedIds, setExpandedIds] = useState(() => getAllExpandedIds('planner').level1);
+  const [expandedSubIds, setExpandedSubIds] = useState(() => getAllExpandedIds('planner').level2);
+
   const filteredTopics = useMemo(() => {
     let topics = helpTopics.filter((topic) => topic.category === activeCategory);
-
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
       topics = topics.filter((topic) => {
         const isMainMatch = topic.title.toLowerCase().includes(lowerQuery);
-        const isSubMatch = topic.subTopics?.some((sub) =>
-          sub.title.toLowerCase().includes(lowerQuery)
-        );
+        const isSubMatch = topic.subTopics?.some((sub) => {
+          const subTitleMatch = sub.title.toLowerCase().includes(lowerQuery);
+          const subSubMatch = sub.subSubTopics?.some((subSub) =>
+            subSub.title.toLowerCase().includes(lowerQuery)
+          );
+          return subTitleMatch || subSubMatch;
+        });
         return isMainMatch || isSubMatch;
       });
     }
     return topics;
   }, [activeCategory, searchQuery]);
 
-  // Handler Search
   const handleSearchChange = (val) => {
     const query = val;
     setSearchQuery(query);
@@ -46,21 +74,51 @@ export default function HelpPage() {
     if (query.trim()) {
       const lowerQuery = query.toLowerCase();
       const newExpanded = new Set();
-      const currentCategoryTopics = helpTopics.filter((t) => t.category === activeCategory);
+      const newSubExpanded = new Set();
 
+      const currentCategoryTopics = helpTopics.filter((t) => t.category === activeCategory);
       currentCategoryTopics.forEach((topic) => {
+        let parentMatch = false;
+
+        if (topic.title.toLowerCase().includes(lowerQuery)) parentMatch = true;
+
         if (topic.subTopics) {
-          const isSubMatch = topic.subTopics.some((sub) =>
-            sub.title.toLowerCase().includes(lowerQuery)
-          );
-          if (isSubMatch || topic.title.toLowerCase().includes(lowerQuery)) {
-            newExpanded.add(topic.id);
-          }
+          topic.subTopics.forEach((sub) => {
+            const subMatch = sub.title.toLowerCase().includes(lowerQuery);
+            let subSubMatch = false;
+
+            if (sub.subSubTopics) {
+              const childMatch = sub.subSubTopics.some((ss) =>
+                ss.title.toLowerCase().includes(lowerQuery)
+              );
+              if (childMatch) {
+                subSubMatch = true;
+                newSubExpanded.add(sub.id);
+              }
+            }
+
+            if (subMatch || subSubMatch) {
+              parentMatch = true;
+              // Jika parent match karena anak/cucu match, kita buka juga level 2-nya
+              // supaya user langsung liat highlight-nya
+              if (sub.subSubTopics && sub.subSubTopics.length > 0) {
+                newSubExpanded.add(sub.id);
+              }
+            }
+          });
+        }
+
+        if (parentMatch) {
+          newExpanded.add(topic.id);
         }
       });
       setExpandedIds(newExpanded);
+      setExpandedSubIds(newSubExpanded);
     } else {
-      setExpandedIds(new Set());
+      // 2. RESET SEARCH: Kembali ke mode "Terbuka Semua (Level 1 & 2)"
+      const { level1, level2 } = getAllExpandedIds(activeCategory);
+      setExpandedIds(level1);
+      setExpandedSubIds(level2);
     }
   };
 
@@ -70,26 +128,52 @@ export default function HelpPage() {
     setActiveCategory(category);
     setManualSelection(null);
     setSearchQuery('');
-    setExpandedIds(new Set());
+
+    // 3. GANTI KATEGORI: Buka semua (Level 1 & 2) untuk kategori baru
+    const { level1, level2 } = getAllExpandedIds(category);
+    setExpandedIds(level1);
+    setExpandedSubIds(level2);
+  };
+
+  const toggleExpand = (e, topicId) => {
+    e.stopPropagation();
+    const newSet = new Set(expandedIds);
+    if (newSet.has(topicId)) newSet.delete(topicId);
+    else newSet.add(topicId);
+    setExpandedIds(newSet);
+  };
+
+  const toggleSubExpand = (e, subId) => {
+    e.stopPropagation();
+    const newSet = new Set(expandedSubIds);
+    if (newSet.has(subId)) newSet.delete(subId);
+    else newSet.add(subId);
+    setExpandedSubIds(newSet);
+  };
+
+  const handleParentClick = (topic) => {
+    setManualSelection(topic);
+    if (topic.subTopics && topic.subTopics.length > 0) {
+      const newSet = new Set(expandedIds);
+      if (!newSet.has(topic.id)) {
+        newSet.add(topic.id);
+        setExpandedIds(newSet);
+      }
+    }
   };
 
   const handleDownload = async (targetCategory) => {
     setIsGenerating(true);
     try {
-      // Filter semua topik kategori tersebut (mengabaikan search filter user)
       const categoryTopics = helpTopics.filter((t) => t.category === targetCategory);
-
       if (categoryTopics.length === 0) {
         alert('Tidak ada data untuk dicetak.');
         return;
       }
-
-      // Generate Blob
       const blob = await pdf(
         <PdfDocument category={targetCategory} topics={categoryTopics} />
       ).toBlob();
 
-      // Buat URL dan Download Otomatis
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -97,36 +181,12 @@ export default function HelpPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url); // Bersihkan memori
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('PDF Generation Error:', error);
       alert('Gagal membuat PDF.');
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const toggleExpand = (e, topicId) => {
-    e.stopPropagation();
-    const newSet = new Set(expandedIds);
-    if (newSet.has(topicId)) {
-      newSet.delete(topicId);
-    } else {
-      newSet.add(topicId);
-    }
-    setExpandedIds(newSet);
-  };
-
-  const handleParentClick = (topic) => {
-    setManualSelection(topic);
-    if (topic.subTopics && topic.subTopics.length > 0) {
-      const newSet = new Set(expandedIds);
-      if (newSet.has(topic.id)) {
-        newSet.delete(topic.id);
-      } else {
-        newSet.add(topic.id);
-      }
-      setExpandedIds(newSet);
     }
   };
 
@@ -136,9 +196,6 @@ export default function HelpPage() {
     return 'slate';
   };
   const theme = getThemeColor();
-
-  const plannerDocUrl = process.env.NEXT_PUBLIC_HELP_URL_PLANNER || '#';
-  const driverDocUrl = process.env.NEXT_PUBLIC_HELP_URL_DRIVER || '#';
 
   return (
     <>
@@ -152,7 +209,6 @@ export default function HelpPage() {
       )}
 
       <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">
@@ -180,12 +236,8 @@ export default function HelpPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
-          {/* --- SIDEBAR --- */}
-          {/* Perubahan di sini: class shrink-0 saja, tidak perlu flex-col di level ini */}
           <aside className="w-full lg:w-1/4 shrink-0">
-            {/* WRAPPER STICKY: Membungkus Search, TOC, dan Download Button sekaligus */}
             <div className="sticky top-24 flex flex-col gap-4">
-              {/* 1. SEARCH BAR */}
               <div className="w-full">
                 <SearchBar
                   value={searchQuery}
@@ -198,7 +250,6 @@ export default function HelpPage() {
                 />
               </div>
 
-              {/* 2. TABLE OF CONTENTS (Hapus class sticky dari sini karena parent sudah sticky) */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className={`px-4 py-3 border-b border-gray-100 bg-${theme}-50`}>
                   <h3 className={`font-semibold text-${theme}-800 text-sm uppercase`}>
@@ -207,8 +258,6 @@ export default function HelpPage() {
                 </div>
 
                 <nav className="p-2 space-y-1 max-h-[60vh] overflow-y-auto">
-                  {' '}
-                  {/* Kurangi max-h agar tombol download muat */}
                   {filteredTopics.length > 0 ? (
                     filteredTopics.map((topic) => {
                       const isParentActive = currentTopic?.id === topic.id;
@@ -217,7 +266,7 @@ export default function HelpPage() {
 
                       return (
                         <div key={topic.id} className="mb-1">
-                          {/* PARENT */}
+                          {/* LEVEL 1: Main Topic */}
                           <div
                             className={`group flex items-center justify-between w-full px-3 py-2.5 rounded-md text-sm font-bold transition-all cursor-pointer ${
                               isParentActive
@@ -249,23 +298,73 @@ export default function HelpPage() {
                             )}
                           </div>
 
-                          {/* CHILDREN */}
+                          {/* LEVEL 2: Sub Topic */}
                           {hasSubTopics && isExpanded && (
                             <div className="mt-1 ml-3 pl-3 border-l-2 border-gray-100 space-y-1 animate-in slide-in-from-top-1 duration-200">
                               {topic.subTopics.map((sub) => {
                                 const isSubActive = currentTopic?.id === sub.id;
+                                const hasSubSub = sub.subSubTopics && sub.subSubTopics.length > 0;
+                                const isSubExpanded = expandedSubIds.has(sub.id);
+
                                 return (
-                                  <button
-                                    key={sub.id}
-                                    onClick={() => setManualSelection(sub)}
-                                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-all truncate ${
-                                      isSubActive
-                                        ? `text-${theme}-600 bg-${theme}-50/50`
-                                        : 'text-slate-500 hover:text-slate-800 hover:bg-gray-50'
-                                    }`}
-                                  >
-                                    {sub.title}
-                                  </button>
+                                  <div key={sub.id}>
+                                    <div className="flex items-center justify-between w-full">
+                                      <button
+                                        onClick={() => setManualSelection(sub)}
+                                        className={`flex-1 text-left px-3 py-2 rounded-md text-sm font-medium transition-all truncate ${
+                                          isSubActive
+                                            ? `text-${theme}-600 bg-${theme}-50/50`
+                                            : 'text-slate-500 hover:text-slate-800 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {sub.title}
+                                      </button>
+
+                                      {/* Tombol Chevron untuk Level 3 */}
+                                      {hasSubSub && (
+                                        <button
+                                          onClick={(e) => toggleSubExpand(e, sub.id)}
+                                          className={`p-1 mr-1 rounded-full hover:bg-gray-200 transition-colors ml-1 focus:outline-none`}
+                                        >
+                                          <svg
+                                            className={`w-3 h-3 transition-transform duration-200 text-slate-400 ${isSubExpanded ? 'rotate-90' : 'rotate-0'}`}
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M9 5l7 7-7 7"
+                                            />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* LEVEL 3: Sub-Sub Topic */}
+                                    {hasSubSub && isSubExpanded && (
+                                      <div className="ml-4 pl-3 border-l border-gray-200 space-y-1 mt-1">
+                                        {sub.subSubTopics.map((subSub) => {
+                                          const isSubSubActive = currentTopic?.id === subSub.id;
+                                          return (
+                                            <button
+                                              key={subSub.id}
+                                              onClick={() => setManualSelection(subSub)}
+                                              className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-all truncate ${
+                                                isSubSubActive
+                                                  ? `text-${theme}-600 bg-${theme}-50/30`
+                                                  : 'text-slate-500 hover:text-slate-800 hover:bg-gray-50'
+                                              }`}
+                                            >
+                                              {subSub.title}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })}
                             </div>
@@ -281,7 +380,6 @@ export default function HelpPage() {
                 </nav>
               </div>
 
-              {/* 3. DOWNLOAD BUTTONS (Sekarang ikut Sticky karena di dalam wrapper) */}
               <div className="space-y-2 pl-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                   Download PDF Manual
@@ -303,10 +401,10 @@ export default function HelpPage() {
                 <button
                   onClick={() => handleDownload('driver')}
                   disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-sky-600 border border-gray-200 bg-white px-3 py-2 rounded-lg hover:border-sky-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-emerald-600 border border-gray-200 bg-white px-3 py-2 rounded-lg hover:border-emerald-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
-                    <span className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-sky-600 rounded-full"></span>
+                    <span className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-emerald-600 rounded-full"></span>
                   ) : (
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
@@ -318,7 +416,6 @@ export default function HelpPage() {
             </div>
           </aside>
 
-          {/* --- MAIN CONTENT --- */}
           <main className="w-full lg:w-3/4">
             {currentTopic ? (
               <div
@@ -339,7 +436,6 @@ export default function HelpPage() {
                   </span>
                   <h2 className="text-3xl font-bold text-slate-900">{currentTopic.title}</h2>
                 </div>
-
                 <div className="content-area">
                   {currentTopic.blocks && currentTopic.blocks.length > 0 ? (
                     currentTopic.blocks.map((block, idx) => (

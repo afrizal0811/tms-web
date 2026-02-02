@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#334155',
-    lineHeight: 1.6,
+    lineHeight: 1.5,
   },
   header: {
     marginBottom: 20,
@@ -27,48 +27,68 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 15,
   },
+
+  // LEVEL 1 (Main Topic)
   topicTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#0f172a',
-    marginBottom: 10,
+    marginBottom: 8,
     marginTop: 10,
     backgroundColor: '#f1f5f9',
     padding: 6,
     borderRadius: 4,
   },
+  contentBlock: {
+    marginBottom: 8,
+  },
+
+  // LEVEL 2 (Sub Topic)
   subTopicTitle: {
     fontSize: 12,
     fontWeight: 'bold',
     color: '#334155',
-    marginTop: 10,
+    marginTop: 8,
+    marginBottom: 4,
+    marginLeft: 15,
+  },
+  subContentBlock: {
     marginBottom: 6,
     marginLeft: 15,
   },
-  contentBlock: {
-    marginBottom: 8,
+
+  // LEVEL 3 (Sub-Sub Topic)
+  subSubTopicTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#475569',
+    marginTop: 6,
+    marginBottom: 2,
+    marginLeft: 30,
   },
-  subContentBlock: {
-    marginBottom: 8,
-    marginLeft: 15,
+  subSubContentBlock: {
+    marginBottom: 4,
+    marginLeft: 30,
   },
+
   paragraph: {
     marginBottom: 6,
     textAlign: 'justify',
   },
-  // List Styles
+
+  // List Styles (Dibuat Lebih Rapat)
   listContainer: {
-    marginLeft: 10,
-    marginBottom: 8,
+    marginLeft: 14, // Sedikit ditambah indentasinya agar jelas
+    marginBottom: 4,
   },
   listItem: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 1, // SANGAT RAPAT: Jarak antar item (hampir nempel, mengandalkan line-height)
   },
   bulletBox: {
-    width: 20,
+    width: 18,
     alignItems: 'flex-end',
-    marginRight: 8,
+    marginRight: 6,
   },
   bulletText: {
     fontSize: 10,
@@ -78,7 +98,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // --- FONT FIXES ---
+  // Font Styles
   bold: {
     fontFamily: 'Helvetica-Bold',
     color: '#000',
@@ -88,6 +108,10 @@ const styles = StyleSheet.create({
   },
   boldItalic: {
     fontFamily: 'Helvetica-BoldOblique',
+  },
+  link: {
+    color: '#2563eb',
+    textDecoration: 'underline',
   },
 
   // Image Styles
@@ -109,20 +133,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Video Box Style (Updated)
+  // Video Box Style
   videoBox: {
     padding: 8,
-    backgroundColor: '#f1f5f9', // Slate-100
-    border: '1px dashed #94a3b8', // Slate-400 dashed
+    backgroundColor: '#f1f5f9',
+    border: '1px dashed #94a3b8',
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   videoText: {
-    fontFamily: 'Helvetica-Bold', // BOLD
+    fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    color: '#0f172a', // Slate-900
+    color: '#0f172a',
     textAlign: 'center',
   },
 
@@ -137,37 +161,41 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- HELPER: RENDER CHILDREN RECURSIVE ---
-const renderNodes = (nodes) => {
+// --- 1. HELPER: RENDER INLINE ---
+const renderInlineNodes = (nodes) => {
   return Array.from(nodes).map((child, i) => {
-    // 1. Handle Text Node
     if (child.nodeName === '#text') {
       return <Text key={i}>{child.textContent}</Text>;
     }
 
-    // 2. Handle Elements (Bold/Italic)
+    // Logic deteksi style yang aman
+    let className = '';
+    if (child.getAttribute) className = child.getAttribute('class') || '';
+
     const isBold =
-      child.nodeName === 'STRONG' ||
-      child.nodeName === 'B' ||
-      (child.classList && child.classList.contains('font-bold'));
+      child.nodeName === 'STRONG' || child.nodeName === 'B' || className.includes('font-bold');
     const isItalic =
-      child.nodeName === 'EM' ||
-      child.nodeName === 'I' ||
-      (child.classList && child.classList.contains('italic'));
+      child.nodeName === 'EM' || child.nodeName === 'I' || className.includes('italic');
+    const isLink = child.nodeName === 'A';
 
     let styleToUse = {};
-    if (isBold && isItalic) {
-      styleToUse = styles.boldItalic;
-    } else if (isBold) {
-      styleToUse = styles.bold;
-    } else if (isItalic) {
-      styleToUse = styles.italic;
+    if (isBold && isItalic) styleToUse = styles.boldItalic;
+    else if (isBold) styleToUse = styles.bold;
+    else if (isItalic) styleToUse = styles.italic;
+
+    if (isLink) {
+      const href = child.getAttribute('href');
+      return (
+        <Link key={i} src={href} style={[styles.link, styleToUse]}>
+          {renderInlineNodes(child.childNodes)}
+        </Link>
+      );
     }
 
     if (child.childNodes && child.childNodes.length > 0) {
       return (
         <Text key={i} style={styleToUse}>
-          {renderNodes(child.childNodes)}
+          {renderInlineNodes(child.childNodes)}
         </Text>
       );
     }
@@ -180,7 +208,109 @@ const renderNodes = (nodes) => {
   });
 };
 
-// --- HELPER: HTML PARSER ---
+// --- 2. HELPER: RENDER BLOCK (DENGAN LOGIKA RAPAT) ---
+const renderBlockNodes = (elements, isInsideList = false) => {
+  return elements.map((el, index) => {
+    // --- PARAGRAPH <p> ---
+    if (el.nodeName === 'P') {
+      let className = '';
+      if (el.getAttribute) className = el.getAttribute('class') || '';
+      const isBold = className.includes('font-bold');
+
+      // FIX: Jika di dalam list, 'marginBottom' diset 0.
+      // Kita spread styles.paragraph agar properti lain (textAlign) tetap ada.
+      const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
+
+      return (
+        <View key={index} style={blockStyle}>
+          <Text style={isBold ? styles.bold : {}}>{renderInlineNodes(el.childNodes)}</Text>
+        </View>
+      );
+    }
+
+    // --- LISTS <ul> & <ol> ---
+    if (el.nodeName === 'UL' || el.nodeName === 'OL') {
+      let className = '';
+      if (el.getAttribute) className = el.getAttribute('class') || '';
+      if (!className && el.className && typeof el.className === 'string') className = el.className;
+
+      const isOrdered = el.nodeName === 'OL' || className.includes('list-decimal');
+      const lis = Array.from(el.children);
+
+      // FIX UTAMA: Jika Nested List, hilangkan Margin Top & Bottom Container
+      const containerStyle = isInsideList
+        ? { ...styles.listContainer, marginBottom: 0, marginTop: 0 }
+        : styles.listContainer;
+
+      return (
+        <View key={index} style={containerStyle}>
+          {lis.map((li, i) => (
+            <View key={i} style={styles.listItem}>
+              <View style={styles.bulletBox}>
+                <Text style={styles.bulletText}>{isOrdered ? `${i + 1}.` : '•'}</Text>
+              </View>
+
+              <View style={styles.listItemContent}>
+                {renderBlockNodes(Array.from(li.childNodes), true)}
+              </View>
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    // --- IMAGES (DIV Wrapper) ---
+    if (el.nodeName === 'DIV') {
+      const img = el.querySelector('img');
+      if (img) {
+        const imgSrc = img.getAttribute('src');
+        const imgAlt = img.getAttribute('alt') || 'Image';
+        const finalSrc =
+          imgSrc.startsWith('/') && typeof window !== 'undefined'
+            ? `${window.location.origin}${imgSrc}`
+            : imgSrc;
+
+        return (
+          <View key={index} style={{ marginVertical: 5 }} wrap={false}>
+            <Image src={finalSrc} style={styles.image} alt={imgAlt} />
+          </View>
+        );
+      }
+      return <View key={index}>{renderBlockNodes(Array.from(el.childNodes), isInsideList)}</View>;
+    }
+
+    // --- IMAGES (Direct IMG) ---
+    if (el.nodeName === 'IMG') {
+      const imgSrc = el.getAttribute('src');
+      const imgAlt = el.getAttribute('alt') || 'Image';
+      const finalSrc =
+        imgSrc.startsWith('/') && typeof window !== 'undefined'
+          ? `${window.location.origin}${imgSrc}`
+          : imgSrc;
+
+      return (
+        <View key={index} style={{ marginVertical: 5 }} wrap={false}>
+          <Image src={finalSrc} style={styles.image} alt={imgAlt} />
+        </View>
+      );
+    }
+
+    // --- Fallback text ---
+    if (el.nodeName === '#text' && el.textContent.trim()) {
+      const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
+
+      return (
+        <Text key={index} style={blockStyle}>
+          {el.textContent}
+        </Text>
+      );
+    }
+
+    return null;
+  });
+};
+
+// --- 3. HTML PARSER WRAPPER ---
 const HtmlToPdf = ({ htmlContent }) => {
   if (typeof window === 'undefined') return null;
 
@@ -188,70 +318,10 @@ const HtmlToPdf = ({ htmlContent }) => {
   const doc = parser.parseFromString(htmlContent, 'text/html');
   const elements = Array.from(doc.body.childNodes);
 
-  return (
-    <View>
-      {elements.map((el, index) => {
-        // --- PARAGRAPH <p> ---
-        if (el.nodeName === 'P') {
-          return (
-            <View key={index} style={styles.paragraph}>
-              <Text>{renderNodes(el.childNodes)}</Text>
-            </View>
-          );
-        }
-
-        // --- LISTS <ul> & <ol> ---
-        if (el.nodeName === 'UL' || el.nodeName === 'OL') {
-          const isOrdered = el.nodeName === 'OL';
-          const lis = Array.from(el.children);
-
-          return (
-            <View key={index} style={styles.listContainer}>
-              {lis.map((li, i) => (
-                <View key={i} style={styles.listItem}>
-                  {/* Bullet / Number */}
-                  <View style={styles.bulletBox}>
-                    <Text style={styles.bulletText}>{isOrdered ? `${i + 1}.` : '•'}</Text>
-                  </View>
-
-                  {/* List Content */}
-                  <View style={styles.listItemContent}>
-                    {Array.from(li.childNodes).map((child, ci) => {
-                      if (child.nodeName === 'P') {
-                        return (
-                          <View key={ci} style={{ marginBottom: 2 }}>
-                            <Text>{renderNodes(child.childNodes)}</Text>
-                          </View>
-                        );
-                      }
-                      if (child.nodeName === '#text' && child.textContent.trim()) {
-                        return <Text key={ci}>{child.textContent}</Text>;
-                      }
-                      return null;
-                    })}
-                  </View>
-                </View>
-              ))}
-            </View>
-          );
-        }
-
-        // --- Fallback text biasa ---
-        if (el.nodeName === '#text' && el.textContent.trim()) {
-          return (
-            <Text key={index} style={styles.paragraph}>
-              {el.textContent}
-            </Text>
-          );
-        }
-
-        return null;
-      })}
-    </View>
-  );
+  return <View>{renderBlockNodes(elements)}</View>;
 };
 
-// --- BLOCK RENDERER ---
+// --- 4. MAIN BLOCK RENDERER ---
 const BlockRenderer = ({ block }) => {
   if (block.type === 'text') {
     return <HtmlToPdf htmlContent={block.content} />;
@@ -265,13 +335,12 @@ const BlockRenderer = ({ block }) => {
 
     return (
       <View style={styles.imageContainer} wrap={false}>
-        <Image src={imgSrc} style={styles.image} />
+        <Image src={imgSrc} style={styles.image} alt={block.alt || 'Tutorial Image'} />
         {block.alt && <Text style={styles.imageCaption}>{block.alt}</Text>}
       </View>
     );
   }
 
-  // --- MODIFIKASI VIDEO BLOCK ---
   if (block.type === 'video') {
     return (
       <View style={styles.videoBox} wrap={false}>
@@ -283,7 +352,7 @@ const BlockRenderer = ({ block }) => {
   return null;
 };
 
-// --- MAIN DOCUMENT ---
+// --- 5. MAIN DOCUMENT COMPONENT ---
 export const PdfDocument = ({ category, topics }) => (
   <Document>
     <Page size="A4" style={styles.page}>
@@ -292,35 +361,60 @@ export const PdfDocument = ({ category, topics }) => (
         <Text style={styles.headerTitle}>User Guide: {category}</Text>
       </View>
 
-      {/* Content Loop */}
-      {topics.map((topic, index) => (
-        <View key={topic.id} style={styles.section}>
-          {/* Judul Utama */}
-          <Text style={styles.topicTitle}>
-            {index + 1}. {topic.title}
-          </Text>
+      {/* Content Loop Level 1 */}
+      {topics.map((topic, index) => {
+        const mainNumber = `${index + 1}.`;
 
-          <View style={styles.contentBlock}>
-            {topic.blocks?.map((block, i) => (
-              <BlockRenderer key={i} block={block} />
-            ))}
-          </View>
+        return (
+          <View key={topic.id} style={styles.section}>
+            <Text style={styles.topicTitle}>
+              {mainNumber} {topic.title}
+            </Text>
 
-          {/* Sub Topik */}
-          {topic.subTopics?.map((sub, subIndex) => (
-            <View key={sub.id} style={styles.subContentBlock}>
-              <Text style={styles.subTopicTitle}>
-                {index + 1}.{subIndex + 1} {sub.title}
-              </Text>
-              {sub.blocks?.map((block, k) => (
-                <BlockRenderer key={k} block={block} />
+            <View style={styles.contentBlock}>
+              {topic.blocks?.map((block, i) => (
+                <BlockRenderer key={i} block={block} />
               ))}
             </View>
-          ))}
-        </View>
-      ))}
 
-      {/* Footer Halaman */}
+            {/* Content Loop Level 2 */}
+            {topic.subTopics?.map((sub, subIndex) => {
+              const subNumber = `${mainNumber}${subIndex + 1}.`;
+
+              return (
+                <View key={sub.id} style={styles.subContentBlock}>
+                  <Text style={styles.subTopicTitle}>
+                    {subNumber} {sub.title}
+                  </Text>
+
+                  {sub.blocks?.map((block, k) => (
+                    <BlockRenderer key={k} block={block} />
+                  ))}
+
+                  {/* Content Loop Level 3 */}
+                  {sub.subSubTopics?.map((subSub, subSubIndex) => {
+                    const subSubNumber = `${subNumber}${subSubIndex + 1}.`;
+
+                    return (
+                      <View key={subSub.id} style={styles.subSubContentBlock}>
+                        <Text style={styles.subSubTopicTitle}>
+                          {subSubNumber} {subSub.title}
+                        </Text>
+
+                        {subSub.blocks?.map((block, m) => (
+                          <BlockRenderer key={m} block={block} />
+                        ))}
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
+
+      {/* Footer */}
       <Text
         style={styles.pageNumber}
         render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
