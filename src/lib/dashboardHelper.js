@@ -10,7 +10,6 @@ function parseDateSafe(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// --- UPDATE: SERVICE LEVEL (STACKED DATA & HUB FILTER) ---
 export function processServiceLevelData(
   allTasks,
   view = 'monthly',
@@ -19,17 +18,21 @@ export function processServiceLevelData(
 ) {
   if (!allTasks || isEmpty(allTasks)) return [];
 
-  // Cek Hub Spesial untuk Pending GR
-  const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2']; // Cikarang & Daan Mogot
+  const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
   const isSpecialHub = hubId && SPECIAL_HUBS.includes(hubId);
 
   const grouped = {};
 
   allTasks.forEach((task) => {
-    // Filter: Hanya task yang punya driver (assignee) — sama seperti sebelumnya
+    // 1. Cek Assignee
     if (!task.assignee || isEmpty(task.assignee)) return;
 
-    // Jika hubId diberikan, coba cocokkan dari beberapa kemungkinan field di task
+    // 2. FILTER: Hapus Flow Pickup dari perhitungan Total Task
+    if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
+      return;
+    }
+
+    // 3. Filter Hub
     if (hubId) {
       const taskHub =
         task.hubId ||
@@ -40,11 +43,11 @@ export function processServiceLevelData(
         task.sourceHubId ||
         null;
       if (taskHub && String(taskHub) !== String(hubId)) {
-        return; // skip task yang bukan dari hub terpilih
+        return;
       }
     }
 
-    // gunakan parseDateSafe supaya konsisten dengan processSequenceAccuracyData
+    // 4. Cek Tanggal
     const dateStr = task.doneTime || task.createdTime;
     const parsed = parseDateSafe(dateStr);
     if (!parsed) return;
@@ -65,7 +68,7 @@ export function processServiceLevelData(
       label = wibTime.toLocaleDateString('id-ID', { month: 'short' });
     } else if (view === 'daily') {
       if (monthKey !== selectedMonthKey) return;
-      if (wibTime.getDay() === 0) return; // Skip Minggu
+      if (wibTime.getDay() === 0) return;
       key = dayKey;
       label = day;
     } else {
@@ -85,14 +88,12 @@ export function processServiceLevelData(
       };
     }
 
-    // IMPORTANT: selalu hitung total (untuk menyamakan dengan SequenceAccuracy)
+    // Hitung Total (Task Pickup sudah dikecualikan di atas)
     grouped[key].total += 1;
 
-    // Hitung status (increment masing-masing jika ada label).
-    // Terima berbagai variasi penulisan untuk safety.
-    if (task.label && task.label.length > 0) {
-      const rawStatus = String(task.label).toUpperCase();
-      // normalisasi beberapa bentuk
+    // Cek Status Delivery (Menggunakan statusDelivery)
+    if (task.statusDelivery) {
+      const rawStatus = String(task.statusDelivery).toUpperCase();
       const status = rawStatus.replace('_', ' ').trim();
 
       if (status.startsWith('SUKSES')) {
@@ -102,7 +103,6 @@ export function processServiceLevelData(
         status === 'PENDING GR' ||
         status === 'PENDING_GR'
       ) {
-        // tetap catat PENDING_GR selalu — total sudah dihitung di atas
         grouped[key].PENDING_GR += 1;
       } else if (status.startsWith('PENDING')) {
         grouped[key].PENDING += 1;
@@ -114,7 +114,6 @@ export function processServiceLevelData(
     }
   });
 
-  // Format Output: tambahkan rate (SUKSES/total)
   return Object.values(grouped)
     .sort((a, b) => a.key.localeCompare(b.key))
     .map((item) => ({
@@ -122,14 +121,16 @@ export function processServiceLevelData(
       rate: item.total > 0 ? parseFloat(((item.SUKSES / item.total) * 100).toFixed(1)) : 0,
     }));
 }
-// ... (Fungsi processSequenceAccuracyData & processExceptionData TETAP SAMA) ...
-// (Copy paste fungsi processSequenceAccuracyData & processExceptionData dari file sebelumnya jika perlu,
-// tapi pastikan processServiceLevelData diganti dengan yang di atas)
 
 export function processSequenceAccuracyData(allTasks, view = 'monthly', selectedMonthKey = null) {
   if (!allTasks || isEmpty(allTasks)) return [];
   const driverDateMap = {};
   allTasks.forEach((task) => {
+    // 1. FILTER: Hapus Flow Pickup (UPDATE BARU)
+    if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
+      return;
+    }
+
     const email = task.assignee && task.assignee[0] ? task.assignee[0].toLowerCase() : null;
     if (!email) return;
     const dateStr = task.doneTime || task.createdTime;
@@ -212,6 +213,11 @@ export function processExceptionData(
   const isSpecialHub = hubId && SPECIAL_HUBS.includes(hubId);
   const grouped = {};
   allTasks.forEach((task) => {
+    // 1. FILTER: Hapus Flow Pickup (UPDATE BARU - Konsistensi)
+    if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
+      return;
+    }
+
     const dateStr = task.doneTime || task.createdTime;
     if (!dateStr) return;
     const d = new Date(dateStr);
@@ -247,8 +253,9 @@ export function processExceptionData(
       };
     }
     grouped[key].totalTasks += 1;
-    if (task.label && task.label.length > 0) {
-      const status = task.label[0].toUpperCase();
+    // Menggunakan statusDelivery juga di sini sesuai perubahan global
+    if (task.statusDelivery) {
+      const status = String(task.statusDelivery).toUpperCase();
       if (status === 'PENDING') {
         grouped[key].pending += 1;
         grouped[key].totalException += 1;
