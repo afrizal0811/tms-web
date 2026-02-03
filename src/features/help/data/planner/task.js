@@ -501,6 +501,47 @@ export const taskTopic = [
           },
         ],
       },
+      {
+        id: 'task-tracking',
+        title: 'Pelacakan Tugas',
+        blocks: [
+          {
+            type: 'text',
+            content: `<p>Pada subtopik ini akan dijelaskan mengenai pelacakan (<span class='italic'>tracking</span>) tugas, yaitu untuk memonitor tugas, mempermudah pemantauan lokasi sopir terkini, tugas yang sedang berjalan atau sudah selesai, informasi jarak yang ditempuh, hingga perkiraan waktu tiba (ETA) dan waktu berangkat (ETD). Modul <span class='font-bold'>Pelacakan</span> dapat dilihat pada modul <span class='font-bold'>Tugas</span>. Selain itu, Berikut ini penjelasan untuk masing-masing aksi. Perhatikan video berikut ini:</p>`,
+          },
+          {
+            type: 'text',
+            content: `
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <iframe 
+                    width="100%" 
+                    height="450" 
+                    src="https://www.youtube.com/embed/0G41UxEgcX0" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <p>Berikut ini penjelasannya:</p>
+                <ul class="list-decimal pl-5 space-y-2 mt-2">
+                <li>
+                  <p>Pada modul pelacakan akan muncul data pengguna, total jumlah tugas yang sedang berjalan dan sudah selesai, waktu dan jarak pengiriman. <span class='italic'>Planner</span> dapat melakukan filter berdasarkan tanggal pengiriman atau nama sopir yang menerima tugas. Selain itu, ditampilkan pula lokasi tiap sopir secara <span class='italic'>real-time</span>.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/tracking-1.png" alt="track-1" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+                <li>
+                  <p>Saat dipilih salah satu sopir, akan muncul detail tugas dan lokasi sopir tersebut. Untuk tugas yang sedang berjalan ditandai ikon berwarna <span class='text-orange-400'>oranye</span> dan tugas yang sudah selesai ditandai ikon berwarna <span class='text-green-400'>hijau</span>. Saat ikon-ikon tersebut ditekan, maka akan memunculkan detail dari tugas tersebut. Selain itu, di bagian kanan layar terdapat daftar tugas, urutan perkiraan, dan urutan sebenarnya untuk tugas yang dikerjakan oleh sopir tersebut.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/tracking-2.png" alt="track-2" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+              </ul>
+              `,
+          },
+        ],
+      },
     ],
   },
 ];
