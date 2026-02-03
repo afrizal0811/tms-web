@@ -95,7 +95,7 @@ export const taskTopic = [
         blocks: [
           {
             type: 'text',
-            content: `<p>Pada sub topik ini akan dijelaskan cara untuk membuat tugas baru. Penambahan tugas baru di <span class='font-bold'>MileApp</span> dapat dilakukan dengan dua cara, yaitu <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span> dan <span class='italic'>input</span> manual. Berikut ini penjelasan untuk masing-masing cara penambahan tugas baru</p>`,
+            content: `<p>Pada subtopik ini akan dijelaskan cara untuk membuat tugas baru. Penambahan tugas baru di <span class='font-bold'>MileApp</span> dapat dilakukan dengan dua cara, yaitu <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span> dan <span class='italic'>input</span> manual. Berikut ini penjelasan untuk masing-masing cara penambahan tugas baru</p>`,
           },
           {
             type: 'text',
@@ -225,7 +225,7 @@ export const taskTopic = [
           {
             type: 'text',
             content:
-              '<p>Pada sub topik ini akan dijelaskan cara untuk mengelola tugas, mulai dari melihat (<span class="italic">view</span>), mengubah (<span class="italic">edit</span>), menghapus (<span class="italic">delete</span>), serta melakukan (<span class="italic">do</span>) tugas. Tombol aksi ini bisa dilakukan per tugas dan secara massal. Berikut ini penjelasan untuk masing-masing aksi.</p>',
+              '<p>Pada subtopik ini akan dijelaskan cara untuk mengelola tugas, mulai dari melihat (<span class="italic">view</span>), mengubah (<span class="italic">edit</span>), menghapus (<span class="italic">delete</span>), serta melakukan (<span class="italic">do</span>) tugas. Tombol aksi ini bisa dilakukan per tugas dan secara massal. Berikut ini penjelasan untuk masing-masing aksi.</p>',
           },
           {
             type: 'text',
@@ -418,6 +418,86 @@ export const taskTopic = [
                 </div>  
               </li>
             </ul>`,
+          },
+        ],
+      },
+      {
+        id: 'task-export',
+        title: 'Export Tugas',
+        blocks: [
+          {
+            type: 'text',
+            content: `<p>Pada subtopik ini akan dijelaskan cara untuk melakukan <span class='italic'>export</span> tugas. Terdapat 2 cara untuk melakukan <span class='italic'>export</span> tugas, yaitu <span class='italic'>export</span> di modul Tugas dan <span class='italic'>export</span> di modul <span class='italic'>Import/Export</span>. Berikut ini penjelasan untuk masing-masing cara <span class='italic'>export</span> tugas.</p>`,
+          },
+          {
+            type: 'text',
+            content: `<p><span class='font-bold text-3xl underline'>Modul Tugas</span></p>
+            <p>Semua tugas yang ada, dapat di-<span class='italic'>export</span> di modul Tugas. Perhatikan video berikut ini:</p>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <iframe 
+                    width="100%" 
+                    height="450" 
+                    src="https://www.youtube.com/embed/0G41UxEgcX0" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <p>Berikut ini penjelasannya:</p>
+                <ul class="list-decimal pl-5 space-y-2 mt-2">
+                <li>
+                  <p>Pada modul Tugas, berikan filter untuk menampilkan tugas yang ingin di-<span class='italic'>export</span>. Tekan tombol <span class='italic'>Export</span>, lalu tekan tombol <span class='italic'>Export Task</span>. Tunggu hingga proses selesai.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/export-task-1.png" alt="expt-1" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+                <li>
+                  <p>Saat proses selesai, tekan tombol modul <span class='italic'>Import/Export</span>. Pilih submodul <span class='italic'>Data Export</span>. Tekan ikon unduh. Tunggu hingga proses selesai.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/export-task-2.png" alt="expt-2" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+              </ul>
+              `,
+          },
+          {
+            type: 'text',
+            content: `<p><span class='font-bold text-3xl underline'>Modul Import/Export</span></p>
+            <p>Selain melalui modul Tugas, tugas dapat di-<span class='italic'>export</span> melalui modul <span class='italic'>Import/Export</span>. Perhatikan video berikut ini:</p>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <iframe 
+                    width="100%" 
+                    height="450" 
+                    src="https://www.youtube.com/embed/Osp5zpVAHKc" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <p>Berikut ini penjelasannya:</p>
+                <ul class="list-decimal pl-5 space-y-2 mt-2">
+                <li>
+                  <p>Pada modul <span class='italic'>Import/Export</span>, pilih submodul <span class='italic'>Data Export</span>, lalu tekan tombol <span class='italic'>New</span>.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/export-task-3.png" alt="expt-3" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+                <li>
+                  <p>Muncul jendela <span class='italic'>Data Export</span>. Pada tipe pilih <span class='font-bold'>Task/Tugas</span> , pilih rentang tanggal tugas, dan pilih lokasi cabang. Pada detail, untuk tipe <span class='italic'>export</span> pilih <span class='font-bold'>All Data</span>, pilih alur dan status yang diinginkan, serta aktifkan semua detail data. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tunggu hingga proses selesai.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/export-task-4.png" alt="expt-4" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+                <li>
+                  <p>Tekan ikon unduh. Tunggu hingga proses selesai.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/export-task-5.png" alt="expt-5" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>
+              </ul>
+              `,
           },
         ],
       },
