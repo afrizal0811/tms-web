@@ -10,11 +10,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#334155',
-    lineHeight: 1.5,
   },
   header: {
     marginBottom: 20,
-    borderBottom: '2px solid #0284c7',
+    borderBottomWidth: 2,
+    borderBottomStyle: 'solid',
+    borderBottomColor: '#0284c7',
     paddingBottom: 10,
   },
   headerTitle: {
@@ -74,16 +75,17 @@ const styles = StyleSheet.create({
   paragraph: {
     marginBottom: 6,
     textAlign: 'justify',
+    lineHeight: 0.9,
   },
 
-  // List Styles (Dibuat Lebih Rapat)
+  // List Styles
   listContainer: {
-    marginLeft: 14, // Sedikit ditambah indentasinya agar jelas
+    marginLeft: 14,
     marginBottom: 4,
   },
   listItem: {
     flexDirection: 'row',
-    marginBottom: 1, // SANGAT RAPAT: Jarak antar item (hampir nempel, mengandalkan line-height)
+    marginBottom: 1,
   },
   bulletBox: {
     width: 18,
@@ -93,6 +95,8 @@ const styles = StyleSheet.create({
   bulletText: {
     fontSize: 10,
     fontWeight: 'bold',
+    // Opsional: lineHeight untuk bullet
+    lineHeight: 2,
   },
   listItemContent: {
     flex: 1,
@@ -123,7 +127,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxHeight: 300,
     objectFit: 'contain',
-    border: '1px solid #e2e8f0',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#e2e8f0',
   },
   imageCaption: {
     fontSize: 8,
@@ -137,7 +143,9 @@ const styles = StyleSheet.create({
   videoBox: {
     padding: 8,
     backgroundColor: '#f1f5f9',
-    border: '1px dashed #94a3b8',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#94a3b8',
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
@@ -168,7 +176,6 @@ const renderInlineNodes = (nodes) => {
       return <Text key={i}>{child.textContent}</Text>;
     }
 
-    // Logic deteksi style yang aman
     let className = '';
     if (child.getAttribute) className = child.getAttribute('class') || '';
 
@@ -208,7 +215,7 @@ const renderInlineNodes = (nodes) => {
   });
 };
 
-// --- 2. HELPER: RENDER BLOCK (DENGAN LOGIKA RAPAT) ---
+// --- 2. HELPER: RENDER BLOCK ---
 const renderBlockNodes = (elements, isInsideList = false) => {
   return elements.map((el, index) => {
     // --- PARAGRAPH <p> ---
@@ -217,8 +224,6 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       if (el.getAttribute) className = el.getAttribute('class') || '';
       const isBold = className.includes('font-bold');
 
-      // FIX: Jika di dalam list, 'marginBottom' diset 0.
-      // Kita spread styles.paragraph agar properti lain (textAlign) tetap ada.
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
 
       return (
@@ -237,7 +242,6 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       const isOrdered = el.nodeName === 'OL' || className.includes('list-decimal');
       const lis = Array.from(el.children);
 
-      // FIX UTAMA: Jika Nested List, hilangkan Margin Top & Bottom Container
       const containerStyle = isInsideList
         ? { ...styles.listContainer, marginBottom: 0, marginTop: 0 }
         : styles.listContainer;
@@ -259,7 +263,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       );
     }
 
-    // --- IMAGES (DIV Wrapper) ---
+    // --- IMAGES (DIV Wrapper dengan Custom Width) ---
     if (el.nodeName === 'DIV') {
       const img = el.querySelector('img');
       if (img) {
@@ -270,9 +274,23 @@ const renderBlockNodes = (elements, isInsideList = false) => {
             ? `${window.location.origin}${imgSrc}`
             : imgSrc;
 
+        // FITUR WIDTH: Ambil width dari style DIV pembungkus
+        let customWidth = null;
+        const divStyle = el.getAttribute('style');
+        if (divStyle) {
+          const widthMatch = divStyle.match(/width:\s*([^;]+)/i);
+          if (widthMatch) {
+            customWidth = widthMatch[1].trim();
+          }
+        }
+
         return (
-          <View key={index} style={{ marginVertical: 5 }} wrap={false}>
-            <Image src={finalSrc} style={styles.image} alt={imgAlt} />
+          <View key={index} style={styles.imageContainer} wrap={false}>
+            <Image
+              src={finalSrc}
+              style={[styles.image, customWidth ? { width: customWidth } : {}]}
+              alt={imgAlt}
+            />
           </View>
         );
       }
@@ -289,8 +307,17 @@ const renderBlockNodes = (elements, isInsideList = false) => {
           : imgSrc;
 
       return (
-        <View key={index} style={{ marginVertical: 5 }} wrap={false}>
+        <View key={index} style={styles.imageContainer} wrap={false}>
           <Image src={finalSrc} style={styles.image} alt={imgAlt} />
+        </View>
+      );
+    }
+
+    // --- VIDEOS (Direct IFRAME) ---
+    if (el.nodeName === 'IFRAME') {
+      return (
+        <View key={index} style={styles.videoBox} wrap={false}>
+          <Text style={styles.videoText}>Video hanya bisa dilihat di website</Text>
         </View>
       );
     }

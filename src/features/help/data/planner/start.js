@@ -44,7 +44,19 @@ export const startTopic = [
           </li>
           <li>
             <p class="font-bold">Pengaturan</p>
-            <p>Penggunaan bahasa di apliakasi ini dapat diubah dengan cara:</p>
+            <p>Bahasa yang digunakan dalam aplikasi ini dapat diubah sesuai dengan kebutuhan. Perhatikan video berikut ini:</p>
+            <div style="margin-top: 10px; margin-bottom: 10px;">
+              <iframe 
+                width="100%" 
+                height="450" 
+                src="https://www.youtube.com/embed/kV_hDSno59A" 
+                title="YouTube video player" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+              </iframe>
+            </div>
+            <p class='underline'>Berikut ini penjelasannya:</p>
             <ul class="list-disc pl-5 space-y-2 mt-2">
               <li>
                 <p>Tekan ikon profil di pojok kanan atas. Lalu, pilih <span class='italic'>Profile</span>.</p>
@@ -60,13 +72,9 @@ export const startTopic = [
               </li>
             </ul>
           </li>
-        </ul>`,
+        </ul>
+        `,
       },
-      {
-        type: 'text',
-        content: '<p class="underline">Untuk memperjelas, perhatikan video berikut ini:</p>',
-      },
-      { type: 'video', src: 'https://www.youtube.com/embed/kV_hDSno59A' },
     ],
   },
 ];

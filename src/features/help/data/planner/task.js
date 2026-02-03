@@ -39,7 +39,7 @@ export const taskTopic = [
             </li>           
             <li>
                 <p class="font-bold">Filter</p>
-                <p>Filter task berdasarkan status, nama <span class='italic'>assignee</span>, nama alur (<span class='italic'>flow</span>), tanggal mulai dan selesai tugas, serta filter manual.</p>
+                <p>Filter tugas berdasarkan status, nama <span class='italic'>assignee</span>, nama alur (<span class='italic'>flow</span>), tanggal mulai dan selesai tugas, serta filter manual.</p>
             </li>
             <li>
                 <p class="font-bold"><span class='italic'>New Task</span></p>
@@ -91,21 +91,28 @@ export const taskTopic = [
     subTopics: [
       {
         id: 'task-create',
-        title: 'Membuat Task Baru',
+        title: 'Membuat Tugas Baru',
         blocks: [
           {
             type: 'text',
-            content: `<p>Penambahan tugas baru di <span class='font-bold'>MileApp</span> dapat dilakukan dengan dua cara, yaitu <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span> dan <span class='italic'>import</span> manual. Berikut ini penjelasan untuk masing-masing cara penambahan tugas baru</p>`,
+            content: `<p>Pada sub topik ini akan dijelaskan cara untuk membuat tugas baru. Penambahan tugas baru di <span class='font-bold'>MileApp</span> dapat dilakukan dengan dua cara, yaitu <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span> dan <span class='italic'>input</span> manual. Berikut ini penjelasan untuk masing-masing cara penambahan tugas baru</p>`,
           },
-        ],
-        subSubTopics: [
           {
-            id: 'task-create-acumatica',
-            title: 'Import Acumatica', // Level 3
-            blocks: [
-              {
-                type: 'text',
-                content: `<p>Penambahan tugas baru dapat dilakukan dengan menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>. Berikut penjelasan dan cara melakukannya:</p>
+            type: 'text',
+            content: `<p><span class='font-bold text-3xl underline'>Import dari Acumatica</span></p>
+            <p>Penambahan tugas baru dapat dilakukan dengan menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>. Perhatikan video berikut ini:</p>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <iframe 
+                    width="100%" 
+                    height="450" 
+                    src="https://www.youtube.com/embed/g7rEVfviOQ8" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <p>Berikut ini penjelasannya:</p>
                 <ul class="list-decimal pl-5 space-y-2 mt-2">
                 <li>
                   <p>Buka menu <span class='italic underline'>Order Template TMS Report</span> di <span class='font-bold'>Acumatica</span>.</p>
@@ -126,12 +133,31 @@ export const taskTopic = [
                   </div>
                 </li>
                 <li>
-                  <p>Periksa tiap kolom yang tersedia untuk memastikan tidak ada data yang kosong. Data yang kosong dapat <span class='font-bold'>diisikan sementara</span> oleh <span class='italic'>planner</span> dan harus dilaporkan supaya master data customer dapat diperbarui.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-4.png" alt="acm-4" style="width: 100%; border-radius: 4px;" />
+                  <p style="margin-bottom: 15px;">Berdasarkan hasil file excel tersebut, periksa tiap kolom yang tersedia untuk memastikan tidak ada data yang kosong. Data yang kosong dapat <span class='font-bold'>diisikan sementara</span> oleh <span class='italic'>planner</span> dan harus dilaporkan supaya master data customer dapat diperbarui.</p>
+                  <div style="width: 100%;" class="mx-auto">
+                      <img 
+                          src="/images/tutorial/planner/acumatica-4.png" 
+                          alt="acm-4" 
+                          style="width: 100%; border-radius: 4px; border: 1px solid #e2e8f0;" 
+                      />
                   </div>
-                </li>
-                <li>
+              </li>
+              </ul>
+              <p class="my-2">Setelah selesai di-<span class='italic'>export</span>, maka data itu harus dimasukkan ke dalam <span class='font-bold'>MileApp</span>. Perhatikan video berikut ini:</p>
+              <div style="margin-bottom: 15px;">
+                <iframe 
+                  width="100%" 
+                  height="450" 
+                  src="https://www.youtube.com/embed/hZM4vlAiVEw" 
+                  title="Tutorial Cek Data Kosong" 
+                  frameborder="0" 
+                  allowfullscreen
+                  style="border-radius: 8px;">
+                </iframe>
+              </div>
+              <p>Berikut ini penjelasannya:</p>     
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+                <li>            
                   <p>Di <span class='font-bold'>MileApp</span>, tekan modul <span class='italic underline'>Custom Upload Delivery</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
                       <img src="/images/tutorial/planner/cud-1.png" alt="cud-1" style="width: 100%; border-radius: 4px;" />
@@ -150,110 +176,248 @@ export const taskTopic = [
                   </div>
                 </li>
                 <li>
-                  <p>Tekan tombol <span class='italic'>Submit</span> dan tunggu sampai prosesnya selesai. Setelah itu, akan muncul notifikasi bahwa data telah berhasil atau gagal diunggah.</p>
+                  <p>Tekan tombol <span class='italic'>Submit</span> dan tunggu sampai prosesnya selesai. Setelah itu, akan muncul notifikasi bahwa data telah berhasil ataupun gagal diunggah.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
                       <img src="/images/tutorial/planner/cud-4.png" alt="cud-4" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
-              </ul>`,
-              },
-              {
-                type: 'text',
-                content:
-                  '<p class="underline">Untuk memperjelas, perhatikan video berikut ini:</p>',
-              },
-              { type: 'video', src: 'https://www.youtube.com/embed/g7rEVfviOQ8' },
-            ],
+              </ul>
+              `,
           },
           {
-            id: 'task-create-manual',
-            title: 'Input Manual', // Level 3
-            blocks: [
-              {
-                type: 'text',
-                content: `<p>Penambahan tugas baru dapat dilakukan dengan menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>. Berikut penjelasan dan cara melakukannya:</p>
+            type: 'text',
+            content: `<p></p><span class='font-bold text-3xl underline'>Input Manual</span></p>
+            <p>Selain menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>, penambahan tugas baru dapat dilakukan dengan cara <span class='italic'>input</span> manual. Proses ini hanya dilakukan <span class='font-bold'>jika dibutuhkan saja</span>,   sehingga <span class='italic'>planner</span> tetap menggunakan <span class='italic'>import</span> file Excel. Perhatikan video berikut ini:</p>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <iframe 
+                    width="100%" 
+                    height="450" 
+                    src="https://www.youtube.com/embed/YDcbmhUpZlg" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <p class='underline'>Berikut ini penjelasannya:</p>
                 <ul class="list-decimal pl-5 space-y-2 mt-2">
                 <li>
-                  <p>Buka menu <span class='italic underline'>Order Template TMS Report</span> di <span class='font-bold'>Acumatica</span>.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-1.png" alt="acm-1" style="width: 100%; border-radius: 4px;" />
+                  <p>Tekan tombol <span class='italic'>New</span>.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/add-task-1.png" alt="add-task-1" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
-                  <p>Sesuaikan filter yang diperlukan, yaitu lokasi cabang, tanggal mulai, tanggal selesai, gudang, dan tipe penyimpanan. Lalu tekan tombol <span class='italic'>Run Report</span>.</p>
+                  <p>Isikan semua data pada kolom yang tersedia. Kolom dengan bertanda bintang (<span class='font-bold text-red-500'>*</span>) <span class='font-bold'>wajib diisikan</span>. Lalu, tekan tombol <span class='italic'>Submit</span>. </p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 80%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-2.png" alt="acm-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/add-task-2-v2.png" alt="add-task-2" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
-                <li>
-                  <p>Tekan tombol <span class='italic'>Export</span>, lalu pilih Excel. Tunggu hingga proses unduh selesai.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-3.png" alt="acm-3" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-                <li>
-                  <p>Periksa tiap kolom yang tersedia untuk memastikan tidak ada data yang kosong. Data yang kosong dapat <span class='font-bold'>diisikan sementara</span> oleh <span class='italic'>planner</span> dan harus dilaporkan supaya master data customer dapat diperbarui.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-4.png" alt="acm-4" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-                <li>
-                  <p>Di <span class='font-bold'>MileApp</span>, tekan modul <span class='italic underline'>Custom Upload Delivery</span>.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-1.png" alt="cud-1" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-                <li>
-                  <p>Di modul ini, pilih hub sesuai lokasi cabang, pilih alur <span class = 'italic'>Delivery</span>, lalu unggah file Excel yang sudah di-<span class='italic'>export</span>.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-2.png" alt="cud-2" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-                <li>
-                  <p>Tekan tombol <span class='italic'>Upload</span> dan tunggu sampai prosesnya selesai. Setelah itu, muncul tabel dari hasil pemrosesan. Jika masih ada kesalahan pada data yang diunggah, maka <span class='font-bold'>lakukan perbaikan</span> pada file Excel yang digunakan, lalu <span class='font-bold'>unggah ulang</span> file Excel yang sudah diperbaiki.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-3.png" alt="cud-3" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-                <li>
-                  <p>Tekan tombol <span class='italic'>Submit</span> dan tunggu sampai prosesnya selesai. Setelah itu, akan muncul notifikasi bahwa data telah berhasil atau gagal diunggah.</p>
-                  <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-4.png" alt="cud-4" style="width: 100%; border-radius: 4px;" />
-                  </div>
-                </li>
-              </ul>`,
-              },
-              {
-                type: 'text',
-                content:
-                  '<p class="underline">Untuk memperjelas, perhatikan video berikut ini:</p>',
-              },
-              { type: 'video', src: 'https://www.youtube.com/embed/YDcbmhUpZlg' },
-            ],
+              </ul>
+              `,
           },
         ],
       },
       {
-        id: 'task-edit',
-        title: 'Mengedit & Menghapus',
+        id: 'task-action',
+        title: 'Aksi Tugas', // Level 2
         blocks: [
           {
             type: 'text',
             content:
-              '<p>Jika terjadi kesalahan input, Anda dapat mengedit task selama statusnya belum "On Delivery".</p>',
-          },
-          { type: 'video', src: 'https://www.youtube.com/embed/another-video-id' },
-        ],
-        subSubTopics: [
-          {
-            id: 'task-create-manual',
-            title: 'Input Manual', // Level 3
-            blocks: [{ type: 'text', content: '<p>Cara input satu per satu...</p>' }],
+              '<p>Pada sub topik ini akan dijelaskan cara untuk mengelola tugas, mulai dari melihat (<span class="italic">view</span>), mengubah (<span class="italic">edit</span>), menghapus (<span class="italic">delete</span>), serta melakukan (<span class="italic">do</span>) tugas. Tombol aksi ini bisa dilakukan per tugas dan secara massal. Berikut ini penjelasan untuk masing-masing aksi.</p>',
           },
           {
-            id: 'task-create-bulk',
-            title: 'Upload Excel (Bulk)', // Level 3
-            blocks: [{ type: 'text', content: '<p>Cara upload banyak task sekaligus...</p>' }],
+            type: 'text',
+            content: `<p><span class='font-bold text-3xl underline'>Aksi Per Tugas</span></p>
+            <p>Setiap baris tugas yang sudah tersimpan dapat dikelola oleh <span class='italic'>planner</span> dengan menggunakan beberapa tombol aksi (<span class='italic'>action</span>). Perhatikan video berikut ini:</p>
+              <div style="margin-top: 10px; margin-bottom: 10px;">
+                <iframe 
+                  width="100%" 
+                  height="450" 
+                  src="https://www.youtube.com/embed/sbLs5Do8J3Q" 
+                  title="YouTube video player" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+              <p>Berikut ini penjelasannya:</p>
+            `,
+          },
+          {
+            type: 'text',
+            content: `<p class='font-bold text-xl underline mt-2'>View Task (Lihat Tugas)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Tekan tombol <span class='italic'>View Task</span> (nomor 1).</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela <span class='italic'>View Task</span>. Terdapat informasi yang terkait dengan tugas tersebut.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-view.png" alt="act-2" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `              
+            <p class='font-bold text-xl underline mt-2'>Edit Task (Sunting Tugas)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Tekan tombol <span class='italic'>Edit</span> (nomor 2).</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela <span class='italic'>Edit Task</span>. Lakukan perubahan sesuai kebutuhan. Kolom dengan bertanda bintang (<span class='font-bold text-red-500'>*</span>) <span class='font-bold'>wajib diisikan</span>. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. </p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-edit-v2.png" alt="act-3" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Tombol <span class='italic'>Edit Task</span> hanya muncul pada tugas dengan status <span class='font-bold italic'>Unassigned</span> atau <span class='font-bold italic'>Ongoing</span></p>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `              
+            <p class='font-bold text-xl underline mt-2'>Delete Task (Hapus Tugas)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Tekan tombol <span class='italic'>Delete Task</span> (nomor 3).</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Delete</span> untuk menghapus data dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tugas yang sudah terhapus <span class='font-bold'>tidak dapat dikembalikan</span>.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-delete.png" alt="act-4" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Tombol <span class='italic'>Delete Task</span> hanya muncul pada tugas dengan status <span class='font-bold italic'>Unassigned</span> atau <span class='font-bold italic'>Ongoing</span>.</p>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `              
+            <p class='font-bold text-xl underline mt-2'>Do Task (Lakukan Tugas)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Tekan tombol <span class='italic'>Do Task</span> (nomor 4).</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Tombol <span class='italic'>Do Task</span> hanya muncul jika <span class='italic'>planner</span> <span class='font-bold'>menambahkan nama akunnya</span> pada tugas tersebut. Aksi ini digunakan saat ingin menyelesaikan tugas yang sudah diberikan kepada sopir tanpa harus menggunakan akun dari sopir tersebut.</p>
+              </li>
+              <li>
+                <p>Setelah ditekan, maka akan muncul jendela <span class='italic'>Do Task</span>. Kerjakan tugas tersebut dengan mengisikan kolom yang tersedia sesuai dengan alur yang digunakan hingga selesai.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-do.png" alt="act-5" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `<p><span class='font-bold text-3xl underline'>Aksi Massal</span></p>
+            <p>Aksi untuk tugas yang tersedia dapat dilakukan secara massal (<span class='italic'>bulk</span>). Aksi ini hanya bisa dilakukan pada task dengan status<span class='font-bold italic'>Unassigned</span> atau <span class='font-bold italic'>Ongoing</span>. Perhatikan video berikut ini:</p>
+              <div style="margin-top: 10px; margin-bottom: 10px;">
+                <iframe 
+                  width="100%" 
+                  height="450" 
+                  src="https://www.youtube.com/embed/H9-5XqYDpXY" 
+                  title="YouTube video player" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+              <p>Berikut ini penjelasannya:</p>
+            `,
+          },
+          {
+            type: 'text',
+            content: `<p class='font-bold text-xl underline mt-2'>Edit Time (Sunting Waktu)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Pilih tugas yang ingin diubah waktunya, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Edit Time</span.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-6" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela <span class='italic'>Edit Time</span>. Lakukan perubahan jam mulai dan selesai sebagai rentang waktu aktifnya tugas tersebut. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/bulk-time.png" alt="act-7" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `<p class='font-bold text-xl underline mt-2'>Assign (Tugaskan)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Pilih tugas yang ingin diberikan, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Assign</span.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-8" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela <span class='italic'>Assign Task</span>. Pilih nama akun yang akan menangani tugas tersebut, umumnya adalah akun sopir. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/bulk-assign.png" alt="act-9" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `<p class='font-bold text-xl underline mt-2'>Unassign (Melepas Tugas)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Pilih tugas yang ingin dilepas tugasnya, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Unassign</span.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-10" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Unassign</span> untuk melepas tugas dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/bulk-unassign.png" alt="act-11" style="width: 100%; border-radius: 4px;" />
+                </div>  
+              </li>
+            </ul>`,
+          },
+          {
+            type: 'text',
+            content: `<p class='font-bold text-xl underline mt-2'>Delete (Hapus)</p>
+              <ul class="list-decimal pl-5 space-y-2 mt-2">
+              <li>
+                <p>Pilih tugas yang ingin dihapus, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Delete</span.</p>
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-12" style="width: 100%; border-radius: 4px;" />
+                </div>
+              </li>
+              <li>
+                <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Delete</span> untuk melepas tugas dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tugas yang sudah terhapus <span class='font-bold'>tidak dapat dikembalikan</span>.</p> 
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/bulk-delete.png" alt="act-13" style="width: 100%; border-radius: 4px;" />
+                </div>  
+              </li>
+            </ul>`,
           },
         ],
       },
