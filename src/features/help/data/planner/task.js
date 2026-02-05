@@ -2,7 +2,7 @@ export const taskTopic = [
   {
     id: 'task-management',
     category: 'planner',
-    title: 'Manajemen Tugas (Task)',
+    title: 'Tugas (Task)',
     blocks: [
       {
         type: 'text',
@@ -15,7 +15,7 @@ export const taskTopic = [
       },
       {
         type: 'text',
-        content: `<p>Berikut penjelasan:</p>
+        content: `<p>Berikut ini penjelasannya:</p>
           <ol class="list-decimal pl-5 space-y-2 mt-2">
             <li>
                 <p class="font-bold">Modul <span class='italic'>Task</span></p>
@@ -91,7 +91,7 @@ export const taskTopic = [
     subTopics: [
       {
         id: 'task-create',
-        title: 'Membuat Tugas Baru',
+        title: 'Membuat Tugas',
         blocks: [
           {
             type: 'text',
@@ -99,7 +99,7 @@ export const taskTopic = [
           },
           {
             type: 'text',
-            content: `<p><span class='font-bold text-3xl underline'>Import dari Acumatica</span></p>
+            content: `<p class='font-bold text-2xl underline mb-2'>Import dari Acumatica</p>
             <p>Penambahan tugas baru dapat dilakukan dengan menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>. Perhatikan video berikut ini:</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
@@ -117,19 +117,19 @@ export const taskTopic = [
                 <li>
                   <p>Buka menu <span class='italic underline'>Order Template TMS Report</span> di <span class='font-bold'>Acumatica</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-1.png" alt="acm-1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/acumatica-1.png" alt="Order Template TMS Report" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Sesuaikan filter yang diperlukan, yaitu lokasi cabang, tanggal mulai, tanggal selesai, gudang, dan tipe penyimpanan. Lalu tekan tombol <span class='italic'>Run Report</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 80%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-2.png" alt="acm-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/acumatica-2.png" alt="Pengaturan Laporan" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Tekan tombol <span class='italic'>Export</span>, lalu pilih Excel. Tunggu hingga proses unduh selesai.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/acumatica-3.png" alt="acm-3" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/acumatica-3.png" alt="Unduh Laporan" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
@@ -137,7 +137,7 @@ export const taskTopic = [
                   <div style="width: 100%;" class="mx-auto">
                       <img 
                           src="/images/tutorial/planner/acumatica-4.png" 
-                          alt="acm-4" 
+                          alt="Periksa Data" 
                           style="width: 100%; border-radius: 4px; border: 1px solid #e2e8f0;" 
                       />
                   </div>
@@ -160,25 +160,25 @@ export const taskTopic = [
                 <li>            
                   <p>Di <span class='font-bold'>MileApp</span>, tekan modul <span class='italic underline'>Custom Upload Delivery</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-1.png" alt="cud-1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/cud-1.png" alt="Custom Upload Delivery" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Di modul ini, pilih hub sesuai lokasi cabang, pilih alur <span class = 'italic'>Delivery</span>, lalu unggah file Excel yang sudah di-<span class='italic'>export</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-2.png" alt="cud-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/cud-2.png" alt="Pengaturan" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Tekan tombol <span class='italic'>Upload</span> dan tunggu sampai prosesnya selesai. Setelah itu, muncul tabel dari hasil pemrosesan. Jika masih ada kesalahan pada data yang diunggah, maka <span class='font-bold'>lakukan perbaikan</span> pada file Excel yang digunakan, lalu <span class='font-bold'>unggah ulang</span> file Excel yang sudah diperbaiki.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-3.png" alt="cud-3" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/cud-3.png" alt="Unggah Data" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Tekan tombol <span class='italic'>Submit</span> dan tunggu sampai prosesnya selesai. Setelah itu, akan muncul notifikasi bahwa data telah berhasil ataupun gagal diunggah.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/cud-4.png" alt="cud-4" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/cud-4.png" alt="Submit Data" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ul>
@@ -186,7 +186,7 @@ export const taskTopic = [
           },
           {
             type: 'text',
-            content: `<p></p><span class='font-bold text-3xl underline'>Input Manual</span></p>
+            content: `<p class='font-bold text-2xl underline mb-2'>Input Manual</p>
             <p>Selain menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>, penambahan tugas baru dapat dilakukan dengan cara <span class='italic'>input</span> manual. Proses ini hanya dilakukan <span class='font-bold'>jika dibutuhkan saja</span>,   sehingga <span class='italic'>planner</span> tetap menggunakan <span class='italic'>import</span> file Excel. Perhatikan video berikut ini:</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
@@ -199,18 +199,18 @@ export const taskTopic = [
                     allowfullscreen>
                   </iframe>
                 </div>
-                <p class='underline'>Berikut ini penjelasannya:</p>
+                <p>Berikut ini penjelasannya:</p>
                 <ul class="list-decimal pl-5 space-y-2 mt-2">
                 <li>
                   <p>Tekan tombol <span class='italic'>New</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/add-task-1.png" alt="add-task-1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/add-task-1.png" alt="Tombol New" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Isikan semua data pada kolom yang tersedia. Kolom dengan bertanda bintang (<span class='font-bold text-red-500'>*</span>) <span class='font-bold'>wajib diisikan</span>. Lalu, tekan tombol <span class='italic'>Submit</span>. </p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 80%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/add-task-2-v2.png" alt="add-task-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/add-task-2.png" alt="Jendela Tambah Tugas" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ul>
@@ -220,16 +220,16 @@ export const taskTopic = [
       },
       {
         id: 'task-action',
-        title: 'Aksi Tugas', // Level 2
+        title: 'Kelola Tugas', // Level 2
         blocks: [
           {
             type: 'text',
             content:
-              '<p>Pada subtopik ini akan dijelaskan cara untuk mengelola tugas, mulai dari melihat (<span class="italic">view</span>), mengubah (<span class="italic">edit</span>), menghapus (<span class="italic">delete</span>), serta melakukan (<span class="italic">do</span>) tugas. Tombol aksi ini bisa dilakukan per tugas dan secara massal. Berikut ini penjelasan untuk masing-masing aksi.</p>',
+              '<p>Pada subtopik ini akan dijelaskan cara untuk mengelola tugas, mulai dari melihat (<span class="italic">view</span>), mengubah (<span class="italic">edit</span>), menghapus (<span class="italic">delete</span>), serta melakukan (<span class="italic">do</span>) tugas. Tombol aksi ini bisa dilakukan per tugas dan secara massal. Berikut ini penjelasan untuk masing-masing pengelolaan.</p>',
           },
           {
             type: 'text',
-            content: `<p><span class='font-bold text-3xl underline'>Aksi Per Tugas</span></p>
+            content: `<p class='font-bold text-2xl underline mb-2'>Kelola Per Tugas</p>
             <p>Setiap baris tugas yang sudah tersimpan dapat dikelola oleh <span class='italic'>planner</span> dengan menggunakan beberapa tombol aksi (<span class='italic'>action</span>). Perhatikan video berikut ini:</p>
               <div style="margin-top: 10px; margin-bottom: 10px;">
                 <iframe 
@@ -252,13 +252,13 @@ export const taskTopic = [
               <li>
                 <p>Tekan tombol <span class='italic'>View Task</span> (nomor 1).</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action.png" alt="Lokasi Tombol View" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela <span class='italic'>View Task</span>. Terdapat informasi yang terkait dengan tugas tersebut.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 90%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-view.png" alt="act-2" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-view.png" alt="Jendela View" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ul>`,
@@ -271,13 +271,13 @@ export const taskTopic = [
               <li>
                 <p>Tekan tombol <span class='italic'>Edit</span> (nomor 2).</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action.png" alt="Lokasi Tombol Edit" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela <span class='italic'>Edit Task</span>. Lakukan perubahan sesuai kebutuhan. Kolom dengan bertanda bintang (<span class='font-bold text-red-500'>*</span>) <span class='font-bold'>wajib diisikan</span>. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. </p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-edit-v2.png" alt="act-3" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-edit.png" alt="Jendela Edit" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
@@ -293,13 +293,13 @@ export const taskTopic = [
               <li>
                 <p>Tekan tombol <span class='italic'>Delete Task</span> (nomor 3).</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action.png" alt="Lokasi Tombol Delete" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Delete</span> untuk menghapus data dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tugas yang sudah terhapus <span class='font-bold'>tidak dapat dikembalikan</span>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-delete.png" alt="act-4" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-delete.png" alt="Konfirmasi Delete" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
@@ -315,7 +315,7 @@ export const taskTopic = [
               <li>
                 <p>Tekan tombol <span class='italic'>Do Task</span> (nomor 4).</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action.png" alt="act-1" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action.png" alt="Lokasi Tombol Do" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
@@ -324,14 +324,14 @@ export const taskTopic = [
               <li>
                 <p>Setelah ditekan, maka akan muncul jendela <span class='italic'>Do Task</span>. Kerjakan tugas tersebut dengan mengisikan kolom yang tersedia sesuai dengan alur yang digunakan hingga selesai.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-do.png" alt="act-5" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-do.png" alt="Jendela Do Task" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ul>`,
           },
           {
             type: 'text',
-            content: `<p><span class='font-bold text-3xl underline'>Aksi Massal</span></p>
+            content: `<p class='font-bold text-2xl underline mb-2'>Kelola Massal</p>
             <p>Aksi untuk tugas yang tersedia dapat dilakukan secara massal (<span class='italic'>bulk</span>). Aksi ini hanya bisa dilakukan pada task dengan status<span class='font-bold italic'>Unassigned</span> atau <span class='font-bold italic'>Ongoing</span>. Perhatikan video berikut ini:</p>
               <div style="margin-top: 10px; margin-bottom: 10px;">
                 <iframe 
@@ -354,13 +354,13 @@ export const taskTopic = [
               <li>
                 <p>Pilih tugas yang ingin diubah waktunya, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Edit Time</span.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-6" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="Lokasi Tombol Edit Time" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela <span class='italic'>Edit Time</span>. Lakukan perubahan jam mulai dan selesai sebagai rentang waktu aktifnya tugas tersebut. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/bulk-time.png" alt="act-7" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/bulk-time.png" alt="Jendela Edit Time" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ul>`,
@@ -372,13 +372,13 @@ export const taskTopic = [
               <li>
                 <p>Pilih tugas yang ingin diberikan, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Assign</span.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-8" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="Lokasi Tombol Assign" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela <span class='italic'>Assign Task</span>. Pilih nama akun yang akan menangani tugas tersebut, umumnya adalah akun sopir. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/bulk-assign.png" alt="act-9" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/bulk-assign.png" alt="Jendela Assign" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ul>`,
@@ -390,13 +390,13 @@ export const taskTopic = [
               <li>
                 <p>Pilih tugas yang ingin dilepas tugasnya, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Unassign</span.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-10" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="Lokasi Tombol Unassign" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Unassign</span> untuk melepas tugas dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/bulk-unassign.png" alt="act-11" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/bulk-unassign.png" alt="Konfirmasi Unassign" style="width: 100%; border-radius: 4px;" />
                 </div>  
               </li>
             </ul>`,
@@ -408,13 +408,13 @@ export const taskTopic = [
               <li>
                 <p>Pilih tugas yang ingin dihapus, lalu tekan tombol Aksi (<span class='italic'>Action</span>). Tekan tombol <span. class='italic'>Delete</span.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/action-bulk.png" alt="act-12" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/action-bulk.png" alt="Lokasi Tombol Delete" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Muncul jendela konfirmasi. Tekan tombol <span class='italic'>Delete</span> untuk melepas tugas dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tugas yang sudah terhapus <span class='font-bold'>tidak dapat dikembalikan</span>.</p> 
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/bulk-delete.png" alt="act-13" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/bulk-delete.png" alt="Konfirmasi Delete" style="width: 100%; border-radius: 4px;" />
                 </div>  
               </li>
             </ul>`,
@@ -431,7 +431,8 @@ export const taskTopic = [
           },
           {
             type: 'text',
-            content: `<p><span class='font-bold text-3xl underline'>Modul Tugas</span></p>
+            content: `
+            <p class='font-bold text-2xl underline mb-2'>Modul Tugas</p>
             <p>Semua tugas yang ada, dapat di-<span class='italic'>export</span> di modul Tugas. Perhatikan video berikut ini:</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
@@ -447,15 +448,15 @@ export const taskTopic = [
                 <p>Berikut ini penjelasannya:</p>
                 <ul class="list-decimal pl-5 space-y-2 mt-2">
                 <li>
-                  <p>Pada modul Tugas, berikan filter untuk menampilkan tugas yang ingin di-<span class='italic'>export</span>. Tekan tombol <span class='italic'>Export</span>, lalu tekan tombol <span class='italic'>Export Task</span>. Tunggu hingga proses selesai.</p>
+                  <p>Pada modul Tugas, berikan filter sesuai kebutuhan untuk menampilkan tugas yang ingin di-<span class='italic'>export</span>. Tekan tombol <span class='italic'>Export</span>, lalu tekan tombol <span class='italic'>Export Task</span>. Tunggu hingga proses selesai.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/export-task-1.png" alt="expt-1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/export-task-1.png" alt="Export di Modul Tugas" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Saat proses selesai, tekan tombol modul <span class='italic'>Import/Export</span>. Pilih submodul <span class='italic'>Data Export</span>. Tekan ikon unduh. Tunggu hingga proses selesai.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/export-task-2.png" alt="expt-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/export-task-2.png" alt="Unduh File" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ul>
@@ -463,7 +464,7 @@ export const taskTopic = [
           },
           {
             type: 'text',
-            content: `<p><span class='font-bold text-3xl underline'>Modul Import/Export</span></p>
+            content: `<p class='font-bold text-2xl underline mb-2'>Modul Import/Export</p>
             <p>Selain melalui modul Tugas, tugas dapat di-<span class='italic'>export</span> melalui modul <span class='italic'>Import/Export</span>. Perhatikan video berikut ini:</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
@@ -481,19 +482,19 @@ export const taskTopic = [
                 <li>
                   <p>Pada modul <span class='italic'>Import/Export</span>, pilih submodul <span class='italic'>Data Export</span>, lalu tekan tombol <span class='italic'>New</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/export-task-3.png" alt="expt-3" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/export-task-3.png" alt="Export di Modul Import/Export" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Muncul jendela <span class='italic'>Data Export</span>. Pada tipe pilih <span class='font-bold'>Task/Tugas</span> , pilih rentang tanggal tugas, dan pilih lokasi cabang. Pada detail, untuk tipe <span class='italic'>export</span> pilih <span class='font-bold'>All Data</span>, pilih alur dan status yang diinginkan, serta aktifkan semua detail data. Tekan tombol <span class='italic'>Submit</span> untuk menyimpan perubahan dan tekan tombol <span class='italic'>Cancel</span> untuk membatalkan. Tunggu hingga proses selesai.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/export-task-4.png" alt="expt-4" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/export-task-4.png" alt="Jendela Data Export" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Tekan ikon unduh. Tunggu hingga proses selesai.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/export-task-5.png" alt="expt-5" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/export-task-5.png" alt="Unduh File" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ul>
@@ -516,7 +517,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/0G41UxEgcX0" 
+                    src="https://www.youtube.com/embed/jGJg7hYGimM" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -528,15 +529,21 @@ export const taskTopic = [
                 <li>
                   <p>Pada modul pelacakan akan muncul data pengguna, total jumlah tugas yang sedang berjalan dan sudah selesai, waktu dan jarak pengiriman. <span class='italic'>Planner</span> dapat melakukan filter berdasarkan tanggal pengiriman atau nama sopir yang menerima tugas. Selain itu, ditampilkan pula lokasi tiap sopir secara <span class='italic'>real-time</span>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/tracking-1.png" alt="track-1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tracking-1.png" alt="Tampilan Umum" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
-                  <p>Saat dipilih salah satu sopir, akan muncul detail tugas dan lokasi sopir tersebut. Untuk tugas yang sedang berjalan ditandai ikon berwarna <span class='text-orange-400'>oranye</span> dan tugas yang sudah selesai ditandai ikon berwarna <span class='text-green-400'>hijau</span>. Saat ikon-ikon tersebut ditekan, maka akan memunculkan detail dari tugas tersebut. Selain itu, di bagian kanan layar terdapat daftar tugas, urutan perkiraan, dan urutan sebenarnya untuk tugas yang dikerjakan oleh sopir tersebut.</p>
+                  <p>Saat dipilih salah satu sopir, akan muncul detail tugas dan lokasi sopir tersebut. Untuk tugas yang sedang berjalan ditandai ikon berwarna <span class='text-orange-400'>oranye</span> dan tugas yang sudah selesai ditandai ikon berwarna <span class='text-green-400'>hijau</span>. Saat ikon-ikon tersebut ditekan, maka akan memunculkan detail dari tugas tersebut.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/tracking-2.png" alt="track-2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tracking-2.png" alt="Tampilan Detail" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
+                <li>
+                  <p>Pada bagian kanan layar terdapat daftar tugas yang harus dikerjakan oleh sopir tersebut. Ditampilkan pula urutan prediksi dan urutan akutualisasi untuk tiap tugasnya.</p>
+                  <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+                      <img src="/images/tutorial/planner/tracking-3.png" alt="Daftar Tugas" style="width: 100%; border-radius: 4px;" />
+                  </div>
+                </li>                
               </ul>
               `,
           },

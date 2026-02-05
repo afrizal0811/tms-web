@@ -291,6 +291,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
               style={[styles.image, customWidth ? { width: customWidth } : {}]}
               alt={imgAlt}
             />
+            {imgAlt && <Text style={styles.imageCaption}>{imgAlt}</Text>}
           </View>
         );
       }
@@ -309,6 +310,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       return (
         <View key={index} style={styles.imageContainer} wrap={false}>
           <Image src={finalSrc} style={styles.image} alt={imgAlt} />
+          {imgAlt && <Text style={styles.imageCaption}>{imgAlt}</Text>}
         </View>
       );
     }

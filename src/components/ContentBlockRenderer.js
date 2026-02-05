@@ -2,8 +2,37 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useRef } from 'react'; // 1. Import useEffect & useRef
 
 export default function ContentBlockRenderer({ block, onImageClick }) {
+  const textContentRef = useRef(null); // 2. Buat Ref
+
+  // 3. Logic untuk memunculkan Caption dari ALT tag secara otomatis
+  useEffect(() => {
+    if (block.type === 'text' && textContentRef.current) {
+      const images = textContentRef.current.querySelectorAll('img');
+
+      images.forEach((img) => {
+        const altText = img.getAttribute('alt');
+
+        // Cek jika alt ada dan belum ada caption (menghindari duplikasi saat re-render)
+        if (altText && !img.nextElementSibling?.classList?.contains('generated-caption')) {
+          const caption = document.createElement('p');
+          caption.innerText = altText;
+
+          // Style disamakan dengan style caption pada block type: 'image'
+          caption.className =
+            'p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 italic generated-caption';
+
+          // Masukkan caption setelah gambar
+          if (img.parentNode) {
+            img.parentNode.insertBefore(caption, img.nextSibling);
+          }
+        }
+      });
+    }
+  }, [block]);
+
   // 1. Handler untuk gambar Murni (Block Type: Image)
   if (block.type === 'image') {
     return (
@@ -32,15 +61,13 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
   if (block.type === 'text') {
     return (
       <div
+        ref={textContentRef} // 4. Pasang Ref disini
         className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-4 
         [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all"
-        // --- LOGIC UTAMA DI SINI ---
         onClick={(e) => {
-          // Cek apakah elemen yang diklik adalah tag IMG
           if (e.target.tagName === 'IMG') {
-            // Panggil fungsi lightbox dengan data gambar yang diklik
             onImageClick({
-              src: e.target.getAttribute('src'), // Ambil src asli
+              src: e.target.getAttribute('src'),
               alt: e.target.alt,
             });
           }

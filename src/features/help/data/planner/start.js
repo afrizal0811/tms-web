@@ -56,18 +56,18 @@ export const startTopic = [
                 allowfullscreen>
               </iframe>
             </div>
-            <p class='underline'>Berikut ini penjelasannya:</p>
+            <p'>Berikut ini penjelasannya:</p>
             <ul class="list-disc pl-5 space-y-2 mt-2">
               <li>
                 <p>Tekan ikon profil di pojok kanan atas. Lalu, pilih <span class='italic'>Profile</span>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/setting-1-v2.png" alt="profile" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/setting-1.png" alt="Pengaturan Profil" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Pada bagian Bahasa (<span class='italic'>Language</span>), pilih bahasa yang diinginkan. Lalu tekan tombol Simpan (<span class='italic'>Save</span>)</p>
-                <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/setting-2-v2.png" alt="select-lang" style="width: 100%; border-radius: 4px;" />
+                <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
+                    <img src="/images/tutorial/planner/setting-2.png" alt="Pilih Bahasa" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ul>
