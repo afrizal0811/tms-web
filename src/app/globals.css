@@ -284,3 +284,21 @@ body > div[style*="z-index: 9999"] {
 .react-datepicker--year-only .react-datepicker__header {
   width: 100% !important;
 }
+
+.section-list {
+  counter-reset: section;
+}
+
+.section-list > li {
+  counter-increment: section;
+}
+
+/* Sembunyikan marker HANYA di list utama */
+.section-list > li::marker {
+  content: '';
+}
+
+.section-title::before {
+  content: counter(section) ". ";
+  font-weight: bold;
+}
