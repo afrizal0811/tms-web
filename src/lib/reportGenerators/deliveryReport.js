@@ -88,7 +88,7 @@ export function generateDeliveryWorkbook(
     const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
     const customerName = task.customerName || '';
     const flow = task.flow;
-
+    const orderId = task.orderId || '';
     if (driverName !== 'N/A') {
       const stats = driverStats.get(driverName) || {
         totalOutlet: 0,
@@ -169,6 +169,7 @@ export function generateDeliveryWorkbook(
       customerId: custId,
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
+      orderId: orderId,
     });
     if (task.klikLokasiClient) {
       updateLonglatData.push({
@@ -399,6 +400,7 @@ export function generateDeliveryWorkbook(
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
     translate('excel.delivery.headers.flow'),
+    translate('excel.delivery.headers.no_so'),
     translate('excel.delivery.headers.date'),
     translate('common.number_plates'),
     translate('common.driver'),
@@ -428,6 +430,7 @@ export function generateDeliveryWorkbook(
     ...pendingSOData.map((row) => {
       const dataRow = [
         row.flow,
+        row.orderId,
         routingDate.replace(/\./g, '/'),
         row.plat,
         row.driver,
@@ -457,7 +460,7 @@ export function generateDeliveryWorkbook(
   ];
   const wsPendingSO = XLSX.utils.aoa_to_sheet(finalSheetData2);
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
-  const separatorColIndex = isSpecialHub ? 9 : 8;
+  const separatorColIndex = isSpecialHub ? 10 : 9;
   const centerAlignedIndices = [
     translate('excel.delivery.headers.open_time'),
     translate('excel.delivery.headers.close_time'),
@@ -483,9 +486,8 @@ export function generateDeliveryWorkbook(
   });
   wsPendingSO['!cols'] = colWidthsSO;
   const separatorStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } } };
-  const pendingColIndex = 5;
+  const pendingColIndex = 6;
   const rangeSO = XLSX.utils.decode_range(wsPendingSO['!ref']);
-  const flowColIndex = 0;
   for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) {
     for (let C = rangeSO.s.c; C <= rangeSO.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
@@ -494,7 +496,7 @@ export function generateDeliveryWorkbook(
       if (R === 0) {
         if (C === separatorColIndex) {
           cell.s = { ...headerStyle, ...separatorStyle };
-        } else if (C === flowColIndex) {
+        } else if (C <= 1) {
           cell.s = headerStyle;
         } else {
           cell.s = greenHeaderStyle;
