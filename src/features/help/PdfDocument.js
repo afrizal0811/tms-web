@@ -95,11 +95,11 @@ const styles = StyleSheet.create({
   bulletText: {
     fontSize: 10,
     fontWeight: 'bold',
-    // Opsional: lineHeight untuk bullet
-    lineHeight: 2,
+    lineHeight: 1,
   },
   listItemContent: {
     flex: 1,
+    lineHeight: 1,
   },
 
   // Font Styles
@@ -183,17 +183,22 @@ const renderInlineNodes = (nodes) => {
       child.nodeName === 'STRONG' || child.nodeName === 'B' || className.includes('font-bold');
     const isItalic =
       child.nodeName === 'EM' || child.nodeName === 'I' || className.includes('italic');
+    const isUnderline = className.includes('underline');
     const isLink = child.nodeName === 'A';
 
-    let styleToUse = {};
-    if (isBold && isItalic) styleToUse = styles.boldItalic;
-    else if (isBold) styleToUse = styles.bold;
-    else if (isItalic) styleToUse = styles.italic;
+    let styleToUse = [];
+    if (isBold && isItalic) styleToUse.push(styles.boldItalic);
+    else if (isBold) styleToUse.push(styles.bold);
+    else if (isItalic) styleToUse.push(styles.italic);
+
+    if (isUnderline) {
+      styleToUse.push({ textDecoration: 'underline' });
+    }
 
     if (isLink) {
       const href = child.getAttribute('href');
       return (
-        <Link key={i} src={href} style={[styles.link, styleToUse]}>
+        <Link key={i} src={href} style={[styles.link, ...styleToUse]}>
           {renderInlineNodes(child.childNodes)}
         </Link>
       );
@@ -223,12 +228,18 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       let className = '';
       if (el.getAttribute) className = el.getAttribute('class') || '';
       const isBold = className.includes('font-bold');
+      const isUnderline = className.includes('underline');
 
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
 
+      const textStyle = [
+        isBold ? styles.bold : {},
+        isUnderline ? { textDecoration: 'underline' } : {},
+      ];
+
       return (
         <View key={index} style={blockStyle}>
-          <Text style={isBold ? styles.bold : {}}>{renderInlineNodes(el.childNodes)}</Text>
+          <Text style={textStyle}>{renderInlineNodes(el.childNodes)}</Text>
         </View>
       );
     }
@@ -239,7 +250,14 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       if (el.getAttribute) className = el.getAttribute('class') || '';
       if (!className && el.className && typeof el.className === 'string') className = el.className;
 
-      const isOrdered = el.nodeName === 'OL' || className.includes('list-decimal');
+      const isOrdered =
+        el.nodeName === 'OL' ||
+        className.includes('list-decimal') ||
+        className.includes('list-[lower-alpha]') ||
+        className.includes('list-lower-alpha');
+      const isLowerAlpha =
+        className.includes('list-[lower-alpha]') || className.includes('list-lower-alpha');
+
       const lis = Array.from(el.children);
 
       const containerStyle = isInsideList
@@ -248,17 +266,28 @@ const renderBlockNodes = (elements, isInsideList = false) => {
 
       return (
         <View key={index} style={containerStyle}>
-          {lis.map((li, i) => (
-            <View key={i} style={styles.listItem}>
-              <View style={styles.bulletBox}>
-                <Text style={styles.bulletText}>{isOrdered ? `${i + 1}.` : '•'}</Text>
-              </View>
+          {lis.map((li, i) => {
+            let bulletChar = '•';
+            if (isOrdered) {
+              if (isLowerAlpha) {
+                bulletChar = `${String.fromCharCode(97 + i)}.`;
+              } else {
+                bulletChar = `${i + 1}.`;
+              }
+            }
 
-              <View style={styles.listItemContent}>
-                {renderBlockNodes(Array.from(li.childNodes), true)}
+            return (
+              <View key={i} style={styles.listItem}>
+                <View style={styles.bulletBox}>
+                  <Text style={styles.bulletText}>{bulletChar}</Text>
+                </View>
+
+                <View style={styles.listItemContent}>
+                  {renderBlockNodes(Array.from(li.childNodes), true)}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       );
     }
@@ -268,13 +297,13 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       const img = el.querySelector('img');
       if (img) {
         const imgSrc = img.getAttribute('src');
-        const imgAlt = img.getAttribute('alt') || 'Image';
+        const imgAlt = img.getAttribute('alt') || '';
+
         const finalSrc =
           imgSrc.startsWith('/') && typeof window !== 'undefined'
             ? `${window.location.origin}${imgSrc}`
             : imgSrc;
 
-        // FITUR WIDTH: Ambil width dari style DIV pembungkus
         let customWidth = null;
         const divStyle = el.getAttribute('style');
         if (divStyle) {
@@ -301,7 +330,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
     // --- IMAGES (Direct IMG) ---
     if (el.nodeName === 'IMG') {
       const imgSrc = el.getAttribute('src');
-      const imgAlt = el.getAttribute('alt') || 'Image';
+      const imgAlt = el.getAttribute('alt') || '';
       const finalSrc =
         imgSrc.startsWith('/') && typeof window !== 'undefined'
           ? `${window.location.origin}${imgSrc}`
