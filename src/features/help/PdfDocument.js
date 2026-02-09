@@ -118,6 +118,16 @@ const styles = StyleSheet.create({
     textDecoration: 'underline',
   },
 
+  textXs: { fontSize: 8 },
+  textSm: { fontSize: 9 },
+  textBase: { fontSize: 10 },
+  textLg: { fontSize: 12 },
+  textXl: { fontSize: 14 },
+  text2xl: { fontSize: 16 },
+  text3xl: { fontSize: 24 },
+  text4xl: { fontSize: 30 },
+  text5xl: { fontSize: 36 },
+
   // Image Styles
   imageContainer: {
     marginVertical: 10,
@@ -144,7 +154,7 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#f1f5f9',
     borderWidth: 1,
-    borderStyle: 'solid',
+    borderStyle: 'dashed',
     borderColor: '#94a3b8',
     borderRadius: 4,
     alignItems: 'center',
@@ -169,6 +179,21 @@ const styles = StyleSheet.create({
   },
 });
 
+// --- HELPER BARU: DETEKSI FONT SIZE ---
+const getFontSize = (className) => {
+  if (!className) return {};
+  if (className.includes('text-xs')) return styles.textXs;
+  if (className.includes('text-sm')) return styles.textSm;
+  if (className.includes('text-base')) return styles.textBase;
+  if (className.includes('text-lg')) return styles.textLg;
+  if (className.includes('text-xl')) return styles.textXl;
+  if (className.includes('text-2xl')) return styles.text2xl;
+  if (className.includes('text-3xl')) return styles.text3xl;
+  if (className.includes('text-4xl')) return styles.text4xl;
+  if (className.includes('text-5xl')) return styles.text5xl;
+  return {};
+};
+
 // --- 1. HELPER: RENDER INLINE ---
 const renderInlineNodes = (nodes) => {
   return Array.from(nodes).map((child, i) => {
@@ -185,8 +210,11 @@ const renderInlineNodes = (nodes) => {
       child.nodeName === 'EM' || child.nodeName === 'I' || className.includes('italic');
     const isUnderline = className.includes('underline');
     const isLink = child.nodeName === 'A';
+    const fontSizeStyle = getFontSize(className);
 
     let styleToUse = [];
+    if (Object.keys(fontSizeStyle).length > 0) styleToUse.push(fontSizeStyle);
+
     if (isBold && isItalic) styleToUse.push(styles.boldItalic);
     else if (isBold) styleToUse.push(styles.bold);
     else if (isItalic) styleToUse.push(styles.italic);
@@ -229,12 +257,14 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       if (el.getAttribute) className = el.getAttribute('class') || '';
       const isBold = className.includes('font-bold');
       const isUnderline = className.includes('underline');
+      const fontSizeStyle = getFontSize(className);
 
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
 
       const textStyle = [
         isBold ? styles.bold : {},
         isUnderline ? { textDecoration: 'underline' } : {},
+        fontSizeStyle, // Terapkan font size
       ];
 
       return (
@@ -255,6 +285,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
         className.includes('list-decimal') ||
         className.includes('list-[lower-alpha]') ||
         className.includes('list-lower-alpha');
+
       const isLowerAlpha =
         className.includes('list-[lower-alpha]') || className.includes('list-lower-alpha');
 

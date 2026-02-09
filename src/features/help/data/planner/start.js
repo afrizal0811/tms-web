@@ -19,7 +19,7 @@ export const startTopic = [
           </li>
           <li>
               <p class="font-bold">Kemudahan Koordinasi</p>
-              <p>Semua data (driver, kendaraan, rute, pelanggan) terpusat di satu dashboard sehingga komunikasi dan pengelolaan lebih efisien.</p>
+              <p>Semua data (sopir, kendaraan, rute, pelanggan) terpusat di satu <span class='italic'>dashboard</span> sehingga komunikasi dan pengelolaan lebih efisien.</p>
           </li>
         </ul>`,
       },
@@ -29,10 +29,10 @@ export const startTopic = [
         <ul class="list-decimal pl-5 space-y-2 mt-2">
           <li>
             <p class="font-bold underline mb-2">Masuk (<span class='italic'>Login</span>)</p>     
-            <p>Melalui tombol <span class='italic'>Edit Time</span>, <span class='italic'>planner</span> dapat mengubah waktu aktif dan selesainya dari tugas yang dipilih secara bersamaan. Berikut caranya:</p>     
+            <p>Untuk mengakses aplikasi, <span class='italic'>planner</span> harus masuk ke dalam aplikasi terlebih dahulu. Berikut caranya:</p>     
             <ol class="list-[lower-alpha] pl-5 space-y-2 mt-2">
               <li>
-                <p>Admin <span class='italic'>planner</span> diharuskan masuk terlebih dahulu untuk mengakses aplikasi dengan menggunakan tautan berikut: <a href="https://web.mile.app/login" target="_blank"  class='underline text-blue-400'>https://web.mile.app/login</a>
+                <p>Buka tautan berikut: <a href="https://web.mile.app/login" target="_blank"  class='underline text-blue-400'>https://web.mile.app/login</a>
                 </p>
               </li>
               <li>

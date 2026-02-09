@@ -187,7 +187,7 @@ export const routingTopic = [
                   </ol>
                 </li>
                 <li>
-                  <p class='section-title font-bold text-2xl underline mb-2'><span class='italic'>Geotagging</span></p>             
+                  <p class='section-title font-bold text-2xl underline mb-2 italic'>Geotagging</p>             
                   <p>Di dalam bagian ini ditampilkan pengaturan <span class='italic'>geotagging</span> yang memungkinkan untuk menetapkan <span class='italic'>tag</span> berdasarkan area geografis. <span class='italic'>Planner</span> dapat menambahkan dan mengubah lokasi dari <span class='italic'>tag</span> tersebut. <span class='font-bold'>Untuk menghapus <span class='italic'>tag</span> yang sudah ada, harap hubungi admin.</span></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-conf-6.png" alt="Pengaturan Geotagging" style="width: 100%; border-radius: 4px;" />
@@ -238,7 +238,7 @@ export const routingTopic = [
           {
             type: 'text',
             content: `
-              <p class=" font-bold text-2xl underline mb-2"><span class='italic'>Gantt Chart</span></p>  
+              <p class=" font-bold text-2xl underline mb-2 italic">Gantt Chart</p>  
               <p>Selain dalam bentuk rangkuman dan detail, hasil optimalisasi dapat ditampilkan dalam bentuk <span class='italic'>Gantt Chart</span>. <span class='italic'>Gantt Chart</span> ini berfungsi untuk menampilkan jadwal pekerjaan dalam bentuk <span class='italic'>timeline</span> supaya mudah melihat urutan, durasi, dan ketergantungan tugas.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-13.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
@@ -279,7 +279,7 @@ export const routingTopic = [
               </li>    
               <li>
                 <p class="section-title font-bold underline mb-2">Pindah Tugas (<span class='italic'>Move Task</span>)</p>   
-                <p> Jika terdapat tugas yang dianggap tidak optimal jika dibawa oleh kendaraan tertentu (jarak antar tugas terlalu jauh, atau lain sebagainya), maka tugas tersebut dapat dipindahkan ke kendaraan lainnya dengan cara:</p>
+                <p>Jika terdapat tugas yang dianggap tidak optimal jika dibawa oleh kendaraan tertentu (jarak antar tugas terlalu jauh, atau lain sebagainya), maka tugas tersebut dapat dipindahkan ke kendaraan lainnya dengan cara:</p>
                 <ol class="list-[lower-alpha] pl-5 space-y-2 mt-2">
                   <li>
                   <p>Tekan tombol <span class='italic'>Move Task</span> (nomor 2) pada tugas yang ingin dipindahkan.</p>
@@ -355,8 +355,8 @@ export const routingTopic = [
           {
             type: 'text',
             content: `
-              <p class=" font-bold text-2xl underline mb-2"><span class='italic'>History</span></p>  
-              <p>Tombol <span class='italic'>History</span> menampilkan riwayat perubahan yang dilakukan <span class='italic'>planner</span> pada tugas dan kendaraan dalam hasil optimalisasi yang dipilih.</p>
+              <p class=" font-bold text-2xl underline mb-2">Riwayat</p>  
+              <p>Tombol riwayat menampilkan semua perubahan yang pernah dilakukan <span class='italic'>planner</span> pada tugas dan kendaraan dalam hasil optimalisasi yang dipilih.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-14.png" alt="History - 1" style="width: 100%; border-radius: 4px;" />
               </div>
@@ -379,7 +379,7 @@ export const routingTopic = [
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-11.png" alt="Tugaskan (Dispatch)" style="width: 100%; border-radius: 4px;" />
               </div>
-              <p>Setelah proses <span class='italic'>dispatch</span> telah selesai, maka akan muncul keterangannya dan planner harus mengganti judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
+              <p>Setelah proses <span class='italic'>dispatch</span> telah selesai, maka akan muncul keterangan dan <span class='italic'>planner</span> <span class='font-bold'>harus</span> mengganti judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-12.png" alt="Keterangan dan Ubah Judul" style="width: 100%; border-radius: 4px;" />
               </div>

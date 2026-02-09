@@ -134,7 +134,7 @@ export const taskTopic = [
                   </div>
                 </li>
                 <li>
-                  <p style="margin-bottom: 15px;">Berdasarkan hasil file excel tersebut, periksa tiap kolom yang tersedia untuk memastikan tidak ada data yang kosong. Data yang kosong dapat <span class='font-bold'>diisikan sementara</span> oleh <span class='italic'>planner</span> dan harus dilaporkan supaya master data customer dapat diperbarui.</p>
+                  <p style="margin-bottom: 15px;">Berdasarkan hasil file excel tersebut, periksa tiap kolom yang tersedia untuk memastikan tidak ada data yang kosong. Data yang kosong dapat <span class='font-bold'>diisikan sementara</span> oleh <span class='italic'>planner</span> dan <span class='font-bold'>harus dilaporkan</span> supaya master data  dapat diperbarui.</p>
                   <div style="width: 100%;" class="mx-auto">
                       <img 
                           src="/images/tutorial/planner/acumatica-4.png" 
@@ -144,7 +144,7 @@ export const taskTopic = [
                   </div>
               </li>
               </ul>
-              <p class="my-2">Setelah selesai di-<span class='italic'>export</span>, maka data itu harus dimasukkan ke dalam <span class='font-bold'>MileApp</span>.</p>
+              <p class="my-2">Setelah selesai di-<span class='italic'>export</span>, maka data itu harus diunggah ke dalam <span class='font-bold'>MileApp</span>.</p>
               <p class='underline mb-2'>Perhatikan video berikut ini:</p>
               <div style="margin-bottom: 15px;">
                 <iframe 
@@ -189,7 +189,7 @@ export const taskTopic = [
           {
             type: 'text',
             content: `<p class='font-bold text-2xl underline mb-2'>Input Manual</p>
-            <p>Selain menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>, penambahan tugas baru dapat dilakukan dengan cara <span class='italic'>input</span> manual. Proses ini hanya dilakukan <span class='font-bold'>jika dibutuhkan saja</span>,   sehingga <span class='italic'>planner</span> tetap menggunakan <span class='italic'>import</span> file Excel.</p>
+            <p>Selain menggunakan <span class='italic'>import</span> file Excel dari <span class='font-bold'>Acumatica</span>, penambahan tugas baru dapat dilakukan dengan cara <span class='italic'>input</span> manual. Proses ini hanya dilakukan <span class='font-bold'>jika dibutuhkan</span>, sehingga <span class='italic'>planner</span> tetap mengutamakan penggunaan <span class='italic'>import</span> file Excel.</p>
             <p class='underline mb-2'>Perhatikan video berikut ini:</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 

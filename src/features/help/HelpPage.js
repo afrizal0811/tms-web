@@ -5,7 +5,7 @@ import ContentBlockRenderer from '@/components/ContentBlockRenderer';
 import ImageLightbox from '@/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react'; // Update Import
 import { helpTopics } from './data';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './PdfDocument';
@@ -27,13 +27,11 @@ export default function HelpPage() {
     // Level 1: Main Topics
     const level1Ids = new Set(catTopics.map((t) => t.id));
 
-    // Level 2: Sub Topics (Hanya jika punya anak/SubSubTopic, atau buka semua subtopic juga boleh)
-    // Di sini saya buat "Buka Semua Subtopic" agar sub-sub-topic terlihat langsung.
+    // Level 2: Sub Topics
     const level2Ids = new Set();
     catTopics.forEach((topic) => {
       if (topic.subTopics) {
         topic.subTopics.forEach((sub) => {
-          // Cek jika punya subSubTopics, maka parent-nya (sub.id) harus dibuka
           if (sub.subSubTopics && sub.subSubTopics.length > 0) {
             level2Ids.add(sub.id);
           }
@@ -44,7 +42,7 @@ export default function HelpPage() {
     return { level1: level1Ids, level2: level2Ids };
   };
 
-  // 1. INITIAL STATE: Langsung panggil helper untuk kategori awal ('planner')
+  // 1. INITIAL STATE
   const [expandedIds, setExpandedIds] = useState(() => getAllExpandedIds('planner').level1);
   const [expandedSubIds, setExpandedSubIds] = useState(() => getAllExpandedIds('planner').level2);
 
@@ -99,8 +97,6 @@ export default function HelpPage() {
 
             if (subMatch || subSubMatch) {
               parentMatch = true;
-              // Jika parent match karena anak/cucu match, kita buka juga level 2-nya
-              // supaya user langsung liat highlight-nya
               if (sub.subSubTopics && sub.subSubTopics.length > 0) {
                 newSubExpanded.add(sub.id);
               }
@@ -115,21 +111,28 @@ export default function HelpPage() {
       setExpandedIds(newExpanded);
       setExpandedSubIds(newSubExpanded);
     } else {
-      // 2. RESET SEARCH: Kembali ke mode "Terbuka Semua (Level 1 & 2)"
       const { level1, level2 } = getAllExpandedIds(activeCategory);
       setExpandedIds(level1);
       setExpandedSubIds(level2);
     }
   };
 
+  // Penentuan Topik Aktif
   const currentTopic = manualSelection || (filteredTopics.length > 0 ? filteredTopics[0] : null);
+
+  // --- FITUR SCROLL KE ATAS ---
+  useEffect(() => {
+    // Setiap kali `currentTopic` berubah (user klik menu atau ganti kategori),
+    // scroll window ke posisi 0 (paling atas).
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentTopic]);
+  // -----------------------------
 
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
     setManualSelection(null);
     setSearchQuery('');
 
-    // 3. GANTI KATEGORI: Buka semua (Level 1 & 2) untuk kategori baru
     const { level1, level2 } = getAllExpandedIds(category);
     setExpandedIds(level1);
     setExpandedSubIds(level2);
