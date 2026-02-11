@@ -27,7 +27,7 @@ export const startTripTopic = [
           <p>Berikut ini penjelasannya:</p>
           <ul class="list-decimal pl-5 space-y-2 mt-2">
           <li>
-            <p>Saat berhasil masuk ke aplikasi, muncul jendela <strong>Mulai Perjalanan</strong> (<em>Start Trip</em>) untuk mencatat waktu awal pekerjaan. Pengguna harus dalam <strong>radius 500 meter</strong> dari gudang untuk dapat memulai perjalanan. Tekan tombol Mulai (<em>Start</em>) dan untuk memulai perjalanan.</p>
+            <p>Saat berhasil masuk ke aplikasi, muncul jendela <strong>Mulai Perjalanan</strong> (<em>Start Trip</em>) untuk mencatat waktu awal pekerjaan. <em>Driver</em> harus dalam <strong>radius 500 meter</strong> dari gudang untuk dapat memulai perjalanan. Tekan tombol Mulai (<em>Start</em>) dan untuk memulai perjalanan.</p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/start-trip-1.png" alt="Memulai Perjalanan - 1" style="width: 100%; border-radius: 4px;" />
             </div>
