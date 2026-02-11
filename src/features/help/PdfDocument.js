@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   paragraph: {
     marginBottom: 6,
     textAlign: 'justify',
-    lineHeight: 0.9,
+    lineHeight: 1,
   },
 
   // List Styles
@@ -95,17 +95,16 @@ const styles = StyleSheet.create({
   bulletText: {
     fontSize: 10,
     fontWeight: 'bold',
-    lineHeight: 1,
+    lineHeight: 1.5,
   },
   listItemContent: {
     flex: 1,
-    lineHeight: 1,
+    lineHeight: 1.5,
   },
 
   // Font Styles
   bold: {
     fontFamily: 'Helvetica-Bold',
-    color: '#000',
   },
   italic: {
     fontFamily: 'Helvetica-Oblique',
@@ -118,6 +117,7 @@ const styles = StyleSheet.create({
     textDecoration: 'underline',
   },
 
+  // FONT SIZES (Tailwind Mapping)
   textXs: { fontSize: 8 },
   textSm: { fontSize: 9 },
   textBase: { fontSize: 10 },
@@ -127,6 +127,13 @@ const styles = StyleSheet.create({
   text3xl: { fontSize: 24 },
   text4xl: { fontSize: 30 },
   text5xl: { fontSize: 36 },
+
+  // COLORS (Tailwind Mapping - Tambahkan sesuai kebutuhan)
+  textRed500: { color: '#ef4444' }, // Merah
+  textGreen400: { color: '#05df72' }, // Hijau
+  textBlue500: { color: '#3b82f6' }, // Biru
+  textOrange400: { color: '#fb923c' }, // X
+  textGray500: { color: '#6b7280' }, // Abu-abu
 
   // Image Styles
   imageContainer: {
@@ -179,7 +186,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- HELPER BARU: DETEKSI FONT SIZE ---
+// --- HELPER 1: DETEKSI FONT SIZE ---
 const getFontSize = (className) => {
   if (!className) return {};
   if (className.includes('text-xs')) return styles.textXs;
@@ -191,6 +198,19 @@ const getFontSize = (className) => {
   if (className.includes('text-3xl')) return styles.text3xl;
   if (className.includes('text-4xl')) return styles.text4xl;
   if (className.includes('text-5xl')) return styles.text5xl;
+  return {};
+};
+
+// --- HELPER 2: DETEKSI WARNA (Baru) ---
+const getColor = (className) => {
+  if (!className) return {};
+  if (className.includes('text-red-500')) return styles.textRed500;
+  if (className.includes('text-green-400')) return styles.textGreen400;
+  if (className.includes('text-green-400')) return styles.textGreen600; // Mapping ke hijau yg sama
+  if (className.includes('text-blue-500')) return styles.textBlue500;
+  if (className.includes('text-blue-400')) return styles.textBlue500;
+  if (className.includes('text-orange-400')) return styles.textOrange400;
+  if (className.includes('text-gray-500')) return styles.textGray500;
   return {};
 };
 
@@ -210,10 +230,16 @@ const renderInlineNodes = (nodes) => {
       child.nodeName === 'EM' || child.nodeName === 'I' || className.includes('italic');
     const isUnderline = className.includes('underline');
     const isLink = child.nodeName === 'A';
+
+    // Ambil Style Font Size & Color
     const fontSizeStyle = getFontSize(className);
+    const colorStyle = getColor(className);
 
     let styleToUse = [];
+
+    // Prioritaskan Font Size & Color
     if (Object.keys(fontSizeStyle).length > 0) styleToUse.push(fontSizeStyle);
+    if (Object.keys(colorStyle).length > 0) styleToUse.push(colorStyle);
 
     if (isBold && isItalic) styleToUse.push(styles.boldItalic);
     else if (isBold) styleToUse.push(styles.bold);
@@ -257,19 +283,33 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       if (el.getAttribute) className = el.getAttribute('class') || '';
       const isBold = className.includes('font-bold');
       const isUnderline = className.includes('underline');
+
       const fontSizeStyle = getFontSize(className);
+      const colorStyle = getColor(className);
 
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
 
       const textStyle = [
         isBold ? styles.bold : {},
         isUnderline ? { textDecoration: 'underline' } : {},
-        fontSizeStyle, // Terapkan font size
+        fontSizeStyle,
+        colorStyle, // Terapkan warna
       ];
 
       return (
         <View key={index} style={blockStyle}>
           <Text style={textStyle}>{renderInlineNodes(el.childNodes)}</Text>
+        </View>
+      );
+    }
+
+    // --- HANDLE INLINE TAGS AT ROOT (Fix untuk tag STRONG/SPAN tanpa P) ---
+    if (['STRONG', 'B', 'EM', 'I', 'SPAN', 'U'].includes(el.nodeName)) {
+      const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
+
+      return (
+        <View key={index} style={blockStyle}>
+          <Text>{renderInlineNodes([el])}</Text>
         </View>
       );
     }
@@ -323,7 +363,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       );
     }
 
-    // --- IMAGES (DIV Wrapper dengan Custom Width) ---
+    // --- IMAGES (DIV Wrapper) ---
     if (el.nodeName === 'DIV') {
       const img = el.querySelector('img');
       if (img) {

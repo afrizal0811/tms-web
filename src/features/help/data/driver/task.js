@@ -7,7 +7,7 @@ export const taskTopic = [
       {
         type: 'text',
         content: `
-        <p><strong>Menu Tugas</strong> (<em>Task</em>) adalah menu utama untuk mengerjakan tugas yang telah diberikan oleh admin.</p>
+        <p><strong>Menu Tugas</strong> (<em>Task</em>) adalah menu utama untuk mengerjakan semua tugas yang telah diberikan oleh admin.</p>
         <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
             <img src="/images/tutorial/driver/task-menu-1.png" alt="Menu Tugas" style="width: 100%; border-radius: 4px;" />
         </div>
@@ -21,13 +21,13 @@ export const taskTopic = [
             <p>Di dalam menu Tugas, terdapat beberapa tombol yang dapat digunakan untuk mempermudah pengiriman, yaitu tombol pencarian, peta, dan optimalisasi rute. Berikut penjelasannya:</p> 
             <ul class="list-disc pl-5 space-y-2 mt-2">
               <li>
-                <p>Untuk tombol pencarian, <em>driver</em> dapat melakukan filter berdasarkan nama pelanggan atau id pelanggan.</p>
+                <p>Tombol pencarian, untuk melakukan filter berdasarkan nama pelanggan atau id pelanggan.</p>
               </li>
               <li>
-                <p>Untuk tombol peta, saat ditekan akan membuka aplikasi maps dengan semua titik lokasi pengantaran yang telah ditentukan oleh admin, hal ini dapat digunakan untuk melihat rute yang dilalui <em>driver</em>.</p>
+                <p>Tombol peta, untuk menampilkan semua titik lokasi pengantaran yang telah ditentukan oleh admin. Hal ini dapat digunakan untuk melihat rute yang dilalui <em>driver</em>.</p>
               </li>
               <li>
-                <p>Untuk tombol optimalisasi rute, saat ditekan akan menentukan kembali urutan tugas yang harus dilakukan dari titik terdekat dari <em>driver</em>.</p>
+                <p>Tombol optimalisasi rute, untuk melakukan perhitungan dan penyesuaian kembali urutan tugas yang harus dikerjakan dari titik terdekat dari <em>driver</em> saat <em>driver</em> menekan tombol tersebut.</p>
               </li>
             </ul>
         `,
@@ -36,7 +36,7 @@ export const taskTopic = [
         type: 'text',
         content: `
             <p class=" font-bold text-2xl underline mb-2">Submenu Kategori</p>  
-            <p>Setiap tugas yang ada akan dikelompokkan berdasarkan status dari tugas tersebut, yaitu tugas yang sedang berjalan (<em>Ongoing</em>) dan tugas selesai (<em>Done</em>). Berikut penjelasannya:</p> 
+            <p>Setiap tugas yang tersedia akan dikelompokkan berdasarkan status dari tugas tersebut, yaitu tugas yang sedang berjalan (<em>Ongoing</em>) dan tugas selesai (<em>Done</em>). Berikut penjelasannya:</p> 
             <ul class="list-decimal pl-5 space-y-2 mt-2">
               <li>
                 <p class="font-bold">Kategori Berjalan (<em>Ongoing</em>)</p>
@@ -44,7 +44,7 @@ export const taskTopic = [
               </li>
               <li>
                 <p class="font-bold">Kategori Selesai (<em>Done</em>)</p>
-                <p>Tugas yang sudah selesai dikerjakan (<em>done</em>) oleh <em>driver</em> tersebut akan tersimpan di submenu ini. Tugas yang tersimpan dengan benar akan bertanda centang berwarna <strong>hijau</strong>. Jika terdapat tugas dengan tanda centang berwarna <strong>abu-abu</strong> atau <strong>merah</strong>, maka penyimpanan mengalami masalah karena <strong>kendala koneksi internet</strong>. Untuk mengatasinya, <em>driver</em> dapat mengganti koneksi internet lalu lakukan sinkronisasi data.</p>
+                <p>Tugas yang sudah selesai dikerjakan (<em>done</em>) oleh <em>driver</em> akan tersimpan di submenu ini. Tugas yang tersimpan dengan benar akan bertanda centang berwarna <strong>hijau</strong>. Jika terdapat tugas dengan tanda centang berwarna <strong>abu-abu</strong> atau <strong>merah</strong>, maka proses penyimpanan data sedang mengalami masalah karena <strong>koneksi internet</strong>. Untuk mengatasinya, <em>driver</em> dapat mengganti koneksi internet lalu lakukan sinkronisasi data.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
                     <img src="/images/tutorial/driver/task-menu-2.png" alt="Kategori Selesai Gagal" style="width: 100%; border-radius: 4px;" />
                 </div>
@@ -61,7 +61,7 @@ export const taskTopic = [
           {
             type: 'text',
             content: `
-            <p>Pada bagian ini akan dijelaskan cara untuk mengejakan tugas yang sudah diterima. Pengerjaan tugas dilakukan secara berurutan dari <strong>atas ke bawah.</strong> </p>
+            <p>Pada bagian ini akan dijelaskan cara untuk mengerjakan tugas yang sudah diterima. Pengerjaan tugas <strong>harus</strong> dilakukan secara berurutan dari <strong>atas ke bawah.</strong> </p>
             <p class='underline mb-2'>Perhatikan video berikut ini:
             <div style="margin-top: 10px; margin-bottom: 10px;">
               <iframe 
@@ -163,7 +163,7 @@ export const taskTopic = [
                 </li>
                 <li>
                     <p class='font-bold'>Alasan</p> 
-                    <p>Isikan alasan secara <u>jelas, detail, dan lengkap</u> berdasarkan status pengiriman yang dipilih. Terutama lengkapi alasan saat statusnya <strong>Terima Sebagian</strong> saat barang yang kirim dalam bentuk satuan terbesar (karton) tetapi barang yang ditolak dalam bentuk satuan terkecil (botol, kaleng, atau <em>pieces</em>).</p>
+                    <p>Isikan alasan secara <u>jelas, detail, dan lengkap</u> berdasarkan status pengiriman yang dipilih.</p>
                 </li>
                 <li>
                     <p class='italic font-bold'>Photo Delivery</p> 
@@ -317,7 +317,7 @@ export const taskTopic = [
                     </ol> 
                   </li>
                   <li>
-                    <p>Pada <strong>Alasan</strong>, isikan alasan secara <u>jelas, detail, dan lengkap</u>. <u>Terutama</u> lengkapi alasan saat barang yang kirim dalam bentuk satuan terbesar (karton) tetapi barang yang ditolak dalam bentuk satuan terkecil (botol, kaleng, atau <em>pieces</em>).</p>
+                    <p>Pada <strong>Alasan</strong>, isikan alasan secara <u>jelas, detail, dan lengkap</u>. Terutama lengkapi alasan saat barang yang kirim dalam bentuk satuan terbesar (karton) tetapi barang yang ditolak dalam bentuk satuan terkecil (botol, kaleng, atau <em>pieces</em>).</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                         <img src="/images/tutorial/driver/reason.png" alt="Alasan - Terima Sebagian" style="width: 100%; border-radius: 4px;" />
                     </div>
@@ -506,7 +506,7 @@ export const taskTopic = [
               {
                 type: 'text',
                 content: `
-                <strong class='underline'>Kondisi ini dapat diabaikan apabila tidak ada kasus Pending GR (<em><em>Goods Receipt</em></em>).</strong>
+                <p class='underline text-red-500 text-lg'><strong>Kondisi ini dapat diabaikan apabila tidak ada kasus Pending GR (<em>Goods Receipt</em>).</strong></p>
                 <p class='mt-3'>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>pending GR</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 

@@ -51,7 +51,7 @@ export const startTopic = [
             </div>
           </li>
           <li>
-            <p>Setelah diunduh, pastikan GPS di perangkat smartphone sudah aktif.</p>
+            <p>Setelah diunduh, pastikan GPS di perangkat <em>smartphone</em> sudah aktif.</p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/location.png" alt="Pengaturan Lokasi (GPS)" style="width: 100%; border-radius: 4px;" />
             </div>
