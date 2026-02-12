@@ -1,4 +1,11 @@
+import { routeTransactionTopic } from './routeTransaction';
+import { routingTopic } from './routing';
 import { startTopic } from './start';
 import { taskTopic } from './task';
-import { routingTopic } from './routing';
-export const plannerTopics = [...startTopic, ...taskTopic, ...routingTopic];
+
+export const plannerTopics = [
+  ...startTopic,
+  ...taskTopic,
+  ...routingTopic,
+  ...routeTransactionTopic,
+];
