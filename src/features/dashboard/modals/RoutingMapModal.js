@@ -3,7 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
-import L from 'leaflet';
+// HAPUS IMPORT INI: import L from 'leaflet';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
 
@@ -102,7 +102,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     sortedTasks.forEach((t) => {
       if (!t.customerName || t.customerName === 'HUB') return;
 
-      // Cek apakah task ini pending (belum dikunjungi)
       const isPending = isEmpty(t.realSequence);
 
       if (t.flow === 'Pickup') {
@@ -127,7 +126,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     return hasHub ? [{ value: 'HUB', label: 'HUB', isPending: false }, ...options] : options;
   }, [driverTasks, resolveDisplayName]);
 
-  const handleFocusCustomer = (val) => {
+  // FIX: Ubah function jadi async untuk import Leaflet secara dinamis
+  const handleFocusCustomer = async (val) => {
     setSelectedCustomer(val);
     if (!val) return;
     const targetTask = driverTasks.find((t) => {
@@ -141,7 +141,11 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       if (coords && mapRo) {
         const zoomLevel = 16;
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
         if (isMobile) {
+          // Import Leaflet disini HANYA jika dijalankan di browser (client-side)
+          const L = (await import('leaflet')).default;
+
           const mapSize = mapRo.getSize();
           const targetPoint = mapRo.project([coords.lat, coords.lon], zoomLevel);
           const offsetY = mapSize.y * 0.25;
@@ -186,7 +190,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     <div className="flex flex-col lg:flex-row items-end justify-between w-full">
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
-          <label className="text-[10px] font-boldtracking-wide">
+          <label className="text-[10px] font-bold tracking-wide">
             {t('dashboard.map.dropdown_driver')}
           </label>
           <select
@@ -218,7 +222,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
               <option
                 key={`${opt.value}-${i}`}
                 value={opt.value}
-                // UPDATE: Logic warna merah soft (#EF4444) jika Pending
                 className={opt.isPending ? 'text-red-500 font-medium' : 'text-slate-700'}
                 style={opt.isPending ? { color: '#EF4444' } : {}}
               >

@@ -1,9 +1,12 @@
+// File: src/features/dashboard/components/MapViewSection.js
+'use client';
+
 import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty, parseCoordinates } from '@/lib/utils';
-import L from 'leaflet';
+// HAPUS: import L from 'leaflet';  <-- INI PENYEBAB ERROR
 import 'leaflet/dist/leaflet.css';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import InfoCard from './InfoCard';
 
@@ -24,7 +27,8 @@ const getAngle = (lat1, lng1, lat2, lng2) => {
   return theta;
 };
 
-const createArrowIcon = (angle, color, isHighlight = false) => {
+// UPDATE: Terima 'L' sebagai parameter
+const createArrowIcon = (L, angle, color, isHighlight = false) => {
   const size = isHighlight ? 24 : 16;
   const fontSize = isHighlight ? '20px' : '14px';
 
@@ -48,7 +52,8 @@ const createArrowIcon = (angle, color, isHighlight = false) => {
   });
 };
 
-const createNumberedIcon = (content, bgClassName) => {
+// UPDATE: Terima 'L' sebagai parameter
+const createNumberedIcon = (L, content, bgClassName) => {
   let fontSize = 'text-xs';
   if (isEmpty(content) || content === '?') fontSize = 'text-lg';
   if (content === 'HUB') fontSize = 'text-[8px] tracking-tighter';
@@ -84,8 +89,9 @@ const applyJitter = (tasks) => {
   });
 };
 
-const ArrowPolyline = ({ segments, defaultColor }) => {
-  if (!segments || isEmpty(segments)) return null;
+// UPDATE: Terima 'L' sebagai props
+const ArrowPolyline = ({ L, segments, defaultColor }) => {
+  if (!segments || isEmpty(segments) || !L) return null;
   return (
     <>
       {segments.map((seg, i) => {
@@ -114,19 +120,20 @@ const ArrowPolyline = ({ segments, defaultColor }) => {
             />
             <Marker
               position={[startArrowLat, startArrowLng]}
-              icon={createArrowIcon(angle, color, isHighlight)}
+              // PASS L ke createArrowIcon
+              icon={createArrowIcon(L, angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
             <Marker
               position={[midLat, midLng]}
-              icon={createArrowIcon(angle, color, isHighlight)}
+              icon={createArrowIcon(L, angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
             <Marker
               position={[endLat, endLng]}
-              icon={createArrowIcon(angle, color, isHighlight)}
+              icon={createArrowIcon(L, angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
@@ -152,14 +159,15 @@ function MapRef({ setMap }) {
   return null;
 }
 
-function FitBounds({ coords }) {
+// UPDATE: Terima 'L' sebagai props
+function FitBounds({ L, coords }) {
   const map = useMap();
   useEffect(() => {
-    if (coords && coords.length > 0) {
+    if (coords && coords.length > 0 && L) {
       const bounds = L.latLngBounds(coords.map((c) => [c.lat, c.lng]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [coords, map]);
+  }, [coords, map, L]);
   return null;
 }
 
@@ -185,6 +193,19 @@ const MapViewSection = ({
   resolveDisplayName,
 }) => {
   const { t } = useLanguage();
+
+  // STATE BARU: Untuk menyimpan library Leaflet yang di-load
+  const [LeafletLib, setLeafletLib] = useState(null);
+
+  // EFFECT BARU: Load Leaflet hanya di client
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('leaflet').then((module) => {
+        setLeafletLib(module.default);
+      });
+    }
+  }, []);
+
   const sortedTasks = useMemo(() => {
     const valid = tasks
       .filter((t) => t.longlat && t.longlat.includes(','))
@@ -198,7 +219,6 @@ const MapViewSection = ({
     return applyJitter(valid);
   }, [tasks, sequenceKey]);
 
-  // REQ 1: Hitung Completed Pickups
   const { pickupCount, completedPickupCount } = useMemo(() => {
     if (!tasks) return { pickupCount: 0, completedPickupCount: 0 };
     const pickups = tasks.filter((t) => t.flow === 'Pickup');
@@ -216,9 +236,7 @@ const MapViewSection = ({
     const routeTasks = sortedTasks.filter((t) => t.type !== 'HUB_START' && t.type !== 'HUB_END');
     let points = [];
 
-    // REQ 3: Logic Panah Actual Map
     if (!isActualMap) {
-      // PLAN MAP (Semua connected sesuai roSequence)
       points.push({ coords: hubCoords, name: 'HUB', flow: 'HUB' });
       routeTasks.forEach((t) => {
         const displayName = resolveDisplayName(t.customerName, t.flow);
@@ -226,23 +244,13 @@ const MapViewSection = ({
       });
       points.push({ coords: hubCoords, name: 'HUB_END', flow: 'HUB' });
     } else {
-      // ACTUAL MAP
-      // 1. Mulai dari HUB
       points.push({ coords: hubCoords, name: 'HUB', flow: 'HUB' });
-
-      // 2. Ambil hanya task yang sudah punya realSequence (sudah dikunjungi)
       const doneTasks = routeTasks.filter((t) => !isEmpty(t.realSequence));
-
-      // 3. Urutkan berdasarkan realSequence (1, 2, 3...)
       doneTasks.sort((a, b) => (a.realSequence || 0) - (b.realSequence || 0));
-
       doneTasks.forEach((t) => {
         const displayName = resolveDisplayName(t.customerName, t.flow);
         points.push({ coords: [t.lat, t.lng], name: displayName, flow: t.flow });
       });
-
-      // 4. Cek apakah SEMUA task sudah selesai?
-      // Jika jumlah yang selesai == total route tasks, baru tarik garis balik ke HUB
       if (doneTasks.length === routeTasks.length && routeTasks.length > 0) {
         points.push({ coords: hubCoords, name: 'HUB_END', flow: 'HUB' });
       }
@@ -286,6 +294,15 @@ const MapViewSection = ({
 
   const coordsForZoom = sortedTasks.map((t) => ({ lat: t.lat, lng: t.lng }));
 
+  // JIKA LEAFLET BELUM READY, JANGAN RENDER MAP
+  if (!LeafletLib) {
+    return (
+      <div className="flex flex-col flex-1 bg-white border rounded-lg overflow-hidden shadow-sm min-h-0 items-center justify-center">
+        <span className="text-sm text-gray-400">Loading Map...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col flex-1 bg-white border rounded-lg overflow-hidden shadow-sm relative min-h-0">
       <div
@@ -307,7 +324,7 @@ const MapViewSection = ({
               : resolveDisplayName(activeTask.customerName, activeTask.flow)
           }
           pickupCount={pickupCount}
-          completedPickupCount={completedPickupCount} // REQ 1: Pass Prop
+          completedPickupCount={completedPickupCount}
           isActualMap={isActualMap}
           t={t}
         />
@@ -327,8 +344,10 @@ const MapViewSection = ({
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapRef setMap={setMap} />
-              <FitBounds coords={coordsForZoom} />
-              <ArrowPolyline segments={pathSegments} defaultColor={lineColor} />
+
+              {/* Pass LeafletLib ke komponen anak */}
+              <FitBounds L={LeafletLib} coords={coordsForZoom} />
+              <ArrowPolyline L={LeafletLib} segments={pathSegments} defaultColor={lineColor} />
 
               {sortedTasks.map((task, idx) => {
                 const seqNum = task[sequenceKey] ?? '?';
@@ -344,16 +363,13 @@ const MapViewSection = ({
                   finalContent = 'HUB';
                 } else if (isCompleted) {
                   if (flow.includes('pickup')) {
-                    // REQ 1: Pickup hanya hijau jika SEMUA pickup sudah selesai
                     const allPickupDone = pickupCount > 0 && completedPickupCount === pickupCount;
                     if (allPickupDone) {
                       markerBgClass = isActualMap ? 'bg-[#16A34A]' : 'bg-[#0D9488]';
                     } else {
-                      // Jika belum semua selesai, tetap Ungu meski yang ini sudah selesai
                       markerBgClass = 'bg-[#9333EA]';
                     }
                   } else {
-                    // Flow Lain: Langsung Hijau/Teal jika completed
                     if (isActualMap) {
                       markerBgClass = 'bg-[#16A34A]';
                     } else {
@@ -361,7 +377,6 @@ const MapViewSection = ({
                     }
                   }
                 } else {
-                  // Not Completed
                   if (task.isManualAssign) {
                     markerBgClass = 'bg-[#64748B]';
                     finalContent = isActualMap ? seqNum : '-';
@@ -380,7 +395,8 @@ const MapViewSection = ({
                   <Marker
                     key={`${sequenceKey}-${idx}`}
                     position={[task.lat, task.lng]}
-                    icon={createNumberedIcon(finalContent, markerBgClass)}
+                    // Pass LeafletLib ke helper icon
+                    icon={createNumberedIcon(LeafletLib, finalContent, markerBgClass)}
                     zIndexOffset={isHub ? 200 : 100}
                     eventHandlers={{
                       click: () => {

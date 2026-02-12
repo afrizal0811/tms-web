@@ -1,5 +1,3 @@
-// File: src/app/layout.js
-
 import SessionGuard from '@/components/SessionGuard';
 import TokenExpirationModal from '@/components/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -20,11 +18,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-white text-slate-900`}>
         <LanguageProvider>
           <Toaster
             position="top-right"
+            containerStyle={{
+              top: 80,
+              left: 20,
+              bottom: 20,
+              right: 20,
+            }}
             toastOptions={{
               duration: 4000,
             }}

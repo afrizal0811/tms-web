@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🚛 Logistics Operation Dashboard & Fleet Management
 
-## Getting Started
+Aplikasi manajemen operasional logistik berbasis web yang komprehensif, dirancang untuk membantu Planner dan Admin dalam memonitor pergerakan armada, menganalisis performa pengiriman, memvalidasi koordinat pelanggan, hingga pelaporan mendalam mengenai penggunaan truk dan kinerja driver.
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-14-black) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC) ![Leaflet](https://img.shields.io/badge/Maps-Leaflet-green)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🌟 Fitur Utama
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 1. 🔐 Manajemen Akses & Lokasi (Multi-Hub)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- **Hub Selection:** Pengguna wajib memilih lokasi operasional (Cabang) saat masuk. Data lokasi disinkronkan dengan API vendor.
+- **Role-Based Login:** Sistem login berbasis email dengan validasi role yang ketat (User dengan role _Driver_ diblokir dari akses web).
+- **Session Guard:** Proteksi rute otomatis untuk memastikan pengguna memiliki sesi lokasi yang valid.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. 📊 Dashboard Operasional (Real-time Analytics)
 
-## Learn More
+Visualisasi performa harian dan tahunan menggunakan grafik interaktif:
 
-To learn more about Next.js, take a look at the following resources:
+- **Service Level:** Memantau status pengiriman (Sukses, Batal, Pending, Partial).
+- **Sequence Accuracy:** Mengukur kepatuhan driver terhadap urutan rute yang direncanakan.
+- **Load Capacity:** Analisis keterisian truk (Full, Optimal, Overload) dengan filter spesifik untuk tipe storage **Dry** dan **Frozen**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. 🚚 Estimasi Delivery & Tracking
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Routing vs Actual:** Tabel komparasi antara rencana sistem (TMS) dengan eksekusi lapangan.
+- **Smart Filtering:** Filter data berdasarkan pencarian teks dan Tipe Storage (Dry/Frozen).
+- **Document Generation:**
+  - **PDF Generator:** Membuat Surat Jalan/Tanda Terima Faktur siap cetak (satuan atau _Batch Zip_).
+  - **Excel Export:** Mengunduh data rekapitulasi pengiriman.
 
-## Deploy on Vercel
+### 4. 📍 Pembaruan Koordinat (Update Longlat)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Fitur untuk memvalidasi dan memperbaiki data lokasi pelanggan:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Interactive Map:** Visualisasi peta (Leaflet) yang menampilkan pergeseran dari titik lama ke titik baru.
+- **Distance Calculation:** Perhitungan otomatis selisih jarak (dalam meter) antara koordinat lama dan baru.
+- **History Log:** Melihat riwayat perubahan titik koordinat pelanggan.
+
+### 5. 📈 Rangkuman & Laporan (Summary Reports)
+
+Menu pelaporan mendalam untuk analisis efisiensi armada:
+
+- **Truck Usage:** Analisis penggunaan truk (TMS vs Non-TMS, TVU, Interbranch).
+- **Average KM:** Laporan rata-rata kilometer tempuh armada per hari.
+- **Time Analysis:**
+  - **Time Driver:** Durasi kerja driver (Jam Berangkat vs Jam Pulang).
+  - **Time RO:** Analisis waktu pembuatan Release Order.
+- **Bulk Downloader:** Fitur unduh laporan bulanan/harian secara massal untuk kebutuhan audit.
+
+### 6. 🚛 Manajemen Data Kendaraan (Vehicle Master)
+
+- **Master Data:** Daftar lengkap kendaraan beserta driver utama (_assignee_).
+- **Tag Mapping System:** Fitur untuk memetakan tag kendaraan dari vendor (misal: `BOX-BESAR`) ke standar internal (misal: `CDD-LONG`).
+- **Conditional Data:** Menangani data kendaraan dengan kondisi operasional khusus.
+
+### 7. 🌐 Fitur Pendukung
+
+- **Multi-Language (i18n):** Dukungan Bahasa Indonesia & Inggris.
+- **Token Expiry Alert:** Notifikasi otomatis jika sesi API token akan segera habis.
+
+---
+
+## 🛠️ Teknologi Utama
+
+- **Frontend:** [Next.js 14](https://nextjs.org/) (App Router), [React](https://react.dev/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Visualization:** [Recharts](https://recharts.org/) (Grafik), [React Leaflet](https://react-leaflet.js.org/) (Peta)
+- **Documents:** `@react-pdf/renderer` (PDF), `xlsx-js-style` (Excel), `jszip` (Kompresi)
+- **State Management:** React Context API & LocalStorage Strategy
+
+Copyright © 2025 EDP - Afi. All rights reserved.

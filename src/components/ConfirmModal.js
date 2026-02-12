@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function ConfirmModal({
@@ -12,35 +12,35 @@ export default function ConfirmModal({
   onConfirm,
   title,
 }) {
-  // Efek untuk disable scroll di background saat modal terbuka
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    // FIX: Gunakan setTimeout agar tidak dianggap synchronous update oleh linter
+    setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
-    // Cleanup
     return () => {
       document.body.style.overflow = 'auto';
     };
   }, [isOpen]);
 
-  // Jangan render apa-apa jika tidak 'isOpen'
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
-  // Render modal menggunakan Portal ke 'document.body'
   return createPortal(
     <div
-      // Backdrop (Overlay)
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-999 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
-        // Kontainer Modal
         className="relative w-full max-w-sm p-6 mx-4 bg-slate-800 rounded-lg shadow-xl transition-transform"
-        onClick={(e) => e.stopPropagation()} // Mencegah klik di dalam modal menutup modal
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Ikon Peringatan (Opsional, tapi bagus) */}
         <div className="flex justify-center mb-4">
           <div className="flex items-center justify-center w-12 h-12 bg-slate-700 rounded-full">
             <svg
@@ -60,13 +60,10 @@ export default function ConfirmModal({
           </div>
         </div>
 
-        {/* Judul (Title) */}
         <h3 className="text-lg font-medium text-center text-white mb-2">{title}</h3>
 
-        {/* Pesan (Message) */}
         <div className="text-sm text-center text-gray-400 mb-6">{message}</div>
 
-        {/* Tombol Aksi */}
         <div className="flex justify-center gap-4">
           <button
             onClick={onCancel}
@@ -83,6 +80,6 @@ export default function ConfirmModal({
         </div>
       </div>
     </div>,
-    document.body // Target Portal
+    document.body
   );
 }

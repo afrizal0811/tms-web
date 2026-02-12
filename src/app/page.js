@@ -6,87 +6,17 @@ import ErrorPage from '@/components/ErrorPage';
 import LocationDropdown from '@/components/LocationDropdown';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import { useLanguage } from '@/context/LanguageContext'; // 1. IMPORT CONTEXT
+import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
-import { ROLE_ID } from '@/lib/constants';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react'; // Tambah useRef
+import { useEffect, useRef, useState } from 'react';
 import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError } from '../lib/toastHelper';
-
-// --- KOMPONEN KECIL UNTUK DROPDOWN BAHASA (FLOATING) ---
-function LanguageFloater() {
-  const { lang, switchLanguage } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const languages = [
-    { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-  ];
-
-  // Tutup dropdown jika klik di luar
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="absolute top-6 right-6 z-50" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border border-gray-200 hover:bg-gray-50 transition-all text-sm font-medium text-slate-700 cursor-pointer"
-      >
-        <span>{lang === 'id' ? '🇮🇩' : '🇬🇧'}</span>
-        <span className="hidden sm:inline">{lang === 'id' ? 'Indonesia' : 'English'}</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
-          {languages.map((item) => (
-            <button
-              key={item.code}
-              onClick={() => {
-                switchLanguage(item.code);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-sky-50 transition-colors cursor-pointer ${
-                lang === item.code ? 'text-sky-700 font-semibold bg-sky-50/50' : 'text-slate-600'
-              }`}
-            >
-              <span className="text-lg">{item.flag}</span>
-              <span>{item.label}</span>
-              {lang === item.code && <span className="ml-auto text-sky-600">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { toastError, toastInfo } from '../lib/toastHelper';
 
 export default function Home() {
-  // ... (State dan Logic useEffect Anda TETAP SAMA, tidak ada yang diubah di sini) ...
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
@@ -99,8 +29,8 @@ export default function Home() {
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
-  // Ambil t untuk translate judul halaman (Opsional, biar makin keren)
   const { t } = useLanguage();
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     async function initializeApp() {
@@ -126,7 +56,7 @@ export default function Home() {
       }
       try {
         const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
-
+  
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setSelectedUser(user);
@@ -150,6 +80,15 @@ export default function Home() {
           }
         } else {
           setCurrentHubListView(processedHubs);
+          const hasShownSession = sessionStorage.getItem('hasShownHelpToast');
+          if (!hasShownSession && !toastShownRef.current) {
+            toastShownRef.current = true;
+            sessionStorage.setItem('hasShownHelpToast', 'true');
+
+            setTimeout(() => {
+              toastInfo(t('home.toast.info_tutorial'));
+            }, 500);
+          }
         }
 
         if (storedLocation && storedDrivers) {
@@ -163,7 +102,8 @@ export default function Home() {
       }
     }
     initializeApp();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependency kosong agar hanya jalan sekali saat mount
 
   useEffect(() => {
     async function fetchDriverData() {
@@ -184,6 +124,7 @@ export default function Home() {
     setTempSelectedLocation(id);
     setTempSelectedLocationName(name);
   };
+
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) {
       toastError(t('home.select_branch'));
@@ -200,10 +141,12 @@ export default function Home() {
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
+
   const handleUserSelect = (user) => {
     setLocalStorage('selectedUser', JSON.stringify(user));
     setSelectedUser(user);
   };
+
   const handleResetAll = () => {
     removeLocalStorage('userLocation');
     removeLocalStorage('userLocationName');
@@ -232,7 +175,6 @@ export default function Home() {
   if (!selectedLocation) {
     return (
       <SelectionLayout>
-        <LanguageFloater />
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
           <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch')}</h2>
@@ -262,7 +204,6 @@ export default function Home() {
   if (selectedLocation && !selectedUser) {
     return (
       <SelectionLayout>
-        <LanguageFloater />
         <div className="text-center w-full">
           <UserLogin
             hubId={selectedLocation}
@@ -280,7 +221,7 @@ export default function Home() {
     );
   }
 
-  // --- TAMPILAN 3: DASHBOARD (Sudah ada Navbar, jadi tidak butuh Floater) ---
+  // --- TAMPILAN 3: DASHBOARD ---
   return (
     <AppLayout mainClassName="items-center px-4">
       <DashboardSummary driverData={driverData.data} />

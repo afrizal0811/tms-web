@@ -66,11 +66,14 @@ export const dictionary = {
         title: 'Konfirmasi Pilihan User',
       },
       toast: {
-        success: 'Data berhasil disimpan!',
-        error: 'Gagal memuat data: {err}',
-        no_session: 'Harap pilih user dan lokasi terlebih dahulu',
-        no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
+        error: 'Gagal memuat data: {err}',
+        info_tutorial: 'Informasi Panduan ada di menu Help',
+        login_failed: 'Gagal login: {err}',
+        login_success: 'Login berhasil!',
+        no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
+        no_session: 'Harap pilih user dan lokasi terlebih dahulu',
+        success: 'Data berhasil disimpan!',
       },
     },
     vehicle_tag: {
@@ -612,6 +615,12 @@ export const dictionary = {
       note: 'Menghitung rute optimal ke dashboard...',
       title: 'Sinyal GPS Hilang',
     },
+    help: {
+      title: 'Tutorial untuk TMS',
+      subtitle:
+        'Dokumentasi teknis terpadu untuk membantu Admin dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
+      last_update: 'Terakhir diperbarui: {date}',
+    },
   },
   en: {
     common: {
@@ -680,6 +689,9 @@ export const dictionary = {
       toast: {
         driver_error: `The driver can’t log in. Please use another account`,
         error: 'Failed to load data: {err}',
+        info_tutorial: 'Information tutorial is in Help menu',
+        login_failed: 'Login failed: {err}',
+        login_success: 'Login success!',
         no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
         success: 'Data has been saved!',
@@ -1223,6 +1235,11 @@ export const dictionary = {
         'The system failed to track the coordinates of the page you want to go. It is possible that the link is broken, the page has been deleted, or the driver made a wrong turn.',
       note: 'Calculating the optimal route to the dashboard...',
       title: 'GPS Signal Lost',
+    },
+    help: {
+      title: 'Tutorial for TMS',
+      subtitle: 'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
+      last_update: 'Last Updated: {date}',
     },
   },
 };
