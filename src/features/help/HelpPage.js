@@ -7,7 +7,7 @@ import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
-import { useEffect, useMemo, useState } from 'react'; // Update Import
+import { useEffect, useMemo, useState } from 'react';
 import { helpTopics } from './data';
 import { PdfDocument } from './PdfDocument';
 
@@ -21,14 +21,9 @@ export default function HelpPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // --- HELPER: Ambil semua ID yang harus dibuka (Level 1 & Level 2) ---
   const getAllExpandedIds = (category) => {
     const catTopics = helpTopics.filter((t) => t.category === category);
-
-    // Level 1: Main Topics
     const level1Ids = new Set(catTopics.map((t) => t.id));
-
-    // Level 2: Sub Topics
     const level2Ids = new Set();
     catTopics.forEach((topic) => {
       if (topic.subTopics) {
@@ -39,11 +34,9 @@ export default function HelpPage() {
         });
       }
     });
-
     return { level1: level1Ids, level2: level2Ids };
   };
 
-  // 1. INITIAL STATE
   const [expandedIds, setExpandedIds] = useState(() => getAllExpandedIds('planner').level1);
   const [expandedSubIds, setExpandedSubIds] = useState(() => getAllExpandedIds('planner').level2);
 
@@ -78,14 +71,11 @@ export default function HelpPage() {
       const currentCategoryTopics = helpTopics.filter((t) => t.category === activeCategory);
       currentCategoryTopics.forEach((topic) => {
         let parentMatch = false;
-
         if (topic.title.toLowerCase().includes(lowerQuery)) parentMatch = true;
-
         if (topic.subTopics) {
           topic.subTopics.forEach((sub) => {
             const subMatch = sub.title.toLowerCase().includes(lowerQuery);
             let subSubMatch = false;
-
             if (sub.subSubTopics) {
               const childMatch = sub.subSubTopics.some((ss) =>
                 ss.title.toLowerCase().includes(lowerQuery)
@@ -95,7 +85,6 @@ export default function HelpPage() {
                 newSubExpanded.add(sub.id);
               }
             }
-
             if (subMatch || subSubMatch) {
               parentMatch = true;
               if (sub.subSubTopics && sub.subSubTopics.length > 0) {
@@ -104,7 +93,6 @@ export default function HelpPage() {
             }
           });
         }
-
         if (parentMatch) {
           newExpanded.add(topic.id);
         }
@@ -118,22 +106,16 @@ export default function HelpPage() {
     }
   };
 
-  // Penentuan Topik Aktif
   const currentTopic = manualSelection || (filteredTopics.length > 0 ? filteredTopics[0] : null);
 
-  // --- FITUR SCROLL KE ATAS ---
   useEffect(() => {
-    // Setiap kali `currentTopic` berubah (user klik menu atau ganti kategori),
-    // scroll window ke posisi 0 (paling atas).
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentTopic]);
-  // -----------------------------
 
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
     setManualSelection(null);
     setSearchQuery('');
-
     const { level1, level2 } = getAllExpandedIds(category);
     setExpandedIds(level1);
     setExpandedSubIds(level2);
@@ -324,7 +306,6 @@ export default function HelpPage() {
                                         {sub.title}
                                       </button>
 
-                                      {/* Tombol Chevron untuk Level 3 */}
                                       {hasSubSub && (
                                         <button
                                           onClick={(e) => toggleSubExpand(e, sub.id)}

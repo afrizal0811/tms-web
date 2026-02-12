@@ -1,4 +1,3 @@
-// File: src/components/navbar/Navbar.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
@@ -10,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
 import LocationSwitcher from './LocationSwitcher';
 import UserDisplay from './UserDisplay';
+
 function NavLink({ href, children, className }) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -46,27 +46,32 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
 
-  const [isSuperadmin] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  useEffect(() => {
+    // FIX: Gunakan setTimeout untuk menghindari warning set-state-in-effect
+    const timer = setTimeout(() => {
+      try {
+        const { storedUser: raw } = getLocalStorage();
+        if (raw) {
+          const user = JSON.parse(raw);
+          setIsLoggedIn(!!user);
+          setIsSuperadmin(user?.roleId === ROLE_ID.superadmin);
+        }
+      } catch {
+        setIsLoggedIn(false);
+        setIsSuperadmin(false);
+      }
+    }, 0);
 
-    try {
-      const { storedUser: raw } = getLocalStorage();
-      if (!raw) return false;
-      const user = JSON.parse(raw);
-      setIsLoggedIn(!!user);
-      return user?.roleId === ROLE_ID.superadmin;
-    } catch {
-      return false;
-    }
-  });
+    return () => clearTimeout(timer);
+  }, []);
 
-  // FIX: Gunakan setTimeout agar update state tidak sinkron (menghindari warning React)
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsMobileMenuOpen(false);
@@ -243,7 +248,6 @@ export default function Navbar() {
       className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm"
     >
       <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
-        {/* SECTION KIRI (Logo & Navigation Links) */}
         <div
           className={`flex items-center space-x-4 sm:space-x-6 ${isLoggedIn ? 'w-auto' : 'w-full lg:w-auto'}`}
         >
@@ -254,35 +258,24 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Navigasi Desktop: Jika Login muncul Menu Lengkap, Jika Tidak muncul Help saja */}
           <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
-            {isLoggedIn ? (
-              LoggedInComps
-            ) : (
-              // PINDAH KE SINI: Tombol Help di sebelah Logo (Layout Kiri)
-              <NavLink href="/help">{t('navbar.help')}</NavLink>
-            )}
+            {isLoggedIn ? LoggedInComps : <NavLink href="/help">{t('navbar.help')}</NavLink>}
           </div>
         </div>
 
-        {/* SECTION KANAN (User Data / Language Switcher) */}
         {isLoggedIn ? (
           <>
             {userComps}
             {hamburger}
           </>
         ) : (
-          // HANYA Language Switcher di pojok kanan
           <div className="flex items-center">
             <LanguageSwitcher />
-
-            {/* Hamburger untuk Mobile (jika layar kecil) agar Help tetap bisa diakses */}
             <div className="lg:hidden ml-2">{hamburger}</div>
           </div>
         )}
       </div>
 
-      {/* Mobile Menu Content (Render untuk LoggedIn maupun NotLoggedIn agar responsif) */}
       <div
         className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
           isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
@@ -308,12 +301,10 @@ export default function Navbar() {
             </>
           ) : null}
 
-          {/* Help selalu muncul di Mobile Menu */}
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
 
           {isLoggedIn && (
             <>
-              {/* Link Manual */}
               <a
                 href={plannerUrl}
                 target="_blank"

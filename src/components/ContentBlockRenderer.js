@@ -2,12 +2,11 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef } from 'react'; // 1. Import useEffect & useRef
+import { useEffect, useRef } from 'react';
 
 export default function ContentBlockRenderer({ block, onImageClick }) {
-  const textContentRef = useRef(null); // 2. Buat Ref
+  const textContentRef = useRef(null);
 
-  // 3. Logic untuk memunculkan Caption dari ALT tag secara otomatis
   useEffect(() => {
     if (block.type === 'text' && textContentRef.current) {
       const images = textContentRef.current.querySelectorAll('img');
@@ -15,16 +14,13 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
       images.forEach((img) => {
         const altText = img.getAttribute('alt');
 
-        // Cek jika alt ada dan belum ada caption (menghindari duplikasi saat re-render)
+        // Cek jika alt ada dan belum ada caption
         if (altText && !img.nextElementSibling?.classList?.contains('generated-caption')) {
           const caption = document.createElement('p');
           caption.innerText = altText;
-
-          // Style disamakan dengan style caption pada block type: 'image'
           caption.className =
             'p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 italic generated-caption';
 
-          // Masukkan caption setelah gambar
           if (img.parentNode) {
             img.parentNode.insertBefore(caption, img.nextSibling);
           }
@@ -61,9 +57,9 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
   if (block.type === 'text') {
     return (
       <div
-        ref={textContentRef} // 4. Pasang Ref disini
-        className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-4 
-        [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all"
+        ref={textContentRef}
+        // FIX: ClassName dijadikan satu baris string untuk menghindari Hydration Mismatch (\r\n vs space)
+        className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-4 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all"
         onClick={(e) => {
           if (e.target.tagName === 'IMG') {
             onImageClick({
