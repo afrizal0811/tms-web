@@ -45,25 +45,32 @@ export default function Navbar() {
   const { t, lang } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
+
+  // PERBAIKAN 1: Inisialisasi state dengan false (jangan akses localStorage di sini)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+
   const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
 
+  // PERBAIKAN 2: Pindahkan akses localStorage ke useEffect agar hanya jalan di browser
   useEffect(() => {
-    // FIX: Gunakan setTimeout untuk menghindari warning set-state-in-effect
+    // Gunakan setTimeout 0 untuk menghindari warning update state saat render
     const timer = setTimeout(() => {
       try {
-        const { storedUser: raw } = getLocalStorage();
-        if (raw) {
-          const user = JSON.parse(raw);
-          setIsLoggedIn(!!user);
-          setIsSuperadmin(user?.roleId === ROLE_ID.superadmin);
+        // Pastikan kode ini hanya jalan di client
+        if (typeof window !== 'undefined') {
+          const { storedUser: raw } = getLocalStorage();
+          if (raw) {
+            const user = JSON.parse(raw);
+            setIsLoggedIn(!!user);
+            setIsSuperadmin(user?.roleId === ROLE_ID.superadmin);
+          }
         }
-      } catch {
+      } catch (e) {
         setIsLoggedIn(false);
         setIsSuperadmin(false);
       }

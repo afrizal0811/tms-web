@@ -14,7 +14,6 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
       images.forEach((img) => {
         const altText = img.getAttribute('alt');
 
-        // Cek jika alt ada dan belum ada caption
         if (altText && !img.nextElementSibling?.classList?.contains('generated-caption')) {
           const caption = document.createElement('p');
           caption.innerText = altText;
@@ -29,7 +28,7 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
     }
   }, [block]);
 
-  // 1. Handler untuk gambar Murni (Block Type: Image)
+  // 1. Handler untuk gambar Murni
   if (block.type === 'image') {
     return (
       <div
@@ -53,12 +52,12 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
     );
   }
 
-  // 2. Handler untuk Teks HTML (Block Type: Text)
+  // 2. Handler untuk Teks HTML
   if (block.type === 'text') {
     return (
       <div
         ref={textContentRef}
-        // FIX: ClassName dijadikan satu baris string untuk menghindari Hydration Mismatch (\r\n vs space)
+        // PERBAIKAN DI SINI: className dijadikan satu baris full (jangan di-enter)
         className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-4 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all"
         onClick={(e) => {
           if (e.target.tagName === 'IMG') {
