@@ -5,9 +5,10 @@ import ContentBlockRenderer from '@/components/ContentBlockRenderer';
 import ImageLightbox from '@/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
-import { useMemo, useState, useEffect } from 'react'; // Update Import
-import { helpTopics } from './data';
+import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
+import { useEffect, useMemo, useState } from 'react'; // Update Import
+import { helpTopics } from './data';
 import { PdfDocument } from './PdfDocument';
 
 export default function HelpPage() {
@@ -199,6 +200,7 @@ export default function HelpPage() {
     return 'slate';
   };
   const theme = getThemeColor();
+  const LAST_UPDATE = '12/02/2026';
 
   return (
     <>
@@ -213,16 +215,15 @@ export default function HelpPage() {
 
       <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              {isIndo ? 'Pusat Tutorial' : 'Tutorial Center'}
-            </h1>
-            <p className="text-slate-500 mt-1">
-              {isIndo ? 'Panduan lengkap penggunaan sistem.' : 'Complete user guide.'}
+          <div className="text-left min-w-sm max-w-xl">
+            <h1 className="text-3xl font-bold text-slate-900">{t('help.title')}</h1>
+            <p className="text-slate-500 mt-1">{t('help.subtitle')}</p>
+            <p className="text-slate-400 mt-1 text-xs italic">
+              {t('help.last_update', { date: formatLongDate(LAST_UPDATE, lang) })}
             </p>
           </div>
           <div className="flex bg-gray-100 p-1 rounded-lg">
-            {['planner', 'driver', 'faq'].map((cat) => (
+            {['planner', 'driver'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}

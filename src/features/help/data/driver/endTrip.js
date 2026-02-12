@@ -12,7 +12,7 @@ export const endTripTopic = [
           <iframe 
             width="100%" 
             height="450" 
-            src="https://www.youtube.com/embed/A9v8--HmaTE" 
+            src="https://www.youtube.com/embed/w-WLEAMs4EI" 
             title="YouTube video player" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

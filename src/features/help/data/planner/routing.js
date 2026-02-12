@@ -375,11 +375,11 @@ export const routingTopic = [
             type: 'text',
             content: `
               <p class=" font-bold text-2xl underline mb-2">Tugaskan (<em>Dispatch</em>)</p>    
-              <p>Saat dirasa puas dengan hasil optimalisasinya, maka <em>planner</em> dapat melakukan proses <em>dispatch</em>, yaitu proses penugasan ke masing-masing <em>driver</em> berdasarkan dengan hasil optimalisasi. <strong>Pastikan memilih hasil yang tepat untuk di-<em>dispatch</em>.</p>
+              <p>Saat dirasa puas dengan hasil optimalisasinya, maka <em>planner</em> dapat melakukan proses <em>dispatch</em>, yaitu proses penugasan ke masing-masing <em>driver</em> berdasarkan dengan hasil optimalisasi. <strong>Pastikan memilih hasil yang tepat untuk di-<em>dispatch</em></strong>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-11.png" alt="Tugaskan (Dispatch)" style="width: 100%; border-radius: 4px;" />
               </div>
-              <p>Setelah proses <em>dispatch</em> telah selesai, maka akan muncul keterangan dan <em>planner</em> <strong>harus</strong> mengganti judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
+              <p>Setelah proses <em>dispatch</em> telah selesai, maka akan muncul keterangan dan <em>planner</em> <strong>harus mengubah</strong> judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-12.png" alt="Keterangan dan Ubah Judul" style="width: 100%; border-radius: 4px;" />
               </div>

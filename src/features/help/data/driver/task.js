@@ -8,7 +8,7 @@ export const taskTopic = [
         type: 'text',
         content: `
         <p><strong>Menu Tugas</strong> (<em>Task</em>) adalah menu utama untuk mengerjakan semua tugas yang telah diberikan oleh admin.</p>
-        <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
+        <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
             <img src="/images/tutorial/driver/task-menu-1.png" alt="Menu Tugas" style="width: 100%; border-radius: 4px;" />
         </div>
         <p>Berikut ini penjelasannya:</p>
@@ -61,13 +61,13 @@ export const taskTopic = [
           {
             type: 'text',
             content: `
-            <p>Pada bagian ini akan dijelaskan cara untuk mengerjakan tugas yang sudah diterima. Pengerjaan tugas <strong>harus</strong> dilakukan secara berurutan dari <strong>atas ke bawah.</strong> </p>
-            <p class='underline mb-2'>Perhatikan video berikut ini:
+            <p>Pada bagian ini akan dijelaskan cara untuk mengerjakan tugas yang sudah diterima. Pengerjaan tugas <strong>harus</strong> dilakukan secara berurutan dari <strong>atas ke bawah.</strong></p>
+            <p class='underline mb-2'>Perhatikan video berikut ini:</p>
             <div style="margin-top: 10px; margin-bottom: 10px;">
               <iframe 
                 width="100%" 
                 height="450" 
-                src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                src="https://www.youtube.com/embed/tAuvtUgzKss" 
                 title="YouTube video player" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -215,7 +215,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/ONsP8-71dSI" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -278,7 +278,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/UsiJSZ7wE90" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -369,7 +369,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/5jH8HaHR0fQ" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -437,7 +437,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/D856Tni_aBk" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -512,7 +512,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/zZWUifeLeTk" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -560,7 +560,7 @@ export const taskTopic = [
                   <li>
                     <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Ya</strong>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/confirm-location-3.png" alt="GPS Sesuai - Sukses" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/driver/confirm-location-4.png" alt="GPS Sesuai - Sukses" style="width: 100%; border-radius: 4px;" />
                     </div>
                   </li>
                 </ul>
@@ -575,7 +575,7 @@ export const taskTopic = [
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/A9v8--HmaTE" 
+                    src="https://www.youtube.com/embed/N-ZUemoeIGE" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

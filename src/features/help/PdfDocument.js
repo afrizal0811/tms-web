@@ -117,13 +117,13 @@ const styles = StyleSheet.create({
     textDecoration: 'underline',
   },
 
-  // FONT SIZES (Tailwind Mapping)
+  // FONT SIZES
   textXs: { fontSize: 8 },
   textSm: { fontSize: 9 },
   textBase: { fontSize: 10 },
   textLg: { fontSize: 12 },
   textXl: { fontSize: 14 },
-  text2xl: { fontSize: 16 },
+  text2xl: { fontSize: 18 },
   text3xl: { fontSize: 24 },
   text4xl: { fontSize: 30 },
   text5xl: { fontSize: 36 },
@@ -201,7 +201,7 @@ const getFontSize = (className) => {
   return {};
 };
 
-// --- HELPER 2: DETEKSI WARNA (Baru) ---
+// --- HELPER 2: DETEKSI WARNA ---
 const getColor = (className) => {
   if (!className) return {};
   if (className.includes('text-red-500')) return styles.textRed500;
@@ -231,13 +231,10 @@ const renderInlineNodes = (nodes) => {
     const isUnderline = className.includes('underline');
     const isLink = child.nodeName === 'A';
 
-    // Ambil Style Font Size & Color
     const fontSizeStyle = getFontSize(className);
     const colorStyle = getColor(className);
 
     let styleToUse = [];
-
-    // Prioritaskan Font Size & Color
     if (Object.keys(fontSizeStyle).length > 0) styleToUse.push(fontSizeStyle);
     if (Object.keys(colorStyle).length > 0) styleToUse.push(colorStyle);
 
@@ -293,7 +290,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
         isBold ? styles.bold : {},
         isUnderline ? { textDecoration: 'underline' } : {},
         fontSizeStyle,
-        colorStyle, // Terapkan warna
+        colorStyle,
       ];
 
       return (
@@ -303,10 +300,9 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       );
     }
 
-    // --- HANDLE INLINE TAGS AT ROOT (Fix untuk tag STRONG/SPAN tanpa P) ---
+    // --- HANDLE INLINE TAGS AT ROOT ---
     if (['STRONG', 'B', 'EM', 'I', 'SPAN', 'U'].includes(el.nodeName)) {
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
-
       return (
         <View key={index} style={blockStyle}>
           <Text>{renderInlineNodes([el])}</Text>
@@ -484,18 +480,19 @@ const BlockRenderer = ({ block }) => {
 // --- 5. MAIN DOCUMENT COMPONENT ---
 export const PdfDocument = ({ category, topics }) => (
   <Document>
-    <Page size="A4" style={styles.page}>
-      {/* Header */}
-      <View style={styles.header} fixed>
-        <Text style={styles.headerTitle}>User Guide: {category}</Text>
-      </View>
+    {/* LOGIC BARU: Lakukan Map pada level <Page> agar setiap topik pasti mulai di halaman baru */}
+    {topics.map((topic, index) => {
+      const mainNumber = `${index + 1}.`;
 
-      {/* Content Loop Level 1 */}
-      {topics.map((topic, index) => {
-        const mainNumber = `${index + 1}.`;
+      return (
+        <Page key={topic.id} size="A4" style={styles.page}>
+          {/* Header (Fixed di setiap halaman topik ini) */}
+          <View style={styles.header} fixed>
+            <Text style={styles.headerTitle}>User Guide: {category}</Text>
+          </View>
 
-        return (
-          <View key={topic.id} style={styles.section}>
+          {/* Konten Topik */}
+          <View style={styles.section}>
             <Text style={styles.topicTitle}>
               {mainNumber} {topic.title}
             </Text>
@@ -540,15 +537,15 @@ export const PdfDocument = ({ category, topics }) => (
               );
             })}
           </View>
-        );
-      })}
 
-      {/* Footer */}
-      <Text
-        style={styles.pageNumber}
-        render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-        fixed
-      />
-    </Page>
+          {/* Footer (Fixed di setiap halaman topik ini) */}
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+            fixed
+          />
+        </Page>
+      );
+    })}
   </Document>
 );

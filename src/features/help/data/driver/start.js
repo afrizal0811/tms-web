@@ -24,25 +24,8 @@ export const startTopic = [
       },
       {
         type: 'text',
-        content: `<p>TMS di Pangan Lestari menggunakan <strong>MileApp</strong>.</p>
-        <p class='underline mb-2'>Perhatikan video berikut ini:</p>
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-          <iframe 
-            width="100%" 
-            height="450" 
-            src="https://www.youtube.com/embed/A9v8--HmaTE" 
-            title="YouTube video player" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
-        </div>
-        `,
-      },
-      {
-        type: 'text',
         content: `
-          <p>Berikut ini penjelasannya:</p>
+          <p>TMS di Pangan Lestari menggunakan <strong>MileApp</strong>. Berikut ini cara untuk masuk di aplikasi TMS:</p>
           <ul class="list-decimal pl-5 space-y-2 mt-2">
           <li>
             <p>Unduh aplikasi MileApp di <em>Google Play Store</em> atau <em>App Store</em> dengan nama <strong>MileApp Field</strong>.</p>

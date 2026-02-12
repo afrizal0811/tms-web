@@ -614,6 +614,12 @@ export const dictionary = {
       note: 'Menghitung rute optimal ke dashboard...',
       title: 'Sinyal GPS Hilang',
     },
+    help: {
+      title: 'Tutorial untuk TMS',
+      subtitle:
+        'Dokumentasi teknis terpadu untuk membantu Admin dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
+      last_update: 'Terakhir diperbarui: {date}',
+    },
   },
   en: {
     common: {
@@ -1227,6 +1233,11 @@ export const dictionary = {
         'The system failed to track the coordinates of the page you want to go. It is possible that the link is broken, the page has been deleted, or the driver made a wrong turn.',
       note: 'Calculating the optimal route to the dashboard...',
       title: 'GPS Signal Lost',
+    },
+    help: {
+      title: 'Tutorial for TMS',
+      subtitle: 'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
+      last_update: 'Last Updated: {date}',
     },
   },
 };

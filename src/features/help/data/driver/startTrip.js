@@ -12,7 +12,7 @@ export const startTripTopic = [
           <iframe 
             width="100%" 
             height="450" 
-            src="https://www.youtube.com/embed/A9v8--HmaTE" 
+            src="https://www.youtube.com/embed/1W1_uPXAi5k" 
             title="YouTube video player" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -28,13 +28,13 @@ export const startTripTopic = [
           <ul class="list-decimal pl-5 space-y-2 mt-2">
           <li>
             <p>Saat berhasil masuk ke aplikasi, muncul jendela <strong>Mulai Perjalanan</strong> (<em>Start Trip</em>) untuk mencatat waktu awal pekerjaan. <em>Driver</em> harus dalam <strong>radius 500 meter</strong> dari gudang untuk dapat memulai perjalanan. Tekan tombol Mulai (<em>Start</em>) dan untuk memulai perjalanan.</p>
-            <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
+            <div style="margin-top: 10px; margin-bottom: 10px; width: 30%;" class="mx-auto">
                 <img src="/images/tutorial/driver/start-trip-1.png" alt="Memulai Perjalanan - 1" style="width: 100%; border-radius: 4px;" />
             </div>
           </li>
           <li>
             <p>Saat proses berhasil, akan muncul konfirmasi bahwa perjalanan telah dimulai. Tekan tombol Selesai (<em>Done</em>) untuk masuk ke dalam menu Tugas (<em>Task</em>).</p>
-            <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
+            <div style="margin-top: 10px; margin-bottom: 10px; width: 30%;" class="mx-auto">
                 <img src="/images/tutorial/driver/start-trip-2.png" alt="Memulai Perjalanan - 2" style="width: 100%; border-radius: 4px;" />
             </div>
           </li>
@@ -44,7 +44,7 @@ export const startTripTopic = [
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/sync-data-1.png" alt="Sinkronisasi Data di menu Tugas" style="width: 100%; border-radius: 4px;" />
             </div>
-            <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
+            <div style="margin-top: 10px; margin-bottom: 10px; width: 30%;" class="mx-auto">
                 <img src="/images/tutorial/driver/sync-data-2.png" alt="Sinkronisasi Data di menu Pengaturan" style="width: 100%; border-radius: 4px;" />
             </div>
           </li>
