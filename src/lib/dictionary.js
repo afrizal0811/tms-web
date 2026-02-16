@@ -455,8 +455,8 @@ export const dictionary = {
         no_data_downloaded: 'Tidak ada data untuk diunduh',
         no_driver_data: 'Gagal memuat data sopir: {err}',
         success_excel: 'Berhasil mengunduh data Estimasi Pengiriman!',
-        success_pdf: 'Berhasil mengunduh data Tanda Terima Faktur!',
-        success_zip: 'Berhasil mengunduh {length} data Tanda Terima Faktur dalam ZIP',
+        success_pdf: 'Berhasil mengunduh data Form Pengiriman!',
+        success_zip: 'Berhasil mengunduh {length} Form Pengiriman dalam ZIP!',
       },
       tooltip: {
         manual_assign: 'Penugasan Manual',
@@ -1077,8 +1077,8 @@ export const dictionary = {
         no_data_downloaded: 'No data available for download',
         no_driver_data: 'Failed to load driver data: {err}',
         success_excel: 'Delivery Estimation data downloaded successfully!',
-        success_pdf: 'Invoice Receipt data downloaded successfully!',
-        success_zip: 'Successfully downloaded {length} Invoice Receipt files in a ZIP archive',
+        success_pdf: 'Delivery Form downloaded successfully!',
+        success_zip: 'Successfully downloaded {length} Delivery Forms in a ZIP!',
       },
       tooltip: {
         manual_assign: 'Manual Assign',
@@ -1238,7 +1238,8 @@ export const dictionary = {
     },
     help: {
       title: 'Tutorial for TMS',
-      subtitle: 'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
+      subtitle:
+        'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
       last_update: 'Last Updated: {date}',
     },
   },

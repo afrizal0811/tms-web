@@ -24,7 +24,7 @@ const formatIndoDate = (dateStr) => {
 const getShortMonth = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('id-ID', { month: 'short' });
+  return date.toLocaleDateString('id-ID', { month: 'long' });
 };
 
 const calculateItemWeight = (item) => {
@@ -154,18 +154,14 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
 
               <View style={styles.miniTable}>
                 <View style={styles.miniTableHeader}>
-                  <View style={[styles.miniCell, styles.colNoUrut]}>
-                    <Text>No. URUT</Text>
+                  <View style={[styles.miniCell, styles.colBln, styles.miniTableFont]}>
+                    <Text>BULAN</Text>
                   </View>
-                  <View style={[styles.miniCell, styles.colBln]}>
-                    <Text>BLN</Text>
-                  </View>
-                  <View style={[styles.miniCell, styles.colNamaDriver]}>
+                  <View style={[styles.miniCell, styles.colNamaDriver, styles.miniTableFont]}>
                     <Text>NAMA DRIVER</Text>
                   </View>
                 </View>
                 <View style={styles.miniTableRow}>
-                  <View style={[styles.miniCell, styles.colNoUrut]}></View>
                   <View style={[styles.miniCell, styles.colBln]}>
                     <Text>{getShortMonth(selectedDate)}</Text>
                   </View>

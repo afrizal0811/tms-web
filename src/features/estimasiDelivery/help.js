@@ -386,8 +386,10 @@ export const styles = StyleSheet.create({
     height: '100%',
     paddingTop: 2,
   },
-  colNoUrut: { width: 50, borderRightWidth: 1 },
-  colBln: { width: 30, borderRightWidth: 1 },
+  miniTableFont : {
+    fontWeight: 'bold',
+  },
+  colBln: { width: 60, borderRightWidth: 1 },
   colNamaDriver: { flex: 1, borderRightWidth: 0 },
 
   tableContainer: {
