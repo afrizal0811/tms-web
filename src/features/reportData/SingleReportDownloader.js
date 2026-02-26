@@ -228,7 +228,7 @@ export default function TmsSummary({
       );
 
       if (error) {
-        throw new Error(t('report.toast.no_time'));
+        throw new Error(error);
       }
 
       XLSX.writeFile(wb, excelFileName);

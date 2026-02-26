@@ -1,4 +1,3 @@
-// File: src/features/vehicleData/timeReport.js (sesuaikan path)
 'use client';
 
 import {
@@ -12,30 +11,65 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
+function checkShiftMidpoint(rawStart, rawFinish, shift) {
+  if (!shift || !shift.startTime || !shift.endTime) return true;
+  if (!rawStart || !rawFinish) return false;
+
+  try {
+    const safeStart = rawStart.replace(' ', 'T') + 'Z';
+    const safeFinish = rawFinish.replace(' ', 'T') + 'Z';
+
+    const startMs = new Date(safeStart).getTime();
+    const finishMs = new Date(safeFinish).getTime();
+
+    if (isNaN(startMs) || isNaN(finishMs)) return false;
+
+    const midpointMs = startMs + (finishMs - startMs) / 2;
+    const midpointDate = new Date(midpointMs);
+
+    const [sH, sM] = shift.startTime.split(':').map(Number);
+    const [eH, eM] = shift.endTime.split(':').map(Number);
+
+    const shiftStart = new Date(midpointDate);
+    shiftStart.setUTCHours((sH || 0) - 7, sM || 0, 0, 0);
+
+    const shiftEnd = new Date(midpointDate);
+    shiftEnd.setUTCHours((eH || 0) - 7, eM || 0, 0, 0);
+
+    if (shift.multiday === 1 || shiftEnd <= shiftStart) {
+      shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+    }
+
+    return midpointMs >= shiftStart.getTime() && midpointMs <= shiftEnd.getTime();
+  } catch (e) {
+    return true;
+  }
+}
+
 export function generateTimeSummaryWorkbook(
   driverData,
   allApiData,
   selectedDate,
   selectedLocationName,
-  t // <--- 1. TERIMA PARAMETER t
+  t
 ) {
-  // Fallback translation function
   const translate = t || ((key) => key);
 
-  // 1. Buat Map Driver
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     if (normalizedEmail) {
-      acc[normalizedEmail] = { plat: driver.plat || null, name: driver.name };
+      acc[normalizedEmail] = {
+        plat: driver.plat || null,
+        name: driver.name,
+        workingTime: driver.workingTime,
+      };
     }
     return acc;
   }, {});
 
-  // 2. Ubah 'selectedDate' (YYYY-MM-DD) ke format DD-MM-YYYY
   const [y, m, d] = selectedDate.split('-');
   const formattedSelectedDate = `${d}-${m}-${y}`;
 
-  // 3. Proses Data API dan Filter
   const processedApiData = allApiData.map((item) => {
     const email = normalizeEmail(item.email);
     const driverInfo = emailToDriverMap[email];
@@ -56,6 +90,10 @@ export function generateTimeSummaryWorkbook(
       finishTimeFormatted: formatTimestampToQuotedHHMM_UTC7(finishTime),
       duration: calculateDurationAsQuotedHHMM(startTime, finishTime),
       travelTimeVal: item.finish?.totalDuration || 0,
+      workingTime: driverInfo?.workingTime || null,
+
+      rawStartTime: startTime,
+      rawFinishTime: finishTime,
     };
   });
 
@@ -63,19 +101,48 @@ export function generateTimeSummaryWorkbook(
     const criteriaMet = item.trackedTime >= 10 && item.totalDistance > 5;
     const emailExists = item.emailExists;
     const dateMatches = item.startDate === formattedSelectedDate;
+
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (isEmpty(filteredApiData)) return { error: 'Tidak ada data Start/Finish untuk tanggal ini.' }; // Error string ini bisa ditangani di UI level untuk translate
+  if (isEmpty(filteredApiData))
+    return { error: translate('report.toast.no_time') };
 
-  const apiDataMap = filteredApiData.reduce((acc, item) => {
-    if (item.email) {
-      acc.set(item.email, item);
+  const groupedData = {};
+  filteredApiData.forEach((item) => {
+    if (!groupedData[item.email]) {
+      groupedData[item.email] = [];
     }
-    return acc;
-  }, new Map());
+    groupedData[item.email].push(item);
+  });
 
-  // 4. Filter Master List
+  const apiDataMap = new Map();
+
+  for (const [email, records] of Object.entries(groupedData)) {
+    if (records.length === 1) {
+      apiDataMap.set(email, [{ ...records[0], isMultiple: false }]);
+      continue;
+    }
+
+    const filteredByShift = records.filter((r) =>
+      checkShiftMidpoint(r.rawStartTime, r.rawFinishTime, r.workingTime)
+    );
+
+    if (filteredByShift.length === 0) continue;
+
+    filteredByShift.sort((a, b) => {
+      const safeA = a.rawStartTime.replace(' ', 'T');
+      const safeB = b.rawStartTime.replace(' ', 'T');
+      return new Date(safeA) - new Date(safeB);
+    });
+
+    const isMultiple = filteredByShift.length > 1;
+    apiDataMap.set(
+      email,
+      filteredByShift.map((r) => ({ ...r, isMultiple }))
+    );
+  }
+
   const masterDriverList = driverData.filter((driver) => {
     const plat = driver.plat || '';
     if (isEmpty(plat)) return false;
@@ -83,28 +150,34 @@ export function generateTimeSummaryWorkbook(
     return true;
   });
 
-  // 5. Buat data Excel Object untuk Sheet 1
-  let excelDataObjects = masterDriverList.map((driver) => {
+  let excelDataObjects = masterDriverList.flatMap((driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
-    const apiData = apiDataMap.get(normalizedEmail);
-    if (apiData) {
-      return apiData;
-    } else {
-      return {
+    const apiDataArray = apiDataMap.get(normalizedEmail);
+
+    if (apiDataArray && apiDataArray.length > 0) {
+      return apiDataArray.map((apiData) => ({
+        ...apiData,
         plat: driver.plat,
         driver: driver.name,
-        startDate: null,
-        startTimeFormatted: null,
-        finishDate: null,
-        finishTimeFormatted: null,
-        duration: null,
-        travelTimeVal: 0,
-        totalDistance: 0,
-      };
+      }));
+    } else {
+      return [
+        {
+          plat: driver.plat,
+          driver: driver.name,
+          startDate: null,
+          startTimeFormatted: null,
+          finishDate: null,
+          finishTimeFormatted: null,
+          duration: null,
+          travelTimeVal: 0,
+          totalDistance: 0,
+          isMultiple: false,
+        },
+      ];
     }
   });
 
-  // 6. Sorting Sheet 1
   const getSortGroup = (platStr) => {
     if (!platStr) return 1;
     const platUpper = platStr.toUpperCase();
@@ -112,19 +185,32 @@ export function generateTimeSummaryWorkbook(
     if (platUpper.includes('SEWA')) return 2;
     return 1;
   };
+
   excelDataObjects.sort((a, b) => {
     const groupA = getSortGroup(a.plat);
     const groupB = getSortGroup(b.plat);
     if (groupA !== groupB) {
       return groupA - groupB;
     }
-    return (a.driver || '').localeCompare(b.driver || '');
+
+    const driverA = a.driver || '';
+    const driverB = b.driver || '';
+    const driverCompare = driverA.localeCompare(driverB);
+
+    if (driverCompare !== 0) {
+      return driverCompare;
+    }
+
+    if (a.rawStartTime && b.rawStartTime) {
+      const timeA = new Date(a.rawStartTime.replace(' ', 'T')).getTime();
+      const timeB = new Date(b.rawStartTime.replace(' ', 'T')).getTime();
+      return timeA - timeB;
+    }
+    return 0;
   });
 
-  // 7. Proses Sheet 1: Start-Finish Summary
   const wb = XLSX.utils.book_new();
 
-  // TRANSLATE HEADERS
   const headers = [
     translate('common.number_plates'),
     translate('common.driver'),
@@ -162,10 +248,14 @@ export function generateTimeSummaryWorkbook(
         displayTravelDist,
       ];
     }),
+    [],
+    ['Note'],
+    ['', 'tanggal start dan finish berbeda'],
+    ['', 'driver klik start-finish lebih dari 1x'],
   ];
+
   const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
 
-  // 8. Styling Sheet 1
   ws['!view'] = { state: 'frozen', ySplit: 1 };
   const colWidths = headers.map((header, i) => {
     const maxLength = finalSheetData.reduce(
@@ -175,37 +265,48 @@ export function generateTimeSummaryWorkbook(
     return { wch: Math.min(maxLength + 2, 50) };
   });
   ws['!cols'] = colWidths;
+
   const headerStyle = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const leftStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
-  const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } } };
   const greenHeaderStyle = {
     ...centerStyle,
     font: { bold: true },
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   };
+
+  const redFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FF9999' } } };
+  const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } };
+
   const range = XLSX.utils.decode_range(ws['!ref']);
+  const dataCount = excelDataObjects.length;
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) continue;
+
       if (R === 0) {
         if ([2, 3, 4, 5, 6].includes(C)) {
           ws[cellRef].s = greenHeaderStyle;
         } else {
           ws[cellRef].s = headerStyle;
         }
-      } else {
+      } else if (R <= dataCount) {
         const rowData = excelDataObjects[R - 1];
         if (C === 0 || C === 1) {
           ws[cellRef].s = leftStyle;
         } else {
           ws[cellRef].s = centerStyle;
         }
+
+        if (C === 1 && rowData && rowData.isMultiple) {
+          ws[cellRef].s = { ...ws[cellRef].s, ...yellowFillStyle };
+        }
+
         if (
           rowData &&
           rowData.startDate !== rowData.finishDate &&
@@ -215,14 +316,21 @@ export function generateTimeSummaryWorkbook(
           if (C === 2) ws[cellRef].s = { ...ws[cellRef].s, ...redFillStyle };
           if (C === 4) ws[cellRef].s = { ...ws[cellRef].s, ...redFillStyle };
         }
+      } else {
+        if (R === dataCount + 2 && C === 0) {
+          ws[cellRef].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
+        } else if (R === dataCount + 3) {
+          if (C === 0) ws[cellRef].s = redFillStyle;
+          if (C === 1) ws[cellRef].s = leftStyle;
+        } else if (R === dataCount + 4) {
+          if (C === 0) ws[cellRef].s = yellowFillStyle;
+          if (C === 1) ws[cellRef].s = leftStyle;
+        }
       }
     }
   }
 
-  // TRANSLATE SHEET NAME
   XLSX.utils.book_append_sheet(wb, ws, translate('excel.time.sheets.start_finish'));
-
-  // --- 9. LOGIC BARU: Sheet 2 - Travel Recap ---
 
   let dryTime = 0;
   let dryDist = 0;
@@ -230,7 +338,6 @@ export function generateTimeSummaryWorkbook(
   let frzDist = 0;
 
   excelDataObjects.forEach((item) => {
-    // Logic deteksi DRY/FRZ tetap menggunakan string internal (jangan di-translate)
     const driverName = (item.driver || '').toUpperCase();
     const tTime = item.travelTimeVal || 0;
     const tDist = item.totalDistance || 0;
@@ -247,7 +354,6 @@ export function generateTimeSummaryWorkbook(
   const totalTime = dryTime + frzTime;
   const totalDist = dryDist + frzDist;
 
-  // TRANSLATE DATA ROWS SHEET 2
   const recapData = [
     [
       translate('excel.time.headers.category'),
@@ -264,8 +370,6 @@ export function generateTimeSummaryWorkbook(
   ];
 
   const wsRecap = XLSX.utils.aoa_to_sheet(recapData);
-
-  // Styling Sheet 2
   const recapRange = XLSX.utils.decode_range(wsRecap['!ref']);
   const recapHeaderStyle = {
     font: { bold: true },
@@ -306,10 +410,8 @@ export function generateTimeSummaryWorkbook(
     }
   }
 
-  // TRANSLATE SHEET NAME
   XLSX.utils.book_append_sheet(wb, wsRecap, translate('excel.time.sheets.travel_recap'));
 
-  // 10. Kembalikan Hasil & TRANSLATE FILENAME
   const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
   const excelFileName = `${translate('excel.time.filename')} - ${formattedDate} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };

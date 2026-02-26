@@ -168,14 +168,17 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
       email: driver.email,
     }));
 
-    // Proses Vehicle Map
+    // Proses Vehicle Map dengan Optional Chaining supaya aman
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
           plat: vehicle.name,
           type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
-          maxWeight: vehicle.capacity.weight.max,
-          maxVolume: vehicle.capacity.volume.max,
+          maxWeight: vehicle.capacity?.weight?.max || null,
+          maxVolume: vehicle.capacity?.volume?.max || null,
+          startWorking: vehicle.workingTime?.startTime || null,
+          endWorking: vehicle.workingTime?.endTime || null,
+          multiday: vehicle.workingTime?.multiday || null,
         };
       }
       return acc;
@@ -190,6 +193,11 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
         type: vehicleInfo ? vehicleInfo.type : null,
         maxWeight: vehicleInfo ? parseFloat(vehicleInfo.maxWeight) : null,
         maxVolume: vehicleInfo ? parseFloat(vehicleInfo.maxVolume) : null,
+        workingTime: {
+          startTime: vehicleInfo ? vehicleInfo.startWorking : null,
+          endTime: vehicleInfo ? vehicleInfo.endWorking : null,
+          multiday: vehicleInfo ? vehicleInfo.multiday : null,
+        },
       };
     });
 
