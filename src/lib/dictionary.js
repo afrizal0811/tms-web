@@ -481,6 +481,13 @@ export const dictionary = {
           holiday: 'Libur (Minggu)',
           start_ro: 'Waktu Mulai',
           title: 'Waktu Routing',
+          tooltip: {
+            date_ro: 'H-1 Pengiriman',
+            end_ro: 'Waktu terakhir penugasan tugas',
+            end_ro_error: 'End RO tersedia, namun Start RO kosong',
+            start_ro: 'Waktu pertama pembuatan tugas',
+            start_ro_error: 'Start RO tersedia, namun End RO kosong',
+          },
         },
         task_summary: {
           co: 'Pembatalan Order',
@@ -1104,6 +1111,13 @@ export const dictionary = {
           holiday: 'Holiday (Sunday)',
           start_ro: 'Start Time',
           title: 'Routing Time',
+          tooltip: {
+            date_ro: 'D-1 Delivery',
+            end_ro: 'Last task assignment time',
+            start_ro_error: 'End RO is available, but Start RO is empty',
+            start_ro: 'First task creation time',
+            end_ro_error: 'Start RO is available, but End RO is empty',
+          },
         },
         task_summary: {
           co: 'Cancel Order',

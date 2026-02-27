@@ -2,11 +2,41 @@ import { formatDateWIB } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 
-const isSameDayWIB = (iso1, iso2) => {
-  if (!iso1 || !iso2) return false;
-  return (
-    formatDateWIB(new Date(iso1), 'YYYY-MM-DD') === formatDateWIB(new Date(iso2), 'YYYY-MM-DD')
+const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
+  if (!createdIso || !assignedIso) return false;
+
+  const cTime = new Date(createdIso).getTime();
+  const aTime = new Date(assignedIso).getTime();
+
+  if (isNaN(cTime) || isNaN(aTime)) return false;
+  if (aTime < cTime) return false;
+
+  const cWIB = new Date(cTime + 7 * 60 * 60 * 1000);
+  const aWIB = new Date(aTime + 7 * 60 * 60 * 1000);
+
+  const maxWIB = new Date(
+    Date.UTC(cWIB.getUTCFullYear(), cWIB.getUTCMonth(), cWIB.getUTCDate() + 1, 3, 0, 0)
   );
+
+  return aWIB.getTime() <= maxWIB.getTime();
+};
+
+const isValidRoutingTimeWIB = (utcString) => {
+  if (!utcString) return false;
+  const d = new Date(utcString);
+  if (isNaN(d.getTime())) return false;
+
+  const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const day = wibDate.getUTCDay();
+  const hour = wibDate.getUTCHours();
+
+  if (day >= 1 && day <= 5) {
+    return hour >= 16;
+  } else if (day === 6) {
+    return hour >= 12;
+  } else {
+    return true;
+  }
 };
 
 const createSafeDate = (dateStr) => {
@@ -33,8 +63,8 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
         month: 'long',
         year: 'numeric',
       }),
-      minCreatedTime: null,
-      minAssignedTime: null,
+      firstCreatedTime: null,
+      lastAssignedTime: null,
       isSunday: current.getDay() === 0,
     };
     current.setDate(current.getDate() + 1);
@@ -43,12 +73,12 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   if (Array.isArray(tasks)) {
     tasks.forEach((task) => {
       if (task.createdFrom !== 'API') return;
+      if (task.flow !== 'Delivery') return;
       if (!task.createdTime) return;
+      if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-      let taskDateKey = formatDateWIB(task.createdTime, 'YYYY-MM-DD');
+      let taskDateKey = formatDateWIB(new Date(task.createdTime), 'YYYY-MM-DD');
 
-      // --- UPDATE LOGIKA RE-MAPPING EXCEL ---
-      // Pindahkan 2 Jan ke 31 Des HANYA JIKA '2025-12-31' ada di range sheet ini.
       if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
         taskDateKey = '2025-12-31';
       }
@@ -56,16 +86,25 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
       const targetKey =
         taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
 
-      const row = dataMap[targetKey];
-      if (!row) return;
+      if (dataMap[targetKey]) {
+        if (
+          !dataMap[targetKey].firstCreatedTime ||
+          new Date(task.createdTime) < new Date(dataMap[targetKey].firstCreatedTime)
+        ) {
+          dataMap[targetKey].firstCreatedTime = task.createdTime;
+        }
 
-      if (!row.minCreatedTime || new Date(task.createdTime) < new Date(row.minCreatedTime)) {
-        row.minCreatedTime = task.createdTime;
-      }
-
-      if (task.assignedTime) {
-        if (!row.minAssignedTime || new Date(task.assignedTime) < new Date(row.minAssignedTime)) {
-          row.minAssignedTime = task.assignedTime;
+        if (
+          task.assignedTime &&
+          task.routingResultId &&
+          isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
+        ) {
+          if (
+            !dataMap[targetKey].lastAssignedTime ||
+            new Date(task.assignedTime) > new Date(dataMap[targetKey].lastAssignedTime)
+          ) {
+            dataMap[targetKey].lastAssignedTime = task.assignedTime;
+          }
         }
       }
     });
@@ -94,11 +133,13 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
           e: { r: rowIndex, c: 2 },
         });
       } else {
-        const validEnd = isSameDayWIB(row.minCreatedTime, row.minAssignedTime);
+        const hasStart = !!row.firstCreatedTime;
+        const hasEnd = !!row.lastAssignedTime;
+
         excelData.push([
           row.dateDisplay,
-          formatDateWIB(row.minCreatedTime, 'HH:mm'),
-          validEnd ? formatDateWIB(row.minAssignedTime, 'HH:mm') : '-',
+          hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-',
+          hasEnd ? formatDateWIB(row.lastAssignedTime, 'HH:mm') : '-',
         ]);
       }
     });
@@ -113,16 +154,38 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
     if (cell) cell.s = HEADER_STYLES.main;
   }
 
+  const ERROR_CELL_STYLE = {
+    fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } },
+    font: { color: { rgb: '9C0006' }, bold: true },
+  };
+
   for (let R = 1; R <= range.e.r; R++) {
-    const isSunday = excelData[R][1] === 'Libur (Minggu)' || excelData[R][1] === 'Holiday (Sunday)';
+    const startVal = excelData[R][1];
+    const endVal = excelData[R][2];
+    const isSunday = startVal === 'Libur (Minggu)' || startVal === 'Holiday (Sunday)';
+
+    // Validasi missing pair
+    const isStartMissing = startVal === '-' && endVal !== '-';
+    const isEndMissing = startVal !== '-' && endVal === '-';
+
     for (let C = 0; C <= 2; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (!cell) continue;
 
-      cell.s = {
-        ...BASE_STYLES.center,
-        fill: isSunday ? { patternType: 'solid', fgColor: COLORS.sunday } : undefined,
-      };
+      let currentStyle = { ...BASE_STYLES.center };
+
+      if (isSunday) {
+        currentStyle.fill = { patternType: 'solid', fgColor: COLORS.sunday };
+      } else {
+        // Berikan warna merah pada cell yang bolong
+        if (C === 1 && isStartMissing) {
+          currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
+        } else if (C === 2 && isEndMissing) {
+          currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
+        }
+      }
+
+      cell.s = currentStyle;
     }
   }
 

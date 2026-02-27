@@ -1,6 +1,6 @@
-// File: src/features/rangkuman/tabs/TimeROTab.js
 'use client';
 
+import Tooltip from '@/components/Tooltip'; // Sesuaikan path ini jika berbeda
 import { formatDateWIB, isDateSunday } from '@/lib/utils';
 import { useMemo } from 'react';
 
@@ -11,9 +11,47 @@ const dataClass =
 
 const isSameDayWIB = (isoString1, isoString2) => {
   if (!isoString1 || !isoString2) return false;
-  const d1 = formatDateWIB(new Date(isoString1), 'YYYY-MM-DD');
-  const d2 = formatDateWIB(new Date(isoString2), 'YYYY-MM-DD');
-  return d1 === d2;
+  return (
+    formatDateWIB(new Date(isoString1), 'YYYY-MM-DD') ===
+    formatDateWIB(new Date(isoString2), 'YYYY-MM-DD')
+  );
+};
+
+const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
+  if (!createdIso || !assignedIso) return false;
+
+  const cTime = new Date(createdIso).getTime();
+  const aTime = new Date(assignedIso).getTime();
+
+  if (isNaN(cTime) || isNaN(aTime)) return false;
+  if (aTime < cTime) return false;
+
+  const cWIB = new Date(cTime + 7 * 60 * 60 * 1000);
+  const aWIB = new Date(aTime + 7 * 60 * 60 * 1000);
+
+  const maxWIB = new Date(
+    Date.UTC(cWIB.getUTCFullYear(), cWIB.getUTCMonth(), cWIB.getUTCDate() + 1, 3, 0, 0)
+  );
+
+  return aWIB.getTime() <= maxWIB.getTime();
+};
+
+const isValidRoutingTimeWIB = (utcString) => {
+  if (!utcString) return false;
+  const d = new Date(utcString);
+  if (isNaN(d.getTime())) return false;
+
+  const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const day = wibDate.getUTCDay();
+  const hour = wibDate.getUTCHours();
+
+  if (day >= 1 && day <= 5) {
+    return hour >= 16;
+  } else if (day === 6) {
+    return hour >= 12;
+  } else {
+    return true;
+  }
 };
 
 export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, language }) {
@@ -28,6 +66,11 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
     const end = new Date(endDateStr);
     end.setHours(0, 0, 0, 0);
 
+    const lastDayKey = formatDateWIB(end, 'YYYY-MM-DD');
+    const nextDay = new Date(end);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayKey = formatDateWIB(nextDay, 'YYYY-MM-DD');
+
     const current = new Date(start);
 
     while (current <= end) {
@@ -41,8 +84,8 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
       dataMap[dateKey] = {
         dateKey: dateKey,
         dateDisplay: displayDate,
-        minCreatedTime: null,
-        minAssignedTime: null,
+        firstCreatedTime: null,
+        lastAssignedTime: null,
       };
       current.setDate(current.getDate() + 1);
     }
@@ -50,32 +93,37 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
     if (tasks && Array.isArray(tasks)) {
       tasks.forEach((task) => {
         if (task.createdFrom !== 'API') return;
+        if (task.flow !== 'Delivery') return;
         if (!task.createdTime) return;
+        if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
         let taskDateKey = formatDateWIB(new Date(task.createdTime), 'YYYY-MM-DD');
 
-        // --- LOGIKA RE-MAPPING ---
-        // Pindahkan 2 Jan ke 31 Des HANYA JIKA '2025-12-31' ada di laporan ini.
         if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
           taskDateKey = '2025-12-31';
         }
 
-        if (dataMap[taskDateKey]) {
-          const currentData = dataMap[taskDateKey];
+        const targetKey =
+          taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
 
+        if (dataMap[targetKey]) {
           if (
-            !currentData.minCreatedTime ||
-            new Date(task.createdTime) < new Date(currentData.minCreatedTime)
+            !dataMap[targetKey].firstCreatedTime ||
+            new Date(task.createdTime) < new Date(dataMap[targetKey].firstCreatedTime)
           ) {
-            currentData.minCreatedTime = task.createdTime;
+            dataMap[targetKey].firstCreatedTime = task.createdTime;
           }
 
-          if (task.assignedTime) {
+          if (
+            task.assignedTime &&
+            task.routingResultId &&
+            isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
+          ) {
             if (
-              !currentData.minAssignedTime ||
-              new Date(task.assignedTime) < new Date(currentData.minAssignedTime)
+              !dataMap[targetKey].lastAssignedTime ||
+              new Date(task.assignedTime) > new Date(dataMap[targetKey].lastAssignedTime)
             ) {
-              currentData.minAssignedTime = task.assignedTime;
+              dataMap[targetKey].lastAssignedTime = task.assignedTime;
             }
           }
         }
@@ -93,9 +141,27 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
         <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0">
           <thead className={`text-xs text-gray-700 uppercase sticky top-0 z-10 ${violetColor}`}>
             <tr>
-              <th className={headerClass}>{translate('summary.tabs.time_ro.date_ro')}</th>
-              <th className={headerClass}>{translate('summary.tabs.time_ro.start_ro')}</th>
-              <th className={headerClass}>{translate('summary.tabs.time_ro.end_ro')}</th>
+              <th className={headerClass}>
+                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.date_ro')}>
+                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
+                    {translate('summary.tabs.time_ro.date_ro')}
+                  </span>
+                </Tooltip>
+              </th>
+              <th className={headerClass}>
+                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.start_ro')}>
+                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
+                    {translate('summary.tabs.time_ro.start_ro')}
+                  </span>
+                </Tooltip>
+              </th>
+              <th className={headerClass}>
+                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro')}>
+                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
+                    {translate('summary.tabs.time_ro.end_ro')}
+                  </span>
+                </Tooltip>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -118,14 +184,44 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                 );
               }
 
-              const isValidEndRO = isSameDayWIB(row.minCreatedTime, row.minAssignedTime);
-              const endRODisplay = isValidEndRO ? formatDateWIB(row.minAssignedTime, 'HH:mm') : '-';
+              const hasStart = !!row.firstCreatedTime;
+              const hasEnd = !!row.lastAssignedTime;
+
+              const isStartMissing = !hasStart && hasEnd;
+              const isEndMissing = hasStart && !hasEnd;
+
+              const startDisplay = hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-';
+              const endDisplay = hasEnd ? formatDateWIB(row.lastAssignedTime, 'HH:mm') : '-';
+
+              const errorClass = 'bg-red-100 text-red-600 font-bold';
 
               return (
                 <tr key={idx} className="bg-white border-b hover:bg-gray-50">
                   <td className={dataClass}>{row.dateDisplay}</td>
-                  <td className={dataClass}>{formatDateWIB(row.minCreatedTime, 'HH:mm')}</td>
-                  <td className={dataClass}>{endRODisplay}</td>
+
+                  {/* CELL START RO */}
+                  <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
+                    {isStartMissing ? (
+                      <Tooltip
+                        tooltipContent={translate('summary.tabs.time_ro.tooltip.start_ro_error')}
+                      >
+                        <span className="cursor-help w-full inline-block">{startDisplay}</span>
+                      </Tooltip>
+                    ) : (
+                      startDisplay
+                    )}
+                  </td>
+
+                  {/* CELL END RO */}
+                  <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
+                    {isEndMissing ? (
+                      <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro_error')}>
+                        <span className="cursor-help w-full inline-block">{endDisplay}</span>
+                      </Tooltip>
+                    ) : (
+                      endDisplay
+                    )}
+                  </td>
                 </tr>
               );
             })}
