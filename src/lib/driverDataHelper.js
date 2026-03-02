@@ -170,7 +170,6 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
 
     // Proses Vehicle Map dengan Optional Chaining supaya aman
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
-    console.log('vehicle :', vehicle);
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
           plat: vehicle.name,
