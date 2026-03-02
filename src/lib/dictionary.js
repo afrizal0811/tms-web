@@ -469,6 +469,7 @@ export const dictionary = {
       subtitle_2: 'tiap bulan',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
+      long_message: 'Memproses banyak data, silahkan tunggu sebentar.',
       toast: {
         success: 'Data rangkuman berhasil diunduh!',
         error: 'Data rangkuman gagal dibuat: {err}',
@@ -1098,7 +1099,7 @@ export const dictionary = {
       subtitle_2: 'every month',
       subtitle_highlight: 'task performance',
       title: 'Summary',
-      long_message: 'Processing a lot of data in',
+      long_message: 'Processing a lot of data, please wait a moment.',
       toast: {
         success: 'Summary data has been downloaded successfully!',
         error: 'Failed to generate summary data: {err}',

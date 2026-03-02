@@ -103,7 +103,7 @@ export default function TaskSummaryTab({
     <tr key={`${key}-sun-1`} className="bg-red-200 text-red-900 border-b border-gray-300">
       <td
         rowSpan={2}
-        className="px-2 py-2 border border-gray-300 font-medium align-middle bg-red-200"
+        className="px-2 py-2 border border-gray-300 font-medium align-middle bg-red-200 text-center"
       >
         {display}
       </td>
@@ -191,12 +191,18 @@ export default function TaskSummaryTab({
               const mtDry = masterTruckData.Dry?.Total || 0;
               const mtFrozen = masterTruckData.Frozen?.Total || 0;
 
+              // --- LOGIKA PEWARNAAN MERAH JIKA TOTAL DP = 0 ---
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0;
+              const dateCellClass = isZeroDP
+                ? 'bg-red-100 text-red-600 font-bold'
+                : 'bg-white font-medium';
+
               return [
                 // ROW 1: DRY
                 <tr key={`${key}-dry`} className="hover:bg-gray-50 bg-white">
                   <td
                     rowSpan={2}
-                    className="px-2 py-2 border border-gray-300 font-medium align-middle bg-white"
+                    className={`px-2 py-2 border border-gray-300 align-middle text-center ${dateCellClass}`}
                   >
                     {display}
                   </td>

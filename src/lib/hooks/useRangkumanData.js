@@ -35,7 +35,6 @@ const cleanPlat = (str) => (str || '').replace(/\s+/g, '').toLowerCase();
 export default function useRangkumanData() {
   const { t, lang } = useLanguage();
 
-  // States
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [selectedDate, setSelectedDate] = useState(getInitialDate());
@@ -50,12 +49,10 @@ export default function useRangkumanData() {
   const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
   const [historyProgress, setHistoryProgress] = useState(0);
 
-  // State untuk titik notifikasi
   const [dismissedDots, setDismissedDots] = useState({});
 
   const fetchStartTimeRef = useRef(null);
 
-  // Load Initial Storage
   useEffect(() => {
     const { storedLocation, storedLocationName, storedMasterTruck } = getLocalStorage();
     if (typeof window !== 'undefined') {
@@ -69,7 +66,6 @@ export default function useRangkumanData() {
     }
   }, []);
 
-  // Timer
   useEffect(() => {
     let interval = null;
     if (isLoading) {
@@ -122,7 +118,6 @@ export default function useRangkumanData() {
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
-            // UPDATE: Tambahkan ma_hist pada inisialisasi awal
             dry: {
               dp: 0,
               dt_total: 0,
@@ -182,6 +177,7 @@ export default function useRangkumanData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
+          // Tetap gunakan doneTime untuk memfilter task yg sudah benar-benar selesai untuk MA/RT/CO/PR
           if (!task.doneTime) return;
           const dateKey = getRoutingDateKeyFromDateStr(task.doneTime.substring(0, 10));
           if (!dateKey) return;
@@ -210,13 +206,52 @@ export default function useRangkumanData() {
       const resultMap = new Map();
 
       doneResults.forEach((res) => {
-        const dObj = new Date(res.createdTime);
-        const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-        const dateKey = res.createdTime
-          ? `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`
-          : null;
+        let deliveryDateWib = null;
+        let attempts = 0;
+        const routingArray = res.result?.routing || [];
+
+        // --- LOGIKA MENCARI TANGGAL DELIVERY VIA TASK DI ALLTASKS ---
+        for (const vehicle of routingArray) {
+          if (attempts >= 5 || deliveryDateWib) break;
+          const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
+          for (const trip of trips) {
+            if (attempts >= 5 || deliveryDateWib) break;
+            const visitId = trip.visitId;
+            if (visitId && visitId.includes('-')) {
+              const taskId = visitId.substring(visitId.indexOf('-') + 1);
+              // Cari Task ID di dalam kamus lokal allTasks
+              const foundTask = allTasks.find(
+                (t) =>
+                  String(t._id) === String(taskId) ||
+                  String(t.id) === String(taskId) ||
+                  String(t.taskId) === String(taskId)
+              );
+
+              if (foundTask && foundTask.startTime) {
+                const stObj = new Date(foundTask.startTime);
+                const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
+                deliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
+              }
+              attempts++;
+            }
+          }
+        }
+
+        let dateKey;
+        if (deliveryDateWib) {
+          // Jika berhasil ketemu, gunakan tanggal delivery yg valid
+          dateKey = getRoutingDateKeyFromDateStr(deliveryDateWib);
+        } else {
+          // Jika 5 percobaan gagal, fallback ke logika awal (createdTime)
+          const dObj = new Date(res.createdTime);
+          const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
+          dateKey = res.createdTime
+            ? `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`
+            : null;
+        }
 
         if (!dateKey || !res._id) return;
+
         initDate(dateKey);
         resultIdsToFetch.push(res._id);
         resultMap.set(res._id, res);
@@ -233,7 +268,6 @@ export default function useRangkumanData() {
         tempMetrics[dateKey].dry.dt_sum += routingDroppedDry;
         tempMetrics[dateKey].frozen.dt_sum += routingDroppedFrozen;
 
-        const routingArray = res.result?.routing || [];
         routingArray.forEach((vehicle) => {
           const driverStorage = driverMapStorage[(vehicle.assignee || '').toLowerCase()] || 'DRY';
           const visitsCount =
@@ -257,9 +291,44 @@ export default function useRangkumanData() {
             (json.data || []).forEach((item) => {
               const originalRes = resultMap.get(item.resultId);
               if (!originalRes) return;
-              const dObj = new Date(originalRes.createdTime);
-              const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-              const dateKey = `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`;
+
+              // Re-apply logika fallback atau lookup pada mapping histori agar sejajar
+              let dateKey;
+              let histDeliveryDateWib = null;
+              let histAttempts = 0;
+              const originalRoutingArray = originalRes.result?.routing || [];
+
+              for (const vehicle of originalRoutingArray) {
+                if (histAttempts >= 5 || histDeliveryDateWib) break;
+                const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
+                for (const trip of trips) {
+                  if (histAttempts >= 5 || histDeliveryDateWib) break;
+                  const visitId = trip.visitId;
+                  if (visitId && visitId.includes('-')) {
+                    const taskId = visitId.substring(visitId.indexOf('-') + 1);
+                    const foundTask = allTasks.find(
+                      (t) =>
+                        String(t._id) === String(taskId) ||
+                        String(t.id) === String(taskId) ||
+                        String(t.taskId) === String(taskId)
+                    );
+                    if (foundTask && foundTask.startTime) {
+                      const stObj = new Date(foundTask.startTime);
+                      const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
+                      histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
+                    }
+                    histAttempts++;
+                  }
+                }
+              }
+
+              if (histDeliveryDateWib) {
+                dateKey = getRoutingDateKeyFromDateStr(histDeliveryDateWib);
+              } else {
+                const dObj = new Date(originalRes.createdTime);
+                const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
+                dateKey = `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`;
+              }
 
               let histDry = 0;
               let histFrozen = 0;
@@ -278,11 +347,9 @@ export default function useRangkumanData() {
                   );
                   const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
 
-                  // Hitung untuk akumulasi DT (Semua riwayat vehicleFrom: dropped)
                   if (storage.includes('FROZEN')) histFrozen += visitsCount;
                   else histDry += visitsCount;
 
-                  // UPDATE: Hitung untuk akumulasi MA (Khusus action: move)
                   if (isActionMove) {
                     if (storage.includes('FROZEN')) histMaFrozen += visitsCount;
                     else histMaDry += visitsCount;
@@ -294,7 +361,6 @@ export default function useRangkumanData() {
                 tempMetrics[dateKey].dry.dt_hist += histDry;
                 tempMetrics[dateKey].frozen.dt_hist += histFrozen;
 
-                // Akumulasikan ke state metric MA history harian
                 tempMetrics[dateKey].dry.ma_hist += histMaDry;
                 tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
               }
@@ -322,15 +388,11 @@ export default function useRangkumanData() {
           }
         };
 
-        // Tambahkan ma_hist agar kalau ada tipe 'unknown', bisa ikut didistribusikan
         ['ma_base', 'ma_hist', 'rt', 'co', 'pr', 'tv'].forEach(distribute);
 
         ['dry', 'frozen'].forEach((type) => {
           m[type].dt_total = m[type].dt_sum + m[type].dt_hist;
-
-          // UPDATE: Gabungkan MA Base (dari get-tasks) dengan MA History (dari get-batch-histories)
           m[type].ma_total = m[type].ma_base + m[type].ma_hist;
-
           m[type].va = 0;
           m[type].tvu = m[type].tv + 0;
         });
@@ -410,11 +472,12 @@ export default function useRangkumanData() {
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
       const pTasks = fetchWithTracker(async () => {
+        // UPDATE STATUS MENJADI 'ONGOING,DONE'
         const [part1, part2, partExtra] = await Promise.all([
           fetchWithRetry(() =>
             getTasks({
               hubId: selectedLocation,
-              status: 'DONE',
+              status: 'ONGOING,DONE',
               timeBy: 'startTime',
               limit: 10000,
               timeFrom: formatToApiUtc(taskStartObj),
@@ -424,7 +487,7 @@ export default function useRangkumanData() {
           fetchWithRetry(() =>
             getTasks({
               hubId: selectedLocation,
-              status: 'DONE',
+              status: 'ONGOING,DONE',
               timeBy: 'startTime',
               limit: 10000,
               timeFrom: formatToApiUtc(midNextObj),
@@ -434,7 +497,7 @@ export default function useRangkumanData() {
           fetchWithRetry(() =>
             getTasks({
               hubId: selectedLocation,
-              status: 'DONE',
+              status: 'ONGOING,DONE',
               timeBy: 'startTime',
               limit: 10000,
               timeFrom: formatToApiUtc(bufferStartObj),
