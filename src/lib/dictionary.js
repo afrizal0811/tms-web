@@ -530,8 +530,7 @@ export const dictionary = {
           ro_seq: 'Perkiraan Urutan',
           visit_actual: 'Aktual Waktu Kunjung',
           visit_plan: 'Perkiraan Waktu Kunjung',
-          warning:
-            'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
+          warning: 'Driver choose wrong status, suppose to be Pending, but it is not',
         },
         time_driver: {
           duration: 'Durasi',
@@ -1160,6 +1159,8 @@ export const dictionary = {
           ro_seq: 'Planned Sequence',
           visit_actual: 'Actual Visit Time',
           visit_plan: 'Planned Visit Time',
+          warning:
+            'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },
         time_driver: {
           duration: 'Duration',

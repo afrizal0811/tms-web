@@ -1,0 +1,108 @@
+// File: src/features/rangkuman/tabs/modals/TaskSummaryModal.js
+'use client';
+
+import BaseModal from '@/components/BaseModal';
+import { useLanguage } from '@/context/LanguageContext';
+import { formatLongDate, parseCustomerString } from '@/lib/utils';
+
+export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
+  const { lang } = useLanguage();
+
+  if (!isOpen || !data) return null;
+
+  // Destructure kedua kemungkinan data (tasks atau vehicles)
+  const { title, dateObj, tasks, vehicles } = data;
+
+  // PERBAIKAN: Ubah menjadi Variabel JSX biasa (bukan Komponen React)
+  const emptyDataContent = (
+    <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
+      <svg
+        className="w-12 h-12 text-gray-300 mb-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+        ></path>
+      </svg>
+      <span className="font-medium">{translate('common.no_data') || 'Tidak ada detail data'}</span>
+    </div>
+  );
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-lg"
+      title={
+        <div>
+          <h3 className="text-lg font-bold">{title}</h3>
+          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateObj, lang)}</p>
+        </div>
+      }
+      bodyClassName="p-0 bg-gray-50 overflow-y-auto"
+    >
+      {/* KONDISI 1: JIKA DATA KENDARAAN (TV) */}
+      {vehicles ? (
+        vehicles.length > 0 ? (
+          <div className="p-5">
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <table className="min-w-full text-sm text-left">
+                <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-center w-12">#</th>
+                    <th className="px-4 py-3 text-center">{translate('common.number_plates')}</th>
+                    <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {vehicles.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 text-center text-gray-500 font-medium">{idx + 1}</td>
+                      <td className="px-4 py-2 text-left font-semibold text-slate-700">
+                        {item.plate || '-'}
+                      </td>
+                      <td className="px-4 py-2 text-left text-slate-600">
+                        {item.driverName || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          emptyDataContent
+        )
+      ) : /* KONDISI 2: JIKA DATA TASK (DT, MA, RT, CO, PR) */
+      tasks && tasks.length > 0 ? (
+        <div className="divide-y divide-gray-200">
+          {tasks.map((task, idx) => {
+            const customerData = parseCustomerString(task.customerOrder || '');
+            const invoice = customerData.invoiceNumber || '-';
+
+            return (
+              <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    {task.flow || 'DELIVERY'} <span className="text-slate-300 mx-1">|</span>{' '}
+                    {invoice}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-800 leading-tight">
+                    {task.customerName || 'Nama Customer Tidak Tersedia'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        emptyDataContent
+      )}
+    </BaseModal>
+  );
+}

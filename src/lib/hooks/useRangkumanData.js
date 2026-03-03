@@ -9,7 +9,7 @@ import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError } from '@/lib/toastHelper';
-import { formatDateUniversal, formatToApiUtc } from '@/lib/utils';
+import { formatDateUniversal, formatToApiUtc, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const getInitialDate = () => {
@@ -54,7 +54,6 @@ export default function useRangkumanData() {
   const [historyProgress, setHistoryProgress] = useState(0);
 
   const [dismissedDots, setDismissedDots] = useState({});
-
   const fetchStartTimeRef = useRef(null);
 
   useEffect(() => {
@@ -120,6 +119,7 @@ export default function useRangkumanData() {
       const tempMetrics = {};
       const uniqueVehicles = {};
 
+      // --- TAMBAHAN tv_details UNTUK MENAMPUNG ARRAY KENDARAAN ---
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
@@ -134,6 +134,12 @@ export default function useRangkumanData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dt_tasks: [],
+              ma_tasks: [],
+              rt_tasks: [],
+              co_tasks: [],
+              pr_tasks: [],
+              tv_details: [],
             },
             frozen: {
               dp: 0,
@@ -146,6 +152,12 @@ export default function useRangkumanData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dt_tasks: [],
+              ma_tasks: [],
+              rt_tasks: [],
+              co_tasks: [],
+              pr_tasks: [],
+              tv_details: [],
             },
             unknown: {
               dp: 0,
@@ -158,10 +170,51 @@ export default function useRangkumanData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dt_tasks: [],
+              ma_tasks: [],
+              rt_tasks: [],
+              co_tasks: [],
+              pr_tasks: [],
+              tv_details: [],
             },
           };
-          uniqueVehicles[dateKey] = { dry: new Set(), frozen: new Set() };
+          // UBAH MENJADI MAP AGAR BISA MENYIMPAN OBJECT DETAILS
+          uniqueVehicles[dateKey] = { dry: new Map(), frozen: new Map() };
         }
+      };
+
+      const getTaskDetails = (tripRaw) => {
+        const visitId = tripRaw?.visitId || '';
+
+        if (!visitId || !visitId.includes('-')) {
+          const rawName = tripRaw?.visitName || '';
+          const parsed = parseCustomerString(rawName);
+          return {
+            customerOrder: rawName,
+            customerName: parsed.name || 'Tidak Diketahui',
+            flow: 'DELIVERY',
+          };
+        }
+
+        const taskId = visitId.substring(visitId.indexOf('-') + 1);
+        const f = allTasks.find(
+          (t) =>
+            String(t._id) === String(taskId) ||
+            String(t.id) === String(taskId) ||
+            String(t.taskId) === String(taskId)
+        );
+
+        if (!f) {
+          const rawName = tripRaw?.visitName || '';
+          const parsed = parseCustomerString(rawName);
+          return {
+            customerOrder: rawName,
+            customerName: parsed.name || 'Tidak Diketahui',
+            flow: 'DELIVERY',
+          };
+        }
+
+        return f;
       };
 
       const driverMapStorage = {};
@@ -185,15 +238,26 @@ export default function useRangkumanData() {
               ? 'dry'
               : 'unknown';
 
-          if (!task.eta || !task.etd || !task.routePlannedOrder)
+          if (!task.eta || !task.etd || !task.routePlannedOrder) {
             tempMetrics[dateKey][type].ma_base += 1;
+            tempMetrics[dateKey][type].ma_tasks.push(task);
+          }
 
           const sDeliv = task.statusDelivery;
           const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
 
-          if (statusArr.some((s) => s === 'PENDING')) tempMetrics[dateKey][type].rt += 1;
-          if (statusArr.some((s) => s === 'BATAL')) tempMetrics[dateKey][type].co += 1;
-          if (statusArr.some((s) => s === 'TERIMA SEBAGIAN')) tempMetrics[dateKey][type].pr += 1;
+          if (statusArr.some((s) => s === 'PENDING')) {
+            tempMetrics[dateKey][type].rt += 1;
+            tempMetrics[dateKey][type].rt_tasks.push(task);
+          }
+          if (statusArr.some((s) => s === 'BATAL')) {
+            tempMetrics[dateKey][type].co += 1;
+            tempMetrics[dateKey][type].co_tasks.push(task);
+          }
+          if (statusArr.some((s) => s === 'TERIMA SEBAGIAN')) {
+            tempMetrics[dateKey][type].pr += 1;
+            tempMetrics[dateKey][type].pr_tasks.push(task);
+          }
         });
       }
 
@@ -213,23 +277,13 @@ export default function useRangkumanData() {
           const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
           for (const trip of trips) {
             if (attempts >= 5 || deliveryDateWib) break;
-            const visitId = trip.visitId;
-            if (visitId && visitId.includes('-')) {
-              const taskId = visitId.substring(visitId.indexOf('-') + 1);
-              const foundTask = allTasks.find(
-                (t) =>
-                  String(t._id) === String(taskId) ||
-                  String(t.id) === String(taskId) ||
-                  String(t.taskId) === String(taskId)
-              );
-
-              if (foundTask && foundTask.startTime) {
-                const stObj = new Date(foundTask.startTime);
-                const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
-                deliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
-              }
-              attempts++;
+            const foundTask = getTaskDetails(trip);
+            if (foundTask && foundTask.startTime) {
+              const stObj = new Date(foundTask.startTime);
+              const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
+              deliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
             }
+            if (trip.visitId && trip.visitId.includes('-')) attempts++;
           }
         }
 
@@ -245,7 +299,6 @@ export default function useRangkumanData() {
         }
 
         if (!dateKey || !res._id) return;
-
         initDate(dateKey);
         resultIdsToFetch.push(res._id);
         resultMap.set(res._id, res);
@@ -255,8 +308,15 @@ export default function useRangkumanData() {
         (res.result?.dropped || []).forEach((trip) => {
           const tagStr = Array.isArray(trip.tags) ? trip.tags[0] : trip.tags;
           const prefix = typeof tagStr === 'string' ? tagStr.split('-')[0].toUpperCase() : '';
-          if (prefix === 'FRZ' || prefix === 'FROZEN') routingDroppedFrozen += 1;
-          else routingDroppedDry += 1;
+          const taskDetail = getTaskDetails(trip);
+
+          if (prefix === 'FRZ' || prefix === 'FROZEN') {
+            routingDroppedFrozen += 1;
+            tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
+          } else {
+            routingDroppedDry += 1;
+            tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
+          }
         });
 
         tempMetrics[dateKey].dry.dt_sum += routingDroppedDry;
@@ -297,7 +357,15 @@ export default function useRangkumanData() {
             ? cleanPlat(matchedDriver.plat)
             : vToClean || `unknown-${Math.random()}`;
 
-          if (canonicalPlate) uniqueVehicles[dateKey][type].add(canonicalPlate);
+          // --- UBAH DARI SET KE MAP UNTUK MENYIMPAN INFO DRIVER ---
+          if (canonicalPlate) {
+            uniqueVehicles[dateKey][type].set(canonicalPlate, {
+              plate: matchedDriver ? matchedDriver.plat : rawPlate || '-',
+              driverName: matchedDriver
+                ? matchedDriver.name
+                : vehicle.assignee || 'Tidak Diketahui',
+            });
+          }
         });
       });
 
@@ -322,22 +390,13 @@ export default function useRangkumanData() {
               const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
               for (const trip of trips) {
                 if (histAttempts >= 5 || histDeliveryDateWib) break;
-                const visitId = trip.visitId;
-                if (visitId && visitId.includes('-')) {
-                  const taskId = visitId.substring(visitId.indexOf('-') + 1);
-                  const foundTask = allTasks.find(
-                    (t) =>
-                      String(t._id) === String(taskId) ||
-                      String(t.id) === String(taskId) ||
-                      String(t.taskId) === String(taskId)
-                  );
-                  if (foundTask && foundTask.startTime) {
-                    const stObj = new Date(foundTask.startTime);
-                    const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
-                    histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
-                  }
-                  histAttempts++;
+                const foundTask = getTaskDetails(trip);
+                if (foundTask && foundTask.startTime) {
+                  const stObj = new Date(foundTask.startTime);
+                  const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
+                  histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
                 }
+                if (trip.visitId && trip.visitId.includes('-')) histAttempts++;
               }
             }
 
@@ -359,27 +418,39 @@ export default function useRangkumanData() {
               const isActionMove = h.action?.toLowerCase() === 'move';
 
               if (isVehicleFromDropped) {
-                const visitsCount = (h.visits || []).length;
                 const vToClean = cleanPlat(h.vehicleTo);
                 const foundDriver = fetchedDrivers.find(
                   (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
                 );
                 const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
+                const isFrozen = storage.includes('FROZEN');
 
-                if (storage.includes('FROZEN')) histFrozen += visitsCount;
-                else histDry += visitsCount;
+                (h.visits || []).forEach((v) => {
+                  const taskDetail = getTaskDetails(v);
 
-                if (isActionMove) {
-                  if (storage.includes('FROZEN')) histMaFrozen += visitsCount;
-                  else histMaDry += visitsCount;
-                }
+                  if (isFrozen) {
+                    histFrozen += 1;
+                    if (tempMetrics[dateKey]) tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
+                    if (isActionMove) {
+                      histMaFrozen += 1;
+                      if (tempMetrics[dateKey])
+                        tempMetrics[dateKey].frozen.ma_tasks.push(taskDetail);
+                    }
+                  } else {
+                    histDry += 1;
+                    if (tempMetrics[dateKey]) tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
+                    if (isActionMove) {
+                      histMaDry += 1;
+                      if (tempMetrics[dateKey]) tempMetrics[dateKey].dry.ma_tasks.push(taskDetail);
+                    }
+                  }
+                });
               }
             });
 
             if (tempMetrics[dateKey]) {
               tempMetrics[dateKey].dry.dt_hist += histDry;
               tempMetrics[dateKey].frozen.dt_hist += histFrozen;
-
               tempMetrics[dateKey].dry.ma_hist += histMaDry;
               tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
             }
@@ -390,23 +461,39 @@ export default function useRangkumanData() {
       }
 
       Object.keys(tempMetrics).forEach((dateKey) => {
+        // --- KONVERSI MAP KE ARRAY LALU URUTKAN NAMA ASCENDING ---
         if (uniqueVehicles[dateKey]) {
           tempMetrics[dateKey].dry.tv = uniqueVehicles[dateKey].dry.size;
+          tempMetrics[dateKey].dry.tv_details = Array.from(
+            uniqueVehicles[dateKey].dry.values()
+          ).sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+
           tempMetrics[dateKey].frozen.tv = uniqueVehicles[dateKey].frozen.size;
+          tempMetrics[dateKey].frozen.tv_details = Array.from(
+            uniqueVehicles[dateKey].frozen.values()
+          ).sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
         }
 
         const m = tempMetrics[dateKey];
+
+        const distributeTasks = (arrProp) => {
+          if (m.unknown[arrProp] && m.unknown[arrProp].length > 0) {
+            m.dry[arrProp].push(...m.unknown[arrProp]);
+            m.unknown[arrProp] = [];
+          }
+        };
+        ['dt_tasks', 'ma_tasks', 'rt_tasks', 'co_tasks', 'pr_tasks'].forEach(distributeTasks);
+
         const distribute = (prop) => {
           if (m.unknown[prop] > 0) {
             const totalKnown = m.dry.dp + m.frozen.dp;
+            let addDry = m.unknown[prop];
             if (totalKnown > 0) {
               const dryRatio = m.dry.dp / totalKnown;
-              const addDry = Math.round(m.unknown[prop] * dryRatio);
-              m.dry[prop] += addDry;
-              m.frozen[prop] += m.unknown[prop] - addDry;
-            } else {
-              m.dry[prop] += m.unknown[prop];
+              addDry = Math.round(m.unknown[prop] * dryRatio);
             }
+            m.dry[prop] += addDry;
+            m.frozen[prop] += m.unknown[prop] - addDry;
             m.unknown[prop] = 0;
           }
         };
@@ -494,7 +581,6 @@ export default function useRangkumanData() {
 
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
-      // --- ARRAY RENTANG WAKTU ---
       const taskRanges = [
         { from: formatToApiUtc(taskStartObj), to: formatToApiUtc(midDateObj) },
         { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
@@ -511,7 +597,6 @@ export default function useRangkumanData() {
         { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
       ];
 
-      // --- PEMANGGILAN API MENGGUNAKAN LOOPING MAP ---
       const pTasks = fetchWithTracker(async () => {
         const results = await Promise.all(
           taskRanges.map((range) =>
