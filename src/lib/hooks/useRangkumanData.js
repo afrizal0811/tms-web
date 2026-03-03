@@ -5,7 +5,7 @@ import {
   getResultsSummary,
   getTasks,
 } from '@/lib/apiService';
-import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants'; // <-- IMPORT BARU
+import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
@@ -223,7 +223,6 @@ export default function useRangkumanData() {
         });
       }
 
-      // --- LOGIKA PERIKSA LOKASI UNTUK PENDING GR ---
       const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
         (selectedLocationName || '').toLowerCase().includes(loc.toLowerCase())
       );
@@ -243,6 +242,7 @@ export default function useRangkumanData() {
               : 'unknown';
 
           if (!task.eta || !task.etd || !task.routePlannedOrder) {
+            task.isNoRouting = true; // <--- FLAG DITAMBAHKAN DI SINI
             tempMetrics[dateKey][type].ma_base += 1;
             tempMetrics[dateKey][type].ma_tasks.push(task);
           }
@@ -253,9 +253,7 @@ export default function useRangkumanData() {
           if (statusArr.some((s) => s === 'PENDING')) {
             tempMetrics[dateKey][type].rt += 1;
             tempMetrics[dateKey][type].rt_tasks.push(task);
-          }
-          // --- DETEKSI SALAH PENDING GR ---
-          else if (!shouldShowPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
+          } else if (!shouldShowPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
             tempMetrics[dateKey][type].rt += 1;
             tempMetrics[dateKey][type].rt_tasks.push({ ...task, isWrongGR: true });
           }

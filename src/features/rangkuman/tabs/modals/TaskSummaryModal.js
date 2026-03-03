@@ -92,12 +92,24 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                     {task.customerName || 'Nama Customer Tidak Tersedia'}
                   </span>
 
-                  {task.isWrongGR && (
-                    <div className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
-                      ⚠️{' '}
-                      <span>
-                        {translate('summary.tabs.task_summary.warning')}
-                      </span>
+                  {/* Container khusus untuk Flags / Warnings */}
+                  {(task.isWrongGR || task.isNoRouting) && (
+                    <div className="mt-1 flex flex-col gap-1.5 items-start">
+                      {task.isWrongGR && (
+                        <div className="text-[11px] font-medium text-red-600 flex items-center gap-1">
+                          ⚠️{' '}
+                          <span>
+                            {translate('summary.tabs.task_summary.warning')}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* --- FLAG NO ROUTING --- */}
+                      {task.isNoRouting && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-500 text-white shadow-sm border border-slate-600">
+                          {translate('summary.tabs.task_summary.no_routing')}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
