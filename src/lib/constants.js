@@ -20,3 +20,4 @@ export const VEHICLE_TYPES = [
     "FUSO-LONG"
 ];
 
+export const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];

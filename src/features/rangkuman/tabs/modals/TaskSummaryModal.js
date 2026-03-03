@@ -10,10 +10,8 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
 
   if (!isOpen || !data) return null;
 
-  // Destructure kedua kemungkinan data (tasks atau vehicles)
   const { title, dateObj, tasks, vehicles } = data;
 
-  // PERBAIKAN: Ubah menjadi Variabel JSX biasa (bukan Komponen React)
   const emptyDataContent = (
     <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
       <svg
@@ -46,7 +44,6 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       }
       bodyClassName="p-0 bg-gray-50 overflow-y-auto"
     >
-      {/* KONDISI 1: JIKA DATA KENDARAAN (TV) */}
       {vehicles ? (
         vehicles.length > 0 ? (
           <div className="p-5">
@@ -78,8 +75,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
         ) : (
           emptyDataContent
         )
-      ) : /* KONDISI 2: JIKA DATA TASK (DT, MA, RT, CO, PR) */
-      tasks && tasks.length > 0 ? (
+      ) : tasks && tasks.length > 0 ? (
         <div className="divide-y divide-gray-200">
           {tasks.map((task, idx) => {
             const customerData = parseCustomerString(task.customerOrder || '');
@@ -95,6 +91,15 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                   <span className="text-sm font-semibold text-slate-800 leading-tight">
                     {task.customerName || 'Nama Customer Tidak Tersedia'}
                   </span>
+
+                  {task.isWrongGR && (
+                    <div className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+                      ⚠️{' '}
+                      <span>
+                        {translate('summary.tabs.task_summary.warning')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );

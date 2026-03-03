@@ -512,6 +512,7 @@ export const dictionary = {
           tvu_persentage: 'Total Kendaraan (%)',
           type: 'Tipe',
           va: 'Penyesuaian Kendaraan',
+          warning: 'Sopir salah pilih status. Otomatis berubah ke Pending!',
         },
         pending_reasons: {
           title: 'Alasan Pending',
@@ -530,7 +531,8 @@ export const dictionary = {
           ro_seq: 'Perkiraan Urutan',
           visit_actual: 'Aktual Waktu Kunjung',
           visit_plan: 'Perkiraan Waktu Kunjung',
-          warning: 'Driver choose wrong status, suppose to be Pending, but it is not',
+          warning:
+            'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
         },
         time_driver: {
           duration: 'Durasi',
@@ -1141,6 +1143,7 @@ export const dictionary = {
           tvu_persentage: 'Total Vehicles (%)',
           type: 'Type',
           va: 'Vehicle Adjusted',
+          warning: 'Driver selected the wrong status. Automatically changed to Pending!',
         },
         pending_reasons: {
           title: 'Pending Reasons',

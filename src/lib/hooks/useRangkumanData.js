@@ -5,6 +5,7 @@ import {
   getResultsSummary,
   getTasks,
 } from '@/lib/apiService';
+import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants'; // <-- IMPORT BARU
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
@@ -119,7 +120,6 @@ export default function useRangkumanData() {
       const tempMetrics = {};
       const uniqueVehicles = {};
 
-      // --- TAMBAHAN tv_details UNTUK MENAMPUNG ARRAY KENDARAAN ---
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
@@ -178,7 +178,6 @@ export default function useRangkumanData() {
               tv_details: [],
             },
           };
-          // UBAH MENJADI MAP AGAR BISA MENYIMPAN OBJECT DETAILS
           uniqueVehicles[dateKey] = { dry: new Map(), frozen: new Map() };
         }
       };
@@ -224,6 +223,11 @@ export default function useRangkumanData() {
         });
       }
 
+      // --- LOGIKA PERIKSA LOKASI UNTUK PENDING GR ---
+      const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
+        (selectedLocationName || '').toLowerCase().includes(loc.toLowerCase())
+      );
+
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
           if (!task.doneTime) return;
@@ -250,6 +254,12 @@ export default function useRangkumanData() {
             tempMetrics[dateKey][type].rt += 1;
             tempMetrics[dateKey][type].rt_tasks.push(task);
           }
+          // --- DETEKSI SALAH PENDING GR ---
+          else if (!shouldShowPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
+            tempMetrics[dateKey][type].rt += 1;
+            tempMetrics[dateKey][type].rt_tasks.push({ ...task, isWrongGR: true });
+          }
+
           if (statusArr.some((s) => s === 'BATAL')) {
             tempMetrics[dateKey][type].co += 1;
             tempMetrics[dateKey][type].co_tasks.push(task);
@@ -357,7 +367,6 @@ export default function useRangkumanData() {
             ? cleanPlat(matchedDriver.plat)
             : vToClean || `unknown-${Math.random()}`;
 
-          // --- UBAH DARI SET KE MAP UNTUK MENYIMPAN INFO DRIVER ---
           if (canonicalPlate) {
             uniqueVehicles[dateKey][type].set(canonicalPlate, {
               plate: matchedDriver ? matchedDriver.plat : rawPlate || '-',
@@ -461,7 +470,6 @@ export default function useRangkumanData() {
       }
 
       Object.keys(tempMetrics).forEach((dateKey) => {
-        // --- KONVERSI MAP KE ARRAY LALU URUTKAN NAMA ASCENDING ---
         if (uniqueVehicles[dateKey]) {
           tempMetrics[dateKey].dry.tv = uniqueVehicles[dateKey].dry.size;
           tempMetrics[dateKey].dry.tv_details = Array.from(
@@ -511,7 +519,7 @@ export default function useRangkumanData() {
       setTaskSummaryMetrics(tempMetrics);
       setIsCalculatingMetrics(false);
     },
-    [t, fetchWithTracker, fetchWithRetry]
+    [t, fetchWithTracker, fetchWithRetry, selectedLocationName]
   );
 
   const fetchData = useCallback(async () => {

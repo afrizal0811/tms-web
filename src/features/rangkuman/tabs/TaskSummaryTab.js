@@ -21,7 +21,6 @@ export default function TaskSummaryTab({
     Frozen: { Total: 0 },
   });
 
-  // HANYA ADA 1 STATE UNTUK MODAL SEKARANG
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
 
   useEffect(() => {
@@ -108,6 +107,7 @@ export default function TaskSummaryTab({
     const armada = isFrozen ? 'Frozen' : 'Dry';
     const typeLabel = translate(`summary.tabs.task_summary.${typeKey}`);
     const title = `${typeLabel} - ${armada}`;
+    const hasWrongGR = tasksArray && tasksArray.some((t) => t.isWrongGR);
 
     return (
       <td
@@ -117,9 +117,14 @@ export default function TaskSummaryTab({
             data: { title, dateObj, type: category, tasks: tasksArray || [] },
           })
         }
-        className="px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold text-slate-800"
+        className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
       >
-        {num}
+        {num}{' '}
+        {hasWrongGR && (
+          <span className="ml-1 text-xs">
+            ⚠️
+          </span>
+        )}
       </td>
     );
   };
@@ -149,7 +154,6 @@ export default function TaskSummaryTab({
     return (
       <td
         onClick={() =>
-          // SEKARANG MENGGUNAKAN setModalConfig JUGA (MENGIRIMKAN PROPERTI vehicles)
           setModalConfig({
             isOpen: true,
             data: { title, dateObj, vehicles: tvArray || [] },
