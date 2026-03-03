@@ -192,10 +192,14 @@ export default function TaskSummaryTab({
               const mtFrozen = masterTruckData.Frozen?.Total || 0;
 
               // --- LOGIKA PEWARNAAN MERAH JIKA TOTAL DP = 0 ---
-              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isPastOrToday = item.dateObj <= today;
+
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
               const dateCellClass = isZeroDP
                 ? 'bg-red-100 text-red-600 font-bold'
-                : 'bg-white font-medium';
+                : 'bg-white font-semibold text-gray-900';
 
               return [
                 // ROW 1: DRY

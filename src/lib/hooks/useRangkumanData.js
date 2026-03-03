@@ -1,5 +1,10 @@
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import {
+  getBatchHistories,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+} from '@/lib/apiService';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
@@ -7,7 +12,6 @@ import { toastError } from '@/lib/toastHelper';
 import { formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Helpers
 export const getInitialDate = () => {
   const now = new Date();
   if (now.getDate() > 1) return now;
@@ -114,6 +118,7 @@ export default function useRangkumanData() {
       setIsCalculatingMetrics(true);
       setHistoryProgress(0);
       const tempMetrics = {};
+      const uniqueVehicles = {};
 
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
@@ -155,17 +160,8 @@ export default function useRangkumanData() {
               tv: 0,
             },
           };
+          uniqueVehicles[dateKey] = { dry: new Set(), frozen: new Set() };
         }
-      };
-
-      const getTypeFromTags = (tags) => {
-        if (!tags) return 'unknown';
-        const tagStr = Array.isArray(tags)
-          ? tags.join(' ').toUpperCase()
-          : String(tags).toUpperCase();
-        if (tagStr.includes('FROZEN')) return 'frozen';
-        if (tagStr.includes('DRY')) return 'dry';
-        return 'unknown';
       };
 
       const driverMapStorage = {};
@@ -177,7 +173,6 @@ export default function useRangkumanData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
-          // Tetap gunakan doneTime untuk memfilter task yg sudah benar-benar selesai untuk MA/RT/CO/PR
           if (!task.doneTime) return;
           const dateKey = getRoutingDateKeyFromDateStr(task.doneTime.substring(0, 10));
           if (!dateKey) return;
@@ -192,10 +187,13 @@ export default function useRangkumanData() {
 
           if (!task.eta || !task.etd || !task.routePlannedOrder)
             tempMetrics[dateKey][type].ma_base += 1;
-          const labels = Array.isArray(task.label) ? task.label : [];
-          if (labels.some((l) => l === 'PENDING')) tempMetrics[dateKey][type].rt += 1;
-          if (labels.some((l) => l === 'BATAL')) tempMetrics[dateKey][type].co += 1;
-          if (labels.some((l) => l === 'TERIMA SEBAGIAN')) tempMetrics[dateKey][type].pr += 1;
+
+          const sDeliv = task.statusDelivery;
+          const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
+
+          if (statusArr.some((s) => s === 'PENDING')) tempMetrics[dateKey][type].rt += 1;
+          if (statusArr.some((s) => s === 'BATAL')) tempMetrics[dateKey][type].co += 1;
+          if (statusArr.some((s) => s === 'TERIMA SEBAGIAN')) tempMetrics[dateKey][type].pr += 1;
         });
       }
 
@@ -210,7 +208,6 @@ export default function useRangkumanData() {
         let attempts = 0;
         const routingArray = res.result?.routing || [];
 
-        // --- LOGIKA MENCARI TANGGAL DELIVERY VIA TASK DI ALLTASKS ---
         for (const vehicle of routingArray) {
           if (attempts >= 5 || deliveryDateWib) break;
           const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
@@ -219,7 +216,6 @@ export default function useRangkumanData() {
             const visitId = trip.visitId;
             if (visitId && visitId.includes('-')) {
               const taskId = visitId.substring(visitId.indexOf('-') + 1);
-              // Cari Task ID di dalam kamus lokal allTasks
               const foundTask = allTasks.find(
                 (t) =>
                   String(t._id) === String(taskId) ||
@@ -239,10 +235,8 @@ export default function useRangkumanData() {
 
         let dateKey;
         if (deliveryDateWib) {
-          // Jika berhasil ketemu, gunakan tanggal delivery yg valid
           dateKey = getRoutingDateKeyFromDateStr(deliveryDateWib);
         } else {
-          // Jika 5 percobaan gagal, fallback ke logika awal (createdTime)
           const dObj = new Date(res.createdTime);
           const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
           dateKey = res.createdTime
@@ -269,109 +263,138 @@ export default function useRangkumanData() {
         tempMetrics[dateKey].frozen.dt_sum += routingDroppedFrozen;
 
         routingArray.forEach((vehicle) => {
-          const driverStorage = driverMapStorage[(vehicle.assignee || '').toLowerCase()] || 'DRY';
+          const assigneeEmail = (vehicle.assignee || '').toLowerCase();
+          const dpDriverStorage = driverMapStorage[assigneeEmail] || 'DRY';
           const visitsCount =
             vehicle.summary?.totalVisits ?? (vehicle.trips?.filter((t) => !t.isHub).length || 0);
-          if (driverStorage.includes('FROZEN')) tempMetrics[dateKey].frozen.dp += visitsCount;
+
+          if (dpDriverStorage.includes('FROZEN')) tempMetrics[dateKey].frozen.dp += visitsCount;
           else tempMetrics[dateKey].dry.dp += visitsCount;
-          tempMetrics[dateKey][getTypeFromTags(vehicle.vehicleTags)].tv += 1;
+
+          const rawPlate =
+            vehicle.name ||
+            vehicle.vehicleName ||
+            vehicle.licensePlate ||
+            vehicle.plateNumber ||
+            vehicle.assignee ||
+            '';
+          const vToClean = cleanPlat(rawPlate);
+
+          let matchedDriver = fetchedDrivers.find((d) => {
+            const p = cleanPlat(d.plat);
+            return p && (vToClean.includes(p) || p.includes(vToClean));
+          });
+
+          if (!matchedDriver && vehicle.assignee) {
+            matchedDriver = fetchedDrivers.find(
+              (d) => d.email && d.email.toLowerCase() === assigneeEmail
+            );
+          }
+
+          const storage = matchedDriver ? (matchedDriver.storage || '').toUpperCase() : 'DRY';
+          const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
+          const canonicalPlate = matchedDriver
+            ? cleanPlat(matchedDriver.plat)
+            : vToClean || `unknown-${Math.random()}`;
+
+          if (canonicalPlate) uniqueVehicles[dateKey][type].add(canonicalPlate);
         });
       });
 
       try {
         if (resultIdsToFetch.length > 0) {
-          const response = await fetch('/api/get-batch-histories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resultIds: resultIdsToFetch }),
-          });
+          const batchData = await fetchWithTracker(
+            () => fetchWithRetry(() => getBatchHistories(resultIdsToFetch)),
+            'Batch Histories'
+          );
 
-          if (response.ok) {
-            const json = await response.json();
-            (json.data || []).forEach((item) => {
-              const originalRes = resultMap.get(item.resultId);
-              if (!originalRes) return;
+          (batchData || []).forEach((item) => {
+            const originalRes = resultMap.get(item.resultId);
+            if (!originalRes) return;
 
-              // Re-apply logika fallback atau lookup pada mapping histori agar sejajar
-              let dateKey;
-              let histDeliveryDateWib = null;
-              let histAttempts = 0;
-              const originalRoutingArray = originalRes.result?.routing || [];
+            let dateKey;
+            let histDeliveryDateWib = null;
+            let histAttempts = 0;
+            const originalRoutingArray = originalRes.result?.routing || [];
 
-              for (const vehicle of originalRoutingArray) {
+            for (const vehicle of originalRoutingArray) {
+              if (histAttempts >= 5 || histDeliveryDateWib) break;
+              const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
+              for (const trip of trips) {
                 if (histAttempts >= 5 || histDeliveryDateWib) break;
-                const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
-                for (const trip of trips) {
-                  if (histAttempts >= 5 || histDeliveryDateWib) break;
-                  const visitId = trip.visitId;
-                  if (visitId && visitId.includes('-')) {
-                    const taskId = visitId.substring(visitId.indexOf('-') + 1);
-                    const foundTask = allTasks.find(
-                      (t) =>
-                        String(t._id) === String(taskId) ||
-                        String(t.id) === String(taskId) ||
-                        String(t.taskId) === String(taskId)
-                    );
-                    if (foundTask && foundTask.startTime) {
-                      const stObj = new Date(foundTask.startTime);
-                      const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
-                      histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
-                    }
-                    histAttempts++;
-                  }
-                }
-              }
-
-              if (histDeliveryDateWib) {
-                dateKey = getRoutingDateKeyFromDateStr(histDeliveryDateWib);
-              } else {
-                const dObj = new Date(originalRes.createdTime);
-                const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-                dateKey = `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`;
-              }
-
-              let histDry = 0;
-              let histFrozen = 0;
-              let histMaDry = 0;
-              let histMaFrozen = 0;
-
-              (item.history || []).forEach((h) => {
-                const isVehicleFromDropped = h.vehicleFrom?.toLowerCase() === 'dropped';
-                const isActionMove = h.action?.toLowerCase() === 'move';
-
-                if (isVehicleFromDropped) {
-                  const visitsCount = (h.visits || []).length;
-                  const vToClean = cleanPlat(h.vehicleTo);
-                  const foundDriver = fetchedDrivers.find(
-                    (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
+                const visitId = trip.visitId;
+                if (visitId && visitId.includes('-')) {
+                  const taskId = visitId.substring(visitId.indexOf('-') + 1);
+                  const foundTask = allTasks.find(
+                    (t) =>
+                      String(t._id) === String(taskId) ||
+                      String(t.id) === String(taskId) ||
+                      String(t.taskId) === String(taskId)
                   );
-                  const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
-
-                  if (storage.includes('FROZEN')) histFrozen += visitsCount;
-                  else histDry += visitsCount;
-
-                  if (isActionMove) {
-                    if (storage.includes('FROZEN')) histMaFrozen += visitsCount;
-                    else histMaDry += visitsCount;
+                  if (foundTask && foundTask.startTime) {
+                    const stObj = new Date(foundTask.startTime);
+                    const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
+                    histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
                   }
+                  histAttempts++;
                 }
-              });
+              }
+            }
 
-              if (tempMetrics[dateKey]) {
-                tempMetrics[dateKey].dry.dt_hist += histDry;
-                tempMetrics[dateKey].frozen.dt_hist += histFrozen;
+            if (histDeliveryDateWib) {
+              dateKey = getRoutingDateKeyFromDateStr(histDeliveryDateWib);
+            } else {
+              const dObj = new Date(originalRes.createdTime);
+              const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
+              dateKey = `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`;
+            }
 
-                tempMetrics[dateKey].dry.ma_hist += histMaDry;
-                tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
+            let histDry = 0;
+            let histFrozen = 0;
+            let histMaDry = 0;
+            let histMaFrozen = 0;
+
+            (item.history || []).forEach((h) => {
+              const isVehicleFromDropped = h.vehicleFrom?.toLowerCase() === 'dropped';
+              const isActionMove = h.action?.toLowerCase() === 'move';
+
+              if (isVehicleFromDropped) {
+                const visitsCount = (h.visits || []).length;
+                const vToClean = cleanPlat(h.vehicleTo);
+                const foundDriver = fetchedDrivers.find(
+                  (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
+                );
+                const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
+
+                if (storage.includes('FROZEN')) histFrozen += visitsCount;
+                else histDry += visitsCount;
+
+                if (isActionMove) {
+                  if (storage.includes('FROZEN')) histMaFrozen += visitsCount;
+                  else histMaDry += visitsCount;
+                }
               }
             });
-          }
+
+            if (tempMetrics[dateKey]) {
+              tempMetrics[dateKey].dry.dt_hist += histDry;
+              tempMetrics[dateKey].frozen.dt_hist += histFrozen;
+
+              tempMetrics[dateKey].dry.ma_hist += histMaDry;
+              tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
+            }
+          });
         }
       } catch (err) {
         toastError(t('summary.toast.error', { err: err.message }));
       }
 
       Object.keys(tempMetrics).forEach((dateKey) => {
+        if (uniqueVehicles[dateKey]) {
+          tempMetrics[dateKey].dry.tv = uniqueVehicles[dateKey].dry.size;
+          tempMetrics[dateKey].frozen.tv = uniqueVehicles[dateKey].frozen.size;
+        }
+
         const m = tempMetrics[dateKey];
         const distribute = (prop) => {
           if (m.unknown[prop] > 0) {
@@ -401,7 +424,7 @@ export default function useRangkumanData() {
       setTaskSummaryMetrics(tempMetrics);
       setIsCalculatingMetrics(false);
     },
-    [t]
+    [t, fetchWithTracker, fetchWithRetry]
   );
 
   const fetchData = useCallback(async () => {
@@ -471,91 +494,76 @@ export default function useRangkumanData() {
 
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
+      // --- ARRAY RENTANG WAKTU ---
+      const taskRanges = [
+        { from: formatToApiUtc(taskStartObj), to: formatToApiUtc(midDateObj) },
+        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
+        { from: formatToApiUtc(bufferStartObj), to: formatToApiUtc(bufferEndObj) },
+      ];
+
+      const routingRanges = [
+        { from: formatToApiUtc(routingStartObj), to: formatToApiUtc(midDateObj) },
+        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(routingEndObj) },
+      ];
+
+      const historyRanges = [
+        { from: formatToApiUtc(locStartObj), to: formatToApiUtc(midDateObj) },
+        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
+      ];
+
+      // --- PEMANGGILAN API MENGGUNAKAN LOOPING MAP ---
       const pTasks = fetchWithTracker(async () => {
-        // UPDATE STATUS MENJADI 'ONGOING,DONE'
-        const [part1, part2, partExtra] = await Promise.all([
-          fetchWithRetry(() =>
-            getTasks({
-              hubId: selectedLocation,
-              status: 'ONGOING,DONE',
-              timeBy: 'startTime',
-              limit: 10000,
-              timeFrom: formatToApiUtc(taskStartObj),
-              timeTo: formatToApiUtc(midDateObj),
-            })
-          ),
-          fetchWithRetry(() =>
-            getTasks({
-              hubId: selectedLocation,
-              status: 'ONGOING,DONE',
-              timeBy: 'startTime',
-              limit: 10000,
-              timeFrom: formatToApiUtc(midNextObj),
-              timeTo: formatToApiUtc(finalEndObj),
-            })
-          ),
-          fetchWithRetry(() =>
-            getTasks({
-              hubId: selectedLocation,
-              status: 'ONGOING,DONE',
-              timeBy: 'startTime',
-              limit: 10000,
-              timeFrom: formatToApiUtc(bufferStartObj),
-              timeTo: formatToApiUtc(bufferEndObj),
-            })
-          ),
-        ]);
-        return mergeResults([part1, part2, partExtra]);
+        const results = await Promise.all(
+          taskRanges.map((range) =>
+            fetchWithRetry(() =>
+              getTasks({
+                hubId: selectedLocation,
+                status: 'ONGOING,DONE',
+                timeBy: 'startTime',
+                limit: 10000,
+                timeFrom: range.from,
+                timeTo: range.to,
+              })
+            )
+          )
+        );
+        return mergeResults(results);
       }, 'Tasks');
 
       const pRouting = fetchWithTracker(async () => {
-        const [part1, part2] = await Promise.all([
-          fetchWithRetry(() =>
-            getResultsSummary({
-              hubId: selectedLocation,
-              limit: 10000,
-              dateFrom: formatToApiUtc(routingStartObj),
-              dateTo: formatToApiUtc(midDateObj),
-            })
-          ),
-          fetchWithRetry(() =>
-            getResultsSummary({
-              hubId: selectedLocation,
-              limit: 10000,
-              dateFrom: formatToApiUtc(midNextObj),
-              dateTo: formatToApiUtc(routingEndObj),
-            })
-          ),
-        ]);
-        return mergeResults([part1, part2]).filter(
+        const results = await Promise.all(
+          routingRanges.map((range) =>
+            fetchWithRetry(() =>
+              getResultsSummary({
+                hubId: selectedLocation,
+                limit: 10000,
+                dateFrom: range.from,
+                dateTo: range.to,
+              })
+            )
+          )
+        );
+        return mergeResults(results).filter(
           (item) => item.dispatchStatus?.toLowerCase() === 'done'
         );
       }, 'Routing');
 
       const pHistory = fetchWithTracker(async () => {
-        const params = {
-          limit: 10000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        };
-        const [part1, part2] = await Promise.all([
-          fetchWithRetry(() =>
-            getLocationHistories({
-              ...params,
-              timeFrom: formatToApiUtc(locStartObj),
-              timeTo: formatToApiUtc(midDateObj),
-            })
-          ),
-          fetchWithRetry(() =>
-            getLocationHistories({
-              ...params,
-              timeFrom: formatToApiUtc(midNextObj),
-              timeTo: formatToApiUtc(finalEndObj),
-            })
-          ),
-        ]);
-        return mergeResults([part1, part2]);
+        const results = await Promise.all(
+          historyRanges.map((range) =>
+            fetchWithRetry(() =>
+              getLocationHistories({
+                limit: 10000,
+                startFinish: 'true',
+                fields: 'finish,startTime,email,trackedTime,totalDistance',
+                timeBy: 'createdTime',
+                timeFrom: range.from,
+                timeTo: range.to,
+              })
+            )
+          )
+        );
+        return mergeResults(results);
       }, 'History');
 
       const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all([
@@ -584,7 +592,8 @@ export default function useRangkumanData() {
         lang
       );
       setReportPreview(preview);
-      processTaskSummaryMetrics(newRawData.tasks, newRawData.results, driversRes || []);
+
+      await processTaskSummaryMetrics(newRawData.tasks, newRawData.results, driversRes || []);
     } catch (e) {
       toastError(e.message);
       setReportPreview(null);

@@ -99,8 +99,17 @@ export function generateTaskSummarySheet(
       const f = data?.frozen || {};
 
       // --- LOGIKA MENYIMPAN BARIS JIKA TOTAL DP = 0 ---
-      if ((d.dp || 0) === 0 && (f.dp || 0) === 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const currentMidnight = new Date(current);
+      currentMidnight.setHours(0, 0, 0, 0);
+      const isPastOrToday = currentMidnight <= today;
+
+      // PERBAIKAN: Gunakan (d.dp || 0) agar undefined diubah jadi 0
+      if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday) {
         zeroDpRows.add(currentRow);
+        zeroDpRows.add(currentRow + 1); // Tambahkan baris Frozen agar merge di Excel terwarnai penuh
       }
 
       // ROW DRY
