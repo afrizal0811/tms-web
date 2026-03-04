@@ -3,8 +3,6 @@ import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// --- HELPER BARU: FILTER WORKING TIME DENGAN PENDEKATAN TITIK TENGAH (MIDPOINT) ---
-// --- HELPER BARU: FILTER WORKING TIME DENGAN PENDEKATAN TITIK TENGAH (MIDPOINT) ---
 function checkShiftMidpoint(rawStart, rawFinish, shift) {
   if (!shift || !shift.startTime || !shift.endTime) return true;
   if (!rawStart || !rawFinish) return false;
@@ -98,24 +96,26 @@ export function calculateTimeDriverData(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  isIndo
+  isIndo,
+  tasks = [],
+  results = []
 ) {
   const driverMap = new Map();
-  const driverEmails = [];
+  const driverEmailsRaw = [];
+
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '';
       if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
-        // --- MENAMBAHKAN WORKING TIME KE MAP ---
         driverMap.set(email, {
           name: d.name,
           plat: plat,
           type: getDriverStorageType(d),
           workingTime: d.workingTime,
         });
-        driverEmails.push(email);
+        driverEmailsRaw.push(email);
       }
     });
   }
@@ -140,14 +140,53 @@ export function calculateTimeDriverData(
     dataMatrix[d.str] = {};
   });
 
+  const activeDriverDates = new Set();
+  let hasCrossReferenceData = false;
+
+  if (Array.isArray(tasks) && tasks.length > 0) {
+    hasCrossReferenceData = true;
+    tasks.forEach((t) => {
+      const rawEmail =
+        t.doneBy ||
+        (t.assignedTo && t.assignedTo.email) ||
+        (Array.isArray(t.assignee) ? t.assignee[0] : t.assignee);
+      const email = normalizeEmail(rawEmail);
+      const dateObj = parseApiDateString(t.startTime || t.doneTime);
+      if (email && dateObj) {
+        activeDriverDates.add(`${email}_${formatDateWIB(dateObj, 'YYYY-MM-DD')}`);
+      }
+    });
+  }
+
+  if (Array.isArray(results) && results.length > 0) {
+    hasCrossReferenceData = true;
+    results.forEach((res) => {
+      const dateObj = parseApiDateString(res.createdTime);
+      if (!dateObj) return;
+      const dateStr = formatDateWIB(dateObj, 'YYYY-MM-DD');
+      (res.result?.routing || []).forEach((vehicle) => {
+        const email = normalizeEmail(vehicle.assignee);
+        if (email) activeDriverDates.add(`${email}_${dateStr}`);
+      });
+    });
+  }
+
   if (locationHistoryData && Array.isArray(locationHistoryData)) {
     locationHistoryData.forEach((item) => {
       const email = normalizeEmail(item.email);
       if (!email || !driverMap.has(email)) return;
 
-      const driverInfo = driverMap.get(email);
+      const startObj = parseApiDateString(item.startTime);
+      if (!startObj) return;
+      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
 
-      // --- FILTER MIDPOINT (MEMBUANG DATA DI LUAR SHIFT) ---
+      if (hasCrossReferenceData && dateKey) {
+        if (!activeDriverDates.has(`${email}_${dateKey}`)) {
+          return;
+        }
+      }
+
+      const driverInfo = driverMap.get(email);
       if (!checkShiftMidpoint(item.startTime, item.finish?.finishTime, driverInfo.workingTime)) {
         return;
       }
@@ -155,13 +194,10 @@ export function calculateTimeDriverData(
       const trackedTime = Math.abs(item.trackedTime || 0);
       const totalDistance = item.finish ? item.finish.totalDistance || 0 : 0;
 
-      // Filter Logika
       if (trackedTime < 10) return;
       if (totalDistance <= 5) return;
 
-      const startObj = parseApiDateString(item.startTime);
       const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
-      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
 
       if (dateKey && dataMatrix[dateKey]) {
         const startStr = formatDateWIB(startObj, 'HH:mm');
@@ -207,6 +243,10 @@ export function calculateTimeDriverData(
     });
   }
 
+  const driverEmails = driverEmailsRaw.filter((email) => {
+    return dateKeys.some((d) => dataMatrix[d.str][email] && dataMatrix[d.str][email].hasData);
+  });
+
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -233,14 +273,18 @@ export function generateTimeDriverSheet(
   startDateStr,
   endDateStr,
   translate,
-  isIndo
+  isIndo,
+  tasks = [],
+  results = []
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTimeDriverData(
     driverData,
     locationHistoryData,
     startDateStr,
     endDateStr,
-    isIndo
+    isIndo,
+    tasks,
+    results
   );
 
   const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };

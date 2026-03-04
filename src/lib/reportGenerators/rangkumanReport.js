@@ -57,7 +57,10 @@ export function generateRangkumanDataPreview(
     driverData,
     locationHistoryData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    isIndo,
+    taskData,
+    resultsData
   );
   // 5. Pending Reason (UPDATE: Pass Dates)
   const pendingReasonData = calculatePendingReasonData(
@@ -120,7 +123,9 @@ export function generateRangkumanWorkbook(
     startDateStr,
     endDateStr,
     translate,
-    isIndo
+    isIndo,
+    taskData,
+    resultsData
   );
   generateTruckDetailSheet(
     wb,
