@@ -491,6 +491,7 @@ export const dictionary = {
           },
         },
         task_summary: {
+          click_box_hint: 'Klik kotak dengan teks tebal untuk melihat detail',
           co: 'Pembatalan Order',
           co_persentage: 'Pembatalan Order (%)',
           date: 'Tanggal',
@@ -1123,6 +1124,7 @@ export const dictionary = {
           },
         },
         task_summary: {
+          click_box_hint: 'Click box with bold text to view details',
           co: 'Cancel Order',
           co_persentage: 'Cancel Order (%)',
           date: 'Date',

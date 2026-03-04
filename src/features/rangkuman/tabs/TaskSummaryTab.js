@@ -119,12 +119,7 @@ export default function TaskSummaryTab({
         }
         className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
       >
-        {num}{' '}
-        {hasWrongGR && (
-          <span className="ml-1 text-xs">
-            ⚠️
-          </span>
-        )}
+        {num} {hasWrongGR && <span className="ml-1 text-xs">⚠️</span>}
       </td>
     );
   };
@@ -382,6 +377,12 @@ export default function TaskSummaryTab({
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
+        <div className="text-xs text-slate-500 italic">
+          *{translate('summary.tabs.task_summary.click_box_hint')}
+        </div>
       </div>
 
       <TaskSummaryModal
