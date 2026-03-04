@@ -233,7 +233,15 @@ export function calculateStartFinishDates(selectedDateStr) {
 function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
   try {
-    const utcTimestamp = timestampStr.replace(' ', 'T') + 'Z';
+    let utcTimestamp = timestampStr.replace(' ', 'T');
+    if (
+      !utcTimestamp.endsWith('Z') &&
+      !utcTimestamp.substring(10).includes('+') &&
+      !utcTimestamp.substring(10).includes('-')
+    ) {
+      utcTimestamp += 'Z';
+    }
+
     const utcDate = new Date(utcTimestamp);
     if (isNaN(utcDate.getTime())) return null;
 

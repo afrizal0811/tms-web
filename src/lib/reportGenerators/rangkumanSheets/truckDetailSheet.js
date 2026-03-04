@@ -28,35 +28,23 @@ const ERROR_STYLES = {
   },
 };
 
-// --- HELPER DATE (ORIGINAL LOGIC - ROBUST) ---
+// --- HELPER DATE ---
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
     const date = new Date(isoString);
-    // Geser ke WIB (UTC+7) dalam miliseconds
     const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
     const wibDate = new Date(wibMs);
-
-    // Ambil hari (0=Minggu, 6=Sabtu)
     const routingDay = wibDate.getUTCDay();
 
     let offsetDays = 1;
-    // Jika Sabtu (6) -> Senin (+2 hari)
-    if (routingDay === 6) offsetDays = 2;
+    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
 
-    // Tambahkan offset
     const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
-
-    // Return YYYY-MM-DD
     return new Date(deliveryMs).toISOString().split('T')[0];
   } catch (e) {
     return null;
   }
-}
-
-function getDateFromTask(isoString) {
-  if (!isoString) return null;
-  return isoString.substring(0, 10);
 }
 
 function getDriverStorageType(driver) {
@@ -106,9 +94,7 @@ export function calculateTruckDetailData(
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '-';
-      if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) {
-        return;
-      }
+      if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return;
       const email = d.email ? d.email.toLowerCase().trim() : null;
       if (email && !driverMap.has(email)) {
         driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
@@ -117,7 +103,6 @@ export function calculateTruckDetailData(
     });
   }
 
-  // 2. Init Date Range (UTC Loop)
   const dateKeys = [];
   const dataMatrix = {};
 
@@ -127,13 +112,13 @@ export function calculateTruckDetailData(
   const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
   const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
+  // Buat Keys HANYA untuk bulan yang dipilih (Untuk UI Display)
   while (currentIterDate <= endDateObj) {
     const y = currentIterDate.getUTCFullYear();
     const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
     const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
 
-    // Format Display
     const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
     const dayNum = safeDate.getDate();
     const monthName = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
@@ -141,22 +126,24 @@ export function calculateTruckDetailData(
 
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     dataMatrix[dateStr] = {};
-
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
-  // 4. Process Routing (Results) - LOGIKA H+1 KEMBALI DIGUNAKAN
+  // 4. Process Routing (Results) - SIMPAN SEMUA TANPA BATAS TANGGAL
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
       if (isDone && dispatch.result && Array.isArray(dispatch.result.routing)) {
-        // GUNAKAN HELPER (H+1 logic)
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
 
-        if (dateKey && dateKey >= startDateStr && dateKey <= endDateStr && dataMatrix[dateKey]) {
+        if (dateKey) {
+          // Buat otomatis jika tangggal berada di bulan lalu (Buffer memory)
+          if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
+
           dispatch.result.routing.forEach((route) => {
             const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
             if (!email || !driverMap.has(email)) return;
+
             if (!dataMatrix[dateKey][email]) {
               dataMatrix[dateKey][email] = {
                 weight: 0,
@@ -216,21 +203,19 @@ export function calculateTruckDetailData(
     });
   }
 
-  // 5. Process Task Data
+  // 5. Process Task Data - SIMPAN SEMUA TANPA BATAS TANGGAL
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
-      const dateKey = getDateFromTask(task.doneTime);
-
+      const dateKey = getUTC7DateString(task.doneTime);
       if (!dateKey) return;
-      if (startDateStr && endDateStr) {
-        if (dateKey < startDateStr || dateKey > endDateStr) return;
-      }
 
       const assigneeArr = task.assignee || [];
       const email = assigneeArr.length > 0 ? assigneeArr[0].toLowerCase().trim() : null;
 
-      if (email && dataMatrix[dateKey]) {
-        if (!driverMap.has(email)) return;
+      if (email && driverMap.has(email)) {
+        // Buat otomatis jika tangggal berada di bulan lalu (Buffer memory)
+        if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
+
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
             weight: 0,
@@ -274,9 +259,6 @@ export function calculateTruckDetailData(
         if (isManual) entry.hasManualError = true;
         if (isDateDiff) entry.hasBedaHariError = true;
 
-        const rawSO = task.content || '-';
-        const formattedSO = rawSO.replace(/,/g, ', ');
-
         const isGR = flow.toUpperCase().includes('GR');
         let arrivalSource;
         if (isGR) {
@@ -289,12 +271,17 @@ export function calculateTruckDetailData(
         const realStartTimeStr = arrivalSource
           ? formatDateTimeWIB(arrivalSource)
           : formatDateTimeWIB(task.startTime);
-        const { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
+
+        const customerData = parseCustomerString(task.customerOrder || '');
+        const finalCustomerName =
+          task.customerName || customerData.name || customerData.fullCustomerName;
+        let finalSO = customerData.invoiceNumber || task.content || '-';
+        finalSO = finalSO.replace(/,/g, ', ');
 
         entry.taskList.push({
           _tempId: Math.random().toString(36).substr(2, 9),
-          customerName: customerName,
-          soNumber: formattedSO,
+          customerName: finalCustomerName,
+          soNumber: finalSO,
           flow: flow,
           status: status,
           isManual: isManual,
@@ -308,13 +295,11 @@ export function calculateTruckDetailData(
     });
   }
 
-  // --- 6. LOGIKA LOOKBACK + STRICT VALIDATION ---
+  // --- 6. LOGIKA LOOKBACK (MENEMBUS BATAS BULAN) ---
   const LOOKBACK_LIMIT = 3;
-  const sortedDateKeys = dateKeys.map((d) => d.str).sort();
 
-  sortedDateKeys.forEach((currDateKey, idx) => {
-    if (idx === 0) return; // Skip hari pertama
-
+  // Hanya loop tanggal yang dituju untuk dirender di UI
+  dateKeys.forEach(({ str: currDateKey }) => {
     driverEmails.forEach((email) => {
       const currData = dataMatrix[currDateKey][email];
       if (!currData) return;
@@ -322,21 +307,21 @@ export function calculateTruckDetailData(
       const hasTasks = currData.outlets > 0;
       const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
 
-      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur/Error)
+      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur/Delay Lintas Bulan)
       if (hasTasks && !hasRouting) {
         let foundRouting = false;
 
-        // 1. Cek Mundur (Lookback)
+        // 1. Cek Mundur secara Matematika Tanggal
         for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
-          const prevIdx = idx - back;
-          if (prevIdx < 0) break;
+          const d = new Date(currDateKey);
+          d.setUTCDate(d.getUTCDate() - back); // Mundur H-1, H-2, dst
+          const prevDateKey = d.toISOString().split('T')[0]; // Format kembali ke YYYY-MM-DD
 
-          const prevDateKey = sortedDateKeys[prevIdx];
-          const prevData = dataMatrix[prevDateKey][email];
+          const prevData = dataMatrix[prevDateKey]?.[email];
 
           if (prevData) {
             const prevHasRouting = prevData.dist > 0 || prevData.weight > 0 || prevData.volume > 0;
-            const prevHasTasks = prevData.outlets > 0;
+            const prevHasTasks = (prevData.outlets || 0) > 0;
 
             // SYARAT: Hari sebelumnya punya Routing TAPI Tidak ada Task
             if (prevHasRouting && !prevHasTasks) {
@@ -362,7 +347,7 @@ export function calculateTruckDetailData(
           }
         }
 
-        // 2. STRICT VALIDATION: Jika setelah Lookback tetap tidak ketemu -> HAPUS DATA TASK
+        // 2. STRICT VALIDATION: Jika tetap tidak ketemu -> HAPUS DATA
         if (!foundRouting) {
           currData.outlets = 0;
           currData.delivered = 0;
