@@ -79,7 +79,8 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
         <div className="divide-y divide-gray-200">
           {tasks.map((task, idx) => {
             const customerData = parseCustomerString(task.customerOrder || '');
-            const invoice = customerData.invoiceNumber || '-';
+            const invoice = customerData.invoiceNumber || task.content || '-';
+            const finalCustomerName = customerData.name || task.customerName ;
 
             return (
               <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
@@ -89,7 +90,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                     {invoice}
                   </span>
                   <span className="text-sm font-semibold text-slate-800 leading-tight">
-                    {task.customerName || 'Nama Customer Tidak Tersedia'}
+                    {finalCustomerName || 'Nama Customer Tidak Tersedia'}
                   </span>
 
                   {/* Container khusus untuk Flags / Warnings */}
@@ -97,14 +98,11 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                     <div className="mt-1 flex flex-col gap-1.5 items-start">
                       {task.isWrongGR && (
                         <div className="text-[11px] font-medium text-red-600 flex items-center gap-1">
-                          ⚠️{' '}
-                          <span>
-                            {translate('summary.tabs.task_summary.warning')}
-                          </span>
+                          ⚠️ <span>{translate('summary.tabs.task_summary.warning')}</span>
                         </div>
                       )}
 
-                      {/* --- FLAG NO ROUTING --- */}
+                      {/* FLAG NO ROUTING */}
                       {task.isNoRouting && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-500 text-white shadow-sm border border-slate-600">
                           {translate('summary.tabs.task_summary.no_routing')}
