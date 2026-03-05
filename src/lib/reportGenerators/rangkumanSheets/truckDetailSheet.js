@@ -295,9 +295,7 @@ export function calculateTruckDetailData(
       const customerData = parseCustomerString(task.customerOrder || '');
       const finalCustomerName =
         task.customerName || customerData.name || customerData.fullCustomerName;
-
-      const pickupHub = task.title || '';
-      const pickupCustomerName = `${pickupHub} (${finalCustomerName})`;
+      const pickupCustomerName = `${task.title} (${finalCustomerName})`;
 
       let finalSO = customerData.invoiceNumber || task.content || '-';
       finalSO = finalSO.replace(/,/g, ', ');

@@ -78,19 +78,21 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       ) : tasks && tasks.length > 0 ? (
         <div className="divide-y divide-gray-200">
           {tasks.map((task, idx) => {
+            const flow = task.flow;
             const customerData = parseCustomerString(task.customerOrder || '');
             const invoice = customerData.invoiceNumber || task.content || '-';
             const finalCustomerName = customerData.name || task.customerName ;
-
+            const pickupCustomerName = `${task.title} (${finalCustomerName})`;
+            
             return (
               <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                    {task.flow || 'DELIVERY'} <span className="text-slate-300 mx-1">|</span>{' '}
+                    {task.flow} <span className="text-slate-300 mx-1">|</span>{' '}
                     {invoice}
                   </span>
                   <span className="text-sm font-semibold text-slate-800 leading-tight">
-                    {finalCustomerName || 'Nama Customer Tidak Tersedia'}
+                    {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}
                   </span>
 
                   {/* Container khusus untuk Flags / Warnings */}

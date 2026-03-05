@@ -128,7 +128,6 @@ export default function useRangkumanData() {
               dt_total: 0,
               dt_sum: 0,
               dt_hist: 0,
-              ma_base: 0,
               ma_hist: 0,
               rt: 0,
               co: 0,
@@ -146,7 +145,6 @@ export default function useRangkumanData() {
               dt_total: 0,
               dt_sum: 0,
               dt_hist: 0,
-              ma_base: 0,
               ma_hist: 0,
               rt: 0,
               co: 0,
@@ -164,7 +162,6 @@ export default function useRangkumanData() {
               dt_total: 0,
               dt_sum: 0,
               dt_hist: 0,
-              ma_base: 0,
               ma_hist: 0,
               rt: 0,
               co: 0,
@@ -240,12 +237,6 @@ export default function useRangkumanData() {
             : typeRaw.includes('DRY')
               ? 'dry'
               : 'unknown';
-
-          if (!task.eta || !task.etd || !task.routePlannedOrder) {
-            task.isNoRouting = true;
-            tempMetrics[dateKey][type].ma_base += 1;
-            tempMetrics[dateKey][type].ma_tasks.push(task);
-          }
 
           const sDeliv = task.statusDelivery;
           const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
@@ -504,11 +495,11 @@ export default function useRangkumanData() {
           }
         };
 
-        ['ma_base', 'ma_hist', 'rt', 'co', 'pr', 'tv'].forEach(distribute);
+        [ 'ma_hist', 'rt', 'co', 'pr', 'tv'].forEach(distribute);
 
         ['dry', 'frozen'].forEach((type) => {
           m[type].dt_total = m[type].dt_sum + m[type].dt_hist;
-          m[type].ma_total = m[type].ma_base + m[type].ma_hist;
+          m[type].ma_total = m[type].ma_hist;
           m[type].va = 0;
           m[type].tvu = m[type].tv + 0;
         });
@@ -573,11 +564,11 @@ export default function useRangkumanData() {
       };
 
       const taskStartObj = new Date(startDate);
-      taskStartObj.setDate(taskStartObj.getDate() - 4); // Buffer mundur 4 hari
+      taskStartObj.setDate(taskStartObj.getDate() - 4);
       taskStartObj.setHours(0, 0, 0, 0);
 
       const taskEndObj = new Date(endDate);
-      taskEndObj.setDate(taskEndObj.getDate() + 4); // Buffer maju 4 hari
+      taskEndObj.setDate(taskEndObj.getDate() + 4);
       taskEndObj.setHours(23, 59, 59, 999);
 
       const routingStartObj = new Date(startDate);
@@ -601,6 +592,7 @@ export default function useRangkumanData() {
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
+
       const pTasks = fetchWithTracker(async () => {
         const results = await Promise.all(
           taskRanges.map((range) =>
@@ -608,7 +600,7 @@ export default function useRangkumanData() {
               getTasks({
                 hubId: selectedLocation,
                 status: 'ONGOING,DONE',
-                timeBy: 'startTime', // KUNCI: Ubah acuan menjadi startTime
+                timeBy: 'startTime',
                 limit: 10000,
                 timeFrom: range.from,
                 timeTo: range.to,
