@@ -242,7 +242,7 @@ export default function useRangkumanData() {
               : 'unknown';
 
           if (!task.eta || !task.etd || !task.routePlannedOrder) {
-            task.isNoRouting = true; // <--- FLAG DITAMBAHKAN DI SINI
+            task.isNoRouting = true;
             tempMetrics[dateKey][type].ma_base += 1;
             tempMetrics[dateKey][type].ma_tasks.push(task);
           }
@@ -537,44 +537,31 @@ export default function useRangkumanData() {
     try {
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
-      const endDatePlusOne = new Date(endDate);
-      endDatePlusOne.setDate(endDatePlusOne.getDate() + 1);
 
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
 
-      const routingStartObj = new Date(startDate);
-      routingStartObj.setDate(routingStartObj.getDate() - 4);
-      routingStartObj.setHours(0, 0, 0, 0);
+      const createDateChunks = (start, end, maxDays) => {
+        const chunks = [];
+        let curr = new Date(start);
+        while (curr <= end) {
+          let next = new Date(curr);
+          next.setDate(next.getDate() + maxDays - 1);
+          next.setHours(23, 59, 59, 999);
 
-      const routingEndObj = new Date(endDate);
-      routingEndObj.setDate(routingEndObj.getDate() + 2);
-      routingEndObj.setHours(23, 59, 59, 999);
+          if (next > end) next = new Date(end);
 
-      const bufferDate = new Date(startDate);
-      bufferDate.setDate(bufferDate.getDate() - 2);
+          chunks.push({
+            from: formatToApiUtc(curr),
+            to: formatToApiUtc(next),
+          });
 
-      const locStartObj = new Date(bufferDate);
-      locStartObj.setHours(22, 0, 0, 0);
-
-      const taskStartObj = new Date(bufferDate);
-      taskStartObj.setHours(0, 0, 0, 0);
-
-      const finalEndObj = new Date(endDatePlusOne);
-      finalEndObj.setHours(23, 59, 59, 999);
-
-      const bufferStartObj = new Date(finalEndObj);
-      bufferStartObj.setDate(bufferStartObj.getDate() + 1);
-      bufferStartObj.setHours(0, 0, 0, 0);
-
-      const bufferEndObj = new Date(bufferStartObj);
-      bufferEndObj.setDate(bufferEndObj.getDate() + 4);
-      bufferEndObj.setHours(23, 59, 59, 999);
-
-      const midDateObj = new Date(year, month, 15);
-      const midNextObj = new Date(year, month, 16);
-      midDateObj.setHours(23, 59, 59, 999);
-      midNextObj.setHours(0, 0, 0, 0);
+          curr = new Date(next);
+          curr.setDate(curr.getDate() + 1);
+          curr.setHours(0, 0, 0, 0);
+        }
+        return chunks;
+      };
 
       const mergeResults = (resArray) => {
         let merged = [];
@@ -585,24 +572,35 @@ export default function useRangkumanData() {
         return merged;
       };
 
+      const taskStartObj = new Date(startDate);
+      taskStartObj.setDate(taskStartObj.getDate() - 4); // Buffer mundur 4 hari
+      taskStartObj.setHours(0, 0, 0, 0);
+
+      const taskEndObj = new Date(endDate);
+      taskEndObj.setDate(taskEndObj.getDate() + 4); // Buffer maju 4 hari
+      taskEndObj.setHours(23, 59, 59, 999);
+
+      const routingStartObj = new Date(startDate);
+      routingStartObj.setDate(routingStartObj.getDate() - 4);
+      routingStartObj.setHours(0, 0, 0, 0);
+
+      const routingEndObj = new Date(endDate);
+      routingEndObj.setDate(routingEndObj.getDate() + 2);
+      routingEndObj.setHours(23, 59, 59, 999);
+
+      const locStartObj = new Date(startDate);
+      locStartObj.setDate(locStartObj.getDate() - 3);
+      locStartObj.setHours(0, 0, 0, 0);
+
+      const locEndObj = new Date(endDate);
+      locEndObj.setDate(locEndObj.getDate() + 2);
+      locEndObj.setHours(23, 59, 59, 999);
+
+      const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
+      const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
+      const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
+
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
-
-      const taskRanges = [
-        { from: formatToApiUtc(taskStartObj), to: formatToApiUtc(midDateObj) },
-        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
-        { from: formatToApiUtc(bufferStartObj), to: formatToApiUtc(bufferEndObj) },
-      ];
-
-      const routingRanges = [
-        { from: formatToApiUtc(routingStartObj), to: formatToApiUtc(midDateObj) },
-        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(routingEndObj) },
-      ];
-
-      const historyRanges = [
-        { from: formatToApiUtc(locStartObj), to: formatToApiUtc(midDateObj) },
-        { from: formatToApiUtc(midNextObj), to: formatToApiUtc(finalEndObj) },
-      ];
-
       const pTasks = fetchWithTracker(async () => {
         const results = await Promise.all(
           taskRanges.map((range) =>
@@ -610,7 +608,7 @@ export default function useRangkumanData() {
               getTasks({
                 hubId: selectedLocation,
                 status: 'ONGOING,DONE',
-                timeBy: 'startTime',
+                timeBy: 'startTime', // KUNCI: Ubah acuan menjadi startTime
                 limit: 10000,
                 timeFrom: range.from,
                 timeTo: range.to,

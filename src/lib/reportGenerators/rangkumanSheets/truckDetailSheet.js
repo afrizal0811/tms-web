@@ -129,7 +129,7 @@ export function calculateTruckDetailData(
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
-  // 4. Process Routing (Results) - SIMPAN SEMUA TANPA BATAS TANGGAL
+  // 4. Process Routing (Results)
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
@@ -137,7 +137,6 @@ export function calculateTruckDetailData(
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
 
         if (dateKey) {
-          // Buat otomatis jika tangggal berada di bulan lalu (Buffer memory)
           if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
 
           dispatch.result.routing.forEach((route) => {
@@ -203,102 +202,125 @@ export function calculateTruckDetailData(
     });
   }
 
-  // 5. Process Task Data - SIMPAN SEMUA TANPA BATAS TANGGAL
+  const uniqueTasksMap = new Map();
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
-      const dateKey = getUTC7DateString(task.doneTime);
-      if (!dateKey) return;
-
-      const assigneeArr = task.assignee || [];
-      const email = assigneeArr.length > 0 ? assigneeArr[0].toLowerCase().trim() : null;
-
-      if (email && driverMap.has(email)) {
-        // Buat otomatis jika tangggal berada di bulan lalu (Buffer memory)
-        if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
-
-        if (!dataMatrix[dateKey][email]) {
-          dataMatrix[dateKey][email] = {
-            weight: 0,
-            maxWeight: 0,
-            volume: 0,
-            maxVolume: 0,
-            dist: 0,
-            duration: 0,
-            outlets: 0,
-            delivered: 0,
-            hasManualError: false,
-            hasBedaHariError: false,
-            taskList: [],
-          };
-        }
-        const entry = dataMatrix[dateKey][email];
-        entry.outlets += 1;
-        const flow = task.flow || '-';
-        let status =
-          flow !== 'Pickup'
-            ? task.statusDelivery && task.statusDelivery.length > 0
-              ? task.statusDelivery[0].toUpperCase()
-              : '-'
-            : task.status && task.status.toUpperCase();
-        status = status !== 'ONGOING' ? status : '-';
-        if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
-
-        const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
-        const startD = getUTC7DateString(task.startTime);
-        const doneD = getUTC7DateString(task.doneTime);
-
-        let isDateDiff = false;
-        let dayDiffCount = 0;
-        if (startD && doneD && startD !== doneD) {
-          isDateDiff = true;
-          const d1 = new Date(startD);
-          const d2 = new Date(doneD);
-          const diffTime = Math.abs(d2 - d1);
-          dayDiffCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
-        if (isManual) entry.hasManualError = true;
-        if (isDateDiff) entry.hasBedaHariError = true;
-
-        const isGR = flow.toUpperCase().includes('GR');
-        let arrivalSource;
-        if (isGR) {
-          arrivalSource = task.page1DoneTime;
-        } else {
-          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
-        }
-        const arrObj = parseApiDateString(arrivalSource);
-        const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
-        const realStartTimeStr = arrivalSource
-          ? formatDateTimeWIB(arrivalSource)
-          : formatDateTimeWIB(task.startTime);
-
-        const customerData = parseCustomerString(task.customerOrder || '');
-        const finalCustomerName =
-          task.customerName || customerData.name || customerData.fullCustomerName;
-        let finalSO = customerData.invoiceNumber || task.content || '-';
-        finalSO = finalSO.replace(/,/g, ', ');
-
-        entry.taskList.push({
-          _tempId: Math.random().toString(36).substr(2, 9),
-          customerName: finalCustomerName,
-          soNumber: finalSO,
-          flow: flow,
-          status: status,
-          isManual: isManual,
-          isDateDiff: isDateDiff,
-          dayDiff: dayDiffCount,
-          startTimeStr: realStartTimeStr,
-          roSequence: task.routePlannedOrder,
-          arrivalTimestamp: arrivalTimestamp,
-        });
+      const id = task._id || task.id || task.taskId;
+      if (id) {
+        uniqueTasksMap.set(id, task);
+      } else {
+        const fallbackKey = `${task.customerOrder || task.content || ''}_${task.flow || ''}_${task.doneTime || task.startTime || ''}`;
+        uniqueTasksMap.set(fallbackKey, task);
       }
     });
   }
+  const cleanTasks = Array.from(uniqueTasksMap.values());
+
+  cleanTasks.forEach((task) => {
+    const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+    if (!dateKey) return;
+
+    let rawEmail = null;
+    if (Array.isArray(task.assignee) && task.assignee.length > 0) {
+      rawEmail = task.assignee[0];
+    } else if (typeof task.assignee === 'string') {
+      rawEmail = task.assignee;
+    } else if (task.assignedTo && task.assignedTo.email) {
+      rawEmail = task.assignedTo.email;
+    } else if (task.doneBy) {
+      rawEmail = task.doneBy;
+    }
+    const email = rawEmail ? rawEmail.toLowerCase().trim() : null;
+
+    if (email && driverMap.has(email)) {
+      if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
+
+      if (!dataMatrix[dateKey][email]) {
+        dataMatrix[dateKey][email] = {
+          weight: 0,
+          maxWeight: 0,
+          volume: 0,
+          maxVolume: 0,
+          dist: 0,
+          duration: 0,
+          outlets: 0,
+          delivered: 0,
+          hasManualError: false,
+          hasBedaHariError: false,
+          taskList: [],
+        };
+      }
+      const entry = dataMatrix[dateKey][email];
+      entry.outlets += 1;
+      const flow = task.flow || '-';
+      let status =
+        flow !== 'Pickup'
+          ? task.statusDelivery && task.statusDelivery.length > 0
+            ? task.statusDelivery[0].toUpperCase()
+            : '-'
+          : task.status && task.status.toUpperCase();
+      status = status !== 'ONGOING' ? status : '-';
+      if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
+
+      const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
+
+      const startD = getUTC7DateString(task.startTime);
+      const doneD = getUTC7DateString(task.doneTime);
+
+      let isDateDiff = false;
+      let dayDiffCount = 0;
+      if (startD && doneD && startD !== doneD) {
+        isDateDiff = true;
+        const d1 = new Date(startD);
+        const d2 = new Date(doneD);
+        const diffTime = Math.abs(d2 - d1);
+        dayDiffCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+      if (isManual) entry.hasManualError = true;
+      if (isDateDiff) entry.hasBedaHariError = true;
+
+      const isGR = flow.toUpperCase().includes('GR');
+      let arrivalSource;
+      if (isGR) {
+        arrivalSource = task.page1DoneTime;
+      } else {
+        arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
+      }
+      const arrObj = parseApiDateString(arrivalSource);
+      const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
+      const realStartTimeStr = arrivalSource
+        ? formatDateTimeWIB(arrivalSource)
+        : formatDateTimeWIB(task.startTime);
+
+      const customerData = parseCustomerString(task.customerOrder || '');
+      const finalCustomerName =
+        task.customerName || customerData.name || customerData.fullCustomerName;
+
+      const pickupHub = task.title || '';
+      const pickupCustomerName = `${pickupHub} (${finalCustomerName})`;
+
+      let finalSO = customerData.invoiceNumber || task.content || '-';
+      finalSO = finalSO.replace(/,/g, ', ');
+
+      entry.taskList.push({
+        _tempId: Math.random().toString(36).substr(2, 9),
+        customerName: flow === 'Pickup' ? pickupCustomerName : finalCustomerName,
+        soNumber: finalSO,
+        flow: flow,
+        status: status,
+        isManual: isManual,
+        isDateDiff: isDateDiff,
+        dayDiff: dayDiffCount,
+        startTimeStr: realStartTimeStr,
+        roSequence: task.routePlannedOrder,
+        arrivalTimestamp: arrivalTimestamp,
+      });
+    }
+  });
 
   // --- 6. LOGIKA LOOKBACK (MENEMBUS BATAS BULAN) ---
   const LOOKBACK_LIMIT = 3;
 
-  // Hanya loop tanggal yang dituju untuk dirender di UI
   dateKeys.forEach(({ str: currDateKey }) => {
     driverEmails.forEach((email) => {
       const currData = dataMatrix[currDateKey][email];
@@ -307,15 +329,13 @@ export function calculateTruckDetailData(
       const hasTasks = currData.outlets > 0;
       const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
 
-      // KONDISI: Ada Task TAPI Tidak Ada Routing (Indikasi Libur/Delay Lintas Bulan)
       if (hasTasks && !hasRouting) {
         let foundRouting = false;
 
-        // 1. Cek Mundur secara Matematika Tanggal
         for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
           const d = new Date(currDateKey);
-          d.setUTCDate(d.getUTCDate() - back); // Mundur H-1, H-2, dst
-          const prevDateKey = d.toISOString().split('T')[0]; // Format kembali ke YYYY-MM-DD
+          d.setUTCDate(d.getUTCDate() - back);
+          const prevDateKey = d.toISOString().split('T')[0];
 
           const prevData = dataMatrix[prevDateKey]?.[email];
 
@@ -323,9 +343,7 @@ export function calculateTruckDetailData(
             const prevHasRouting = prevData.dist > 0 || prevData.weight > 0 || prevData.volume > 0;
             const prevHasTasks = (prevData.outlets || 0) > 0;
 
-            // SYARAT: Hari sebelumnya punya Routing TAPI Tidak ada Task
             if (prevHasRouting && !prevHasTasks) {
-              // FOUND! Pindahkan data
               currData.weight = prevData.weight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
@@ -333,7 +351,6 @@ export function calculateTruckDetailData(
               currData.dist = prevData.dist;
               currData.duration = prevData.duration;
 
-              // Bersihkan data lama
               prevData.weight = 0;
               prevData.maxWeight = 0;
               prevData.volume = 0;
@@ -347,7 +364,6 @@ export function calculateTruckDetailData(
           }
         }
 
-        // 2. STRICT VALIDATION: Jika tetap tidak ketemu -> HAPUS DATA
         if (!foundRouting) {
           currData.outlets = 0;
           currData.delivered = 0;
