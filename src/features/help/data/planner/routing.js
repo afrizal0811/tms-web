@@ -187,7 +187,7 @@ export const routingTopic = [
                   </ol>
                 </li>
                 <li>
-                  <p class='section-title font-bold text-2xl underline mb-2 italic'>Geotagging</p>             
+                  <p class='section-title font-bold underline mb-2 italic'>Geotagging</p>             
                   <p>Di dalam bagian ini ditampilkan pengaturan <em>geotagging</em> yang memungkinkan untuk menetapkan <em>tag</em> berdasarkan area geografis. <em>Planner</em> dapat menambahkan dan mengubah lokasi dari <em>tag</em> tersebut. <strong>Untuk menghapus <em>tag</em> yang sudah ada, harap hubungi admin.</strong></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-conf-6.png" alt="Pengaturan Geotagging" style="width: 100%; border-radius: 4px;" />

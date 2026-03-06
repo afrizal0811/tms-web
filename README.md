@@ -50,13 +50,12 @@ Menu pelaporan mendalam untuk analisis efisiensi armada:
 ### 6. 🚛 Manajemen Data Kendaraan (Vehicle Master)
 
 - **Master Data:** Daftar lengkap kendaraan beserta driver utama (_assignee_).
-- **Tag Mapping System:** Fitur untuk memetakan tag kendaraan dari vendor (misal: `BOX-BESAR`) ke standar internal (misal: `CDD-LONG`).
+- **Tag Mapping System:** Fitur untuk memetakan tag kendaraan (misal: `BOX-BESAR`) ke standar internal (misal: `CDD-LONG`).
 - **Conditional Data:** Menangani data kendaraan dengan kondisi operasional khusus.
 
 ### 7. 🌐 Fitur Pendukung
 
-- **Multi-Language (i18n):** Dukungan Bahasa Indonesia & Inggris.
-- **Token Expiry Alert:** Notifikasi otomatis jika sesi API token akan segera habis.
+- **Multi-Language:** Dukungan Bahasa Indonesia & Inggris.
 
 ---
 

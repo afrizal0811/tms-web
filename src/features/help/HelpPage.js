@@ -10,6 +10,7 @@ import { pdf } from '@react-pdf/renderer';
 import { useEffect, useMemo, useState } from 'react';
 import { helpTopics } from './data';
 import { PdfDocument } from './PdfDocument';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 
 export default function HelpPage() {
   const { t, lang } = useLanguage();
@@ -149,11 +150,12 @@ export default function HelpPage() {
   };
 
   const handleDownload = async (targetCategory) => {
+    const capitalizedCategory = targetCategory.charAt(0).toUpperCase() + targetCategory.slice(1);
     setIsGenerating(true);
     try {
       const categoryTopics = helpTopics.filter((t) => t.category === targetCategory);
       if (categoryTopics.length === 0) {
-        alert('Tidak ada data untuk dicetak.');
+        toastError(t('common.no_data'));
         return;
       }
       const blob = await pdf(
@@ -163,15 +165,15 @@ export default function HelpPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Manual_${targetCategory}_TMS.pdf`;
+      link.download = `Manual ${capitalizedCategory} TMS.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('PDF Generation Error:', error);
-      alert('Gagal membuat PDF.');
+      toastError(t('common.toast.error', { error }));
     } finally {
+      toastSuccess(t('common.toast.success'));
       setIsGenerating(false);
     }
   };

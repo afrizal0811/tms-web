@@ -532,7 +532,7 @@ export const taskTopic = [
                 </iframe>
               </div>
               <p>Pada menu pelacakan akan muncul data pengguna, total jumlah tugas yang sedang berjalan dan sudah selesai, waktu dan jarak pengiriman. <em>Planner</em> dapat melakukan filter berdasarkan tanggal pengiriman atau nama <em>driver</em> yang menerima tugas. Selain itu, ditampilkan pula lokasi tiap <em>driver</em> secara <em>real-time</em>.</p>
-              <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+              <div style="margin-top: 10px; margin-bottom: 10px; width: 85%;" class="mx-auto">
                   <img src="/images/tutorial/planner/tracking-1.png" alt="Tampilan Umum" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
@@ -541,7 +541,7 @@ export const taskTopic = [
             type: 'text',
             content: `
               <p>Saat dipilih salah satu <em>driver</em>, akan muncul detail tugas dan lokasi <em>driver</em> tersebut. Untuk tugas yang sedang berjalan ditandai ikon berwarna <span class='text-orange-400'>oranye</span> dan tugas yang sudah selesai ditandai ikon berwarna <span class='text-green-400'>hijau</span>. Saat ikon-ikon tersebut ditekan, maka akan memunculkan detail dari tugas tersebut.</p>
-              <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+              <div style="margin-top: 10px; margin-bottom: 10px; width: 85%;" class="mx-auto">
                   <img src="/images/tutorial/planner/tracking-2.png" alt="Tampilan Detail" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
@@ -550,7 +550,7 @@ export const taskTopic = [
             type: 'text',
             content: `
               <p>Pada bagian kanan layar terdapat daftar tugas yang harus dikerjakan oleh <em>driver</em> tersebut. Ditampilkan pula urutan prediksi dan urutan aktualisasi untuk tiap tugasnya.</p>
-              <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
+              <div style="margin-top: 10px; margin-bottom: 10px; width: 85%;" class="mx-auto">
                   <img src="/images/tutorial/planner/tracking-3.png" alt="Daftar Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
