@@ -86,7 +86,9 @@ export function generateDeliveryWorkbook(
     const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
     const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
     const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
-    const customerName = task.customerName || '';
+    const customerData = parseCustomerString(task.customerOrder || '');
+    const customerName = customerData.name || task.customerName || customerData.fullCustomerName;
+    const pickupCustomerName = `${task.title} (${customerName})`;
     const flow = task.flow;
     const orderId = task.orderId || '';
     if (driverName !== 'N/A') {
@@ -108,12 +110,12 @@ export function generateDeliveryWorkbook(
       if (startDate && doneDate && startDate !== doneDate) {
         stats.mismatchCustomers.push({
           name: customerName,
-          date: startDate,
+          date: doneDate,
         });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
         stats.missingDataCustomers.push({
-          name: customerName,
+          name: flow === 'Pickup' ? pickupCustomerName : customerName,
         });
       }
       driverStats.set(driverName, stats);
@@ -287,6 +289,7 @@ export function generateDeliveryWorkbook(
     const driverPlat = driver.plat;
     const driverEmail = normalizeEmail(driver.email);
     const stats = driverStats.get(driverName);
+
     if (stats) {
       const totalDelivery = stats.totalOutlet - stats.failedCount;
       const mismatchText = stats.mismatchCustomers
@@ -296,7 +299,7 @@ export function generateDeliveryWorkbook(
             const [y, m, d] = task.date.split('-');
             if (y && m && d) formattedDate = `${d}-${m}-${y}`;
           }
-          return `• ${task.name} (${formattedDate})`;
+          return `• ${task.name} (done: ${formattedDate})`;
         })
         .join('\n');
       const missingDataText = stats.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
