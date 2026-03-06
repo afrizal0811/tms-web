@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Tabel untuk menyimpan data tugas tambahan manual
+model ManualTask {
+  id            Int      @id @default(autoincrement())
+  driverName    String
+  customerName  String
+  soNumber      String
+  flow          String
+  createdAt     DateTime @default(now())
+}
