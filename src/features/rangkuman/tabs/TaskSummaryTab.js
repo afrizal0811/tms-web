@@ -6,6 +6,7 @@ import Tooltip from '@/components/Tooltip';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useMemo, useState } from 'react';
+import TaskSummaryModal from './modals/TaskSummaryModal';
 
 export default function TaskSummaryTab({
   metrics,
@@ -19,6 +20,8 @@ export default function TaskSummaryTab({
     Dry: { Total: 0 },
     Frozen: { Total: 0 },
   });
+
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -83,6 +86,81 @@ export default function TaskSummaryTab({
     return val || 0;
   };
 
+  const renderClickableCell = (val, tasksArray, typeKey, category, dateObj, isFrozen = false) => {
+    if (isLoading && val === undefined) {
+      return (
+        <td className="px-2 py-2 border border-gray-300">
+          <Spinner
+            addClass="inline-block"
+            border="border-2 border-slate-400 border-t-transparent"
+            size="w-3 h-3"
+          />
+        </td>
+      );
+    }
+
+    const num = val || 0;
+    if (num === 0) {
+      return <td className="px-2 py-2 border border-gray-300">0</td>;
+    }
+
+    const armada = isFrozen ? 'Frozen' : 'Dry';
+    const typeLabel = translate(`summary.tabs.task_summary.${typeKey}`);
+    const title = `${typeLabel} - ${armada}`;
+    const hasWrongGR = tasksArray && tasksArray.some((t) => t.isWrongGR);
+
+    return (
+      <td
+        onClick={() =>
+          setModalConfig({
+            isOpen: true,
+            data: { title, dateObj, type: category, tasks: tasksArray || [] },
+          })
+        }
+        className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
+      >
+        {num} {hasWrongGR && <span className="ml-1 text-xs">⚠️</span>}
+      </td>
+    );
+  };
+
+  const renderClickableTvCell = (val, tvArray, dateObj, isFrozen = false) => {
+    if (isLoading && val === undefined) {
+      return (
+        <td className="px-2 py-2 border border-gray-300">
+          <Spinner
+            addClass="inline-block"
+            border="border-2 border-slate-400 border-t-transparent"
+            size="w-3 h-3"
+          />
+        </td>
+      );
+    }
+
+    const num = val || 0;
+    if (num === 0) {
+      return <td className="px-2 py-2 border border-gray-300">0</td>;
+    }
+
+    const armada = isFrozen ? 'Frozen' : 'Dry';
+    const typeLabel = translate('summary.tabs.task_summary.tv') || 'Total Vehicle';
+    const title = `${typeLabel} - ${armada}`;
+
+    return (
+      <td
+        onClick={() =>
+          setModalConfig({
+            isOpen: true,
+            data: { title, dateObj, vehicles: tvArray || [] },
+          })
+        }
+        className="px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold text-slate-800"
+      >
+        {num}
+      </td>
+    );
+  };
+
   const calculatePct = (num, den) => {
     if (isLoading && (num === undefined || den === undefined)) {
       return (
@@ -103,7 +181,7 @@ export default function TaskSummaryTab({
     <tr key={`${key}-sun-1`} className="bg-red-200 text-red-900 border-b border-gray-300">
       <td
         rowSpan={2}
-        className="px-2 py-2 border border-gray-300 font-medium align-middle bg-red-200"
+        className="px-2 py-2 border border-gray-300 font-medium align-middle bg-red-200 text-center"
       >
         {display}
       </td>
@@ -118,7 +196,6 @@ export default function TaskSummaryTab({
     <tr key={`${key}-sun-2`} className="bg-red-200 text-red-900"></tr>,
   ];
 
-  // --- COLORS DEFINITION ---
   const cYellow = 'bg-[#fff2cc]';
   const cPink = 'bg-[#ead1dc]';
   const cGreen = 'bg-[#d9ead3]';
@@ -191,12 +268,21 @@ export default function TaskSummaryTab({
               const mtDry = masterTruckData.Dry?.Total || 0;
               const mtFrozen = masterTruckData.Frozen?.Total || 0;
 
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const isPastOrToday = item.dateObj <= today;
+
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
+              const dateCellClass = isZeroDP
+                ? 'bg-red-100 text-red-600 font-bold'
+                : 'bg-white font-medium';
+
               return [
                 // ROW 1: DRY
                 <tr key={`${key}-dry`} className="hover:bg-gray-50 bg-white">
                   <td
                     rowSpan={2}
-                    className="px-2 py-2 border border-gray-300 font-medium align-middle bg-white"
+                    className={`px-2 py-2 border border-gray-300 align-middle text-center ${dateCellClass}`}
                   >
                     {display}
                   </td>
@@ -205,33 +291,36 @@ export default function TaskSummaryTab({
                   </td>
 
                   <td className="px-2 py-2 border border-gray-300">{renderValue(d.dp)}</td>
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.dt_total)}</td>
+
+                  {renderClickableCell(d.dt_total, d.dt_tasks, 'dt', 'DT', dateObj, false)}
                   <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
                     {calculatePct(d.dt_total, d.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.ma_total)}</td>
+                  {renderClickableCell(d.ma_total, d.ma_tasks, 'ma', 'MA', dateObj, false)}
                   <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
                     {calculatePct(d.ma_total, d.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.rt)}</td>
+                  {renderClickableCell(d.rt, d.rt_tasks, 'rt', 'RT', dateObj, false)}
                   <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
                     {calculatePct(d.rt, d.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.co)}</td>
+                  {renderClickableCell(d.co, d.co_tasks, 'co', 'CO', dateObj, false)}
                   <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
                     {calculatePct(d.co, d.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.pr)}</td>
+                  {renderClickableCell(d.pr, d.pr_tasks, 'pr', 'PR', dateObj, false)}
                   <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
                     {calculatePct(d.pr, d.dp)}
                   </td>
 
                   <td className="px-2 py-2 border border-gray-300 font-semibold">{mtDry}</td>
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.tv)}</td>
+
+                  {renderClickableTvCell(d.tv, d.tv_details, dateObj, false)}
+
                   <td className="px-2 py-2 border border-gray-300">{renderValue(d.va)}</td>
 
                   <td className="px-2 py-2 border border-gray-300">{renderValue(d.tvu)}</td>
@@ -247,33 +336,36 @@ export default function TaskSummaryTab({
                   </td>
 
                   <td className="px-2 py-2 border border-gray-300">{renderValue(f.dp)}</td>
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.dt_total)}</td>
+
+                  {renderClickableCell(f.dt_total, f.dt_tasks, 'dt', 'DT', dateObj, true)}
                   <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
                     {calculatePct(f.dt_total, f.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.ma_total)}</td>
+                  {renderClickableCell(f.ma_total, f.ma_tasks, 'ma', 'MA', dateObj, true)}
                   <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
                     {calculatePct(f.ma_total, f.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.rt)}</td>
+                  {renderClickableCell(f.rt, f.rt_tasks, 'rt', 'RT', dateObj, true)}
                   <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
                     {calculatePct(f.rt, f.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.co)}</td>
+                  {renderClickableCell(f.co, f.co_tasks, 'co', 'CO', dateObj, true)}
                   <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
                     {calculatePct(f.co, f.dp)}
                   </td>
 
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.pr)}</td>
+                  {renderClickableCell(f.pr, f.pr_tasks, 'pr', 'PR', dateObj, true)}
                   <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
                     {calculatePct(f.pr, f.dp)}
                   </td>
 
                   <td className="px-2 py-2 border border-gray-300 font-semibold">{mtFrozen}</td>
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.tv)}</td>
+
+                  {renderClickableTvCell(f.tv, f.tv_details, dateObj, true)}
+
                   <td className="px-2 py-2 border border-gray-300">{renderValue(f.va)}</td>
 
                   <td className="px-2 py-2 border border-gray-300">{renderValue(f.tvu)}</td>
@@ -286,6 +378,19 @@ export default function TaskSummaryTab({
           </tbody>
         </table>
       </div>
+
+      <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
+        <div className="text-xs text-slate-500 italic">
+          *{translate('summary.tabs.task_summary.click_box_hint')}
+        </div>
+      </div>
+
+      <TaskSummaryModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        data={modalConfig.data}
+        translate={translate}
+      />
     </div>
   );
 }

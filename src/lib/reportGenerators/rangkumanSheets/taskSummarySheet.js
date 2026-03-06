@@ -55,6 +55,7 @@ export function generateTaskSummarySheet(
   const excelData = [headers];
   const merges = [];
   const sundayRows = new Set(); // Simpan index baris minggu
+  const zeroDpRows = new Set(); // --- Simpan index baris DP = 0 ---
 
   // --- GENERATE DATA ---
   const current = new Date(startDateStr);
@@ -96,6 +97,20 @@ export function generateTaskSummarySheet(
       const data = metrics ? metrics[routingKey] : null;
       const d = data?.dry || {};
       const f = data?.frozen || {};
+
+      // --- LOGIKA MENYIMPAN BARIS JIKA TOTAL DP = 0 ---
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const currentMidnight = new Date(current);
+      currentMidnight.setHours(0, 0, 0, 0);
+      const isPastOrToday = currentMidnight <= today;
+
+      // PERBAIKAN: Gunakan (d.dp || 0) agar undefined diubah jadi 0
+      if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday) {
+        zeroDpRows.add(currentRow);
+        zeroDpRows.add(currentRow + 1); // Tambahkan baris Frozen agar merge di Excel terwarnai penuh
+      }
 
       // ROW DRY
       excelData.push([
@@ -277,7 +292,7 @@ export function generateTaskSummarySheet(
       }
       // ---------------------
 
-      // STYLE HEADER & DATA (Sama seperti sebelumnya)
+      // STYLE HEADER & DATA
       if (R === 0) {
         cell.s = {
           ...HEADER_STYLES.main,
@@ -291,11 +306,17 @@ export function generateTaskSummarySheet(
           cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '990000' } };
           if (C === 1) cell.s.alignment = { horizontal: 'center', vertical: 'center' };
         } else {
-          if (C === 0)
+          if (C === 0) {
             cell.s = {
               ...BASE_STYLES.center,
               alignment: { vertical: 'center', horizontal: 'center' },
             };
+            // --- TERAPKAN WARNA MERAH KHUSUS UNTUK CELL TANGGAL JIKA DP = 0 ---
+            if (zeroDpRows.has(R)) {
+              cell.s.fill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
+              cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+            }
+          }
           if (C === 1) cell.s.font = FONT_STYLES.bold;
           if (pctCols.includes(C)) {
             cell.t = 'n';

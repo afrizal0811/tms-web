@@ -174,6 +174,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
         acc[vehicle.assignee] = {
           plat: vehicle.name,
           type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
+          storage: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0].split('-')[0] : null,
           maxWeight: vehicle.capacity?.weight?.max || null,
           maxVolume: vehicle.capacity?.volume?.max || null,
           startWorking: vehicle.workingTime?.startTime || null,
@@ -193,6 +194,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
         type: vehicleInfo ? vehicleInfo.type : null,
         maxWeight: vehicleInfo ? parseFloat(vehicleInfo.maxWeight) : null,
         maxVolume: vehicleInfo ? parseFloat(vehicleInfo.maxVolume) : null,
+        storage: vehicleInfo ? vehicleInfo.storage : null,
         workingTime: {
           startTime: vehicleInfo ? vehicleInfo.startWorking : null,
           endTime: vehicleInfo ? vehicleInfo.endWorking : null,

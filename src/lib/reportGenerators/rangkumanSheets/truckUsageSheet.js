@@ -1,7 +1,6 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckUsageSheet.js
 import { VEHICLE_TYPES } from '@/lib/constants';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { getMasterTruckData } from '@/lib/masterTruckHelper';
 import { toastError } from '@/lib/toastHelper';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -152,7 +151,8 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       toastError(e);
     }
   }
-  const hubMasterData = getMasterTruckData() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+  const { storedMasterTruck } = getLocalStorage() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+  const hubMasterData = JSON.parse(storedMasterTruck);
   const dateMap = {};
   const dateKeys = [];
   const currentIterDate = new Date(startDateStr);

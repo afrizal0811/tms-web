@@ -3,9 +3,7 @@ import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
 import { useRef, useState } from 'react';
-
-// --- KONFIGURASI DINAMIS ---
-const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
+import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 
 // --- 1. REASON CELL ---
 const ReasonCell = ({ text, className }) => {

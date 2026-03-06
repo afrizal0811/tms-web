@@ -1,7 +1,7 @@
 // File: features/rangkuman/tabs/components/TruckDetailModal.js
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, isEmpty } from '@/lib/utils';
+import { formatLongDate, isEmpty, parseCustomerString } from '@/lib/utils';
 
 export default function TruckDetailModal({ isOpen, onClose, data, translate, language }) {
   if (!isOpen || !data) return null;
@@ -65,7 +65,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
           {tasks.map((task, idx) => {
             const displayRO = task.roSequence ?? '-';
             const displayReal = task.realSequence || '-';
-
+            const { name: customerName } = parseCustomerString(task.customerName);
             return (
               <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start">
@@ -75,7 +75,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                       {task.soNumber || '-'}
                     </span>
                     <span className="text-sm font-semibold text-slate-800 leading-tight">
-                      {task.customerName || 'No Name'}
+                      {customerName}
                     </span>
                   </div>
                   <Tooltip

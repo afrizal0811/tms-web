@@ -3,6 +3,49 @@ import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
+function checkShiftMidpoint(rawStart, rawFinish, shift) {
+  if (!shift || !shift.startTime || !shift.endTime) return true;
+  if (!rawStart || !rawFinish) return false;
+
+  try {
+    // Pastikan tidak ada double 'Z' jika formatnya sudah ISO
+    const safeStart = rawStart.replace(' ', 'T') + (rawStart.includes('Z') ? '' : 'Z');
+    const safeFinish = rawFinish.replace(' ', 'T') + (rawFinish.includes('Z') ? '' : 'Z');
+
+    const startMs = new Date(safeStart).getTime();
+    const finishMs = new Date(safeFinish).getTime();
+
+    if (isNaN(startMs) || isNaN(finishMs)) return false;
+
+    // --- BYPASS UNTUK TRIP PANJANG (LONG HAUL) ---
+    // Jika durasi trip lebih dari 14 jam, otomatis loloskan (valid lintas hari)
+    const durationHours = (finishMs - startMs) / (1000 * 60 * 60);
+    if (durationHours >= 14) {
+      return true;
+    }
+
+    const midpointMs = startMs + (finishMs - startMs) / 2;
+    const midpointDate = new Date(midpointMs);
+
+    const [sH, sM] = shift.startTime.split(':').map(Number);
+    const [eH, eM] = shift.endTime.split(':').map(Number);
+
+    const shiftStart = new Date(midpointDate);
+    shiftStart.setUTCHours((sH || 0) - 7, sM || 0, 0, 0);
+
+    const shiftEnd = new Date(midpointDate);
+    shiftEnd.setUTCHours((eH || 0) - 7, eM || 0, 0, 0);
+
+    if (shift.multiday === 1 || shiftEnd <= shiftStart) {
+      shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+    }
+
+    return midpointMs >= shiftStart.getTime() && midpointMs <= shiftEnd.getTime();
+  } catch (e) {
+    return true;
+  }
+}
+
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -53,18 +96,26 @@ export function calculateTimeDriverData(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  isIndo
+  isIndo,
+  tasks = [],
+  results = []
 ) {
   const driverMap = new Map();
-  const driverEmails = [];
+  const driverEmailsRaw = [];
+
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '';
       if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
-        driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
-        driverEmails.push(email);
+        driverMap.set(email, {
+          name: d.name,
+          plat: plat,
+          type: getDriverStorageType(d),
+          workingTime: d.workingTime,
+        });
+        driverEmailsRaw.push(email);
       }
     });
   }
@@ -89,21 +140,64 @@ export function calculateTimeDriverData(
     dataMatrix[d.str] = {};
   });
 
+  const activeDriverDates = new Set();
+  let hasCrossReferenceData = false;
+
+  if (Array.isArray(tasks) && tasks.length > 0) {
+    hasCrossReferenceData = true;
+    tasks.forEach((t) => {
+      const rawEmail =
+        t.doneBy ||
+        (t.assignedTo && t.assignedTo.email) ||
+        (Array.isArray(t.assignee) ? t.assignee[0] : t.assignee);
+      const email = normalizeEmail(rawEmail);
+      const dateObj = parseApiDateString(t.startTime || t.doneTime);
+      if (email && dateObj) {
+        activeDriverDates.add(`${email}_${formatDateWIB(dateObj, 'YYYY-MM-DD')}`);
+      }
+    });
+  }
+
+  if (Array.isArray(results) && results.length > 0) {
+    hasCrossReferenceData = true;
+    results.forEach((res) => {
+      const dateObj = parseApiDateString(res.createdTime);
+      if (!dateObj) return;
+      const dateStr = formatDateWIB(dateObj, 'YYYY-MM-DD');
+      (res.result?.routing || []).forEach((vehicle) => {
+        const email = normalizeEmail(vehicle.assignee);
+        if (email) activeDriverDates.add(`${email}_${dateStr}`);
+      });
+    });
+  }
+
   if (locationHistoryData && Array.isArray(locationHistoryData)) {
     locationHistoryData.forEach((item) => {
       const email = normalizeEmail(item.email);
       if (!email || !driverMap.has(email)) return;
 
+      const startObj = parseApiDateString(item.startTime);
+      if (!startObj) return;
+      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
+
+      if (hasCrossReferenceData && dateKey) {
+        if (!activeDriverDates.has(`${email}_${dateKey}`)) {
+          return;
+        }
+      }
+
+      const driverInfo = driverMap.get(email);
+      if (!checkShiftMidpoint(item.startTime, item.finish?.finishTime, driverInfo.workingTime)) {
+        return;
+      }
+
       const trackedTime = Math.abs(item.trackedTime || 0);
       const totalDistance = item.finish ? item.finish.totalDistance || 0 : 0;
 
-      // Filter Logika
       if (trackedTime < 10) return;
       if (totalDistance <= 5) return;
 
-      const startObj = parseApiDateString(item.startTime);
       const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
-      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
 
       if (dateKey && dataMatrix[dateKey]) {
         const startStr = formatDateWIB(startObj, 'HH:mm');
@@ -149,6 +243,10 @@ export function calculateTimeDriverData(
     });
   }
 
+  const driverEmails = driverEmailsRaw.filter((email) => {
+    return dateKeys.some((d) => dataMatrix[d.str][email] && dataMatrix[d.str][email].hasData);
+  });
+
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
     if (p.includes('DM')) return 3;
@@ -175,14 +273,18 @@ export function generateTimeDriverSheet(
   startDateStr,
   endDateStr,
   translate,
-  isIndo
+  isIndo,
+  tasks = [],
+  results = []
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTimeDriverData(
     driverData,
     locationHistoryData,
     startDateStr,
     endDateStr,
-    isIndo
+    isIndo,
+    tasks,
+    results
   );
 
   const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };
@@ -258,7 +360,7 @@ export function generateTimeDriverSheet(
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
       let cellFill = null;
-      let fontStyle = dataStyle.font; // Default font
+      let fontStyle = dataStyle.font;
 
       if (C <= 2) {
         if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
@@ -268,7 +370,6 @@ export function generateTimeDriverSheet(
         if (dateKeys[dateIdx]) {
           const dObj = new Date(dateKeys[dateIdx].str);
 
-          // Style Header Hari Minggu
           if (dObj.getUTCDay() === 0) {
             cellFill = FILL_STYLES.red;
           } else {

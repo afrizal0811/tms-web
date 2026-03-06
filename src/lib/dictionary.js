@@ -469,6 +469,7 @@ export const dictionary = {
       subtitle_2: 'tiap bulan',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
+      long_message: 'Memproses banyak data, silahkan tunggu sebentar.',
       toast: {
         success: 'Data rangkuman berhasil diunduh!',
         error: 'Data rangkuman gagal dibuat: {err}',
@@ -481,8 +482,16 @@ export const dictionary = {
           holiday: 'Libur (Minggu)',
           start_ro: 'Waktu Mulai',
           title: 'Waktu Routing',
+          tooltip: {
+            date_ro: 'H-1 Pengiriman',
+            end_ro: 'Waktu terakhir penugasan tugas',
+            end_ro_error: 'End RO tersedia, namun Start RO kosong',
+            start_ro: 'Waktu pertama pembuatan tugas',
+            start_ro_error: 'Start RO tersedia, namun End RO kosong',
+          },
         },
         task_summary: {
+          click_box_hint: 'Klik kotak dengan teks tebal untuk melihat detail',
           co: 'Pembatalan Order',
           co_persentage: 'Pembatalan Order (%)',
           date: 'Tanggal',
@@ -494,6 +503,7 @@ export const dictionary = {
           ma: 'Penugasan Manual',
           ma_persentage: 'Penugasan Manual (%)',
           mt: 'Truk Master',
+          no_routing: 'Tanpa Routing',
           pr: 'Terima Sebagian',
           pr_persentage: 'Terima Sebagian (%)',
           rt: 'Pengiriman Ulang',
@@ -504,6 +514,7 @@ export const dictionary = {
           tvu_persentage: 'Total Kendaraan (%)',
           type: 'Tipe',
           va: 'Penyesuaian Kendaraan',
+          warning: 'Sopir salah pilih status. Otomatis berubah ke Pending!',
         },
         pending_reasons: {
           title: 'Alasan Pending',
@@ -1091,7 +1102,7 @@ export const dictionary = {
       subtitle_2: 'every month',
       subtitle_highlight: 'task performance',
       title: 'Summary',
-      long_message: 'Processing a lot of data in',
+      long_message: 'Processing a lot of data, please wait a moment.',
       toast: {
         success: 'Summary data has been downloaded successfully!',
         error: 'Failed to generate summary data: {err}',
@@ -1104,8 +1115,16 @@ export const dictionary = {
           holiday: 'Holiday (Sunday)',
           start_ro: 'Start Time',
           title: 'Routing Time',
+          tooltip: {
+            date_ro: 'D-1 Delivery',
+            end_ro: 'Last task assignment time',
+            start_ro_error: 'End RO is available, but Start RO is empty',
+            start_ro: 'First task creation time',
+            end_ro_error: 'Start RO is available, but End RO is empty',
+          },
         },
         task_summary: {
+          click_box_hint: 'Click box with bold text to view details',
           co: 'Cancel Order',
           co_persentage: 'Cancel Order (%)',
           date: 'Date',
@@ -1117,6 +1136,7 @@ export const dictionary = {
           ma: 'Manual Assign',
           ma_persentage: 'Manual Assign (%)',
           mt: 'Master Truck',
+          no_routing: 'No Routing',
           pr: 'Partial Received',
           pr_persentage: 'Partial Received (%)',
           rt: 'Redelivery Tasks',
@@ -1127,6 +1147,7 @@ export const dictionary = {
           tvu_persentage: 'Total Vehicles (%)',
           type: 'Type',
           va: 'Vehicle Adjusted',
+          warning: 'Driver selected the wrong status. Automatically changed to Pending!',
         },
         pending_reasons: {
           title: 'Pending Reasons',
@@ -1145,6 +1166,8 @@ export const dictionary = {
           ro_seq: 'Planned Sequence',
           visit_actual: 'Actual Visit Time',
           visit_plan: 'Planned Visit Time',
+          warning:
+            'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },
         time_driver: {
           duration: 'Duration',

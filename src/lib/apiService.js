@@ -3,9 +3,10 @@ import { toastError } from './toastHelper';
 /**
  * Helper internal untuk menangani fetch, parsing, dan error.
  */
-async function apiFetch(url, errorMessage) {
+// UPDATE: Tambahkan parameter options dengan default object kosong {}
+async function apiFetch(url, errorMessage, options = {}) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, options);
     const data = await response.json();
 
     if (!response.ok) {
@@ -20,7 +21,7 @@ async function apiFetch(url, errorMessage) {
     if (data && data.data && Array.isArray(data.data.data)) {
       return data.data.data;
     }
-    // Untuk getUsers, getVehicles
+    // Untuk getUsers, getVehicles, get-batch-histories
     if (data && Array.isArray(data.data)) {
       return data.data;
     }
@@ -53,15 +54,11 @@ export async function getUsers({ hubId, roleId, status }) {
   return await apiFetch(`/api/get-users?${params.toString()}`, 'Gagal mengambil data users');
 }
 
-/**
- * Mengambil data user berdasarkan email (q).
- */
 export async function getUsersByEmail(email, hubId) {
   const params = new URLSearchParams();
   params.append('q', email);
   params.append('status', 'active');
 
-  // Tambahkan hubId agar pencarian terbatas pada lokasi yang dipilih
   if (hubId) {
     params.append('hubId', hubId);
   }
@@ -125,4 +122,13 @@ export async function getLocationHistories({
     `/api/get-location-histories?${params.toString()}`,
     'Gagal mengambil data location histories'
   );
+}
+
+// --- NEW: Tambahkan fungsi getBatchHistories ---
+export async function getBatchHistories(resultIds) {
+  return await apiFetch('/api/get-batch-histories', 'Gagal mengambil data batch histories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resultIds }),
+  });
 }

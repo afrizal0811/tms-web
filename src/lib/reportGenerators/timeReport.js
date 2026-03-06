@@ -24,6 +24,11 @@ function checkShiftMidpoint(rawStart, rawFinish, shift) {
 
     if (isNaN(startMs) || isNaN(finishMs)) return false;
 
+    const durationHours = (finishMs - startMs) / (1000 * 60 * 60);
+    if (durationHours >= 14) {
+      return true;
+    }
+    
     const midpointMs = startMs + (finishMs - startMs) / 2;
     const midpointDate = new Date(midpointMs);
 

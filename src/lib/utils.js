@@ -41,22 +41,6 @@ export function calculateTargetDates(selectedDateStr) {
   };
 }
 
-// Memicu browser untuk mengunduh data objek sebagai file JSON
-export function saveJSON(data, filename = 'results.json') {
-  const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], {
-    type: 'application/json',
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
 // Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
 export function formatMinutesToHHMM(totalMinutes) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
@@ -102,7 +86,7 @@ export function calculateMinuteDifference(time1, time2) {
 // Memecah string data pelanggan menjadi Nama, ID, dan Lokasi berdasarkan pola pemisah tertentu
 export function parseCustomerString(fullString) {
   if (!fullString || typeof fullString !== 'string') {
-    return { name: '', id: null, location: null };
+    return { name: '', id: null, location: null, fullCustomerName: '', invoiceNumber: '' };
   }
 
   const parts = fullString.split(/\s+-\s+/);
@@ -114,16 +98,26 @@ export function parseCustomerString(fullString) {
   id = id !== undefined ? id : '';
 
   let location = null;
+  let invoiceNumber = '';
+
   if (parts.length > 2) {
     const rawLocation = parts[parts.length - 1];
-    location = rawLocation.split(',')[0].trim();
+    const commaSplit = rawLocation.split(',');
+    location = commaSplit[0].trim();
+    if (commaSplit.length > 1) {
+      invoiceNumber = commaSplit.slice(1).join(',').trim();
+    }
+  } else if (parts.length === 2 && id.includes(',')) {
+    const commaSplit = id.split(',');
+    id = commaSplit[0].trim();
+    invoiceNumber = commaSplit.slice(1).join(',').trim();
   }
   location = location !== null ? location : '';
 
   const name = parts[0] && parts[0] !== id ? parts[0] : '';
   const fullCustomerName = id !== '' || location !== '' ? `${name} - ${id} - ${location}` : name;
 
-  return { name, id, location, fullCustomerName };
+  return { name, id, location, fullCustomerName, invoiceNumber };
 }
 
 // Menyederhanakan string waktu (HH:mm:ss) menjadi format HH:mm
@@ -239,7 +233,15 @@ export function calculateStartFinishDates(selectedDateStr) {
 function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
   try {
-    const utcTimestamp = timestampStr.replace(' ', 'T') + 'Z';
+    let utcTimestamp = timestampStr.replace(' ', 'T');
+    if (
+      !utcTimestamp.endsWith('Z') &&
+      !utcTimestamp.substring(10).includes('+') &&
+      !utcTimestamp.substring(10).includes('-')
+    ) {
+      utcTimestamp += 'Z';
+    }
+
     const utcDate = new Date(utcTimestamp);
     if (isNaN(utcDate.getTime())) return null;
 
