@@ -12,7 +12,6 @@ import UserLogin from '@/features/userLogin/UserLogin';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
 import { toastError, toastInfo } from '../lib/toastHelper';
 
@@ -27,6 +26,7 @@ export default function Home() {
   const [isPageLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
+  console.log('allHubsList :', allHubsList);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
   const { t } = useLanguage();
@@ -38,7 +38,9 @@ export default function Home() {
       setPageError(null);
       let processedHubs = [];
       try {
-        const hubs = await getHubs();
+        // Hanya Murni mengambil data dari Database MySQL Lokal
+        const res = await fetch('/api/get-hubs');
+        const hubs = await res.json();
 
         processedHubs = hubs
           .filter((hub) => hub.name !== 'Hub Demo')
@@ -48,15 +50,15 @@ export default function Home() {
           }));
 
         setAllHubsList(processedHubs);
-        setLocalStorage('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
-        setPageError(e.message);
+        setPageError('Gagal terhubung ke database.');
         setIsLoading(false);
         return;
       }
+
       try {
         const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
-  
+
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setSelectedUser(user);
@@ -84,7 +86,6 @@ export default function Home() {
           if (!hasShownSession && !toastShownRef.current) {
             toastShownRef.current = true;
             sessionStorage.setItem('hasShownHelpToast', 'true');
-
             setTimeout(() => {
               toastInfo(t('home.toast.info_tutorial'));
             }, 500);
@@ -102,8 +103,7 @@ export default function Home() {
       }
     }
     initializeApp();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Dependency kosong agar hanya jalan sekali saat mount
+  }, [t]);
 
   useEffect(() => {
     async function fetchDriverData() {
@@ -114,10 +114,7 @@ export default function Home() {
         toastError(err);
       }
     }
-
-    if (selectedLocation) {
-      fetchDriverData();
-    }
+    if (selectedLocation) fetchDriverData();
   }, [selectedLocation]);
 
   const handleLocationChange = (id, name) => {
@@ -126,10 +123,7 @@ export default function Home() {
   };
 
   const handleSaveLocation = () => {
-    if (!tempSelectedLocation) {
-      toastError(t('home.select_branch'));
-      return;
-    }
+    if (!tempSelectedLocation) return toastError(t('home.select_branch'));
     if (!selectedUser) {
       removeLocalStorage('selectedUser');
       setSelectedUser(null);
@@ -159,26 +153,20 @@ export default function Home() {
     setCurrentHubListView(allHubsList);
   };
 
-  if (isPageLoading || allHubsList === null) {
+  if (isPageLoading || allHubsList === null)
     return (
       <SelectionLayout>
         <Spinner />
       </SelectionLayout>
     );
-  }
+  if (pageError) return <ErrorPage />;
 
-  if (pageError) {
-    <ErrorPage />;
-  }
-
-  // --- TAMPILAN 1: PILIH LOKASI ---
   if (!selectedLocation) {
     return (
       <SelectionLayout>
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
           <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch')}</h2>
-
           <LocationDropdown
             value={tempSelectedLocation}
             onChange={handleLocationChange}
@@ -200,7 +188,6 @@ export default function Home() {
     );
   }
 
-  // --- TAMPILAN 2: PILIH USER ---
   if (selectedLocation && !selectedUser) {
     return (
       <SelectionLayout>
@@ -221,7 +208,6 @@ export default function Home() {
     );
   }
 
-  // --- TAMPILAN 3: DASHBOARD ---
   return (
     <AppLayout mainClassName="items-center px-4">
       <DashboardSummary driverData={driverData.data} />

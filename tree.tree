@@ -121,6 +121,7 @@
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
 │   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
 │   │       │   └── TruckDetailModal.js
 │   │       ├── PendingReasonsTab.js
@@ -157,9 +158,10 @@
     ├── dictionary.js
     ├── driverDataHelper.js
     ├── hooks
+    │   ├── useRangkumanData.js
     │   └── useVehicleTagCheck.js
     ├── localStorageHandler.js
-    ├── masterTruckHelper.js
+    ├── prisma.js
     ├── reportGenerators
     │   ├── deliveryReport.js
     │   ├── rangkumanReport.js

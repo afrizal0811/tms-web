@@ -1,9 +1,9 @@
+// File: src/lib/apiService.js
 import { toastError } from './toastHelper';
 
 /**
  * Helper internal untuk menangani fetch, parsing, dan error.
  */
-// UPDATE: Tambahkan parameter options dengan default object kosong {}
 async function apiFetch(url, errorMessage, options = {}) {
   try {
     const response = await fetch(url, options);
@@ -11,6 +11,10 @@ async function apiFetch(url, errorMessage, options = {}) {
 
     if (!response.ok) {
       throw new Error(data.error || errorMessage);
+    }
+
+    if (data && data.message) {
+      return data;
     }
 
     // Untuk get-tasks, get-location-histories
@@ -25,7 +29,7 @@ async function apiFetch(url, errorMessage, options = {}) {
     if (data && Array.isArray(data.data)) {
       return data.data;
     }
-    // Untuk getHubs
+    // Untuk getHubs (Metode GET)
     if (Array.isArray(data)) {
       return data;
     }
@@ -43,6 +47,13 @@ async function apiFetch(url, errorMessage, options = {}) {
 
 export async function getHubs() {
   return await apiFetch('/api/get-hubs', 'Gagal mengambil data hubs');
+}
+
+// Fungsi untuk Sinkronisasi Hub ke Database
+export async function syncHubsData() {
+  return await apiFetch('/api/get-hubs', 'Gagal sinkronisasi data hubs dengan vendor', {
+    method: 'POST',
+  });
 }
 
 export async function getUsers({ hubId, roleId, status }) {
@@ -124,7 +135,6 @@ export async function getLocationHistories({
   );
 }
 
-// --- NEW: Tambahkan fungsi getBatchHistories ---
 export async function getBatchHistories(resultIds) {
   return await apiFetch('/api/get-batch-histories', 'Gagal mengambil data batch histories', {
     method: 'POST',

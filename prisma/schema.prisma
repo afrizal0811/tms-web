@@ -1,9 +1,12 @@
+// File: prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 // Tabel untuk menyimpan data tugas tambahan manual
@@ -14,4 +17,11 @@ model ManualTask {
   soNumber      String
   flow          String
   createdAt     DateTime @default(now())
+}
+
+// Tabel untuk menyimpan data Cabang/Hub dari Vendor
+model Hub {
+  id        String   @id
+  name      String
+  updatedAt DateTime @updatedAt
 }

@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
+import SyncDataButton from './SyncDataButton'; // <-- Import komponen baru
 
 export default function UserDisplay() {
   const { t, lang, switchLanguage } = useLanguage();
@@ -37,9 +38,7 @@ export default function UserDisplay() {
     };
   }, []);
 
-  if (!userName) {
-    return null;
-  }
+  if (!userName) return null;
 
   const languages = [
     { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
@@ -48,7 +47,6 @@ export default function UserDisplay() {
 
   return (
     <div className="relative inline-block text-left w-full lg:w-auto" ref={dropdownRef}>
-      {/* Tombol Trigger */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -58,10 +56,9 @@ export default function UserDisplay() {
       >
         <span>{userName}</span>
         <svg
-          xmlns="http://www.w3.org/2000/svg"
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
           viewBox="0 0 20 20"
           fill="currentColor"
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
         >
           <path
             fillRule="evenodd"
@@ -70,19 +67,13 @@ export default function UserDisplay() {
           />
         </svg>
       </button>
+
       {isOpen && (
-        <div
-          className={`
-            mt-2 rounded-md ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100
-            relative w-full shadow-none border border-gray-100 bg-gray-50
-            lg:absolute lg:right-0 lg:w-40 lg:shadow-lg lg:border-none lg:bg-white
-          `}
-        >
+        <div className="mt-2 rounded-md ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border border-gray-100 bg-gray-50 lg:absolute lg:right-0 lg:w-48 lg:shadow-lg lg:border-none lg:bg-white">
           <div className="py-1">
             <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-200 lg:border-gray-100 mb-1">
               {t('common.language') || 'Language'}
             </div>
-
             {languages.map((item) => (
               <button
                 key={item.code}
@@ -100,23 +91,17 @@ export default function UserDisplay() {
                   <span className="text-base">{item.flag}</span>
                   <span>{item.label}</span>
                 </div>
-
-                {lang === item.code && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-4 h-4 text-sky-600"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
               </button>
             ))}
+
+            <div className="border-t border-gray-200 lg:border-gray-100 my-1"></div>
+
+            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-200 lg:border-gray-100 mb-1">
+              Database
+            </div>
+
+            {/* Komponen dipanggil di sini */}
+            <SyncDataButton onClose={() => setIsOpen(false)} />
           </div>
         </div>
       )}
