@@ -182,7 +182,7 @@ export default function HelpPage() {
     return 'slate';
   };
   const theme = getThemeColor();
-  const LAST_UPDATE = '12/02/2026';
+  const LAST_UPDATE = '02/12/2026'; //12 februari 2026
 
   return (
     <>
