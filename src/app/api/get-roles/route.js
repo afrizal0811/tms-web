@@ -16,6 +16,7 @@ export async function GET() {
     const formattedRoles = roles.map((role) => ({
       _id: role.id,
       name: role.name,
+      updatedAt: role.updatedAt,
     }));
 
     return NextResponse.json(formattedRoles, { status: 200 });

@@ -19,6 +19,7 @@ export async function GET() {
       .map((hub) => ({
         _id: hub.id,
         name: hub.name.replace('Hub ', ''),
+        updatedAt: hub.updatedAt,
       }));
 
     return NextResponse.json(formattedHubs, { status: 200 });
