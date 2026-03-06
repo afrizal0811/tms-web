@@ -1,7 +1,8 @@
+// File: src/components/navbar/Navbar.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { ROLE_ID } from '@/lib/constants';
+import { getRoles } from '@/lib/apiService';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -46,7 +47,6 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
 
-  // PERBAIKAN 1: Inisialisasi state dengan false (jangan akses localStorage di sini)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
@@ -56,24 +56,28 @@ export default function Navbar() {
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
 
-  // PERBAIKAN 2: Pindahkan akses localStorage ke useEffect agar hanya jalan di browser
   useEffect(() => {
-    // Gunakan setTimeout 0 untuk menghindari warning update state saat render
-    const timer = setTimeout(() => {
+    const checkUserAndRole = async () => {
       try {
-        // Pastikan kode ini hanya jalan di client
         if (typeof window !== 'undefined') {
           const { storedUser: raw } = getLocalStorage();
           if (raw) {
             const user = JSON.parse(raw);
             setIsLoggedIn(!!user);
-            setIsSuperadmin(user?.roleId === ROLE_ID.superadmin);
+            const roles = await getRoles();
+            const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
+
+            setIsSuperadmin(user?.roleId === superadminRole?._id);
           }
         }
       } catch (e) {
         setIsLoggedIn(false);
         setIsSuperadmin(false);
       }
+    };
+
+    const timer = setTimeout(() => {
+      checkUserAndRole();
     }, 0);
 
     return () => clearTimeout(timer);

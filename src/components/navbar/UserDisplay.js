@@ -1,16 +1,21 @@
-// File: src/components/UserDisplay.js
+// File: src/components/navbar/UserDisplay.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
+import { getRoles } from '@/lib/apiService'; // <-- Panggil pelayan untuk cek role
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
-import SyncDataButton from './SyncDataButton'; // <-- Import komponen baru
+import SyncDataButton from './SyncDataButton';
 
 export default function UserDisplay() {
   const { t, lang, switchLanguage } = useLanguage();
   const dropdownRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  // KUNCI: State khusus untuk menyimpan izin melihat tombol sinkronisasi
+  const [canSync, setCanSync] = useState(false);
+
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -25,6 +30,37 @@ export default function UserDisplay() {
     }
     return '';
   });
+
+  // Pengecekan Izin Akses (Otorisasi)
+  useEffect(() => {
+    const checkSyncPermission = async () => {
+      try {
+        const { storedUser } = getLocalStorage();
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+
+          // 1. Ambil data semua peran dari database lokal
+          const roles = await getRoles();
+
+          // 2. Cari mana yang merupakan Superadmin dan Owner
+          const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
+          const ownerRole = roles.find((r) => r.name.toLowerCase() === 'owner');
+
+          // 3. Cocokkan ID pengguna dengan ID Superadmin atau Owner
+          if (
+            (superadminRole && user.roleId === superadminRole._id) ||
+            (ownerRole && user.roleId === ownerRole._id)
+          ) {
+            setCanSync(true); // Izinkan jika cocok!
+          }
+        }
+      } catch (error) {
+        console.error('Gagal memverifikasi izin sinkronisasi:', error);
+      }
+    };
+
+    checkSyncPermission();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -91,17 +127,33 @@ export default function UserDisplay() {
                   <span className="text-base">{item.flag}</span>
                   <span>{item.label}</span>
                 </div>
+                {lang === item.code && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-4 h-4 text-sky-600"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
               </button>
             ))}
 
-            <div className="border-t border-gray-200 lg:border-gray-100 my-1"></div>
-
-            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-200 lg:border-gray-100 mb-1">
-              Database
-            </div>
-
-            {/* Komponen dipanggil di sini */}
-            <SyncDataButton onClose={() => setIsOpen(false)} />
+            {/* Tombol dan label Database HANYA akan muncul jika canSync = true */}
+            {canSync && (
+              <>
+                <div className="border-t border-gray-200 lg:border-gray-100 my-1"></div>
+                <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-gray-200 lg:border-gray-100 mb-1">
+                  Database
+                </div>
+                <SyncDataButton onClose={() => setIsOpen(false)} />
+              </>
+            )}
           </div>
         </div>
       )}

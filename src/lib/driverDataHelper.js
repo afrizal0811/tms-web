@@ -1,5 +1,6 @@
-import { getUsers, getVehicles } from './apiService';
-import { ROLE_ID, VEHICLE_TYPES } from './constants';
+// File: src/lib/driverDataHelper.js
+import { getUsers, getVehicles, getRoles } from './apiService';
+import { VEHICLE_TYPES } from './constants';
 import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
 import { isEmpty } from './utils';
@@ -149,7 +150,15 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
   }
 
   try {
-    const rolesToFetch = [ROLE_ID.driver, ROLE_ID.driverJkt];
+    // KUNCI PERBAIKAN: Ambil Roles dari Database
+    const roles = await getRoles();
+    const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
+    const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
+
+    const rolesToFetch = [];
+    if (driverRole) rolesToFetch.push(driverRole._id);
+    if (driverJktRole) rolesToFetch.push(driverJktRole._id);
+
     const driverPromises = rolesToFetch.map((roleId) =>
       getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
     );

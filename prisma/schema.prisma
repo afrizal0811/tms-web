@@ -25,3 +25,10 @@ model Hub {
   name      String
   updatedAt DateTime @updatedAt
 }
+
+// Tabel untuk menyimpan data Role dari Vendor
+model Role {
+  id        String   @id
+  name      String
+  updatedAt DateTime @updatedAt
+}

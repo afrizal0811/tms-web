@@ -1,8 +1,9 @@
 // File: src/components/SyncDataButton.js
 'use client';
 
-import { syncHubsData } from '@/lib/apiService'; // <-- Import dari pelayan kita
-import { toastInfo } from '@/lib/toastHelper';
+import { toastError, toastInfo } from '@/lib/toastHelper';
+// KUNCI: Import juga syncRolesData
+import { syncHubsData, syncRolesData } from '@/lib/apiService';
 import { useState } from 'react';
 
 export default function SyncDataButton({ onClose }) {
@@ -13,8 +14,9 @@ export default function SyncDataButton({ onClose }) {
       setIsSyncing(true);
       toastInfo('Sedang menyelaraskan data dengan API Vendor...');
 
-      // Pemanggilan API menjadi sangat bersih dan rapi!
-      await syncHubsData();
+      // KUNCI PERBAIKAN: Gunakan Promise.all agar sinkronisasi Hub dan Role
+      // berjalan bersamaan dan web tidak perlu menunggu dua kali lipat.
+      await Promise.all([syncHubsData(), syncRolesData()]);
 
       toastInfo('✅ Sinkronisasi data berhasil!');
 
@@ -22,8 +24,6 @@ export default function SyncDataButton({ onClose }) {
         window.location.reload();
       }, 1000);
     } catch (error) {
-      // Error sudah ditangani otomatis oleh toast di apiService,
-      // tapi kita tetap tangkap di sini untuk mematikan loading
       console.error(error);
     } finally {
       setIsSyncing(false);

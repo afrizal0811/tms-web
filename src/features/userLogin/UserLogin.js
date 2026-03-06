@@ -1,11 +1,11 @@
+// File: src/features/userLogin/UserLogin.js
 'use client';
 
 import ConfirmModal from '@/components/ConfirmModal';
 import Spinner from '@/components/Spinner';
 import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getUsersByEmail } from '@/lib/apiService';
-import { ROLE_ID } from '@/lib/constants';
+import { getUsersByEmail, getRoles } from '@/lib/apiService';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -44,7 +44,16 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
       }
 
       const foundUser = users[0];
-      if (foundUser.roleId === ROLE_ID.driver || foundUser.roleId === ROLE_ID.driverJkt) {
+
+      // Ambil Roles dari DB, lalu cari Driver dan Driver JKT
+      const roles = await getRoles();
+      const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
+      const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
+
+      if (
+        (driverRole && foundUser.roleId === driverRole._id) ||
+        (driverJktRole && foundUser.roleId === driverJktRole._id)
+      ) {
         toastError(t('home.toast.driver_error'));
         setLoading(false);
         return;
@@ -85,6 +94,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     setIsConfirmOpen(false);
     setUserToConfirm(null);
   };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center">
