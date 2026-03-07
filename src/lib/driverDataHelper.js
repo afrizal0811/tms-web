@@ -1,6 +1,4 @@
-// File: src/lib/driverDataHelper.js
-import { getUsers, getVehicles, getRoles } from './apiService';
-import { VEHICLE_TYPES } from './constants';
+import { getRoles, getUsers, getVehicles, getVehicleTypes } from './api';
 import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
 import { isEmpty } from './utils';
@@ -20,16 +18,14 @@ const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
     const hubMap = tagMap[hubId];
     if (hubMap && hubMap[plate]) {
       const mappedValue = hubMap[plate][typeCandidate];
-      if (mappedValue) {
-        return mappedValue;
-      }
+      if (mappedValue) return mappedValue;
     }
   }
 
   return typeCandidate;
 };
 
-const updateMasterTruckStorage = (drivers, hubId) => {
+const updateMasterTruckStorage = async (drivers, hubId) => {
   if (typeof window === 'undefined' || !Array.isArray(drivers)) return;
 
   let tagMap = {};
@@ -40,10 +36,10 @@ const updateMasterTruckStorage = (drivers, hubId) => {
     return e;
   }
 
-  const masterData = {
-    Dry: { Total: 0 },
-    Frozen: { Total: 0 },
-  };
+  const vehicleTypesObj = await getVehicleTypes();
+  const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
+
+  const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 
   VEHICLE_TYPES.forEach((type) => {
     masterData.Dry[type] = 0;
@@ -56,18 +52,15 @@ const updateMasterTruckStorage = (drivers, hubId) => {
     const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
 
-    if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO') || platUpper.includes('SEWA')) {
+    if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO') || platUpper.includes('SEWA'))
       return;
-    }
 
     let storageCategory = null;
-    if (name.includes('DRY')) {
-      storageCategory = 'Dry';
-    } else if (name.includes('FRZ')) {
-      storageCategory = 'Frozen';
-    }
+    if (name.includes('DRY')) storageCategory = 'Dry';
+    else if (name.includes('FRZ')) storageCategory = 'Frozen';
 
     if (!storageCategory) return;
+
     const resolvedType = resolveVehicleType(rawTag, plat, hubId, tagMap);
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
 
@@ -93,9 +86,11 @@ export async function checkUnmappedVehicles(hubId) {
     }
   }
   try {
+    const vehicleTypesObj = await getVehicleTypes();
+    const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
+
     const res = await getVehicles({ hubId: hubId, limit: 1000 });
     const vehicles = Array.isArray(res) ? res : res.data || [];
-
     const unmappedList = [];
 
     vehicles.forEach((v) => {
@@ -108,20 +103,14 @@ export async function checkUnmappedVehicles(hubId) {
       let specificType = parts.length > 1 ? parts[1] : rawTag;
 
       if (parts.length > 2 && parts[2] === 'LONG') {
-        if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
-          specificType = `${specificType}-LONG`;
-        }
+        if (['CDE', 'CDD', 'FUSO'].includes(specificType)) specificType = `${specificType}-LONG`;
       }
+
       const isStandard = VEHICLE_TYPES.includes(specificType);
       const isMapped = tagMap[hubId] && tagMap[hubId][plat] && tagMap[hubId][plat][specificType];
 
       if (!isStandard && !isMapped) {
-        unmappedList.push({
-          plat: plat,
-          fullTag: rawTag,
-          tag: specificType,
-          hubId: hubId,
-        });
+        unmappedList.push({ plat: plat, fullTag: rawTag, tag: specificType, hubId: hubId });
       }
     });
 
@@ -132,16 +121,14 @@ export async function checkUnmappedVehicles(hubId) {
 }
 
 export async function getOrFetchDriverData(selectedLocation, forceRefresh = false) {
-  if (!selectedLocation) {
-    throw new Error('Lokasi Hub tidak ditemukan.');
-  }
+  if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
 
   if (!forceRefresh) {
     try {
-      const { storedDrivers: storedDrivers } = getLocalStorage();
+      const { storedDrivers } = getLocalStorage();
       if (storedDrivers) {
         const parsed = JSON.parse(storedDrivers);
-        updateMasterTruckStorage(parsed, selectedLocation);
+        await updateMasterTruckStorage(parsed, selectedLocation);
         return parsed;
       }
     } catch (e) {
@@ -150,7 +137,6 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
   }
 
   try {
-    // KUNCI PERBAIKAN: Ambil Roles dari Database
     const roles = await getRoles();
     const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
     const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
@@ -177,7 +163,6 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
       email: driver.email,
     }));
 
-    // Proses Vehicle Map dengan Optional Chaining supaya aman
     const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
       if (vehicle.assignee) {
         acc[vehicle.assignee] = {
@@ -213,7 +198,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
     });
 
     setLocalStorage('driverData', JSON.stringify(mergedDriverData));
-    updateMasterTruckStorage(mergedDriverData, selectedLocation);
+    await updateMasterTruckStorage(mergedDriverData, selectedLocation);
 
     return mergedDriverData;
   } catch (err) {

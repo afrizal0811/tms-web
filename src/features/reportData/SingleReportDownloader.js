@@ -1,10 +1,9 @@
-// File: features/reportData/TmsSummary.js
 'use client';
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/apiService';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -46,12 +45,10 @@ export default function TmsSummary({
     let interval = null;
     if (currentRunning) {
       startTimeRef.current = Date.now();
-      setElapsedTime(0);
       interval = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
     } else {
-      setElapsedTime(0);
       startTimeRef.current = null;
     }
 
@@ -60,7 +57,7 @@ export default function TmsSummary({
     };
   }, [currentRunning]);
 
-  const selectedDateString = formatDateUniversal(selectedDate); // "YYYY-MM-DD"
+  const selectedDateString = formatDateUniversal(selectedDate);
   const isDateInvalid = isDateSunday(selectedDateString);
 
   const disabledCommon = isAnyLoading || isMapping;
@@ -74,9 +71,9 @@ export default function TmsSummary({
     }
   };
 
-  // ---------- Handlers (gabungan) ----------
   const handleRouting = async () => {
     try {
+      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
       if (setIsMapping) setIsMapping(false);
@@ -85,7 +82,6 @@ export default function TmsSummary({
 
       if (!selectedDateString) throw new Error('Tanggal tidak valid.');
 
-      // H-1 logic encapsulated by helper
       const { dateFrom, dateTo } = calculateTargetDates(selectedDateString);
       const apiDateFrom = `${dateFrom} 00:00:00`;
       const apiDateTo = `${dateTo} 23:59:59`;
@@ -132,6 +128,7 @@ export default function TmsSummary({
 
   const handleDelivery = async () => {
     try {
+      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('delivery');
 
@@ -139,10 +136,8 @@ export default function TmsSummary({
 
       if (!selectedDateString) throw new Error('Tanggal tidak valid.');
 
-      // calculateTargetDates returns dateFrom (H-1) as needed by prior logic
       const { dateFrom: apiDate } = calculateTargetDates(selectedDateString);
 
-      // Buat objek Date untuk Start (00:00:00) dan End (23:59:59)
       const startObj = new Date(selectedDate);
       startObj.setHours(0, 0, 0, 0);
 
@@ -197,6 +192,7 @@ export default function TmsSummary({
 
   const handleTime = async () => {
     try {
+      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('time');
 
@@ -206,7 +202,7 @@ export default function TmsSummary({
 
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDateString);
 
-      const allApiData = await getLocationHistories({
+      const response = await getLocationHistories({
         timeFrom,
         timeTo,
         limit: 5000,
@@ -214,6 +210,8 @@ export default function TmsSummary({
         fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       });
+
+      const allApiData = response?.tasks?.data || [];
 
       if (!Array.isArray(allApiData) || isEmpty(allApiData)) {
         throw new Error(t('report.toast.no_time'));
@@ -240,7 +238,6 @@ export default function TmsSummary({
       if (setIsAnyLoading) setIsAnyLoading(false);
     }
   };
-  // ---------- end handlers ----------
 
   const handleDateChange = (date) => {
     if (!date) {
@@ -289,7 +286,6 @@ export default function TmsSummary({
           )}
         </button>
 
-        {/* Tombol Delivery */}
         <button
           onClick={handleDelivery}
           disabled={disabledCommon || isDateInvalid}

@@ -19,7 +19,7 @@ import {
 import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/apiService';
+import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import FormPengiriman from './components/FormPengiriman';

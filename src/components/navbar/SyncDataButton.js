@@ -1,9 +1,8 @@
 // File: src/components/SyncDataButton.js
 'use client';
 
-import { toastError, toastInfo } from '@/lib/toastHelper';
-// KUNCI: Import juga syncRolesData
-import { syncHubsData, syncRolesData } from '@/lib/apiService';
+import { toastInfo } from '@/lib/toastHelper';
+import { syncHubsData, syncRolesData } from '@/lib/api';
 import { useState } from 'react';
 
 export default function SyncDataButton({ onClose }) {
@@ -13,9 +12,6 @@ export default function SyncDataButton({ onClose }) {
     try {
       setIsSyncing(true);
       toastInfo('Sedang menyelaraskan data dengan API Vendor...');
-
-      // KUNCI PERBAIKAN: Gunakan Promise.all agar sinkronisasi Hub dan Role
-      // berjalan bersamaan dan web tidak perlu menunggu dua kali lipat.
       await Promise.all([syncHubsData(), syncRolesData()]);
 
       toastInfo('✅ Sinkronisasi data berhasil!');

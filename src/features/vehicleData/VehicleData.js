@@ -9,7 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getVehicles } from '../../lib/apiService';
+import { getVehicles } from '../../lib/api';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError } from '../../lib/toastHelper';
 import TemplateTab from './components/TemplateTab';

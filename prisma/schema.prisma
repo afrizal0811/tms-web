@@ -32,3 +32,13 @@ model Role {
   name      String
   updatedAt DateTime @updatedAt
 }
+
+// Tabel untuk menyimpan Tipe Kendaraan dinamis
+model VehicleType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vehicle_type")
+}

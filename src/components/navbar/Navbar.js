@@ -2,7 +2,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { getRoles } from '@/lib/apiService';
+import { getRoles } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

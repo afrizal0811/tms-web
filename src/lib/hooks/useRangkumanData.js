@@ -1,10 +1,5 @@
 import { useLanguage } from '@/context/LanguageContext';
-import {
-  getBatchHistories,
-  getLocationHistories,
-  getResultsSummary,
-  getTasks,
-} from '@/lib/apiService';
+import { getBatchHistories, getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
 import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -495,7 +490,7 @@ export default function useRangkumanData() {
           }
         };
 
-        [ 'ma_hist', 'rt', 'co', 'pr', 'tv'].forEach(distribute);
+        ['ma_hist', 'rt', 'co', 'pr', 'tv'].forEach(distribute);
 
         ['dry', 'frozen'].forEach((type) => {
           m[type].dt_total = m[type].dt_sum + m[type].dt_hist;

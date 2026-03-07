@@ -5,7 +5,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Spinner from '@/components/Spinner';
 import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getUsersByEmail, getRoles } from '@/lib/apiService';
+import { getRoles, getUsersByEmail } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
