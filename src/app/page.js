@@ -26,7 +26,6 @@ export default function Home() {
   const [isPageLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
-  console.log('allHubsList :', allHubsList);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
   const { t } = useLanguage();

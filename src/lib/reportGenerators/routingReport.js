@@ -1,18 +1,15 @@
-// File: lib/reportGenerators/routingReport.js
 'use client';
 
-import { VEHICLE_TYPES } from '@/lib/constants';
+import { getVehicleTypes } from '@/lib/api';
 import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-// Helper kecil untuk memformat jam (HH:mm:ss -> HH:mm)
 function formatSimpleTime(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return '-';
-  // Ambil 5 karakter pertama (HH:mm)
   return timeStr.substring(0, 5);
 }
 
-export function generateRoutingWorkbook(
+export async function generateRoutingWorkbook(
   driverData,
   filteredResults,
   tagMap,
@@ -20,6 +17,9 @@ export function generateRoutingWorkbook(
   hubName,
   t
 ) {
+  const vehicleTypesObj = await getVehicleTypes();
+  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+
   const translate = t || ((key) => key);
   const driverMap = driverData.reduce((acc, driver) => {
     if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
@@ -31,7 +31,7 @@ export function generateRoutingWorkbook(
   let totalFrozenDistance = 0;
   let truckUsageCount = {};
 
-  [...VEHICLE_TYPES, 'Lainnya'].forEach((type) => {
+  [...vehicleTypes, 'Lainnya'].forEach((type) => {
     truckUsageCount[type] = { Dry: 0, Frozen: 0 };
   });
 
@@ -91,7 +91,6 @@ export function generateRoutingWorkbook(
         ) {
           manualCalcs = route.trips.reduce((acc, trip) => {
             if (!trip.isHub) {
-              // Perubahan: hanya akumulasikan nilai positif; nilai 0 atau negatif diabaikan
               if (needsManualWeight && (trip.weight || 0) > 0) acc.weight += trip.weight;
               if (needsManualVolume && (trip.volume || 0) > 0) acc.volume += trip.volume;
 
@@ -173,7 +172,7 @@ export function generateRoutingWorkbook(
             }
 
             let category = 'Lainnya';
-            if (VEHICLE_TYPES.includes(specificType)) {
+            if (vehicleTypes.includes(specificType)) {
               category = specificType;
             } else if (tagMap[vehiclePlat] && tagMap[vehiclePlat][specificType]) {
               category = tagMap[vehiclePlat][specificType];
@@ -433,7 +432,7 @@ export function generateRoutingWorkbook(
     translate('excel.routing.headers.count_dry'),
     translate('excel.routing.headers.count_frozen'),
   ];
-  const usageDataRows = VEHICLE_TYPES.map((type) => {
+  const usageDataRows = vehicleTypes.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
     const frozenCount = truckUsageCount[type]['Frozen'];
     return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];

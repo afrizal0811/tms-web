@@ -24,7 +24,6 @@ export default function RangkumanSummary() {
   const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState('Time RO');
 
-  // Destructure logic dari custom hook
   const {
     selectedLocation,
     selectedLocationName,
@@ -49,7 +48,7 @@ export default function RangkumanSummary() {
     fetchData();
   }, [fetchData]);
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (!selectedDate) return;
     if (isEmpty(driverData)) {
       toastError(t('summary.toast.no_driver_data'));
@@ -60,7 +59,7 @@ export default function RangkumanSummary() {
     const startDate = new Date(year, month, 1);
     const endDate = new Date(year, month + 1, 0);
     try {
-      const { wb, excelFileName } = generateRangkumanWorkbook(
+      const { wb, excelFileName } = await generateRangkumanWorkbook(
         driverData,
         rawData.tasks,
         rawData.results,

@@ -657,7 +657,7 @@ export default function useRangkumanData() {
       };
       setRawData(newRawData);
 
-      const preview = generateRangkumanDataPreview(
+      const preview = await generateRangkumanDataPreview(
         driversRes || [],
         newRawData.tasks,
         newRawData.results,

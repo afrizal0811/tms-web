@@ -1,5 +1,4 @@
-// File: src/lib/reportGenerators/rangkumanSheets/truckUsageSheet.js
-import { VEHICLE_TYPES } from '@/lib/constants';
+import { getVehicleTypes } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { formatDateUniversal } from '@/lib/utils';
@@ -9,6 +8,7 @@ import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from '.
 function formatMonthName(dateObj) {
   return dateObj.toLocaleDateString('en-GB', { month: 'long' });
 }
+
 function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
@@ -24,7 +24,8 @@ function getDeliveryDateFromRouting(isoString) {
     return null;
   }
 }
-function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
+
+function getVehicleType(firstTag, vehiclePlate, hubId, tagMap, vehicleTypes) {
   if (!firstTag) return 'Lainnya';
   const parts = firstTag.split('-');
   if (parts.length < 2) return 'Lainnya';
@@ -34,7 +35,7 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
       specificType = `${specificType}-LONG`;
     }
   }
-  if (VEHICLE_TYPES.includes(specificType)) return specificType;
+  if (vehicleTypes.includes(specificType)) return specificType;
   if (tagMap && hubId && vehiclePlate) {
     const hubMap = tagMap[hubId];
     if (hubMap && hubMap[vehiclePlate]) {
@@ -45,26 +46,21 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap) {
   return specificType;
 }
 
-function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
+function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
 
-  // --- LOGIKA HARI KERJA ---
   const workingDays = dateKeys.filter((d) => {
-    if (d.isSunday) return false; // Minggu tidak dihitung
+    if (d.isSunday) return false;
     const hasData = (dateMap[d.str]?.OTV || 0) > 0;
     return hasData;
   }).length;
-
-  // const skippedDates = dateKeys
-  //   .filter((d) => !d.isSunday && (dateMap[d.str]?.OTV || 0) === 0)
-  //   .map((d) => d.str);
 
   const categories = ['Dry', 'Frozen'];
 
   categories.forEach((cat) => {
     let grpTMS = 0;
     let grpNonTMS = 0;
-    VEHICLE_TYPES.forEach((type) => {
+    vehicleTypes.forEach((type) => {
       let totalTMS = 0;
       dateKeys.forEach((d) => {
         totalTMS += dateMap[d.str][cat][type] || 0;
@@ -141,7 +137,7 @@ function calculateUsageSummary(dateMap, dateKeys, hubMasterData) {
   return summary;
 }
 
-export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
+export async function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
   let tagMap = {};
   if (typeof window !== 'undefined') {
     try {
@@ -151,24 +147,30 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       toastError(e);
     }
   }
+
+  const vehicleTypesObj = await getVehicleTypes();
+  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+
   const { storedMasterTruck } = getLocalStorage() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
   const hubMasterData = JSON.parse(storedMasterTruck);
   const dateMap = {};
   const dateKeys = [];
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
+
   while (currentIterDate <= endDateObj) {
     const dateStr = formatDateUniversal(currentIterDate);
     const dayNum = currentIterDate.getDate();
     const isSunday = currentIterDate.getDay() === 0;
     dateKeys.push({ str: dateStr, day: dayNum, isSunday });
     dateMap[dateStr] = { Dry: {}, Frozen: {}, DryTotal: 0, FrozenTotal: 0, OTV: 0 };
-    VEHICLE_TYPES.forEach((type) => {
+    vehicleTypes.forEach((type) => {
       dateMap[dateStr].Dry[type] = 0;
       dateMap[dateStr].Frozen[type] = 0;
     });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
+
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
@@ -189,7 +191,7 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
               );
               const storage = isFrozen ? 'Frozen' : 'Dry';
               const firstTag = tags.length > 0 ? String(tags[0]) : '';
-              const type = getVehicleType(firstTag, vehiclePlate, hubId, tagMap);
+              const type = getVehicleType(firstTag, vehiclePlate, hubId, tagMap, vehicleTypes);
               if (dateMap[dateKey][storage][type] !== undefined) {
                 dateMap[dateKey][storage][type]++;
                 dateMap[dateKey][`${storage}Total`]++;
@@ -201,11 +203,11 @@ export function calculateTruckUsageData(resultsData, startDateStr, endDateStr, h
       }
     });
   }
-  const summaryData = calculateUsageSummary(dateMap, dateKeys, hubMasterData);
-  return { dateMap, dateKeys, vehicleTypes: VEHICLE_TYPES, hubMasterData, summaryData };
+  const summaryData = calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes);
+  return { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData };
 }
 
-export function generateTruckUsageSheet(
+export async function generateTruckUsageSheet(
   wb,
   resultsData,
   startDateStr,
@@ -213,12 +215,8 @@ export function generateTruckUsageSheet(
   hubId,
   translate
 ) {
-  const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } = calculateTruckUsageData(
-    resultsData,
-    startDateStr,
-    endDateStr,
-    hubId
-  );
+  const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
+    await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
 
   const monthName = formatMonthName(new Date(startDateStr));
   const excelData = [];
@@ -429,7 +427,7 @@ export function generateTruckUsageSheet(
 
   excelData.push([]);
   excelData.push([translate('summary.tabs.truck_usage.explanation')]);
-  const legendTitleRow = excelData.length - 1; // Index baris judul
+  const legendTitleRow = excelData.length - 1;
 
   merges.push({ s: { r: legendTitleRow, c: 0 }, e: { r: legendTitleRow, c: 2 } });
 
@@ -478,7 +476,6 @@ export function generateTruckUsageSheet(
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // --- STYLE UNTUK LEGENDA ---
       if (R >= legendTitleRow) {
         if (R === legendTitleRow && C === 0) {
           cell.s = {

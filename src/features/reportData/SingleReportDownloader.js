@@ -102,7 +102,7 @@ export default function TmsSummary({
       const fullTagMap = JSON.parse(storedVehicleTag || '{}');
       const hubTagMap = fullTagMap[selectedLocation] || {};
 
-      const { wb, excelFileName, missingTimesFound } = generateRoutingWorkbook(
+      const { wb, excelFileName, missingTimesFound } = await generateRoutingWorkbook(
         driverData,
         filteredResults,
         hubTagMap,
