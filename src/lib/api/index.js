@@ -4,3 +4,4 @@ export * from './tasks';
 export * from './users';
 export * from './vehicleTypes';
 export * from './vehicles';
+export * from './drivers';

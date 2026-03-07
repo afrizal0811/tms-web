@@ -19,11 +19,34 @@ model ManualTask {
   createdAt     DateTime @default(now())
 }
 
-// Tabel untuk menyimpan data Cabang/Hub dari Vendor
+// Tambahkan baris relasi "drivers" ini ke dalam model Hub yang sudah ada
 model Hub {
   id        String   @id
   name      String
   updatedAt DateTime @updatedAt
+  drivers   Driver[] 
+}
+
+// Tambahkan model Driver baru ini di bawah
+model Driver {
+  id          String   @id
+  email       String
+  name        String
+  plat        String?
+  type        String?
+  maxWeight   Float?
+  maxVolume   Float?
+  storage     String?
+  startTime   String?
+  endTime     String?
+  multiday    Boolean?
+  
+  hubId       String
+  hub         Hub      @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime @updatedAt
+
+  @@index([hubId])
+  @@map("drivers")
 }
 
 // Tabel untuk menyimpan data Role dari Vendor

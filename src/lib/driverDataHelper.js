@@ -1,4 +1,4 @@
-import { getRoles, getUsers, getVehicles, getVehicleTypes } from './api';
+import { getDrivers, getVehicleTypes } from './api';
 import { getLocalStorage, setLocalStorage } from './localStorageHandler';
 import { toastError, toastWarning } from './toastHelper';
 import { isEmpty } from './utils';
@@ -21,7 +21,6 @@ const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
       if (mappedValue) return mappedValue;
     }
   }
-
   return typeCandidate;
 };
 
@@ -40,7 +39,6 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
   const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
 
   const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
-
   VEHICLE_TYPES.forEach((type) => {
     masterData.Dry[type] = 0;
     masterData.Frozen[type] = 0;
@@ -60,7 +58,6 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
     else if (name.includes('FRZ')) storageCategory = 'Frozen';
 
     if (!storageCategory) return;
-
     const resolvedType = resolveVehicleType(rawTag, plat, hubId, tagMap);
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
 
@@ -72,7 +69,6 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
 
   setLocalStorage('masterTruck', JSON.stringify(masterData));
 };
-
 export async function checkUnmappedVehicles(hubId) {
   if (!hubId) return [];
 
@@ -123,84 +119,30 @@ export async function checkUnmappedVehicles(hubId) {
 export async function getOrFetchDriverData(selectedLocation, forceRefresh = false) {
   if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
 
-  if (!forceRefresh) {
-    try {
-      const { storedDrivers } = getLocalStorage();
-      if (storedDrivers) {
-        const parsed = JSON.parse(storedDrivers);
-        await updateMasterTruckStorage(parsed, selectedLocation);
-        return parsed;
-      }
-    } catch (e) {
-      toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
-    }
-  }
-
   try {
-    const roles = await getRoles();
-    const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
-    const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
+    const driversFromDB = await getDrivers(selectedLocation);
 
-    const rolesToFetch = [];
-    if (driverRole) rolesToFetch.push(driverRole._id);
-    if (driverJktRole) rolesToFetch.push(driverJktRole._id);
-
-    const driverPromises = rolesToFetch.map((roleId) =>
-      getUsers({ hubId: selectedLocation, roleId: roleId, status: 'active' })
-    );
-    const vehiclePromise = getVehicles({ hubId: selectedLocation, limit: 500 });
-
-    const [driverResponses, vehicleResult] = await Promise.all([
-      Promise.all(driverPromises),
-      vehiclePromise,
-    ]);
-    const rawDrivers = driverResponses.flat();
-    const uniqueDrivers = Array.from(new Map(rawDrivers.map((item) => [item._id, item])).values());
-
-    const processedDrivers = uniqueDrivers.map((driver) => ({
-      _id: driver._id,
-      name: driver.name,
-      email: driver.email,
+    // Memetakan struktur data agar 100% sama persis dengan format yang dibutuhkan sistem lama
+    const mappedDrivers = driversFromDB.map((d) => ({
+      _id: d.id,
+      email: d.email,
+      name: d.name,
+      plat: d.plat,
+      type: d.type,
+      maxWeight: d.maxWeight,
+      maxVolume: d.maxVolume,
+      storage: d.storage,
+      workingTime: {
+        startTime: d.startTime,
+        endTime: d.endTime,
+        multiday: d.multiday,
+      },
     }));
 
-    const vehicleMap = vehicleResult.reduce((acc, vehicle) => {
-      if (vehicle.assignee) {
-        acc[vehicle.assignee] = {
-          plat: vehicle.name,
-          type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
-          storage: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0].split('-')[0] : null,
-          maxWeight: vehicle.capacity?.weight?.max || null,
-          maxVolume: vehicle.capacity?.volume?.max || null,
-          startWorking: vehicle.workingTime?.startTime || null,
-          endWorking: vehicle.workingTime?.endTime || null,
-          multiday: vehicle.workingTime?.multiday || null,
-        };
-      }
-      return acc;
-    }, {});
+    setLocalStorage('driverData', JSON.stringify(mappedDrivers));
+    await updateMasterTruckStorage(mappedDrivers, selectedLocation);
 
-    const mergedDriverData = processedDrivers.map((driver) => {
-      const vehicleInfo = vehicleMap[driver.email];
-      return {
-        email: driver.email,
-        name: driver.name,
-        plat: vehicleInfo ? vehicleInfo.plat : null,
-        type: vehicleInfo ? vehicleInfo.type : null,
-        maxWeight: vehicleInfo ? parseFloat(vehicleInfo.maxWeight) : null,
-        maxVolume: vehicleInfo ? parseFloat(vehicleInfo.maxVolume) : null,
-        storage: vehicleInfo ? vehicleInfo.storage : null,
-        workingTime: {
-          startTime: vehicleInfo ? vehicleInfo.startWorking : null,
-          endTime: vehicleInfo ? vehicleInfo.endWorking : null,
-          multiday: vehicleInfo ? vehicleInfo.multiday : null,
-        },
-      };
-    });
-
-    setLocalStorage('driverData', JSON.stringify(mergedDriverData));
-    await updateMasterTruckStorage(mergedDriverData, selectedLocation);
-
-    return mergedDriverData;
+    return mappedDrivers;
   } catch (err) {
     throw err;
   }
