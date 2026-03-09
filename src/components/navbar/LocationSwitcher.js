@@ -33,7 +33,7 @@ export default function LocationSwitcher() {
 
         setAllowedHubs(allowed);
       } catch (e) {
-        toastError(t('common.error', { err: 'Gagal memuat cabang dari database' }));
+        toastError(t('common.toast.error', { err: 'Gagal memuat cabang dari database' }));
         setAllowedHubs([]);
       }
     }

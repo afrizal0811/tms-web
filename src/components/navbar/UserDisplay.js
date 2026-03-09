@@ -3,7 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -20,9 +20,9 @@ export default function UserDisplay() {
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
-        const { storedUser: userStr } = getLocalStorage();
-        if (userStr) {
-          const user = JSON.parse(userStr);
+        const { storedUser } = getLocalStorage();
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
           return user.name || '';
         }
       } catch (e) {
@@ -70,6 +70,11 @@ export default function UserDisplay() {
     window.location.reload();
   };
 
+  const handleLogout = () => {
+    removeLocalStorage('tms_user_session');
+    window.location.href = '/';
+  };
+
   if (!userName) return null;
 
   return (
@@ -102,7 +107,7 @@ export default function UserDisplay() {
                 setIsOpen(false);
                 setIsLangModalOpen(true);
               }}
-              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer"
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -125,7 +130,7 @@ export default function UserDisplay() {
               <Link
                 href="/settings"
                 onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer border-t border-gray-100"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer border-t border-gray-100"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -149,6 +154,28 @@ export default function UserDisplay() {
                 Pengaturan
               </Link>
             )}
+
+            {/* TOMBOL LOGOUT */}
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer border-t border-gray-100 font-medium"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+                />
+              </svg>
+              Keluar Akun
+            </button>
           </div>
         </div>
       )}

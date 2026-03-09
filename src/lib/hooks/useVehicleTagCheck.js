@@ -1,10 +1,10 @@
 // File: lib/hooks/useVehicleTagCheck.js
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { checkUnmappedVehicles } from '@/lib/driverDataHelper';
 import { useCallback, useState } from 'react';
 import { toastError } from '../toastHelper';
-import { useLanguage } from '@/context/LanguageContext';
 
 export function useVehicleTagCheck() {
   const [isChecking, setIsChecking] = useState(false);
@@ -13,33 +13,36 @@ export function useVehicleTagCheck() {
   const [onSuccessCallback, setOnSuccessCallback] = useState(null);
   const { t } = useLanguage();
 
-  const triggerCheck = useCallback(async (hubId, onSuccess) => {
-    if (!hubId) return;
+  const triggerCheck = useCallback(
+    async (hubId, onSuccess) => {
+      if (!hubId) return;
 
-    setIsChecking(true);
-    try {
-      const issues = await checkUnmappedVehicles(hubId);
-      if (issues && issues.length > 0) {
-        setUnmappedData(issues);
-        setOnSuccessCallback(() => onSuccess);
-        setShowModal(true);
-      } else {
+      setIsChecking(true);
+      try {
+        const issues = await checkUnmappedVehicles(hubId);
+        if (issues && issues.length > 0) {
+          setUnmappedData(issues);
+          setOnSuccessCallback(() => onSuccess);
+          setShowModal(true);
+        } else {
+          onSuccess();
+        }
+      } catch (error) {
+        toastError(t('common.toast.error', { err: error.message }));
         onSuccess();
+      } finally {
+        setIsChecking(false);
       }
-    } catch (error) {
-      toastError(t('common.error', { err: error.message }));
-      onSuccess();
-    } finally {
-      setIsChecking(false);
-    }
-  }, [t]);
+    },
+    [t]
+  );
 
   const handleMappingCompleted = useCallback(() => {
     setShowModal(false);
     setUnmappedData([]);
     if (onSuccessCallback) {
       onSuccessCallback();
-      setOnSuccessCallback(null); 
+      setOnSuccessCallback(null);
     }
   }, [onSuccessCallback]);
 
@@ -47,7 +50,7 @@ export function useVehicleTagCheck() {
     isChecking,
     showModal,
     unmappedData,
-    triggerCheck, 
-    handleMappingCompleted, 
+    triggerCheck,
+    handleMappingCompleted,
   };
 }

@@ -35,17 +35,26 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
     setLoading(true);
     try {
-      const users = await getUsersByEmail(emailInput, hubId);
+      const response = await getUsersByEmail(emailInput, hubId);
+      let usersArray = [];
+      if (Array.isArray(response)) {
+        usersArray = response;
+      } else if (response && Array.isArray(response.data)) {
+        usersArray = response.data;
+      }
 
-      if (isEmpty(users)) {
+      if (isEmpty(usersArray)) {
         toastError(t('home.toast.no_email_inactive'));
         setLoading(false);
         return;
       }
 
-      const foundUser = users[0];
-
-      // Ambil Roles dari DB, lalu cari Driver dan Driver JKT
+      const foundUser = usersArray[0];
+      if (!foundUser) {
+        toastError(t('home.toast.no_email_inactive'));
+        setLoading(false);
+        return;
+      }
       const roles = await getRoles();
       const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
       const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
@@ -62,7 +71,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
       setUserToConfirm(foundUser);
       setIsConfirmOpen(true);
     } catch (err) {
-      toastError(t('common.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }));
     } finally {
       setLoading(false);
     }
