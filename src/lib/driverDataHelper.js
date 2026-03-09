@@ -119,21 +119,8 @@ export async function checkUnmappedVehicles(hubId) {
   }
 }
 
-export async function getOrFetchDriverData(selectedLocation, forceRefresh = false) {
+export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
-
-  if (!forceRefresh) {
-    try {
-      const { storedDrivers } = getLocalStorage();
-      if (storedDrivers) {
-        const parsed = JSON.parse(storedDrivers);
-        await updateMasterTruckStorage(parsed, selectedLocation);
-        return parsed;
-      }
-    } catch (e) {
-      toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
-    }
-  }
 
   try {
     const driversFromDB = await getDrivers(selectedLocation);
@@ -152,10 +139,7 @@ export async function getOrFetchDriverData(selectedLocation, forceRefresh = fals
         multiday: d.multiday,
       },
     }));
-
-    setLocalStorage('driverData', JSON.stringify(mappedDrivers));
     await updateMasterTruckStorage(mappedDrivers, selectedLocation);
-
     return mappedDrivers;
   } catch (err) {
     throw err;

@@ -55,26 +55,7 @@ export default function EstimasiDelivery() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     setSelectedDate(`${y}-${m}-${d}`);
-
-    const ls = getLocalStorage();
-    if (ls && ls.storedDrivers) {
-      try {
-        const rawDrivers = JSON.parse(ls.storedDrivers);
-        if (Array.isArray(rawDrivers)) {
-          const driverObjMap = {};
-          rawDrivers.forEach((d) => {
-            if (d.email) {
-              const normEmail = normalizeEmail(d.email);
-              driverObjMap[normEmail] = d;
-            }
-          });
-          setDriverData(driverObjMap);
-        }
-      } catch (e) {
-        toastError(t('estimation.toast.no_driver_data', { err: e.message }));
-      }
-    }
-  }, [t]);
+  }, []);
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -94,25 +75,6 @@ export default function EstimasiDelivery() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    try {
-      const { storedDrivers } = getLocalStorage();
-      if (storedDrivers) {
-        const parsedDrivers = JSON.parse(storedDrivers);
-        const map = new Map();
-        if (Array.isArray(parsedDrivers)) {
-          parsedDrivers.forEach((d) => {
-            const email = normalizeEmail(d.email);
-            if (email) map.set(email, d.plat);
-          });
-        }
-        setDriverMap(map);
-      }
-    } catch (error) {
-      toastError(t('estimation.toast.no_driver_data', { err: error.message }));
-    }
-  }, [t]);
 
   const handleDeliveryDownload = async () => {
     if (isEmpty(filteredVehicleRoutes)) {

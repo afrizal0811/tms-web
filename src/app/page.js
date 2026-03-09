@@ -1,4 +1,3 @@
-// File: src/app/page.js
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -37,7 +36,6 @@ export default function Home() {
       setPageError(null);
       let processedHubs = [];
       try {
-        // Hanya Murni mengambil data dari Database MySQL Lokal
         const res = await fetch('/api/get-hubs');
         const hubs = await res.json();
 
@@ -56,7 +54,7 @@ export default function Home() {
       }
 
       try {
-        const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
+        const { storedLocation, storedLocationName, storedUser } = getLocalStorage();
 
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -89,10 +87,6 @@ export default function Home() {
               toastInfo(t('home.toast.info_tutorial'));
             }, 500);
           }
-        }
-
-        if (storedLocation && storedDrivers) {
-          setDriverData({ data: JSON.parse(storedDrivers) });
         }
       } catch (e) {
         setPageError(e.message);
@@ -127,7 +121,6 @@ export default function Home() {
       removeLocalStorage('selectedUser');
       setSelectedUser(null);
     }
-    removeLocalStorage('driverData');
     setDriverData({ data: [] });
     setLocalStorage('userLocation', tempSelectedLocation);
     setLocalStorage('userLocationName', tempSelectedLocationName);
@@ -144,7 +137,6 @@ export default function Home() {
     removeLocalStorage('userLocation');
     removeLocalStorage('userLocationName');
     removeLocalStorage('selectedUser');
-    removeLocalStorage('driverData');
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');

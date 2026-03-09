@@ -1,4 +1,3 @@
-// File: src/app/api/get-drivers/route.js
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -11,6 +10,7 @@ export async function GET(request) {
   try {
     const where = hubId ? { hubs: { some: { id: hubId } } } : {};
     const drivers = await prisma.driver.findMany({ where });
+
     return NextResponse.json(drivers, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -53,9 +53,12 @@ export async function POST(request) {
         }
       }
 
-      const uniqueDrivers = Array.from(
-        new Map(rawDrivers.map((item) => [item._id, item])).values()
-      );
+      const driverMapByEmail = new Map();
+      rawDrivers.forEach((d) => {
+        if (d.email) {
+          driverMapByEmail.set(d.email.toLowerCase(), d);
+        }
+      });
 
       const vehRes = await fetch(`${apiUrl}/vehicles?hubId=${hubId}&limit=1000`, {
         headers: { Authorization: `Bearer ${apiToken}` },
@@ -68,57 +71,78 @@ export async function POST(request) {
         vehicles = vehData.data || [];
       }
 
-      const vehicleMap = vehicles.reduce((acc, vehicle) => {
-        if (vehicle.assignee) {
-          acc[vehicle.assignee] = {
-            plat: vehicle.name,
-            type: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null,
-            storage: vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0].split('-')[0] : null,
-            maxWeight: vehicle.capacity?.weight?.max || null,
-            maxVolume: vehicle.capacity?.volume?.max || null,
-            startWorking: vehicle.workingTime?.startTime || null,
-            endWorking: vehicle.workingTime?.endTime || null,
-            multiday: vehicle.workingTime?.multiday || null,
+      const uniquePayloads = new Map();
+
+      for (const vehicle of vehicles) {
+        const assigneeEmail = (vehicle.assignee || '').toLowerCase();
+        const driverInfo = driverMapByEmail.get(assigneeEmail);
+        const plat = vehicle.name || vehicle.plateNumber;
+
+        if (driverInfo && plat && plat.trim() !== '') {
+          const type = vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null;
+          const storage = type ? type.split('-')[0] : null;
+
+          const cleanPlate = plat.replace(/\s+/g, '').toUpperCase();
+          const uniqueId = `${driverInfo._id}-${cleanPlate}`;
+
+          let wMax = vehicle.capacity?.weight?.max ? parseFloat(vehicle.capacity.weight.max) : null;
+          if (isNaN(wMax)) wMax = null;
+
+          let vMax = vehicle.capacity?.volume?.max ? parseFloat(vehicle.capacity.volume.max) : null;
+          if (isNaN(vMax)) vMax = null;
+
+          let mDay = vehicle.workingTime?.multiday;
+          if (mDay === 'true' || mDay === true) mDay = true;
+          else if (mDay === 'false' || mDay === false) mDay = false;
+          else mDay = null;
+
+          const dataPayload = {
+            name: driverInfo.name || 'Unknown',
+            email: driverInfo.email,
+            plat: plat,
+            type: type,
+            maxWeight: wMax,
+            maxVolume: vMax,
+            storage: storage,
+            startTime: vehicle.workingTime?.startTime || null,
+            endTime: vehicle.workingTime?.endTime || null,
+            multiday: mDay,
           };
+
+          uniquePayloads.set(uniqueId, dataPayload);
         }
-        return acc;
-      }, {});
+      }
 
-      for (const driver of uniqueDrivers) {
-        const vInfo = vehicleMap[driver.email];
-        const dataPayload = {
-          name: driver.name,
-          email: driver.email,
-          plat: vInfo ? vInfo.plat : null,
-          type: vInfo ? vInfo.type : null,
-          maxWeight: vInfo && vInfo.maxWeight ? parseFloat(vInfo.maxWeight) : null,
-          maxVolume: vInfo && vInfo.maxVolume ? parseFloat(vInfo.maxVolume) : null,
-          storage: vInfo ? vInfo.storage : null,
-          startTime: vInfo ? vInfo.startWorking : null,
-          endTime: vInfo ? vInfo.endWorking : null,
-          multiday: vInfo ? vInfo.multiday : null,
-        };
-
+      for (const [uniqueId, payload] of uniquePayloads.entries()) {
         allUpserts.push(
           prisma.driver.upsert({
-            where: { id: driver._id },
+            where: { id: uniqueId },
             update: {
-              ...dataPayload,
-              hubs: { connect: { id: hubId } },
+              ...payload,
+              hubs: { connect: [{ id: hubId }] },
             },
             create: {
-              id: driver._id,
-              ...dataPayload,
-              hubs: { connect: { id: hubId } },
+              id: uniqueId,
+              ...payload,
+              hubs: { connect: [{ id: hubId }] },
             },
           })
         );
       }
     }
 
+    await prisma.driver.deleteMany({
+      where: { OR: [{ plat: null }, { plat: '' }] },
+    });
+
+    await prisma.driver.deleteMany({
+      where: { NOT: { id: { contains: '-' } } },
+    });
+
     await prisma.$transaction(allUpserts);
     return NextResponse.json({ message: 'Sync Drivers Berhasil' }, { status: 200 });
   } catch (error) {
+    console.error('Error Sync Driver:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

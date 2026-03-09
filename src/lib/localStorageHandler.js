@@ -7,8 +7,6 @@ export function removeLocalStorage(name) {
 }
 
 export function getLocalStorage() {
-  const storedDrivers = localStorage.getItem('driverData');
-  const storedHubs = localStorage.getItem('allHubsList');
   const storedLocation = localStorage.getItem('userLocation');
   const storedLocationName = localStorage.getItem('userLocationName');
   const storedVehicleTag = localStorage.getItem('vehicleTagMap');
@@ -17,8 +15,6 @@ export function getLocalStorage() {
   const storedLanguage = localStorage.getItem('app_lang');
 
   return {
-    storedDrivers,
-    storedHubs,
     storedLocation,
     storedLocationName,
     storedVehicleTag,
