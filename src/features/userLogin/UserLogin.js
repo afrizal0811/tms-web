@@ -9,7 +9,7 @@ import { getRoles, getUsersByEmail } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { isEmpty } from '@/lib/utils';
+import { isEmpty, capitalizeText } from '@/lib/utils';
 import { useState } from 'react';
 
 export default function UserLogin({ onUserSelect, locationId, hubId }) {
@@ -116,10 +116,10 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
   const modalMessage = (
     <div className="flex flex-col gap-2">
       <div>
-        {t('home.confirmation.question')} <span className="font-bold">{userToConfirm?.name}</span>?
+        {t('home.confirmation.question')}{' '}
+        <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>
       <div className="text-sm text-gray-500">{userToConfirm?.email}</div>
-      <div className="underline">{t('home.confirmation.caution')}</div>
     </div>
   );
 

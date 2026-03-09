@@ -60,7 +60,6 @@ export const dictionary = {
       note: 'Gunakan surel yang terdaftar di MileApp',
       confirmation: {
         cancel: 'Batal',
-        caution: 'User tidak bisa diubah kembali',
         confirm: 'Ya, Yakin',
         question: 'Anda yakin ingin memilih user',
         title: 'Konfirmasi Pilihan User',
@@ -692,7 +691,6 @@ export const dictionary = {
       note: 'Use the same email registered in MileApp',
       confirmation: {
         cancel: 'No',
-        caution: 'User cannot be changed later',
         confirm: 'Yes',
         question: 'Are you sure to select',
         title: 'Confirmation User Selection',

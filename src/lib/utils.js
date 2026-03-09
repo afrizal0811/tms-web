@@ -392,3 +392,6 @@ export function convertWibToUtc(dateInput) {
 
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
+
+export const capitalizeText = (text = '') =>
+  text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());

@@ -2,9 +2,9 @@
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getRoles } from '@/lib/api';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
+import { capitalizeText } from '@/lib/utils';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -13,7 +13,6 @@ export default function UserDisplay() {
   const dropdownRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
-  const [canSync, setCanSync] = useState(false);
   const [isLangModalOpen, setIsLangModalOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState(lang);
 
@@ -23,7 +22,8 @@ export default function UserDisplay() {
         const { storedUser } = getLocalStorage();
         if (storedUser) {
           const user = JSON.parse(storedUser);
-          return user.name || '';
+          // Terapkan fungsi capitalizeText di sini
+          return capitalizeText(user.name || '');
         }
       } catch (e) {
         toastError(t('home.toast.error', { err: e.message }));
@@ -31,30 +31,6 @@ export default function UserDisplay() {
     }
     return '';
   });
-
-  useEffect(() => {
-    const checkSyncPermission = async () => {
-      try {
-        const { storedUser } = getLocalStorage();
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          const roles = await getRoles();
-          const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
-          const ownerRole = roles.find((r) => r.name.toLowerCase() === 'owner');
-
-          if (
-            (superadminRole && user.roleId === superadminRole._id) ||
-            (ownerRole && user.roleId === ownerRole._id)
-          ) {
-            setCanSync(true);
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    checkSyncPermission();
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -126,36 +102,33 @@ export default function UserDisplay() {
               {t('common.language') || 'Pengaturan Bahasa'}
             </button>
 
-            {canSync && (
-              <Link
-                href="/settings"
-                onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer border-t border-gray-100"
+            <Link
+              href="/settings"
+              onClick={() => setIsOpen(false)}
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 hover:bg-sky-50 transition-colors cursor-pointer border-t border-gray-100"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-4 h-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                Pengaturan
-              </Link>
-            )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              Pengaturan
+            </Link>
 
-            {/* TOMBOL LOGOUT */}
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer border-t border-gray-100 font-medium"
