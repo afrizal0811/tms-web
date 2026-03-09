@@ -23,10 +23,7 @@ export default function VehicleData() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-
-  // 2. State untuk Filter Storage
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
-
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
   const [templateData, setTemplateData] = useState([]);
@@ -288,11 +285,10 @@ export default function VehicleData() {
           )}
           {activeTab === 'template' && (
             <TemplateTab
-              driverMap={driverMap}
               paginatedData={filteredData}
               searchQuery={searchQuery}
               t={t}
-            />
+            /> 
           )}
         </div>
       </BodyCard>

@@ -40,12 +40,8 @@ model Driver {
   startTime   String?
   endTime     String?
   multiday    Boolean?
-  
-  hubId       String
-  hub         Hub      @relation(fields: [hubId], references: [id], onDelete: Cascade)
   updatedAt   DateTime @updatedAt
-
-  @@index([hubId])
+  hubs        Hub[]
   @@map("drivers")
 }
 

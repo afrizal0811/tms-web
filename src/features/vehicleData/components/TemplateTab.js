@@ -7,7 +7,7 @@ import Tooltip from '@/components/Tooltip';
 import { isEmpty, normalizeEmail } from '@/lib/utils';
 import { formatVolume } from '../help';
 
-export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }) {
+export default function TemplateTab({ paginatedData, searchQuery, t }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-[1200px]">
@@ -37,10 +37,7 @@ export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }
                 <HighlightText text={v.name} highlight={searchQuery} />
               </Td>
               <Td>
-                <HighlightText
-                  text={driverMap.get(normalizeEmail(v.assignee)) || null}
-                  highlight={searchQuery}
-                />
+                <HighlightText text={normalizeEmail(v.assignee) || null} highlight={searchQuery} />
               </Td>
               <Td>{v.workingTime?.startTime || null}</Td>
               <Td>{v.workingTime?.endTime || null}</Td>

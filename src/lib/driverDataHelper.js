@@ -21,6 +21,7 @@ const resolveVehicleType = (rawTag, plate, hubId, tagMap) => {
       if (mappedValue) return mappedValue;
     }
   }
+
   return typeCandidate;
 };
 
@@ -39,6 +40,7 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
   const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
 
   const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+
   VEHICLE_TYPES.forEach((type) => {
     masterData.Dry[type] = 0;
     masterData.Frozen[type] = 0;
@@ -58,6 +60,7 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
     else if (name.includes('FRZ')) storageCategory = 'Frozen';
 
     if (!storageCategory) return;
+
     const resolvedType = resolveVehicleType(rawTag, plat, hubId, tagMap);
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
 
@@ -69,6 +72,7 @@ const updateMasterTruckStorage = async (drivers, hubId) => {
 
   setLocalStorage('masterTruck', JSON.stringify(masterData));
 };
+
 export async function checkUnmappedVehicles(hubId) {
   if (!hubId) return [];
 
@@ -84,17 +88,16 @@ export async function checkUnmappedVehicles(hubId) {
   try {
     const vehicleTypesObj = await getVehicleTypes();
     const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
-
-    const res = await getVehicles({ hubId: hubId, limit: 1000 });
-    const vehicles = Array.isArray(res) ? res : res.data || [];
+    const drivers = await getDrivers(hubId);
     const unmappedList = [];
 
-    vehicles.forEach((v) => {
-      const tags = v.tags || v.vehicleTags || [];
-      if (isEmpty(tags)) return;
+    drivers.forEach((v) => {
+      const rawTag = v.type ? String(v.type).toUpperCase() : null;
+      if (isEmpty(rawTag)) return;
 
-      const rawTag = String(tags[0]).toUpperCase();
-      const plat = v.name || v.plateNumber;
+      const plat = v.plat || '';
+      if (isEmpty(plat)) return;
+
       const parts = rawTag.split('-');
       let specificType = parts.length > 1 ? parts[1] : rawTag;
 
@@ -119,10 +122,21 @@ export async function checkUnmappedVehicles(hubId) {
 export async function getOrFetchDriverData(selectedLocation, forceRefresh = false) {
   if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
 
+  if (!forceRefresh) {
+    try {
+      const { storedDrivers } = getLocalStorage();
+      if (storedDrivers) {
+        const parsed = JSON.parse(storedDrivers);
+        await updateMasterTruckStorage(parsed, selectedLocation);
+        return parsed;
+      }
+    } catch (e) {
+      toastWarning(`Gagal membaca cache driver: ${e.message}. Mengambil data baru.`);
+    }
+  }
+
   try {
     const driversFromDB = await getDrivers(selectedLocation);
-
-    // Memetakan struktur data agar 100% sama persis dengan format yang dibutuhkan sistem lama
     const mappedDrivers = driversFromDB.map((d) => ({
       _id: d.id,
       email: d.email,
