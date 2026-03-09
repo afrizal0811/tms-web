@@ -3,9 +3,7 @@
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
-import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useMemo } from 'react';
 import TaskSummaryModal from './modals/TaskSummaryModal';
 
 export default function TaskSummaryTab({
@@ -15,27 +13,9 @@ export default function TaskSummaryTab({
   startDateStr,
   endDateStr,
   translate,
+  masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } }, // Terima data dari props
 }) {
-  const [masterTruckData, setMasterTruckData] = useState({
-    Dry: { Total: 0 },
-    Frozen: { Total: 0 },
-  });
-
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const { storedMasterTruck: stored } = getLocalStorage();
-        if (stored) {
-          //eslint-disable-next-line
-          setMasterTruckData(JSON.parse(stored));
-        }
-      } catch (e) {
-        toastError(`Failed to load masterTruck from storage: ${e.message}`);
-      }
-    }
-  }, []);
 
   const allDates = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -265,8 +245,8 @@ export default function TaskSummaryTab({
               const d = data?.dry || {};
               const f = data?.frozen || {};
 
-              const mtDry = masterTruckData.Dry?.Total || 0;
-              const mtFrozen = masterTruckData.Frozen?.Total || 0;
+              const mtDry = masterTruckData?.Dry?.Total || 0;
+              const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
               const today = new Date();
               today.setHours(0, 0, 0, 0);

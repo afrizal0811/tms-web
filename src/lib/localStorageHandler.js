@@ -9,16 +9,12 @@ export function removeLocalStorage(name) {
 export function getLocalStorage() {
   const storedLocation = localStorage.getItem('userLocation');
   const storedLocationName = localStorage.getItem('userLocationName');
-  const storedVehicleTag = localStorage.getItem('vehicleTagMap');
-  const storedMasterTruck = localStorage.getItem('masterTruck');
   const storedUser = localStorage.getItem('selectedUser');
   const storedLanguage = localStorage.getItem('app_lang');
 
   return {
     storedLocation,
     storedLocationName,
-    storedVehicleTag,
-    storedMasterTruck,
     storedUser,
     storedLanguage,
   };

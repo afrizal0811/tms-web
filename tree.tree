@@ -2,17 +2,27 @@
 │   ├── api
 │   │   ├── get-batch-histories
 │   │   │   └── route.js
+│   │   ├── get-drivers
+│   │   │   ├── route.js
+│   │   │   └── status
+│   │   │       └── route.js
 │   │   ├── get-hubs
 │   │   │   └── route.js
 │   │   ├── get-location-histories
 │   │   │   └── route.js
 │   │   ├── get-results-summary
 │   │   │   └── route.js
+│   │   ├── get-roles
+│   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
 │   │   ├── get-users
 │   │   │   └── route.js
-│   │   └── get-vehicles
+│   │   ├── get-vehicles
+│   │   │   └── route.js
+│   │   ├── vehicle-mappings
+│   │   │   └── route.js
+│   │   └── vehicle-types
 │   │       └── route.js
 │   ├── estimasi
 │   │   └── page.js
@@ -29,6 +39,8 @@
 │   ├── old.ico
 │   ├── page.js
 │   ├── rangkuman
+│   │   └── page.js
+│   ├── settings
 │   │   └── page.js
 │   ├── update-longlat
 │   │   └── page.js
@@ -54,6 +66,7 @@
 │   │   ├── LanguageSwitcher.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
+│   │   ├── SyncDataButton.js
 │   │   └── UserDisplay.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
@@ -135,6 +148,8 @@
 │   │   ├── BulkReportDownloader.js
 │   │   ├── help.js
 │   │   └── SingleReportDownloader.js
+│   ├── settings
+│   │   └── SettingsPage.js
 │   ├── updateLonglat
 │   │   ├── components
 │   │   │   ├── UpdateLonglatTable.js
@@ -152,7 +167,17 @@
 │       ├── help.js
 │       └── VehicleData.js
 └── lib
-    ├── apiService.js
+    ├── api
+    │   ├── base.js
+    │   ├── drivers.js
+    │   ├── hubs.js
+    │   ├── index.js
+    │   ├── roles.js
+    │   ├── tasks.js
+    │   ├── users.js
+    │   ├── vehicleMappings.js
+    │   ├── vehicles.js
+    │   └── vehicleTypes.js
     ├── constants.js
     ├── dashboardHelper.js
     ├── dictionary.js

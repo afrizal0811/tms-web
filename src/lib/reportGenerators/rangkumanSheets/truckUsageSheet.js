@@ -1,6 +1,5 @@
-import { getVehicleTypes } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api';
+import { calculateMasterTruckStorage } from '@/lib/driverDataHelper';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
@@ -25,7 +24,10 @@ function getDeliveryDateFromRouting(isoString) {
   }
 }
 
-function getVehicleType(firstTag, vehiclePlate, hubId, tagMap, vehicleTypes) {
+function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
+  if (vehiclePlate && mappingsObj[vehiclePlate]) {
+    return mappingsObj[vehiclePlate];
+  }
   if (!firstTag) return 'Lainnya';
   const parts = firstTag.split('-');
   if (parts.length < 2) return 'Lainnya';
@@ -36,13 +38,6 @@ function getVehicleType(firstTag, vehiclePlate, hubId, tagMap, vehicleTypes) {
     }
   }
   if (vehicleTypes.includes(specificType)) return specificType;
-  if (tagMap && hubId && vehiclePlate) {
-    const hubMap = tagMap[hubId];
-    if (hubMap && hubMap[vehiclePlate]) {
-      const mappedValue = hubMap[vehiclePlate][specificType];
-      if (mappedValue) return mappedValue;
-    }
-  }
   return specificType;
 }
 
@@ -138,21 +133,22 @@ function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
 }
 
 export async function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
-  let tagMap = {};
-  if (typeof window !== 'undefined') {
-    try {
-      const { storedVehicleTag: storedMap } = getLocalStorage();
-      if (storedMap) tagMap = JSON.parse(storedMap);
-    } catch (e) {
-      toastError(e);
-    }
-  }
+  // 1. Panggil semua data master dari DB secara paralel
+  const [vehicleTypesObj, mappingsDB, driversDB] = await Promise.all([
+    getVehicleTypes(),
+    getVehicleMappings(),
+    getDrivers(hubId),
+  ]);
 
-  const vehicleTypesObj = await getVehicleTypes();
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+  const mappingsObj = mappingsDB.reduce((acc, curr) => {
+    acc[curr.plat] = curr.mappedType;
+    return acc;
+  }, {});
 
-  const { storedMasterTruck } = getLocalStorage() || { Dry: { Total: 0 }, Frozen: { Total: 0 } };
-  const hubMasterData = JSON.parse(storedMasterTruck);
+  // 2. KUNCI PERUBAHAN: Hitung masterTruck secara dinamis, tanpa Local Storage!
+  const hubMasterData = await calculateMasterTruckStorage(driversDB, mappingsObj, vehicleTypes);
+
   const dateMap = {};
   const dateKeys = [];
   const currentIterDate = new Date(startDateStr);
@@ -191,7 +187,9 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
               );
               const storage = isFrozen ? 'Frozen' : 'Dry';
               const firstTag = tags.length > 0 ? String(tags[0]) : '';
-              const type = getVehicleType(firstTag, vehiclePlate, hubId, tagMap, vehicleTypes);
+
+              const type = getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes);
+
               if (dateMap[dateKey][storage][type] !== undefined) {
                 dateMap[dateKey][storage][type]++;
                 dateMap[dateKey][`${storage}Total`]++;

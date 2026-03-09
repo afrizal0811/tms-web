@@ -1,7 +1,14 @@
 import { useLanguage } from '@/context/LanguageContext';
-import { getBatchHistories, getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
+import {
+  getBatchHistories,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+  getVehicleMappings,
+  getVehicleTypes,
+} from '@/lib/api';
 import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError } from '@/lib/toastHelper';
@@ -53,15 +60,10 @@ export default function useRangkumanData() {
   const fetchStartTimeRef = useRef(null);
 
   useEffect(() => {
-    const { storedLocation, storedLocationName, storedMasterTruck } = getLocalStorage();
+    const { storedLocation, storedLocationName } = getLocalStorage();
     if (typeof window !== 'undefined') {
       if (storedLocation) setSelectedLocation(storedLocation);
       if (storedLocationName) setSelectedLocationName(storedLocationName);
-      try {
-        if (storedMasterTruck) setMasterTruckData(JSON.parse(storedMasterTruck));
-      } catch (e) {
-        toastError(e.message);
-      }
     }
   }, []);
 
@@ -552,8 +554,13 @@ export default function useRangkumanData() {
       const mergeResults = (resArray) => {
         let merged = [];
         resArray.forEach((res) => {
-          if (Array.isArray(res)) merged = [...merged, ...res];
-          else if (res?.data) merged = [...merged, ...res.data];
+          if (Array.isArray(res)) {
+            merged = [...merged, ...res];
+          } else if (res?.data) {
+            merged = [...merged, ...res.data];
+          } else if (res?.tasks?.data) {
+            merged = [...merged, ...res.tasks.data];
+          }
         });
         return merged;
       };
@@ -650,6 +657,27 @@ export default function useRangkumanData() {
       ]);
 
       setDriverData(driversRes || []);
+
+      // >>> PERHITUNGAN MASTER TRUCK DINAMIS DARI DATABASE <<<
+      try {
+        const [vTypesObj, mapsDB] = await Promise.all([getVehicleTypes(), getVehicleMappings()]);
+        const vTypes = vTypesObj.map((v) => v.name);
+        const mapObj = mapsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
+        const calculatedMaster = await calculateMasterTruckStorage(
+          driversRes || [],
+          mapObj,
+          vTypes
+        );
+        setMasterTruckData(calculatedMaster);
+      } catch (e) {
+        console.error('Gagal menghitung master truck:', e);
+        setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
+      }
+
       const newRawData = {
         tasks: tasksRes || [],
         results: resultsRes || [],
@@ -657,6 +685,7 @@ export default function useRangkumanData() {
       };
       setRawData(newRawData);
 
+      // KUNCI PERBAIKAN: Harus menggunakan AWAIT agar preview tidak berbentuk Promise!
       const preview = await generateRangkumanDataPreview(
         driversRes || [],
         newRawData.tasks,

@@ -3,8 +3,7 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -54,12 +53,23 @@ export default function BulkReportDownloader({ driverData }) {
     setEndDate(end);
   };
 
-  const handleBulkRoutingSummary = (t) => {
+  const handleBulkRoutingSummary = async (t) => {
     setElapsedTime(0);
-    const { storedVehicleTag } = getLocalStorage();
-    const fullTagMap = JSON.parse(storedVehicleTag || '{}');
-    const { storedLocation: hubIdLocal } = getLocalStorage();
-    const hubTagMap = fullTagMap[hubIdLocal] || {};
+
+    // Ambil data mapping dari database sebelum menjalankan proses bulk
+    let mappingsObj = {};
+    try {
+      setIsLoading(true);
+      const mappingsDB = await getVehicleMappings();
+      mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mappedType;
+        return acc;
+      }, {});
+    } catch (e) {
+      console.error('Gagal memuat mapping kendaraan:', e);
+    } finally {
+      setIsLoading(false); // bulkDownloader akan mengaturnya kembali
+    }
 
     bulkDownloader({
       startDate,
@@ -82,10 +92,10 @@ export default function BulkReportDownloader({ driverData }) {
         const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
 
         if (filteredResults.length > 0) {
-          return generateRoutingWorkbook(
+          return await generateRoutingWorkbook(
             driverData,
             filteredResults,
-            hubTagMap,
+            mappingsObj, // Kirim mapping dari DB, bukan local storage
             dateForFile,
             hubName,
             t

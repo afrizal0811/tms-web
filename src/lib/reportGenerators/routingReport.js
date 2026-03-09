@@ -1,3 +1,4 @@
+// File: lib/reportGenerators/routingReport.js
 'use client';
 
 import { getVehicleTypes } from '@/lib/api';
@@ -12,7 +13,7 @@ function formatSimpleTime(timeStr) {
 export async function generateRoutingWorkbook(
   driverData,
   filteredResults,
-  tagMap,
+  mappingsObj, // <-- Menerima data mapping dari DB
   dateForFile,
   hubName,
   t
@@ -172,10 +173,11 @@ export async function generateRoutingWorkbook(
             }
 
             let category = 'Lainnya';
-            if (vehicleTypes.includes(specificType)) {
+            // PERUBAHAN: Cek DB Mapping murni berdasarkan pelat
+            if (mappingsObj[vehiclePlat]) {
+              category = mappingsObj[vehiclePlat];
+            } else if (vehicleTypes.includes(specificType)) {
               category = specificType;
-            } else if (tagMap[vehiclePlat] && tagMap[vehiclePlat][specificType]) {
-              category = tagMap[vehiclePlat][specificType];
             }
 
             if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;

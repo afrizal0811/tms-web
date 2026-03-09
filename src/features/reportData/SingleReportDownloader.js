@@ -3,8 +3,7 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -98,14 +97,17 @@ export default function TmsSummary({
         throw new Error(t('report.toast.no_routing'));
       }
 
-      const { storedVehicleTag } = getLocalStorage();
-      const fullTagMap = JSON.parse(storedVehicleTag || '{}');
-      const hubTagMap = fullTagMap[selectedLocation] || {};
+      // Ambil mapping eksklusif dari Database
+      const mappingsDB = await getVehicleMappings();
+      const mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mappedType;
+        return acc;
+      }, {});
 
       const { wb, excelFileName, missingTimesFound } = await generateRoutingWorkbook(
         driverData,
         filteredResults,
-        hubTagMap,
+        mappingsObj,
         selectedDateString,
         selectedLocationName,
         t

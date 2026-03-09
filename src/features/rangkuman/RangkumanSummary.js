@@ -176,6 +176,7 @@ export default function RangkumanSummary() {
           endDateStr: endStr,
           isHasData: Object.entries(taskSummaryMetrics).length > 0,
           translate: t,
+          masterTruckData: masterTruckData,
         });
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {

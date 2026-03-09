@@ -4,12 +4,12 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
-import StorageTypeFilter from '@/components/StorageTypeFilter'; // 1. Import Component
+import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getVehicles } from '../../lib/api';
+import { getVehicles, getVehicleMappings } from '../../lib/api';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError } from '../../lib/toastHelper';
 import TemplateTab from './components/TemplateTab';
@@ -32,8 +32,7 @@ export default function VehicleData() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const { storedLocation: userLocation, storedVehicleTag: storedMapString } =
-          getLocalStorage();
+        const { storedLocation: userLocation } = getLocalStorage();
         if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
 
         const drivers = await getOrFetchDriverData(userLocation);
@@ -45,51 +44,57 @@ export default function VehicleData() {
           });
         }
         setDriverMap(localDriverMap);
-        const rawApiData = await getVehicles({ limit: 500, hubId: userLocation });
+
+        const [rawApiData, mappingsDB] = await Promise.all([
+          getVehicles({ limit: 500, hubId: userLocation }),
+          getVehicleMappings(),
+        ]);
+
         if (!rawApiData || isEmpty(rawApiData)) throw new Error('Tidak ada data.');
         const sortByEmail = (a, b) => (a.assignee || '').localeCompare(b.assignee || '');
         setTemplateData([...rawApiData].sort(sortByEmail));
         let processedData = rawApiData.map((v) => ({ ...v, tags: v.tags ? [...v.tags] : [] }));
 
+        const mappingsObj = mappingsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
         try {
-          if (storedMapString) {
-            const tagMap = JSON.parse(storedMapString);
-            const hubMap = tagMap[userLocation];
-            if (hubMap) {
-              processedData.forEach((vehicle) => {
-                if (!vehicle.tags || isEmpty(vehicle.tags) || !vehicle.name) return;
-                const originalTag = vehicle.tags[0];
-                const plate = vehicle.name;
-                const parts = originalTag.split('-');
-                let storagePrefix = '';
-                let currentType = '';
-                if (parts.length >= 2) {
-                  storagePrefix = parts[0];
-                  currentType = parts[1];
-                } else {
-                  currentType = originalTag;
-                }
-                const emailKey = normalizeEmail(vehicle.assignee);
-                const driverName = localDriverMap.get(emailKey) || '';
-                const upperName = driverName.toUpperCase();
-
-                if (upperName.includes('FRZ') || upperName.includes('FROZEN')) {
-                  storagePrefix = 'FROZEN';
-                } else if (upperName.includes('DRY')) {
-                  storagePrefix = 'DRY';
-                }
-                if (hubMap[plate] && hubMap[plate][currentType]) {
-                  const mappedType = hubMap[plate][currentType];
-                  const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
-
-                  vehicle.tags[0] = newFullTag;
-                }
-              });
+          processedData.forEach((vehicle) => {
+            if (!vehicle.tags || isEmpty(vehicle.tags) || !vehicle.name) return;
+            const originalTag = vehicle.tags[0];
+            const plate = vehicle.name;
+            const parts = originalTag.split('-');
+            let storagePrefix = '';
+            let currentType = '';
+            if (parts.length >= 2) {
+              storagePrefix = parts[0];
+              currentType = parts[1];
+            } else {
+              currentType = originalTag;
             }
-          }
+            const emailKey = normalizeEmail(vehicle.assignee);
+            const driverName = localDriverMap.get(emailKey) || '';
+            const upperName = driverName.toUpperCase();
+
+            if (upperName.includes('FRZ') || upperName.includes('FROZEN')) {
+              storagePrefix = 'FROZEN';
+            } else if (upperName.includes('DRY')) {
+              storagePrefix = 'DRY';
+            }
+
+            // Ganti logikanya membaca murni berdasarkan plat
+            if (mappingsObj[plate]) {
+              const mappedType = mappingsObj[plate];
+              const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
+              vehicle.tags[0] = newFullTag;
+            }
+          });
         } catch (error) {
           toastError(t('vehicle.failed_mapping', { error }));
         }
+
         const emailToVehiclesMap = new Map();
         processedData.forEach((v) => {
           if (!v.assignee) return;
@@ -116,7 +121,7 @@ export default function VehicleData() {
         setMasterData(masterList.sort(sortByEmail));
         setConditionalData(conditionalList.sort(sortByEmail));
       } catch (err) {
-        toastError(err.message); // Pastikan toastError aman
+        toastError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -124,18 +129,13 @@ export default function VehicleData() {
     fetchData();
   }, [t]);
 
-  // 3. Helper Fungsi Filter Storage (Reusable)
   const applyStorageFilter = useCallback(
     (list) => {
       return list.filter((item) => {
-        // Jika semua dipilih atau tidak ada (fallback), tampilkan semua
         if (storageFilter.length === 2) return true;
         if (storageFilter.length === 0) return false;
 
-        // Ambil nama driver dari map
         const driverName = (driverMap.get(normalizeEmail(item.assignee)) || '').toUpperCase();
-
-        // Cek keyword DRY atau FRZ
         const isDry = driverName.includes("'DRY'");
         const isFrz = driverName.includes("'FRZ'");
 
@@ -148,17 +148,14 @@ export default function VehicleData() {
     [storageFilter, driverMap]
   );
 
-  // 4. Update Filtered Data untuk Tampilan
   const filteredData = useMemo(() => {
     let data = [];
     if (activeTab === 'master') data = masterData;
     else if (activeTab === 'conditional') data = conditionalData;
     else if (activeTab === 'template') data = templateData;
 
-    // A. Apply Storage Filter
     data = applyStorageFilter(data);
 
-    // B. Apply Search Filter
     if (!searchQuery) return data;
 
     const lowerQuery = searchQuery.toLowerCase();
@@ -182,16 +179,14 @@ export default function VehicleData() {
     templateData,
     searchQuery,
     driverMap,
-    applyStorageFilter, // Dependency baru
+    applyStorageFilter,
   ]);
 
   const handleExcelDownload = () => {
-    // 5. Filter data sebelum didownload agar sesuai dengan pilihan storage
     const filteredMaster = applyStorageFilter(masterData);
     const filteredConditional = applyStorageFilter(conditionalData);
     const filteredTemplate = applyStorageFilter(templateData);
 
-    // Tentukan prefix nama file (opsional, untuk kerapian file output)
     let filePrefix = '';
     if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) filePrefix = 'DRY';
     if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) filePrefix = 'FRZ';
@@ -202,9 +197,9 @@ export default function VehicleData() {
       templateData: filteredTemplate,
       driverMap,
       setIsDownloading,
-      sheetSelection: { master: true, conditional: true, template: true }, // Download semua tab yg relevan
+      sheetSelection: { master: true, conditional: true, template: true },
       t,
-      fileNamePrefix: filePrefix, // Kirim prefix ke helper (jika helper support, atau diabaikan tidak masalah)
+      fileNamePrefix: filePrefix,
     });
   };
 
@@ -284,11 +279,7 @@ export default function VehicleData() {
             />
           )}
           {activeTab === 'template' && (
-            <TemplateTab
-              paginatedData={filteredData}
-              searchQuery={searchQuery}
-              t={t}
-            /> 
+            <TemplateTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
           )}
         </div>
       </BodyCard>

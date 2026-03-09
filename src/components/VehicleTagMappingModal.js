@@ -1,14 +1,14 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
-import { getVehicleTypes } from '@/lib/api';
-import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { getVehicleTypes, saveVehicleMappings } from '@/lib/api';
 import { useEffect, useState } from 'react';
 
 export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {
   const [mappings, setMappings] = useState({});
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     async function fetchVehicleTypes() {
@@ -24,38 +24,41 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
     fetchVehicleTypes();
   }, []);
 
-  const handleSave = () => {
-    let currentMap = {};
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
-      const { storedVehicleTag: stored } = getLocalStorage();
-      if (stored) currentMap = JSON.parse(stored);
-    } catch (e) {}
+      const payload = [];
+      unmappedData.forEach((item) => {
+        const selectedType = mappings[item.plat];
+        if (selectedType) {
+          payload.push({
+            plat: item.plat,
+            mappedType: selectedType,
+          });
+        }
+      });
 
-    unmappedData.forEach((item) => {
-      const { hubId, plat, tag } = item;
-      const selectedType = mappings[`${plat}-${tag}`];
-
-      if (selectedType) {
-        if (!currentMap[hubId]) currentMap[hubId] = {};
-        if (!currentMap[hubId][plat]) currentMap[hubId][plat] = {};
-        currentMap[hubId][plat][tag] = selectedType;
+      if (payload.length > 0) {
+        await saveVehicleMappings(payload);
       }
-    });
-
-    setLocalStorage('vehicleTagMap', JSON.stringify(currentMap));
-    onCompleted();
+      onCompleted();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const isAllSelected = unmappedData.every((item) => mappings[`${item.plat}-${item.tag}`]);
+  const isAllSelected = unmappedData.every((item) => mappings[item.plat]);
 
   const footerContent = (
     <div className="flex justify-end">
       <button
         onClick={handleSave}
-        disabled={!isAllSelected || isLoading}
+        disabled={!isAllSelected || isLoading || isSaving}
         className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
       >
-        {t('common.save')}
+        {isSaving ? 'Menyimpan...' : t('common.save')}
       </button>
     </div>
   );
@@ -120,16 +123,14 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
                   {vehicleTypes.map((type) => (
                     <label
                       key={type}
-                      className={`cursor-pointer px-3 py-1.5 rounded-md text-sm border transition-all ${mappings[`${info.plat}-${info.tag}`] === type ? 'bg-sky-600 text-white border-sky-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-300 hover:border-sky-400 hover:bg-sky-50'}`}
+                      className={`cursor-pointer px-3 py-1.5 rounded-md text-sm border transition-all ${mappings[info.plat] === type ? 'bg-sky-600 text-white border-sky-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-300 hover:border-sky-400 hover:bg-sky-50'}`}
                     >
                       <input
                         type="radio"
-                        name={`map-${info.plat}-${info.tag}`}
+                        name={`map-${info.plat}`}
                         value={type}
                         className="hidden"
-                        onChange={() =>
-                          setMappings((prev) => ({ ...prev, [`${info.plat}-${info.tag}`]: type }))
-                        }
+                        onChange={() => setMappings((prev) => ({ ...prev, [info.plat]: type }))}
                       />
                       {type}
                     </label>
