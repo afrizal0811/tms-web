@@ -11,9 +11,9 @@ import { useEffect } from 'react';
 export default function AppLayout({ children, mainClassName }) {
   const { t } = useLanguage();
   useEffect(() => {
-    const { storedLocation } = getLocalStorage();
-    if (storedLocation) {
-      getOrFetchDriverData(storedLocation, true).catch((err) => {
+    const { storedSession } = getLocalStorage();
+    if (storedSession?.activeHubId) {
+      getOrFetchDriverData(storedSession.activeHubId, true).catch((err) => {
         toastError(t('common.toast.error', { err: err.message }));
       });
     }

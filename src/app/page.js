@@ -73,10 +73,16 @@ export default function Home() {
               setTempSelectedLocation(storedLocation);
               setTempSelectedLocationName(storedLocationName);
             } else {
-              removeLocalStorage('userLocation');
-              removeLocalStorage('userLocationName');
+              removeLocalStorage('tms_user_session');
             }
           }
+        } else if (storedLocation) {
+          // Kondisi ketika user baru memilih lokasi tapi belum login
+          setCurrentHubListView(processedHubs);
+          setSelectedLocation(storedLocation);
+          setSelectedLocationName(storedLocationName);
+          setTempSelectedLocation(storedLocation);
+          setTempSelectedLocationName(storedLocationName);
         } else {
           setCurrentHubListView(processedHubs);
           const hasShownSession = sessionStorage.getItem('hasShownHelpToast');
@@ -101,7 +107,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getOrFetchDriverData(selectedLocation, true);
+        const data = await getOrFetchDriverData(selectedLocation);
         setDriverData({ data: data });
       } catch (err) {
         toastError(err);
@@ -118,25 +124,42 @@ export default function Home() {
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) return toastError(t('home.select_branch'));
     if (!selectedUser) {
-      removeLocalStorage('selectedUser');
+      removeLocalStorage('tms_user_session');
       setSelectedUser(null);
     }
+
     setDriverData({ data: [] });
-    setLocalStorage('userLocation', tempSelectedLocation);
-    setLocalStorage('userLocationName', tempSelectedLocationName);
+
+    // KUNCI: Simpan ke session tunggal
+    const tempSession = {
+      activeHubId: tempSelectedLocation,
+      activeHubName: tempSelectedLocationName,
+    };
+    setLocalStorage('tms_user_session', JSON.stringify(tempSession));
+
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
 
   const handleUserSelect = (user) => {
-    setLocalStorage('selectedUser', JSON.stringify(user));
-    setSelectedUser(user);
+    // KUNCI: Gabungkan data profil dengan lokasi, lalu simpan ke session tunggal
+    const filteredUserSession = {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      hubId: user.hubId,
+      roleId: user.roleId,
+      status: user.status,
+      activeHubId: selectedLocation,
+      activeHubName: selectedLocationName,
+    };
+
+    setLocalStorage('tms_user_session', JSON.stringify(filteredUserSession));
+    setSelectedUser(filteredUserSession);
   };
 
   const handleResetAll = () => {
-    removeLocalStorage('userLocation');
-    removeLocalStorage('userLocationName');
-    removeLocalStorage('selectedUser');
+    removeLocalStorage('tms_user_session');
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');

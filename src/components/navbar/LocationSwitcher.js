@@ -1,11 +1,10 @@
-// File: src/components/navbar/LocationSwitcher.js
 'use client';
 
 import LocationDropdown from '@/components/LocationDropdown';
 import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
-import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
 
@@ -39,7 +38,6 @@ export default function LocationSwitcher() {
       }
     }
 
-    // KUNCI PERBAIKAN: Menggunakan setTimeout untuk menghindari "Cascading Renders"
     const timer = setTimeout(() => {
       const {
         storedUser: userStr,
@@ -56,18 +54,24 @@ export default function LocationSwitcher() {
   }, [t]);
 
   const handleLocationChange = (id, name) => {
-    try {
-      triggerCheck(id, () => {
-        setLocalStorage('userLocation', id);
-        setLocalStorage('userLocationName', name);
-        removeLocalStorage('driverData');
-        window.location.reload();
-      });
-    } catch (err) {
-      setLocalStorage('userLocation', id);
-      setLocalStorage('userLocationName', name);
-      removeLocalStorage('driverData');
+    const updateLocationAndReload = () => {
+      const { storedUser } = getLocalStorage();
+      let newSession = { activeHubId: id, activeHubName: name };
+
+      // Pertahankan data user lama, hanya timpa lokasinya
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser);
+        newSession = { ...userObj, activeHubId: id, activeHubName: name };
+      }
+
+      setLocalStorage('tms_user_session', JSON.stringify(newSession));
       window.location.reload();
+    };
+
+    try {
+      triggerCheck(id, updateLocationAndReload);
+    } catch (err) {
+      updateLocationAndReload();
     }
   };
 

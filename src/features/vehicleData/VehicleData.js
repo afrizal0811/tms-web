@@ -32,7 +32,8 @@ export default function VehicleData() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const { storedLocation: userLocation } = getLocalStorage();
+        const { storedSession } = getLocalStorage();
+        const userLocation = storedSession?.activeHubId;
         if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
 
         const drivers = await getOrFetchDriverData(userLocation);

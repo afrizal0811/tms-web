@@ -7,12 +7,29 @@ export function removeLocalStorage(name) {
 }
 
 export function getLocalStorage() {
-  const storedLocation = localStorage.getItem('userLocation');
-  const storedLocationName = localStorage.getItem('userLocationName');
-  const storedUser = localStorage.getItem('selectedUser');
-  const storedLanguage = localStorage.getItem('app_lang');
+  const sessionStr = localStorage.getItem('tms_user_session');
+  let storedSession = null;
+  let storedLocation = null;
+  let storedLocationName = null;
+  let storedUser = null;
+
+  if (sessionStr) {
+    try {
+      storedSession = JSON.parse(sessionStr);
+      storedLocation = storedSession.activeHubId || null;
+      storedLocationName = storedSession.activeHubName || null;
+      if (storedSession._id) {
+        storedUser = sessionStr;
+      }
+    } catch (e) {
+      console.error('Gagal membaca session:', e);
+    }
+  }
+
+  const storedLanguage = localStorage.getItem('language');
 
   return {
+    storedSession,
     storedLocation,
     storedLocationName,
     storedUser,

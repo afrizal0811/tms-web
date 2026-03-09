@@ -60,13 +60,12 @@ export default function useRangkumanData() {
   const fetchStartTimeRef = useRef(null);
 
   useEffect(() => {
-    const { storedLocation, storedLocationName } = getLocalStorage();
+    const { storedSession } = getLocalStorage();
     if (typeof window !== 'undefined') {
-      if (storedLocation) setSelectedLocation(storedLocation);
-      if (storedLocationName) setSelectedLocationName(storedLocationName);
+      if (storedSession?.activeHubId) setSelectedLocation(storedSession.activeHubId);
+      if (storedSession?.activeHubName) setSelectedLocationName(storedSession.activeHubName);
     }
   }, []);
-
   useEffect(() => {
     let interval = null;
     if (isLoading) {

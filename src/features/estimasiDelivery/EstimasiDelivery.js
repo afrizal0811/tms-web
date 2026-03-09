@@ -87,8 +87,8 @@ export default function EstimasiDelivery() {
 
     try {
       const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-      const { storedLocationName } = getLocalStorage();
-      const locationName = storedLocationName || 'Cabang';
+      const { storedSession } = getLocalStorage();
+      const locationName = storedSession?.activeHubName || 'Cabang';
 
       const generatePdfBlob = async (route) => {
         const normalizedAssignee = normalizeEmail(route.assignee);
@@ -182,7 +182,8 @@ export default function EstimasiDelivery() {
       setTimeMap(new Map());
 
       try {
-        const { storedLocation: userLocation } = getLocalStorage();
+        const { storedSession } = getLocalStorage();
+        const userLocation = storedSession?.activeHubId;
         if (!userLocation) {
           throw new Error('userLocation tidak ditemukan di localStorage.');
         }
