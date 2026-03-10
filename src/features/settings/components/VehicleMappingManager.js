@@ -14,7 +14,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
   const [editingPlat, setEditingPlat] = useState(null);
   const [editType, setEditType] = useState('');
 
-  // State untuk Confirm Modal
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, plat: null });
 
   useEffect(() => {
@@ -61,16 +60,14 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
     }
   };
 
-  // Buka modal pengesahan
   const handleDeleteClick = (plat) => {
     if (isReadOnly) return;
     setDeleteConfig({ isOpen: true, plat });
   };
 
-  // Laksanakan pemadaman selepas disahkan
   const confirmDelete = async () => {
     const targetPlat = deleteConfig.plat;
-    setDeleteConfig({ isOpen: false, plat: null }); // Tutup modal terus
+    setDeleteConfig({ isOpen: false, plat: null });
 
     if (!targetPlat) return;
 
@@ -84,8 +81,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-8 relative">
-      {/* Panggil ConfirmModal */}
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-8 relative flex flex-col h-full min-h-0">
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, plat: null })}
@@ -110,7 +106,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
         )}
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto pr-1">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
         {isLoading ? (
           <div className="py-8 flex justify-center">
             <span className="animate-spin h-6 w-6 border-4 border-slate-300 border-t-sky-600 rounded-full"></span>
@@ -173,7 +169,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
                         >
                           Edit
                         </button>
-                        {/* Ubah onClick di sini */}
                         <button
                           onClick={() => handleDeleteClick(item.plat)}
                           className="text-xs text-red-500 hover:text-red-700 font-bold px-2 py-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
