@@ -71,3 +71,20 @@ model VehicleMapping {
 
   @@map("vehicle_mappings")
 }
+
+// Tambahkan di bagian paling bawah file prisma/schema.prisma
+
+model TruckUsage {
+  id          Int      @id @default(autoincrement())
+  hubId       String
+  date        String   // Format: YYYY-MM-DD
+  storageType String   // Dry atau Frozen
+  vehicleType String   // L300, CDE, dll
+  count       Int      
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([hubId, date, storageType, vehicleType])
+  @@map("truck_usages")
+}

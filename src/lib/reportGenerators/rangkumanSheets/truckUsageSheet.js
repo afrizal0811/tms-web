@@ -41,26 +41,29 @@ function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
   return specificType;
 }
 
-function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
+// FUNGSI INI DI-EXPORT AGAR BISA DIGUNAKAN OLEH TRUCK USAGE TAB UNTUK LOCAL REFRESH
+export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
 
   const workingDays = dateKeys.filter((d) => {
     if (d.isSunday) return false;
-    const hasData = (dateMap[d.str]?.OTV || 0) > 0;
-    return hasData;
+    return (dateMap[d.str]?.OTV || 0) > 0 || (dateMap[d.str]?.OTVManual || 0) > 0;
   }).length;
 
   const categories = ['Dry', 'Frozen'];
 
   categories.forEach((cat) => {
     let grpTMS = 0;
-    let grpNonTMS = 0;
+    let grpManual = 0;
+
     vehicleTypes.forEach((type) => {
       let totalTMS = 0;
+      let totalManual = 0;
       dateKeys.forEach((d) => {
         totalTMS += dateMap[d.str][cat][type] || 0;
+        totalManual += dateMap[d.str][`${cat}Manual`][type]?.count || 0;
       });
-      const TVU = totalTMS;
+      const TVU = totalTMS + totalManual;
       const V_Type = hubMasterData?.[cat]?.[type] || 0;
       const TV = V_Type * workingDays;
       const PctTVU = TV > 0 ? TVU / TV : 0;
@@ -69,61 +72,83 @@ function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
       const PctIV = V_Type > 0 ? IV / V_Type : 0;
       summary[cat].types[type] = {
         TMS: totalTMS,
-        NonTMS: 0,
+        Manual: totalManual,
         TVU,
         TV,
         PctTVU,
         PctTMS: TV > 0 ? totalTMS / TV : 0,
-        PctNonTMS: 0,
+        PctManual: TV > 0 ? totalManual / TV : 0,
         PctIV,
         V: V_Type,
         VU,
         IV,
       };
       grpTMS += totalTMS;
+      grpManual += totalManual;
     });
+
+    // MENGHITUNG PENGURANGAN INTERBRANCH UNTUK TOTAL USED
+    let interbranchTMS = 0;
+    let interbranchManual = 0;
+    dateKeys.forEach((d) => {
+      interbranchTMS += dateMap[d.str][cat]['Interbranch'] || 0;
+      interbranchManual += dateMap[d.str][`${cat}Manual`]['Interbranch']?.count || 0;
+    });
+
+    const netTMS = grpTMS - interbranchTMS;
+    const netManual = grpManual - interbranchManual;
+
     const V_Total = hubMasterData?.[cat]?.Total || 0;
     const TV_Total = V_Total * workingDays;
-    const TVU_Total = grpTMS;
+    const TVU_Total = netTMS + netManual;
+
     const PctTVU_Total = TV_Total > 0 ? TVU_Total / TV_Total : 0;
-    const PctTMS_Total = TV_Total > 0 ? grpTMS / TV_Total : 0;
-    const PctNonTMS_Total = 0;
+    const PctTMS_Total = TV_Total > 0 ? netTMS / TV_Total : 0;
+    const PctManual_Total = TV_Total > 0 ? netManual / TV_Total : 0;
     const VU_Total = Math.ceil(PctTVU_Total * V_Total);
     const IV_Total = Math.max(0, V_Total - VU_Total);
     const PctIV_Total = V_Total > 0 ? IV_Total / V_Total : 0;
+
     summary[cat].total = {
-      TMS: grpTMS,
-      NonTMS: 0,
+      TMS: netTMS,
+      Manual: netManual,
       TVU: TVU_Total,
       TV: TV_Total,
       PctTVU: PctTVU_Total,
       PctTMS: PctTMS_Total,
-      PctNonTMS: PctNonTMS_Total,
+      PctManual: PctManual_Total,
       PctIV: PctIV_Total,
       V: V_Total,
       VU: VU_Total,
       IV: IV_Total,
     };
   });
+
   let otvTMS = 0;
-  dateKeys.forEach((d) => (otvTMS += dateMap[d.str].OTV || 0));
+  let otvManual = 0;
+  dateKeys.forEach((d) => {
+    otvTMS += dateMap[d.str].OTV || 0;
+    otvManual += dateMap[d.str].OTVManual || 0;
+  });
+
   const V_OTV = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
   const TV_OTV = V_OTV * workingDays;
-  const TVU_OTV = otvTMS;
+  const TVU_OTV = otvTMS + otvManual;
   const PctTVU_OTV = TV_OTV > 0 ? TVU_OTV / TV_OTV : 0;
   const PctTMS_OTV = TV_OTV > 0 ? otvTMS / TV_OTV : 0;
-  const PctNonTMS_OTV = 0;
+  const PctManual_OTV = TV_OTV > 0 ? otvManual / TV_OTV : 0;
   const VU_OTV = Math.ceil(PctTVU_OTV * V_OTV);
   const IV_OTV = Math.max(0, V_OTV - VU_OTV);
   const PctIV_OTV = V_OTV > 0 ? IV_OTV / V_OTV : 0;
+
   summary.OTV = {
     TMS: otvTMS,
-    NonTMS: 0,
+    Manual: otvManual,
     TVU: TVU_OTV,
     TV: TV_OTV,
     PctTVU: PctTVU_OTV,
     PctTMS: PctTMS_OTV,
-    PctNonTMS: PctNonTMS_OTV,
+    PctManual: PctManual_OTV,
     PctIV: PctIV_OTV,
     V: V_OTV,
     VU: VU_OTV,
@@ -132,12 +157,25 @@ function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
   return summary;
 }
 
+async function getTruckUsageData(hubId, startDate, endDate) {
+  try {
+    const res = await fetch(
+      `/api/truck-usage?hubId=${hubId}&startDate=${startDate}&endDate=${endDate}`
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.error('Gagal mengambil data Truck Usage', e);
+    return [];
+  }
+}
+
 export async function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
-  // 1. Panggil semua data master dari DB secara paralel
-  const [vehicleTypesObj, mappingsDB, driversDB] = await Promise.all([
+  const [vehicleTypesObj, mappingsDB, driversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
     getDrivers(hubId),
+    getTruckUsageData(hubId, startDateStr, endDateStr),
   ]);
 
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
@@ -146,7 +184,6 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     return acc;
   }, {});
 
-  // 2. KUNCI PERUBAHAN: Hitung masterTruck secara dinamis, tanpa Local Storage!
   const hubMasterData = await calculateMasterTruckStorage(driversDB, mappingsObj, vehicleTypes);
 
   const dateMap = {};
@@ -159,12 +196,48 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     const dayNum = currentIterDate.getDate();
     const isSunday = currentIterDate.getDay() === 0;
     dateKeys.push({ str: dateStr, day: dayNum, isSunday });
-    dateMap[dateStr] = { Dry: {}, Frozen: {}, DryTotal: 0, FrozenTotal: 0, OTV: 0 };
+    // INISIALISASI STRUKTUR INTERBRANCH
+    dateMap[dateStr] = {
+      Dry: { Interbranch: 0 },
+      Frozen: { Interbranch: 0 },
+      DryTotal: 0,
+      FrozenTotal: 0,
+      OTV: 0,
+      DryManual: { Interbranch: {} },
+      FrozenManual: { Interbranch: {} },
+      DryTotalManual: 0,
+      FrozenTotalManual: 0,
+      OTVManual: 0,
+    };
     vehicleTypes.forEach((type) => {
       dateMap[dateStr].Dry[type] = 0;
       dateMap[dateStr].Frozen[type] = 0;
     });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
+  }
+
+  if (Array.isArray(manualUsageDB)) {
+    manualUsageDB.forEach((item) => {
+      const dStr = item.date;
+      if (dateMap[dStr]) {
+        const st = item.storageType;
+        const vt = item.vehicleType;
+        dateMap[dStr][`${st}Manual`][vt] = {
+          count: item.count,
+          desc: item.description,
+          id: item.id,
+        };
+
+        // PENGURANGAN INTERBRANCH DARI TOTAL HARIAN
+        if (vt === 'Interbranch') {
+          dateMap[dStr][`${st}TotalManual`] -= item.count;
+          dateMap[dStr].OTVManual -= item.count;
+        } else {
+          dateMap[dStr][`${st}TotalManual`] += item.count;
+          dateMap[dStr].OTVManual += item.count;
+        }
+      }
+    });
   }
 
   if (resultsData && Array.isArray(resultsData)) {
@@ -254,12 +327,12 @@ export async function generateTruckUsageSheet(
     vehicleTypes.forEach((type) => {
       const d = summaryData[cat].types[type];
       if (isPercentage) {
-        excelData.push([type, d.PctTMS, d.PctNonTMS, d.PctTVU]);
+        excelData.push([type, d.PctTMS, d.PctManual, d.PctTVU]);
       } else {
         excelData.push([
           type,
           d.TMS || 0,
-          d.NonTMS || 0,
+          d.Manual || 0,
           d.TVU || 0,
           d.TV || 0,
           d.PctTVU,
@@ -274,14 +347,14 @@ export async function generateTruckUsageSheet(
       excelData.push([
         translate('summary.tabs.truck_usage.total_used'),
         t.PctTMS,
-        t.PctNonTMS,
+        t.PctManual,
         t.PctTVU,
       ]);
     } else {
       excelData.push([
         translate('summary.tabs.truck_usage.total_used'),
         t.TMS,
-        t.NonTMS,
+        t.Manual,
         t.TVU,
         t.TV,
         t.PctTVU,
@@ -296,7 +369,7 @@ export async function generateTruckUsageSheet(
   addSummarySection('Frozen', false);
 
   const otv = summaryData.OTV;
-  excelData.push(['OTV', otv.TMS, otv.NonTMS, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
+  excelData.push(['OTV', otv.TMS, otv.Manual, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
 
   const summaryCountEndRow = excelData.length;
   excelData.push([]);
@@ -313,7 +386,7 @@ export async function generateTruckUsageSheet(
 
   addSummarySection('Dry', true);
   addSummarySection('Frozen', true);
-  excelData.push(['OTV', otv.PctTMS, otv.PctNonTMS, otv.PctTVU]);
+  excelData.push(['OTV', otv.PctTMS, otv.PctManual, otv.PctTVU]);
 
   const summaryPctEndRow = excelData.length;
   excelData.push([]);
@@ -344,31 +417,39 @@ export async function generateTruckUsageSheet(
         totalVal = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
       rowMasterTotals[relativeRowIdx] = totalVal || 0;
       row.push(totalVal || null);
+
       dateKeys.forEach((d) => {
         let valRaw = 0;
-        if (category === 'Dry' || category === 'Frozen') valRaw = dateMap[d.str][category][label2];
-        else if (category === 'DryTotal') valRaw = dateMap[d.str].DryTotal;
-        else if (category === 'FrozenTotal') valRaw = dateMap[d.str].FrozenTotal;
-        else if (category === 'OTV') valRaw = dateMap[d.str].OTV;
-        valRaw = valRaw || 0;
-        const nonTmsRaw = 0;
+        let manualRaw = 0;
+
+        if (category === 'Dry' || category === 'Frozen') {
+          valRaw = dateMap[d.str][category][label2] || 0;
+          manualRaw = dateMap[d.str][`${category}Manual`][label2]?.count || 0;
+        } else if (category === 'DryTotal' || category === 'FrozenTotal') {
+          valRaw = dateMap[d.str][category] || 0;
+          manualRaw = dateMap[d.str][`${category}Manual`] || 0;
+        } else if (category === 'OTV') {
+          valRaw = dateMap[d.str].OTV || 0;
+          manualRaw = dateMap[d.str].OTVManual || 0;
+        }
+
         const tmsDisp = valRaw > 0 ? valRaw : null;
-        const nonTmsDisp = null;
+        const manualDisp = manualRaw > 0 ? manualRaw : null;
         let tvuDisp = null;
-        const sumVal = valRaw + nonTmsRaw;
+        const sumVal = valRaw + manualRaw;
         if (sumVal > 0) tvuDisp = sumVal;
 
         if (isPercentage) {
           if (totalVal > 0) {
             const tmsPct = tmsDisp !== null ? tmsDisp / totalVal : null;
-            const nonTmsPct = null;
+            const manualPct = manualDisp !== null ? manualDisp / totalVal : null;
             const tvuPct = tvuDisp !== null ? tvuDisp / totalVal : null;
-            row.push(tmsPct, nonTmsPct, tvuPct);
+            row.push(tmsPct, manualPct, tvuPct);
           } else {
             row.push(null, null, null);
           }
         } else {
-          row.push(tmsDisp, nonTmsDisp, tvuDisp);
+          row.push(tmsDisp, manualDisp, tvuDisp);
         }
       });
       return row;
@@ -377,7 +458,9 @@ export async function generateTruckUsageSheet(
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
     );
-    tableRows.push(createRow(translate('summary.tabs.truck_usage.interbranch'), '', 'Dry', rIdx++));
+    tableRows.push(
+      createRow(translate('summary.tabs.truck_usage.interbranch'), 'Interbranch', 'Dry', rIdx++)
+    );
     tableRows.push(
       createRow(translate('summary.tabs.truck_usage.total_used'), '', 'DryTotal', rIdx++)
     );
@@ -385,7 +468,7 @@ export async function generateTruckUsageSheet(
       tableRows.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', rIdx++))
     );
     tableRows.push(
-      createRow(translate('summary.tabs.truck_usage.interbranch'), '', 'Frozen', rIdx++)
+      createRow(translate('summary.tabs.truck_usage.interbranch'), 'Interbranch', 'Frozen', rIdx++)
     );
     tableRows.push(
       createRow(translate('summary.tabs.truck_usage.total_used'), '', 'FrozenTotal', rIdx++)
@@ -614,8 +697,17 @@ export async function generateTruckUsageSheet(
             const val = cell.v;
 
             if (isTable1) {
-              if (isTMSCol && isDetailRow && val > masterTotal) finalFill = FILL_STYLES.alertRed;
-              else if (isSundayCol) finalFill = FILL_STYLES.red;
+              if (isDetailRow && masterTotal > 0) {
+                const baseIdx = C - ((C - 3) % 3);
+                const tmsVal = ws[XLSX.utils.encode_cell({ r: R, c: baseIdx })]?.v || 0;
+                const manualVal = ws[XLSX.utils.encode_cell({ r: R, c: baseIdx + 1 })]?.v || 0;
+
+                if (isTMSCol && val > masterTotal) finalFill = FILL_STYLES.alertRed;
+                else if (!isTMSCol && !isTVUCol && tmsVal + manualVal > masterTotal)
+                  finalFill = FILL_STYLES.alertRed;
+                else if (isTVUCol && val > masterTotal) finalFill = FILL_STYLES.alertRed;
+              }
+              if (isSundayCol && finalFill !== FILL_STYLES.alertRed) finalFill = FILL_STYLES.red;
             } else {
               if (isSundayCol) finalFill = FILL_STYLES.red;
               else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
@@ -628,7 +720,12 @@ export async function generateTruckUsageSheet(
               }
             }
             if (finalFill) cell.s.fill = finalFill;
-            if (isTable2 && finalFill === FILL_STYLES.alertRed) cell.s.font = FONT_STYLES.whiteBold;
+            if (
+              (isTable2 || finalFill === FILL_STYLES.alertRed) &&
+              finalFill === FILL_STYLES.alertRed
+            ) {
+              cell.s.font = FONT_STYLES.whiteBold;
+            }
           }
           if ([dryInter, dryTot, frzInter, frzTot, otvRow].includes(relR)) {
             cell.s.font = FONT_STYLES.bold;

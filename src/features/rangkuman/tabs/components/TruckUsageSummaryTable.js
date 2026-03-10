@@ -1,4 +1,3 @@
-// File: features/rangkuman/tabs/components/TruckUsageSummaryTable.js
 import Tooltip from '@/components/Tooltip';
 import { isEmpty } from '@/lib/utils';
 
@@ -32,7 +31,6 @@ export default function TruckUsageSummaryTable({
       </Tooltip>
     );
   };
-  // Color helper for percentage
   const getPctClass = (val) => {
     if (val > 1) return 'bg-[#ff0000] text-white font-bold';
     if (val >= 0.75) return 'bg-[#b7e1cd]';
@@ -51,8 +49,8 @@ export default function TruckUsageSummaryTable({
             <td className={`${tdClass} ${getPctClass(d.PctTMS)}`}>
               {d.PctTMS ? (d.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
             </td>
-            <td className={`${tdClass} ${getPctClass(d.PctNonTMS)}`}>
-              {d.PctNonTMS ? (d.PctNonTMS * 100).toFixed(2) + '%' : '0.00%'}
+            <td className={`${tdClass} ${getPctClass(d.PctManual)}`}>
+              {d.PctManual ? (d.PctManual * 100).toFixed(2) + '%' : '0.00%'}
             </td>
             <td className={`${tdClass} ${getPctClass(d.PctTVU)}`}>
               {d.PctTVU ? (d.PctTVU * 100).toFixed(2) + '%' : '0.00%'}
@@ -61,12 +59,11 @@ export default function TruckUsageSummaryTable({
         );
       }
 
-      // Count Table
       return (
         <tr key={`${cat}-${type}`} className="hover:opacity-90">
           <td className={`${tdClass} text-left font-medium ${bgColor}`}>{type}</td>
           <td className={`${tdClass} ${bgColor}`}>{d.TMS || 0}</td>
-          <td className={`${tdClass} ${bgColor}`}>{d.NonTMS || 0}</td>
+          <td className={`${tdClass} ${bgColor}`}>{d.Manual || 0}</td>
           <td className={`${tdClass} ${bgColor}`}>{d.TVU || 0}</td>
           <td className={`${tdClass} ${bgColor}`}>{d.TV || 0}</td>
           <td className={`${tdClass} ${bgColor}`}>
@@ -90,8 +87,8 @@ export default function TruckUsageSummaryTable({
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
-          <td className={`${tdClass} ${getPctClass(t.PctNonTMS)}`}>
-            {t.PctNonTMS ? (t.PctNonTMS * 100).toFixed(2) + '%' : '0.00%'}
+          <td className={`${tdClass} ${getPctClass(t.PctManual)}`}>
+            {t.PctManual ? (t.PctManual * 100).toFixed(2) + '%' : '0.00%'}
           </td>
           <td className={`${tdClass} ${getPctClass(t.PctTVU)}`}>
             {t.PctTVU ? (t.PctTVU * 100).toFixed(2) + '%' : '0.00%'}
@@ -100,7 +97,6 @@ export default function TruckUsageSummaryTable({
       ];
     }
 
-    // Count Table Total
     return [
       ...rows,
       <tr key={`${cat}-Total`} className="font-bold">
@@ -108,7 +104,7 @@ export default function TruckUsageSummaryTable({
           {translate('summary.tabs.truck_usage.total_used')}
         </td>
         <td className={`${tdClass} ${totalBg}`}>{t.TMS || 0}</td>
-        <td className={`${tdClass} ${totalBg}`}>{t.NonTMS || 0}</td>
+        <td className={`${tdClass} ${totalBg}`}>{t.Manual || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.TVU || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>{t.TV || 0}</td>
         <td className={`${tdClass} ${totalBg}`}>
@@ -135,8 +131,8 @@ export default function TruckUsageSummaryTable({
           <td className={`${tdClass} ${getPctClass(t.PctTMS)}`}>
             {t.PctTMS ? (t.PctTMS * 100).toFixed(2) + '%' : '0.00%'}
           </td>
-          <td className={`${tdClass} ${getPctClass(t.PctNonTMS)}`}>
-            {t.PctNonTMS ? (t.PctNonTMS * 100).toFixed(2) + '%' : '0.00%'}
+          <td className={`${tdClass} ${getPctClass(t.PctManual)}`}>
+            {t.PctManual ? (t.PctManual * 100).toFixed(2) + '%' : '0.00%'}
           </td>
           <td className={`${tdClass} ${getPctClass(t.PctTVU)}`}>
             {t.PctTVU ? (t.PctTVU * 100).toFixed(2) + '%' : '0.00%'}
@@ -154,7 +150,7 @@ export default function TruckUsageSummaryTable({
           `${tdClass} text-left ${otvBg}`
         )}
         <td className={`${tdClass} ${otvBg}`}>{t.TMS || 0}</td>
-        <td className={`${tdClass} ${otvBg}`}>{t.NonTMS || 0}</td>
+        <td className={`${tdClass} ${otvBg}`}>{t.Manual || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.TVU || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>{t.TV || 0}</td>
         <td className={`${tdClass} ${otvBg}`}>
@@ -179,7 +175,6 @@ export default function TruckUsageSummaryTable({
             {headerTooltip(translate('summary.tabs.truck_usage.non_tms'), 'Non TMS')}
             {headerTooltip(translate('summary.tabs.truck_usage.tvu'), 'TVU')}
 
-            {/* HIDE COLUMNS FOR PERCENTAGE TABLE */}
             {!isPercentage && (
               <>
                 {headerTooltip(translate('summary.tabs.truck_usage.tv'), 'TV')}
