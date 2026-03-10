@@ -103,6 +103,39 @@ export default function SettingsPage() {
 
   if (!isAuthorized) return null;
 
+  const buttonData = [
+    {
+      tab: 'sync',
+      label: 'Synchronisasi Data',
+    },
+    {
+      tab: 'master',
+      label: 'Master Data',
+    },
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'sync':
+        return (
+          <SyncDataTab
+            hubsList={hubsList}
+            lastUpdated={lastUpdated}
+            driverSyncStatus={driverSyncStatus}
+          />
+        );
+      case 'master':
+        return (
+          <MasterDataTab
+            vehicleTypes={vehicleTypes}
+            onRefresh={fetchAllData}
+            isReadOnly={isReadOnly}
+          />
+        );
+      default:
+        return null;
+    }
+  };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
       {/* HEADER DIKEMBALIKAN KE VERSI STANDAR */}
@@ -114,45 +147,22 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex border-b border-gray-200 mb-6 mt-4">
-        <button
-          onClick={() => setActiveTab('sync')}
-          className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 cursor-pointer ${
-            activeTab === 'sync'
-              ? 'border-sky-600 text-sky-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-          }`}
-        >
-          Sinkronisasi Data
-        </button>
-        <button
-          onClick={() => setActiveTab('master')}
-          className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 cursor-pointer ${
-            activeTab === 'master'
-              ? 'border-sky-600 text-sky-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-          }`}
-        >
-          Master Data
-        </button>
+        {buttonData.map((data) => (
+          <button
+            key={data.tab}
+            onClick={() => setActiveTab(data.tab)}
+            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 cursor-pointer ${
+              activeTab === data.tab
+                ? 'border-sky-600 text-sky-600'
+                : 'border-transparent text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            {data.label}
+          </button>
+        ))}
       </div>
 
-      {activeTab === 'sync' && (
-        <SyncDataTab
-          hubsList={hubsList}
-          lastUpdated={lastUpdated}
-          driverSyncStatus={driverSyncStatus}
-          onRefresh={fetchAllData}
-          isReadOnly={isReadOnly}
-        />
-      )}
-
-      {activeTab === 'master' && (
-        <MasterDataTab
-          vehicleTypes={vehicleTypes}
-          onRefresh={fetchAllData}
-          isReadOnly={isReadOnly}
-        />
-      )}
+      {renderTabContent()}
     </div>
   );
 }

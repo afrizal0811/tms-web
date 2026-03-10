@@ -17,11 +17,20 @@ export default function SyncDataTab({
   const [activeHubName, setActiveHubName] = useState('');
 
   useEffect(() => {
-    const { storedSession } = getLocalStorage();
-    if (storedSession && storedSession.activeHubId) {
-      setActiveHubId(storedSession.activeHubId);
-      setActiveHubName(storedSession.activeHubName || 'Cabang Aktif');
+    const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
+    let hubId = storedLocation;
+    let hubName = storedLocationName;
+
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.activeHubId) hubId = parsed.activeHubId;
+        if (parsed.activeHubName) hubName = parsed.activeHubName;
+      } catch (e) {}
     }
+
+    setActiveHubId(hubId || '');
+    setActiveHubName(hubName || 'Cabang Aktif');
   }, []);
 
   const executeSync = async (type) => {

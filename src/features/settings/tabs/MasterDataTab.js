@@ -71,9 +71,7 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
       />
 
       <div className="lg:col-span-2 flex flex-col h-full min-h-0">
-        <div className="-mt-8 flex-1 flex flex-col min-h-0 h-full *:h-full">
-          <VehicleMappingManager vehicleTypes={vehicleTypes} isReadOnly={isReadOnly} />
-        </div>
+        <VehicleMappingManager vehicleTypes={vehicleTypes} isReadOnly={isReadOnly} />
       </div>
 
       <div className="flex flex-col h-full min-h-0">
@@ -111,7 +109,7 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
               vehicleTypes.map((type) => (
                 <div
                   key={type.id}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-slate-50 hover:bg-white transition-colors group gap-2"
+                  className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-slate-50 hover:bg-white transition-colors group gap-2 overflow-hidden"
                 >
                   {editTypeId === type.id ? (
                     <input
