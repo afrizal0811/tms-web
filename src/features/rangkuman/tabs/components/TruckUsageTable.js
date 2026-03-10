@@ -219,12 +219,12 @@ export default function TruckUsageTable({
 
                   {tooltipText ? (
                     <Tooltip tooltipContent={tooltipText}>
-                      <div className="relative z-20 w-full min-h-[20px] flex items-center justify-center">
+                      <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
                         {formatValue(manualDisp, masterTotal)}
                       </div>
                     </Tooltip>
                   ) : (
-                    <div className="relative z-20 w-full min-h-[20px] flex items-center justify-center">
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
                       {formatValue(manualDisp, masterTotal)}
                     </div>
                   )}
@@ -327,12 +327,12 @@ export default function TruckUsageTable({
 
                   {tooltipText ? (
                     <Tooltip tooltipContent={tooltipText}>
-                      <div className="relative z-20 w-full min-h-[20px] flex items-center justify-center">
+                      <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
                         {formatValue(manualDisp, masterTotal)}
                       </div>
                     </Tooltip>
                   ) : (
-                    <div className="relative z-20 w-full min-h-[20px] flex items-center justify-center">
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
                       {formatValue(manualDisp, masterTotal)}
                     </div>
                   )}
