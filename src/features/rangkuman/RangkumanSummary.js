@@ -281,10 +281,8 @@ export default function RangkumanSummary() {
         longLoadingContent={
           pendingEndpoints.length > 0 && (
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
-              <p>
-                {t('summary.long_message')}
-                {pendingEndpoints.join(', ')}.
-              </p>
+              <p>{t('summary.long_message')}</p>
+              <p>{pendingEndpoints.join(', ')}</p>
             </div>
           )
         }
@@ -292,9 +290,8 @@ export default function RangkumanSummary() {
         {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
           <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse">
-              <p>
-                {t('summary.long_message')} {pendingEndpoints.join(', ')}.
-              </p>
+              <p>{t('summary.long_message')}</p>
+              <p>{pendingEndpoints.join(', ')}</p>
             </div>
           </div>
         )}
