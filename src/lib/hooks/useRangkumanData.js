@@ -12,6 +12,7 @@ import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverD
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError } from '@/lib/toastHelper';
+import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import { formatDateUniversal, formatToApiUtc, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -223,8 +224,10 @@ export default function useRangkumanData() {
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
           if (!task.doneTime) return;
-          const dateKey = getRoutingDateKeyFromDateStr(task.doneTime.substring(0, 10));
-          if (!dateKey) return;
+          const dObj = new Date(task.doneTime);
+          const wibDate = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
+          const dateKey = `${wibDate.getUTCFullYear()}-${String(wibDate.getUTCMonth() + 1).padStart(2, '0')}-${String(wibDate.getUTCDate()).padStart(2, '0')}`;
+
           initDate(dateKey);
 
           const typeRaw = (task.typeStorage || '').toUpperCase();
@@ -259,41 +262,15 @@ export default function useRangkumanData() {
       const doneResults = (allResults || []).filter(
         (item) => item.dispatchStatus?.toLowerCase() === 'done'
       );
+      const unifiedMap = getUnifiedVehicleMap(doneResults, fetchedDrivers);
+
       const resultIdsToFetch = [];
       const resultMap = new Map();
 
       doneResults.forEach((res) => {
-        let deliveryDateWib = null;
-        let attempts = 0;
-        const routingArray = res.result?.routing || [];
-
-        for (const vehicle of routingArray) {
-          if (attempts >= 5 || deliveryDateWib) break;
-          const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
-          for (const trip of trips) {
-            if (attempts >= 5 || deliveryDateWib) break;
-            const foundTask = getTaskDetails(trip);
-            if (foundTask && foundTask.startTime) {
-              const stObj = new Date(foundTask.startTime);
-              const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
-              deliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
-            }
-            if (trip.visitId && trip.visitId.includes('-')) attempts++;
-          }
-        }
-
-        let dateKey;
-        if (deliveryDateWib) {
-          dateKey = getRoutingDateKeyFromDateStr(deliveryDateWib);
-        } else {
-          const dObj = new Date(res.createdTime);
-          const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-          dateKey = res.createdTime
-            ? `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`
-            : null;
-        }
-
+        const dateKey = getDeliveryDateFromRouting(res.createdTime);
         if (!dateKey || !res._id) return;
+
         initDate(dateKey);
         resultIdsToFetch.push(res._id);
         resultMap.set(res._id, res);
@@ -313,54 +290,8 @@ export default function useRangkumanData() {
             tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
           }
         });
-
         tempMetrics[dateKey].dry.dt_sum += routingDroppedDry;
         tempMetrics[dateKey].frozen.dt_sum += routingDroppedFrozen;
-
-        routingArray.forEach((vehicle) => {
-          const assigneeEmail = (vehicle.assignee || '').toLowerCase();
-          const dpDriverStorage = driverMapStorage[assigneeEmail] || 'DRY';
-          const visitsCount =
-            vehicle.summary?.totalVisits ?? (vehicle.trips?.filter((t) => !t.isHub).length || 0);
-
-          if (dpDriverStorage.includes('FROZEN')) tempMetrics[dateKey].frozen.dp += visitsCount;
-          else tempMetrics[dateKey].dry.dp += visitsCount;
-
-          const rawPlate =
-            vehicle.name ||
-            vehicle.vehicleName ||
-            vehicle.licensePlate ||
-            vehicle.plateNumber ||
-            vehicle.assignee ||
-            '';
-          const vToClean = cleanPlat(rawPlate);
-
-          let matchedDriver = fetchedDrivers.find((d) => {
-            const p = cleanPlat(d.plat);
-            return p && (vToClean.includes(p) || p.includes(vToClean));
-          });
-
-          if (!matchedDriver && vehicle.assignee) {
-            matchedDriver = fetchedDrivers.find(
-              (d) => d.email && d.email.toLowerCase() === assigneeEmail
-            );
-          }
-
-          const storage = matchedDriver ? (matchedDriver.storage || '').toUpperCase() : 'DRY';
-          const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
-          const canonicalPlate = matchedDriver
-            ? cleanPlat(matchedDriver.plat)
-            : vToClean || `unknown-${Math.random()}`;
-
-          if (canonicalPlate) {
-            uniqueVehicles[dateKey][type].set(canonicalPlate, {
-              plate: matchedDriver ? matchedDriver.plat : rawPlate || '-',
-              driverName: matchedDriver
-                ? matchedDriver.name
-                : vehicle.assignee || 'Tidak Diketahui',
-            });
-          }
-        });
       });
 
       try {
@@ -373,8 +304,9 @@ export default function useRangkumanData() {
           (batchData || []).forEach((item) => {
             const originalRes = resultMap.get(item.resultId);
             if (!originalRes) return;
+            let dateKey = getDeliveryDateFromRouting(originalRes.createdTime);
+            if (!dateKey) return;
 
-            let dateKey;
             let histDeliveryDateWib = null;
             let histAttempts = 0;
             const originalRoutingArray = originalRes.result?.routing || [];
@@ -455,16 +387,28 @@ export default function useRangkumanData() {
       }
 
       Object.keys(tempMetrics).forEach((dateKey) => {
-        if (uniqueVehicles[dateKey]) {
-          tempMetrics[dateKey].dry.tv = uniqueVehicles[dateKey].dry.size;
-          tempMetrics[dateKey].dry.tv_details = Array.from(
-            uniqueVehicles[dateKey].dry.values()
-          ).sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+        const dailyVehicles = unifiedMap[dateKey];
+        if (dailyVehicles) {
+          tempMetrics[dateKey].dry.tv = 0;
+          tempMetrics[dateKey].frozen.tv = 0;
+          tempMetrics[dateKey].dry.dp = 0;
+          tempMetrics[dateKey].frozen.dp = 0;
+          dailyVehicles.forEach((vh) => {
+            const type = vh.storageType.toLowerCase();
+            tempMetrics[dateKey][type].tv += 1;
+            tempMetrics[dateKey][type].dp += vh.visits;
+            tempMetrics[dateKey][type].tv_details.push({
+              plate: vh.plate,
+              driverName: vh.driverName,
+            });
+          });
 
-          tempMetrics[dateKey].frozen.tv = uniqueVehicles[dateKey].frozen.size;
-          tempMetrics[dateKey].frozen.tv_details = Array.from(
-            uniqueVehicles[dateKey].frozen.values()
-          ).sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+          tempMetrics[dateKey].dry.tv_details.sort((a, b) =>
+            (a.driverName || '').localeCompare(b.driverName || '')
+          );
+          tempMetrics[dateKey].frozen.tv_details.sort((a, b) =>
+            (a.driverName || '').localeCompare(b.driverName || '')
+          );
         }
 
         const m = tempMetrics[dateKey];
@@ -595,56 +539,59 @@ export default function useRangkumanData() {
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
       const pTasks = fetchWithTracker(async () => {
-        const results = await Promise.all(
-          taskRanges.map((range) =>
-            fetchWithRetry(() =>
-              getTasks({
-                hubId: selectedLocation,
-                status: 'ONGOING,DONE',
-                timeBy: 'startTime',
-                limit: 10000,
-                timeFrom: range.from,
-                timeTo: range.to,
-              })
-            )
-          )
-        );
+        const results = [];
+        for (const range of taskRanges) {
+          const res = await fetchWithRetry(() =>
+            getTasks({
+              hubId: selectedLocation,
+              status: 'ONGOING,DONE',
+              timeBy: 'startTime',
+              limit: 10000,
+              timeFrom: range.from,
+              timeTo: range.to,
+            })
+          );
+          results.push(res);
+          await new Promise((r) => setTimeout(r, 300));
+        }
         return mergeResults(results);
       }, 'Tasks');
 
       const pRouting = fetchWithTracker(async () => {
-        const results = await Promise.all(
-          routingRanges.map((range) =>
-            fetchWithRetry(() =>
-              getResultsSummary({
-                hubId: selectedLocation,
-                limit: 10000,
-                dateFrom: range.from,
-                dateTo: range.to,
-              })
-            )
-          )
-        );
+        const results = [];
+        for (const range of routingRanges) {
+          const res = await fetchWithRetry(() =>
+            getResultsSummary({
+              hubId: selectedLocation,
+              limit: 10000,
+              dateFrom: range.from,
+              dateTo: range.to,
+            })
+          );
+          results.push(res);
+          await new Promise((r) => setTimeout(r, 300));
+        }
         return mergeResults(results).filter(
           (item) => item.dispatchStatus?.toLowerCase() === 'done'
         );
       }, 'Routing');
 
       const pHistory = fetchWithTracker(async () => {
-        const results = await Promise.all(
-          historyRanges.map((range) =>
-            fetchWithRetry(() =>
-              getLocationHistories({
-                limit: 10000,
-                startFinish: 'true',
-                fields: 'finish,startTime,email,trackedTime,totalDistance',
-                timeBy: 'createdTime',
-                timeFrom: range.from,
-                timeTo: range.to,
-              })
-            )
-          )
-        );
+        const results = [];
+        for (const range of historyRanges) {
+          const res = await fetchWithRetry(() =>
+            getLocationHistories({
+              limit: 10000,
+              startFinish: 'true',
+              fields: 'finish,startTime,email,trackedTime,totalDistance',
+              timeBy: 'createdTime',
+              timeFrom: range.from,
+              timeTo: range.to,
+            })
+          );
+          results.push(res);
+          await new Promise((r) => setTimeout(r, 300));
+        }
         return mergeResults(results);
       }, 'History');
 

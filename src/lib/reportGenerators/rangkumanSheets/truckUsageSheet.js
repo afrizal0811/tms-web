@@ -1,5 +1,6 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api';
 import { calculateMasterTruckStorage } from '@/lib/driverDataHelper';
+import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
@@ -243,42 +244,26 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
   }
 
   if (resultsData && Array.isArray(resultsData)) {
-    resultsData.forEach((dispatch) => {
-      const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
-      const hasResult = dispatch.result && Array.isArray(dispatch.result.routing);
-      if (isDone && hasResult) {
-        const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
-        if (dateKey && dateMap[dateKey]) {
-          const processedVehicles = new Set();
-          dispatch.result.routing.forEach((route) => {
-            const vehicleId = route.vehicleId || route.vehicleName;
-            if (processedVehicles.has(vehicleId)) return;
-            processedVehicles.add(vehicleId);
+    const unifiedMap = getUnifiedVehicleMap(resultsData, driversDB);
 
-            if (route.trips && route.trips.length > 0) {
-              const tags = route.vehicleTags || [];
-              const vehiclePlate = route.vehicleName || '-';
-              const isFrozen = tags.some(
-                (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
-              );
-              const storage = isFrozen ? 'Frozen' : 'Dry';
-              const firstTag = tags.length > 0 ? String(tags[0]) : '';
+    Object.keys(unifiedMap).forEach((dateKey) => {
+      if (dateMap[dateKey]) {
+        // Loop Map() kendaraan unik per hari
+        unifiedMap[dateKey].forEach((vh) => {
+          const type = getVehicleType(vh.firstTag, vh.plate, mappingsObj, vehicleTypes);
+          const storage = vh.storageType;
 
-              const type = getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes);
-
-              if (dateMap[dateKey][storage][type] !== undefined) {
-                dateMap[dateKey][storage][type]++;
-                dateMap[dateKey][`${storage}Total`]++;
-                dateMap[dateKey].OTV++;
-                dateMap[dateKey][storage][`${type}_details`].push({
-                  plate: vehiclePlate,
-                  driver: driverName,
-                  type: type,
-                });
-              }
-            }
-          });
-        }
+          if (dateMap[dateKey][storage][type] !== undefined) {
+            dateMap[dateKey][storage][type]++;
+            dateMap[dateKey][`${storage}Total`]++;
+            dateMap[dateKey].OTV++;
+            dateMap[dateKey][storage][`${type}_details`].push({
+              plate: vh.plate,
+              driver: vh.driverName,
+              type: type,
+            });
+          }
+        });
       }
     });
   }

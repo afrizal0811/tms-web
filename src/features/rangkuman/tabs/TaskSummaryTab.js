@@ -239,8 +239,7 @@ export default function TaskSummaryTab({
               const { key, display, isSunday, dateObj } = item;
               if (isSunday) return renderSundayRows(key, display);
 
-              const routingKey = getRoutingDateKey(dateObj);
-              const data = metrics ? metrics[routingKey] : null;
+              const data = metrics ? metrics[key] : null;
 
               const d = data?.dry || {};
               const f = data?.frozen || {};
