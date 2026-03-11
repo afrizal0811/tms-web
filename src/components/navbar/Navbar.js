@@ -44,6 +44,7 @@ function MobileNavLink({ href, children }) {
 
 export default function Navbar() {
   const { t, lang, switchLanguage } = useLanguage();
+  const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
 
@@ -76,7 +77,9 @@ export default function Navbar() {
       }
     };
 
+    // KUNCI PERBAIKAN: Memindahkan setMounted(true) ke dalam setTimeout agar bersifat asinkronus (menghindari error cascading renders)
     const timer = setTimeout(() => {
+      setMounted(true);
       checkUserAndRole();
     }, 0);
 
@@ -117,6 +120,25 @@ export default function Navbar() {
   const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
   const primaryDeliveries = isIndo ? 'Data' : t('navbar.vehicle');
   const secondaryDeliveries = isIndo ? t('navbar.vehicle') : 'Data';
+
+  if (!mounted) {
+    return (
+      <nav className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm">
+        <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
+          <div className="flex items-center space-x-4 sm:space-x-6 w-full lg:w-auto">
+            <Link href="/" className="flex flex-col leading-tight">
+              <span className="hidden lg:block text-slate-900 font-bold text-lg sm:text-xl">
+                TMS
+              </span>
+              <span className="block lg:hidden text-slate-900 font-bold text-lg sm:text-xl">
+                TMS Data Processing
+              </span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   const navLinkEstimate = (
     <NavLink href="/estimasi">
@@ -288,7 +310,7 @@ export default function Navbar() {
       </div>
 
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 overflow-y-auto transition-all duration-300 ease-in-out ${
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
           isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
@@ -309,8 +331,34 @@ export default function Navbar() {
               <div className="pt-2 pb-1 px-3">
                 <div className="border-t border-gray-200"></div>
               </div>
+            </>
+          ) : null}
 
-              {/* PENAMBAHAN MENU SETTING & BAHASA UNTUK MOBILE */}
+          <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
+
+          {isLoggedIn && (
+            <>
+              <a
+                href={plannerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+              >
+                {t('navbar.planner_guide')}
+              </a>
+              <a
+                href={driverUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
+              >
+                {t('navbar.driver_guide')}
+              </a>
+
+              <div className="pt-2 pb-1 px-3">
+                <div className="border-t border-gray-200"></div>
+              </div>
+
               <MobileNavLink href="/settings">
                 <div className="flex items-center gap-2">
                   <svg
@@ -366,33 +414,7 @@ export default function Navbar() {
               <div className="pt-2 pb-1 px-3">
                 <div className="border-t border-gray-200"></div>
               </div>
-            </>
-          ) : null}
 
-          <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
-
-          {isLoggedIn && (
-            <>
-              <a
-                href={plannerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-              >
-                {t('navbar.planner_guide')}
-              </a>
-              <a
-                href={driverUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-              >
-                {t('navbar.driver_guide')}
-              </a>
-
-              <div className="pt-2 pb-1 px-3">
-                <div className="border-t border-gray-200"></div>
-              </div>
               <div className="p-3">
                 <UserDisplay />
               </div>

@@ -65,11 +65,6 @@ export default function SyncDataTab({
               Penyelarasan data master dan operasional cabang dengan server pusat
             </p>
           </div>
-          {activeHubName && (
-            <div className="px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 rounded-md text-sm font-semibold whitespace-nowrap">
-              {activeHubName}
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

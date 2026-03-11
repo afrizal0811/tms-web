@@ -183,11 +183,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
             Kelola tipe kendaraan yang sudah disesuaikan secara manual
           </p>
         </div>
-        {activeHubName && (
-          <div className="px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 rounded-md text-sm font-semibold">
-            {activeHubName}
-          </div>
-        )}
       </div>
 
       <div className="min-h-0 overflow-y-auto pr-1 max-h-[60vh]">
