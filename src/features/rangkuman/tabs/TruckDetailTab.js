@@ -50,7 +50,6 @@ export default function TruckDetailTab({ data, translate, language }) {
         onClose={closeModal}
         translate={translate}
       />
-      <a href="a"></a>
       <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100">

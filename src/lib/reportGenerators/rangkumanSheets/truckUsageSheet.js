@@ -196,10 +196,10 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     const dayNum = currentIterDate.getDate();
     const isSunday = currentIterDate.getDay() === 0;
     dateKeys.push({ str: dateStr, day: dayNum, isSunday });
-    // INISIALISASI STRUKTUR INTERBRANCH
+
     dateMap[dateStr] = {
-      Dry: { Interbranch: 0 },
-      Frozen: { Interbranch: 0 },
+      Dry: { Interbranch: 0, Interbranch_details: [] },
+      Frozen: { Interbranch: 0, Interbranch_details: [] },
       DryTotal: 0,
       FrozenTotal: 0,
       OTV: 0,
@@ -209,9 +209,12 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
       FrozenTotalManual: 0,
       OTVManual: 0,
     };
+
     vehicleTypes.forEach((type) => {
       dateMap[dateStr].Dry[type] = 0;
+      dateMap[dateStr].Dry[`${type}_details`] = []; // ARRAY PENYIMPAN DETAIL TMS
       dateMap[dateStr].Frozen[type] = 0;
+      dateMap[dateStr].Frozen[`${type}_details`] = []; // ARRAY PENYIMPAN DETAIL TMS
     });
     currentIterDate.setDate(currentIterDate.getDate() + 1);
   }
@@ -228,7 +231,6 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
           id: item.id,
         };
 
-        // PENGURANGAN INTERBRANCH DARI TOTAL HARIAN
         if (vt === 'Interbranch') {
           dateMap[dStr][`${st}TotalManual`] -= item.count;
           dateMap[dStr].OTVManual -= item.count;
@@ -252,9 +254,10 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
             const vehicleId = route.vehicleId || route.vehicleName;
             if (processedVehicles.has(vehicleId)) return;
             processedVehicles.add(vehicleId);
+
             if (route.trips && route.trips.length > 0) {
               const tags = route.vehicleTags || [];
-              const vehiclePlate = route.vehicleName;
+              const vehiclePlate = route.vehicleName || '-';
               const isFrozen = tags.some(
                 (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
               );
@@ -267,6 +270,11 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
                 dateMap[dateKey][storage][type]++;
                 dateMap[dateKey][`${storage}Total`]++;
                 dateMap[dateKey].OTV++;
+                dateMap[dateKey][storage][`${type}_details`].push({
+                  plate: vehiclePlate,
+                  driver: driverName,
+                  type: type,
+                });
               }
             }
           });

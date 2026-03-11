@@ -200,8 +200,9 @@ export default function RangkumanSummary() {
         return renderTab(TruckUsageTab, {
           data: reportPreview.truckUsageData,
           translate: t,
-          hubId: selectedLocation, // <--- KUNCI PERBAIKAN: Mengirim Hub ID ke Tab
-          onRefresh: fetchData, // <--- KUNCI PERBAIKAN: Mengirim fungsi refresh
+          hubId: selectedLocation,
+          onRefresh: fetchData,
+          driverData: driverData,
         });
       case 'Average KM':
         return renderTab(AverageKmTab, {
