@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { getDriversSyncStatus, getHubs, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
@@ -7,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import MasterDataTab from './tabs/MasterDataTab';
 import SyncDataTab from './tabs/SyncDataTab';
-
 export default function SettingsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
@@ -100,17 +101,17 @@ export default function SettingsPage() {
       </div>
     );
   }
-
+t
   if (!isAuthorized) return null;
 
   const buttonData = [
     {
       tab: 'sync',
-      label: 'Synchronisasi Data',
+      label: t('setting.tab.sync_data.title'),
     },
     {
       tab: 'master',
-      label: 'Master Data',
+      label: t('setting.tab.master_data.title'),
     },
   ];
 
@@ -119,9 +120,11 @@ export default function SettingsPage() {
       case 'sync':
         return (
           <SyncDataTab
-            hubsList={hubsList}
             lastUpdated={lastUpdated}
             driverSyncStatus={driverSyncStatus}
+            onRefresh={fetchAllData}
+            isReadOnly={isReadOnly}
+            translate={t}
           />
         );
       case 'master':
@@ -130,6 +133,7 @@ export default function SettingsPage() {
             vehicleTypes={vehicleTypes}
             onRefresh={fetchAllData}
             isReadOnly={isReadOnly}
+            translate={t}
           />
         );
       default:
@@ -140,10 +144,7 @@ export default function SettingsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
       {/* HEADER DIKEMBALIKAN KE VERSI STANDAR */}
       <div className="mb-2">
-        <h1 className="text-3xl font-bold text-slate-900">Pengaturan Sistem</h1>
-        <p className="text-slate-500 mt-1">
-          Kelola data master dan sinkronisasi database aplikasi secara terpusat.
-        </p>
+        <h1 className="text-3xl font-bold text-slate-900">{t('setting.title')}</h1>
       </div>
 
       <div className="flex border-b border-gray-200 mb-6 mt-4">

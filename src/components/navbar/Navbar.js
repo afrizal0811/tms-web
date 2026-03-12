@@ -380,7 +380,7 @@ export default function Navbar() {
                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  {t('navbar.settings') || 'Pengaturan'}
+                  {t('setting.title')}
                 </div>
               </MobileNavLink>
 
@@ -389,7 +389,7 @@ export default function Navbar() {
                   switchLanguage(lang === 'id' ? 'en' : 'id');
                   window.location.reload();
                 }}
-                className="block w-full text-left px-3 py-3 text-base font-medium text-slate-700 hover:bg-gray-100 transition-colors"
+                className="block w-full text-left px-3 py-3 text-base font-medium text-slate-700 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <svg

@@ -2,26 +2,50 @@
 
 import ConfirmModal from '@/components/ConfirmModal';
 import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api';
-import { toastError, toastInfo } from '@/lib/toastHelper';
-import { useState } from 'react';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { useEffect, useRef, useState } from 'react';
 import VehicleMappingManager from '../components/VehicleMappingManager';
 
-export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
+export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly, translate }) {
   const [newTypeName, setNewTypeName] = useState('');
   const [editTypeId, setEditTypeId] = useState(null);
   const [editTypeName, setEditTypeName] = useState('');
-
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
+
+  const editRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        event.target.closest('[role="dialog"]') ||
+        event.target.closest('.swal2-container') ||
+        event.target.closest('.toast')
+      ) {
+        return;
+      }
+      if (editRef.current && !editRef.current.contains(event.target)) {
+        setEditTypeId(null);
+        setEditTypeName('');
+      }
+    };
+
+    if (editTypeId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editTypeId]);
 
   const handleAddVehicleType = async () => {
     if (!newTypeName.trim() || isReadOnly) return;
     try {
       await createVehicleType(newTypeName);
       setNewTypeName('');
-      toastInfo('✅ Tipe kendaraan ditambahkan!');
+      toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (err) {
-      toastError(err.message);
+      toastError(translate('common.toast.error', { err: err.message }));
     }
   };
 
@@ -31,10 +55,10 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
       await updateVehicleType(id, editTypeName);
       setEditTypeId(null);
       setEditTypeName('');
-      toastInfo('✅ Tipe kendaraan diubah!');
+      toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (err) {
-      toastError(err.message);
+      toastError(translate('common.toast.error', { err: err.message }));
     }
   };
 
@@ -51,10 +75,10 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
 
     try {
       await deleteVehicleType(targetId);
-      toastInfo('🗑️ Tipe kendaraan dihapus!');
+      toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (err) {
-      toastError(err.message);
+      toastError(translate('common.toast.error', { err: err.message }));
     }
   };
 
@@ -64,20 +88,24 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteType}
-        title="Hapus Tipe Kendaraan"
-        message="Yakin menghapus tipe kendaraan ini? Data tidak dapat dikembalikan."
-        confirmText="Hapus"
-        cancelText="Batal"
+        title={translate('setting.tab.master_data.confirm_title')}
+        message={translate('setting.tab.master_data.confirm_message')}
+        confirmText={translate('setting.tab.master_data.btn_delete')}
+        cancelText={translate('setting.tab.master_data.btn_cancel')}
       />
 
       <div className="lg:col-span-2 flex flex-col h-full min-h-0">
-        <VehicleMappingManager vehicleTypes={vehicleTypes} isReadOnly={isReadOnly} />
+        <VehicleMappingManager
+          vehicleTypes={vehicleTypes}
+          isReadOnly={isReadOnly}
+          translate={translate}
+        />
       </div>
 
       <div className="flex flex-col h-full min-h-0">
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col flex-1 h-full min-h-0">
           <h2 className="text-lg font-bold text-slate-800 mb-4 border-b border-gray-100 pb-3">
-            Tipe Kendaraan
+            {translate('setting.tab.master_data.standart_title')}
           </h2>
 
           {!isReadOnly && (
@@ -86,16 +114,16 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
                 type="text"
                 value={newTypeName}
                 onChange={(e) => setNewTypeName(e.target.value.toUpperCase())}
-                placeholder="Tambah tipe baru..."
+                placeholder={translate('setting.tab.master_data.add_placeholder')}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-sm"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddVehicleType()}
               />
               <button
                 onClick={handleAddVehicleType}
                 disabled={!newTypeName.trim()}
-                className="bg-sky-600 text-white px-3 py-2 rounded-md hover:bg-sky-700 font-medium text-sm disabled:bg-gray-400 cursor-pointer shrink-0"
+                className="bg-sky-600 text-white px-3 py-2 rounded-md hover:bg-sky-700 font-medium text-sm disabled:bg-gray-400 cursor-pointer shrink-0 mr-1"
               >
-                Tambah
+                {translate('setting.tab.master_data.btn_add')}
               </button>
             </div>
           )}
@@ -103,12 +131,13 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
           <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 min-h-[300px] lg:min-h-0">
             {vehicleTypes.length === 0 ? (
               <p className="text-center text-slate-500 text-sm py-4 italic">
-                Belum ada data tipe kendaraan.
+                {translate('common.no_data')}
               </p>
             ) : (
               vehicleTypes.map((type) => (
                 <div
                   key={type.id}
+                  ref={editTypeId === type.id ? editRef : null}
                   className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-slate-50 hover:bg-white transition-colors group gap-2 overflow-hidden"
                 >
                   {editTypeId === type.id ? (
@@ -132,23 +161,12 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
                   {!isReadOnly && (
                     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                       {editTypeId === type.id ? (
-                        <>
-                          <button
-                            onClick={() => handleUpdateVehicleType(type.id)}
-                            className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-2 py-1 rounded cursor-pointer"
-                          >
-                            Simpan
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditTypeId(null);
-                              setEditTypeName('');
-                            }}
-                            className="text-xs bg-slate-200 text-slate-600 hover:bg-slate-300 font-medium px-2 py-1 rounded cursor-pointer"
-                          >
-                            Batal
-                          </button>
-                        </>
+                        <button
+                          onClick={() => handleUpdateVehicleType(type.id)}
+                          className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-2 py-1 rounded cursor-pointer"
+                        >
+                          {translate('setting.tab.master_data.btn_save')}
+                        </button>
                       ) : (
                         <>
                           <button
@@ -156,15 +174,15 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly }) {
                               setEditTypeId(type.id);
                               setEditTypeName(type.name);
                             }}
-                            className="text-xs text-sky-600 hover:text-sky-700 font-bold cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            Edit
+                            {translate('setting.tab.master_data.btn_edit')}
                           </button>
                           <button
                             onClick={() => handleDeleteClick(type.id)}
-                            className="text-xs text-red-500 hover:text-red-700 font-bold cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                            className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            Hapus
+                            {translate('setting.tab.master_data.btn_delete')}
                           </button>
                         </>
                       )}

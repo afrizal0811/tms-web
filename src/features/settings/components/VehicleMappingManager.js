@@ -3,10 +3,10 @@
 import ConfirmModal from '@/components/ConfirmModal';
 import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastInfo } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
+export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
   const [activeHubId, setActiveHubId] = useState('');
   const [activeHubName, setActiveHubName] = useState('');
   const [mappings, setMappings] = useState([]);
@@ -45,11 +45,13 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
       const sortedData = data.sort((a, b) => a.plat.localeCompare(b.plat));
       setMappings(sortedData);
     } catch (error) {
-      toastError(error.message);
+      toastError(
+        translate ? translate('common.toast.error', { err: error.message }) : error.message
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [activeHubId]);
+  }, [activeHubId, translate]);
 
   useEffect(() => {
     if (activeHubId) {
@@ -85,7 +87,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
 
   const handleEdit = (id, plat, currentType) => {
     setEditingId(id);
-    setEditingPlat(plat);
+    setEditingPlat(plat); // <--- Memastikan plat masuk ke state saat edit diklik
     setEditType(currentType);
   };
 
@@ -93,33 +95,16 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
     if (!editType || isReadOnly) return;
     setIsLoading(true);
     try {
-      const payload = { id: editingId, plat: editingPlat, mappedType: editType };
+      // Panggil langsung dari file API
+      await updateVehicleMapping(editingId, editingPlat, editType);
 
-      let res = await fetch('/api/vehicle-mappings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        res = await fetch('/api/vehicle-mappings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!res.ok) {
-        await updateVehicleMapping(editingId || editingPlat, editType);
-      }
-
-      toastInfo(`Tipe kendaraan plat ${editingPlat} berhasil diubah!`);
+      toastSuccess(translate('common.toast.success'));
       setEditingId(null);
       setEditingPlat('');
       await loadMappings();
     } catch (error) {
       setIsLoading(false);
-      toastError('Gagal menyimpan data. Server menolak format yang dikirim.');
+      toastError(translate('common.toast.error', { err: error.message }));
     }
   };
 
@@ -137,30 +122,14 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
     setIsLoading(true);
 
     try {
-      let res = await fetch(
-        `/api/vehicle-mappings?id=${targetId}&plat=${encodeURIComponent(targetPlat)}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      // Panggil langsung dari file API
+      await deleteVehicleMapping(targetId, targetPlat);
 
-      if (!res.ok) {
-        res = await fetch('/api/vehicle-mappings', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: targetId, plat: targetPlat }),
-        });
-      }
-
-      if (!res.ok) {
-        await deleteVehicleMapping(targetId || targetPlat);
-      }
-
-      toastInfo(`Pemetaan plat ${targetPlat} dihapus!`);
+      toastSuccess(translate('common.toast.success'));
       await loadMappings();
     } catch (error) {
       setIsLoading(false);
-      toastError('Gagal menghapus pemetaan kendaraan.');
+      toastError(translate('common.toast.error', { err: error.message }));
     }
   };
 
@@ -170,17 +139,19 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title="Hapus Pemetaan"
-        message={`Hapus pemetaan untuk plat ${deleteConfig.plat}? Kendaraan ini akan kembali meminta mapping saat digunakan.`}
-        confirmText="Hapus"
-        cancelText="Batal"
+        title={translate('setting.tab.master_data.confirm_title')}
+        message={translate('setting.tab.master_data.confirm_message')}
+        confirmText={translate('setting.tab.master_data.btn_delete')}
+        cancelText={translate('setting.tab.master_data.btn_cancel')}
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Pemetaan Tipe Kendaraan</h2>
+          <h2 className="text-lg font-bold text-slate-800">
+            {translate('setting.tab.master_data.mapping_title')}
+          </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kelola tipe kendaraan yang sudah disesuaikan secara manual
+            {translate('setting.tab.master_data.mapping_subtitle')}
           </p>
         </div>
       </div>
@@ -192,7 +163,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
           </div>
         ) : mappings.length === 0 ? (
           <p className="text-center text-slate-500 text-sm py-4 italic">
-            Tidak ada data pemetaan kendaraan di cabang ini.
+            {translate('common.no_data')}
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 content-start items-start">
@@ -217,7 +188,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
                         className="flex-1 px-2 py-1.5 text-sm border border-sky-400 rounded outline-none cursor-pointer bg-white"
                       >
                         <option value="" disabled>
-                          Pilih Tipe
+                          {translate('setting.tab.master_data.dropdown_title')}
                         </option>
                         {vehicleTypes.map((v) => (
                           <option key={v.id} value={v.name}>
@@ -231,7 +202,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
                         disabled={editType === item.mappedType || isLoading}
                         className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-3 py-1.5 rounded cursor-pointer disabled:opacity-60 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                       >
-                        Simpan
+                        {translate('setting.tab.master_data.btn_save')}
                       </button>
                     </div>
                   ) : (
@@ -249,13 +220,13 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly }) {
                             onClick={() => handleEdit(item.id, item.plat, item.mappedType)}
                             className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                           >
-                            Edit
+                            {translate('setting.tab.master_data.btn_edit')}
                           </button>
                           <button
                             onClick={() => handleDeleteClick(item.id, item.plat)}
                             className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                           >
-                            Hapus
+                            {translate('setting.tab.master_data.btn_delete')}
                           </button>
                         </div>
                       )}
