@@ -1,15 +1,15 @@
 // File: src/features/userLogin/UserLogin.js
 'use client';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/modal/ConfirmModal';
+import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles, getUsersByEmail } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { isEmpty, capitalizeText } from '@/lib/utils';
+import { capitalizeText, isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 
 export default function UserLogin({ onUserSelect, locationId, hubId }) {

@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toastHelper';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import BaseModal from './BaseModal';
+import BaseModal from '../BaseModal';
 
 export default function TokenExpirationModal() {
   const { t, lang } = useLanguage();

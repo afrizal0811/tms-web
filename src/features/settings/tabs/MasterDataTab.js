@@ -1,6 +1,6 @@
 'use client';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';

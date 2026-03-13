@@ -9,16 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Tabel untuk menyimpan data tugas tambahan manual
-model ManualTask {
-  id            Int      @id @default(autoincrement())
-  driverName    String
-  customerName  String
-  soNumber      String
-  flow          String
-  createdAt     DateTime @default(now())
-}
-
 // Tambahkan baris relasi "drivers" ini ke dalam model Hub yang sudah ada
 model Hub {
   id        String   @id

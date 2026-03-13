@@ -1,7 +1,7 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';

@@ -1,5 +1,5 @@
 import BaseModal from '@/components/BaseModal';
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';

@@ -2,9 +2,9 @@
 
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import ConfirmModal from '@/components/ConfirmModal';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
