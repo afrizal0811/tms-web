@@ -116,7 +116,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
   const modalMessage = (
     <div className="flex flex-col gap-2">
       <div>
-        {t('home.confirmation.question')}{' '}
+        {t('home.modal.question')}{' '}
         <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>
       <div className="text-sm text-gray-500">{userToConfirm?.email}</div>
@@ -135,13 +135,11 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
       )}
 
       <ConfirmModal
-        cancelText={t('home.confirmation.cancel')}
-        confirmText={t('home.confirmation.confirm')}
         isOpen={isConfirmOpen}
         message={modalMessage}
         onCancel={handleCancelConfirm}
         onConfirm={handleConfirmLogin}
-        title={t('home.confirmation.title')}
+        title={t('home.modal.title')}
       />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

@@ -4,6 +4,7 @@ export const dictionary = {
   id: {
     common: {
       accuracy: 'Akurasi',
+      apply: 'Terapkan',
       click_for_detail: 'Klik untuk detail',
       copyright: 'Dibuat oleh',
       customer_id: 'ID Pelanggan',
@@ -40,6 +41,8 @@ export const dictionary = {
         contact_edp: 'Harap segera hubungi tim EDP terkait!',
         exp_remaining: 'Masa aktif token API Anda akan berakhir dalam',
         exp_remaining_days: '{remaining} hari',
+        btn_confirm: 'Ya',
+        btn_cancel: 'Tidak',
       },
     },
     home: {
@@ -58,9 +61,7 @@ export const dictionary = {
       vehicle_check: 'Memeriksa konfigurasi kendaraan...',
       welcome: 'SELAMAT DATANG!',
       note: 'Gunakan surel yang terdaftar di MileApp',
-      confirmation: {
-        cancel: 'Batal',
-        confirm: 'Ya, Yakin',
+      modal: {
         question: 'Anda yakin ingin memilih user',
         title: 'Konfirmasi Pilihan User',
       },
@@ -118,7 +119,7 @@ export const dictionary = {
         hub_not_found: 'Lokasi Hub tidak ditemukan. Harap login ulang.',
         parsing_date_error: 'Gagal memproses tanggal untuk tooltip: {err}',
         partial_warning: 'Gagal memuat sebagian data tahunan: {err}',
-        sunday_error: 'Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain',
+        sunday_error: 'Tidak ada pengiriman saat Minggu. silakan pilih tanggal lain',
         user_load_error: 'Gagal memuat data user',
         view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
         yearly_fetch_error: 'Gagal ambil data tahunan',
@@ -397,7 +398,7 @@ export const dictionary = {
         failed: 'Data gagal diunduh!',
         failed_get_data: 'Gagal mengambil data',
         no_data: 'Tidak ada data untuk diunduh',
-        no_sunday: 'Tidak ada pengiriman saat Minggu. Silahkan pilih tanggal lain',
+        no_sunday: 'Tidak ada pengiriman saat Minggu. Silakan pilih tanggal lain',
         recovered: 'Data riwayat sebanyak {count} telah berhasil dilengkapi',
         retry_chunk: 'Mengulang {count} chunk yang gagal...',
         success: 'Data berhasil diunduh!',
@@ -471,12 +472,17 @@ export const dictionary = {
       },
     },
     summary: {
-      label: 'Bulan Performa',
+      label: 'Tanggal Performa',
       subtitle_1: 'Rekapitulasi',
-      subtitle_2: 'tiap bulan',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
-      long_message: 'Memproses banyak data, silahkan tunggu sebentar.',
+      long_message: 'Memproses banyak data, silakan tunggu sebentar.',
+      modal: {
+        title: 'Peringatan Beban Data',
+        text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
+        btn_confirm: 'Ya',
+        btn_cancel: 'Tidak',
+      },
       toast: {
         success: 'Data rangkuman berhasil diunduh!',
         error: 'Data rangkuman gagal dibuat: {err}',
@@ -656,11 +662,10 @@ export const dictionary = {
         master_data: {
           add_placeholder: 'Tambah tipe baru...',
           btn_add: 'Tambah',
-          btn_cancel: 'Batal',
           btn_delete: 'Hapus',
           btn_edit: 'Ubah',
           btn_save: 'Simpan',
-          confirm_message: 'Yakin menghapus tipe kendaraan ini? Data tidak dapat dikembalikan!',
+          confirm_message: 'Apakah anda yakin ingin menghapus tipe kendaraan ini?',
           confirm_title: 'Hapus Tipe Kendaraan',
           dropdown_title: 'Pilih Tipe Kendaraan',
           mapping_subtitle: 'Pengubahan tipe kendaraan sesuai dengan standar yang digunakan',
@@ -675,6 +680,7 @@ export const dictionary = {
   en: {
     common: {
       accuracy: 'Accuracy',
+      apply: 'Apply',
       click_for_detail: 'Click for details',
       copyright: 'Made by',
       customer_id: 'Customer ID',
@@ -711,6 +717,8 @@ export const dictionary = {
         contact_edp: 'Please contact the EDP team immediately!',
         exp_remaining: 'Your API token validity will expire in',
         exp_remaining_days: '{remaining} days',
+        btn_confirm: 'Yes',
+        btn_cancel: 'No',
       },
     },
     home: {
@@ -729,9 +737,7 @@ export const dictionary = {
       vehicle_check: 'Checking vehicle configuration...',
       welcome: 'WELCOME!',
       note: 'Use the same email registered in MileApp',
-      confirmation: {
-        cancel: 'No',
-        confirm: 'Yes',
+      modal: {
         question: 'Are you sure to select',
         title: 'Confirmation User Selection',
       },
@@ -1143,12 +1149,17 @@ export const dictionary = {
       },
     },
     summary: {
-      label: 'Performance Month',
+      label: 'Performance Date',
       subtitle_1: 'Recap of',
-      subtitle_2: 'every month',
       subtitle_highlight: 'task performance',
       title: 'Summary',
       long_message: 'Processing a lot of data, please wait a moment.',
+      modal: {
+        title: 'Data Load Warning',
+        text: `The data being processed is too large (more than 14 days). Do you want to continue?`,
+        btn_confirm: 'Yes',
+        btn_cancel: 'No',
+      },
       toast: {
         success: 'Summary data has been downloaded successfully!',
         error: 'Failed to generate summary data: {err}',
@@ -1328,12 +1339,10 @@ export const dictionary = {
         master_data: {
           add_placeholder: 'Add new type...',
           btn_add: 'Add',
-          btn_cancel: 'Cancel',
           btn_delete: 'Delete',
           btn_edit: 'Edit',
           btn_save: 'Save',
-          confirm_message:
-            'Are you sure you want to delete this vehicle type? This data cannot be recovered!',
+          confirm_message: 'Are you sure you want to delete this vehicle type?',
           confirm_title: 'Delete Vehicle Type',
           dropdown_title: 'Select Vehicle Type',
           mapping_subtitle: 'Adjust vehicle types according to the standard used',

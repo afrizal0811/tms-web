@@ -141,8 +141,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         onConfirm={confirmDelete}
         title={translate('setting.tab.master_data.confirm_title')}
         message={translate('setting.tab.master_data.confirm_message')}
-        confirmText={translate('setting.tab.master_data.btn_delete')}
-        cancelText={translate('setting.tab.master_data.btn_cancel')}
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3">

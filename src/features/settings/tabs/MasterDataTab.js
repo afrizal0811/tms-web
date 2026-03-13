@@ -90,8 +90,6 @@ export default function MasterDataTab({ vehicleTypes, onRefresh, isReadOnly, tra
         onConfirm={confirmDeleteType}
         title={translate('setting.tab.master_data.confirm_title')}
         message={translate('setting.tab.master_data.confirm_message')}
-        confirmText={translate('setting.tab.master_data.btn_delete')}
-        cancelText={translate('setting.tab.master_data.btn_cancel')}
       />
 
       <div className="lg:col-span-2 flex flex-col h-full min-h-0">

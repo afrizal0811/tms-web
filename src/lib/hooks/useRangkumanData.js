@@ -16,13 +16,18 @@ import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedR
 import { formatDateUniversal, formatToApiUtc, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const getInitialDate = () => {
+export const getInitialDateRange = () => {
   const now = new Date();
-  if (now.getDate() > 1) return now;
-  const targetDate = new Date(now);
-  targetDate.setDate(targetDate.getDate() - 1);
-  if (targetDate.getDay() === 0) targetDate.setDate(targetDate.getDate() - 1);
-  return targetDate;
+  const day = now.getDay();
+  const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+  const start = new Date(now.setDate(diffToMonday));
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  return [start, end];
 };
 
 const getRoutingDateKeyFromDateStr = (dateStr) => {
@@ -45,7 +50,7 @@ export default function useRangkumanData() {
 
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
-  const [selectedDate, setSelectedDate] = useState(getInitialDate());
+  const [dateRange, setDateRange] = useState(getInitialDateRange());
   const [masterTruckData, setMasterTruckData] = useState(null);
   const [driverData, setDriverData] = useState([]);
   const [rawData, setRawData] = useState({ tasks: [], results: [], locations: [] });
@@ -67,6 +72,7 @@ export default function useRangkumanData() {
       if (storedSession?.activeHubName) setSelectedLocationName(storedSession.activeHubName);
     }
   }, []);
+
   useEffect(() => {
     let interval = null;
     if (isLoading) {
@@ -452,7 +458,7 @@ export default function useRangkumanData() {
   );
 
   const fetchData = useCallback(async () => {
-    if (!selectedLocation || !selectedDate) return;
+    if (!selectedLocation || !dateRange || !dateRange[0] || !dateRange[1]) return;
 
     setIsLoading(true);
     setDismissedDots({});
@@ -462,12 +468,10 @@ export default function useRangkumanData() {
     setHistoryProgress(0);
     fetchStartTimeRef.current = Date.now();
 
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-
     try {
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 0);
+      const startDate = new Date(dateRange[0]);
+      const endDate = new Date(dateRange[1]);
+      endDate.setHours(23, 59, 59, 999);
 
       const startStr = formatDateUniversal(startDate);
       const endStr = formatDateUniversal(endDate);
@@ -539,7 +543,7 @@ export default function useRangkumanData() {
       const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation), 'Drivers');
 
       const pTasks = fetchWithTracker(async () => {
-        const results = [];
+        const rawResults = [];
         for (const range of taskRanges) {
           const res = await fetchWithRetry(() =>
             getTasks({
@@ -551,14 +555,13 @@ export default function useRangkumanData() {
               timeTo: range.to,
             })
           );
-          results.push(res);
-          await new Promise((r) => setTimeout(r, 300));
+          rawResults.push(res);
         }
-        return mergeResults(results);
+        return mergeResults(rawResults);
       }, 'Tasks');
 
       const pRouting = fetchWithTracker(async () => {
-        const results = [];
+        const rawResults = [];
         for (const range of routingRanges) {
           const res = await fetchWithRetry(() =>
             getResultsSummary({
@@ -568,16 +571,15 @@ export default function useRangkumanData() {
               dateTo: range.to,
             })
           );
-          results.push(res);
-          await new Promise((r) => setTimeout(r, 300));
+          rawResults.push(res);
         }
-        return mergeResults(results).filter(
+        return mergeResults(rawResults).filter(
           (item) => item.dispatchStatus?.toLowerCase() === 'done'
         );
       }, 'Routing');
 
       const pHistory = fetchWithTracker(async () => {
-        const results = [];
+        const rawResults = [];
         for (const range of historyRanges) {
           const res = await fetchWithRetry(() =>
             getLocationHistories({
@@ -589,10 +591,9 @@ export default function useRangkumanData() {
               timeTo: range.to,
             })
           );
-          results.push(res);
-          await new Promise((r) => setTimeout(r, 300));
+          rawResults.push(res);
         }
-        return mergeResults(results);
+        return mergeResults(rawResults);
       }, 'History');
 
       const [driversRes, tasksRes, resultsRes, locRes] = await Promise.all([
@@ -604,7 +605,6 @@ export default function useRangkumanData() {
 
       setDriverData(driversRes || []);
 
-      // >>> PERHITUNGAN MASTER TRUCK DINAMIS DARI DATABASE <<<
       try {
         const [vTypesObj, mapsDB] = await Promise.all([getVehicleTypes(), getVehicleMappings()]);
         const vTypes = vTypesObj.map((v) => v.name);
@@ -631,7 +631,6 @@ export default function useRangkumanData() {
       };
       setRawData(newRawData);
 
-      // KUNCI PERBAIKAN: Harus menggunakan AWAIT agar preview tidak berbentuk Promise!
       const preview = await generateRangkumanDataPreview(
         driversRes || [],
         newRawData.tasks,
@@ -653,7 +652,7 @@ export default function useRangkumanData() {
     }
   }, [
     selectedLocation,
-    selectedDate,
+    dateRange,
     fetchWithRetry,
     fetchWithTracker,
     processTaskSummaryMetrics,
@@ -663,8 +662,8 @@ export default function useRangkumanData() {
   return {
     selectedLocation,
     selectedLocationName,
-    selectedDate,
-    setSelectedDate,
+    dateRange,
+    setDateRange,
     driverData,
     rawData,
     isLoading,

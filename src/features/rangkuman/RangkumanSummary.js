@@ -2,6 +2,7 @@
 
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import ConfirmModal from '@/components/ConfirmModal';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
 import { useLanguage } from '@/context/LanguageContext';
@@ -27,8 +28,8 @@ export default function RangkumanSummary() {
   const {
     selectedLocation,
     selectedLocationName,
-    selectedDate,
-    setSelectedDate,
+    dateRange,
+    setDateRange,
     driverData,
     rawData,
     isLoading,
@@ -44,20 +45,45 @@ export default function RangkumanSummary() {
     setDismissedDots,
   } = useRangkumanData();
 
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [pendingDateRange, setPendingDateRange] = useState([null, null]);
+  const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
+
+  const handleTempDateChange = (update) => {
+    setTempDateRange(update);
+  };
+
+  const handleApplyDate = () => {
+    const [start, end] = tempDateRange;
+    if (start && end) {
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+      if (diffDays > 14) {
+        setPendingDateRange(tempDateRange);
+        setShowWarningModal(true);
+      } else {
+        setDateRange(tempDateRange);
+      }
+    } else {
+      setDateRange(tempDateRange);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const handleDownloadExcel = async () => {
-    if (!selectedDate) return;
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
     if (isEmpty(driverData)) {
       toastError(t('summary.toast.no_driver_data'));
       return;
     }
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, month + 1, 0);
+
+    const startDate = new Date(dateRange[0]);
+    const endDate = new Date(dateRange[1]);
+
     try {
       const { wb, excelFileName } = await generateRangkumanWorkbook(
         driverData,
@@ -153,10 +179,9 @@ export default function RangkumanSummary() {
         <Component {...props} />
       </div>
     );
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const startStr = formatDateUniversal(new Date(year, month, 1));
-    const endStr = formatDateUniversal(new Date(year, month + 1, 0));
+
+    const startStr = dateRange && dateRange[0] ? formatDateUniversal(new Date(dateRange[0])) : '';
+    const endStr = dateRange && dateRange[1] ? formatDateUniversal(new Date(dateRange[1])) : '';
 
     switch (activeTab) {
       case 'Time RO':
@@ -216,17 +241,37 @@ export default function RangkumanSummary() {
     }
   };
 
+  const getMaxDate = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const max = new Date(today);
+
+    if (day === 6) {
+      max.setDate(max.getDate() + 2);
+    } else {
+      max.setDate(max.getDate() + 1);
+    }
+    return max;
+  };
+
+  const maxDateConfig = getMaxDate();
+
   const headerItems = [
     {
       label: t('summary.label'),
       component: (
         <CustomDatePicker
-          dateFormat="MMMM yyyy"
+          selectsRange={true}
+          startDate={tempDateRange ? tempDateRange[0] : null}
+          endDate={tempDateRange ? tempDateRange[1] : null}
+          onChange={handleTempDateChange}
           disableSunday={false}
           isLoading={isLoading}
-          onChange={setSelectedDate}
-          selected={selectedDate}
-          showMonthYearPicker
+          showApplyButton={true}
+          onApply={handleApplyDate}
+          applyText={t('common.apply')}
+          maxDate={maxDateConfig}
+          useCustomRangeFormat={true}
         />
       ),
       hideLabel: false,
@@ -262,8 +307,7 @@ export default function RangkumanSummary() {
         subtitle={
           <>
             {t('summary.subtitle_1')}{' '}
-            <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>{' '}
-            {t('summary.subtitle_2')}
+            <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>
           </>
         }
         items={headerItems}
@@ -297,6 +341,20 @@ export default function RangkumanSummary() {
         )}
         {!isLoading && renderContent()}
       </BodyCard>
+
+      <ConfirmModal
+        isOpen={showWarningModal}
+        title={t('summary.modal.title')}
+        message={t('summary.modal.text')}
+        onConfirm={() => {
+          setDateRange(pendingDateRange);
+          setShowWarningModal(false);
+        }}
+        onCancel={() => {
+          setShowWarningModal(false);
+          setTempDateRange(dateRange);
+        }}
+      />
     </div>
   );
 }
