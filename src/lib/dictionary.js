@@ -20,6 +20,7 @@ export const dictionary = {
       minute: 'Menit',
       no_data: 'Tidak ada data',
       number_plates: 'Pelat Nomor',
+      ongoing: 'Berjalan',
       others: 'Lainnya',
       point: 'Titik',
       preparing_chart: 'Menyiapkan Grafik...',

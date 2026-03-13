@@ -253,13 +253,19 @@ export function calculateTruckDetailData(
       const entry = dataMatrix[dateKey][email];
       entry.outlets += 1;
       const flow = task.flow || '-';
-      let status =
-        flow !== 'Pickup'
-          ? task.statusDelivery && task.statusDelivery.length > 0
-            ? task.statusDelivery[0].toUpperCase()
-            : '-'
-          : task.status && task.status.toUpperCase();
-      status = status !== 'ONGOING' ? status : '-';
+      let status = '';
+      if (flow !== 'Pickup') {
+        if (task.statusDelivery && task.statusDelivery.length > 0) {
+          status = task.statusDelivery[0].toUpperCase();
+        } else if (flow.includes('GR')) {
+          if (task.statusGr && task.statusGr.length > 0) {
+            status = task.statusGr[0].toUpperCase();
+          }
+        }
+      } else {
+        status = task.status && task.status.toUpperCase();
+      }
+      status = task.status !== 'ONGOING' ? status : 'ONGOING';
       if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
@@ -269,7 +275,7 @@ export function calculateTruckDetailData(
 
       let isDateDiff = false;
       let dayDiffCount = 0;
-      if (startD && doneD && startD !== doneD) {
+      if (startD && doneD && startD !== doneD && doneD > startD) {
         isDateDiff = true;
         const d1 = new Date(startD);
         const d2 = new Date(doneD);
