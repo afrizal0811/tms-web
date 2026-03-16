@@ -43,20 +43,45 @@ export default function HelpPage() {
 
   const filteredTopics = useMemo(() => {
     let topics = helpTopics.filter((topic) => topic.category === activeCategory);
+
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
-      topics = topics.filter((topic) => {
+
+      return topics.reduce((acc, topic) => {
         const isMainMatch = topic.title.toLowerCase().includes(lowerQuery);
-        const isSubMatch = topic.subTopics?.some((sub) => {
-          const subTitleMatch = sub.title.toLowerCase().includes(lowerQuery);
-          const subSubMatch = sub.subSubTopics?.some((subSub) =>
-            subSub.title.toLowerCase().includes(lowerQuery)
-          );
-          return subTitleMatch || subSubMatch;
-        });
-        return isMainMatch || isSubMatch;
-      });
+
+        let filteredSubTopics = [];
+
+        if (topic.subTopics) {
+          topic.subTopics.forEach((sub) => {
+            const isSubMatch = sub.title.toLowerCase().includes(lowerQuery);
+
+            let filteredSubSubTopics = [];
+            if (sub.subSubTopics) {
+              filteredSubSubTopics = sub.subSubTopics.filter((subSub) =>
+                subSub.title.toLowerCase().includes(lowerQuery)
+              );
+            }
+
+            if (isMainMatch || isSubMatch || filteredSubSubTopics.length > 0) {
+              filteredSubTopics.push({
+                ...sub,
+                subSubTopics: isMainMatch || isSubMatch ? sub.subSubTopics : filteredSubSubTopics,
+              });
+            }
+          });
+        }
+        if (isMainMatch || filteredSubTopics.length > 0) {
+          acc.push({
+            ...topic,
+            subTopics: filteredSubTopics.length > 0 ? filteredSubTopics : topic.subTopics,
+          });
+        }
+
+        return acc;
+      }, []);
     }
+
     return topics;
   }, [activeCategory, searchQuery]);
 
