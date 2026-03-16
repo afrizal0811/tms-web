@@ -641,10 +641,17 @@ export const dictionary = {
       title: 'Sinyal GPS Hilang',
     },
     help: {
-      title: 'Tutorial untuk TMS',
-      subtitle:
-        'Dokumentasi teknis terpadu untuk membantu Admin dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
+      categories: 'Kategori',
+      driver_guide: 'Panduan Sopir',
       last_update: 'Terakhir diperbarui: {date}',
+      module: 'Modul {category}',
+      notice: 'Semua informasi dalam Bahasa Indonesia',
+      placeholder: 'Cari',
+      planner_guide: 'Panduan Perencana',
+      processing: 'Memulai proses...',
+      subtitle:
+        'Dokumentasi teknis terpadu untuk membantu Perencana dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
+      title: 'Tutorial untuk TMS',
     },
     setting: {
       btn_sync: 'Sinkronisasi',
@@ -1323,10 +1330,17 @@ export const dictionary = {
       title: 'GPS Signal Lost',
     },
     help: {
-      title: 'Tutorial for TMS',
+      categories: 'Categories',
+      driver_guide: 'Driver Guide',
+      last_update: 'Last Updated: {date}',
+      module: '{category} Module',
+      notice: 'All information in Indonesian',
+      placeholder: 'Search',
+      planner_guide: 'Planner Guide',
+      processing: 'Processing...',
       subtitle:
         'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
-      last_update: 'Last Updated: {date}',
+      title: 'Tutorial for TMS',
     },
     setting: {
       btn_sync: 'Synchronize',

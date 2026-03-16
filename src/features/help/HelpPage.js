@@ -5,12 +5,12 @@ import ContentBlockRenderer from '@/components/ContentBlockRenderer';
 import ImageLightbox from '@/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { useEffect, useMemo, useState } from 'react';
 import { helpTopics } from './data';
 import { PdfDocument } from './PdfDocument';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
 
 export default function HelpPage() {
   const { t, lang } = useLanguage();
@@ -185,7 +185,14 @@ export default function HelpPage() {
   };
   const theme = getThemeColor();
   const LAST_UPDATE = '02/12/2026'; //12 februari 2026
-
+  const categories = [
+    { label: t('help.planner_guide'), value: 'planner' },
+    { label: t('help.driver_guide'), value: 'driver' },
+  ];
+  const colorMap = {
+    planner: 'bg-sky-50 text-sky-700 ',
+    driver: 'bg-emerald-50 text-emerald-700',
+  };
   return (
     <>
       {zoomedImage && (
@@ -200,26 +207,39 @@ export default function HelpPage() {
       <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-6">
           <div className="text-left min-w-sm max-w-xl">
-            <h1 className="text-3xl font-bold text-slate-900">{t('help.title')}</h1>
-            <p className="text-slate-500 mt-1">{t('help.subtitle')}</p>
-            <p className="text-slate-400 mt-1 text-xs italic">
+            <h1 className="text-3xl font-bold text-slate-900" suppressHydrationWarning>
+              {t('help.title')}
+            </h1>
+            <p className="text-slate-500 mt-1" suppressHydrationWarning>
+              {t('help.subtitle')}
+            </p>
+            <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
               {t('help.last_update', { date: formatLongDate(LAST_UPDATE, lang) })}
             </p>
+            {!isIndo && (
+              <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
+                <span className="text-red-500">*</span>
+                {t('help.notice')}
+              </p>
+            )}
           </div>
           <div className="flex bg-gray-100 p-1 rounded-lg">
-            {['planner', 'driver'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize ${
-                  activeCategory === cat
-                    ? 'bg-white shadow text-slate-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const isActive = activeCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => handleCategoryChange(cat.value)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize cursor-pointer ${
+                    isActive
+                      ? `${colorMap[cat.value] || 'bg-slate-50 text-slate-700'} shadow`
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {cat.value}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -230,9 +250,7 @@ export default function HelpPage() {
                 <SearchBar
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder={
-                    isIndo ? `Cari di ${activeCategory}...` : `Search in ${activeCategory}...`
-                  }
+                  placeholder={t('help.placeholder')}
                   width="w-full"
                   className="shadow-sm"
                 />
@@ -240,8 +258,11 @@ export default function HelpPage() {
 
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className={`px-4 py-3 border-b border-gray-100 bg-${theme}-50`}>
-                  <h3 className={`font-semibold text-${theme}-800 text-sm uppercase`}>
-                    {isIndo ? 'Daftar Isi' : 'Table of Contents'}
+                  <h3
+                    className={`font-semibold text-${theme}-800 text-sm uppercase`}
+                    suppressHydrationWarning
+                  >
+                    {t('help.categories')}
                   </h3>
                 </div>
 
@@ -360,8 +381,8 @@ export default function HelpPage() {
                       );
                     })
                   ) : (
-                    <div className="p-4 text-center text-sm text-gray-400">
-                      {isIndo ? 'Tidak ditemukan.' : 'No topics found.'}
+                    <div className="p-4 text-center text-sm text-gray-400" suppressHydrationWarning>
+                      {t('common.no_data')}
                     </div>
                   )}
                 </nav>
@@ -369,36 +390,34 @@ export default function HelpPage() {
 
               <div className="space-y-2 pl-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                  Download PDF Manual
+                  {t('common.download')}
                 </p>
-                <button
-                  onClick={() => handleDownload('planner')}
-                  disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-sky-600 border border-gray-200 bg-white px-3 py-2 rounded-lg hover:border-sky-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? (
-                    <span className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-sky-600 rounded-full"></span>
-                  ) : (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                    </svg>
-                  )}
-                  {isGenerating ? 'Generating...' : 'Planner Guide'}
-                </button>
-                <button
-                  onClick={() => handleDownload('driver')}
-                  disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-emerald-600 border border-gray-200 bg-white px-3 py-2 rounded-lg hover:border-emerald-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isGenerating ? (
-                    <span className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-emerald-600 rounded-full"></span>
-                  ) : (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                    </svg>
-                  )}
-                  {isGenerating ? 'Generating...' : 'Driver Guide'}
-                </button>
+                {categories.map((category) => {
+                  const value = category.value;
+                  const isActive = activeCategory === value;
+
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => handleDownload(value)}
+                      disabled={isGenerating}
+                      className={`w-full flex items-center justify-center gap-2 text-sm text-slate-600 border border-gray-200 bg-white px-3 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isActive ? 'hover:text-sky-600 hover:border-sky-300' : 'hover:text-emerald-600 hover:border-emerald-300'}`}
+                    >
+                      {isGenerating ? (
+                        <span
+                          className={`animate-spin h-4 w-4 border-2 border-gray-300 ${
+                            isActive ? 'border-t-sky-600' : 'border-t-emerald-600'
+                          } rounded-full`}
+                        ></span>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                        </svg>
+                      )}
+                      {isGenerating ? t('help.processing') : category.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </aside>
@@ -419,7 +438,7 @@ export default function HelpPage() {
                           : 'bg-gray-50 text-gray-600 ring-gray-500/10'
                     }`}
                   >
-                    {activeCategory} Module
+                    {t('help.module', { category: activeCategory })}
                   </span>
                   <h2 className="text-3xl font-bold text-slate-900">{currentTopic.title}</h2>
                 </div>
@@ -453,7 +472,7 @@ export default function HelpPage() {
                     d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                   />
                 </svg>
-                <p>Pilih topik di sebelah kiri untuk melihat panduan.</p>
+                {t('common.no_data')}
               </div>
             )}
           </main>
