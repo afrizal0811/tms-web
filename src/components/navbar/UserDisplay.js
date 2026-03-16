@@ -73,7 +73,7 @@ export default function UserDisplay() {
   };
 
   const handleLogout = () => {
-    removeLocalStorage('tms_user_session');
+    removeLocalStorage('data');
     window.location.href = '/';
   };
 

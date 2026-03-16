@@ -1,10 +1,10 @@
 import SessionGuard from '@/components/SessionGuard';
+import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
-import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,8 +21,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-white text-slate-900`}>
-        <SystemUpdateModal />
         <LanguageProvider>
+          <SystemUpdateModal />
           <Toaster
             position="top-right"
             containerStyle={{

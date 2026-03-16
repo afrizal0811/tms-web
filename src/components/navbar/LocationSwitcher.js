@@ -64,7 +64,7 @@ export default function LocationSwitcher() {
         newSession = { ...userObj, activeHubId: id, activeHubName: name };
       }
 
-      setLocalStorage('tms_user_session', JSON.stringify(newSession));
+      setLocalStorage('data', JSON.stringify(newSession));
       window.location.reload();
     };
 

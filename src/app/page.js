@@ -73,7 +73,7 @@ export default function Home() {
               setTempSelectedLocation(storedLocation);
               setTempSelectedLocationName(storedLocationName);
             } else {
-              removeLocalStorage('tms_user_session');
+              removeLocalStorage('data');
             }
           }
         } else if (storedLocation) {
@@ -124,7 +124,7 @@ export default function Home() {
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) return toastError(t('home.select_branch'));
     if (!selectedUser) {
-      removeLocalStorage('tms_user_session');
+      removeLocalStorage('data');
       setSelectedUser(null);
     }
 
@@ -135,14 +135,13 @@ export default function Home() {
       activeHubId: tempSelectedLocation,
       activeHubName: tempSelectedLocationName,
     };
-    setLocalStorage('tms_user_session', JSON.stringify(tempSession));
+    setLocalStorage('data', JSON.stringify(tempSession));
 
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
 
   const handleUserSelect = (user) => {
-    // KUNCI: Gabungkan data profil dengan lokasi, lalu simpan ke session tunggal
     const filteredUserSession = {
       _id: user._id,
       email: user.email,
@@ -154,12 +153,12 @@ export default function Home() {
       activeHubName: selectedLocationName,
     };
 
-    setLocalStorage('tms_user_session', JSON.stringify(filteredUserSession));
+    setLocalStorage('data', JSON.stringify(filteredUserSession));
     setSelectedUser(filteredUserSession);
   };
 
   const handleResetAll = () => {
-    removeLocalStorage('tms_user_session');
+    removeLocalStorage('data');
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');

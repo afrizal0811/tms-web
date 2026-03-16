@@ -677,6 +677,11 @@ export const dictionary = {
         },
       },
     },
+    update: {
+      title: 'Pembaruan Sistem',
+      text: 'Versi terbaru aplikasi telah tersedia. Silakan muat ulang untuk menerapkan pembaruan dan memastikan aplikasi berjalan optimal.',
+      btn_update: 'Muat Ulang',
+    },
   },
   en: {
     common: {
@@ -1353,6 +1358,11 @@ export const dictionary = {
           title: 'Master',
         },
       },
+    },
+    update: {
+      title: 'System Update',
+      text: 'A new version of the application is available. Please reload to apply the update and ensure the application runs optimally.',
+      btn_update: 'Reload',
     },
   },
 };
