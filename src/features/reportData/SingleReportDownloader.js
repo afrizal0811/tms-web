@@ -7,7 +7,7 @@ import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings }
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
@@ -104,7 +104,7 @@ export default function TmsSummary({
         return acc;
       }, {});
 
-      const { wb, excelFileName, missingTimesFound } = await generateRoutingWorkbook(
+      const { wb, excelFileName } = await generateRoutingWorkbook(
         driverData,
         filteredResults,
         mappingsObj,
@@ -112,10 +112,6 @@ export default function TmsSummary({
         selectedLocationName,
         t
       );
-
-      if (missingTimesFound) {
-        toastWarning(t('report.toast.missing_time'));
-      }
 
       XLSX.writeFile(wb, excelFileName);
       toastSuccess(t('report.toast.success'));

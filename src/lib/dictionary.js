@@ -260,8 +260,6 @@ export const dictionary = {
         failed_zip: 'Tidak ada file {zipPrefix} yang berhasil dibuat.',
         invalid_date: 'Rentang tanggal tidak valid. Pastikan awal <= akhir dan berbeda tanggal.',
         invalid_driver: 'Data driver tidak valid.',
-        missing_time:
-          'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!',
         no_data: 'Tidak ada data ditemukan untuk semua tanggal dalam rentang ini.',
         no_delivery: 'Tidak ada data Delivery untuk tanggal ini',
         no_routing: 'Tidak ada data Routing untuk tanggal ini',
@@ -950,8 +948,6 @@ export const dictionary = {
         failed_zip: 'No {zipPrefix} file was successfully created.',
         invalid_date: 'Invalid date range. Make sure start <= end and they are different dates.',
         invalid_driver: 'Invalid driver data.',
-        missing_time:
-          'Travel Time or Visit Time is not available in the API. Please check it manually in the Routing menu!',
         no_data: 'No data found for any dates in this range.',
         no_delivery: 'No delivery data found for this date.',
         no_routing: 'No routing data found for this date.',

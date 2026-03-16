@@ -265,7 +265,6 @@ export async function generateRoutingWorkbook(
     const mergedRow = mergedTruckDetailMap.get(driverName);
 
     if (mergedRow && mergedRow.hasTrips) {
-      const hasMissingTimes = mergedRow.totalTravelTime === 0 || mergedRow.totalVisitTime === 0;
       return {
         Plat: mergedRow.plat,
         Driver: mergedRow.driver,
@@ -277,8 +276,6 @@ export async function generateRoutingWorkbook(
         ShipDuration: formatMinutesToHHMM(mergedRow.shipDurationRaw),
         ETAFirstStore: mergedRow.etaFirstStore,
         ETDHub: mergedRow.etdHub,
-
-        hasMissingTimes: hasMissingTimes,
       };
     } else {
       return {
@@ -292,7 +289,6 @@ export async function generateRoutingWorkbook(
         ShipDuration: null,
         ETAFirstStore: null,
         ETDHub: null,
-        hasMissingTimes: false,
       };
     }
   });
@@ -318,8 +314,6 @@ export async function generateRoutingWorkbook(
     return driverA.localeCompare(driverB);
   });
 
-  const missingTimesFound = excelDataRows.some((row) => row.hasMissingTimes);
-
   const finalSheetData1 = [
     headers1,
     ...excelDataRows.map((row) => [
@@ -340,8 +334,6 @@ export async function generateRoutingWorkbook(
   const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
 
   const centerAlignedDataColumns1 = [2, 3, 4, 7, 8, 9];
-  const shipDurationColIndex = 7;
-
   const greenHeaders = [
     translate('excel.routing.headers.weight_pct'),
     translate('excel.routing.headers.volume_pct'),
@@ -364,22 +356,8 @@ export async function generateRoutingWorkbook(
         } else {
           wsTruckDetail[cellRef].s = defaultHeaderStyle;
         }
-
-        if (C === shipDurationColIndex && missingTimesFound) {
-          if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
-          wsTruckDetail[cellRef].c.push({
-            a: 'Info',
-            t: 'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!',
-            h: true,
-          });
-        }
       } else if (centerAlignedDataColumns1.includes(C)) {
         wsTruckDetail[cellRef].s = centerStyle;
-      }
-
-      const rowData = excelDataRows[R - 1];
-      if (rowData && rowData.hasMissingTimes && C === shipDurationColIndex) {
-        wsTruckDetail[cellRef].s = redFillStyle;
       }
     }
   }
@@ -474,5 +452,5 @@ export async function generateRoutingWorkbook(
   const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
   const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
 
-  return { wb, excelFileName, missingTimesFound };
+  return { wb, excelFileName };
 }
