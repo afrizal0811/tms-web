@@ -16,7 +16,7 @@ export default function ConfirmModal({
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
-  if (cancelText === undefined && confirmText === undefined) {
+  if (cancelText === undefined || confirmText === undefined) {
     cancelText = t('common.modal.btn_cancel');
     confirmText = t('common.modal.btn_confirm');
   }

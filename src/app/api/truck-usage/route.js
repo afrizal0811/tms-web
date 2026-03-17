@@ -32,18 +32,29 @@ export async function POST(request) {
       update: { count: parseInt(count), description },
       create: { hubId, date, storageType, vehicleType, count: parseInt(count), description },
     });
-    return NextResponse.json(upserted);
+    return NextResponse.json({ message: 'Success', data: upserted });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
 export async function DELETE(request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
   try {
-    await prisma.truckUsage.delete({ where: { id: parseInt(id) } });
-    return NextResponse.json({ success: true });
+    const body = await request.json();
+    const { hubId, date, storageType, vehicleType } = body;
+
+    await prisma.truckUsage.delete({
+      where: {
+        hubId_date_storageType_vehicleType: {
+          hubId,
+          date,
+          storageType,
+          vehicleType,
+        },
+      },
+    });
+
+    return NextResponse.json({ message: 'Success' });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

@@ -228,6 +228,7 @@ export default function RangkumanSummary() {
           hubId: selectedLocation,
           onRefresh: fetchData,
           driverData: driverData,
+          language: lang,
         });
       case 'Average KM':
         return renderTab(AverageKmTab, {

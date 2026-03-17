@@ -4,7 +4,7 @@ import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageModal from './modals/TruckUsageModal';
 
-export default function TruckUsageTab({ data, translate, hubId, driverData }) {
+export default function TruckUsageTab({ data, translate, hubId, driverData, language }) {
   const [localData, setLocalData] = useState(data);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
 
@@ -75,6 +75,8 @@ export default function TruckUsageTab({ data, translate, hubId, driverData }) {
         onSuccess={handleModalSuccess}
         driverData={driverData}
         vehicleTypes={vehicleTypes}
+        translate={translate}
+        language={language}
       />
 
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
