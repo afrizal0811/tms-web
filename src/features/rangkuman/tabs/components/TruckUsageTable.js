@@ -85,7 +85,7 @@ export default function TruckUsageTable({
     }
 
     let isOverLimit = false;
-    if (isDetailRow && maxNum > 0) {
+    if (isDetailRow) {
       if (cellType === 'TMS' && valNum > maxNum) isOverLimit = true;
       if (cellType === 'MANUAL' && valNum + parseInt(otherVal || 0) > maxNum) isOverLimit = true;
       if (cellType === 'TVU' && valNum > maxNum) isOverLimit = true;
@@ -186,17 +186,10 @@ export default function TruckUsageTable({
             const isClickableTMS = !isPercentage && tmsRaw > 0;
             const hasDataManual = manualDisp !== null;
 
-            let tooltipText = '';
-            if (!isPercentage) {
-              tooltipText = manualDesc ? manualDesc : '';
-            } else if (manualDesc) {
-              tooltipText = manualDesc;
-            }
-
             return (
               <Fragment key={i}>
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 transition-colors' : ''}`}
+                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 transition-colors' : ''}`}
                   style={getDataStyle(bgColor, d.isSunday, tmsDisp, masterTotal, true, 'TMS')}
                   onClick={() => {
                     if (isClickableTMS && onCellClick) {
@@ -212,8 +205,21 @@ export default function TruckUsageTable({
                   }}
                 >
                   {isClickableTMS ? (
-                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold">
-                      {formatValue(tmsDisp, masterTotal)}
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold text-sky-700 underline decoration-sky-700/40 decoration-dashed hover:decoration-solid hover:text-sky-800 transition-all group/tms">
+                      <span>{formatValue(tmsDisp, masterTotal)}</span>
+                      <svg
+                        className="w-3 h-3 ml-1 text-sky-600 opacity-0 group-hover/tms:opacity-100 transition-opacity absolute right-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
                     </div>
                   ) : (
                     <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
@@ -251,20 +257,28 @@ export default function TruckUsageTable({
                 >
                   {isClickableManual && !hasDataManual && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-10">
-                      <div className="absolute inset-0 bg-white/20"></div>
+                      <div className="absolute inset-0 bg-white/30"></div>
                       <span className="relative text-slate-600/30 text-xl font-bold">+</span>
                     </div>
                   )}
 
-                  {tooltipText ? (
-                    <Tooltip tooltipContent={tooltipText}>
-                      <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
-                        {formatValue(manualDisp, masterTotal)}
-                      </div>
-                    </Tooltip>
-                  ) : (
-                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
-                      {formatValue(manualDisp, masterTotal)}
+                  {hasDataManual && (
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center group/edit">
+                      <span>{formatValue(manualDisp, masterTotal)}</span>
+                      {/* Ikon pensil kecil yang muncul saat di-hover */}
+                      <svg
+                        className="w-3 h-3 ml-1 text-slate-500 opacity-0 group-hover/edit:opacity-100 transition-opacity absolute right-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
                     </div>
                   )}
                 </td>
@@ -330,13 +344,6 @@ export default function TruckUsageTable({
           const isClickableTMS = !isPercentage && tmsRaw > 0;
           const hasDataManual = manualDisp !== null;
 
-          let tooltipText = '';
-          if (!isPercentage) {
-            tooltipText = manualDesc ? manualDesc : '';
-          } else if (manualDesc) {
-            tooltipText = manualDesc;
-          }
-
           return (
             <Fragment key={i}>
               <td
@@ -348,7 +355,7 @@ export default function TruckUsageTable({
                       isTms: true,
                       date: d.str,
                       storage: cat,
-                      type: type || 'Gabungan', 
+                      type: type || 'Gabungan',
                       tmsCount: tmsRaw,
                       tmsDetails: tmsDetails,
                     });
@@ -356,8 +363,22 @@ export default function TruckUsageTable({
                 }}
               >
                 {isClickableTMS ? (
-                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold">
-                    {formatValue(tmsDisp, masterTotal)}
+                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold text-sky-700 underline decoration-sky-700/40 decoration-dashed hover:decoration-solid hover:text-sky-800 transition-all group/tms">
+                    <span>{formatValue(tmsDisp, masterTotal)}</span>
+                    {/* Ikon Kaca Pembesar (Search) */}
+                    <svg
+                      className="w-3 h-3 ml-1 text-sky-600 opacity-0 group-hover/tms:opacity-100 transition-opacity absolute right-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
                   </div>
                 ) : (
                   <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
@@ -393,15 +414,23 @@ export default function TruckUsageTable({
                     </div>
                   )}
 
-                  {tooltipText ? (
-                    <Tooltip tooltipContent={tooltipText}>
-                      <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
-                        {formatValue(manualDisp, masterTotal)}
-                      </div>
-                    </Tooltip>
-                  ) : (
-                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
-                      {formatValue(manualDisp, masterTotal)}
+                  {hasDataManual && (
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center group/edit">
+                      <span>{formatValue(manualDisp, masterTotal)}</span>
+                      {/* Ikon pensil kecil yang muncul saat di-hover */}
+                      <svg
+                        className="w-3 h-3 ml-1 text-slate-500 opacity-0 group-hover/edit:opacity-100 transition-opacity absolute right-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
                     </div>
                   )}
                 </td>

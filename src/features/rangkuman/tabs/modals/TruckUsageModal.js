@@ -132,9 +132,9 @@ export default function TruckUsageModal({
     );
   }
 
-  // ===== RENDER MODE MANUAL (EDIT/INPUT) =====
   const totalInput = (parseInt(count) || 0) + (data?.tmsCount || 0);
-  const isOverLimit = data?.masterTotal > 0 && totalInput > data.masterTotal;
+  const masterCapacity = data?.masterTotal || 0;
+  const isOverLimit = data?.type !== 'Interbranch' && totalInput > masterCapacity;
 
   const isChanged = count !== initialCount || desc !== initialDesc;
   const isSaveDisabled = isLoading || count === '' || !desc.trim() || !isChanged;
@@ -156,7 +156,6 @@ export default function TruckUsageModal({
       onClose();
     } catch (e) {
       console.error(e);
-      // Dikosongkan: console.error dihapus, toast error sudah di-handle oleh apiFetch
     } finally {
       setIsLoading(false);
     }
