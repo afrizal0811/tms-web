@@ -30,27 +30,18 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
     const oldManualObj = dayData[manualKey][updatedCell.type] || {};
     const oldCount = oldManualObj.count || 0;
 
-    let newCount = 0;
-    if (!resData.isDelete) {
-      newCount = parseInt(resData.count);
-      dayData[manualKey][updatedCell.type] = {
-        count: newCount,
-        desc: resData.description,
-        id: resData.id,
-      };
-    } else {
-      dayData[manualKey][updatedCell.type] = { count: 0, desc: '', id: null };
-    }
+    const newCount = resData.isDelete ? 0 : parseInt(resData.count) || 0;
+    dayData[manualKey][updatedCell.type] = {
+      count: newCount,
+      desc: resData.isDelete ? '' : resData.description,
+      id: resData.isDelete ? null : resData.id,
+    };
 
     const diff = newCount - oldCount;
+    const multiplier = updatedCell.type === 'Interbranch' ? -1 : 1;
 
-    if (updatedCell.type === 'Interbranch') {
-      dayData[`${updatedCell.storage}TotalManual`] -= diff;
-      dayData.OTVManual -= diff;
-    } else {
-      dayData[`${updatedCell.storage}TotalManual`] += diff;
-      dayData.OTVManual += diff;
-    }
+    dayData[`${updatedCell.storage}TotalManual`] += diff * multiplier;
+    dayData.OTVManual += diff * multiplier;
 
     newDateMap[updatedCell.date] = dayData;
 
@@ -64,6 +55,29 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
   };
 
   if (!localData) return null;
+
+  const tableSections = [
+    {
+      title: 'summary.tabs.truck_usage.subtitle_1',
+      Component: TruckUsageSummaryTable,
+      props: { summaryData, vehicleTypes, isPercentage: false },
+    },
+    {
+      title: 'summary.tabs.truck_usage.subtitle_2',
+      Component: TruckUsageSummaryTable,
+      props: { summaryData, vehicleTypes, isPercentage: true },
+    },
+    {
+      title: 'summary.tabs.truck_usage.subtitle_3',
+      Component: TruckUsageTable,
+      props: { ...localData, isPercentage: false, onCellClick: handleCellClick },
+    },
+    {
+      title: 'summary.tabs.truck_usage.subtitle_4',
+      Component: TruckUsageTable,
+      props: { ...localData, isPercentage: true },
+    },
+  ];
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
@@ -80,63 +94,21 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
       />
 
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
-        <div className="flex flex-col gap-2 min-w-max">
-          <h3 className="font-bold text-slate-700 px-1 sticky left-0">
-            {translate('summary.tabs.truck_usage.subtitle_1')}
-          </h3>
-          <div className="border border-gray-300 overflow-hidden">
-            <TruckUsageSummaryTable
-              isPercentage={false}
-              summaryData={summaryData}
-              translate={translate}
-              vehicleTypes={vehicleTypes}
-            />
+        {tableSections.map(({ title, Component, props }, index) => (
+          <div key={index} className="flex flex-col gap-2 min-w-max">
+            <h3 className="font-bold text-slate-700 px-1 sticky left-0">{translate(title)}</h3>
+            <div
+              className={`border border-gray-300 overflow-hidden`}
+            >
+              <Component translate={translate} {...props} />
+            </div>
           </div>
-        </div>
-
-        <div className="flex flex-col gap-2 min-w-max">
-          <h3 className="font-bold text-slate-700 px-1 sticky left-0">
-            {translate('summary.tabs.truck_usage.subtitle_2')}
-          </h3>
-          <div className="border border-gray-300 overflow-hidden">
-            <TruckUsageSummaryTable
-              isPercentage={true}
-              summaryData={summaryData}
-              translate={translate}
-              vehicleTypes={vehicleTypes}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 min-w-max">
-          <h3 className="font-bold text-slate-700 px-1 sticky left-0">
-            {translate('summary.tabs.truck_usage.subtitle_3')}
-          </h3>
-          <div className="border border-gray-300 overflow-hidden">
-            <TruckUsageTable
-              {...localData}
-              isPercentage={false}
-              translate={translate}
-              onCellClick={handleCellClick}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 min-w-max">
-          <h3 className="font-bold text-slate-700 px-1 sticky left-0">
-            {translate('summary.tabs.truck_usage.subtitle_4')}
-          </h3>
-          <div className="border border-gray-300 rounded-b-xl overflow-hidden">
-            <TruckUsageTable {...localData} isPercentage={true} translate={translate} />
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0 z-10">
         <div className="text-xs text-slate-500 italic">
-          *
-          {translate('summary.tabs.task_summary.click_box_hint') ||
-            'Klik pada baris/kolom dengan angka untuk melihat detail kendaraan'}
+          *{translate('summary.tabs.task_summary.click_box_hint')}
         </div>
       </div>
     </div>
