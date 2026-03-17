@@ -265,7 +265,7 @@ export function calculateTruckDetailData(
       } else {
         status = task.status && task.status.toUpperCase();
       }
-      status = task.status !== 'ONGOING' ? status : 'ONGOING';
+      status = task.status !== 'ONGOING' ? status : '-';
       if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
@@ -388,9 +388,18 @@ export function calculateTruckDetailData(
           return a.arrivalTimestamp - b.arrivalTimestamp;
         });
         const realRankMap = new Map();
-        sortedByTime.forEach((item, index) => {
-          realRankMap.set(item._tempId, index + 1);
+        let rankCounter = 1; // Tambahkan counter manual
+
+        sortedByTime.forEach((item) => {
+          // Jika belum sampai (masih bawa nilai dummy), set null
+          if (item.arrivalTimestamp === 9999999999999) {
+            realRankMap.set(item._tempId, null);
+          } else {
+            realRankMap.set(item._tempId, rankCounter);
+            rankCounter++;
+          }
         });
+
         entry.taskList.forEach((item) => {
           item.realSequence = realRankMap.get(item._tempId);
         });

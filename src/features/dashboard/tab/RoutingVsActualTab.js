@@ -72,13 +72,19 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       const driverEmail = normalizeEmail(emailString);
       const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
       const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-      let statusLabel =
-        flow !== 'Pickup'
-          ? task.statusDelivery && task.statusDelivery.length > 0
-            ? task.statusDelivery[0].toUpperCase()
-            : '-'
-          : task.status && task.status.toUpperCase();
-      statusLabel = statusLabel !== 'ONGOING' ? statusLabel : '-';
+      let statusLabel = '';
+      if (flow !== 'Pickup') {
+        if (task.statusDelivery && task.statusDelivery.length > 0) {
+          statusLabel = task.statusDelivery[0].toUpperCase();
+        } else if (flow.includes('GR')) {
+          if (task.statusGr && task.statusGr.length > 0) {
+            statusLabel = task.statusGr[0].toUpperCase();
+          }
+        }
+      } else {
+        statusLabel = task.status && task.status.toUpperCase();
+      }
+      statusLabel = task.status !== 'ONGOING' ? statusLabel : '-';
       let { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
       if (isEmpty(customerName)) customerName = task.customerName;
 
@@ -230,8 +236,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
         customerName: 'HUB',
       });
 
-      // FIX: Mengubah sorting agar murni berdasarkan Planned Sequence (roSequence)
-      // Ini memperbaiki masalah urutan sequence yang melompat karena sebelumnya dipengaruhi status actual
       matchingTasks.sort((a, b) => {
         return (a.roSequence || 0) - (b.roSequence || 0);
       });
