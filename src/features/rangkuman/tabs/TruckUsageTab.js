@@ -97,9 +97,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
         {tableSections.map(({ title, Component, props }, index) => (
           <div key={index} className="flex flex-col gap-2 min-w-max">
             <h3 className="font-bold text-slate-700 px-1 sticky left-0">{translate(title)}</h3>
-            <div
-              className={`border border-gray-300 overflow-hidden`}
-            >
+            <div className={`border border-gray-300 overflow-hidden`}>
               <Component translate={translate} {...props} />
             </div>
           </div>
@@ -108,7 +106,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
 
       <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0 z-10">
         <div className="text-xs text-slate-500 italic">
-          *{translate('summary.tabs.task_summary.click_box_hint')}
+          *{translate('summary.click_box_hint')}
         </div>
       </div>
     </div>

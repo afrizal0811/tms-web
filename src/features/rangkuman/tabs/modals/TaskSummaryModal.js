@@ -27,7 +27,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
           d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
         ></path>
       </svg>
-      <span className="font-medium">{translate('common.no_data') || 'Tidak ada detail data'}</span>
+      <span className="font-medium">{translate('common.no_data')}</span>
     </div>
   );
 
@@ -51,7 +51,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
               <table className="min-w-full text-sm text-left">
                 <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-center w-12">#</th>
+                    <th className="px-4 py-3 text-center">#</th>
                     <th className="px-4 py-3 text-center">{translate('common.number_plates')}</th>
                     <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
                   </tr>
@@ -59,11 +59,9 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                 <tbody className="divide-y divide-gray-100">
                   {vehicles.map((item, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-center text-gray-500 font-medium">{idx + 1}</td>
-                      <td className="px-4 py-2 text-left font-semibold text-slate-700">
-                        {item.plate || '-'}
-                      </td>
-                      <td className="px-4 py-2 text-left text-slate-600">
+                      <td className="px-4 py-2 text-center text-gray-700">{idx + 1}</td>
+                      <td className="px-4 py-2 text-center text-slate-700">{item.plate || '-'}</td>
+                      <td className="px-4 py-2 text-center text-slate-700">
                         {item.driverName || '-'}
                       </td>
                     </tr>
@@ -81,21 +79,18 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
             const flow = task.flow;
             const customerData = parseCustomerString(task.customerOrder || '');
             const invoice = customerData.invoiceNumber || task.content || '-';
-            const finalCustomerName = customerData.name || task.customerName ;
+            const finalCustomerName = customerData.name || task.customerName;
             const pickupCustomerName = `${task.title} (${finalCustomerName})`;
-            
+
             return (
               <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                    {task.flow} <span className="text-slate-300 mx-1">|</span>{' '}
-                    {invoice}
+                    {task.flow} <span className="text-slate-300 mx-1">|</span> {invoice}
                   </span>
                   <span className="text-sm font-semibold text-slate-800 leading-tight">
                     {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}
                   </span>
-
-                  {/* Container khusus untuk Flags / Warnings */}
                   {(task.isWrongGR || task.isNoRouting) && (
                     <div className="mt-1 flex flex-col gap-1.5 items-start">
                       {task.isWrongGR && (
@@ -103,8 +98,6 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                           ⚠️ <span>{translate('summary.tabs.task_summary.warning')}</span>
                         </div>
                       )}
-
-                      {/* FLAG NO ROUTING */}
                       {task.isNoRouting && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-500 text-white shadow-sm border border-slate-600">
                           {translate('summary.tabs.task_summary.no_routing')}

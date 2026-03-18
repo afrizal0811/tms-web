@@ -40,19 +40,6 @@ export default function TaskSummaryTab({
     return dates;
   }, [startDateStr, endDateStr]);
 
-  const getRoutingDateKey = (deliveryDateObj) => {
-    const d = new Date(deliveryDateObj);
-    const day = d.getDay();
-    let offset = 1;
-    if (day === 1) offset = 2;
-    d.setDate(d.getDate() - offset);
-
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const da = d.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${da}`;
-  };
-
   const renderValue = (val) => {
     if (isLoading && val === undefined) {
       return (
@@ -97,9 +84,11 @@ export default function TaskSummaryTab({
             data: { title, dateObj, type: category, tasks: tasksArray || [] },
           })
         }
-        className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
+        className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
       >
-        {num} {hasWrongGR && <span className="ml-1 text-xs">⚠️</span>}
+        <span className="inline-block border-b-2 border-dotted border-red-700 px-2 pb-0.5">
+          {num} {hasWrongGR && <span className="ml-1 text-xs">⚠️</span>}
+        </span>
       </td>
     );
   };
@@ -134,9 +123,11 @@ export default function TaskSummaryTab({
             data: { title, dateObj, vehicles: tvArray || [] },
           })
         }
-        className="px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors font-bold text-slate-800"
+        className="px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors text-slate-800"
       >
-        {num}
+        <span className="inline-block border-b-2 border-dotted border-red-700 px-2 pb-0.5">
+          {num}
+        </span>
       </td>
     );
   };
@@ -189,7 +180,9 @@ export default function TaskSummaryTab({
     return (
       <Tooltip tooltipContent={tooltip}>
         <th className={`cursor-help px-2 py-3 border border-gray-300 min-w-[60px] ${color}`}>
-          <span className="border-b-[1.5px] border-dashed border-gray-600 pb-px">{text}</span>
+          <span className="cursor-help border-b-2 border-dotted border-slate-700 pb-0.5">
+            {text}
+          </span>
         </th>
       </Tooltip>
     );
@@ -360,7 +353,7 @@ export default function TaskSummaryTab({
 
       <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
         <div className="text-xs text-slate-500 italic">
-          *{translate('summary.tabs.task_summary.click_box_hint')}
+          *{translate('summary.click_box_hint')}
         </div>
       </div>
 

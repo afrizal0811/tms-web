@@ -1,21 +1,14 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip'; // Sesuaikan path ini jika berbeda
-import { formatDateWIB, isDateSunday } from '@/lib/utils';
+import { formatDateWIB, isDateSunday, formatLongDate } from '@/lib/utils';
 import { useMemo } from 'react';
 
 const violetColor = 'bg-[#d9d2e9]';
-const headerClass = 'px-6 py-3 border-r border-b border-gray-300 font-bold w-1/3 text-center';
+const headerClass =
+  'px-6 py-3 border-r border-b border-gray-300 font-bold w-1/3 text-center min-w-[200px]';
 const dataClass =
   'px-6 py-4 font-medium text-gray-900 border-r border-b border-gray-200 text-center';
-
-const isSameDayWIB = (isoString1, isoString2) => {
-  if (!isoString1 || !isoString2) return false;
-  return (
-    formatDateWIB(new Date(isoString1), 'YYYY-MM-DD') ===
-    formatDateWIB(new Date(isoString2), 'YYYY-MM-DD')
-  );
-};
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
@@ -55,8 +48,6 @@ const isValidRoutingTimeWIB = (utcString) => {
 };
 
 export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, language }) {
-  const isIndo = language === 'id';
-
   const processedData = useMemo(() => {
     const dataMap = {};
 
@@ -75,11 +66,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
 
     while (current <= end) {
       const dateKey = formatDateWIB(current, 'YYYY-MM-DD');
-      const displayDate = current.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      const displayDate = formatLongDate(current, language);
 
       dataMap[dateKey] = {
         dateKey: dateKey,
@@ -133,35 +120,26 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
     return Object.keys(dataMap)
       .sort()
       .map((key) => dataMap[key]);
-  }, [tasks, startDateStr, endDateStr, isIndo]);
+  }, [tasks, startDateStr, endDateStr, language]);
 
+  const headerTitle = ['date_ro', 'start_ro', 'end_ro'];
   return (
     <div className="w-full h-full flex flex-col bg-white rounded-b-lx shadow-sm border border-gray-200 p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
         <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0">
           <thead className={`text-xs text-gray-700 uppercase sticky top-0 z-10 ${violetColor}`}>
             <tr>
-              <th className={headerClass}>
-                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.date_ro')}>
-                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
-                    {translate('summary.tabs.time_ro.date_ro')}
-                  </span>
-                </Tooltip>
-              </th>
-              <th className={headerClass}>
-                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.start_ro')}>
-                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
-                    {translate('summary.tabs.time_ro.start_ro')}
-                  </span>
-                </Tooltip>
-              </th>
-              <th className={headerClass}>
-                <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro')}>
-                  <span className="cursor-help border-b border-dashed border-gray-500 pb-0.5">
-                    {translate('summary.tabs.time_ro.end_ro')}
-                  </span>
-                </Tooltip>
-              </th>
+              {headerTitle.map((header, index) => (
+                <th key={index} className={headerClass}>
+                  <Tooltip
+                    tooltipContent={translate(`summary.tabs.time_ro.tooltip.${header}`)}
+                  >
+                    <span className="cursor-help border-b-2 border-dotted border-slate-700 pb-0.5">
+                      {translate(`summary.tabs.time_ro.${header}`)}
+                    </span>
+                  </Tooltip>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -215,7 +193,9 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                   {/* CELL END RO */}
                   <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
                     {isEndMissing ? (
-                      <Tooltip tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro_error')}>
+                      <Tooltip
+                        tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro_error')}
+                      >
                         <span className="cursor-help w-full inline-block">{endDisplay}</span>
                       </Tooltip>
                     ) : (

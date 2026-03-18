@@ -205,21 +205,10 @@ export default function TruckUsageTable({
                   }}
                 >
                   {isClickableTMS ? (
-                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold text-sky-700 underline decoration-sky-700/40 decoration-dashed hover:decoration-solid hover:text-sky-800 transition-all group/tms">
-                      <span>{formatValue(tmsDisp, masterTotal)}</span>
-                      <svg
-                        className="w-3 h-3 ml-1 text-sky-600 opacity-0 group-hover/tms:opacity-100 transition-opacity absolute right-0.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 hover:text-slate-800 transition-all group/tms">
+                      <span className="inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5">
+                        {formatValue(tmsDisp, masterTotal)}
+                      </span>
                     </div>
                   ) : (
                     <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
@@ -262,25 +251,19 @@ export default function TruckUsageTable({
                     </div>
                   )}
 
-                  {hasDataManual && (
+                  {hasDataManual ? (
                     <div className="relative z-20 w-full min-h-5 flex items-center justify-center group/edit">
-                      <span>{formatValue(manualDisp, masterTotal)}</span>
-                      {/* Ikon pensil kecil yang muncul saat di-hover */}
-                      <svg
-                        className="w-3 h-3 ml-1 text-slate-500 opacity-0 group-hover/edit:opacity-100 transition-opacity absolute right-0.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <span
+                        className={
+                          isClickableManual
+                            ? `inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5`
+                            : ''
+                        }
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
+                        {formatValue(manualDisp, masterTotal)}
+                      </span>
                     </div>
-                  )}
+                  ) : undefined}
                 </td>
 
                 <td
@@ -307,7 +290,7 @@ export default function TruckUsageTable({
         className={`${tooltip && 'cursor-help'} ${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
         style={{ backgroundColor: bgColor }}
       >
-        <span className={tooltip && `border-b-[1.5px] border-dashed border-gray-600 pb-px`}>
+        <span className={tooltip && `border-b-2 border-dotted border-red-700 pb-px`}>
           {label}
         </span>
       </td>
@@ -363,22 +346,10 @@ export default function TruckUsageTable({
                 }}
               >
                 {isClickableTMS ? (
-                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center font-bold text-sky-700 underline decoration-sky-700/40 decoration-dashed hover:decoration-solid hover:text-sky-800 transition-all group/tms">
-                    <span>{formatValue(tmsDisp, masterTotal)}</span>
-                    {/* Ikon Kaca Pembesar (Search) */}
-                    <svg
-                      className="w-3 h-3 ml-1 text-sky-600 opacity-0 group-hover/tms:opacity-100 transition-opacity absolute right-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 hover:text-slate-800 transition-all group/tms">
+                    <span className="inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5">
+                      {formatValue(tmsDisp, masterTotal)}
+                    </span>
                   </div>
                 ) : (
                   <div className="relative z-20 w-full min-h-5 flex items-center justify-center">
@@ -414,25 +385,19 @@ export default function TruckUsageTable({
                     </div>
                   )}
 
-                  {hasDataManual && (
+                  {hasDataManual ? (
                     <div className="relative z-20 w-full min-h-5 flex items-center justify-center group/edit">
-                      <span>{formatValue(manualDisp, masterTotal)}</span>
-                      {/* Ikon pensil kecil yang muncul saat di-hover */}
-                      <svg
-                        className="w-3 h-3 ml-1 text-slate-500 opacity-0 group-hover/edit:opacity-100 transition-opacity absolute right-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <span
+                        className={
+                          isClickableManual
+                            ? `inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5`
+                            : ''
+                        }
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
+                        {formatValue(manualDisp, masterTotal)}
+                      </span>
                     </div>
-                  )}
+                  ) : undefined}
                 </td>
               ) : (
                 <td
@@ -502,7 +467,7 @@ export default function TruckUsageTable({
                 className={`${thClass} ${thickBorderClass} min-w-[90px]`}
                 style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
               >
-                {d.day}
+                {formatDateUniversal(d.str, 'DD-MM-YYYY')}
               </th>
             ))}
           </tr>

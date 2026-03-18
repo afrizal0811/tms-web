@@ -26,7 +26,7 @@ export default function TruckUsageSummaryTable({
         <td
           className={`${isEmpty(className) ? thClassTooltip : className} ${addClass && `${addClass}`}`}
         >
-          <span className="border-b-[1.5px] border-dashed border-gray-600 pb-px">{text}</span>
+          <span className="border-b-2 border-dotted border-slate-700 pb-px">{text}</span>
         </td>
       </Tooltip>
     );

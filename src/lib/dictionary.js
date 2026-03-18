@@ -475,7 +475,8 @@ export const dictionary = {
       subtitle_1: 'Rekapitulasi',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
-      long_message: 'Memproses banyak data, silakan tunggu sebentar.',
+      long_message: 'Memproses banyak data, silakan tunggu sebentar',
+      click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       modal: {
         title: 'Peringatan Beban Data',
         text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
@@ -503,7 +504,6 @@ export const dictionary = {
           },
         },
         task_summary: {
-          click_box_hint: 'Klik kotak dengan teks tebal untuk melihat detail',
           co: 'Pembatalan Order',
           co_persentage: 'Pembatalan Order (%)',
           date: 'Tanggal',
@@ -1177,6 +1177,7 @@ export const dictionary = {
       subtitle_highlight: 'task performance',
       title: 'Summary',
       long_message: 'Processing a lot of data, please wait a moment.',
+      click_box_hint: 'Click text with red underline to view details',
       modal: {
         title: 'Data Load Warning',
         text: `The data being processed is too large (more than 14 days). Do you want to continue?`,
@@ -1204,7 +1205,6 @@ export const dictionary = {
           },
         },
         task_summary: {
-          click_box_hint: 'Click box with bold text to view details',
           co: 'Cancel Order',
           co_persentage: 'Cancel Order (%)',
           date: 'Date',

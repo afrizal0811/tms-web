@@ -14,22 +14,61 @@ export default function TruckDetailTab({ data, translate, language }) {
     }
   };
   const closeModal = () => setModalData(null);
-
+  const percentage = (data, maxData) => ((data / maxData) * 100).toFixed(1) + '%';
   const isSunday = (dateStr) => {
     if (!dateStr) return false;
     const date = new Date(dateStr);
     return date.getUTCDay() === 0;
   };
 
-  // --- COLORS ---
-  const COLOR_A = 'bg-[#fae2d5]';
-  const COLOR_B = 'bg-[#dbe9f7]';
-  const COLOR_C = 'bg-[#f4cccc]';
-  // UPDATE WARNA ERROR (Hex + Text White)
-  const COLOR_ERR_MANUAL = 'bg-[#4F76C7] text-white ';
-  const COLOR_ERR_DATE = 'bg-[#C85D86] text-white';
-  const COLOR_ERR_BOTH = 'bg-[#5C5FB2] text-white';
-
+  const errorColor = [
+    {
+      name: 'blue',
+      colors: 'bg-[#4F76C7] text-white',
+    },
+    {
+      name: 'magenta',
+      colors: 'bg-[#C85D86] text-white',
+    },
+    {
+      name: 'indigo',
+      colors: 'bg-[#5C5FB2] text-white',
+    },
+  ];
+  const displayData = [
+    {
+      key: 'weight',
+      border: true,
+      getValue: (m) => (m?.maxWeight > 0 ? percentage(m.weight, m.maxWeight) : '-'),
+    },
+    {
+      key: 'volume',
+      getValue: (m) => (m?.maxVolume > 0 ? percentage(m.volume, m.maxVolume) : '-'),
+    },
+    {
+      key: 'distance',
+      getValue: (m) => m?.dist?.toLocaleString(),
+    },
+    {
+      key: 'total_outlet',
+      getValue: (m) => m?.outlets,
+    },
+    {
+      key: 'total_delivery',
+      getValue: (m) => m?.delivered,
+    },
+    {
+      key: 'ship_duration',
+      getValue: (m) => formatMinutesToHHMM(m?.duration),
+    },
+    {
+      key: 'delivered',
+      getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
+    },
+  ];
+  const titleColor = 'bg-[#fae2d5]';
+  const dateColor = 'bg-[#dbe9f7]';
+  const holidayColor = 'bg-[#f4cccc]';
   const thClass = 'border border-gray-300 px-2 py-2 text-center text-xs font-bold text-slate-700';
   const thMetricClass =
     'border border-gray-300 px-2 py-2 text-center text-xs font-bold text-slate-700';
@@ -37,9 +76,11 @@ export default function TruckDetailTab({ data, translate, language }) {
     'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700 whitespace-nowrap';
   const tdClickable = `${tdClass} cursor-pointer hover:opacity-80 transition-opacity`;
 
-  const stickyType = 'sticky left-0 z-20 border-r';
-  const stickyPlate = 'sticky left-[80px] z-20 border-r';
-  const stickyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
+  // UPDATE: Tambahkan md: dan sesuaikan kalkulasi jarak left-nya
+  // Col 1 (80px), Col 2 (180px) -> total 260px sebelum Col 3
+  const stickyType = 'md:sticky md:left-0 md:z-20 md:border-r';
+  const stickyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r';
+  const stickyDriver = 'md:sticky md:left-[260px] md:z-20 md:border-r md:shadow-md';
 
   return (
     <div className="w-full h-full flex flex-col relative p-0">
@@ -54,20 +95,27 @@ export default function TruckDetailTab({ data, translate, language }) {
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100">
             <tr>
-              <th rowSpan="2" className={`${thClass} min-w-20 sticky left-0 z-40 ${COLOR_A}`}>
+              {/* UPDATE HEADER: Tambahkan md: dan sesuaikan min-w & left */}
+              <th
+                rowSpan="2"
+                className={`${thClass} min-w-20 md:sticky md:left-0 md:z-40 ${titleColor}`}
+              >
                 {translate('common.storage_type')}
               </th>
-              <th rowSpan="2" className={`${thClass} min-w-[100px] sticky left-20 z-40 ${COLOR_A}`}>
+              <th
+                rowSpan="2"
+                className={`${thClass} min-w-[180px] md:sticky md:left-20 md:z-40 ${titleColor}`}
+              >
                 {translate('common.number_plates')}
               </th>
               <th
                 rowSpan="2"
-                className={`${thClass} min-w-[200px] sticky left-[180px] z-40 ${COLOR_A} border-r-2 border-slate-400`}
+                className={`${thClass} min-w-[200px] md:sticky md:left-[260px] md:z-40 ${titleColor} md:border-r-2 md:border-slate-400`}
               >
                 {translate('common.driver')}
               </th>
               {dateKeys.map((d, i) => {
-                const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
+                const headerColor = isSunday(d.str) ? holidayColor : dateColor;
                 const date = formatLongDate(d.str, indoLang);
                 return (
                   <th
@@ -82,30 +130,19 @@ export default function TruckDetailTab({ data, translate, language }) {
             </tr>
             <tr>
               {dateKeys.map((d, i) => {
-                const metricColor = isSunday(d.str) ? COLOR_C : COLOR_A;
+                const metricColor = isSunday(d.str) ? holidayColor : titleColor;
                 return (
-                  <Fragment key={i}>
-                    <th className={`${thMetricClass} ${metricColor} border-l-2 border-l-gray-400`}>
-                      {translate('summary.tabs.truck_detail.weight')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.volume')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.distance')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.total_outlet')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.total_delivery')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.ship_duration')}
-                    </th>
-                    <th className={`${thMetricClass} ${metricColor}`}>
-                      {translate('summary.tabs.truck_detail.delivered')}
-                    </th>
+                  <Fragment key={`${d.day}-${i}-header`}>
+                    {displayData.map(({ key, border }) => (
+                      <th
+                        key={key}
+                        className={`${thMetricClass} ${metricColor} ${
+                          border ? 'border-l-2 border-l-gray-400' : ''
+                        }`}
+                      >
+                        {translate(`summary.tabs.truck_detail.${key}`)}
+                      </th>
+                    ))}
                   </Fragment>
                 );
               })}
@@ -119,81 +156,55 @@ export default function TruckDetailTab({ data, translate, language }) {
                   <td className={`${tdClass} ${stickyType} bg-white`}>{driver.type}</td>
                   <td className={`${tdClass} ${stickyPlate} bg-white`}>{driver.plat}</td>
                   <td
-                    className={`${tdClass} ${stickyDriver} bg-white text-left border-r-2 border-slate-400`}
+                    className={`${tdClass} ${stickyDriver} bg-white text-left md:border-r-2 md:border-slate-400`}
                   >
                     {driver.name}
                   </td>
 
                   {dateKeys.map((d, i) => {
                     const metrics = dataMatrix[d.str][email];
-                    const isSun = isSunday(d.str);
-                    let cellBg = isSun ? COLOR_C : '';
-                    const emptyBg = isSun ? COLOR_C : 'bg-gray-50';
+                    const outletData = metrics?.outlets;
+                    const onClick = () => handleCellClick(metrics, driver.name, d.display);
 
-                    if (metrics && metrics.outlets > 0) {
+                    const isSun = isSunday(d.str);
+                    let cellBg = isSun ? holidayColor : '';
+                    const emptyBg = isSun ? holidayColor : 'bg-gray-50';
+
+                    if (metrics && outletData > 0) {
                       if (metrics.hasManualError && metrics.hasBedaHariError)
-                        cellBg = COLOR_ERR_BOTH;
-                      else if (metrics.hasManualError) cellBg = COLOR_ERR_MANUAL;
-                      else if (metrics.hasBedaHariError) cellBg = COLOR_ERR_DATE;
+                        cellBg = errorColor.find((item) => item.name === 'indigo')?.colors;
+                      else if (metrics.hasManualError)
+                        cellBg = errorColor.find((item) => item.name === 'blue')?.colors;
+                      else if (metrics.hasBedaHariError)
+                        cellBg = errorColor.find((item) => item.name === 'magenta')?.colors;
                     }
 
-                    if (!metrics || metrics.outlets === 0) {
+                    if (!metrics || outletData === 0) {
                       return (
-                        <Fragment key={i}>
-                          <td className={`${tdClass} border-l-2 border-l-gray-400 ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
-                          <td className={`${tdClass} ${emptyBg}`}></td>
+                        <Fragment key={`${d.day}-${i}-empty`}>
+                          {displayData.map(({ key, border }) => (
+                            <td
+                              key={key}
+                              className={`${tdClass} ${emptyBg} ${
+                                border ? 'border-l-2 border-l-gray-400' : ''
+                              }`}
+                            ></td>
+                          ))}
                         </Fragment>
                       );
                     }
 
-                    const weightPct =
-                      metrics.maxWeight > 0
-                        ? ((metrics.weight / metrics.maxWeight) * 100).toFixed(1) + '%'
-                        : '-';
-                    const volPct =
-                      metrics.maxVolume > 0
-                        ? ((metrics.volume / metrics.maxVolume) * 100).toFixed(1) + '%'
-                        : '-';
-                    const delPct =
-                      metrics.outlets > 0
-                        ? ((metrics.delivered / metrics.outlets) * 100).toFixed(1) + '%'
-                        : '-';
-                    const onClick = () => handleCellClick(metrics, driver.name, d.display);
-
                     return (
-                      <Fragment key={i}>
-                        <td
-                          onClick={onClick}
-                          className={`${tdClickable} border-l-2 border-l-gray-400 ${cellBg}`}
-                        >
-                          {weightPct}
-                        </td>
-                        <td onClick={onClick} className={`${tdClickable} ${cellBg}`}>
-                          {volPct}
-                        </td>
-                        <td onClick={onClick} className={`${tdClickable} ${cellBg}`}>
-                          {metrics.dist?.toLocaleString()}
-                        </td>
-                        <td onClick={onClick} className={`${tdClickable} ${cellBg}`}>
-                          {metrics.outlets}
-                        </td>
-                        <td onClick={onClick} className={`${tdClickable} ${cellBg}`}>
-                          {metrics.delivered}
-                        </td>
-                        <td onClick={onClick} className={`${tdClickable} ${cellBg}`}>
-                          {formatMinutesToHHMM(metrics.duration)}
-                        </td>
-                        <td
-                          onClick={onClick}
-                          className={`${tdClickable} font-semibold ${cellBg} ${metrics.delivered < metrics.outlets ? 'text-red-600' : 'text-green-600'}`}
-                        >
-                          {delPct}
-                        </td>
+                      <Fragment key={`${d.day}-${i}-data`}>
+                        {displayData.map(({ key, border, getValue }) => (
+                          <td
+                            key={key}
+                            onClick={onClick}
+                            className={`${tdClickable} ${cellBg} ${border ? 'border-l-2 border-l-gray-400' : ''}`}
+                          >
+                            {getValue(metrics)}
+                          </td>
+                        ))}
                       </Fragment>
                     );
                   })}
@@ -207,29 +218,21 @@ export default function TruckDetailTab({ data, translate, language }) {
       {/* LEGENDA WARNA BARU */}
       <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
         <div>
-          <h4 className="text-xs font-bold mb-2 underline text-slate-700">
-            {translate('summary.tabs.truck_detail.color_exp')}
-          </h4>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 text-xs text-slate-600">
-              <div className="flex items-center gap-2">
-                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_MANUAL}`} />
-                <span>{translate('summary.tabs.truck_detail.blue')}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_DATE}`} />
-                <span>{translate('summary.tabs.truck_detail.magenta')}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${COLOR_ERR_BOTH}`} />
-                <span>{translate('summary.tabs.truck_detail.indigo')}</span>
-              </div>
-            </div>
+          <div className="flex flex-col justify-between gap-2 pb-1">
             <div className="text-xs text-slate-500 italic">
               *{translate('summary.tabs.truck_detail.click_row_hint')}
             </div>
+            <h4 className="text-xs font-bold mb-2 text-slate-700">
+              {translate('summary.tabs.truck_detail.color_exp')}
+            </h4>
+          </div>
+          <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600">
+            {errorColor.map((color, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${color.colors}`} />
+                <span>{translate(`summary.tabs.truck_detail.${color.name}`)}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
-import PlaceholderTab from './tabs/PlaceholderTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TimeROTab from './tabs/TimeROTab';
@@ -237,8 +236,6 @@ export default function RangkumanSummary() {
           translate: t,
           language: lang,
         });
-      default:
-        return <PlaceholderTab tabName={activeTab} />;
     }
   };
 

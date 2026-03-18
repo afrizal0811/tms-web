@@ -1,9 +1,9 @@
 // File: features/rangkuman/tabs/PendingReasonsTab.js
 import Tooltip from '@/components/Tooltip';
+import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { toastSuccess } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
 import { useRef, useState } from 'react';
-import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 
 // --- 1. REASON CELL ---
 const ReasonCell = ({ text, className }) => {
@@ -61,7 +61,7 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
 
   const textStyle = isError
     ? 'text-[#FF0000] font-bold border-b border-dotted border-red-500'
-    : 'border-b border-dotted border-slate-400 group-hover:border-blue-500';
+    : 'inline-block border-b-2 border-dotted border-red-700 px-1';
 
   const handleCopy = () => {
     if (!firstRef) return;
@@ -180,13 +180,12 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
                 <SOCell text={textBatal} content={item.content} className={tdClass} />
                 <SOCell text={textParsial} content={item.content} className={tdClass} />
 
-                {/* CELL PENDING (Pass JSX errorMsg) */}
                 <SOCell
                   text={textPending}
                   content={item.content}
                   className={tdClass}
                   isError={isWrongGR}
-                  errorMessage={errorMsg} // Passing JSX
+                  errorMessage={errorMsg}
                 />
 
                 {shouldShowPendingGR && (
