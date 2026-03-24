@@ -2,7 +2,7 @@
 'use client';
 
 import { getVehicleTypes } from '@/lib/api';
-import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
+import { formatDateWIB, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 function formatSimpleTime(timeStr) {
@@ -446,8 +446,84 @@ export async function generateRoutingWorkbook(
     if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = usageDataNumStyle;
     if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
   });
+
   wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
+
+  const helpHeader = [
+    translate('excel.routing.headers.routing_id'),
+    translate('excel.routing.headers.routing_name'),
+    translate('excel.routing.headers.created_by'),
+    translate('excel.routing.headers.created_at'),
+    translate('excel.routing.headers.routing_result'),
+  ];
+
+  const helpDataRows = [];
+
+  const sortedHelpItems = filteredResults
+    .filter((r) => r.dispatchStatus && String(r.dispatchStatus).toLowerCase() === 'done')
+    .sort((a, b) => {
+      const timeA = a.createdTime ? new Date(a.createdTime).getTime() : 0;
+      const timeB = b.createdTime ? new Date(b.createdTime).getTime() : 0;
+      return timeA - timeB;
+    });
+
+  sortedHelpItems.forEach((resultItem) => {
+    let routingId = resultItem._id || '-';
+    let routingName = resultItem.name || '-';
+    let createdBy = resultItem.user?.name || '-';
+    let routingTime = '-';
+
+    if (resultItem.createdTime) {
+      try {
+        const dateObj = new Date(resultItem.createdTime);
+        routingTime = formatDateWIB(dateObj, 'DD/MM/YYYY HH:mm:ss');
+      } catch (e) {
+        routingTime = resultItem.createdTime;
+      }
+    }
+
+    let routingResult = resultItem.dispatchMessage || '-';
+    if (routingResult.includes('/')) {
+      const [success, total] = routingResult.split('/');
+      if (!isNaN(success) && !isNaN(total)) {
+        routingResult = translate('excel.routing.data.dispatch_message', {
+          success,
+          total,
+        });
+      }
+    }
+
+    helpDataRows.push([routingId, routingName, createdBy, routingTime, routingResult]);
+  });
+
+  const finalHelpData = [helpHeader, ...helpDataRows];
+  const wsHelp = XLSX.utils.aoa_to_sheet(finalHelpData);
+  const helpHeaderStyle = {
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const helpDataStyle = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
+
+  wsHelp['A1'].s = helpHeaderStyle;
+  wsHelp['B1'].s = helpHeaderStyle;
+  wsHelp['C1'].s = helpHeaderStyle;
+  wsHelp['D1'].s = helpHeaderStyle;
+  wsHelp['E1'].s = helpHeaderStyle;
+
+  helpDataRows.forEach((row, idx) => {
+    const rowNum = idx + 2;
+    if (wsHelp[`A${rowNum}`]) wsHelp[`A${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`B${rowNum}`]) wsHelp[`B${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`C${rowNum}`]) wsHelp[`C${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`D${rowNum}`]) wsHelp[`D${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`E${rowNum}`]) wsHelp[`E${rowNum}`].s = helpDataStyle;
+  });
+
+  wsHelp['!cols'] = [{ wch: 28 }, { wch: 30 }, { wch: 20 }, { wch: 22 }, { wch: 45 }];
+  XLSX.utils.book_append_sheet(wb, wsHelp, translate('excel.routing.sheets.help'));
 
   const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
   const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
