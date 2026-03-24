@@ -35,8 +35,25 @@ export default function TmsSummary({
 
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [currentRunning, setCurrentRunning] = useState(null);
 
+  const [isCustomRouting, setIsCustomRouting] = useState(false);
+  const [routingDate, setRoutingDate] = useState(() => {
+    const d = new Date(initialDate);
+    d.setDate(d.getDate() - 1);
+    if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+    return d;
+  });
+
+  useEffect(() => {
+    if (!isCustomRouting) {
+      const d = new Date(selectedDate);
+      d.setDate(d.getDate() - 1);
+      if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+      setRoutingDate(d);
+    }
+  }, [selectedDate, isCustomRouting]);
+
+  const [currentRunning, setCurrentRunning] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(null);
 
@@ -61,29 +78,17 @@ export default function TmsSummary({
 
   const disabledCommon = isAnyLoading || isMapping;
 
-  const safeEnsureDriverData = () => {
-    if (!Array.isArray(driverData) || isEmpty(driverData)) {
-      throw new Error('Data driver belum dimuat. Mohon muat data driver terlebih dahulu.');
-    }
-    if (!selectedLocation) {
-      throw new Error('Lokasi belum dipilih.');
-    }
-  };
-
   const handleRouting = async () => {
     try {
       setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
       if (setIsMapping) setIsMapping(false);
+      if (!routingDate) throw new Error(t('common.invalid_date'));
 
-      safeEnsureDriverData();
-
-      if (!selectedDateString) throw new Error('Tanggal tidak valid.');
-
-      const { dateFrom, dateTo } = calculateTargetDates(selectedDateString);
-      const apiDateFrom = `${dateFrom} 00:00:00`;
-      const apiDateTo = `${dateTo} 23:59:59`;
+      const targetRoutingStr = formatDateUniversal(routingDate);
+      const apiDateFrom = `${targetRoutingStr} 00:00:00`;
+      const apiDateTo = `${targetRoutingStr} 23:59:59`;
 
       const resultsData = await getResultsSummary({
         dateFrom: apiDateFrom,
@@ -97,7 +102,6 @@ export default function TmsSummary({
         throw new Error(t('report.toast.no_routing'));
       }
 
-      // Ambil mapping eksklusif dari Database
       const mappingsDB = await getVehicleMappings();
       const mappingsObj = mappingsDB.reduce((acc, curr) => {
         acc[curr.plat] = curr.mappedType;
@@ -130,9 +134,7 @@ export default function TmsSummary({
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('delivery');
 
-      safeEnsureDriverData();
-
-      if (!selectedDateString) throw new Error('Tanggal tidak valid.');
+      if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
       const { dateFrom: apiDate } = calculateTargetDates(selectedDateString);
 
@@ -194,9 +196,7 @@ export default function TmsSummary({
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('time');
 
-      safeEnsureDriverData();
-
-      if (!selectedDateString) throw new Error('Tanggal tidak valid.');
+      if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDateString);
 
@@ -250,27 +250,70 @@ export default function TmsSummary({
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">{t('report.daily_title')}</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{t('report.daily_title')}</h1>
 
-      <div className="mb-8 text-center w-full max-w-xs cursor-pointer">
-        <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
-          {t('common.delivery_date')}
-        </label>
-        <CustomDatePicker
-          className="max-w-xs"
-          disabled={disabledCommon}
-          id="shippingDate"
-          maxDate={tomorrow}
-          onChange={handleDateChange}
-          selected={selectedDate}
-        />
+      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 mb-10 w-full">
+        <div className="flex flex-col items-center w-full max-w-xs">
+          <label
+            htmlFor="shippingDate"
+            className="block text-lg mb-2 text-gray-500 font-medium text-center"
+          >
+            {t('common.delivery_date')}
+          </label>
+          <CustomDatePicker
+            className="max-w-xs cursor-pointer"
+            disabled={disabledCommon}
+            id="shippingDate"
+            maxDate={tomorrow}
+            onChange={handleDateChange}
+            selected={selectedDate}
+          />
+
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="customRouting"
+              disabled={disabledCommon}
+              checked={isCustomRouting}
+              onChange={(e) => setIsCustomRouting(e.target.checked)}
+              className="w-4 h-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
+            />
+            <label
+              htmlFor="customRouting"
+              className="text-sm text-gray-600 cursor-pointer select-none"
+            >
+              {t('report.change_date')}
+            </label>
+          </div>
+        </div>
+
+        {isCustomRouting && (
+          <div className="flex flex-col items-center w-full max-w-xs transition-opacity duration-300">
+            <label
+              htmlFor="routingDate"
+              className="block text-lg mb-2 text-gray-500 font-medium text-center"
+            >
+              {t('report.routing_date')}
+            </label>
+            <CustomDatePicker
+              className="max-w-xs cursor-pointer"
+              disabled={disabledCommon}
+              id="routingDate"
+              maxDate={selectedDate}
+              onChange={(date) => {
+                if (date) setRoutingDate(date);
+              }}
+              selected={routingDate}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
         <button
           onClick={handleRouting}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'routing' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >
@@ -287,7 +330,7 @@ export default function TmsSummary({
         <button
           onClick={handleDelivery}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'delivery' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >
@@ -304,7 +347,7 @@ export default function TmsSummary({
         <button
           onClick={handleTime}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
             ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'time' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
           `}
         >
