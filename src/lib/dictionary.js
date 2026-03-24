@@ -270,7 +270,7 @@ export const dictionary = {
         select_date: 'Pilih tanggal pengiriman',
         select_diff_date: 'Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.',
         skip_data:
-          'Terdapat ${skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
+          'Terdapat {skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
         skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
         success: 'File berhasil diunduh!',
       },
