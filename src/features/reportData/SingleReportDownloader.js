@@ -46,13 +46,11 @@ export default function TmsSummary({
   });
 
   useEffect(() => {
-    if (!isCustomRouting) {
-      const d = new Date(selectedDate);
-      d.setDate(d.getDate() - 1);
-      if (d.getDay() === 0) d.setDate(d.getDate() - 1);
-      setRoutingDate(d);
-    }
-  }, [selectedDate, isCustomRouting]);
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+    setRoutingDate(d);
+  }, [selectedDate]);
 
   const [currentRunning, setCurrentRunning] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -85,9 +83,19 @@ export default function TmsSummary({
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
       if (setIsMapping) setIsMapping(false);
-      if (!routingDate) throw new Error(t('common.invalid_date'));
 
-      const targetRoutingStr = formatDateUniversal(routingDate);
+      let targetRoutingStr;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingStr = formatDateUniversal(routingDate);
+      } else {
+        if (!selectedDate) throw new Error(t('common.invalid_date'));
+        const d = new Date(selectedDate);
+        d.setDate(d.getDate() - 1);
+        if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+        targetRoutingStr = formatDateUniversal(d);
+      }
+
       const apiDateFrom = `${targetRoutingStr} 00:00:00`;
       const apiDateTo = `${targetRoutingStr} 23:59:59`;
 
@@ -113,7 +121,7 @@ export default function TmsSummary({
         driverData,
         filteredResults,
         mappingsObj,
-        selectedDateString,
+        targetRoutingStr,
         selectedLocationName,
         t
       );
