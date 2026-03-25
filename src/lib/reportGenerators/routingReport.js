@@ -13,7 +13,7 @@ function formatSimpleTime(timeStr) {
 export async function generateRoutingWorkbook(
   driverData,
   filteredResults,
-  mappingsObj, // <-- Menerima data mapping dari DB
+  mappingsObj,
   dateForFile,
   hubName,
   t
@@ -22,10 +22,18 @@ export async function generateRoutingWorkbook(
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
 
   const translate = t || ((key) => key);
-  const driverMap = driverData.reduce((acc, driver) => {
-    if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
-    return acc;
-  }, {});
+
+  const emailMap = {};
+  const platMap = {};
+  driverData.forEach((driver) => {
+    if (driver.email)
+      emailMap[driver.email.trim().toLowerCase()] = { name: driver.name, plat: driver.plat };
+    if (driver.plat)
+      platMap[driver.plat.replace(/\s+/g, '').toLowerCase()] = {
+        name: driver.name,
+        plat: driver.plat,
+      };
+  });
 
   let processedDataRows = [];
   let totalDryDistance = 0;
@@ -65,12 +73,12 @@ export async function generateRoutingWorkbook(
           }
         }
 
-        const needsManualWeight = hasTrips && initialTotalWeight === 0;
-        const needsManualVolume = hasTrips && initialTotalVolume === 0;
-        const needsManualDistance = hasTrips && initialTotalDistance === 0;
-        const needsManualTravelTime = hasTrips && initialTotalTravelTime === 0;
-        const needsManualVisitTime = hasTrips && initialTotalVisitTime === 0;
-        const needsManualWaitingTime = hasTrips && initialTotalWaitingTime === 0;
+        const needsManualWeight = hasTrips && Math.floor(initialTotalWeight) <= 0;
+        const needsManualVolume = hasTrips && Math.floor(initialTotalVolume) <= 0;
+        const needsManualDistance = hasTrips && Math.floor(initialTotalDistance) <= 0;
+        const needsManualTravelTime = hasTrips && Math.floor(initialTotalTravelTime) <= 0;
+        const needsManualVisitTime = hasTrips && Math.floor(initialTotalVisitTime) <= 0;
+        const needsManualWaitingTime = hasTrips && Math.floor(initialTotalWaitingTime) <= 0;
 
         let manualCalcs = {
           weight: 0,
@@ -119,9 +127,13 @@ export async function generateRoutingWorkbook(
           ? manualCalcs.waitingTime
           : initialTotalWaitingTime;
 
-        const assigneeEmail = route.assignee;
-        const driverInfo = driverMap[assigneeEmail];
-        const driverName = driverInfo ? driverInfo.name : assigneeEmail;
+        const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
+        const vehiclePlatRaw = route.vehicleName
+          ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
+          : '';
+
+        const driverInfo = emailMap[assigneeEmail] || platMap[vehiclePlatRaw];
+        const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
 
         const maxWeight = route.vehicleMaxWeight || 0;
         const maxVolume = route.vehicleMaxVolume || 0;
@@ -173,7 +185,6 @@ export async function generateRoutingWorkbook(
             }
 
             let category = 'Lainnya';
-            // PERUBAHAN: Cek DB Mapping murni berdasarkan pelat
             if (mappingsObj[vehiclePlat]) {
               category = mappingsObj[vehiclePlat];
             } else if (vehicleTypes.includes(specificType)) {
@@ -252,10 +263,21 @@ export async function generateRoutingWorkbook(
     translate('excel.routing.headers.etd_hub'),
   ];
 
+  const seenIdentifiers = new Set();
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
     if (isEmpty(plat)) return false;
     if (plat.toUpperCase().includes('DEMO')) return false;
+
+    const emailKey = driver.email ? driver.email.trim().toLowerCase() : '';
+    const nameKey = driver.name ? driver.name.trim().toLowerCase() : '';
+
+    if (emailKey && seenIdentifiers.has(emailKey)) return false;
+    if (nameKey && seenIdentifiers.has(nameKey)) return false;
+
+    if (emailKey) seenIdentifiers.add(emailKey);
+    if (nameKey) seenIdentifiers.add(nameKey);
+
     return true;
   });
 
