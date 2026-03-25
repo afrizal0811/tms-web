@@ -274,6 +274,9 @@ export const dictionary = {
         skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
         success: 'File berhasil diunduh!',
       },
+      tooltip: {
+        info: 'Untuk routing non H-1',
+      },
     },
     excel: {
       routing: {
@@ -983,6 +986,9 @@ export const dictionary = {
         skip_data: 'There are {skippedDates} date(s) with no data (including Sundays).',
         skip_sunday: 'Skipped {sundaysSkipped} date(s) because they fall on Sunday.',
         success: 'File downloaded successfully!',
+      },
+      tooltip: {
+        info: 'For non D-1 routing',
       },
     },
     excel: {

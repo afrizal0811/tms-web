@@ -2,6 +2,7 @@
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
+import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
@@ -280,9 +281,28 @@ export default function TmsSummary({
             />
             <label
               htmlFor="customRouting"
-              className="text-sm text-gray-600 cursor-pointer select-none"
+              className="text-sm text-gray-600 cursor-pointer select-none flex items-center gap-1"
             >
               {t('report.change_date')}
+
+              <Tooltip tooltipContent={t('report.tooltip.info')}>
+                <span className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </span>
+              </Tooltip>
             </label>
           </div>
         </div>
