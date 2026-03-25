@@ -314,7 +314,7 @@ export function generateDeliveryWorkbook(
         highlightType = 'yellow'; // Hanya Beda Hari
       }
       return {
-        plat: stats.plat || driverPlat,
+        plat: driverPlat || stats.plat,
         driver: driverName,
         totalOutlet: stats.totalOutlet,
         totalDelivery: totalDelivery,

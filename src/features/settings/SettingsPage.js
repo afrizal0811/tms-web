@@ -1,13 +1,15 @@
 'use client';
 
+import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriversSyncStatus, getHubs, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import MasterDataTab from './tabs/MasterDataTab';
 import SyncDataTab from './tabs/SyncDataTab';
+
 export default function SettingsPage() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -15,13 +17,41 @@ export default function SettingsPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isReadOnly, setIsReadOnly] = useState(false);
-
   const [activeTab, setActiveTab] = useState('sync');
-
-  const [hubsList, setHubsList] = useState([]);
   const [driverSyncStatus, setDriverSyncStatus] = useState({});
   const [lastUpdated, setLastUpdated] = useState({});
   const [vehicleTypes, setVehicleTypes] = useState([]);
+
+  const fetchAllData = useCallback(async () => {
+    try {
+      const [hubs, rolesDb, dStatus, vTypes] = await Promise.all([
+        getHubs(),
+        getRoles(),
+        getDriversSyncStatus(),
+        getVehicleTypes(),
+      ]);
+
+      setLastUpdated({
+        hubs:
+          hubs.length > 0 && hubs[0].updatedAt
+            ? new Date(hubs[0].updatedAt).toLocaleString('id-ID')
+            : '-',
+        roles:
+          rolesDb.length > 0 && rolesDb[0].updatedAt
+            ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
+            : '-',
+      });
+
+      const dMap = {};
+      dStatus.forEach((d) => {
+        if (d._max.updatedAt) dMap[d.hubId] = new Date(d._max.updatedAt).toLocaleString('id-ID');
+      });
+      setDriverSyncStatus(dMap);
+      setVehicleTypes(vTypes);
+    } catch (error) {
+      toastError(t('common.error', { err: error.message }));
+    }
+  }, [t]);
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -59,49 +89,19 @@ export default function SettingsPage() {
     };
 
     checkAuthAndLoadData();
-  }, [router]);
+  }, [router, fetchAllData]);
 
-  const fetchAllData = async () => {
-    try {
-      const [hubs, rolesDb, dStatus, vTypes] = await Promise.all([
-        getHubs(),
-        getRoles(),
-        getDriversSyncStatus(),
-        getVehicleTypes(),
-      ]);
-
-      setLastUpdated({
-        hubs:
-          hubs.length > 0 && hubs[0].updatedAt
-            ? new Date(hubs[0].updatedAt).toLocaleString('id-ID')
-            : '-',
-        roles:
-          rolesDb.length > 0 && rolesDb[0].updatedAt
-            ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
-            : '-',
-      });
-
-      const dMap = {};
-      dStatus.forEach((d) => {
-        if (d._max.updatedAt) dMap[d.hubId] = new Date(d._max.updatedAt).toLocaleString('id-ID');
-      });
-      setDriverSyncStatus(dMap);
-      setHubsList(hubs);
-      setVehicleTypes(vTypes);
-    } catch (error) {
-      toastError('Gagal memuat data pengaturan');
-    }
-  };
+  
 
   if (isLoadingPage) {
     return (
-      <div className="p-8 text-center text-slate-500 flex flex-col justify-center items-center h-full">
-        <span className="animate-spin h-8 w-8 border-4 border-slate-300 border-t-sky-600 rounded-full mb-4"></span>
-        Memuat pengaturan...
+      <div className="p-8 text-center text-slate-500 flex flex-col justify-center items-center h-full gap-4">
+        <Spinner />
+        {t('common.loading')}
       </div>
     );
   }
-t
+
   if (!isAuthorized) return null;
 
   const buttonData = [
@@ -142,7 +142,6 @@ t
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
-      {/* HEADER DIKEMBALIKAN KE VERSI STANDAR */}
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-slate-900">{t('setting.title')}</h1>
       </div>

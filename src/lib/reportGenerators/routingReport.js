@@ -288,8 +288,8 @@ export async function generateRoutingWorkbook(
 
     if (mergedRow && mergedRow.hasTrips) {
       return {
-        Plat: mergedRow.plat,
-        Driver: mergedRow.driver,
+        Plat: driverPlat,
+        Driver: driverName,
         WeightPercentage: mergedRow.weightPercentage > 0 ? `${mergedRow.weightPercentage}%` : null,
         VolumePercentage: mergedRow.volumePercentage > 0 ? `${mergedRow.volumePercentage}%` : null,
         TotalDistance: mergedRow.totalDistance > 0 ? mergedRow.totalDistance : null,
