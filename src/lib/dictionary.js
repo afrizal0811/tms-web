@@ -275,7 +275,8 @@ export const dictionary = {
         success: 'File berhasil diunduh!',
       },
       tooltip: {
-        info: 'Untuk routing non H-1',
+        info_change_time: 'Untuk routing non H-1',
+        info_delivery: 'Routing otomatis H-1',
       },
     },
     excel: {
@@ -988,7 +989,8 @@ export const dictionary = {
         success: 'File downloaded successfully!',
       },
       tooltip: {
-        info: 'For non D-1 routing',
+        info_change_time: 'For non D-1 routing',
+        info_delivery: 'Auto D-1 routing',
       },
     },
     excel: {

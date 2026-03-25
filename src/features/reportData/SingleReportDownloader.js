@@ -257,6 +257,26 @@ export default function TmsSummary({
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  const informationComp = (tooltipContent) => (
+    <Tooltip tooltipContent={tooltipContent}>
+      <span className="flex items-center">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+      </span>
+    </Tooltip>
+  );
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{t('report.daily_title')}</h1>
@@ -265,9 +285,9 @@ export default function TmsSummary({
         <div className="flex flex-col items-center w-full max-w-xs">
           <label
             htmlFor="shippingDate"
-            className="block text-lg mb-2 text-gray-500 font-medium text-center"
+            className="text-lg mb-2 text-gray-500 font-medium text-center select-none flex items-center gap-1"
           >
-            {t('common.delivery_date')}
+            {t('common.delivery_date')} {informationComp(t('report.tooltip.info_delivery'))}
           </label>
           <CustomDatePicker
             className="max-w-xs cursor-pointer"
@@ -291,26 +311,7 @@ export default function TmsSummary({
               htmlFor="customRouting"
               className="text-sm text-gray-600 cursor-pointer select-none flex items-center gap-1"
             >
-              {t('report.change_date')}
-
-              <Tooltip tooltipContent={t('report.tooltip.info')}>
-                <span className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                </span>
-              </Tooltip>
+              {t('report.change_date')} {informationComp(t('report.tooltip.info_change_time'))}
             </label>
           </div>
         </div>
