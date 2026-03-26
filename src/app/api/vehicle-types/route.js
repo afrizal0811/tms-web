@@ -9,7 +9,8 @@ export async function GET() {
     const types = await prisma.vehicleType.findMany({ orderBy: { id: 'asc' } });
     return NextResponse.json(types, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal memuat tipe kendaraan' }, { status: 500 });
+    console.error('Error Vehicle Types:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -26,7 +27,8 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal menambah tipe kendaraan' }, { status: 500 });
+    console.error('Error Vehicle Types:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -44,7 +46,8 @@ export async function PUT(request) {
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal mengubah tipe kendaraan' }, { status: 500 });
+    console.error('Error Vehicle Types:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -56,6 +59,7 @@ export async function DELETE(request) {
     await prisma.vehicleType.delete({ where: { id: Number(id) } });
     return NextResponse.json({ message: 'Tipe berhasil dihapus' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal menghapus tipe kendaraan' }, { status: 500 });
+    console.error('Error Vehicle Types:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

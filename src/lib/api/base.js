@@ -1,5 +1,3 @@
-import { toastError } from '../toastHelper';
-
 export async function apiFetch(url, errorMessage, options = {}) {
   try {
     const response = await fetch(url, options);
@@ -30,7 +28,6 @@ export async function apiFetch(url, errorMessage, options = {}) {
 
     throw new Error(`Format data API tidak dikenal dari ${url}`);
   } catch (err) {
-    toastError(err.message);
     throw err;
   }
 }

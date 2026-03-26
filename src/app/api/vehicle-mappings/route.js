@@ -35,7 +35,8 @@ export async function GET(request) {
 
     return NextResponse.json(mappings, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Vehicle Mapping:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -59,7 +60,8 @@ export async function POST(request) {
     await prisma.$transaction(transactions);
     return NextResponse.json({ message: 'Mapping berhasil disimpan' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Vehicle Mapping:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -78,7 +80,8 @@ export async function PUT(request) {
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Vehicle Mapping:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -96,6 +99,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ message: 'Mapping berhasil dihapus' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Vehicle Mapping:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

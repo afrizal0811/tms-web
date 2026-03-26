@@ -13,7 +13,8 @@ export async function GET(request) {
 
     return NextResponse.json(drivers, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Driver:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -143,6 +144,6 @@ export async function POST(request) {
     return NextResponse.json({ message: 'Sync Drivers Berhasil' }, { status: 200 });
   } catch (error) {
     console.error('Error Sync Driver:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

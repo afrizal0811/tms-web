@@ -21,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json(formattedRoles, { status: 200 });
   } catch (error) {
-    console.error('Gagal mengambil data Role dari DB Lokal:', error);
+    console.error('Error Roles', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -61,10 +61,9 @@ export async function POST() {
       });
       await prisma.$transaction(upsertPromises);
       return NextResponse.json({ message: 'Sync Roles Berhasil' }, { status: 200 });
-    } else {
-      return NextResponse.json({ error: 'Data vendor bukan array' }, { status: 400 });
-    }
+    } 
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Sync Roles:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

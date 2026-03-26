@@ -20,6 +20,9 @@
 │   │   │   └── route.js
 │   │   ├── get-vehicles
 │   │   │   └── route.js
+│   │   ├── monthly-summary
+│   │   ├── truck-usage
+│   │   │   └── route.js
 │   │   ├── vehicle-mappings
 │   │   │   └── route.js
 │   │   └── vehicle-types
@@ -52,7 +55,6 @@
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
-│   ├── ConfirmModal.js
 │   ├── ContentBlockRenderer.js
 │   ├── CustomDatePicker.js
 │   ├── DownloadButton.js
@@ -61,6 +63,11 @@
 │   ├── HighlightText.js
 │   ├── ImageLightbox.js
 │   ├── LocationDropdown.js
+│   ├── modal
+│   │   ├── ConfirmModal.js
+│   │   ├── SystemUpdateModal.js
+│   │   ├── TokenExpirationModal.js
+│   │   └── VehicleTagMappingModal.js
 │   ├── navbar
 │   │   ├── HelpDropdown.js
 │   │   ├── LanguageSwitcher.js
@@ -77,9 +84,7 @@
 │   │   ├── TabButton.js
 │   │   ├── Td.js
 │   │   └── Th.js
-│   ├── TokenExpirationModal.js
-│   ├── Tooltip.js
-│   └── VehicleTagMappingModal.js
+│   └── Tooltip.js
 ├── context
 │   └── LanguageContext.js
 ├── features
@@ -136,9 +141,9 @@
 │   │       │   ├── AverageKmDetailModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
-│   │       │   └── TruckDetailModal.js
+│   │       │   ├── TruckDetailModal.js
+│   │       │   └── TruckUsageModal.js
 │   │       ├── PendingReasonsTab.js
-│   │       ├── PlaceholderTab.js
 │   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
 │   │       ├── TimeROTab.js
@@ -149,7 +154,12 @@
 │   │   ├── help.js
 │   │   └── SingleReportDownloader.js
 │   ├── settings
-│   │   └── SettingsPage.js
+│   │   ├── components
+│   │   │   └── VehicleMappingManager.js
+│   │   ├── SettingsPage.js
+│   │   └── tabs
+│   │       ├── MasterDataTab.js
+│   │       └── SyncDataTab.js
 │   ├── updateLonglat
 │   │   ├── components
 │   │   │   ├── UpdateLonglatTable.js
@@ -174,6 +184,7 @@
     │   ├── index.js
     │   ├── roles.js
     │   ├── tasks.js
+    │   ├── truckUsage.js
     │   ├── users.js
     │   ├── vehicleMappings.js
     │   ├── vehicles.js
@@ -202,4 +213,5 @@
     │   ├── routingReport.js
     │   └── timeReport.js
     ├── toastHelper.js
+    ├── unifiedRouting.js
     └── utils.js

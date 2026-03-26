@@ -24,7 +24,7 @@ export async function GET() {
 
     return NextResponse.json(formattedHubs, { status: 200 });
   } catch (error) {
-    console.error('Gagal mengambil data Hub dari DB Lokal:', error);
+    console.error('Error Hubs:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -64,10 +64,9 @@ export async function POST() {
       });
       await prisma.$transaction(upsertPromises);
       return NextResponse.json({ message: 'Sync Berhasil' }, { status: 200 });
-    } else {
-      return NextResponse.json({ error: 'Data vendor bukan array' }, { status: 400 });
     }
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error Sync Hubs:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -16,7 +16,8 @@ export async function GET(request) {
     });
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('Error Truck Usage:', e);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -34,7 +35,8 @@ export async function POST(request) {
     });
     return NextResponse.json({ message: 'Success', data: upserted });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('Error Truck Usage:', e);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -56,6 +58,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ message: 'Success' });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('Error Truck Usage:', e);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

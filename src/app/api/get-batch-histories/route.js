@@ -54,7 +54,7 @@ export async function POST(request) {
 
     return NextResponse.json({ data: validResults });
   } catch (error) {
-    console.error('Batch history error:', error);
+    console.error('Error Batch History:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
