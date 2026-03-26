@@ -1,5 +1,6 @@
+// File: src/features/vehicleData/help.js
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { isEmpty, normalizeEmail } from '@/lib/utils';
+import { isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 
@@ -12,9 +13,8 @@ export const formatVolume = (vol) => {
 
 export const handleConfirmDownload = ({
   conditionalData,
-  driverMap,
   masterData,
-  setIsDownloadDropdownOpen,
+  setIsDownloadDropdownOpen = () => {}, 
   setIsDownloading,
   sheetSelection,
   t,
@@ -27,12 +27,7 @@ export const handleConfirmDownload = ({
 
     if (sheetSelection.master) {
       const headers1 = ['Plat', 'Type', 'Name', 'Email'];
-      const data1 = masterData.map((v) => [
-        v.name,
-        v.tags?.[0] || null,
-        driverMap.get(normalizeEmail(v.assignee)) || null,
-        v.assignee,
-      ]);
+      const data1 = masterData.map((v) => [v.plat, v.type || null, v.name || null, v.email]);
       const ws1 = XLSX.utils.aoa_to_sheet([headers1, ...data1]);
       ws1['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
       ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
@@ -40,14 +35,10 @@ export const handleConfirmDownload = ({
       });
       XLSX.utils.book_append_sheet(wb, ws1, t('vehicle.tabs.master_title'));
     }
+
     if (sheetSelection.conditional && conditionalData.length > 0) {
       const headersC = ['Plat', 'Type', 'Name', 'Email'];
-      const dataC = conditionalData.map((v) => [
-        v.name,
-        v.tags?.[0] || null,
-        driverMap.get(normalizeEmail(v.assignee)) || null,
-        v.assignee,
-      ]);
+      const dataC = conditionalData.map((v) => [v.plat, v.type || null, v.name || null, v.email]);
       const wsC = XLSX.utils.aoa_to_sheet([headersC, ...dataC]);
       wsC['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
       ['A1', 'B1', 'C1', 'D1'].forEach((cell) => {
@@ -55,8 +46,8 @@ export const handleConfirmDownload = ({
       });
       XLSX.utils.book_append_sheet(wb, wsC, t('vehicle.tabs.conditional_title'));
     }
+
     if (sheetSelection.template) {
-      // Template menggunakan templateData (Data Murni)
       const headers2 = [
         'Name*',
         'Assignee',
@@ -75,21 +66,21 @@ export const handleConfirmDownload = ({
         'volume Max',
       ];
       const data2 = templateData.map((v) => [
-        v.name,
-        v.assignee,
-        v.workingTime?.startTime || null,
-        v.workingTime?.endTime || null,
-        v.breaktime?.startTime || null,
-        v.breaktime?.endTime || null,
-        v.workingTime?.multiday || 0,
+        v.plat,
+        v.email,
+        v.startTime || null,
+        v.endTime || null,
+        v.startBreakTime || null,
+        v.endBreakTime || null,
+        v.multiday || 0,
         v.speed,
-        null,
-        v.tags?.join('; ') || null,
+        v.costFactor,
+        v.parsedTags?.join('; ') || null,
         v.oddEven,
-        0,
-        v.capacity?.weight?.max || null,
-        0,
-        formatVolume(v.capacity?.volume?.max),
+        v.minWeight || 0,
+        v.maxWeight || null,
+        v.minVolume || 0,
+        formatVolume(v.maxVolume),
       ]);
       const ws2 = XLSX.utils.aoa_to_sheet([headers2, ...data2]);
       ws2['!cols'] = Array(headers2.length).fill({ wch: 20 });

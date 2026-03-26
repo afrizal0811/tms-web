@@ -1,11 +1,11 @@
+// File: src/features/vehicleData/components/VehicleTab.js
 'use client';
 
 import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { normalizeEmail } from '@/lib/utils';
 
-export default function VehicleTab({ paginatedData, driverMap, searchQuery, t }) {
+export default function VehicleTab({ paginatedData, searchQuery, t }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-4xl">
@@ -19,21 +19,18 @@ export default function VehicleTab({ paginatedData, driverMap, searchQuery, t })
         </thead>
         <tbody>
           {paginatedData.map((v) => (
-            <tr key={v._id} className="hover:bg-gray-50">
+            <tr key={v.id} className="hover:bg-gray-50">
               <Td>
-                <HighlightText text={v.name} highlight={searchQuery} />
+                <HighlightText text={v.plat} highlight={searchQuery} />
               </Td>
               <Td>
-                <HighlightText text={v.tags?.[0] || null} highlight={searchQuery} />
+                <HighlightText text={v.type || null} highlight={searchQuery} />
               </Td>
               <Td>
-                <HighlightText
-                  text={driverMap.get(normalizeEmail(v.assignee)) || null}
-                  highlight={searchQuery}
-                />
+                <HighlightText text={v.name || null} highlight={searchQuery} />
               </Td>
               <Td>
-                <HighlightText text={v.assignee} highlight={searchQuery} />
+                <HighlightText text={v.email} highlight={searchQuery} />
               </Td>
             </tr>
           ))}
