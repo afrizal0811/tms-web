@@ -19,19 +19,29 @@ model Hub {
 
 // Tambahkan model Driver baru ini di bawah
 model Driver {
-  id          String   @id
-  email       String
-  name        String
-  plat        String?
-  type        String?
-  maxWeight   Float?
-  maxVolume   Float?
-  storage     String?
-  startTime   String?
-  endTime     String?
-  multiday    Boolean?
-  updatedAt   DateTime @updatedAt
-  hubs        Hub[]
+  id             String   @id
+  email          String
+  name           String
+  plat           String?
+  type           String?
+  startTime      String?
+  endTime        String?
+  startBreakTime String?  // Kolom Baru
+  endBreakTime   String?  // Kolom Baru
+  multiday       Int?
+  speed          Float?   // Kolom Baru
+  costFactor     Float?   // Kolom Baru
+  tags           String?  // Kolom Baru (Disimpan sebagai teks/string JSON)
+  oddEven        String?  // Kolom Baru
+  minWeight      Float?   // Kolom Baru
+  maxWeight      Float?
+  minVolume      Float?   // Kolom Baru
+  maxVolume      Float?
+  storage        String?
+  updatedAt      DateTime @updatedAt
+
+  hubs           Hub[]    
+
   @@map("drivers")
 }
 

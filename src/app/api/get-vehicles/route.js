@@ -4,10 +4,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    // 1. Ambil query params dari request client (page.js)
     const { searchParams } = new URL(request.url);
     const hubId = searchParams.get('hubId');
-    const limit = searchParams.get('limit') || 50; // Default limit 50
+    const limit = searchParams.get('limit') || 100;
 
     if (!hubId) {
       return NextResponse.json(

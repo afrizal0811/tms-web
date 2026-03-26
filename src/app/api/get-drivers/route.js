@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -86,32 +87,83 @@ export async function POST(request) {
           const cleanPlate = plat.replace(/\s+/g, '').toUpperCase();
           const uniqueId = `${driverInfo._id}-${cleanPlate}`;
 
+          // Kapasitas Berat
           let wMax = vehicle.capacity?.weight?.max ? parseFloat(vehicle.capacity.weight.max) : null;
           if (isNaN(wMax)) wMax = null;
+          let wMin = vehicle.capacity?.weight?.min ? parseFloat(vehicle.capacity.weight.min) : null;
+          if (isNaN(wMin)) wMin = null;
+          else if (isEmpty(wMin)) wMin = 0;
 
+          // Kapasitas Volume
           let vMax = vehicle.capacity?.volume?.max ? parseFloat(vehicle.capacity.volume.max) : null;
           if (isNaN(vMax)) vMax = null;
+          let vMin = vehicle.capacity?.volume?.min ? parseFloat(vehicle.capacity.volume.min) : null;
+          if (isNaN(vMin)) vMin = null;
+          else if (isEmpty(vMin)) vMin = 0;
 
+          // Multiday
           let mDay = vehicle.workingTime?.multiday;
-          if (mDay === 'true' || mDay === true) mDay = true;
-          else if (mDay === 'false' || mDay === false) mDay = false;
-          else mDay = null;
+          console.log('mDay :', mDay);
+          if (mDay !== null && mDay !== undefined) {
+            mDay = parseInt(mDay, 10);
+            if (isNaN(mDay)) mDay = null; // Jika ternyata isinya bukan angka, set null
+          } else {
+            mDay = 0;
+          }
+
+          let speedVal = vehicle.speed ? parseFloat(vehicle.speed) : null;
+          let costFactorVal = vehicle.fixedCost ? parseFloat(vehicle.fixedCost) : null;
+          let tagsStr =
+            vehicle.tags && vehicle.tags.length > 0 ? JSON.stringify(vehicle.tags) : null;
 
           const dataPayload = {
             name: driverInfo.name || 'Unknown',
             email: driverInfo.email,
             plat: plat,
             type: type,
-            maxWeight: wMax,
-            maxVolume: vMax,
-            storage: storage,
             startTime: vehicle.workingTime?.startTime || null,
             endTime: vehicle.workingTime?.endTime || null,
+            startBreakTime: vehicle.breakTime?.breakStartTime || null,
+            endBreakTime: vehicle.breakTime?.breakEndTime || null,
             multiday: mDay,
+            speed: speedVal,
+            costFactor: costFactorVal,
+            tags: tagsStr,
+            oddEven: vehicle.oddEven || null,
+            minWeight: wMin,
+            maxWeight: wMax,
+            minVolume: vMin,
+            maxVolume: vMax,
+            storage: storage,
           };
 
           uniquePayloads.set(uniqueId, dataPayload);
         }
+      }
+
+      // 1. Dapatkan semua ID yang "Aktif" dari API vendor untuk Hub ini
+      const activeIdsFromApi = Array.from(uniquePayloads.keys());
+
+      // 2. Ambil semua ID driver yang saat ini terdaftar di Hub ini dari Database
+      const existingHub = await prisma.hub.findUnique({
+        where: { id: hubId },
+        include: { drivers: { select: { id: true } } }, // Ambil ID-nya saja biar ringan
+      });
+      const existingIdsInDb = existingHub?.drivers.map((d) => d.id) || [];
+
+      // 3. Cari ID mana yang ada di DB, tapi TIDAK ADA di API (Data Usang)
+      const staleIds = existingIdsInDb.filter((id) => !activeIdsFromApi.includes(id));
+
+      // 4. Putuskan hubungan (disconnect) data usang tersebut dari Hub saat ini
+      if (staleIds.length > 0) {
+        await prisma.hub.update({
+          where: { id: hubId },
+          data: {
+            drivers: {
+              disconnect: staleIds.map((id) => ({ id })),
+            },
+          },
+        });
       }
 
       for (const [uniqueId, payload] of uniquePayloads.entries()) {
@@ -138,6 +190,14 @@ export async function POST(request) {
 
     await prisma.driver.deleteMany({
       where: { NOT: { id: { contains: '-' } } },
+    });
+
+    await prisma.driver.deleteMany({
+      where: {
+        hubs: {
+          none: {},
+        },
+      },
     });
 
     await prisma.$transaction(allUpserts);
