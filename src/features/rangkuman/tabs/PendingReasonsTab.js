@@ -2,7 +2,7 @@
 import Tooltip from '@/components/Tooltip';
 import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { toastSuccess } from '@/lib/toastHelper';
-import { isEmpty } from '@/lib/utils';
+import { isEmpty, parseCustomerString } from '@/lib/utils';
 import { useRef, useState } from 'react';
 
 // --- 1. REASON CELL ---
@@ -148,6 +148,7 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
         </thead>
         <tbody className="bg-white">
           {data.map((item, idx) => {
+            const { name: customerName } = parseCustomerString(item.customerName);
             const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
             const borderBottomClass = isLastInDate
               ? 'border-b-[4px] border-b-slate-400'
@@ -160,15 +161,15 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
             // --- UPDATE: PESAN ERROR MENGGUNAKAN JSX (UNDERLINE) ---
             const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
 
-            const textBatal = item.status === 'BATAL' ? item.customerName : '';
-            const textParsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
+            const textBatal = item.status === 'BATAL' ? customerName : '';
+            const textParsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
 
-            let textPending = item.status === 'PENDING' ? item.customerName : '';
+            let textPending = item.status === 'PENDING' ? customerName : '';
             if (isWrongGR) {
               textPending = item.customerName;
             }
 
-            const textPendingGR = item.status === 'PENDING GR' ? item.customerName : '';
+            const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
 
             return (
               <tr key={idx} className="hover:bg-gray-50">
