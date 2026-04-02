@@ -1,37 +1,46 @@
 // File: lib/reportGenerators/routingReport.js
 'use client';
 
-import { VEHICLE_TYPES } from '@/lib/constants';
-import { formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
+import { getVehicleTypes } from '@/lib/api';
+import { formatDateWIB, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-// Helper kecil untuk memformat jam (HH:mm:ss -> HH:mm)
 function formatSimpleTime(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return '-';
-  // Ambil 5 karakter pertama (HH:mm)
   return timeStr.substring(0, 5);
 }
 
-export function generateRoutingWorkbook(
+export async function generateRoutingWorkbook(
   driverData,
   filteredResults,
-  tagMap,
+  mappingsObj,
   dateForFile,
   hubName,
   t
 ) {
+  const vehicleTypesObj = await getVehicleTypes();
+  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+
   const translate = t || ((key) => key);
-  const driverMap = driverData.reduce((acc, driver) => {
-    if (driver.email) acc[driver.email] = { name: driver.name, plat: driver.plat };
-    return acc;
-  }, {});
+
+  const emailMap = {};
+  const platMap = {};
+  driverData.forEach((driver) => {
+    if (driver.email)
+      emailMap[driver.email.trim().toLowerCase()] = { name: driver.name, plat: driver.plat };
+    if (driver.plat)
+      platMap[driver.plat.replace(/\s+/g, '').toLowerCase()] = {
+        name: driver.name,
+        plat: driver.plat,
+      };
+  });
 
   let processedDataRows = [];
   let totalDryDistance = 0;
   let totalFrozenDistance = 0;
   let truckUsageCount = {};
 
-  [...VEHICLE_TYPES, 'Lainnya'].forEach((type) => {
+  [...vehicleTypes, 'Lainnya'].forEach((type) => {
     truckUsageCount[type] = { Dry: 0, Frozen: 0 };
   });
 
@@ -64,12 +73,12 @@ export function generateRoutingWorkbook(
           }
         }
 
-        const needsManualWeight = hasTrips && initialTotalWeight === 0;
-        const needsManualVolume = hasTrips && initialTotalVolume === 0;
-        const needsManualDistance = hasTrips && initialTotalDistance === 0;
-        const needsManualTravelTime = hasTrips && initialTotalTravelTime === 0;
-        const needsManualVisitTime = hasTrips && initialTotalVisitTime === 0;
-        const needsManualWaitingTime = hasTrips && initialTotalWaitingTime === 0;
+        const needsManualWeight = hasTrips && Math.floor(initialTotalWeight) <= 0;
+        const needsManualVolume = hasTrips && Math.floor(initialTotalVolume) <= 0;
+        const needsManualDistance = hasTrips && Math.floor(initialTotalDistance) <= 0;
+        const needsManualTravelTime = hasTrips && Math.floor(initialTotalTravelTime) <= 0;
+        const needsManualVisitTime = hasTrips && Math.floor(initialTotalVisitTime) <= 0;
+        const needsManualWaitingTime = hasTrips && Math.floor(initialTotalWaitingTime) <= 0;
 
         let manualCalcs = {
           weight: 0,
@@ -91,7 +100,6 @@ export function generateRoutingWorkbook(
         ) {
           manualCalcs = route.trips.reduce((acc, trip) => {
             if (!trip.isHub) {
-              // Perubahan: hanya akumulasikan nilai positif; nilai 0 atau negatif diabaikan
               if (needsManualWeight && (trip.weight || 0) > 0) acc.weight += trip.weight;
               if (needsManualVolume && (trip.volume || 0) > 0) acc.volume += trip.volume;
 
@@ -119,9 +127,13 @@ export function generateRoutingWorkbook(
           ? manualCalcs.waitingTime
           : initialTotalWaitingTime;
 
-        const assigneeEmail = route.assignee;
-        const driverInfo = driverMap[assigneeEmail];
-        const driverName = driverInfo ? driverInfo.name : assigneeEmail;
+        const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
+        const vehiclePlatRaw = route.vehicleName
+          ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
+          : '';
+
+        const driverInfo = emailMap[assigneeEmail] || platMap[vehiclePlatRaw];
+        const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
 
         const maxWeight = route.vehicleMaxWeight || 0;
         const maxVolume = route.vehicleMaxVolume || 0;
@@ -173,10 +185,10 @@ export function generateRoutingWorkbook(
             }
 
             let category = 'Lainnya';
-            if (VEHICLE_TYPES.includes(specificType)) {
+            if (mappingsObj[vehiclePlat]) {
+              category = mappingsObj[vehiclePlat];
+            } else if (vehicleTypes.includes(specificType)) {
               category = specificType;
-            } else if (tagMap[vehiclePlat] && tagMap[vehiclePlat][specificType]) {
-              category = tagMap[vehiclePlat][specificType];
             }
 
             if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
@@ -251,10 +263,21 @@ export function generateRoutingWorkbook(
     translate('excel.routing.headers.etd_hub'),
   ];
 
+  const seenIdentifiers = new Set();
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
     if (isEmpty(plat)) return false;
     if (plat.toUpperCase().includes('DEMO')) return false;
+
+    const emailKey = driver.email ? driver.email.trim().toLowerCase() : '';
+    const nameKey = driver.name ? driver.name.trim().toLowerCase() : '';
+
+    if (emailKey && seenIdentifiers.has(emailKey)) return false;
+    if (nameKey && seenIdentifiers.has(nameKey)) return false;
+
+    if (emailKey) seenIdentifiers.add(emailKey);
+    if (nameKey) seenIdentifiers.add(nameKey);
+
     return true;
   });
 
@@ -264,10 +287,9 @@ export function generateRoutingWorkbook(
     const mergedRow = mergedTruckDetailMap.get(driverName);
 
     if (mergedRow && mergedRow.hasTrips) {
-      const hasMissingTimes = mergedRow.totalTravelTime === 0 || mergedRow.totalVisitTime === 0;
       return {
-        Plat: mergedRow.plat,
-        Driver: mergedRow.driver,
+        Plat: driverPlat,
+        Driver: driverName,
         WeightPercentage: mergedRow.weightPercentage > 0 ? `${mergedRow.weightPercentage}%` : null,
         VolumePercentage: mergedRow.volumePercentage > 0 ? `${mergedRow.volumePercentage}%` : null,
         TotalDistance: mergedRow.totalDistance > 0 ? mergedRow.totalDistance : null,
@@ -276,8 +298,6 @@ export function generateRoutingWorkbook(
         ShipDuration: formatMinutesToHHMM(mergedRow.shipDurationRaw),
         ETAFirstStore: mergedRow.etaFirstStore,
         ETDHub: mergedRow.etdHub,
-
-        hasMissingTimes: hasMissingTimes,
       };
     } else {
       return {
@@ -291,7 +311,6 @@ export function generateRoutingWorkbook(
         ShipDuration: null,
         ETAFirstStore: null,
         ETDHub: null,
-        hasMissingTimes: false,
       };
     }
   });
@@ -317,8 +336,6 @@ export function generateRoutingWorkbook(
     return driverA.localeCompare(driverB);
   });
 
-  const missingTimesFound = excelDataRows.some((row) => row.hasMissingTimes);
-
   const finalSheetData1 = [
     headers1,
     ...excelDataRows.map((row) => [
@@ -339,8 +356,6 @@ export function generateRoutingWorkbook(
   const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
 
   const centerAlignedDataColumns1 = [2, 3, 4, 7, 8, 9];
-  const shipDurationColIndex = 7;
-
   const greenHeaders = [
     translate('excel.routing.headers.weight_pct'),
     translate('excel.routing.headers.volume_pct'),
@@ -363,22 +378,8 @@ export function generateRoutingWorkbook(
         } else {
           wsTruckDetail[cellRef].s = defaultHeaderStyle;
         }
-
-        if (C === shipDurationColIndex && missingTimesFound) {
-          if (!wsTruckDetail[cellRef].c) wsTruckDetail[cellRef].c = [];
-          wsTruckDetail[cellRef].c.push({
-            a: 'Info',
-            t: 'Travel Time atau Visit Time tidak ada di API. Periksa manual di menu Routing!',
-            h: true,
-          });
-        }
       } else if (centerAlignedDataColumns1.includes(C)) {
         wsTruckDetail[cellRef].s = centerStyle;
-      }
-
-      const rowData = excelDataRows[R - 1];
-      if (rowData && rowData.hasMissingTimes && C === shipDurationColIndex) {
-        wsTruckDetail[cellRef].s = redFillStyle;
       }
     }
   }
@@ -433,7 +434,7 @@ export function generateRoutingWorkbook(
     translate('excel.routing.headers.count_dry'),
     translate('excel.routing.headers.count_frozen'),
   ];
-  const usageDataRows = VEHICLE_TYPES.map((type) => {
+  const usageDataRows = vehicleTypes.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
     const frozenCount = truckUsageCount[type]['Frozen'];
     return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];
@@ -467,11 +468,87 @@ export function generateRoutingWorkbook(
     if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = usageDataNumStyle;
     if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
   });
+
   wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
+
+  const helpHeader = [
+    translate('excel.routing.headers.routing_id'),
+    translate('excel.routing.headers.routing_name'),
+    translate('excel.routing.headers.created_by'),
+    translate('excel.routing.headers.created_at'),
+    translate('excel.routing.headers.routing_result'),
+  ];
+
+  const helpDataRows = [];
+
+  const sortedHelpItems = filteredResults
+    .filter((r) => r.dispatchStatus && String(r.dispatchStatus).toLowerCase() === 'done')
+    .sort((a, b) => {
+      const timeA = a.createdTime ? new Date(a.createdTime).getTime() : 0;
+      const timeB = b.createdTime ? new Date(b.createdTime).getTime() : 0;
+      return timeA - timeB;
+    });
+
+  sortedHelpItems.forEach((resultItem) => {
+    let routingId = resultItem._id || '-';
+    let routingName = resultItem.name || '-';
+    let createdBy = resultItem.user?.name || '-';
+    let routingTime = '-';
+
+    if (resultItem.createdTime) {
+      try {
+        const dateObj = new Date(resultItem.createdTime);
+        routingTime = formatDateWIB(dateObj, 'DD/MM/YYYY HH:mm:ss');
+      } catch (e) {
+        routingTime = resultItem.createdTime;
+      }
+    }
+
+    let routingResult = resultItem.dispatchMessage || '-';
+    if (routingResult.includes('/')) {
+      const [success, total] = routingResult.split('/');
+      if (!isNaN(success) && !isNaN(total)) {
+        routingResult = translate('excel.routing.data.dispatch_message', {
+          success,
+          total,
+        });
+      }
+    }
+
+    helpDataRows.push([routingId, routingName, createdBy, routingTime, routingResult]);
+  });
+
+  const finalHelpData = [helpHeader, ...helpDataRows];
+  const wsHelp = XLSX.utils.aoa_to_sheet(finalHelpData);
+  const helpHeaderStyle = {
+    font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const helpDataStyle = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
+
+  wsHelp['A1'].s = helpHeaderStyle;
+  wsHelp['B1'].s = helpHeaderStyle;
+  wsHelp['C1'].s = helpHeaderStyle;
+  wsHelp['D1'].s = helpHeaderStyle;
+  wsHelp['E1'].s = helpHeaderStyle;
+
+  helpDataRows.forEach((row, idx) => {
+    const rowNum = idx + 2;
+    if (wsHelp[`A${rowNum}`]) wsHelp[`A${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`B${rowNum}`]) wsHelp[`B${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`C${rowNum}`]) wsHelp[`C${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`D${rowNum}`]) wsHelp[`D${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`E${rowNum}`]) wsHelp[`E${rowNum}`].s = helpDataStyle;
+  });
+
+  wsHelp['!cols'] = [{ wch: 28 }, { wch: 30 }, { wch: 20 }, { wch: 22 }, { wch: 45 }];
+  XLSX.utils.book_append_sheet(wb, wsHelp, translate('excel.routing.sheets.help'));
 
   const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
   const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
 
-  return { wb, excelFileName, missingTimesFound };
+  return { wb, excelFileName };
 }

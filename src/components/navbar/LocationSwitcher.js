@@ -1,93 +1,85 @@
-// File: features/location/LocationSwitcher.js
 'use client';
 
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
+import LocationDropdown from '@/components/LocationDropdown';
+import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { getHubs } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
-import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { toastError } from '@/lib/toastHelper';
+import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import { toastError } from '../../lib/toastHelper';
-import LocationDropdown from '../LocationDropdown';
 
 export default function LocationSwitcher() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentLocationName, setCurrentLocationName] = useState('');
+  const [currentLocationId, setCurrentLocationId] = useState('');
   const [allowedHubs, setAllowedHubs] = useState([]);
   const { t } = useLanguage();
 
-  const {
-    isChecking, // tetap tersedia dari hook (tapi kita gak tampilkan spinner)
-    showModal,
-    unmappedData,
-    triggerCheck,
-    handleMappingCompleted,
-  } = useVehicleTagCheck();
-
-  const {
-    storedUser: userStr,
-    storedLocationName: locationName,
-    storedHubs: allHubsStr,
-    storedLocation,
-  } = getLocalStorage();
+  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
+    useVehicleTagCheck();
 
   useEffect(() => {
-    try {
-      //eslint-disable-next-line
-      if (locationName) setCurrentLocationName(locationName);
-
-      if (userStr) {
+    async function fetchHubsFromDatabase(userStr) {
+      try {
+        const hubsSimple = await getHubs();
+        if (isEmpty(hubsSimple)) {
+          throw new Error(t('common.no_data'));
+        }
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
-        if (allHubsStr) {
-          try {
-            const hubsRaw = JSON.parse(allHubsStr);
-            // Pastikan array bentuk { name, _id } saja
-            const hubsSimple = Array.isArray(hubsRaw)
-              ? hubsRaw.map((h) => ({ _id: h._id, name: h.name }))
-              : Array.isArray(hubsRaw.allHubsList) // kompatibilitas jika disimpan sebagai object wrapper
-                ? hubsRaw.allHubsList.map((h) => ({ _id: h._id, name: h.name }))
-                : [];
+        const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
+        const allowed =
+          userHubIds.length > 0 ? hubsSimple.filter((h) => userHubIds.includes(h._id)) : hubsSimple;
 
-            // Jika user.hubId tersedia, filter allowed hubs; jika tidak, tampilkan semua
-            const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
-            const allowed =
-              userHubIds.length > 0
-                ? hubsSimple.filter((h) => userHubIds.includes(h._id))
-                : hubsSimple;
-            setAllowedHubs(allowed);
-          } catch (e) {
-            toastError(t('common.error', { err: e.message }));
-            setAllowedHubs([]);
-          }
-        }
+        setAllowedHubs(allowed);
+      } catch (e) {
+        setAllowedHubs([]);
+        toastError(t('common.toast.error', { err: e.message }));
       }
-    } catch (e) {
-      toastError(t('common.error', { err: e.message }));
     }
-  }, [userStr, locationName, allHubsStr, t]);
+
+    const timer = setTimeout(() => {
+      const {
+        storedUser: userStr,
+        storedLocationName: locName,
+        storedLocation: locId,
+      } = getLocalStorage();
+
+      if (locName) setCurrentLocationName(locName);
+      if (locId) setCurrentLocationId(locId);
+      if (userStr) fetchHubsFromDatabase(userStr);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [t]);
 
   const handleLocationChange = (id, name) => {
-    try {
-      triggerCheck(id, () => {
-        setLocalStorage('userLocation', id);
-        setLocalStorage('userLocationName', name);
-        removeLocalStorage('driverData');
-        window.location.reload();
-      });
-    } catch (err) {
-      toastError(t('common.error', { err: e.message }));
-      setLocalStorage('userLocation', id);
-      setLocalStorage('userLocationName', name);
-      removeLocalStorage('driverData');
+    const updateLocationAndReload = () => {
+      const { storedUser } = getLocalStorage();
+      let newSession = { activeHubId: id, activeHubName: name };
+
+      // Pertahankan data user lama, hanya timpa lokasinya
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser);
+        newSession = { ...userObj, activeHubId: id, activeHubName: name };
+      }
+
+      setLocalStorage('data', JSON.stringify(newSession));
       window.location.reload();
+    };
+
+    try {
+      triggerCheck(id, updateLocationAndReload);
+    } catch (err) {
+      updateLocationAndReload();
     }
   };
 
-  // Bila data belum siap, tampilkan null (tidak menggangu header)
   if (!currentUser) return null;
 
-  // Jika user hanya punya 1 lokasi, tampilkan nama saja (sesuai sebelumnya)
   if (allowedHubs.length <= 1) {
     return <span className="text-sm font-medium text-slate-700">{currentLocationName}</span>;
   }
@@ -97,23 +89,16 @@ export default function LocationSwitcher() {
       <LocationDropdown
         className="text-sm border border-gray-300 rounded-md bg-white"
         compact={true}
-        hubsToShow={allowedHubs} // hanya { _id, name }
+        hubsToShow={allowedHubs}
         onChange={handleLocationChange}
         showPlaceholder={false}
-        value={storedLocation || ''}
+        value={currentLocationId || ''}
       />
-
       {showModal && (
         <VehicleTagMappingModal
           t={t}
           unmappedData={unmappedData}
-          onCompleted={() => {
-            try {
-              handleMappingCompleted();
-            } catch (err) {
-              toastError(t('common.error', { err: e.message }));
-            }
-          }}
+          onCompleted={handleMappingCompleted}
         />
       )}
     </>

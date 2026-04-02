@@ -43,7 +43,7 @@ export const bulkDownloader = async ({
     if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
       toastError(t('report.toast.select_diff_date'));
     } else {
-      toastError(t('report.toast.invalid_date'));
+      toastError(t('common.invalid_date'));
     }
     return;
   }

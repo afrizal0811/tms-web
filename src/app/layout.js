@@ -1,5 +1,6 @@
 import SessionGuard from '@/components/SessionGuard';
-import TokenExpirationModal from '@/components/TokenExpirationModal';
+import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
+import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
@@ -21,6 +22,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-white text-slate-900`}>
         <LanguageProvider>
+          <SystemUpdateModal />
           <Toaster
             position="top-right"
             containerStyle={{

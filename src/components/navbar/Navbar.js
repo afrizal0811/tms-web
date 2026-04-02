@@ -1,7 +1,8 @@
+// File: src/components/navbar/Navbar.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { ROLE_ID } from '@/lib/constants';
+import { getRoles } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -42,11 +43,11 @@ function MobileNavLink({ href, children }) {
 }
 
 export default function Navbar() {
-  const { t, lang } = useLanguage();
+  const { t, lang, switchLanguage } = useLanguage();
+  const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
 
-  // PERBAIKAN 1: Inisialisasi state dengan false (jangan akses localStorage di sini)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
@@ -56,24 +57,30 @@ export default function Navbar() {
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
 
-  // PERBAIKAN 2: Pindahkan akses localStorage ke useEffect agar hanya jalan di browser
   useEffect(() => {
-    // Gunakan setTimeout 0 untuk menghindari warning update state saat render
-    const timer = setTimeout(() => {
+    const checkUserAndRole = async () => {
       try {
-        // Pastikan kode ini hanya jalan di client
         if (typeof window !== 'undefined') {
           const { storedUser: raw } = getLocalStorage();
           if (raw) {
             const user = JSON.parse(raw);
             setIsLoggedIn(!!user);
-            setIsSuperadmin(user?.roleId === ROLE_ID.superadmin);
+            const roles = await getRoles();
+            const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
+
+            setIsSuperadmin(user?.roleId === superadminRole?._id);
           }
         }
       } catch (e) {
         setIsLoggedIn(false);
         setIsSuperadmin(false);
       }
+    };
+
+    // KUNCI PERBAIKAN: Memindahkan setMounted(true) ke dalam setTimeout agar bersifat asinkronus (menghindari error cascading renders)
+    const timer = setTimeout(() => {
+      setMounted(true);
+      checkUserAndRole();
     }, 0);
 
     return () => clearTimeout(timer);
@@ -113,6 +120,25 @@ export default function Navbar() {
   const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
   const primaryDeliveries = isIndo ? 'Data' : t('navbar.vehicle');
   const secondaryDeliveries = isIndo ? t('navbar.vehicle') : 'Data';
+
+  if (!mounted) {
+    return (
+      <nav className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm">
+        <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
+          <div className="flex items-center space-x-4 sm:space-x-6 w-full lg:w-auto">
+            <Link href="/" className="flex flex-col leading-tight">
+              <span className="hidden lg:block text-slate-900 font-bold text-lg sm:text-xl">
+                TMS
+              </span>
+              <span className="block lg:hidden text-slate-900 font-bold text-lg sm:text-xl">
+                TMS Data Processing
+              </span>
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   const navLinkEstimate = (
     <NavLink href="/estimasi">
@@ -332,6 +358,63 @@ export default function Navbar() {
               <div className="pt-2 pb-1 px-3">
                 <div className="border-t border-gray-200"></div>
               </div>
+
+              <MobileNavLink href="/settings">
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  {t('setting.title')}
+                </div>
+              </MobileNavLink>
+
+              <button
+                onClick={() => {
+                  switchLanguage(lang === 'id' ? 'en' : 'id');
+                  window.location.reload();
+                }}
+                className="block w-full text-left px-3 py-3 text-base font-medium text-slate-700 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"
+                    />
+                  </svg>
+                  {t('common.language') || 'Bahasa'} :{' '}
+                  {lang === 'id' ? '🇮🇩 Indonesia' : '🇬🇧 English'}
+                </div>
+              </button>
+
+              <div className="pt-2 pb-1 px-3">
+                <div className="border-t border-gray-200"></div>
+              </div>
+
               <div className="p-3">
                 <UserDisplay />
               </div>

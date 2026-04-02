@@ -1,0 +1,91 @@
+// File: prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// Tambahkan baris relasi "drivers" ini ke dalam model Hub yang sudah ada
+model Hub {
+  id        String   @id
+  name      String
+  updatedAt DateTime @updatedAt
+  drivers   Driver[] 
+}
+
+// Tambahkan model Driver baru ini di bawah
+model Driver {
+  id             String   @id
+  email          String
+  name           String
+  plat           String?
+  type           String?
+  startTime      String?
+  endTime        String?
+  startBreakTime String?  // Kolom Baru
+  endBreakTime   String?  // Kolom Baru
+  multiday       Int?
+  speed          Float?   // Kolom Baru
+  costFactor     Float?   // Kolom Baru
+  tags           String?  // Kolom Baru (Disimpan sebagai teks/string JSON)
+  oddEven        String?  // Kolom Baru
+  minWeight      Float?   // Kolom Baru
+  maxWeight      Float?
+  minVolume      Float?   // Kolom Baru
+  maxVolume      Float?
+  storage        String?
+  updatedAt      DateTime @updatedAt
+
+  hubs           Hub[]    
+
+  @@map("drivers")
+}
+
+// Tabel untuk menyimpan data Role dari Vendor
+model Role {
+  id        String   @id
+  name      String
+  updatedAt DateTime @updatedAt
+}
+
+// Tabel untuk menyimpan Tipe Kendaraan dinamis
+model VehicleType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vehicle_type")
+}
+
+model VehicleMapping {
+  id         Int      @id @default(autoincrement())
+  plat       String   @unique
+  mappedType String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("vehicle_mappings")
+}
+
+// Tambahkan di bagian paling bawah file prisma/schema.prisma
+
+model TruckUsage {
+  id          Int      @id @default(autoincrement())
+  hubId       String
+  date        String   // Format: YYYY-MM-DD
+  storageType String   // Dry atau Frozen
+  vehicleType String   // L300, CDE, dll
+  count       Int      
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([hubId, date, storageType, vehicleType])
+  @@map("truck_usages")
+}

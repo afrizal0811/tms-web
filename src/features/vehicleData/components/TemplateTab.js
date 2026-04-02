@@ -1,13 +1,14 @@
+// File: src/features/vehicleData/components/TemplateTab.js
 'use client';
 
 import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
-import { isEmpty, normalizeEmail } from '@/lib/utils';
+import { isEmpty } from '@/lib/utils';
 import { formatVolume } from '../help';
 
-export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }) {
+export default function TemplateTab({ paginatedData, searchQuery, t }) {
   return (
     <div className="overflow-auto flex-1">
       <table className="w-full border-collapse min-w-[1200px]">
@@ -32,26 +33,23 @@ export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }
         </thead>
         <tbody>
           {paginatedData.map((v) => (
-            <tr key={v._id} className="hover:bg-gray-50">
+            <tr key={v.id} className="hover:bg-gray-50">
               <Td>
-                <HighlightText text={v.name} highlight={searchQuery} />
+                <HighlightText text={v.plat} highlight={searchQuery} />
               </Td>
               <Td>
-                <HighlightText
-                  text={driverMap.get(normalizeEmail(v.assignee)) || null}
-                  highlight={searchQuery}
-                />
+                <HighlightText text={v.email || null} highlight={searchQuery} />
               </Td>
-              <Td>{v.workingTime?.startTime || null}</Td>
-              <Td>{v.workingTime?.endTime || null}</Td>
-              <Td>{v.breaktime?.startTime || null}</Td>
-              <Td>{v.breaktime?.endTime || null}</Td>
-              <Td>{v.workingTime?.multiday || 0}</Td>
+              <Td>{v.startTime || null}</Td>
+              <Td>{v.endTime || null}</Td>
+              <Td>{v.startBreakTime || null}</Td>
+              <Td>{v.endBreakTime || null}</Td>
+              <Td>{v.multiday || 0}</Td>
               <Td>{v.speed}</Td>
-              <Td>{null}</Td>
+              <Td>{v.costFactor}</Td>
               <Td>
                 {(() => {
-                  const tags = v.tags || [];
+                  const tags = v.parsedTags || [];
                   if (isEmpty(tags)) return null;
                   const firstTag = tags[0];
                   const remainingTags = tags.slice(1);
@@ -67,10 +65,10 @@ export default function TemplateTab({ paginatedData, driverMap, searchQuery, t }
                 })()}
               </Td>
               <Td>{v.oddEven}</Td>
-              <Td>0</Td>
-              <Td>{v.capacity?.weight?.max || null}</Td>
-              <Td>0</Td>
-              <Td>{formatVolume(v.capacity?.volume?.max)}</Td>
+              <Td>{v.minWeight || 0}</Td>
+              <Td>{v.maxWeight || null}</Td>
+              <Td>{v.minVolume || 0}</Td>
+              <Td>{formatVolume(v.maxVolume)}</Td>
             </tr>
           ))}
         </tbody>

@@ -41,7 +41,7 @@ export default function SessionGuard({ children }) {
         }, 0);
       }
     } catch (e) {
-      toastError(t('home.toast.error', { err: e.message }));
+      toastError(t('common.toast.error', { err: e.message }));
       router.push('/');
     }
   }, [pathname, router, t, isPublicPage]);

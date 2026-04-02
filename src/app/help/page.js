@@ -1,13 +1,13 @@
 // File: src/app/help/page.js
 'use client';
 
-import SelectionLayout from '@/components/SelectionLayout';
+import AppLayout from '@/components/AppLayout';
 import HelpPage from '@/features/help/HelpPage';
 
 export default function Page() {
   return (
-    <SelectionLayout>
+    <AppLayout mainClassName="items-center px-4">
       <HelpPage />
-    </SelectionLayout>
+    </AppLayout>
   );
 }

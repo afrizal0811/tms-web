@@ -1,15 +1,15 @@
+// File: src/features/userLogin/UserLogin.js
 'use client';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/modal/ConfirmModal';
+import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import VehicleTagMappingModal from '@/components/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getUsersByEmail } from '@/lib/apiService';
-import { ROLE_ID } from '@/lib/constants';
+import { getRoles, getUsersByEmail } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { isEmpty } from '@/lib/utils';
+import { capitalizeText, isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 
 export default function UserLogin({ onUserSelect, locationId, hubId }) {
@@ -35,16 +35,34 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
     setLoading(true);
     try {
-      const users = await getUsersByEmail(emailInput, hubId);
+      const response = await getUsersByEmail(emailInput, hubId);
+      let usersArray = [];
+      if (Array.isArray(response)) {
+        usersArray = response;
+      } else if (response && Array.isArray(response.data)) {
+        usersArray = response.data;
+      }
 
-      if (isEmpty(users)) {
+      if (isEmpty(usersArray)) {
         toastError(t('home.toast.no_email_inactive'));
         setLoading(false);
         return;
       }
 
-      const foundUser = users[0];
-      if (foundUser.roleId === ROLE_ID.driver || foundUser.roleId === ROLE_ID.driverJkt) {
+      const foundUser = usersArray[0];
+      if (!foundUser) {
+        toastError(t('home.toast.no_email_inactive'));
+        setLoading(false);
+        return;
+      }
+      const roles = await getRoles();
+      const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
+      const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
+
+      if (
+        (driverRole && foundUser.roleId === driverRole._id) ||
+        (driverJktRole && foundUser.roleId === driverJktRole._id)
+      ) {
         toastError(t('home.toast.driver_error'));
         setLoading(false);
         return;
@@ -53,7 +71,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
       setUserToConfirm(foundUser);
       setIsConfirmOpen(true);
     } catch (err) {
-      toastError(t('common.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }));
     } finally {
       setLoading(false);
     }
@@ -85,6 +103,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     setIsConfirmOpen(false);
     setUserToConfirm(null);
   };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center">
@@ -97,10 +116,10 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
   const modalMessage = (
     <div className="flex flex-col gap-2">
       <div>
-        {t('home.confirmation.question')} <span className="font-bold">{userToConfirm?.name}</span>?
+        {t('home.modal.question')}{' '}
+        <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>
       <div className="text-sm text-gray-500">{userToConfirm?.email}</div>
-      <div className="underline">{t('home.confirmation.caution')}</div>
     </div>
   );
 
@@ -116,13 +135,11 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
       )}
 
       <ConfirmModal
-        cancelText={t('home.confirmation.cancel')}
-        confirmText={t('home.confirmation.confirm')}
         isOpen={isConfirmOpen}
         message={modalMessage}
         onCancel={handleCancelConfirm}
         onConfirm={handleConfirmLogin}
-        title={t('home.confirmation.title')}
+        title={t('home.modal.title')}
       />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

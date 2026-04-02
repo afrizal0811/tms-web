@@ -42,6 +42,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
 
   const getSeqColor = (ro, real) => {
     if (isEmpty(ro)) return 'bg-red-100 text-red-600 border border-red-200';
+    if (isEmpty(real)) return 'bg-gray-100 text-gray-500 border border-gray-300';
     if (ro == real) return 'bg-green-100 text-green-600 border border-green-200';
     return 'bg-red-100 text-red-600 border border-red-200';
   };
@@ -88,9 +89,10 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                     }
                   >
                     <div
-                      className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(displayRO, displayReal)}`}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(displayRO, task.realSequence)}`}
                     >
-                      {isEmpty(displayRO) ? '-' : `#${displayRO}`} &rarr; #{displayReal}
+                      {isEmpty(displayRO) ? '-' : `#${displayRO}`} &rarr;{' '}
+                      {isEmpty(task.realSequence) ? '-' : `#${displayReal}`}
                     </div>
                   </Tooltip>
                 </div>

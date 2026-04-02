@@ -19,7 +19,7 @@ import {
 import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/apiService';
+import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import FormPengiriman from './components/FormPengiriman';
@@ -55,26 +55,7 @@ export default function EstimasiDelivery() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     setSelectedDate(`${y}-${m}-${d}`);
-
-    const ls = getLocalStorage();
-    if (ls && ls.storedDrivers) {
-      try {
-        const rawDrivers = JSON.parse(ls.storedDrivers);
-        if (Array.isArray(rawDrivers)) {
-          const driverObjMap = {};
-          rawDrivers.forEach((d) => {
-            if (d.email) {
-              const normEmail = normalizeEmail(d.email);
-              driverObjMap[normEmail] = d;
-            }
-          });
-          setDriverData(driverObjMap);
-        }
-      } catch (e) {
-        toastError(t('estimation.toast.no_driver_data', { err: e.message }));
-      }
-    }
-  }, [t]);
+  }, []);
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -95,25 +76,6 @@ export default function EstimasiDelivery() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    try {
-      const { storedDrivers } = getLocalStorage();
-      if (storedDrivers) {
-        const parsedDrivers = JSON.parse(storedDrivers);
-        const map = new Map();
-        if (Array.isArray(parsedDrivers)) {
-          parsedDrivers.forEach((d) => {
-            const email = normalizeEmail(d.email);
-            if (email) map.set(email, d.plat);
-          });
-        }
-        setDriverMap(map);
-      }
-    } catch (error) {
-      toastError(t('estimation.toast.no_driver_data', { err: error.message }));
-    }
-  }, [t]);
-
   const handleDeliveryDownload = async () => {
     if (isEmpty(filteredVehicleRoutes)) {
       toastError(t('estimation.toast.no_data_downloaded'));
@@ -125,8 +87,8 @@ export default function EstimasiDelivery() {
 
     try {
       const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-      const { storedLocationName } = getLocalStorage();
-      const locationName = storedLocationName || 'Cabang';
+      const { storedSession } = getLocalStorage();
+      const locationName = storedSession?.activeHubName || 'Cabang';
 
       const generatePdfBlob = async (route) => {
         const normalizedAssignee = normalizeEmail(route.assignee);
@@ -220,7 +182,8 @@ export default function EstimasiDelivery() {
       setTimeMap(new Map());
 
       try {
-        const { storedLocation: userLocation } = getLocalStorage();
+        const { storedSession } = getLocalStorage();
+        const userLocation = storedSession?.activeHubId;
         if (!userLocation) {
           throw new Error('userLocation tidak ditemukan di localStorage.');
         }

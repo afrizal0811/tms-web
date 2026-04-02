@@ -1,4 +1,3 @@
-// File: src/app/page.js
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -9,12 +8,20 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
+import {
+  getDriversSyncStatus,
+  getHubs,
+  getUsers,
+  getVehicles,
+  syncDriversData,
+  syncHubsData,
+  syncRolesData,
+} from '@/lib/api';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { getHubs } from '../lib/apiService';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError, toastInfo } from '../lib/toastHelper';
+import { toastError, toastInfo, toastWarning } from '../lib/toastHelper';
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -33,12 +40,71 @@ export default function Home() {
   const toastShownRef = useRef(false);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const initData = async () => {
+      try {
+        setIsLoading(true);
+
+        const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
+
+        if (!hasSynced) {
+          toastInfo('Menyiapkan data awal...');
+          try {
+            const syncResults = await Promise.allSettled([
+              syncHubsData(),
+              syncRolesData(),
+              getUsers(),
+              getVehicles(),
+              syncDriversData(),
+              getDriversSyncStatus(),
+            ]);
+
+            const failedSyncs = syncResults.filter((r) => r.status === 'rejected');
+            console.log('failedSyncs :', failedSyncs);
+
+            if (failedSyncs.length > 0) {
+              toastWarning('Beberapa data mungkin belum terbaru.');
+            } else {
+              toastSuccess('Semua data berhasil diperbarui!');
+            }
+
+            sessionStorage.setItem('hasSyncedThisSession', 'true');
+          } catch (err) {
+            console.error('Error saat sync awal:', err);
+          }
+        }
+
+        const localHubs = await getHubs();
+
+        if (isMounted) {
+          setAllHubsList(localHubs || []);
+          setCurrentHubListView(localHubs || []);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setPageError(error.message);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     async function initializeApp() {
       setIsLoading(true);
       setPageError(null);
       let processedHubs = [];
       try {
-        const hubs = await getHubs();
+        const res = await fetch('/api/get-hubs');
+        const hubs = await res.json();
 
         processedHubs = hubs
           .filter((hub) => hub.name !== 'Hub Demo')
@@ -48,15 +114,15 @@ export default function Home() {
           }));
 
         setAllHubsList(processedHubs);
-        setLocalStorage('allHubsList', JSON.stringify(processedHubs));
       } catch (e) {
-        setPageError(e.message);
+        setPageError('Gagal terhubung ke database.');
         setIsLoading(false);
         return;
       }
+
       try {
-        const { storedLocation, storedLocationName, storedUser, storedDrivers } = getLocalStorage();
-  
+        const { storedLocation, storedLocationName, storedUser } = getLocalStorage();
+
         if (storedUser) {
           const user = JSON.parse(storedUser);
           setSelectedUser(user);
@@ -74,25 +140,26 @@ export default function Home() {
               setTempSelectedLocation(storedLocation);
               setTempSelectedLocationName(storedLocationName);
             } else {
-              removeLocalStorage('userLocation');
-              removeLocalStorage('userLocationName');
+              removeLocalStorage('data');
             }
           }
+        } else if (storedLocation) {
+          // Kondisi ketika user baru memilih lokasi tapi belum login
+          setCurrentHubListView(processedHubs);
+          setSelectedLocation(storedLocation);
+          setSelectedLocationName(storedLocationName);
+          setTempSelectedLocation(storedLocation);
+          setTempSelectedLocationName(storedLocationName);
         } else {
           setCurrentHubListView(processedHubs);
           const hasShownSession = sessionStorage.getItem('hasShownHelpToast');
           if (!hasShownSession && !toastShownRef.current) {
             toastShownRef.current = true;
             sessionStorage.setItem('hasShownHelpToast', 'true');
-
             setTimeout(() => {
               toastInfo(t('home.toast.info_tutorial'));
             }, 500);
           }
-        }
-
-        if (storedLocation && storedDrivers) {
-          setDriverData({ data: JSON.parse(storedDrivers) });
         }
       } catch (e) {
         setPageError(e.message);
@@ -102,22 +169,18 @@ export default function Home() {
       }
     }
     initializeApp();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Dependency kosong agar hanya jalan sekali saat mount
+  }, [t]);
 
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getOrFetchDriverData(selectedLocation, true);
+        const data = await getOrFetchDriverData(selectedLocation);
         setDriverData({ data: data });
       } catch (err) {
         toastError(err);
       }
     }
-
-    if (selectedLocation) {
-      fetchDriverData();
-    }
+    if (selectedLocation) fetchDriverData();
   }, [selectedLocation]);
 
   const handleLocationChange = (id, name) => {
@@ -126,32 +189,43 @@ export default function Home() {
   };
 
   const handleSaveLocation = () => {
-    if (!tempSelectedLocation) {
-      toastError(t('home.select_branch'));
-      return;
-    }
+    if (!tempSelectedLocation) return toastError(t('home.select_branch'));
     if (!selectedUser) {
-      removeLocalStorage('selectedUser');
+      removeLocalStorage('data');
       setSelectedUser(null);
     }
-    removeLocalStorage('driverData');
+
     setDriverData({ data: [] });
-    setLocalStorage('userLocation', tempSelectedLocation);
-    setLocalStorage('userLocationName', tempSelectedLocationName);
+
+    // KUNCI: Simpan ke session tunggal
+    const tempSession = {
+      activeHubId: tempSelectedLocation,
+      activeHubName: tempSelectedLocationName,
+    };
+    setLocalStorage('data', JSON.stringify(tempSession));
+
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
 
   const handleUserSelect = (user) => {
-    setLocalStorage('selectedUser', JSON.stringify(user));
-    setSelectedUser(user);
+    const filteredUserSession = {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      hubId: user.hubId,
+      roleId: user.roleId,
+      status: user.status,
+      activeHubId: selectedLocation,
+      activeHubName: selectedLocationName,
+    };
+
+    setLocalStorage('data', JSON.stringify(filteredUserSession));
+    setSelectedUser(filteredUserSession);
   };
 
   const handleResetAll = () => {
-    removeLocalStorage('userLocation');
-    removeLocalStorage('userLocationName');
-    removeLocalStorage('selectedUser');
-    removeLocalStorage('driverData');
+    removeLocalStorage('data');
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');
@@ -159,26 +233,20 @@ export default function Home() {
     setCurrentHubListView(allHubsList);
   };
 
-  if (isPageLoading || allHubsList === null) {
+  if (isPageLoading || allHubsList === null)
     return (
       <SelectionLayout>
         <Spinner />
       </SelectionLayout>
     );
-  }
+  if (pageError) return <ErrorPage />;
 
-  if (pageError) {
-    <ErrorPage />;
-  }
-
-  // --- TAMPILAN 1: PILIH LOKASI ---
   if (!selectedLocation) {
     return (
       <SelectionLayout>
         <div className="text-center w-full">
           <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
           <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch')}</h2>
-
           <LocationDropdown
             value={tempSelectedLocation}
             onChange={handleLocationChange}
@@ -200,7 +268,6 @@ export default function Home() {
     );
   }
 
-  // --- TAMPILAN 2: PILIH USER ---
   if (selectedLocation && !selectedUser) {
     return (
       <SelectionLayout>
@@ -221,7 +288,6 @@ export default function Home() {
     );
   }
 
-  // --- TAMPILAN 3: DASHBOARD ---
   return (
     <AppLayout mainClassName="items-center px-4">
       <DashboardSummary driverData={driverData.data} />

@@ -1,21 +1,26 @@
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function ConfirmModal({
-  cancelText = 'Tidak',
-  confirmText = 'Ya',
+  cancelText,
+  confirmText,
   isOpen,
   message,
   onCancel,
   onConfirm,
   title,
 }) {
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
+  if (cancelText === undefined || confirmText === undefined) {
+    cancelText = t('common.modal.btn_cancel');
+    confirmText = t('common.modal.btn_confirm');
+  }
   useEffect(() => {
-    // FIX: Gunakan setTimeout agar tidak dianggap synchronous update oleh linter
     setTimeout(() => {
       setMounted(true);
     }, 0);

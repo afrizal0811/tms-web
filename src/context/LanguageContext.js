@@ -17,7 +17,7 @@ export function LanguageProvider({ children }) {
 
   const switchLanguage = (newLang) => {
     setLang(newLang);
-    setLocalStorage('app_lang', newLang);
+    setLocalStorage('language', newLang);
   };
 
   // Fungsi Translate Helper (t)

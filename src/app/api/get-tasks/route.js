@@ -101,10 +101,7 @@ export async function GET(request) {
     // Namun berdasarkan code RangkumanSummary.js yang kamu kasih, dia mengharapkan array dari apiService.
     return NextResponse.json(allTasks);
   } catch (error) {
-    console.error('Error in get-tasks route:', error);
-    return NextResponse.json(
-      { error: 'Internal server error.', details: error.message },
-      { status: 500 }
-    );
+    console.error('Error Tasks:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,15 +1,18 @@
 {
   "name": "tms-web",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "postinstall": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "@react-pdf/renderer": "^4.3.2",
+    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
@@ -28,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "prettier": "^3.6.2",
+    "prisma": "^6.19.2",
     "tailwindcss": "^4"
   }
 }

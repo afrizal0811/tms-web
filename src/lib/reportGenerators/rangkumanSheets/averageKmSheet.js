@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
-import { normalizeEmail } from '@/lib/utils';
+import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -47,43 +47,7 @@ function determineTargetDate(createdTimeStr, apiRoutingDate) {
 }
 
 export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo, driverData) {
-  const driverMap = new Map();
-  if (driverData && Array.isArray(driverData)) {
-    driverData.forEach((d) => {
-      if (d.email) {
-        driverMap.set(normalizeEmail(d.email), d.name);
-      }
-    });
-  }
-
-  const dailyVehicleMap = {};
-
-  if (resultsData && Array.isArray(resultsData)) {
-    resultsData.forEach((dispatch) => {
-      const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
-      const hasResult = dispatch.result && Array.isArray(dispatch.result.routing);
-
-      if (isDone && hasResult) {
-        const dateKey = determineTargetDate(dispatch.createdTime, dispatch.routingDate);
-        const dispatchTimestamp = new Date(dispatch.createdTime).getTime();
-
-        if (dateKey) {
-          if (!dailyVehicleMap[dateKey]) {
-            dailyVehicleMap[dateKey] = new Map();
-          }
-          dispatch.result.routing.forEach((route) => {
-            const vehicleId = route.vehicleId || route.vehicleName;
-            const existingEntry = dailyVehicleMap[dateKey].get(vehicleId);
-            if (!existingEntry || dispatchTimestamp > existingEntry.dispatchTimestamp) {
-              route.dispatchTimestamp = dispatchTimestamp;
-              dailyVehicleMap[dateKey].set(vehicleId, route);
-            }
-          });
-        }
-      }
-    });
-  }
-
+  const unifiedMap = getUnifiedVehicleMap(resultsData, driverData);
   const summaryData = [];
 
   const [sY, sM, sD] = startDateStr.split('-').map(Number);
@@ -125,60 +89,24 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
     };
 
     if (!isSunday) {
-      const vehiclesMap = dailyVehicleMap[currentDateString];
+      const vehiclesMap = unifiedMap[currentDateString];
       if (vehiclesMap) {
-        vehiclesMap.forEach((route) => {
-          const hasTrips = route.trips && route.trips.length > 0;
-          if (hasTrips) {
-            const tags = route.vehicleTags || [];
+        vehiclesMap.forEach((vh) => {
+          const detailItem = {
+            plate: vh.plate,
+            driverName: vh.driverName,
+            distance: vh.distanceKm,
+            visit: vh.visits,
+          };
 
-            let distMeter = route.totalDistance || 0;
-
-            if (distMeter === 0 && Array.isArray(route.trips)) {
-              distMeter = route.trips.reduce((acc, trip) => {
-                if (!trip.isHub) {
-                  return acc + (trip.distance || 0);
-                }
-                return acc;
-              }, 0);
-            }
-
-            const distKm = distMeter / 1000;
-
-            const isFrozen = tags.some(
-              (t) => typeof t === 'string' && t.toUpperCase().includes('FROZEN')
-            );
-
-            const rawEmail = route.assignee || route.email;
-            let finalDriverName = '-';
-
-            if (rawEmail) {
-              const normalized = normalizeEmail(rawEmail);
-              if (driverMap.has(normalized)) {
-                finalDriverName = driverMap.get(normalized);
-              } else {
-                finalDriverName = route.driverProfile?.name || rawEmail;
-              }
-            } else {
-              finalDriverName = route.driverProfile?.name || '-';
-            }
-
-            const detailItem = {
-              plate: route.vehicleName || route.vehicleId,
-              driverName: finalDriverName,
-              distance: distKm,
-              visit: route.trips.length,
-            };
-
-            if (isFrozen) {
-              rowData.frozenCount++;
-              rowData.frozenKm += distKm;
-              rowData.frozenDetails.push(detailItem);
-            } else {
-              rowData.dryCount++;
-              rowData.dryKm += distKm;
-              rowData.dryDetails.push(detailItem);
-            }
+          if (vh.storageType === 'Frozen') {
+            rowData.frozenCount++;
+            rowData.frozenKm += vh.distanceKm;
+            rowData.frozenDetails.push(detailItem);
+          } else {
+            rowData.dryCount++;
+            rowData.dryKm += vh.distanceKm;
+            rowData.dryDetails.push(detailItem);
           }
         });
       }

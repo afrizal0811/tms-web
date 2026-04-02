@@ -36,12 +36,13 @@ export default function TimeDriverTab({ data, translate, language }) {
   const tdClass =
     'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700 whitespace-nowrap';
 
-  const stickyHeaderType = 'sticky top-0 left-0 z-40';
-  const stickyHeaderPlate = 'sticky top-0 left-[80px] z-40';
-  const stickyHeaderDriver = 'sticky top-0 left-[180px] z-40';
-  const stickyBodyType = 'sticky left-0 z-20 border-r';
-  const stickyBodyPlate = 'sticky left-[80px] z-20 border-r';
-  const stickyBodyDriver = 'sticky left-[180px] z-20 border-r shadow-md';
+  // UPDATE: Menggunakan md: agar sticky left hanya aktif di layar tablet & desktop
+  const stickyHeaderType = 'md:sticky md:left-0 md:z-40';
+  const stickyHeaderPlate = 'md:sticky md:left-[80px] md:z-40';
+  const stickyHeaderDriver = 'md:sticky md:left-[180px] md:z-40';
+  const stickyBodyType = 'md:sticky md:left-0 md:z-20 md:border-r';
+  const stickyBodyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r';
+  const stickyBodyDriver = 'md:sticky md:left-[180px] md:z-20 md:border-r md:shadow-md';
 
   return (
     <div className="rounded-b-xl overflow-auto border border-gray-300 m-0 h-full relative">
@@ -112,7 +113,7 @@ export default function TimeDriverTab({ data, translate, language }) {
                 <td className={`${tdClass} ${stickyBodyType} bg-white`}>{driver.type}</td>
                 <td className={`${tdClass} ${stickyBodyPlate} bg-white`}>{driver.plat}</td>
                 <td
-                  className={`${tdClass} ${stickyBodyDriver} text-left border-r-2 border-slate-400 bg-white`}
+                  className={`${tdClass} ${stickyBodyDriver} text-left md:border-r-2 md:border-slate-400 bg-white`}
                 >
                   {driver.name}
                 </td>

@@ -1,9 +1,7 @@
-// File: src/lib/reportGenerators/rangkumanReport.js
 'use client';
 
 import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
 import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
 import {
   calculatePendingReasonData,
@@ -24,7 +22,7 @@ import {
   generateTruckUsageSheet,
 } from './rangkumanSheets/truckUsageSheet';
 
-export function generateRangkumanDataPreview(
+export async function generateRangkumanDataPreview(
   driverData,
   taskData,
   resultsData,
@@ -42,9 +40,14 @@ export function generateRangkumanDataPreview(
     isIndo,
     driverData
   );
-  // 2. Truck Usage
-  const truckUsageData = calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
-  // 3. Truck Detail
+
+  const truckUsageData = await calculateTruckUsageData(
+    resultsData,
+    startDateStr,
+    endDateStr,
+    hubId
+  );
+
   const truckDetailRaw = calculateTruckDetailData(
     driverData,
     resultsData,
@@ -52,7 +55,7 @@ export function generateRangkumanDataPreview(
     startDateStr,
     endDateStr
   );
-  // 4. Time Driver
+
   const timeDriverRaw = calculateTimeDriverData(
     driverData,
     locationHistoryData,
@@ -62,7 +65,7 @@ export function generateRangkumanDataPreview(
     taskData,
     resultsData
   );
-  // 5. Pending Reason (UPDATE: Pass Dates)
+
   const pendingReasonData = calculatePendingReasonData(
     driverData,
     taskData,
@@ -80,7 +83,7 @@ export function generateRangkumanDataPreview(
   };
 }
 
-export function generateRangkumanWorkbook(
+export async function generateRangkumanWorkbook(
   driverData,
   taskData,
   resultsData,
@@ -96,6 +99,7 @@ export function generateRangkumanWorkbook(
 ) {
   const wb = XLSX.utils.book_new();
   const isIndo = language === 'id';
+
   generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, isIndo);
   generateTaskSummarySheet(
     wb,
@@ -105,7 +109,7 @@ export function generateRangkumanWorkbook(
     masterTruckData,
     translate
   );
-  // UPDATE: Pass Dates ke Sheet Generator
+
   generatePendingReasonSheet(
     wb,
     driverData,
@@ -127,6 +131,7 @@ export function generateRangkumanWorkbook(
     taskData,
     resultsData
   );
+
   generateTruckDetailSheet(
     wb,
     driverData,
@@ -137,7 +142,8 @@ export function generateRangkumanWorkbook(
     translate,
     isIndo
   );
-  generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
+
+  await generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo);
 
   const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);

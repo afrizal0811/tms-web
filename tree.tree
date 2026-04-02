@@ -2,17 +2,30 @@
 │   ├── api
 │   │   ├── get-batch-histories
 │   │   │   └── route.js
+│   │   ├── get-drivers
+│   │   │   ├── route.js
+│   │   │   └── status
+│   │   │       └── route.js
 │   │   ├── get-hubs
 │   │   │   └── route.js
 │   │   ├── get-location-histories
 │   │   │   └── route.js
 │   │   ├── get-results-summary
 │   │   │   └── route.js
+│   │   ├── get-roles
+│   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
 │   │   ├── get-users
 │   │   │   └── route.js
-│   │   └── get-vehicles
+│   │   ├── get-vehicles
+│   │   │   └── route.js
+│   │   ├── monthly-summary
+│   │   ├── truck-usage
+│   │   │   └── route.js
+│   │   ├── vehicle-mappings
+│   │   │   └── route.js
+│   │   └── vehicle-types
 │   │       └── route.js
 │   ├── estimasi
 │   │   └── page.js
@@ -30,6 +43,8 @@
 │   ├── page.js
 │   ├── rangkuman
 │   │   └── page.js
+│   ├── settings
+│   │   └── page.js
 │   ├── update-longlat
 │   │   └── page.js
 │   └── vehicles
@@ -40,7 +55,6 @@
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
-│   ├── ConfirmModal.js
 │   ├── ContentBlockRenderer.js
 │   ├── CustomDatePicker.js
 │   ├── DownloadButton.js
@@ -49,11 +63,17 @@
 │   ├── HighlightText.js
 │   ├── ImageLightbox.js
 │   ├── LocationDropdown.js
+│   ├── modal
+│   │   ├── ConfirmModal.js
+│   │   ├── SystemUpdateModal.js
+│   │   ├── TokenExpirationModal.js
+│   │   └── VehicleTagMappingModal.js
 │   ├── navbar
 │   │   ├── HelpDropdown.js
 │   │   ├── LanguageSwitcher.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
+│   │   ├── SyncDataButton.js
 │   │   └── UserDisplay.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
@@ -64,9 +84,7 @@
 │   │   ├── TabButton.js
 │   │   ├── Td.js
 │   │   └── Th.js
-│   ├── TokenExpirationModal.js
-│   ├── Tooltip.js
-│   └── VehicleTagMappingModal.js
+│   └── Tooltip.js
 ├── context
 │   └── LanguageContext.js
 ├── features
@@ -121,10 +139,11 @@
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
 │   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
-│   │       │   └── TruckDetailModal.js
+│   │       │   ├── TruckDetailModal.js
+│   │       │   └── TruckUsageModal.js
 │   │       ├── PendingReasonsTab.js
-│   │       ├── PlaceholderTab.js
 │   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
 │   │       ├── TimeROTab.js
@@ -134,6 +153,13 @@
 │   │   ├── BulkReportDownloader.js
 │   │   ├── help.js
 │   │   └── SingleReportDownloader.js
+│   ├── settings
+│   │   ├── components
+│   │   │   └── VehicleMappingManager.js
+│   │   ├── SettingsPage.js
+│   │   └── tabs
+│   │       ├── MasterDataTab.js
+│   │       └── SyncDataTab.js
 │   ├── updateLonglat
 │   │   ├── components
 │   │   │   ├── UpdateLonglatTable.js
@@ -151,15 +177,27 @@
 │       ├── help.js
 │       └── VehicleData.js
 └── lib
-    ├── apiService.js
+    ├── api
+    │   ├── base.js
+    │   ├── drivers.js
+    │   ├── hubs.js
+    │   ├── index.js
+    │   ├── roles.js
+    │   ├── tasks.js
+    │   ├── truckUsage.js
+    │   ├── users.js
+    │   ├── vehicleMappings.js
+    │   ├── vehicles.js
+    │   └── vehicleTypes.js
     ├── constants.js
     ├── dashboardHelper.js
     ├── dictionary.js
     ├── driverDataHelper.js
     ├── hooks
+    │   ├── useRangkumanData.js
     │   └── useVehicleTagCheck.js
     ├── localStorageHandler.js
-    ├── masterTruckHelper.js
+    ├── prisma.js
     ├── reportGenerators
     │   ├── deliveryReport.js
     │   ├── rangkumanReport.js
@@ -175,4 +213,5 @@
     │   ├── routingReport.js
     │   └── timeReport.js
     ├── toastHelper.js
+    ├── unifiedRouting.js
     └── utils.js

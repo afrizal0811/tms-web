@@ -59,7 +59,7 @@ export default function LaporanPage() {
           driverData: drivers, // <-- Gunakan data dari 'drivers'
         });
       } catch (e) {
-        toastError(t('home.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }));
         router.push('/');
       } finally {
         setIsLoading(false);

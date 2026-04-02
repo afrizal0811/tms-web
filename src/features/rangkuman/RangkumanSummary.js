@@ -4,6 +4,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import DownloadButton from '@/components/DownloadButton';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
@@ -13,7 +14,6 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
-import PlaceholderTab from './tabs/PlaceholderTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TimeROTab from './tabs/TimeROTab';
@@ -24,12 +24,11 @@ export default function RangkumanSummary() {
   const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState('Time RO');
 
-  // Destructure logic dari custom hook
   const {
     selectedLocation,
     selectedLocationName,
-    selectedDate,
-    setSelectedDate,
+    dateRange,
+    setDateRange,
     driverData,
     rawData,
     isLoading,
@@ -45,22 +44,47 @@ export default function RangkumanSummary() {
     setDismissedDots,
   } = useRangkumanData();
 
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [pendingDateRange, setPendingDateRange] = useState([null, null]);
+  const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
+
+  const handleTempDateChange = (update) => {
+    setTempDateRange(update);
+  };
+
+  const handleApplyDate = () => {
+    const [start, end] = tempDateRange;
+    if (start && end) {
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+      if (diffDays > 14) {
+        setPendingDateRange(tempDateRange);
+        setShowWarningModal(true);
+      } else {
+        setDateRange(tempDateRange);
+      }
+    } else {
+      setDateRange(tempDateRange);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleDownloadExcel = () => {
-    if (!selectedDate) return;
+  const handleDownloadExcel = async () => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
     if (isEmpty(driverData)) {
       toastError(t('summary.toast.no_driver_data'));
       return;
     }
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, month + 1, 0);
+
+    const startDate = new Date(dateRange[0]);
+    const endDate = new Date(dateRange[1]);
+
     try {
-      const { wb, excelFileName } = generateRangkumanWorkbook(
+      const { wb, excelFileName } = await generateRangkumanWorkbook(
         driverData,
         rawData.tasks,
         rawData.results,
@@ -154,10 +178,9 @@ export default function RangkumanSummary() {
         <Component {...props} />
       </div>
     );
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const startStr = formatDateUniversal(new Date(year, month, 1));
-    const endStr = formatDateUniversal(new Date(year, month + 1, 0));
+
+    const startStr = dateRange && dateRange[0] ? formatDateUniversal(new Date(dateRange[0])) : '';
+    const endStr = dateRange && dateRange[1] ? formatDateUniversal(new Date(dateRange[1])) : '';
 
     switch (activeTab) {
       case 'Time RO':
@@ -177,6 +200,7 @@ export default function RangkumanSummary() {
           endDateStr: endStr,
           isHasData: Object.entries(taskSummaryMetrics).length > 0,
           translate: t,
+          masterTruckData: masterTruckData,
         });
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
@@ -197,7 +221,14 @@ export default function RangkumanSummary() {
           language: lang,
         });
       case 'Truck Usage':
-        return renderTab(TruckUsageTab, { data: reportPreview.truckUsageData, translate: t });
+        return renderTab(TruckUsageTab, {
+          data: reportPreview.truckUsageData,
+          translate: t,
+          hubId: selectedLocation,
+          onRefresh: fetchData,
+          driverData: driverData,
+          language: lang,
+        });
       case 'Average KM':
         return renderTab(AverageKmTab, {
           data: reportPreview.averageKmData,
@@ -205,22 +236,40 @@ export default function RangkumanSummary() {
           translate: t,
           language: lang,
         });
-      default:
-        return <PlaceholderTab tabName={activeTab} />;
     }
   };
+
+  const getMaxDate = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const max = new Date(today);
+
+    if (day === 6) {
+      max.setDate(max.getDate() + 2);
+    } else {
+      max.setDate(max.getDate() + 1);
+    }
+    return max;
+  };
+
+  const maxDateConfig = getMaxDate();
 
   const headerItems = [
     {
       label: t('summary.label'),
       component: (
         <CustomDatePicker
-          dateFormat="MMMM yyyy"
+          selectsRange={true}
+          startDate={tempDateRange ? tempDateRange[0] : null}
+          endDate={tempDateRange ? tempDateRange[1] : null}
+          onChange={handleTempDateChange}
           disableSunday={false}
           isLoading={isLoading}
-          onChange={setSelectedDate}
-          selected={selectedDate}
-          showMonthYearPicker
+          showApplyButton={true}
+          onApply={handleApplyDate}
+          applyText={t('common.apply')}
+          maxDate={maxDateConfig}
+          useCustomRangeFormat={true}
         />
       ),
       hideLabel: false,
@@ -256,8 +305,7 @@ export default function RangkumanSummary() {
         subtitle={
           <>
             {t('summary.subtitle_1')}{' '}
-            <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>{' '}
-            {t('summary.subtitle_2')}
+            <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>
           </>
         }
         items={headerItems}
@@ -275,10 +323,8 @@ export default function RangkumanSummary() {
         longLoadingContent={
           pendingEndpoints.length > 0 && (
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
-              <p>
-                {t('summary.long_message')}
-                {pendingEndpoints.join(', ')}.
-              </p>
+              <p>{t('summary.long_message')}</p>
+              <p>{pendingEndpoints.join(', ')}</p>
             </div>
           )
         }
@@ -286,14 +332,27 @@ export default function RangkumanSummary() {
         {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
           <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse">
-              <p>
-                {t('summary.long_message')} {pendingEndpoints.join(', ')}.
-              </p>
+              <p>{t('summary.long_message')}</p>
+              <p>{pendingEndpoints.join(', ')}</p>
             </div>
           </div>
         )}
         {!isLoading && renderContent()}
       </BodyCard>
+
+      <ConfirmModal
+        isOpen={showWarningModal}
+        title={t('summary.modal.title')}
+        message={t('summary.modal.text')}
+        onConfirm={() => {
+          setDateRange(pendingDateRange);
+          setShowWarningModal(false);
+        }}
+        onCancel={() => {
+          setShowWarningModal(false);
+          setTempDateRange(dateRange);
+        }}
+      />
     </div>
   );
 }

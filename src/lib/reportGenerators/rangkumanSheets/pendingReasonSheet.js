@@ -214,13 +214,12 @@ export function generatePendingReasonSheet(
   data.forEach((item, idx) => {
     const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
     if (isWrongGR) errorRows.add(idx + 1);
-
-    const batal = item.status === 'BATAL' ? item.customerName : '';
-    const parsial = item.status === 'TERIMA SEBAGIAN' ? item.customerName : '';
+    const { id, name: customerName } = parseCustomerString(item.customerName);
+    const batal = item.status === 'BATAL' ? customerName : '';
+    const parsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
     let pending = '';
-    if (item.status === 'PENDING' || isWrongGR) pending = item.customerName;
-    const pendingGR = item.status === 'PENDING GR' ? item.customerName : '';
-    const { id } = parseCustomerString(item.customerName);
+    if (item.status === 'PENDING' || isWrongGR) pending = customerName;
+    const pendingGR = item.status === 'PENDING GR' ? customerName : '';
 
     const row = [
       item.flow || '-',
