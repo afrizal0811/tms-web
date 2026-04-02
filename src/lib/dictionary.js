@@ -69,8 +69,7 @@ export const dictionary = {
       },
       toast: {
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
-        error: 'Gagal memuat data: {err}',
-        info_tutorial: 'Informasi Panduan ada di menu Help',
+        info_tutorial: 'Informasi Panduan ada di menu Bantuan',
         login_failed: 'Gagal login: {err}',
         login_success: 'Login berhasil!',
         no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',

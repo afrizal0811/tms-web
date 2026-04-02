@@ -32,7 +32,7 @@ export default function UserDisplay() {
           return capitalizeText(user.name || '');
         }
       } catch (e) {
-        toastError(t('home.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }));
       }
     }
     return '';

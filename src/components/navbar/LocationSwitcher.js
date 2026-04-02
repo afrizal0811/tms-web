@@ -3,9 +3,11 @@
 import LocationDropdown from '@/components/LocationDropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { getHubs } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
+import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 export default function LocationSwitcher() {
@@ -21,9 +23,10 @@ export default function LocationSwitcher() {
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
       try {
-        const response = await fetch('/api/get-hubs');
-        const hubsSimple = await response.json();
-
+        const hubsSimple = await getHubs();
+        if (isEmpty(hubsSimple)) {
+          throw new Error(t('common.no_data'));
+        }
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
@@ -33,8 +36,8 @@ export default function LocationSwitcher() {
 
         setAllowedHubs(allowed);
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
         setAllowedHubs([]);
+        toastError(t('common.toast.error', { err: e.message }));
       }
     }
 
