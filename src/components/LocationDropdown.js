@@ -1,9 +1,9 @@
-// File: components/LocationDropdown.js
 'use client';
 
 import { toastError } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+
 export default function LocationDropdown({
   value,
   onChange,
@@ -16,10 +16,9 @@ export default function LocationDropdown({
   saveToLocalStorageKey = null,
   disabled = false,
   className = '',
-  // capture any developer-passed custom props here so they don't end up on DOM
-  showPlaceholder, // intentionally captured but not used/passed down
-  searchable, // capture and ignore if passed accidentally
-  // rest will contain only valid native props you intentionally want to forward
+  showPlaceholder,
+  searchable,
+  translate,
   ...rest
 }) {
   const [data, setData] = useState([]);
@@ -27,25 +26,20 @@ export default function LocationDropdown({
   const [error, setError] = useState(null);
   const [localValue, setLocalValue] = useState(value ?? '');
 
-  // init localValue from localStorage if key provided and no explicit value
   useEffect(() => {
     if (saveToLocalStorageKey && isEmpty(value)) {
       try {
         const stored = localStorage.getItem(saveToLocalStorageKey);
         if (stored) setLocalValue(stored);
-      } catch (e) {
-        // ignore localStorage errors
-      }
+      } catch (e) {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // sync when parent passes value
   useEffect(() => {
     if (value !== undefined && value !== null) setLocalValue(value);
   }, [value]);
 
-  // load data: prefer hubsToShow, else fetchHubsFn
   useEffect(() => {
     let mounted = true;
     const setList = (arr) => {
@@ -79,12 +73,10 @@ export default function LocationDropdown({
       return () => (mounted = false);
     }
 
-    // no data source
     setList([]);
     return () => (mounted = false);
   }, [hubsToShow, fetchHubsFn]);
 
-  // if compact (header) and data loaded and no localValue -> auto-select first option
   useEffect(() => {
     if (!compact) return;
     if (loading) return;
@@ -99,16 +91,16 @@ export default function LocationDropdown({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compact, loading, error, data]);
 
-  // persist to localStorage if needed
   useEffect(() => {
     if (!saveToLocalStorageKey) return;
     try {
       if (localValue) localStorage.setItem(saveToLocalStorageKey, localValue);
       else localStorage.removeItem(saveToLocalStorageKey);
     } catch (e) {
-      // ignore storage errors
+      console.error(e);
+      toastError(translate('common.toast.error', { err: e.message }));
     }
-  }, [localValue, saveToLocalStorageKey]);
+  }, [localValue, saveToLocalStorageKey, translate]);
 
   const handleChange = (e) => {
     const id = e.target.value;
@@ -136,9 +128,7 @@ export default function LocationDropdown({
 
       {!loading && !error && (
         <>
-          {/* show placeholder only when NOT compact (i.e., page mode) */}
           {!compact && placeholder && <option value="">{placeholder}</option>}
-
           {isEmpty(data) && <option value="">{'-- Tidak ada lokasi --'}</option>}
 
           {data.map((hub) => {

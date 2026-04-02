@@ -93,6 +93,7 @@ export default function LocationSwitcher() {
         onChange={handleLocationChange}
         showPlaceholder={false}
         value={currentLocationId || ''}
+        translate={t}
       />
       {showModal && (
         <VehicleTagMappingModal

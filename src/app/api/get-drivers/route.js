@@ -103,7 +103,6 @@ export async function POST(request) {
 
           // Multiday
           let mDay = vehicle.workingTime?.multiday;
-          console.log('mDay :', mDay);
           if (mDay !== null && mDay !== undefined) {
             mDay = parseInt(mDay, 10);
             if (isNaN(mDay)) mDay = null; // Jika ternyata isinya bukan angka, set null

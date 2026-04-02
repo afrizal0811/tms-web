@@ -46,7 +46,7 @@ export default function SyncDataTab({
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (error) {
-      toastError(translate('common.toast.error', { err: err.message }));
+      toastError(translate('common.toast.error', { err: error.message }));
     } finally {
       setSyncLoading((prev) => ({ ...prev, [type]: false }));
     }

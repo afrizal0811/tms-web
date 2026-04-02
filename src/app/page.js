@@ -8,20 +8,13 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
-import {
-  getDriversSyncStatus,
-  getHubs,
-  getUsers,
-  getVehicles,
-  syncDriversData,
-  syncHubsData,
-  syncRolesData,
-} from '@/lib/api';
+import { getDriversSyncStatus, syncDriversData, syncRolesData } from '@/lib/api';
+import { useInitialDataSync } from '@/lib/hooks/useInitialDataSync';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError, toastInfo, toastWarning } from '../lib/toastHelper';
+import { toastError, toastInfo } from '../lib/toastHelper';
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -30,72 +23,44 @@ export default function Home() {
   const [tempSelectedLocation, setTempSelectedLocation] = useState('');
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [driverData, setDriverData] = useState({ data: [] });
-
   const [isPageLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
 
   const { t } = useLanguage();
   const toastShownRef = useRef(false);
 
+  useInitialDataSync(setIsLoading, setAllHubsList, setCurrentHubListView, setPageError);
+
   useEffect(() => {
-    let isMounted = true;
+    const { storedSession, storedLocation, storedLocationName, storedUser } = getLocalStorage();
+    const hasCompleteData = storedSession && storedLocation && storedLocationName && storedUser;
 
-    const initData = async () => {
-      try {
-        setIsLoading(true);
+    if (hasCompleteData || selectedUser) {
+      const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
 
-        const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
-
-        if (!hasSynced) {
-          toastInfo('Menyiapkan data awal...');
+      if (!hasSynced) {
+        const runBackgroundSync = async () => {
+          setIsBackgroundSyncing(true); // Tampilkan Spinner
           try {
-            const syncResults = await Promise.allSettled([
-              syncHubsData(),
-              syncRolesData(),
-              getUsers(),
-              getVehicles(),
-              syncDriversData(),
-              getDriversSyncStatus(),
-            ]);
-
-            const failedSyncs = syncResults.filter((r) => r.status === 'rejected');
-            console.log('failedSyncs :', failedSyncs);
-
-            if (failedSyncs.length > 0) {
-              toastWarning('Beberapa data mungkin belum terbaru.');
-            } else {
-              toastSuccess('Semua data berhasil diperbarui!');
-            }
+            await syncRolesData().catch(() => {});
+            await syncDriversData().catch(() => {});
+            await getDriversSyncStatus().catch(() => {});
 
             sessionStorage.setItem('hasSyncedThisSession', 'true');
           } catch (err) {
-            console.error('Error saat sync awal:', err);
+            console.error('Error background sync:', err);
+          } finally {
+            setIsBackgroundSyncing(false);
           }
-        }
+        };
 
-        const localHubs = await getHubs();
-
-        if (isMounted) {
-          setAllHubsList(localHubs || []);
-          setCurrentHubListView(localHubs || []);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setPageError(error.message);
-          setIsLoading(false);
-        }
+        runBackgroundSync();
       }
-    };
-
-    initData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    }
+  }, [selectedUser]);
 
   useEffect(() => {
     async function initializeApp() {
@@ -144,7 +109,6 @@ export default function Home() {
             }
           }
         } else if (storedLocation) {
-          // Kondisi ketika user baru memilih lokasi tapi belum login
           setCurrentHubListView(processedHubs);
           setSelectedLocation(storedLocation);
           setSelectedLocationName(storedLocationName);
@@ -197,7 +161,6 @@ export default function Home() {
 
     setDriverData({ data: [] });
 
-    // KUNCI: Simpan ke session tunggal
     const tempSession = {
       activeHubId: tempSelectedLocation,
       activeHubName: tempSelectedLocationName,
@@ -253,12 +216,13 @@ export default function Home() {
             hubsToShow={currentHubListView}
             className="mt-6 p-2 rounded border border-gray-300 w-64"
             placeholder={`-- ${t('home.placeholder')} --`}
+            translate={t}
           />
           <div className="mt-4">
             <button
               onClick={handleSaveLocation}
               disabled={!tempSelectedLocation}
-              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
+              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors"
             >
               {t('home.select_btn')}
             </button>
@@ -289,8 +253,25 @@ export default function Home() {
   }
 
   return (
-    <AppLayout mainClassName="items-center px-4">
+    <AppLayout mainClassName="items-center px-4 relative">
       <DashboardSummary driverData={driverData.data} />
+      {isBackgroundSyncing && (
+        <div className="fixed inset-0 z-9999 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center transform scale-100 animate-fade-in-up">
+            <Spinner
+              size="w-14 h-14"
+              border="border-4 border-gray-100"
+              colorClass="border-t-sky-600"
+            />
+
+            <h2 className="mt-6 text-xl font-bold text-slate-800">Sinkronisasi Data</h2>
+
+            <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+              Mohon tunggu sebentar, kami sedang melakukan sinkronisasi data
+            </p>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

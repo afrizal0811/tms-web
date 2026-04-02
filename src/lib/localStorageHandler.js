@@ -45,7 +45,7 @@ export function removeLocalStorage(name) {
 }
 
 export function getLocalStorage() {
-  const rawSessionStr = localStorage.getItem('data') || localStorage.getItem('tms_user_session');
+  const rawSessionStr = localStorage.getItem('data');
   let storedSession = null;
   let storedLocation = null;
   let storedLocationName = null;
