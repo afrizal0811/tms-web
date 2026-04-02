@@ -8,11 +8,20 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
+import {
+  getDriversSyncStatus,
+  getHubs,
+  getUsers,
+  getVehicles,
+  syncDriversData,
+  syncHubsData,
+  syncRolesData,
+} from '@/lib/api';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError, toastInfo } from '../lib/toastHelper';
+import { toastError, toastInfo, toastWarning } from '../lib/toastHelper';
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -29,6 +38,64 @@ export default function Home() {
 
   const { t } = useLanguage();
   const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initData = async () => {
+      try {
+        setIsLoading(true);
+
+        const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
+
+        if (!hasSynced) {
+          toastInfo('Menyiapkan data awal...');
+          try {
+            const syncResults = await Promise.allSettled([
+              syncHubsData(),
+              syncRolesData(),
+              getUsers(),
+              getVehicles(),
+              syncDriversData(),
+              getDriversSyncStatus(),
+            ]);
+
+            const failedSyncs = syncResults.filter((r) => r.status === 'rejected');
+            console.log('failedSyncs :', failedSyncs);
+
+            if (failedSyncs.length > 0) {
+              toastWarning('Beberapa data mungkin belum terbaru.');
+            } else {
+              toastSuccess('Semua data berhasil diperbarui!');
+            }
+
+            sessionStorage.setItem('hasSyncedThisSession', 'true');
+          } catch (err) {
+            console.error('Error saat sync awal:', err);
+          }
+        }
+
+        const localHubs = await getHubs();
+
+        if (isMounted) {
+          setAllHubsList(localHubs || []);
+          setCurrentHubListView(localHubs || []);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setPageError(error.message);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     async function initializeApp() {
