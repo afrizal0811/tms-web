@@ -44,7 +44,6 @@ export default function BaseModal({
               </button>
             )}
           </div>
-          <div></div>
         </div>
 
         {/* Body */}

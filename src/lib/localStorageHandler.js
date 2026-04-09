@@ -24,6 +24,8 @@ const decryptData = (ciphertext) => {
 };
 
 export function setLocalStorage(name, value) {
+  if (typeof window === 'undefined') return;
+
   if (name === 'data' && value) {
     try {
       let parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
@@ -41,10 +43,24 @@ export function setLocalStorage(name, value) {
 }
 
 export function removeLocalStorage(name) {
+  // Penjaga untuk SSR Next.js
+  if (typeof window === 'undefined') return;
+
   localStorage.removeItem(name);
 }
 
 export function getLocalStorage() {
+  if (typeof window === 'undefined') {
+    return {
+      storedSession: null,
+      storedLocation: null,
+      storedLocationName: null,
+      storedUser: null,
+      storedLanguage: null,
+      appVersion: null,
+    };
+  }
+
   const rawSessionStr = localStorage.getItem('data');
   let storedSession = null;
   let storedLocation = null;

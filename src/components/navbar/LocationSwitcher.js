@@ -87,7 +87,7 @@ export default function LocationSwitcher() {
   return (
     <>
       <LocationDropdown
-        className="text-sm border border-gray-300 rounded-md bg-white"
+        className="w-full sm:w-auto text-xs sm:text-sm font-semibold text-slate-700 bg-white! border-0! rounded-lg! shadow-md focus:ring-2! focus:ring-white/50! py-2! px-3! cursor-pointer transition-all"
         compact={true}
         hubsToShow={allowedHubs}
         onChange={handleLocationChange}
