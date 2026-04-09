@@ -483,12 +483,13 @@ export const dictionary = {
       },
     },
     summary: {
+      caution: 'Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
+      click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       label: 'Tanggal Performa',
+      long_message: 'Memproses banyak data, silakan tunggu sebentar',
       subtitle_1: 'Rekapitulasi',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
-      long_message: 'Memproses banyak data, silakan tunggu sebentar',
-      click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       modal: {
         title: 'Peringatan Beban Data',
         text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
@@ -509,7 +510,7 @@ export const dictionary = {
           title: 'Waktu Routing',
           tooltip: {
             date_ro: 'H-1 Pengiriman',
-            end_ro: 'Waktu terakhir penugasan tugas',
+            end_ro: 'Waktu terakhir penugasan',
             end_ro_error: 'End RO tersedia, namun Start RO kosong',
             start_ro: 'Waktu pertama pembuatan tugas',
             start_ro_error: 'Start RO tersedia, namun End RO kosong',
@@ -1197,12 +1198,13 @@ export const dictionary = {
       },
     },
     summary: {
+      caution: 'Displayed data may be inaccurate. Verify before use',
+      click_box_hint: 'Click text with red underline to view details',
       label: 'Performance Date',
+      long_message: 'Processing a lot of data, please wait a moment.',
       subtitle_1: 'Recap of',
       subtitle_highlight: 'task performance',
       title: 'Summary',
-      long_message: 'Processing a lot of data, please wait a moment.',
-      click_box_hint: 'Click text with red underline to view details',
       modal: {
         title: 'Data Load Warning',
         text: `The data being processed is too large (more than 14 days). Do you want to continue?`,

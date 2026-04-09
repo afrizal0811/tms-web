@@ -339,7 +339,9 @@ export default function RangkumanSummary() {
         )}
         {!isLoading && renderContent()}
       </BodyCard>
-
+      <span className="-mt-4 block text-xs text-amber-600 text-right italic">
+        {t('summary.caution')}
+      </span>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('summary.modal.title')}
