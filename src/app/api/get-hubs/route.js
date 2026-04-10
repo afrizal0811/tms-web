@@ -25,7 +25,12 @@ export async function GET() {
     return NextResponse.json(formattedHubs, { status: 200 });
   } catch (error) {
     console.error('Error Hubs:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil data hubs dari database lokal', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -67,6 +72,11 @@ export async function POST() {
     }
   } catch (error) {
     console.error('Error Sync Hubs:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal melakukan sinkronisasi data hubs dengan Vendor API', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

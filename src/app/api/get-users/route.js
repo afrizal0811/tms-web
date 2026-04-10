@@ -64,13 +64,11 @@ export async function GET(request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error Users:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-      },
-      {
-        status: 500,
-      }
+      { error: 'Gagal memproses permintaan data users', detail: errorMessage },
+      { status: 500 }
     );
   }
 }

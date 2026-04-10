@@ -35,8 +35,13 @@ export async function GET(request) {
 
     return NextResponse.json(mappings, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Mapping:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Get Vehicle Mapping:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil data pemetaan kendaraan', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -60,8 +65,13 @@ export async function POST(request) {
     await prisma.$transaction(transactions);
     return NextResponse.json({ message: 'Mapping berhasil disimpan' }, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Mapping:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Upsert Vehicle Mapping:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menyimpan pemetaan kendaraan secara massal', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -80,8 +90,13 @@ export async function PUT(request) {
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Mapping:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Update Vehicle Mapping:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal memperbarui data pemetaan kendaraan', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -99,7 +114,12 @@ export async function DELETE(request) {
 
     return NextResponse.json({ message: 'Mapping berhasil dihapus' }, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Mapping:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Delete Vehicle Mapping:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menghapus data pemetaan kendaraan', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

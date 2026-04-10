@@ -28,6 +28,11 @@ export async function GET() {
     return NextResponse.json(status, { status: 200 });
   } catch (error) {
     console.error('Error Status Driver:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil status update driver dari database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

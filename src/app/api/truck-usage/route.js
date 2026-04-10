@@ -15,9 +15,14 @@ export async function GET(request) {
       },
     });
     return NextResponse.json(data);
-  } catch (e) {
-    console.error('Error Truck Usage:', e);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error('Error Get Truck Usage:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil data penggunaan truk dari database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -34,9 +39,14 @@ export async function POST(request) {
       create: { hubId, date, storageType, vehicleType, count: parseInt(count), description },
     });
     return NextResponse.json({ message: 'Success', data: upserted });
-  } catch (e) {
-    console.error('Error Truck Usage:', e);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error('Error Upsert Truck Usage:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menyimpan atau memperbarui data penggunaan truk', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -57,8 +67,13 @@ export async function DELETE(request) {
     });
 
     return NextResponse.json({ message: 'Success' });
-  } catch (e) {
-    console.error('Error Truck Usage:', e);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error('Error Delete Truck Usage:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menghapus data penggunaan truk dari database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

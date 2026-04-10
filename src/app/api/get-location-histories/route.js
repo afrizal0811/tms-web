@@ -74,13 +74,11 @@ export async function GET(request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error Location:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-      },
-      {
-        status: 500,
-      }
+      { error: 'Gagal mengambil data riwayat lokasi (location histories)', detail: errorMessage },
+      { status: 500 }
     );
   }
 }
