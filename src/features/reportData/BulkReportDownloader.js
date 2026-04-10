@@ -131,7 +131,7 @@ export default function BulkReportDownloader({ driverData }) {
         const [allTasks, resultsData] = await Promise.all([
           getTasks({
             hubId: hubId,
-            status: 'DONE',
+            status: 'DONE,ONGOING',
             timeFrom: timeFrom,
             timeTo: timeTo,
             timeBy: 'startTime',

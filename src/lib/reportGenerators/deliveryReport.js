@@ -659,26 +659,32 @@ export function generateDeliveryWorkbook(
     ]);
     tasks.sort((a, b) => a.roSequence - b.roSequence);
     for (const task of tasks) {
-      const ro = task.roSequence;
-      const real = task.realSequence;
+      const customerName = task.customerName || '';
+      const customerId = task.customerId || '';
+      const locationId = task.locationId || '';
+      const customerData = `${customerName} - ${customerId} - ${locationId}`;
+      const ro = task.roSequence || '-';
+      const real = task.realSequence || '-';
       const isSame =
-        ro == real
-          ? translate('excel.delivery.data.match')
-          : translate('excel.delivery.data.mismatch');
+        real === '-'
+          ? '-'
+          : ro === real
+            ? translate('excel.delivery.data.match')
+            : translate('excel.delivery.data.mismatch');
       finalSheetData3.push([
-        task.flow,
-        task.plat,
-        task.driver,
-        task.customerName,
-        task.statusLabel,
-        task.openTime,
-        task.closeTime,
-        task.eta,
-        task.actualArrival,
-        task.etd,
-        task.actualDeparture,
-        task.visitTime,
-        task.actualVisitTime,
+        task.flow || '-',
+        task.plat || '-',
+        task.driver || '-',
+        customerData || '-',
+        task.statusLabel || '-',
+        task.openTime || '-',
+        task.closeTime || '-',
+        task.eta || '-',
+        task.actualArrival || '-',
+        task.etd || '-',
+        task.actualDeparture || '-',
+        task.visitTime || '-',
+        task.actualVisitTime || '-',
         ro,
         real,
         isSame,

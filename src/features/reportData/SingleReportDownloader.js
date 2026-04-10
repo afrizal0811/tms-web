@@ -158,7 +158,7 @@ export default function TmsSummary({
 
       const tasksPromise = getTasks({
         hubId: selectedLocation,
-        status: 'DONE',
+        status: 'DONE,ONGOING',
         timeFrom,
         timeTo,
         timeBy: 'startTime',
