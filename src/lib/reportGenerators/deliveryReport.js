@@ -86,8 +86,8 @@ export function generateDeliveryWorkbook(
     const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
     const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
     const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
-    const customerData = parseCustomerString(task.customerOrder || '');
-    const customerName = customerData.name || task.customerName || customerData.fullCustomerName;
+    const customerData = parseCustomerString(task.customerOrder || task.customerName);
+    const { name: customerName, id: customerId, location: customerLocation } = customerData;
     const pickupCustomerName = `${task.title} (${customerName})`;
     const flow = task.flow;
     const orderId = task.orderId || '';
@@ -144,7 +144,7 @@ export function generateDeliveryWorkbook(
         migrationOccurred = true;
       }
     }
-    const { id: custId, location: locId } = parseCustomerString(customerName);
+
     allTaskDataForSequence.push({
       driverEmail: driverEmail,
       driver: driverName,
@@ -155,6 +155,7 @@ export function generateDeliveryWorkbook(
       isMigrated: isMigrated,
       flow: flow,
       customerName: customerName,
+      locationId: customerLocation,
       fakturBatal: fakturBatal,
       terkirimSebagian: terkirimSebagian,
       pending: pending,
@@ -168,7 +169,7 @@ export function generateDeliveryWorkbook(
       actualDeparture: formatTimestampToHHMM(actualDeparture),
       visitTime: task.visitTime,
       actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-      customerId: custId,
+      customerId: customerId,
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
       orderId: orderId,
@@ -176,8 +177,8 @@ export function generateDeliveryWorkbook(
     if (task.klikLokasiClient) {
       updateLonglatData.push({
         customerName: customerName,
-        customerId: custId,
-        locationId: locId,
+        customerId: customerId,
+        locationId: customerLocation,
         newLonglat: formatCoordinates(task.klikLokasiClient),
         bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient),
       });
