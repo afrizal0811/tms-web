@@ -8,8 +8,6 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
-import { getDriversSyncStatus, syncDriversData, syncRolesData } from '@/lib/api';
-import { useInitialDataSync } from '@/lib/hooks/useInitialDataSync';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -27,40 +25,9 @@ export default function Home() {
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
 
   const { t } = useLanguage();
   const toastShownRef = useRef(false);
-
-  useInitialDataSync(setIsLoading, setAllHubsList, setCurrentHubListView, setPageError);
-
-  useEffect(() => {
-    const { storedSession, storedLocation, storedLocationName, storedUser } = getLocalStorage();
-    const hasCompleteData = storedSession && storedLocation && storedLocationName && storedUser;
-
-    if (hasCompleteData || selectedUser) {
-      const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
-
-      if (!hasSynced) {
-        const runBackgroundSync = async () => {
-          setIsBackgroundSyncing(true); // Tampilkan Spinner
-          try {
-            await syncRolesData().catch(() => {});
-            await syncDriversData().catch(() => {});
-            await getDriversSyncStatus().catch(() => {});
-
-            sessionStorage.setItem('hasSyncedThisSession', 'true');
-          } catch (err) {
-            console.error('Error background sync:', err);
-          } finally {
-            setIsBackgroundSyncing(false);
-          }
-        };
-
-        runBackgroundSync();
-      }
-    }
-  }, [selectedUser]);
 
   useEffect(() => {
     async function initializeApp() {
@@ -255,23 +222,6 @@ export default function Home() {
   return (
     <AppLayout mainClassName="items-center px-4 relative">
       <DashboardSummary driverData={driverData.data} />
-      {isBackgroundSyncing && (
-        <div className="fixed inset-0 z-9999 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center transform scale-100 animate-fade-in-up">
-            <Spinner
-              size="w-14 h-14"
-              border="border-4 border-gray-100"
-              colorClass="border-t-sky-600"
-            />
-
-            <h2 className="mt-6 text-xl font-bold text-slate-800">Sinkronisasi Data</h2>
-
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-              Mohon tunggu sebentar, kami sedang melakukan sinkronisasi data
-            </p>
-          </div>
-        </div>
-      )}
     </AppLayout>
   );
 }
