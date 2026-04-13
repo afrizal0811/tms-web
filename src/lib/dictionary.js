@@ -685,6 +685,16 @@ export const dictionary = {
       sync_loading: 'Menyelaraskan...',
       title: 'Pengaturan',
       tab: {
+        general: {
+          acronym_title: 'Nama Cabang',
+          add_placeholder: 'Tambah tipe baru...',
+          btn_add: 'Tambah',
+          btn_delete: 'Hapus',
+          btn_edit: 'Ubah',
+          btn_save: 'Simpan',
+          standart_title: 'Tipe Kendaraan Standar',
+          title: 'Umum',
+        },
         sync_data: {
           driver_vehicles: 'Data Sopir & Kendaraan',
           hubs: 'Data Cabang',
@@ -694,8 +704,6 @@ export const dictionary = {
           title: 'Sinkronisasi',
         },
         master_data: {
-          add_placeholder: 'Tambah tipe baru...',
-          btn_add: 'Tambah',
           btn_delete: 'Hapus',
           btn_edit: 'Ubah',
           btn_save: 'Simpan',
@@ -704,8 +712,6 @@ export const dictionary = {
           dropdown_title: 'Pilih Tipe Kendaraan',
           mapping_subtitle: 'Pengubahan tipe kendaraan sesuai dengan standar yang digunakan',
           mapping_title: 'Pemetaan Tipe Kendaraan',
-          standart_subtitle: 'Tipe kendaraan standar yang digunakan di TMS',
-          standart_title: 'Tipe Kendaraan Standar',
           title: 'Master',
         },
       },
@@ -1401,6 +1407,16 @@ export const dictionary = {
       sync_loading: 'Synchronizing...',
       title: 'Settings',
       tab: {
+        general: {
+          acronym_title: 'Branch Name',
+          add_placeholder: 'Add new type...',
+          btn_add: 'Add',
+          btn_delete: 'Delete',
+          btn_edit: 'Edit',
+          btn_save: 'Save',
+          standart_title: 'Standard Vehicle Type',
+          title: 'General',
+        },
         sync_data: {
           driver_vehicles: 'Driver & Vehicle Data',
           hubs: 'Branch Data',
@@ -1410,8 +1426,6 @@ export const dictionary = {
           title: 'Synchronize',
         },
         master_data: {
-          add_placeholder: 'Add new type...',
-          btn_add: 'Add',
           btn_delete: 'Delete',
           btn_edit: 'Edit',
           btn_save: 'Save',
@@ -1420,8 +1434,6 @@ export const dictionary = {
           dropdown_title: 'Select Vehicle Type',
           mapping_subtitle: 'Adjust vehicle types according to the standard used',
           mapping_title: 'Vehicle Type Mapping',
-          standart_subtitle: 'Standard vehicle types used in TMS',
-          standart_title: 'Standard Vehicle Types',
           title: 'Master',
         },
       },

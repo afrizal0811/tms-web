@@ -1,24 +1,20 @@
-// File: src/app/api/get-hubs/route.js
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// ==========================================
-// FUNGSI GET: HANYA MEMBACA DATABASE LOKAL
-// ==========================================
 export async function GET() {
   try {
     const hubs = await prisma.hub.findMany({
       orderBy: { name: 'asc' },
     });
 
-    // KUNCI PERBAIKAN: Filter Hub Demo dan hilangkan kata "Hub "
     const formattedHubs = hubs
       .filter((hub) => hub.name !== 'Hub Demo')
       .map((hub) => ({
         _id: hub.id,
         name: hub.name.replace('Hub ', ''),
+        acronym: hub.acronym,
         updatedAt: hub.updatedAt,
       }));
 
@@ -34,9 +30,6 @@ export async function GET() {
   }
 }
 
-// ==========================================
-// FUNGSI POST: SINKRONISASI DENGAN VENDOR API
-// ==========================================
 export async function POST() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const apiToken = process.env.API_TOKEN;
@@ -76,6 +69,35 @@ export async function POST() {
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
       { error: 'Gagal melakukan sinkronisasi data hubs dengan Vendor API', detail: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req) {
+  try {
+    const body = await req.json();
+    const { id, acronym } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
+    }
+
+    const updatedHub = await prisma.hub.update({
+      where: { id: String(id) },
+      data: { acronym: acronym || null },
+    });
+
+    return NextResponse.json(
+      { message: 'Akronim berhasil diperbarui', data: updatedHub },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error Update Hub Acronym:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal memperbarui akronim cabang', detail: errorMessage },
       { status: 500 }
     );
   }
