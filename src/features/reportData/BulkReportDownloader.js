@@ -76,7 +76,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'routing',
-      zipPrefix: `Bulk ${t('excel.routing.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.routing.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -114,7 +114,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'delivery',
-      zipPrefix: `Bulk ${t('excel.delivery.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.delivery.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -170,7 +170,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'time',
-      zipPrefix: `Bulk ${t('excel.time.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.time.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubName }) => {

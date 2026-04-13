@@ -119,7 +119,7 @@ export const bulkDownloader = async ({
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(zipBlob);
-    link.download = `${zipPrefix} ${originalStartDateString} - ${originalEndDateString}.zip`;
+    link.download = `${zipPrefix} - (${originalStartDateString} - ${originalEndDateString}) - ${hubName}.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -250,6 +250,7 @@ export const dictionary = {
       },
     },
     report: {
+      bulk: 'Massal',
       change_date: 'Ubah Tanggal Routing',
       daily_title: 'Laporan Harian',
       delivery_summary: 'Ringkasan Pengiriman',
@@ -966,6 +967,7 @@ export const dictionary = {
       },
     },
     report: {
+      bulk: 'Bulk',
       change_date: 'Change Routing Date',
       daily_title: 'Daily Report',
       delivery_summary: 'Delivery Summary',
