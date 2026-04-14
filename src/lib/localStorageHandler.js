@@ -74,7 +74,6 @@ export function getLocalStorage() {
     try {
       const sessionStr = decryptData(rawSessionStr);
       storedSession = JSON.parse(sessionStr);
-      console.log('storedSession :', storedSession);
       storedLocation = storedSession.activeHubId || null;
       storedLocationName = storedSession.activeHubName || null;
       storedLocationAcronym = storedSession.activeHubAcronym || null;

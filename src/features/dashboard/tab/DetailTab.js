@@ -32,16 +32,21 @@ StatCard.displayName = 'StatCard';
 // ========== MAIN DETAIL TAB ==========
 
 export default function DetailTab({ loading, summaryData }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const handleCopy = (task) => {
-    if (!task.copyValue) {
-      toastWarning(t('dashboard.no_so'));
+    const isIndo = lang === 'id';
+    const copyText = isIndo
+      ? `${t('dashboard.copy')} ${t('dashboard.tab.detail.so_number')}`
+      : `${t('dashboard.tab.detail.so_number')} ${t('dashboard.copy')}`;
+
+    if (!task.soNumber) {
+      toastWarning(t('dashboard.empty_so'));
       return;
     }
-    navigator.clipboard.writeText(task.copyValue).then(
+    navigator.clipboard.writeText(task.soNumber).then(
       () => {
-        toastSuccess(`${t('dashboard.copy')}: ${task.tooltip}`);
+        toastSuccess(copyText);
       },
       (err) => {
         toastError(t('dashboard.unable_copy'), err);
@@ -163,18 +168,24 @@ export default function DetailTab({ loading, summaryData }) {
                       <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
                         {t('common.customer_name')}
                       </th>
+                      <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                        {t('dashboard.tab.detail.so_number')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {summaryData.unassignedList.map((t, i) => (
-                      <tr
-                        key={i}
-                        className="hover:bg-gray-50 cursor-copy"
-                        onClick={() => handleCopy(t)}
-                      >
-                        <td className="p-3 text-xs">{t.flow}</td>
-                        <td className="p-3 text-xs">{t.customer}</td>
-                      </tr>
+                      <Tooltip key={i} tooltipContent={t.truncateSoNumber}>
+                        <tr
+                          key={i}
+                          className="hover:bg-gray-50 cursor-copy"
+                          onClick={() => handleCopy(t)}
+                        >
+                          <td className="p-3 text-xs">{t.flow}</td>
+                          <td className="p-3 text-xs">{t.customer}</td>
+                          <td className="p-3 text-xs">{t.truncateSoNumber}</td>
+                        </tr>
+                      </Tooltip>
                     ))}
                   </tbody>
                 </table>
@@ -214,15 +225,17 @@ export default function DetailTab({ loading, summaryData }) {
 
                   <tbody className="divide-y divide-gray-100">
                     {summaryData.manualAssignList.map((t, i) => (
-                      <tr
-                        key={i}
-                        className="hover:bg-gray-50 cursor-copy"
-                        onClick={() => handleCopy(t)}
-                      >
-                        <td className="p-3 text-xs">{t.flow}</td>
-                        <td className="p-3 text-xs">{t.customer}</td>
-                        <td className="p-3 text-xs font-semibold">{t.driver}</td>
-                      </tr>
+                      <Tooltip key={i} tooltipContent={t.truncateSoNumber}>
+                        <tr
+                          key={i}
+                          className="hover:bg-gray-50 cursor-copy"
+                          onClick={() => handleCopy(t)}
+                        >
+                          <td className="p-3 text-xs">{t.flow}</td>
+                          <td className="p-3 text-xs">{t.customer}</td>
+                          <td className="p-3 text-xs font-semibold">{t.driver}</td>
+                        </tr>
+                      </Tooltip>
                     ))}
                   </tbody>
                 </table>
@@ -261,15 +274,17 @@ export default function DetailTab({ loading, summaryData }) {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {summaryData.crossDayTasks.map((t, i) => (
-                      <tr
-                        key={i}
-                        className="hover:bg-gray-50 cursor-copy"
-                        onClick={() => handleCopy(t)}
-                      >
-                        <td className="p-3 text-xs">{t.customer}</td>
-                        <td className="p-3 text-xs text-red-500">{t.doneDateDisplay}</td>
-                        <td className="p-3 text-xs">{t.driver}</td>
-                      </tr>
+                      <Tooltip key={i} tooltipContent={t.truncateSoNumber}>
+                        <tr
+                          key={i}
+                          className="hover:bg-gray-50 cursor-copy"
+                          onClick={() => handleCopy(t)}
+                        >
+                          <td className="p-3 text-xs">{t.customer}</td>
+                          <td className="p-3 text-xs text-red-500">{t.doneDateDisplay}</td>
+                          <td className="p-3 text-xs">{t.driver}</td>
+                        </tr>
+                      </Tooltip>
                     ))}
                   </tbody>
                 </table>

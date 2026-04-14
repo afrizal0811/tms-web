@@ -1,5 +1,143 @@
-import { formatDateUniversal, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+
+export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
+  if (isEmpty(tasksArray)) {
+    return {
+      totalTasks: 0,
+      unassigned: 0,
+      manualAssignList: [],
+      unassignedList: [],
+      done: 0,
+      ongoing: 0,
+      assignedTasks: 0,
+      flowDelivery: 0,
+      flowReDelivery: 0,
+      flowPendingGR: 0,
+      crossDayTasks: [],
+      totalDry: 0,
+      totalFrozen: 0,
+      assignedDry: 0,
+      assignedFrozen: 0,
+    };
+  }
+
+  let manualAssignList = [];
+  let crossDayTasks = [];
+  let unassignedList = [];
+  let done = 0;
+  let ongoing = 0;
+  let unassigned = 0;
+  let flowDelivery = 0;
+  let flowReDelivery = 0;
+  let flowPendingGR = 0;
+  let totalDry = 0;
+  let totalFrozen = 0;
+  let assignedDry = 0;
+  let assignedFrozen = 0;
+
+  for (const task of tasksArray) {
+    const flow = task.flow || 'N/A';
+    let displayOrderId = '-';
+    if (task.orderId) {
+      const orderParts = task.orderId.split(',').filter(Boolean);
+      if (orderParts.length > 1) {
+        displayOrderId = `${orderParts[0].trim()} (+${orderParts.length - 1})`;
+      } else if (orderParts.length === 1) {
+        displayOrderId = orderParts[0].trim();
+      }
+    }
+
+    const typeStorage = (task.typeStorage || '').toUpperCase();
+    const isDry = typeStorage === 'DRY';
+    const isFrozen = typeStorage === 'FROZEN';
+
+    if (isDry) totalDry++;
+    if (isFrozen) totalFrozen++;
+
+    if (task.status === 'DONE') done++;
+    else if (task.status === 'ONGOING') ongoing++;
+    else if (task.status === 'UNASSIGNED') {
+      unassigned++;
+      unassignedList.push({
+        customer: task.customerName || '-',
+        flow,
+        soNumber: task.orderId || '-',
+        truncateSoNumber: displayOrderId,
+      });
+    }
+
+    const isAssigned = task.status !== 'UNASSIGNED';
+
+    if (isAssigned) {
+      if (isDry) assignedDry++;
+      if (isFrozen) assignedFrozen++;
+    }
+
+    const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
+    if (manualCategory && isAssigned) {
+      const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+      let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+      if (finalAssignee === 'N/A') finalAssignee = '-';
+
+      manualAssignList.push({
+        customer: task.customerName || 'N/A',
+        driver: finalAssignee,
+        flow,
+        soNumber: task.orderId || '-',
+        truncateSoNumber: displayOrderId,
+      });
+    }
+
+    if (flow === 'Delivery') flowDelivery++;
+    else if (flow.includes('Re Delivery')) flowReDelivery++;
+    else if (flow.includes('Pending GR')) flowPendingGR++;
+
+    if (task.status === 'DONE' && task.startTime && task.doneTime) {
+      const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
+      const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
+
+      if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
+        const startDate = new Date(task.startTime);
+        const doneDate = new Date(task.doneTime);
+        const diffInMs = doneDate.getTime() - startDate.getTime();
+        const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+        const datePlusText = lang === 'id' ? 'H+' : 'D+';
+        const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+        const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+        crossDayTasks.push({
+          customer: task.customerName || 'N/A',
+          doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
+          driver: driverName,
+          soNumber: task.orderId || '-',
+          truncateSoNumber: displayOrderId,
+        });
+      }
+    }
+  }
+
+  unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+  manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
+  crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+
+  return {
+    totalTasks: tasksArray.length,
+    unassigned,
+    manualAssignList,
+    unassignedList,
+    done,
+    ongoing,
+    assignedTasks: done + ongoing,
+    flowDelivery,
+    flowReDelivery,
+    flowPendingGR,
+    crossDayTasks,
+    totalDry,
+    totalFrozen,
+    assignedDry,
+    assignedFrozen,
+  };
+};
 
 export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
   if (!data || !Array.isArray(data) || data.length === 0) {

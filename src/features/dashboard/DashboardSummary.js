@@ -10,158 +10,10 @@ import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatDateWIB, formatToApiUtc, isEmpty, normalizeEmail } from '@/lib/utils';
+import { formatToApiUtc, isEmpty, normalizeEmail } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { calculateDashboardSummary } from './help';
 import DiagramTab from './tab/DiagramTab';
-
-function processOrderInfo(rawOrderId, t) {
-  if (!rawOrderId || rawOrderId === 'N/A') {
-    return { tooltip: t('dashboard.no_so'), copyValue: null };
-  }
-  const firstOrderId = rawOrderId.split(',')[0].trim();
-  let copyValueToUse = null;
-
-  if (firstOrderId.startsWith('SO') && firstOrderId.includes('-')) {
-    const processedCopy = firstOrderId.split('-')[1];
-    copyValueToUse = processedCopy || firstOrderId;
-  } else {
-    copyValueToUse = firstOrderId;
-  }
-  return { tooltip: rawOrderId, copyValue: copyValueToUse };
-}
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Fungsi kalkulasi dipisah agar lebih bersih
-const calculateDashboardSummary = (tasksArray, driverMap, t, lang) => {
-  if (isEmpty(tasksArray)) {
-    return {
-      totalTasks: 0,
-      unassigned: 0,
-      manualAssignList: [],
-      unassignedList: [],
-      done: 0,
-      ongoing: 0,
-      assignedTasks: 0,
-      flowDelivery: 0,
-      flowReDelivery: 0,
-      flowPendingGR: 0,
-      crossDayTasks: [],
-      totalDry: 0,
-      totalFrozen: 0,
-      assignedDry: 0,
-      assignedFrozen: 0,
-    };
-  }
-
-  let manualAssignList = [];
-  let crossDayTasks = [];
-  let unassignedList = [];
-  let done = 0;
-  let ongoing = 0;
-  let unassigned = 0;
-  let flowDelivery = 0;
-  let flowReDelivery = 0;
-  let flowPendingGR = 0;
-  let totalDry = 0;
-  let totalFrozen = 0;
-  let assignedDry = 0;
-  let assignedFrozen = 0;
-
-  for (const task of tasksArray) {
-    const flow = task.flow || 'N/A';
-    const orderInfo = processOrderInfo(task.orderId, t);
-
-    const typeStorage = (task.typeStorage || '').toUpperCase();
-    const isDry = typeStorage === 'DRY';
-    const isFrozen = typeStorage === 'FROZEN';
-
-    if (isDry) totalDry++;
-    if (isFrozen) totalFrozen++;
-
-    if (task.status === 'DONE') done++;
-    else if (task.status === 'ONGOING') ongoing++;
-    else if (task.status === 'UNASSIGNED') {
-      unassigned++;
-      unassignedList.push({
-        customer: task.customerName || 'N/A',
-        flow,
-        copyValue: orderInfo.copyValue,
-        tooltip: orderInfo.tooltip,
-      });
-    }
-
-    const isAssigned = task.status !== 'UNASSIGNED';
-
-    if (isAssigned) {
-      if (isDry) assignedDry++;
-      if (isFrozen) assignedFrozen++;
-    }
-
-    const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
-    if (manualCategory && isAssigned) {
-      const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-      let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-      if (finalAssignee === 'N/A') finalAssignee = '-';
-
-      manualAssignList.push({
-        customer: task.customerName || 'N/A',
-        driver: finalAssignee,
-        flow,
-        copyValue: orderInfo.copyValue,
-        tooltip: orderInfo.tooltip,
-      });
-    }
-
-    if (flow === 'Delivery') flowDelivery++;
-    else if (flow.includes('Re Delivery')) flowReDelivery++;
-    else if (flow.includes('Pending GR')) flowPendingGR++;
-
-    if (task.status === 'DONE' && task.startTime && task.doneTime) {
-      const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
-      const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
-
-      if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
-        const startDate = new Date(task.startTime);
-        const doneDate = new Date(task.doneTime);
-        const diffInMs = doneDate.getTime() - startDate.getTime();
-        const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-        const datePlusText = lang === 'id' ? 'H+' : 'D+';
-        const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-        const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-        crossDayTasks.push({
-          customer: task.customerName || 'N/A',
-          doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
-          driver: driverName,
-          copyValue: orderInfo.copyValue,
-          tooltip: orderInfo.tooltip,
-        });
-      }
-    }
-  }
-
-  unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
-  manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-  crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
-
-  return {
-    totalTasks: tasksArray.length,
-    unassigned,
-    manualAssignList,
-    unassignedList,
-    done,
-    ongoing,
-    assignedTasks: done + ongoing,
-    flowDelivery,
-    flowReDelivery,
-    flowPendingGR,
-    crossDayTasks,
-    totalDry,
-    totalFrozen,
-    assignedDry,
-    assignedFrozen,
-  };
-};
 
 export default function DashboardSummary({ driverData }) {
   const { t, lang } = useLanguage();
@@ -182,7 +34,7 @@ export default function DashboardSummary({ driverData }) {
   const yearlyCacheRef = useRef({});
   const fetchStartTimeRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('Diagram');
+  const [activeTab, setActiveTab] = useState('Detail');
   const [dismissedDots, setDismissedDots] = useState({
     Diagram: false,
     Detail: false,
@@ -270,7 +122,7 @@ export default function DashboardSummary({ driverData }) {
           throw err;
         }
         const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
-        await wait(delay);
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }, []);
@@ -478,8 +330,8 @@ export default function DashboardSummary({ driverData }) {
 
   // Calculate Summary from Filtered Data
   const summaryData = useMemo(() => {
-    return calculateDashboardSummary(filteredDailyTasks, driverMap, t, lang);
-  }, [filteredDailyTasks, driverMap, t, lang]);
+    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang);
+  }, [filteredDailyTasks, driverMap, lang]);
 
   const isDiagramTab = activeTab === 'Diagram';
 
@@ -544,8 +396,8 @@ export default function DashboardSummary({ driverData }) {
   ];
 
   const cardTabs = [
-    { id: 'Diagram', label: t('dashboard.tabs.diagram'), extraContent: getPingDot('Diagram') },
     { id: 'Detail', label: t('dashboard.tabs.detail'), extraContent: getPingDot('Detail') },
+    { id: 'Diagram', label: t('dashboard.tabs.diagram'), extraContent: getPingDot('Diagram') },
     {
       id: 'RoutingVsActual',
       label: t('dashboard.tabs.routing_vs_actual'),
