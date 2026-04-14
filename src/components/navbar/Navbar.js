@@ -3,7 +3,8 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { avatarColorStyles } from '@/lib/constants';
+import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -11,44 +12,13 @@ import LanguageSwitcher from './LanguageSwitcher';
 import LocationSwitcher from './LocationSwitcher';
 import UserDisplay from './UserDisplay';
 
-function NavLink({ href, children, className }) {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-
-  return (
-    <Link
-      href={href}
-      className={`text-sm font-medium transition-colors ${className} ${
-        isActive ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function MobileNavLink({ href, children }) {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-  return (
-    <Link
-      href={href}
-      className={`block w-full p-3 text-base font-medium ${
-        isActive ? 'text-sky-600 bg-sky-50' : 'text-slate-700 hover:bg-gray-100'
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
 export default function Navbar() {
   const { t, lang, switchLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [avatarColor, setAvatarColor] = useState('sky');
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   const isIndo = lang === 'id';
@@ -56,14 +26,31 @@ export default function Navbar() {
   const navRef = useRef(null);
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
+  const { storedUser } = getLocalStorage();
+  const userName = storedUser ? JSON.parse(storedUser).name : '';
+
+  const handleLogout = () => {
+    removeLocalStorage('data');
+    window.location.href = '/';
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const availableColors = Object.keys(avatarColorStyles);
+      const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+
+      setAvatarColor(randomColor);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const checkUserAndRole = async () => {
       try {
         if (typeof window !== 'undefined') {
-          const { storedUser: raw } = getLocalStorage();
-          if (raw) {
-            const user = JSON.parse(raw);
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
             setIsLoggedIn(!!user);
             const roles = await getRoles();
             const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
@@ -76,15 +63,13 @@ export default function Navbar() {
         setIsSuperadmin(false);
       }
     };
-
-    // KUNCI PERBAIKAN: Memindahkan setMounted(true) ke dalam setTimeout agar bersifat asinkronus (menghindari error cascading renders)
     const timer = setTimeout(() => {
       setMounted(true);
       checkUserAndRole();
     }, 0);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [storedUser]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -112,14 +97,50 @@ export default function Navbar() {
     };
   }, [isMobileMenuOpen, isLaporanOpen]);
 
-  const plannerUrl = process.env.NEXT_PUBLIC_HELP_URL_PLANNER || '#';
-  const driverUrl = process.env.NEXT_PUBLIC_HELP_URL_DRIVER || '#';
-
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
   const primaryEstimate = isIndo ? t('navbar.estimate') : t('navbar.deliveries');
   const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
   const primaryDeliveries = isIndo ? 'Data' : t('navbar.vehicle');
   const secondaryDeliveries = isIndo ? t('navbar.vehicle') : 'Data';
+
+  function NavLink({ href, children, className }) {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+
+    return (
+      <Link
+        href={href}
+        className={`text-sm font-medium transition-colors ${className} ${
+          isActive ? 'text-sky-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
+        }`}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  function MobileNavLink({ href, children, target = '', rel = '' }) {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+    const isExternal = target === '_blank';
+    const baseClassName = `block w-full p-3 text-base font-medium ${
+      isActive ? 'text-sky-600 bg-sky-50' : 'text-slate-700 hover:bg-gray-100'
+    }`;
+
+    if (isExternal) {
+      return (
+        <a href={href} target={target} rel={rel} className={baseClassName}>
+          {children}
+        </a>
+      );
+    }
+
+    return (
+      <Link href={href} className={baseClassName}>
+        {children}
+      </Link>
+    );
+  }
 
   if (!mounted) {
     return (
@@ -275,6 +296,15 @@ export default function Navbar() {
     </div>
   );
 
+  const userInitial = (userName) => {
+    return userName
+      ? userName
+          .replace(/[^a-zA-Z]/g, '')
+          .charAt(0)
+          .toUpperCase()
+      : 'U';
+  };
+
   return (
     <nav
       ref={navRef}
@@ -314,9 +344,32 @@ export default function Navbar() {
           isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="flex flex-col pt-2 pb-4 space-y-1">
+        <div className="flex flex-col pb-4">
           {isLoggedIn ? (
             <>
+              <div className=" px-4 py-5 flex items-center justify-between text-slate-800 gap-3">
+                <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                  <div
+                    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-inner ${avatarColorStyles[avatarColor] || avatarColorStyles.sky}`}
+                  >
+                    {userInitial(userName)}
+                  </div>
+                  <div className="flex flex-col overflow-hidden min-w-0">
+                    <span className="text-sm font-bold truncate tracking-wide">{userName}</span>
+                    <span className="text-[11px] text-slate-400 truncate">
+                      {storedUser ? JSON.parse(storedUser).email : 'email@example.com'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bagian Kanan: Location Switcher menggantikan Logout */}
+                <div className="shrink-0 w-32">
+                  <LocationSwitcher />
+                </div>
+              </div>
+              <div className="pt-1 pb-1 px-3">
+                <div className="border-t border-gray-200"></div>
+              </div>
               <MobileNavLink href="/laporan">{t('navbar.daily_report')}</MobileNavLink>
               <MobileNavLink href="/laporan/bulk">{t('navbar.period_report')}</MobileNavLink>
               {isSuperadmin && (
@@ -327,100 +380,30 @@ export default function Navbar() {
               </MobileNavLink>
               {mobileLinkEstimate}
               {mobileLinkDelivery}
-
-              <div className="pt-2 pb-1 px-3">
-                <div className="border-t border-gray-200"></div>
-              </div>
             </>
           ) : null}
-
+          <div className="pt-2 pb-1 px-3">
+            <div className="border-t border-gray-200"></div>
+          </div>
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
-
           {isLoggedIn && (
             <>
-              <a
-                href={plannerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-              >
-                {t('navbar.planner_guide')}
-              </a>
-              <a
-                href={driverUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full p-3 text-base font-medium text-slate-700 hover:bg-gray-100"
-              >
-                {t('navbar.driver_guide')}
-              </a>
-
-              <div className="pt-2 pb-1 px-3">
-                <div className="border-t border-gray-200"></div>
-              </div>
-
-              <MobileNavLink href="/settings">
-                <div className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  {t('setting.title')}
-                </div>
-              </MobileNavLink>
-
+              <MobileNavLink href="/settings">{t('setting.title')}</MobileNavLink>
               <button
                 onClick={() => {
-                  switchLanguage(lang === 'id' ? 'en' : 'id');
+                  switchLanguage(isIndo ? 'en' : 'id');
                   window.location.reload();
                 }}
                 className="block w-full text-left px-3 py-3 text-base font-medium text-slate-700 hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"
-                    />
-                  </svg>
-                  {t('common.language') || 'Bahasa'} :{' '}
-                  {lang === 'id' ? '🇮🇩 Indonesia' : '🇬🇧 English'}
-                </div>
+                {t('common.language')} : {isIndo ? 'Indonesia' : 'English'}
               </button>
-
-              <div className="pt-2 pb-1 px-3">
-                <div className="border-t border-gray-200"></div>
-              </div>
-
-              <div className="p-3">
-                <UserDisplay />
-              </div>
-              <div className="p-3 pt-0">
-                <LocationSwitcher />
-              </div>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-3 py-3 text-base font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+              >
+                {t('navbar.logout')}
+              </button>
             </>
           )}
         </div>

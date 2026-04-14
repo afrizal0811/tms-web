@@ -280,20 +280,6 @@ export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
   return formatMinutesToHHMM(totalMinutes);
 }
 
-// Mengubah format tanggal string dari YYYY-MM-DD menjadi DD.MM.YYYY
-export function formatYYYYMMDDToDDMMYYYY(yyyyMmDd) {
-  if (typeof yyyyMmDd !== 'string' || !yyyyMmDd.includes('-')) {
-    return yyyyMmDd;
-  }
-  try {
-    const [y, m, d] = yyyyMmDd.split('-');
-    if (!y || !m || !d) return yyyyMmDd;
-    return `${d}.${m}.${y}`;
-  } catch (e) {
-    return yyyyMmDd;
-  }
-}
-
 // Mendapatkan string YYYY-MM-DD dari timestamp yang sudah disesuaikan ke UTC+7
 export const getUTC7DateString = (timestamp) => {
   const date = parseAndShiftToUTC7(timestamp);

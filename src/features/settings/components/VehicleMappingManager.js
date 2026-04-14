@@ -87,7 +87,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
 
   const handleEdit = (id, plat, currentType) => {
     setEditingId(id);
-    setEditingPlat(plat); // <--- Memastikan plat masuk ke state saat edit diklik
+    setEditingPlat(plat);
     setEditType(currentType);
   };
 
@@ -95,7 +95,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     if (!editType || isReadOnly) return;
     setIsLoading(true);
     try {
-      // Panggil langsung dari file API
       await updateVehicleMapping(editingId, editingPlat, editType);
 
       toastSuccess(translate('common.toast.success'));
@@ -122,7 +121,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     setIsLoading(true);
 
     try {
-      // Panggil langsung dari file API
       await deleteVehicleMapping(targetId, targetPlat);
 
       toastSuccess(translate('common.toast.success'));
@@ -134,7 +132,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative flex flex-col min-h-0">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative flex flex-col h-full">
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
@@ -143,7 +141,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         message={translate('setting.tab.master_data.confirm_message')}
       />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3 shrink-0">
         <div>
           <h2 className="text-lg font-bold text-slate-800">
             {translate('setting.tab.master_data.mapping_title')}
@@ -154,7 +152,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         </div>
       </div>
 
-      <div className="min-h-0 overflow-y-auto pr-1 max-h-[60vh]">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         {isLoading ? (
           <div className="py-8 flex justify-center">
             <span className="animate-spin h-6 w-6 border-4 border-slate-300 border-t-sky-600 rounded-full"></span>

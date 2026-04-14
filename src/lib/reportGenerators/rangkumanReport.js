@@ -1,7 +1,8 @@
 'use client';
 
-import { formatYYYYMMDDToDDMMYYYY } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import { getLocalStorage } from '../localStorageHandler';
 import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
 import {
   calculatePendingReasonData,
@@ -146,9 +147,10 @@ export async function generateRangkumanWorkbook(
   await generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo);
 
-  const formattedStart = formatYYYYMMDDToDDMMYYYY(startDateStr);
-  const formattedEnd = formatYYYYMMDDToDDMMYYYY(endDateStr);
-  const excelFileName = `${translate('summary.title')} - ${hubName} - ${formattedStart} sd ${formattedEnd}.xlsx`;
+  const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
+  const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
+  const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
+  const excelFileName = `${translate('summary.title')} - (${formattedStart} - ${formattedEnd}) - ${locationName}.xlsx`;
 
   return { wb, excelFileName };
 }

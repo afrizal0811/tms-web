@@ -59,12 +59,19 @@ export default function LocationSwitcher() {
   const handleLocationChange = (id, name) => {
     const updateLocationAndReload = () => {
       const { storedUser } = getLocalStorage();
-      let newSession = { activeHubId: id, activeHubName: name };
+      const selectedHub = allowedHubs.find((h) => h._id === id);
+      const acronym = selectedHub?.acronym || '';
 
-      // Pertahankan data user lama, hanya timpa lokasinya
+      let newSession = { activeHubId: id, activeHubName: name, activeHubAcronym: acronym };
+
       if (storedUser) {
         const userObj = JSON.parse(storedUser);
-        newSession = { ...userObj, activeHubId: id, activeHubName: name };
+        newSession = {
+          ...userObj,
+          activeHubId: id,
+          activeHubName: name,
+          activeHubAcronym: acronym,
+        };
       }
 
       setLocalStorage('data', JSON.stringify(newSession));
@@ -87,12 +94,13 @@ export default function LocationSwitcher() {
   return (
     <>
       <LocationDropdown
-        className="text-sm border border-gray-300 rounded-md bg-white"
+        className="w-full sm:w-auto text-xs sm:text-sm font-semibold text-slate-700 bg-white! border-0! rounded-lg! focus:ring-2! focus:ring-white/50! py-2! px-3! cursor-pointer transition-all"
         compact={true}
         hubsToShow={allowedHubs}
         onChange={handleLocationChange}
         showPlaceholder={false}
         value={currentLocationId || ''}
+        translate={t}
       />
       {showModal && (
         <VehicleTagMappingModal

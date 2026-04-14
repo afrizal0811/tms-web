@@ -24,6 +24,8 @@ const decryptData = (ciphertext) => {
 };
 
 export function setLocalStorage(name, value) {
+  if (typeof window === 'undefined') return;
+
   if (name === 'data' && value) {
     try {
       let parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
@@ -41,14 +43,30 @@ export function setLocalStorage(name, value) {
 }
 
 export function removeLocalStorage(name) {
+  // Penjaga untuk SSR Next.js
+  if (typeof window === 'undefined') return;
+
   localStorage.removeItem(name);
 }
 
 export function getLocalStorage() {
-  const rawSessionStr = localStorage.getItem('data') || localStorage.getItem('tms_user_session');
+  if (typeof window === 'undefined') {
+    return {
+      storedSession: null,
+      storedLocation: null,
+      storedLocationName: null,
+      storedLocationAcronym: null,
+      storedUser: null,
+      storedLanguage: null,
+      appVersion: null,
+    };
+  }
+
+  const rawSessionStr = localStorage.getItem('data');
   let storedSession = null;
   let storedLocation = null;
   let storedLocationName = null;
+  let storedLocationAcronym = null;
   let storedUser = null;
   let appVersion = null;
 
@@ -58,6 +76,7 @@ export function getLocalStorage() {
       storedSession = JSON.parse(sessionStr);
       storedLocation = storedSession.activeHubId || null;
       storedLocationName = storedSession.activeHubName || null;
+      storedLocationAcronym = storedSession.activeHubAcronym || null;
       appVersion = storedSession.app_version || null;
 
       if (storedSession._id) {
@@ -74,6 +93,7 @@ export function getLocalStorage() {
     storedSession,
     storedLocation,
     storedLocationName,
+    storedLocationAcronym,
     storedUser,
     storedLanguage,
     appVersion,

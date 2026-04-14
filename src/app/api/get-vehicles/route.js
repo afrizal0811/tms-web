@@ -65,14 +65,15 @@ export async function GET(request) {
     // 5. Kirim kembali data
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error Vehicles', error);
+    console.error('Error Vehicles:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
       {
-        error: 'Internal Server Error',
+        error: 'Gagal mengambil atau memproses data vehicles dari API eksternal',
+        detail: errorMessage,
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

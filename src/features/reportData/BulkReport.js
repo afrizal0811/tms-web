@@ -21,7 +21,7 @@ const parseDate = (dateStr) => {
   return new Date(dateStr.replace(/-/g, '/'));
 };
 
-export default function BulkReportDownloader({ driverData }) {
+export default function BulkReport({ driverData }) {
   const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -76,7 +76,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'routing',
-      zipPrefix: `Bulk ${t('excel.routing.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.routing.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -114,7 +114,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'delivery',
-      zipPrefix: `Bulk ${t('excel.delivery.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.delivery.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
@@ -131,7 +131,7 @@ export default function BulkReportDownloader({ driverData }) {
         const [allTasks, resultsData] = await Promise.all([
           getTasks({
             hubId: hubId,
-            status: 'DONE',
+            status: 'DONE,ONGOING',
             timeFrom: timeFrom,
             timeTo: timeTo,
             timeBy: 'startTime',
@@ -170,7 +170,7 @@ export default function BulkReportDownloader({ driverData }) {
       endDate,
       driverData,
       reportType: 'time',
-      zipPrefix: `Bulk ${t('excel.time.filename')}`,
+      zipPrefix: `${t('report.bulk')} ${t('excel.time.filename')}`,
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubName }) => {

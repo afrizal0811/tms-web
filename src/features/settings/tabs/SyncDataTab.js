@@ -46,7 +46,7 @@ export default function SyncDataTab({
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (error) {
-      toastError(translate('common.toast.error', { err: err.message }));
+      toastError(translate('common.toast.error', { err: error.message }));
     } finally {
       setSyncLoading((prev) => ({ ...prev, [type]: false }));
     }
@@ -69,8 +69,12 @@ export default function SyncDataTab({
 
   const renderSyncButton = (type, label) => {
     return (
-      <div className="p-5 border border-gray-200 rounded-lg hover:border-sky-300 transition-colors bg-slate-50 flex flex-col justify-between min-h-40">
-        <div>
+      <div
+        className={`p-5 border border-gray-200 rounded-lg hover:border-sky-300 transition-colors bg-slate-50 flex flex-col justify-between h-full ${
+          isReadOnly ? '' : 'min-h-40'
+        }`}
+      >
+        <div className="text-center md:text-left">
           <div className="font-bold text-slate-800">{label}</div>
           <div className="text-xs text-slate-500 mt-1.5">
             {translate('setting.last_updated')} <br />

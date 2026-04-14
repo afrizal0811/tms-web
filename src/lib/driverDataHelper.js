@@ -1,6 +1,10 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api';
 import { isEmpty } from './utils';
 
+const driversCache = {};
+let vehicleTypesPromise = null;
+let vehicleMappingsPromise = null;
+
 const resolveVehicleType = (rawTag, plate, mappingsObj) => {
   if (plate && mappingsObj[plate]) {
     return mappingsObj[plate];
@@ -23,10 +27,13 @@ export async function checkUnmappedVehicles(hubId) {
   if (!hubId) return [];
 
   try {
+    if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
+    if (!vehicleMappingsPromise) vehicleMappingsPromise = getVehicleMappings();
+
     const [vehicleTypesObj, drivers, mappingsDB] = await Promise.all([
-      getVehicleTypes(),
-      getDrivers(hubId),
-      getVehicleMappings(),
+      vehicleTypesPromise,
+      getOrFetchDriverData(hubId),
+      vehicleMappingsPromise,
     ]);
 
     const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
@@ -69,28 +76,33 @@ export async function checkUnmappedVehicles(hubId) {
 
 export async function getOrFetchDriverData(selectedLocation) {
   if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
-
-  try {
-    const driversFromDB = await getDrivers(selectedLocation);
-    const mappedDrivers = driversFromDB.map((d) => ({
-      _id: d.id,
-      email: d.email,
-      name: d.name,
-      plat: d.plat,
-      type: d.type,
-      maxWeight: d.maxWeight,
-      maxVolume: d.maxVolume,
-      storage: d.storage,
-      workingTime: {
-        startTime: d.startTime,
-        endTime: d.endTime,
-        multiday: d.multiday,
-      },
-    }));
-    return mappedDrivers;
-  } catch (err) {
-    throw err;
+  if (!driversCache[selectedLocation]) {
+    driversCache[selectedLocation] = (async () => {
+      try {
+        const driversFromDB = await getDrivers(selectedLocation);
+        return driversFromDB.map((d) => ({
+          _id: d.id,
+          email: d.email,
+          name: d.name,
+          plat: d.plat,
+          type: d.type,
+          maxWeight: d.maxWeight,
+          maxVolume: d.maxVolume,
+          storage: d.storage,
+          workingTime: {
+            startTime: d.startTime,
+            endTime: d.endTime,
+            multiday: d.multiday,
+          },
+        }));
+      } catch (err) {
+        delete driversCache[selectedLocation];
+        throw err;
+      }
+    })();
   }
+
+  return driversCache[selectedLocation];
 }
 
 export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {

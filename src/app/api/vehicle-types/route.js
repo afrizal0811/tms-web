@@ -9,8 +9,13 @@ export async function GET() {
     const types = await prisma.vehicleType.findMany({ orderBy: { id: 'asc' } });
     return NextResponse.json(types, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Types:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Get Vehicle Types:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil data tipe kendaraan dari database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -27,8 +32,13 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error Vehicle Types:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Create Vehicle Type:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menambahkan tipe kendaraan baru ke database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -46,8 +56,13 @@ export async function PUT(request) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error Vehicle Types:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Update Vehicle Type:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal memperbarui data tipe kendaraan di database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -59,7 +74,12 @@ export async function DELETE(request) {
     await prisma.vehicleType.delete({ where: { id: Number(id) } });
     return NextResponse.json({ message: 'Tipe berhasil dihapus' }, { status: 200 });
   } catch (error) {
-    console.error('Error Vehicle Types:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Delete Vehicle Type:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal menghapus data tipe kendaraan dari database', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

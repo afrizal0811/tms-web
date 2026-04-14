@@ -5,6 +5,7 @@ import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -23,7 +24,7 @@ import * as XLSX from 'xlsx-js-style';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
-export default function TmsSummary({
+export default function SingleReport({
   driverData,
   isAnyLoading,
   isMapping,
@@ -99,12 +100,16 @@ export default function TmsSummary({
       const apiDateFrom = `${targetRoutingStr} 00:00:00`;
       const apiDateTo = `${targetRoutingStr} 23:59:59`;
 
-      const resultsData = await getResultsSummary({
-        dateFrom: apiDateFrom,
-        dateTo: apiDateTo,
-        limit: 1000,
-        hubId: selectedLocation,
-      });
+      const { storedLocationAcronym } = getLocalStorage();
+      // Fetch Results dan Hubs secara bersamaan
+      const [resultsData] = await Promise.all([
+        getResultsSummary({
+          dateFrom: apiDateFrom,
+          dateTo: apiDateTo,
+          limit: 1000,
+          hubId: selectedLocation,
+        }),
+      ]);
 
       const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
       if (isEmpty(filteredResults)) {
@@ -117,12 +122,15 @@ export default function TmsSummary({
         return acc;
       }, {});
 
+      // Mencari akronim
+      const hubLabel = storedLocationAcronym || selectedLocationName;
+
       const { wb, excelFileName } = await generateRoutingWorkbook(
         driverData,
         filteredResults,
         mappingsObj,
         targetRoutingStr,
-        selectedLocationName,
+        hubLabel, // Menggunakan akronim
         t
       );
 
@@ -155,28 +163,31 @@ export default function TmsSummary({
 
       const timeFrom = formatToApiUtc(startObj);
       const timeTo = formatToApiUtc(endObj);
-
-      const tasksPromise = getTasks({
-        hubId: selectedLocation,
-        status: 'DONE',
-        timeFrom,
-        timeTo,
-        timeBy: 'startTime',
-        limit: 5000,
-      });
-
-      const resultsPromise = getResultsSummary({
-        dateFrom: timeFrom,
-        dateTo: timeTo,
-        limit: 1000,
-        hubId: selectedLocation,
-      });
-
-      const [allTasks, resultsData] = await Promise.all([tasksPromise, resultsPromise]);
+      const { storedLocationAcronym } = getLocalStorage();
+      // Fetch Tasks, Results, dan Hubs secara bersamaan
+      const [allTasks, resultsData] = await Promise.all([
+        getTasks({
+          hubId: selectedLocation,
+          status: 'DONE,ONGOING',
+          timeFrom,
+          timeTo,
+          timeBy: 'startTime',
+          limit: 5000,
+        }),
+        getResultsSummary({
+          dateFrom: timeFrom,
+          dateTo: timeTo,
+          limit: 1000,
+          hubId: selectedLocation,
+        }),
+      ]);
 
       if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
         throw new Error(t('report.toast.no_delivery'));
       }
+
+      // Mencari akronim
+      const hubLabel = storedLocationAcronym || selectedLocationName;
 
       const { wb, excelFileName } = generateDeliveryWorkbook(
         driverData,
@@ -185,7 +196,7 @@ export default function TmsSummary({
         selectedDateString,
         apiDate,
         selectedLocation,
-        selectedLocationName,
+        hubLabel, // Menggunakan akronim
         t
       );
 
@@ -208,15 +219,18 @@ export default function TmsSummary({
       if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDateString);
-
-      const response = await getLocationHistories({
-        timeFrom,
-        timeTo,
-        limit: 5000,
-        startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
-        timeBy: 'createdTime',
-      });
+      const { storedLocationAcronym } = getLocalStorage();
+      // Fetch Histories dan Hubs secara bersamaan
+      const [response] = await Promise.all([
+        getLocationHistories({
+          timeFrom,
+          timeTo,
+          limit: 5000,
+          startFinish: 'true',
+          fields: 'finish,startTime,email,trackedTime,totalDistance',
+          timeBy: 'createdTime',
+        }),
+      ]);
 
       const allApiData = response?.tasks?.data || [];
 
@@ -224,11 +238,14 @@ export default function TmsSummary({
         throw new Error(t('report.toast.no_time'));
       }
 
+      // Mencari akronim
+      const hubLabel = storedLocationAcronym || selectedLocationName;
+
       const { wb, excelFileName, error } = generateTimeSummaryWorkbook(
         driverData,
         allApiData,
         selectedDateString,
-        selectedLocationName,
+        hubLabel, // Menggunakan akronim
         t
       );
 

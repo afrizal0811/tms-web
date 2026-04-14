@@ -21,8 +21,13 @@ export async function GET() {
 
     return NextResponse.json(formattedRoles, { status: 200 });
   } catch (error) {
-    console.error('Error Roles', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error Roles:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal mengambil data roles dari database lokal', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -61,9 +66,14 @@ export async function POST() {
       });
       await prisma.$transaction(upsertPromises);
       return NextResponse.json({ message: 'Sync Roles Berhasil' }, { status: 200 });
-    } 
+    }
   } catch (error) {
     console.error('Error Sync Roles:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
+    return NextResponse.json(
+      { error: 'Gagal melakukan sinkronisasi data roles dengan Vendor API', detail: errorMessage },
+      { status: 500 }
+    );
   }
 }

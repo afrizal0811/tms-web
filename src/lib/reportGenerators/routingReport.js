@@ -2,7 +2,7 @@
 'use client';
 
 import { getVehicleTypes } from '@/lib/api';
-import { formatDateWIB, formatMinutesToHHMM, formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, formatDateWIB, formatMinutesToHHMM, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 function formatSimpleTime(timeStr) {
@@ -547,7 +547,7 @@ export async function generateRoutingWorkbook(
   wsHelp['!cols'] = [{ wch: 28 }, { wch: 30 }, { wch: 20 }, { wch: 22 }, { wch: 45 }];
   XLSX.utils.book_append_sheet(wb, wsHelp, translate('excel.routing.sheets.help'));
 
-  const formattedDate = formatYYYYMMDDToDDMMYYYY(dateForFile);
+  const formattedDate = formatDateUniversal(dateForFile, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
 
   return { wb, excelFileName };

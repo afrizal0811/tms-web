@@ -3,7 +3,7 @@
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import BulkReportDownloader from '@/features/reportData/BulkReportDownloader';
+import BulkReport from '@/features/reportData/BulkReport';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
@@ -49,7 +49,7 @@ export default function LaporanBulkPage() {
   // Tampilan utama
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <BulkReportDownloader driverData={driverData} />
+      <BulkReport driverData={driverData} />
     </AppLayout>
   );
 }

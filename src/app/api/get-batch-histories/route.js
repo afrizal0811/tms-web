@@ -54,7 +54,17 @@ export async function POST(request) {
 
     return NextResponse.json({ data: validResults });
   } catch (error) {
-    console.error('Error Batch History:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error saat eksekusi Batch History:', error);
+
+    const errorMessage =
+      error instanceof Error ? error.message : 'Terjadi kesalahan sistem yang tidak diketahui';
+
+    return NextResponse.json(
+      {
+        error: 'Gagal memproses permintaan batch history',
+        detail: errorMessage,
+      },
+      { status: 500 }
+    );
   }
 }

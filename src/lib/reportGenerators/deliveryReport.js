@@ -6,9 +6,9 @@ import {
   calculateMinuteDifference,
   extractTempFromDriverName,
   formatCoordinates,
+  formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
-  formatYYYYMMDDToDDMMYYYY,
   getUTC7DateString,
   isEmpty,
   normalizeEmail,
@@ -86,11 +86,12 @@ export function generateDeliveryWorkbook(
     const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
     const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
     const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
-    const customerData = parseCustomerString(task.customerOrder || '');
-    const customerName = customerData.name || task.customerName || customerData.fullCustomerName;
+    const customerData = parseCustomerString(task.customerOrder || task.customerName);
+    const { name: customerName, id: customerId, location: customerLocation } = customerData;
     const pickupCustomerName = `${task.title} (${customerName})`;
     const flow = task.flow;
     const orderId = task.orderId || '';
+
     if (driverName !== 'N/A') {
       const stats = driverStats.get(driverName) || {
         totalOutlet: 0,
@@ -120,6 +121,7 @@ export function generateDeliveryWorkbook(
       }
       driverStats.set(driverName, stats);
     }
+
     let actualArrival, actualDeparture;
     if (flow && flow.toUpperCase().includes('GR')) {
       actualArrival = task.page1DoneTime;
@@ -128,6 +130,29 @@ export function generateDeliveryWorkbook(
       actualArrival = task.klikJikaSudahSampai;
       actualDeparture = task.page3DoneTime;
     }
+
+    // --- TAMBAHAN LOGIKA PENGECEKAN STATUS JAM OPERASIONAL ---
+    const openTimeVal = formatSimpleTime(task.openTime) || '-';
+    const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
+    const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
+
+    let hoursStatus = null;
+    if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
+      const isInside =
+        openTimeVal > closeTimeVal
+          ? actualArrVal >= openTimeVal || actualArrVal <= closeTimeVal
+          : actualArrVal >= openTimeVal && actualArrVal <= closeTimeVal;
+
+      if (isInside) {
+        hoursStatus = 'yes';
+      } else if (actualArrVal < openTimeVal) {
+        hoursStatus = 'early';
+      } else {
+        hoursStatus = 'no';
+      }
+    }
+    // ---------------------------------------------------------
+
     let fakturBatal = null,
       terkirimSebagian = null,
       pending = null,
@@ -144,7 +169,7 @@ export function generateDeliveryWorkbook(
         migrationOccurred = true;
       }
     }
-    const { id: custId, location: locId } = parseCustomerString(customerName);
+
     allTaskDataForSequence.push({
       driverEmail: driverEmail,
       driver: driverName,
@@ -155,29 +180,32 @@ export function generateDeliveryWorkbook(
       isMigrated: isMigrated,
       flow: flow,
       customerName: customerName,
+      locationId: customerLocation,
       fakturBatal: fakturBatal,
       terkirimSebagian: terkirimSebagian,
       pending: pending,
       pendingGR: pendingGR,
       reason: task.alasan,
-      openTime: formatSimpleTime(task.openTime),
-      closeTime: formatSimpleTime(task.closeTime),
-      eta: formatSimpleTime(task.eta),
-      etd: formatSimpleTime(task.etd),
-      actualArrival: formatTimestampToHHMM(actualArrival),
-      actualDeparture: formatTimestampToHHMM(actualDeparture),
+      openTime: openTimeVal,
+      closeTime: closeTimeVal,
+      eta: formatSimpleTime(task.eta) || '-',
+      etd: formatSimpleTime(task.etd) || '-',
+      actualArrival: actualArrVal,
+      actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
       visitTime: task.visitTime,
       actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-      customerId: custId,
+      customerId: customerId,
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
       orderId: orderId,
+      isWithinHoursStatus: hoursStatus, // <--- Data Status Jam
     });
+
     if (task.klikLokasiClient) {
       updateLonglatData.push({
         customerName: customerName,
-        customerId: custId,
-        locationId: locId,
+        customerId: customerId,
+        locationId: customerLocation,
         newLonglat: formatCoordinates(task.klikLokasiClient),
         bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient),
       });
@@ -247,9 +275,22 @@ export function generateDeliveryWorkbook(
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   };
 
+  // Warna khusus untuk kolom Status Jam
+  const textGreenStyle = {
+    alignment: centerStyle.alignment,
+    font: { bold: true, color: { rgb: '16A34A' } },
+  };
+  const textAmberStyle = {
+    alignment: centerStyle.alignment,
+    font: { bold: true, color: { rgb: 'F59E0B' } },
+  };
+  const textRedStyle = {
+    alignment: centerStyle.alignment,
+    font: { bold: true, color: { rgb: 'DC2626' } },
+  };
+
   // --- Sheet 1: Routing Date ---
-  // Gunakan 'selectedDate' (tanggal asli pilihan user)
-  const routingDate = formatYYYYMMDDToDDMMYYYY(apiDate);
+  const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
     [routingDate, null, null, null, null, null, null],
@@ -267,7 +308,7 @@ export function generateDeliveryWorkbook(
     { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
   ];
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
-  XLSX.utils.book_append_sheet(wb, wsRoutingDate, 'Routing Date');
+  XLSX.utils.book_append_sheet(wb, wsRoutingDate, translate('excel.delivery.sheets.routing_date'));
 
   // --- Sheet 2: Total Delivered ---
   const headers1 = [
@@ -307,11 +348,11 @@ export function generateDeliveryWorkbook(
       const hasBedaHariError = stats.mismatchCustomers.length > 0;
       let highlightType = 'none';
       if (hasManualError && hasBedaHariError) {
-        highlightType = 'green'; // Manual + Beda Hari
+        highlightType = 'green';
       } else if (hasManualError) {
-        highlightType = 'blue'; // Hanya Manual
+        highlightType = 'blue';
       } else if (hasBedaHariError) {
-        highlightType = 'yellow'; // Hanya Beda Hari
+        highlightType = 'yellow';
       }
       return {
         plat: driverPlat || stats.plat,
@@ -602,13 +643,14 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.headers.close_time'),
     translate('common.eta'),
     translate('excel.delivery.headers.act_arr'),
-    translate('common.eta'),
+    translate('common.etd'),
     translate('excel.delivery.headers.act_dep'),
     translate('excel.delivery.headers.visit_time'),
     translate('excel.delivery.headers.act_visit_time'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.is_same_seq'),
+    translate('excel.delivery.headers.is_same'),
+    translate('dashboard.tab.routingreal.is_within_hours'), // <--- Tambahan Header Baru
   ];
   let finalSheetData3 = [headers3];
   const tasksByNameMap = new Map();
@@ -635,7 +677,6 @@ export function generateDeliveryWorkbook(
   });
   for (const driverRow of roVsRealDriverList) {
     const driverName = driverRow.driver;
-    const driverPlat = driverRow.plat;
     const tasks = tasksByNameMap.get(driverName) || [];
     const hubTimes = hubTimesMap.get(driverName) || { hubETD: null, hubETA: null };
     finalSheetData3.push([
@@ -655,32 +696,50 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
+      null, // 17 Elemen
     ]);
     tasks.sort((a, b) => a.roSequence - b.roSequence);
     for (const task of tasks) {
-      const ro = task.roSequence;
-      const real = task.realSequence;
-      const isSame =
-        ro == real
+      const customerName = task.customerName || '';
+      const customerId = task.customerId || '';
+      const locationId = task.locationId || '';
+      const customerData = `${customerName} - ${customerId} - ${locationId}`;
+      const ro = task.roSequence || '-';
+      const real = task.realSequence || '-';
+      const isRealEmpty = isEmpty(real);
+      const isSame = isRealEmpty
+        ? '-'
+        : ro === real
           ? translate('excel.delivery.data.match')
           : translate('excel.delivery.data.mismatch');
+
+      // Translasi untuk Status Jam
+      let withinHoursText = '-';
+      if (task.isWithinHoursStatus === 'yes')
+        withinHoursText = translate('dashboard.tab.routingreal.yes');
+      else if (task.isWithinHoursStatus === 'early')
+        withinHoursText = translate('dashboard.tab.routingreal.early');
+      else if (task.isWithinHoursStatus === 'no')
+        withinHoursText = translate('dashboard.tab.routingreal.no');
+
       finalSheetData3.push([
-        task.flow,
-        task.plat,
-        task.driver,
-        task.customerName,
-        task.statusLabel,
-        task.openTime,
-        task.closeTime,
-        task.eta,
-        task.actualArrival,
-        task.etd,
-        task.actualDeparture,
-        task.visitTime,
-        task.actualVisitTime,
+        task.flow || '-',
+        task.plat || '-',
+        task.driver || '-',
+        customerData || '-',
+        task.statusLabel || '-',
+        task.openTime || '-',
+        task.closeTime || '-',
+        task.eta || '-',
+        task.actualArrival || '-',
+        task.etd || '-',
+        task.actualDeparture || '-',
+        task.visitTime || '-',
+        task.actualVisitTime || '-',
         ro,
         real,
         isSame,
+        withinHoursText, // <--- Tambahan Data Baru
       ]);
     }
     finalSheetData3.push([
@@ -700,6 +759,7 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
+      null, // 17 Elemen
     ]);
     finalSheetData3.push(Array(headers3.length).fill(null));
   }
@@ -713,7 +773,7 @@ export function generateDeliveryWorkbook(
     return { wch: Math.min(maxLength + 2, 50) };
   });
   wsRoVsReal['!cols'] = colWidths3;
-  const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; // Ditambah Index 16
   const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
   const etaColIndex = 7;
   const etdColIndex = 9;
@@ -721,6 +781,7 @@ export function generateDeliveryWorkbook(
   const driverColIndex = 2;
   const roColIndex = 13;
   const redFillStyleRoVsReal = { fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } } };
+
   for (let R = range3.s.r; R <= range3.e.r; ++R) {
     const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
     const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
@@ -764,12 +825,24 @@ export function generateDeliveryWorkbook(
           if (!cell.s) cell.s = {};
           cell.s.fill = redFillStyleRoVsReal.fill;
         }
+        
+        if (C === 15 && cell.v) {
+          if (cell.v === translate('excel.delivery.data.match')) cell.s = textGreenStyle;
+          else if (cell.v === translate('excel.delivery.data.mismatch')) cell.s = textRedStyle;
+        }
+        if (C === 16 && cell.v) {
+          if (cell.v === translate('dashboard.tab.routingreal.yes')) cell.s = textGreenStyle;
+          else if (cell.v === translate('dashboard.tab.routingreal.early')) cell.s = textAmberStyle;
+          else if (cell.v === translate('dashboard.tab.routingreal.no')) cell.s = textRedStyle;
+        }
+        // ---------------------------------------------------------
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
+  XLSX.utils.book_append_sheet(wb, wsRoVsReal, t('excel.delivery.sheets.ro_vs_real'));
 
   // --- 9. Kembalikan Hasil ---
-  const excelFileName = `${translate('excel.delivery.filename')} - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
+  const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+  const excelFileName = `${translate('excel.delivery.filename')} - ${date} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };
 }

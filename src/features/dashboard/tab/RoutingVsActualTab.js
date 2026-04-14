@@ -5,261 +5,29 @@ import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import {
-  formatSimpleTime,
-  formatTimestampToHHMM,
-  isEmpty,
-  normalizeEmail,
-  parseCustomerString,
-} from '@/lib/utils';
+import { isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
-import { downloadRoutingVsActual } from '../help';
+import { downloadRoutingVsActual, processRoutingVsActualData } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
 
-export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
+export default function RoutingVsActualTab({ loading, tasks, results, drivers, selectedDate }) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   const processedData = useMemo(() => {
-    if (loading || !tasks || !drivers) return [];
+    if (loading) return [];
 
-    const emailToDriverMap = drivers.reduce((acc, driver) => {
-      const normalized = normalizeEmail(driver.email);
-      if (normalized) {
-        acc[normalized] = { plat: driver.plat || null, name: driver.name };
-      }
-      return acc;
-    }, {});
-
-    const hubTimesMap = new Map();
-    if (results) {
-      const filteredResults = results.filter((item) => item.dispatchStatus === 'done');
-      for (const result of filteredResults) {
-        if (result.result && Array.isArray(result.result.routing)) {
-          for (const route of result.result.routing) {
-            const driverEmail = normalizeEmail(route.assignee);
-            const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-            const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-            if (!driverName || !Array.isArray(route.trips) || isEmpty(route.trips)) continue;
-
-            const hubTrips = route.trips.filter((trip) => trip.isHub === true);
-            if (hubTrips.length > 0) {
-              const firstHub = hubTrips[0];
-              const lastHub = hubTrips[hubTrips.length - 1];
-              const hubLocation = firstHub.coordinate || null;
-
-              hubTimesMap.set(driverName, {
-                hubETD: formatSimpleTime(firstHub.etd) || '-',
-                hubETA: formatSimpleTime(lastHub.eta) || '-',
-                hubLongLat: hubLocation,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    const driverStats = new Map();
-    const allTaskData = [];
-
-    for (const task of tasks) {
-      const flow = task.flow;
-      const emailString =
-        Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
-      const driverEmail = normalizeEmail(emailString);
-      const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-      const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-      let statusLabel = '';
-      if (flow !== 'Pickup') {
-        if (task.statusDelivery && task.statusDelivery.length > 0) {
-          statusLabel = task.statusDelivery[0].toUpperCase();
-        } else if (flow.includes('GR')) {
-          if (task.statusGr && task.statusGr.length > 0) {
-            statusLabel = task.statusGr[0].toUpperCase();
-          }
-        }
-      } else {
-        statusLabel = task.status && task.status.toUpperCase();
-      }
-      statusLabel = task.status !== 'ONGOING' ? statusLabel : '-';
-      let { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
-      if (isEmpty(customerName)) customerName = task.customerName;
-
-      if (driverName !== 'N/A') {
-        const stats = driverStats.get(driverName) || {
-          plat: null,
-          driverEmail: driverEmail,
-        };
-        if (!stats.plat && driverInfo && driverInfo.plat) {
-          stats.plat = driverInfo.plat;
-        }
-        driverStats.set(driverName, stats);
-      }
-
-      let actualArrival, actualDeparture;
-      if (flow && flow.toUpperCase().includes('GR')) {
-        actualArrival = task.page1DoneTime;
-        actualDeparture = task.page1DoneTime;
-      } else if (flow && flow.toUpperCase().includes('PICKUP')) {
-        actualArrival = task.klikJikaAndaSudahSampaiDiGudang;
-        actualDeparture = task.page1DoneTime;
-      } else {
-        actualArrival = task.klikJikaSudahSampai;
-        actualDeparture = task.page3DoneTime;
-      }
-
-      const roSequence = task.routePlannedOrder || 0;
-      const etaVal = formatSimpleTime(task.eta);
-      const etdVal = formatSimpleTime(task.etd);
-
-      let actualVisitTimeVal = '-';
-      if (actualArrival && actualDeparture) {
-        const start = new Date(actualArrival).getTime();
-        const end = new Date(actualDeparture).getTime();
-        if (!isNaN(start) && !isNaN(end) && end >= start) {
-          const diffMs = end - start;
-          const diffMins = Math.ceil(diffMs / 60000);
-          actualVisitTimeVal = diffMins;
-        }
-      }
-
-      allTaskData.push({
-        driver: driverName,
-        plat: driverInfo ? driverInfo.plat : null,
-        actualArrivalTimestamp: actualArrival ? new Date(actualArrival).getTime() : null,
-        roSequence: roSequence,
-        statusLabel: statusLabel,
-        flow: flow,
-        customerName: customerName,
-        openTime: formatSimpleTime(task.openTime) || '-',
-        closeTime: formatSimpleTime(task.closeTime) || '-',
-        eta: etaVal || '-',
-        etd: etdVal || '-',
-        actualArrival: formatTimestampToHHMM(actualArrival) || '-',
-        actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
-        visitTime: task.visitTime || '-',
-        actualVisitTime: actualVisitTimeVal,
-        realSequence: 0,
-        isManualAssign: roSequence === 0,
-        longlat: task.longlat,
-      });
-    }
-
-    allTaskData.sort((a, b) => {
-      const driverCompare = a.driver.localeCompare(b.driver);
-      if (driverCompare !== 0) return driverCompare;
-      const timeA = a.actualArrivalTimestamp || Infinity;
-      const timeB = b.actualArrivalTimestamp || Infinity;
-      return timeA - timeB;
+    // Cukup panggil fungsi dari help.js!
+    return processRoutingVsActualData({
+      tasks,
+      results,
+      drivers,
+      searchQuery,
     });
-
-    let currentDriver = null;
-    let rankCounter = 1;
-    for (const row of allTaskData) {
-      if (row.driver !== currentDriver) {
-        currentDriver = row.driver;
-        rankCounter = 1;
-      }
-      if (row.actualArrivalTimestamp !== null) {
-        row.realSequence = rankCounter;
-        rankCounter++;
-      } else {
-        row.realSequence = null;
-      }
-    }
-
-    const tasksByNameMap = new Map();
-    for (const task of allTaskData) {
-      if (!tasksByNameMap.has(task.driver)) {
-        tasksByNameMap.set(task.driver, []);
-      }
-      tasksByNameMap.get(task.driver).push(task);
-    }
-
-    const getSortGroup = (platStr) => {
-      if (!platStr) return 1;
-      const platUpper = platStr.toUpperCase();
-      if (platUpper.includes('DM')) return 3;
-      if (platUpper.includes('SEWA')) return 2;
-      return 1;
-    };
-
-    let driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
-      return {
-        plat: stats.plat,
-        driver: driverName,
-      };
-    });
-
-    driverList.sort((a, b) => {
-      const groupA = getSortGroup(a.plat);
-      const groupB = getSortGroup(b.plat);
-      if (groupA !== groupB) {
-        return groupA - groupB;
-      }
-      return (a.driver || '').localeCompare(b.driver || '');
-    });
-
-    const finalRows = [];
-    const query = searchQuery.toLowerCase();
-
-    for (const driverRow of driverList) {
-      const driverName = driverRow.driver;
-      const driverPlat = driverRow.plat;
-      const driverTasks = tasksByNameMap.get(driverName) || [];
-      const hubTimes = hubTimesMap.get(driverName) || {
-        hubETD: '-',
-        hubETA: '-',
-        hubLongLat: null,
-      };
-
-      const isDriverMatch =
-        driverName.toLowerCase().includes(query) ||
-        (driverPlat && driverPlat.toLowerCase().includes(query));
-
-      const matchingTasks = driverTasks.filter((t) => {
-        if (isDriverMatch) return true;
-        return t.customerName && t.customerName.toLowerCase().includes(query);
-      });
-
-      if (isEmpty(matchingTasks) && !isDriverMatch) continue;
-
-      finalRows.push({
-        type: 'HUB_START',
-        driver: driverName,
-        plat: driverPlat,
-        time: hubTimes.hubETD,
-        longlat: hubTimes.hubLongLat,
-        customerName: 'HUB',
-      });
-
-      matchingTasks.sort((a, b) => {
-        return (a.roSequence || 0) - (b.roSequence || 0);
-      });
-
-      matchingTasks.forEach((t) => {
-        finalRows.push({
-          type: 'TASK',
-          ...t,
-        });
-      });
-
-      finalRows.push({
-        type: 'HUB_END',
-        driver: driverName,
-        plat: driverPlat,
-        time: hubTimes.hubETA,
-        longlat: hubTimes.hubLongLat,
-        customerName: 'HUB',
-      });
-
-      finalRows.push({ type: 'SPACER' });
-    }
-
-    return finalRows;
   }, [loading, tasks, results, drivers, searchQuery]);
 
   const handleDownload = async () => {
@@ -267,8 +35,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
     setIsDownloading(true);
     try {
+      const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+      const hubLabel = storedLocationAcronym || storedLocationName || '';
+
       await new Promise((r) => setTimeout(r, 100));
-      downloadRoutingVsActual(processedData, t);
+      downloadRoutingVsActual(processedData, t, selectedDate, hubLabel);
     } catch (e) {
       toastError(t('dashboard.error_download', { err: e.message }));
     } finally {
@@ -281,6 +52,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
       toastWarning(t('dashboard.toast.view_map_warning'));
     }
     setIsMapModalOpen(true);
+  };
+
+  const hoursStatusConfig = {
+    yes: { text: t('dashboard.tab.routingreal.yes'), color: 'text-green-600' },
+    early: { text: t('dashboard.tab.routingreal.early'), color: 'text-amber-500' },
+    no: { text: t('dashboard.tab.routingreal.no'), color: 'text-red-600' },
   };
 
   return (
@@ -360,18 +137,31 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
               <th className="px-4 py-3 border-b text-center">
                 {t('dashboard.tab.routingreal.actual_seq')}
               </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.is_same')}
-              </th>
+              <Tooltip tooltipContent={t('dashboard.tab.routingreal.tooltip.exp_is_same')}>
+                <th className="px-4 py-3 border-b text-center cursor-help">
+                  {t('dashboard.tab.routingreal.is_same')}
+                </th>
+              </Tooltip>
+              <Tooltip
+                tooltipContent={t('dashboard.tab.routingreal.tooltip.exp_within_hours')}
+                width="w-40"
+              >
+                <th className="px-4 py-3 border-b text-center cursor-help">
+                  {t('dashboard.tab.routingreal.is_within_hours')}
+                </th>
+              </Tooltip>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {processedData.map((row, index) => {
+              const hubStart = row.type === 'HUB_START';
+              const hubEnd = row.type === 'HUB_END';
+
               if (row.type === 'SPACER') {
                 return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
               }
 
-              if (row.type === 'HUB_START' || row.type === 'HUB_END') {
+              if (hubStart) {
                 return (
                   <tr
                     key={index}
@@ -384,8 +174,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
                     <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
@@ -439,6 +230,17 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                   >
                     {match}
                   </td>
+                  {(() => {
+                    const statusUI = hoursStatusConfig[row.isWithinHoursStatus] || {
+                      text: '-',
+                      color: 'text-gray-400',
+                    };
+                    return (
+                      <td className={`px-4 py-2 text-center font-bold ${statusUI.color}`}>
+                        {statusUI.text}
+                      </td>
+                    );
+                  })()}
                 </>
               );
 
@@ -452,6 +254,32 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
                       {cellContent}
                     </tr>
                   </Tooltip>
+                );
+              }
+
+              if (hubEnd) {
+                return (
+                  <tr
+                    key={index}
+                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                  >
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                  </tr>
                 );
               }
 

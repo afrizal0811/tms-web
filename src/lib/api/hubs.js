@@ -9,3 +9,11 @@ export async function syncHubsData() {
     method: 'POST',
   });
 }
+
+export async function updateHubAcronym(id, acronym) {
+  return await apiFetch('/api/get-hubs', 'Gagal memperbarui akronim cabang', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, acronym }),
+  });
+}

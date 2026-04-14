@@ -1,1 +1,18 @@
 export const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
+export const avatarColorStyles = {
+  red: 'bg-red-100 text-red-600',
+  orange: 'bg-orange-100 text-orange-600',
+  amber: 'bg-amber-100 text-amber-700',
+  yellow: 'bg-yellow-100 text-yellow-700',
+  lime: 'bg-lime-100 text-lime-700',
+  green: 'bg-green-100 text-green-600',
+  teal: 'bg-teal-100 text-teal-600',
+  cyan: 'bg-cyan-100 text-cyan-600',
+  blue: 'bg-blue-100 text-blue-600',
+  indigo: 'bg-indigo-100 text-indigo-600',
+  violet: 'bg-violet-100 text-violet-600',
+  purple: 'bg-purple-100 text-purple-600',
+  fuchsia: 'bg-fuchsia-100 text-fuchsia-600',
+  pink: 'bg-pink-100 text-pink-600',
+  gray: 'bg-gray-100 text-gray-600',
+};

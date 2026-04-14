@@ -1,6 +1,6 @@
 // File: src/features/vehicleData/help.js
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 
@@ -14,7 +14,7 @@ export const formatVolume = (vol) => {
 export const handleConfirmDownload = ({
   conditionalData,
   masterData,
-  setIsDownloadDropdownOpen = () => {}, 
+  setIsDownloadDropdownOpen = () => {},
   setIsDownloading,
   sheetSelection,
   t,
@@ -94,8 +94,9 @@ export const handleConfirmDownload = ({
     if (isEmpty(wb.SheetNames)) {
       toastError(t('vehicle.toast.choose_one'));
     } else {
-      const { storedLocationName: locationName } = getLocalStorage() || '-';
-      const fileName = `${t('vehicle.title')} - ${locationName}.xlsx`;
+      const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
+      const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+      const fileName = `${t('vehicle.title')} - ${date} - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
       toastSuccess(t('vehicle.toast.success'));
     }

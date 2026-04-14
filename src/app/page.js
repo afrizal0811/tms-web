@@ -8,20 +8,11 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
 import UserLogin from '@/features/userLogin/UserLogin';
-import {
-  getDriversSyncStatus,
-  getHubs,
-  getUsers,
-  getVehicles,
-  syncDriversData,
-  syncHubsData,
-  syncRolesData,
-} from '@/lib/api';
 import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError, toastInfo, toastWarning } from '../lib/toastHelper';
+import { toastError, toastInfo } from '../lib/toastHelper';
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -30,7 +21,6 @@ export default function Home() {
   const [tempSelectedLocation, setTempSelectedLocation] = useState('');
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
   const [driverData, setDriverData] = useState({ data: [] });
-
   const [isPageLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [allHubsList, setAllHubsList] = useState(null);
@@ -38,64 +28,6 @@ export default function Home() {
 
   const { t } = useLanguage();
   const toastShownRef = useRef(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const initData = async () => {
-      try {
-        setIsLoading(true);
-
-        const hasSynced = sessionStorage.getItem('hasSyncedThisSession');
-
-        if (!hasSynced) {
-          toastInfo('Menyiapkan data awal...');
-          try {
-            const syncResults = await Promise.allSettled([
-              syncHubsData(),
-              syncRolesData(),
-              getUsers(),
-              getVehicles(),
-              syncDriversData(),
-              getDriversSyncStatus(),
-            ]);
-
-            const failedSyncs = syncResults.filter((r) => r.status === 'rejected');
-            console.log('failedSyncs :', failedSyncs);
-
-            if (failedSyncs.length > 0) {
-              toastWarning('Beberapa data mungkin belum terbaru.');
-            } else {
-              toastSuccess('Semua data berhasil diperbarui!');
-            }
-
-            sessionStorage.setItem('hasSyncedThisSession', 'true');
-          } catch (err) {
-            console.error('Error saat sync awal:', err);
-          }
-        }
-
-        const localHubs = await getHubs();
-
-        if (isMounted) {
-          setAllHubsList(localHubs || []);
-          setCurrentHubListView(localHubs || []);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setPageError(error.message);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     async function initializeApp() {
@@ -144,7 +76,6 @@ export default function Home() {
             }
           }
         } else if (storedLocation) {
-          // Kondisi ketika user baru memilih lokasi tapi belum login
           setCurrentHubListView(processedHubs);
           setSelectedLocation(storedLocation);
           setSelectedLocationName(storedLocationName);
@@ -197,10 +128,11 @@ export default function Home() {
 
     setDriverData({ data: [] });
 
-    // KUNCI: Simpan ke session tunggal
+    const selectedHubObj = allHubsList.find((h) => h._id === tempSelectedLocation);
     const tempSession = {
       activeHubId: tempSelectedLocation,
       activeHubName: tempSelectedLocationName,
+      activeHubAcronym: selectedHubObj?.acronym || '',
     };
     setLocalStorage('data', JSON.stringify(tempSession));
 
@@ -209,6 +141,7 @@ export default function Home() {
   };
 
   const handleUserSelect = (user) => {
+    const selectedHubObj = allHubsList.find((h) => h._id === selectedLocation);
     const filteredUserSession = {
       _id: user._id,
       email: user.email,
@@ -218,6 +151,7 @@ export default function Home() {
       status: user.status,
       activeHubId: selectedLocation,
       activeHubName: selectedLocationName,
+      activeHubAcronym: selectedHubObj?.acronym || '',
     };
 
     setLocalStorage('data', JSON.stringify(filteredUserSession));
@@ -253,12 +187,13 @@ export default function Home() {
             hubsToShow={currentHubListView}
             className="mt-6 p-2 rounded border border-gray-300 w-64"
             placeholder={`-- ${t('home.placeholder')} --`}
+            translate={t}
           />
           <div className="mt-4">
             <button
               onClick={handleSaveLocation}
               disabled={!tempSelectedLocation}
-              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
+              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors"
             >
               {t('home.select_btn')}
             </button>
@@ -289,7 +224,7 @@ export default function Home() {
   }
 
   return (
-    <AppLayout mainClassName="items-center px-4">
+    <AppLayout mainClassName="items-center px-4 relative">
       <DashboardSummary driverData={driverData.data} />
     </AppLayout>
   );

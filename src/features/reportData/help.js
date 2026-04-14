@@ -3,6 +3,7 @@ import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toastHe
 import { formatDateUniversal, isDateSunday, isEmpty } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
+
 /**
  * Helper untuk mendapatkan array tanggal di antara dua tanggal
  */
@@ -60,9 +61,14 @@ export const bulkDownloader = async ({
   try {
     const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');
     const originalEndDateString = formatDateUniversal(endDate, 'DD.MM.YYYY');
-    const { storedLocation: hubId, storedLocationName: hubName } = getLocalStorage();
+    const {
+      storedLocation: hubId,
+      storedLocationName: hubName,
+      storedLocationAcronym,
+    } = getLocalStorage();
 
     if (!hubId) throw new Error('Data Hub tidak valid (ID Lokasi tidak ditemukan).');
+    const hubLabel = storedLocationAcronym || hubName;
 
     const datesToProcess = getDatesInRange(startDate, endDate);
     const zip = new JSZip();
@@ -83,7 +89,7 @@ export const bulkDownloader = async ({
           dateObj,
           dateForFile,
           hubId,
-          hubName,
+          hubName: hubLabel,
         });
 
         if (result) {
@@ -119,7 +125,7 @@ export const bulkDownloader = async ({
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(zipBlob);
-    link.download = `${zipPrefix} ${originalStartDateString} - ${originalEndDateString}.zip`;
+    link.download = `${zipPrefix} - (${originalStartDateString} - ${originalEndDateString}) - ${hubLabel}.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
