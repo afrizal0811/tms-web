@@ -497,7 +497,7 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
           ? t('dashboard.tab.routingreal.match')
           : t('dashboard.tab.routingreal.mismatch');
 
-    let withinHoursText = '-';
+    let withinHoursText = isHub ? null : '-';
     if (!isHub && row.isWithinHoursStatus) {
       if (row.isWithinHoursStatus === 'yes') withinHoursText = t('dashboard.tab.routingreal.yes');
       else if (row.isWithinHoursStatus === 'early')
