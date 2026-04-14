@@ -603,7 +603,7 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.headers.close_time'),
     translate('common.eta'),
     translate('excel.delivery.headers.act_arr'),
-    translate('common.eta'),
+    translate('common.etd'),
     translate('excel.delivery.headers.act_dep'),
     translate('excel.delivery.headers.visit_time'),
     translate('excel.delivery.headers.act_visit_time'),
@@ -636,7 +636,6 @@ export function generateDeliveryWorkbook(
   });
   for (const driverRow of roVsRealDriverList) {
     const driverName = driverRow.driver;
-    const driverPlat = driverRow.plat;
     const tasks = tasksByNameMap.get(driverName) || [];
     const hubTimes = hubTimesMap.get(driverName) || { hubETD: null, hubETA: null };
     finalSheetData3.push([
@@ -774,7 +773,7 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
+  XLSX.utils.book_append_sheet(wb, wsRoVsReal, t('excel.delivery.sheets.ro_vs_real'));
 
   // --- 9. Kembalikan Hasil ---
   const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
