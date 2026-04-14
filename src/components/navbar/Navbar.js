@@ -2,6 +2,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
+import { getRoles } from '@/lib/api';
 import { avatarColorStyles } from '@/lib/constants';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [avatarColor, setAvatarColor] = useState('sky');
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   const isIndo = lang === 'id';
   const pathname = usePathname();
@@ -50,10 +52,15 @@ export default function Navbar() {
           if (storedUser) {
             const user = JSON.parse(storedUser);
             setIsLoggedIn(!!user);
+            const roles = await getRoles();
+            const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
+
+            setIsSuperadmin(user?.roleId === superadminRole?._id);
           }
         }
       } catch (e) {
         setIsLoggedIn(false);
+        setIsSuperadmin(false);
       }
     };
     const timer = setTimeout(() => {
@@ -229,7 +236,7 @@ export default function Navbar() {
   const LoggedInComps = (
     <>
       {navLinkReport}
-      <NavLink href="/rangkuman">{t('navbar.summary')}</NavLink>
+      {isSuperadmin && <NavLink href="/rangkuman">{t('navbar.summary')}</NavLink>}
       <NavLink href="/update-longlat">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
       </NavLink>
@@ -289,6 +296,15 @@ export default function Navbar() {
     </div>
   );
 
+  const userInitial = (userName) => {
+    return userName
+      ? userName
+          .replace(/[^a-zA-Z]/g, '')
+          .charAt(0)
+          .toUpperCase()
+      : 'U';
+  };
+
   return (
     <nav
       ref={navRef}
@@ -336,7 +352,7 @@ export default function Navbar() {
                   <div
                     className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-inner ${avatarColorStyles[avatarColor] || avatarColorStyles.sky}`}
                   >
-                    {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                    {userInitial(userName)}
                   </div>
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-sm font-bold truncate tracking-wide">{userName}</span>
@@ -356,7 +372,9 @@ export default function Navbar() {
               </div>
               <MobileNavLink href="/laporan">{t('navbar.daily_report')}</MobileNavLink>
               <MobileNavLink href="/laporan/bulk">{t('navbar.period_report')}</MobileNavLink>
-              <MobileNavLink href="/rangkuman">{t('navbar.summary')}</MobileNavLink>
+              {isSuperadmin && (
+                <MobileNavLink href="/rangkuman">{t('navbar.summary')}</MobileNavLink>
+              )}
               <MobileNavLink href="/update-longlat">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
