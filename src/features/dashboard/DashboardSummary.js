@@ -574,6 +574,7 @@ export default function DashboardSummary({ driverData }) {
               tasks={filteredDailyTasks}
               results={rawData.results}
               drivers={driverData}
+              selectedDate={selectedDate}
             />
           )}
 

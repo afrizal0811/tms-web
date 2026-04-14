@@ -6,9 +6,9 @@ import {
   calculateMinuteDifference,
   extractTempFromDriverName,
   formatCoordinates,
+  formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
-  formatYYYYMMDDToDDMMYYYY,
   getUTC7DateString,
   isEmpty,
   normalizeEmail,
@@ -250,7 +250,7 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 1: Routing Date ---
   // Gunakan 'selectedDate' (tanggal asli pilihan user)
-  const routingDate = formatYYYYMMDDToDDMMYYYY(apiDate);
+  const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
     [routingDate, null, null, null, null, null, null],
@@ -777,6 +777,7 @@ export function generateDeliveryWorkbook(
   XLSX.utils.book_append_sheet(wb, wsRoVsReal, 'Hasil RO vs Real');
 
   // --- 9. Kembalikan Hasil ---
-  const excelFileName = `${translate('excel.delivery.filename')} - ${formatYYYYMMDDToDDMMYYYY(selectedDate)} - ${selectedLocationName}.xlsx`;
+  const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+  const excelFileName = `${translate('excel.delivery.filename')} - ${date} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };
 }

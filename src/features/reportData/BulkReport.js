@@ -21,7 +21,7 @@ const parseDate = (dateStr) => {
   return new Date(dateStr.replace(/-/g, '/'));
 };
 
-export default function BulkReportDownloader({ driverData }) {
+export default function BulkReport({ driverData }) {
   const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);

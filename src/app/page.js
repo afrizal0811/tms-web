@@ -128,9 +128,11 @@ export default function Home() {
 
     setDriverData({ data: [] });
 
+    const selectedHubObj = allHubsList.find((h) => h._id === tempSelectedLocation);
     const tempSession = {
       activeHubId: tempSelectedLocation,
       activeHubName: tempSelectedLocationName,
+      activeHubAcronym: selectedHubObj?.acronym || '',
     };
     setLocalStorage('data', JSON.stringify(tempSession));
 
@@ -139,6 +141,7 @@ export default function Home() {
   };
 
   const handleUserSelect = (user) => {
+    const selectedHubObj = allHubsList.find((h) => h._id === selectedLocation);
     const filteredUserSession = {
       _id: user._id,
       email: user.email,
@@ -148,6 +151,7 @@ export default function Home() {
       status: user.status,
       activeHubId: selectedLocation,
       activeHubName: selectedLocationName,
+      activeHubAcronym: selectedHubObj?.acronym || '',
     };
 
     setLocalStorage('data', JSON.stringify(filteredUserSession));

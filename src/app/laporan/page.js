@@ -3,13 +3,13 @@
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
-import SingleReportDownloader from '@/features/reportData/SingleReportDownloader';
+import { useLanguage } from '@/context/LanguageContext';
+import SingleReport from '@/features/reportData/SingleReport';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper'; // Pastikan path ini benar
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
 
 export default function LaporanPage() {
   const router = useRouter();
@@ -81,7 +81,7 @@ export default function LaporanPage() {
   // Tampilan utama jika data berhasil dimuat
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <SingleReportDownloader
+      <SingleReport
         selectedLocation={data.selectedLocation}
         selectedLocationName={data.selectedLocationName}
         selectedUser={data.selectedUser}

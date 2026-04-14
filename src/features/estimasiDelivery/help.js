@@ -269,11 +269,11 @@ export const handleConfirmDownload = async ({
 
       XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
     });
-    const { storedLocationName: locationName } = getLocalStorage() || '-';
-    const timestamp = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-    let fileName = `${t('estimation.title')} - ${locationName} - ${timestamp}.xlsx`;
+    const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
+    const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+    let fileName = `${t('estimation.title')} - ${date} - ${locationName}.xlsx`;
     if (fileNamePrefix) {
-      fileName = `${t('estimation.title')} (${fileNamePrefix}) - ${locationName} - ${timestamp}.xlsx`;
+      fileName = `${t('estimation.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`;
     }
 
     XLSX.writeFile(wb, fileName);
@@ -386,7 +386,7 @@ export const styles = StyleSheet.create({
     height: '100%',
     paddingTop: 2,
   },
-  miniTableFont : {
+  miniTableFont: {
     fontWeight: 'bold',
   },
   colBln: { width: 60, borderRightWidth: 1 },

@@ -1,13 +1,12 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatYYYYMMDDToDDMMYYYY, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
 export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName, t) => {
   if (isEmpty(processedData)) {
     toastWarning(t('report.toast.no_data'));
     return;
   }
-  const yyyyMmDd = selectedDate.toISOString().slice(0, 10);
 
   setIsDownloading(true);
   try {
@@ -63,7 +62,9 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     }
 
     XLSX.utils.book_append_sheet(wb, ws, t('longlat.title'));
-    const fileName = `${t('longlat.title')} - ${formatYYYYMMDDToDDMMYYYY(yyyyMmDd)} ${hubName && `- ${hubName}`}.xlsx`;
+    const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
+    const fileName = `${t('longlat.title')} - ${date} ${locationName}.xlsx`;
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('report.toast.success'));
   } catch (e) {

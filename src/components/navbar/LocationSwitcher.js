@@ -59,12 +59,19 @@ export default function LocationSwitcher() {
   const handleLocationChange = (id, name) => {
     const updateLocationAndReload = () => {
       const { storedUser } = getLocalStorage();
-      let newSession = { activeHubId: id, activeHubName: name };
+      const selectedHub = allowedHubs.find((h) => h._id === id);
+      const acronym = selectedHub?.acronym || '';
 
-      // Pertahankan data user lama, hanya timpa lokasinya
+      let newSession = { activeHubId: id, activeHubName: name, activeHubAcronym: acronym };
+
       if (storedUser) {
         const userObj = JSON.parse(storedUser);
-        newSession = { ...userObj, activeHubId: id, activeHubName: name };
+        newSession = {
+          ...userObj,
+          activeHubId: id,
+          activeHubName: name,
+          activeHubAcronym: acronym,
+        };
       }
 
       setLocalStorage('data', JSON.stringify(newSession));

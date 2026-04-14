@@ -2,10 +2,10 @@
 
 import {
   calculateDurationAsQuotedHHMM,
+  formatDateUniversal,
   formatMinutesToHHMM,
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
-  formatYYYYMMDDToDDMMYYYY,
   isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
@@ -28,7 +28,7 @@ function checkShiftMidpoint(rawStart, rawFinish, shift) {
     if (durationHours >= 14) {
       return true;
     }
-    
+
     const midpointMs = startMs + (finishMs - startMs) / 2;
     const midpointDate = new Date(midpointMs);
 
@@ -110,8 +110,7 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (isEmpty(filteredApiData))
-    return { error: translate('report.toast.no_time') };
+  if (isEmpty(filteredApiData)) return { error: translate('report.toast.no_time') };
 
   const groupedData = {};
   filteredApiData.forEach((item) => {
@@ -417,7 +416,7 @@ export function generateTimeSummaryWorkbook(
 
   XLSX.utils.book_append_sheet(wb, wsRecap, translate('excel.time.sheets.travel_recap'));
 
-  const formattedDate = formatYYYYMMDDToDDMMYYYY(selectedDate);
+  const formattedDate = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.time.filename')} - ${formattedDate} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };
 }

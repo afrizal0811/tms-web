@@ -1,7 +1,7 @@
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export const downloadRoutingVsActual = (data, t) => {
+export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return;
   }
@@ -207,8 +207,12 @@ export const downloadRoutingVsActual = (data, t) => {
   }
 
   XLSX.utils.book_append_sheet(wb, ws, 'Routing vs Actual');
-  const dateStr = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-  XLSX.writeFile(wb, `${t('dashboard.tabs.routing_vs_actual')} - ${dateStr}.xlsx`);
+
+  // Menggunakan tanggal dari Datepicker dan akronim (hubLabel)
+  const dateStr = formatDateUniversal(selectedDate || new Date(), 'DD.MM.YYYY');
+  const safeHubLabel = hubLabel ? ` - ${hubLabel}` : '';
+
+  XLSX.writeFile(wb, `${t('dashboard.tabs.routing_vs_actual')} - ${dateStr}${safeHubLabel}.xlsx`);
 };
 
 export const processLoadCapacityData = (tasks, driverData, year) => {

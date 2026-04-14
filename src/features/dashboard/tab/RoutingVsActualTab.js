@@ -5,6 +5,7 @@ import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import {
   formatSimpleTime,
@@ -17,7 +18,7 @@ import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
 
-export default function RoutingVsActualTab({ loading, tasks, results, drivers }) {
+export default function RoutingVsActualTab({ loading, tasks, results, drivers, selectedDate }) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -267,8 +268,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers })
 
     setIsDownloading(true);
     try {
+      const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+      const hubLabel = storedLocationAcronym || storedLocationName || '';
+
       await new Promise((r) => setTimeout(r, 100));
-      downloadRoutingVsActual(processedData, t);
+      downloadRoutingVsActual(processedData, t, selectedDate, hubLabel);
     } catch (e) {
       toastError(t('dashboard.error_download', { err: e.message }));
     } finally {

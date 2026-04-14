@@ -55,6 +55,7 @@ export function getLocalStorage() {
       storedSession: null,
       storedLocation: null,
       storedLocationName: null,
+      storedLocationAcronym: null,
       storedUser: null,
       storedLanguage: null,
       appVersion: null,
@@ -65,6 +66,7 @@ export function getLocalStorage() {
   let storedSession = null;
   let storedLocation = null;
   let storedLocationName = null;
+  let storedLocationAcronym = null;
   let storedUser = null;
   let appVersion = null;
 
@@ -72,8 +74,10 @@ export function getLocalStorage() {
     try {
       const sessionStr = decryptData(rawSessionStr);
       storedSession = JSON.parse(sessionStr);
+      console.log('storedSession :', storedSession);
       storedLocation = storedSession.activeHubId || null;
       storedLocationName = storedSession.activeHubName || null;
+      storedLocationAcronym = storedSession.activeHubAcronym || null;
       appVersion = storedSession.app_version || null;
 
       if (storedSession._id) {
@@ -90,6 +94,7 @@ export function getLocalStorage() {
     storedSession,
     storedLocation,
     storedLocationName,
+    storedLocationAcronym,
     storedUser,
     storedLanguage,
     appVersion,
