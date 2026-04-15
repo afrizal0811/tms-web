@@ -203,7 +203,7 @@ export const dictionary = {
           actual_seq: 'Aktual Urutan',
           close_time: 'Waktu Tutup',
           flow: 'Alur',
-          is_same: 'Sesuai?',
+          is_match: 'Sesuai?',
           match: 'Sesuai',
           mismatch: 'Beda',
           open_time: 'Waktu Buka',
@@ -221,7 +221,7 @@ export const dictionary = {
             manual: 'Penugasan Manual',
             exp_within_hours:
               'Waktu kedatangan aktual dalam rantang waktu buka dan tutup pelanggan',
-            exp_is_same: 'Kesamaan urutan rencana dan aktual',
+            exp_is_same: 'Kesesuaian urutan rencana dan aktual',
           },
         },
       },
@@ -323,6 +323,12 @@ export const dictionary = {
       },
       delivery: {
         filename: 'Ringkasan Pengiriman',
+        info_longlat: 'Jarak secara garis lurus',
+        info_within_hours: 'Waktu kedatangan aktual dalam rentang waktu buka dan tutup pelanggan',
+        info_wrong_status:
+          'Warna merah menandakan seharusnya memilih "Pending", bukan "Pending GR"',
+        match: 'Sesuai',
+        mismatch: 'Beda',
         sheets: {
           pending_so: 'Hasil Pending SO',
           ro_vs_real: 'Hasil RO vs Aktual',
@@ -341,7 +347,7 @@ export const dictionary = {
           flow: 'Alur',
           info_diff_day: 'Info Beda Hari',
           info_manual: 'Info Penugasan Manual',
-          is_same: 'Sama?',
+          is_match: 'Sesuai?',
           loc_id: 'ID Lokasi',
           new_longlat: 'Longlat Baru',
           no_so: 'Nomor SO',
@@ -358,11 +364,6 @@ export const dictionary = {
           total_outlet: 'Total Toko',
           visit_time: 'Perkiraan Waktu Kunjung',
           is_within_hours: 'Dalam Jam Buka?',
-        },
-        data: {
-          longlat_info: 'Jarak secara garis lurus',
-          match: 'Sesuai',
-          mismatch: 'Beda',
         },
       },
       time: {
@@ -935,7 +936,7 @@ export const dictionary = {
           actual_seq: 'Actual Sequence',
           close_time: 'Close Time',
           flow: 'Flow',
-          is_same: 'Match?',
+          is_match: 'Is Match?',
           match: 'Match',
           mismatch: 'Mismatch',
           open_time: 'Open Time',
@@ -943,7 +944,7 @@ export const dictionary = {
           search_placeholder: 'Search Plate, Driver, or Customer',
           show_map: 'View Map',
           status: 'Status',
-          is_within_hours: 'Within Hours?',
+          is_within_hours: 'Is Within Hours?',
           visit_actual: 'Actual Visit Time',
           visit_plan: 'Planned Visit Time',
           yes: 'Yes',
@@ -1054,6 +1055,12 @@ export const dictionary = {
       },
       delivery: {
         filename: 'Delivery Summary',
+        info_longlat: 'Straight-line distance',
+        info_within_hours: 'Actual arrival time within the customer operating hours',
+        info_wrong_status:
+          'Red color indicates that the status should be "Pending", not "Pending GR"',
+        match: 'Match',
+        mismatch: 'Mismatch',
         sheets: {
           pending_so: 'Pending SO Results',
           ro_vs_real: 'RO vs Real Results',
@@ -1072,7 +1079,7 @@ export const dictionary = {
           flow: 'Flow',
           info_diff_day: 'Different Day Info',
           info_manual: 'Manual Assign Info',
-          is_same: 'Is Same?',
+          is_match: 'Is Match?',
           loc_id: 'Location ID',
           new_longlat: 'New Longlat',
           no_so: 'SO Number',
@@ -1089,11 +1096,6 @@ export const dictionary = {
           total_outlet: 'Total Outlets',
           visit_time: 'Visit Time',
           is_within_hours: 'Within Hours?',
-        },
-        data: {
-          longlat_info: 'Straight-line distance',
-          match: 'Match',
-          mismatch: 'Mismatch',
         },
       },
       time: {

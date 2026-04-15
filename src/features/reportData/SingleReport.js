@@ -12,10 +12,8 @@ import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
-  calculateTargetDates,
   formatDateUniversal,
   formatTimer,
-  formatToApiUtc,
   isDateSunday,
   isEmpty,
 } from '@/lib/utils';
@@ -85,23 +83,24 @@ export default function SingleReport({
       setCurrentRunning('routing');
       if (setIsMapping) setIsMapping(false);
 
-      let targetRoutingStr;
+      let targetRoutingDateObj;
       if (isCustomRouting) {
         if (!routingDate) throw new Error(t('common.invalid_date'));
-        targetRoutingStr = formatDateUniversal(routingDate);
+        targetRoutingDateObj = new Date(routingDate);
       } else {
         if (!selectedDate) throw new Error(t('common.invalid_date'));
-        const d = new Date(selectedDate);
-        d.setDate(d.getDate() - 1);
-        if (d.getDay() === 0) d.setDate(d.getDate() - 1);
-        targetRoutingStr = formatDateUniversal(d);
+        targetRoutingDateObj = new Date(selectedDate);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0)
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
       }
 
+      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
       const apiDateFrom = `${targetRoutingStr} 00:00:00`;
       const apiDateTo = `${targetRoutingStr} 23:59:59`;
 
       const { storedLocationAcronym } = getLocalStorage();
-      // Fetch Results dan Hubs secara bersamaan
+
       const [resultsData] = await Promise.all([
         getResultsSummary({
           dateFrom: apiDateFrom,
@@ -122,7 +121,6 @@ export default function SingleReport({
         return acc;
       }, {});
 
-      // Mencari akronim
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
       const { wb, excelFileName } = await generateRoutingWorkbook(
@@ -130,7 +128,7 @@ export default function SingleReport({
         filteredResults,
         mappingsObj,
         targetRoutingStr,
-        hubLabel, // Menggunakan akronim
+        hubLabel,
         t
       );
 
@@ -153,18 +151,26 @@ export default function SingleReport({
 
       if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
-      const { dateFrom: apiDate } = calculateTargetDates(selectedDateString);
+      const timeFrom = `${selectedDateString} 00:00:00`;
+      const timeTo = `${selectedDateString} 23:59:59`;
 
-      const startObj = new Date(selectedDate);
-      startObj.setHours(0, 0, 0, 0);
+      let targetRoutingDateObj;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(routingDate);
+      } else {
+        targetRoutingDateObj = new Date(selectedDate);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0)
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+      }
 
-      const endObj = new Date(selectedDate);
-      endObj.setHours(23, 59, 59, 999);
+      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+      const routingDateFrom = `${targetRoutingStr} 00:00:00`;
+      const routingDateTo = `${targetRoutingStr} 23:59:59`;
 
-      const timeFrom = formatToApiUtc(startObj);
-      const timeTo = formatToApiUtc(endObj);
       const { storedLocationAcronym } = getLocalStorage();
-      // Fetch Tasks, Results, dan Hubs secara bersamaan
+
       const [allTasks, resultsData] = await Promise.all([
         getTasks({
           hubId: selectedLocation,
@@ -175,8 +181,8 @@ export default function SingleReport({
           limit: 5000,
         }),
         getResultsSummary({
-          dateFrom: timeFrom,
-          dateTo: timeTo,
+          dateFrom: routingDateFrom,
+          dateTo: routingDateTo,
           limit: 1000,
           hubId: selectedLocation,
         }),
@@ -186,7 +192,6 @@ export default function SingleReport({
         throw new Error(t('report.toast.no_delivery'));
       }
 
-      // Mencari akronim
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
       const { wb, excelFileName } = generateDeliveryWorkbook(
@@ -194,9 +199,9 @@ export default function SingleReport({
         allTasks,
         resultsData || [],
         selectedDateString,
-        apiDate,
+        targetRoutingStr,
         selectedLocation,
-        hubLabel, // Menggunakan akronim
+        hubLabel,
         t
       );
 
@@ -220,7 +225,7 @@ export default function SingleReport({
 
       const { timeFrom, timeTo } = calculateStartFinishDates(selectedDateString);
       const { storedLocationAcronym } = getLocalStorage();
-      // Fetch Histories dan Hubs secara bersamaan
+
       const [response] = await Promise.all([
         getLocationHistories({
           timeFrom,
@@ -238,14 +243,13 @@ export default function SingleReport({
         throw new Error(t('report.toast.no_time'));
       }
 
-      // Mencari akronim
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
       const { wb, excelFileName, error } = generateTimeSummaryWorkbook(
         driverData,
         allApiData,
         selectedDateString,
-        hubLabel, // Menggunakan akronim
+        hubLabel,
         t
       );
 
@@ -294,6 +298,7 @@ export default function SingleReport({
       </span>
     </Tooltip>
   );
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{t('report.daily_title')}</h1>

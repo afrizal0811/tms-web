@@ -139,7 +139,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               </th>
               <Tooltip tooltipContent={t('dashboard.tab.routingreal.tooltip.exp_is_same')}>
                 <th className="px-4 py-3 border-b text-center cursor-help">
-                  {t('dashboard.tab.routingreal.is_same')}
+                  {t('dashboard.tab.routingreal.is_match')}
                 </th>
               </Tooltip>
               <Tooltip

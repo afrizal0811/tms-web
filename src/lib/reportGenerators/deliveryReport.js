@@ -549,7 +549,7 @@ export function generateDeliveryWorkbook(
           cell.c = [
             {
               a: 'Info',
-              t: 'Warna merah menandakan harusnya pilih "Pending" bukan "Pending GR"',
+              t: translate('excel.delivery.info_wrong_status'),
               h: true,
             },
           ];
@@ -615,7 +615,7 @@ export function generateDeliveryWorkbook(
         wsUpdateLonglat[cellRef].s = headerStyle;
         if (C === 4) {
           wsUpdateLonglat[cellRef].c = [
-            { a: 'Info', t: translate('excel.delivery.data.longlat_info'), h: true },
+            { a: 'Info', t: translate('excel.delivery.info_longlat'), h: true },
           ];
         }
       } else if (centerAlignedLonglat.includes(C)) {
@@ -649,8 +649,8 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.headers.act_visit_time'),
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
-    translate('excel.delivery.headers.is_same'),
-    translate('dashboard.tab.routingreal.is_within_hours'), // <--- Tambahan Header Baru
+    translate('excel.delivery.headers.is_match'),
+    translate('dashboard.tab.routingreal.is_within_hours'), 
   ];
   let finalSheetData3 = [headers3];
   const tasksByNameMap = new Map();
@@ -710,8 +710,8 @@ export function generateDeliveryWorkbook(
       const isSame = isRealEmpty
         ? '-'
         : ro === real
-          ? translate('excel.delivery.data.match')
-          : translate('excel.delivery.data.mismatch');
+          ? translate('excel.delivery.match')
+          : translate('excel.delivery.mismatch');
 
       // Translasi untuk Status Jam
       let withinHoursText = '-';
@@ -735,7 +735,7 @@ export function generateDeliveryWorkbook(
         task.etd || '-',
         task.actualDeparture || '-',
         task.visitTime || '-',
-        task.actualVisitTime || '-',
+        task.actualVisitTime,
         ro,
         real,
         isSame,
@@ -804,6 +804,15 @@ export function generateDeliveryWorkbook(
       const cell = wsRoVsReal[cellRef];
       if (R === 0) {
         cell.s = headerStyle;
+        if (C === 16) {
+          cell.c = [
+            {
+              a: 'Info', // Author/Judul tooltip
+              t: translate('excel.delivery.info_within_hours'), // Teks pesan yang ingin ditampilkan
+              h: true, // hidden = true (komentar disembunyikan sampai cell di-hover)
+            },
+          ];
+        }
       } else if (isHubRow) {
         cell.s = redTextStyle;
         if (C === 3) {
@@ -825,10 +834,14 @@ export function generateDeliveryWorkbook(
           if (!cell.s) cell.s = {};
           cell.s.fill = redFillStyleRoVsReal.fill;
         }
-        
+
+        if (C === 12 && !cell.v) {
+          if (cell.v === '0' || cell.v === 0) cell.s = textRedStyle;
+        }
+
         if (C === 15 && cell.v) {
-          if (cell.v === translate('excel.delivery.data.match')) cell.s = textGreenStyle;
-          else if (cell.v === translate('excel.delivery.data.mismatch')) cell.s = textRedStyle;
+          if (cell.v === translate('excel.delivery.match')) cell.s = textGreenStyle;
+          else if (cell.v === translate('excel.delivery.mismatch')) cell.s = textRedStyle;
         }
         if (C === 16 && cell.v) {
           if (cell.v === translate('dashboard.tab.routingreal.yes')) cell.s = textGreenStyle;
