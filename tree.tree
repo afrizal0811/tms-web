@@ -20,7 +20,6 @@
 │   │   │   └── route.js
 │   │   ├── get-vehicles
 │   │   │   └── route.js
-│   │   ├── monthly-summary
 │   │   ├── truck-usage
 │   │   │   └── route.js
 │   │   ├── vehicle-mappings
@@ -69,11 +68,9 @@
 │   │   ├── TokenExpirationModal.js
 │   │   └── VehicleTagMappingModal.js
 │   ├── navbar
-│   │   ├── HelpDropdown.js
 │   │   ├── LanguageSwitcher.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
-│   │   ├── SyncDataButton.js
 │   │   └── UserDisplay.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
@@ -150,14 +147,16 @@
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
 │   ├── reportData
-│   │   ├── BulkReportDownloader.js
+│   │   ├── BulkReport.js
 │   │   ├── help.js
-│   │   └── SingleReportDownloader.js
+│   │   └── SingleReport.js
 │   ├── settings
 │   │   ├── components
+│   │   │   ├── BranchAcronymManager.js
 │   │   │   └── VehicleMappingManager.js
 │   │   ├── SettingsPage.js
 │   │   └── tabs
+│   │       ├── GeneralTab.js
 │   │       ├── MasterDataTab.js
 │   │       └── SyncDataTab.js
 │   ├── updateLonglat

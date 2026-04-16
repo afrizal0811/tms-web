@@ -479,6 +479,9 @@ export const dictionary = {
       subtitle: 'Monitoring estimasi',
       subtitle_highlight: 'rute kunjungan & jadwal pengiriman',
       title: 'Estimasi Pengiriman',
+      view: 'Tampilan',
+      view_detail: 'Detail',
+      view_summary: 'Ringkas',
       visit: 'Kunjungan',
       toast: {
         download_failed: 'Gagal mengunduh file laporan: {err}',
@@ -1211,6 +1214,9 @@ export const dictionary = {
       subtitle: 'Monitoring estimation of',
       subtitle_highlight: 'visit routes & delivery schedules',
       title: 'Deliveries Estimate',
+      view: 'View',
+      view_detail: 'Detail',
+      view_summary: 'Summary',
       visit: 'Visit',
       toast: {
         download_failed: 'Failed to download report file: {err}',

@@ -8,7 +8,7 @@ import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
   calculateStartFinishDates,
   convertWibToUtc,
@@ -31,10 +31,8 @@ export default function EstimasiDelivery() {
   const [allRoutes, setAllRoutes] = useState([]);
   const [driverData, setDriverData] = useState({});
   const [driverMap, setDriverMap] = useState(new Map());
-
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
-
   const [isClient, setIsClient] = useState(false);
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -42,6 +40,7 @@ export default function EstimasiDelivery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [timeMap, setTimeMap] = useState(new Map());
+  const [isDetailView, setIsDetailView] = useState(false);
 
   const downloadDropdownRef = useRef(null);
   const isAnyDownloading = isDownloadingExcel || isDownloadingPdf;
@@ -55,6 +54,11 @@ export default function EstimasiDelivery() {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     setSelectedDate(`${y}-${m}-${d}`);
+
+    const { storedSession } = getLocalStorage();
+    if (storedSession && typeof storedSession.isDetailViewEstimasi === 'boolean') {
+      setIsDetailView(storedSession.isDetailViewEstimasi);
+    }
   }, []);
 
   const handleDateChange = (date) => {
@@ -75,6 +79,15 @@ export default function EstimasiDelivery() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleToggleView = (isDetail) => {
+    setIsDetailView(isDetail);
+    const { storedSession } = getLocalStorage();
+    if (storedSession) {
+      const updatedSession = { ...storedSession, isDetailViewEstimasi: isDetail };
+      setLocalStorage('data', updatedSession);
+    }
+  };
 
   const handleDeliveryDownload = async () => {
     if (isEmpty(filteredVehicleRoutes)) {
@@ -163,6 +176,7 @@ export default function EstimasiDelivery() {
       t,
       driverData,
       fileNamePrefix: filePrefix,
+      isDetailView,
     });
   };
 
@@ -249,10 +263,23 @@ export default function EstimasiDelivery() {
         ]);
 
         const rawTasks = tasksResponse;
-
         const filteredTasks = (Array.isArray(rawTasks) ? rawTasks : []).filter((task) => {
           const assignee = task?.assignee;
           return Array.isArray(assignee) && assignee.length > 0;
+        });
+
+        const soToWarehouseMap = new Map();
+        filteredTasks.forEach((t) => {
+          if (t.flow === 'Pickup' && t.orderId) {
+            const wh = t['warehouseName-1'] || t.warehouseName || '';
+            if (wh) {
+              const sos = t.orderId
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+              sos.forEach((so) => soToWarehouseMap.set(so, wh));
+            }
+          }
         });
 
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
@@ -305,25 +332,37 @@ export default function EstimasiDelivery() {
             return orderA - orderB;
           });
 
-          const taskTrips = tasks.map((task) => ({
-            visitId: task._id || task.taskId,
-            routePlannedOrder: task.routePlannedOrder,
-            visitName: task.customerOrder || task.customerName || '',
+          const taskTrips = tasks.map((task) => {
+            const sos = (task.orderId || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const soWarehouseMapping = sos.map((so) => ({
+              so,
+              wh: soToWarehouseMap.get(so) || '',
+            }));
 
-            orderId: task.orderId,
-            flow: task.flow,
-            warehouseName: task.flow === 'Pickup' ? task['warehouseName-1'] : '',
-            locationName: task.locationName || null,
-
-            openTime: task.openTime,
-            closeTime: task.closeTime,
-            eta: task.eta,
-            etd: task.etd,
-            weight: task.weightKg,
-            volume: task.volumeCbm,
-            isHub: false,
-            isManual: task.routePlannedOrder === null || task.routePlannedOrder === undefined,
-          }));
+            return {
+              visitId: task._id || task.taskId,
+              routePlannedOrder: task.routePlannedOrder,
+              visitName: task.customerOrder || task.customerName || '',
+              orderId: task.orderId,
+              flow: task.flow,
+              warehouseName:
+                task.flow === 'Pickup' ? task['warehouseName-1'] || task.warehouseName : '',
+              locationName: task.locationName || null,
+              openTime: task.openTime,
+              closeTime: task.closeTime,
+              eta: task.eta,
+              etd: task.etd,
+              weight: task.weightKg,
+              volume: task.volumeCbm,
+              isHub: false,
+              isManual: task.routePlannedOrder === null || task.routePlannedOrder === undefined,
+              isReDelivery: task.flow?.toLowerCase().includes('re delivery'),
+              soWarehouseMapping,
+            };
+          });
 
           const hubData = resultHubsByPlat.get(plat);
           const finalTrips = [];
@@ -399,45 +438,48 @@ export default function EstimasiDelivery() {
       });
     });
 
-    const pairToLetter = {};
-    let currentLetterCode = 65;
-
     return allRoutes.map((route) => {
       const tripsWithSyncStatus = route.trips.map((trip) => {
-        if (trip.isHub || !trip.orderId) return trip;
-
-        const pickupVehicle = soTracker[trip.orderId]?.Pickup;
-        const deliveryVehicle = soTracker[trip.orderId]?.Delivery;
-        const isUnsync = pickupVehicle && deliveryVehicle && pickupVehicle !== deliveryVehicle;
-
-        let partnerVehicle = null;
-        let groupLetter = null;
-
-        if (isUnsync) {
-          partnerVehicle = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
-
-          const pairKey = [route.vehicleName, partnerVehicle].sort().join('|');
-
-          if (!pairToLetter[pairKey]) {
-            pairToLetter[pairKey] = String.fromCharCode(currentLetterCode);
-            currentLetterCode++;
-          }
-          groupLetter = pairToLetter[pairKey];
+        if (trip.isHub || !trip.orderId) {
+          return { ...trip, isUnsync: false, partnerVehicle: null, syncDetails: {} };
         }
 
-        return { ...trip, isUnsync, partnerVehicle, groupLetter };
-      });
+        const individualSOs = trip.orderId
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
 
-      const uniqueLetters = [
-        ...new Set(tripsWithSyncStatus.map((t) => t.groupLetter).filter(Boolean)),
-      ];
+        let isUnsync = false;
+        let partnerVehicles = new Set();
+        const syncDetails = {};
+
+        individualSOs.forEach((so) => {
+          const pickupVehicle = soTracker[so]?.Pickup;
+          const deliveryVehicle = soTracker[so]?.Delivery;
+          const isThisSOUnsync =
+            pickupVehicle && deliveryVehicle && pickupVehicle !== deliveryVehicle;
+
+          if (isThisSOUnsync) {
+            isUnsync = true;
+            const partner = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
+            if (partner) {
+              partnerVehicles.add(partner);
+              syncDetails[so] = partner;
+            }
+          }
+        });
+
+        const partnerVehicle =
+          partnerVehicles.size > 0 ? Array.from(partnerVehicles).join(', ') : null;
+
+        return { ...trip, isUnsync, partnerVehicle, syncDetails };
+      });
 
       return {
         ...route,
         trips: tripsWithSyncStatus,
         hasManual: tripsWithSyncStatus.some((t) => t.isManual),
         hasUnsync: tripsWithSyncStatus.some((t) => t.isUnsync),
-        groupLetters: uniqueLetters,
       };
     });
   }, [allRoutes]);
@@ -561,7 +603,25 @@ export default function EstimasiDelivery() {
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
       maxDate={tomorrow}
+      className="w-full xl:w-40!"
     />
+  );
+
+  const viewToggle = (
+    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px]">
+      <button
+        onClick={() => handleToggleView(false)}
+        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+      >
+        {t('estimation.view_summary')}
+      </button>
+      <button
+        onClick={() => handleToggleView(true)}
+        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+      >
+        {t('estimation.view_detail')}
+      </button>
+    </div>
   );
 
   const downloadMenu = (
@@ -603,6 +663,7 @@ export default function EstimasiDelivery() {
     { label: 'Filter', component: searchBar, hideLabel: false },
     { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
+    { label: t('estimation.view'), component: viewToggle, hideLabel: false },
     { label: 'Export', component: downloadMenu, hideLabel: true },
   ];
 
@@ -628,14 +689,7 @@ export default function EstimasiDelivery() {
         id: route.vehicleId,
         label: (
           <Tooltip tooltipContent={noDriverName ? t('estimation.no_driver') : tooltipName}>
-            <span className={tabClass}>
-              {route.vehicleName}
-              {route.hasUnsync && route.groupLetters.length > 0 && (
-                <div className="absolute -top-2 -right-2 bg-blue-400 text-black text-[10px] font-bold px-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center shadow-sm border border-white">
-                  {route.groupLetters.join(', ')}
-                </div>
-              )}
-            </span>
+            <span className={tabClass}>{route.vehicleName}</span>
           </Tooltip>
         ),
       };
@@ -666,7 +720,13 @@ export default function EstimasiDelivery() {
         <div className="bg-white rounded-xl h-full flex flex-col border-none">
           <div className="overflow-y-auto grow h-full m-0 border border-gray-300 rounded-b-xl">
             {!isLoading && activeRoute && (
-              <TableData activeRoute={activeRoute} searchQuery={searchQuery} t={t} />
+              <TableData
+                activeRoute={activeRoute}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isDetailView={isDetailView}
+                t={t}
+              />
             )}
           </div>
         </div>

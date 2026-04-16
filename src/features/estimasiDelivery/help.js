@@ -113,6 +113,7 @@ export const handleConfirmDownload = async ({
   t,
   driverData,
   fileNamePrefix,
+  isDetailView,
 }) => {
   setIsDownloading(true);
   try {
@@ -125,8 +126,8 @@ export const handleConfirmDownload = async ({
 
       const hasManualInRoute = route.trips?.some((t) => t.isManual);
       const wsData = [
-        ['Kendaraan', route.vehicleName], // Baris 1
-        ['Driver', driverName], // Baris 2
+        [t('common.vehicle'), route.vehicleName], // Baris 1
+        [t('common.driver'), driverName], // Baris 2
         [], // Baris 3 (Spacer)
         [
           'No.',
@@ -140,9 +141,9 @@ export const handleConfirmDownload = async ({
       ];
       const stylingMeta = [];
       stylingMeta.push(
-        { row: 0, col: 0, style: { font: { bold: true } } }, // Label 'Kendaraan'
-        { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } }, // Value Kendaraan
-        { row: 1, col: 0, style: { font: { bold: true } } } // Label 'Driver'
+        { row: 0, col: 0, style: { font: { bold: true } } },
+        { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } },
+        { row: 1, col: 0, style: { font: { bold: true } } }
       );
 
       const headerRowIndex = 3;
@@ -170,77 +171,122 @@ export const handleConfirmDownload = async ({
         const isFirstHub = index === 0 && isHub;
         const isLastHub = index === route.trips.length - 1 && isHub;
 
-        let outletName = '';
+        let baseOutletName = '';
         if (isHub) {
-          outletName = 'HUB';
+          baseOutletName = 'HUB';
         } else if (trip.flow === 'Pickup' && trip.warehouseName) {
-          outletName = trip.warehouseName;
+          baseOutletName = trip.warehouseName;
         } else {
-          const parsed = parseCustomerString(trip.visitName);
-          outletName = parsed?.name || trip.visitName;
+          baseOutletName = parseCustomerString(trip.visitName)?.name || trip.visitName;
         }
 
-        let soNumber = isHub ? '' : parseSONumber(trip.visitName);
+        if (trip.isReDelivery && !isHub) {
+          baseOutletName = `[REDELIVERY] ${baseOutletName}`;
+        }
 
-        if (!isHub && isEmpty(soNumber)) {
-          const rawOrderId = trip.orderId;
-          const standardRegex = /^(SO|SC|SE)\d{4}-\d+$/;
-          if (rawOrderId && standardRegex.test(rawOrderId)) {
-            soNumber = rawOrderId;
-          } else {
-            soNumber = '-';
+        const mapping = trip.soWarehouseMapping || [];
+
+        // pushRow diupdate agar mengambil nilai override parameter (jika Detail)
+        const pushRow = (
+          displayNo,
+          displaySo,
+          whInfo = null,
+          isSplit = false,
+          isUnsyncOverride = null,
+          partnerOverride = null
+        ) => {
+          const openVal = isHub ? '' : trip.openTime || '-';
+          const closeVal = isHub ? '' : trip.closeTime || '-';
+          let etaVal = isFirstHub ? '' : trip.eta ? formatSimpleTime(trip.eta) : '-';
+          const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
+
+          // Memprioritaskan parameter override (untuk split line SO) dibandingkan info global trip
+          const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
+          const rowPartner = partnerOverride !== null ? partnerOverride : trip.partnerVehicle;
+
+          let outletWithWh =
+            isDetailView && whInfo ? `${baseOutletName}\n↳ Pickup: ${whInfo}` : baseOutletName;
+
+          if (isRowUnsync && rowPartner) {
+            outletWithWh += `\n[Partner: ${rowPartner}]`;
           }
-        } else if (!isHub && isEmpty(soNumber)) {
-          soNumber = '-';
-        }
 
-        const noVal = trip.isManual ? '-' : trip.routePlannedOrder;
-        const openVal = isHub ? '' : trip.openTime || '-';
-        const closeVal = isHub ? '' : trip.closeTime || '-';
+          wsData.push([displayNo, outletWithWh, displaySo, openVal, closeVal, etaVal, etdVal]);
 
-        let etaVal = isFirstHub ? '' : trip.eta ? formatSimpleTime(trip.eta) : '-';
-        const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
+          const cellStyle = {
+            border: {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' },
+            },
+            alignment: {
+              vertical: 'center',
+              wrapText: true,
+            },
+          };
 
-        if (isLastHub && hasManualInRoute && trip.eta) {
-          etaVal = `${formatSimpleTime(trip.eta)} (${t('estimation.hub_eta_short')})`;
-        }
+          if (trip.isManual) {
+            cellStyle.fill = { fgColor: { rgb: 'FEE2E2' } };
+          }
 
-        wsData.push([noVal, outletName, soNumber, openVal, closeVal, etaVal, etdVal]);
-        const cellStyle = {
-          border: {
-            top: { style: 'thin' },
-            bottom: { style: 'thin' },
-            left: { style: 'thin' },
-            right: { style: 'thin' },
-          },
-          alignment: {
-            vertical: 'center',
-            wrapText: true,
-          },
+          if (isHub) {
+            cellStyle.font = { color: { rgb: 'DC2626' }, bold: true };
+          }
+
+          for (let c = 0; c < 7; c++) {
+            let colStyle = { ...cellStyle };
+            let comment = null;
+
+            if (c === 0) {
+              colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
+            }
+
+            if (c === 0 && isSplit && !isHub) {
+              colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
+            }
+
+            if (c === 5 && isLastHub && hasManualInRoute && trip.eta) {
+              comment = [{ a: 'Info', t: t('estimation.hub_eta_short'), h: true }];
+            }
+
+            stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
+          }
+          currentRowIndex++;
         };
 
-        if (trip.isManual) {
-          cellStyle.fill = { fgColor: { rgb: 'FEE2E2' } };
+        // --- EXCEL CASE: DETAIL (Pecah Baris) ---
+        if (!isHub && isDetailView && mapping.length > 0) {
+          mapping.forEach((item, idx) => {
+            const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
+            const displayNo = trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`;
+            const whInfo = trip.flow !== 'Pickup' ? item.wh : null;
+
+            // Dapatkan informasi unsync khusus untuk SO ini
+            const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
+            const soIsUnsync = !!soPartner;
+
+            pushRow(displayNo, item.so, whInfo, mapping.length > 1, soIsUnsync, soPartner);
+          });
+          return;
         }
 
-        if (trip.isUnsync) {
-          const blue400 = { style: 'medium', color: { rgb: '60A5FA' } };
-          cellStyle.border = {
-            top: blue400,
-            bottom: blue400,
-            left: blue400,
-            right: blue400,
-          };
+        // --- EXCEL CASE: SUMMARY (Gabung SO + Warehouse) ---
+        let displaySo = '-';
+        if (!isHub) {
+          if (mapping.length > 0) {
+            displaySo = mapping
+              .map((item) =>
+                item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
+              )
+              .join(', ');
+          } else {
+            displaySo = parseSONumber(trip.visitName) || trip.orderId || '-';
+          }
         }
 
-        if (isHub) {
-          cellStyle.font = { color: { rgb: 'DC2626' }, bold: true };
-        }
-
-        for (let c = 0; c < 7; c++) {
-          stylingMeta.push({ row: currentRowIndex, col: c, style: cellStyle });
-        }
-        currentRowIndex++;
+        const displayNo = isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder;
+        pushRow(displayNo, displaySo, null, false);
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -248,17 +294,23 @@ export const handleConfirmDownload = async ({
         const cellRef = XLSX.utils.encode_cell({ r: meta.row, c: meta.col });
         if (!ws[cellRef]) ws[cellRef] = { v: '' };
         ws[cellRef].s = { ...(ws[cellRef].s || {}), ...meta.style };
+        if (meta.comment) ws[cellRef].c = meta.comment;
       });
 
-      ws['!cols'] = [
-        { wch: 5 }, // No
-        { wch: 40 }, // Visit
-        { wch: 20 }, // SO
-        { wch: 10 }, // Open
-        { wch: 10 }, // Close
-        { wch: 30 }, // ETA
-        { wch: 15 }, // ETD
-      ];
+      const colWidths = [0, 1, 2, 3, 4, 5, 6].map((colIndex) => {
+        let maxLength = 0;
+        for (let r = 3; r < wsData.length; r++) {
+          const cellValue = wsData[r][colIndex];
+          if (cellValue !== null && cellValue !== undefined) {
+            const lines = cellValue.toString().split('\n');
+            const maxLineLength = Math.max(...lines.map((l) => l.length));
+            maxLength = Math.max(maxLength, maxLineLength);
+          }
+        }
+        return { wch: Math.min(Math.max(maxLength + 2, 8), 60) };
+      });
+
+      ws['!cols'] = colWidths;
 
       let finalSheetName = cleanName;
       let counter = 1;
@@ -277,7 +329,6 @@ export const handleConfirmDownload = async ({
     }
 
     XLSX.writeFile(wb, fileName);
-
     toastSuccess(t('estimation.toast.success_excel'));
   } catch (e) {
     toastError(t('estimation.toast.download_failed', { err: e.message }));
@@ -286,6 +337,7 @@ export const handleConfirmDownload = async ({
   }
 };
 
+// ... (Sisa variabel styles untuk PDF tidak ada perubahan sama sekali)
 export const styles = StyleSheet.create({
   page: {
     padding: 20,
@@ -483,40 +535,35 @@ export const styles = StyleSheet.create({
     width: '30%',
   },
 
-  // ADD: Style baru untuk container Keterangan
   legendContainer: {
-    flex: 1, // Mengambil sisa ruang di sebelah kanan
-    flexDirection: 'row', // Untuk membagi menjadi 2 kolom (kiri-kanan)
+    flex: 1,
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    borderLeftWidth: 1, // Opsional: Garis pemisah antara info Asli dan Keterangan
+    borderLeftWidth: 1,
     borderColor: '#000',
     paddingLeft: 8,
   },
 
-  // ADD: Style untuk kolom di dalam keterangan
   legendColumn: {
-    width: '48%', // Bagi 2 kolom (sedikit kurang dari 50% untuk gap)
+    width: '48%',
     flexDirection: 'column',
     gap: 1,
   },
 
-  // ADD: Style untuk baris item keterangan
   legendItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 1,
   },
 
-  // ADD: Style untuk bullet point
   bullet: {
     width: 8,
     fontSize: 7,
-    marginTop: -1, // Sedikit penyesuaian posisi vertikal
+    marginTop: -1,
   },
 
-  // ADD: Style untuk teks konten keterangan
   legendTextContent: {
-    fontSize: 6, // Ukuran font sedikit lebih kecil agar muat
+    fontSize: 6,
     fontFamily: 'Helvetica',
     flex: 1,
   },
