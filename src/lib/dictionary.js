@@ -3,6 +3,7 @@
 export const dictionary = {
   id: {
     common: {
+      all: 'Semua',
       accuracy: 'Akurasi',
       apply: 'Terapkan',
       click_for_detail: 'Klik untuk detail',
@@ -737,6 +738,7 @@ export const dictionary = {
   },
   en: {
     common: {
+      all: 'All',
       accuracy: 'Accuracy',
       apply: 'Apply',
       click_for_detail: 'Click for details',

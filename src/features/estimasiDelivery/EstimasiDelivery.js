@@ -582,6 +582,7 @@ export default function EstimasiDelivery() {
       onChange={(val) => setSearchQuery(val)}
       placeholder={t('estimation.search_placeholder')}
       value={searchQuery}
+      width="w-full xs:w-40!"
     />
   );
 
@@ -590,6 +591,7 @@ export default function EstimasiDelivery() {
       selectedTypes={storageFilter}
       onApply={setStorageFilter}
       disabled={isLoading || isAnyDownloading}
+      className="w-full xl:w-30!"
     />
   );
 
@@ -608,16 +610,16 @@ export default function EstimasiDelivery() {
   );
 
   const viewToggle = (
-    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px]">
+    <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px]">
       <button
         onClick={() => handleToggleView(false)}
-        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
       >
         {t('estimation.view_summary')}
       </button>
       <button
         onClick={() => handleToggleView(true)}
-        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
       >
         {t('estimation.view_detail')}
       </button>

@@ -315,7 +315,7 @@ export default function UpdateLonglatPage() {
 
   const headerItems = [
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
-    { label: 'Action', component: downloadBtn, hideLabel: true },
+    { label: 'Export', component: downloadBtn, hideLabel: true },
   ];
 
   const subtitle = (
