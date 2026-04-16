@@ -82,14 +82,18 @@ export function generateDeliveryWorkbook(
   for (const task of allTasks) {
     const emailString =
       Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
+    const flow = task.flow;
     const driverEmail = normalizeEmail(emailString);
     const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
     const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-    const statusLabel = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : null;
+    let statusLabel =
+      task.statusDelivery && task.statusDelivery.length > 0
+        ? task.statusDelivery[0].toUpperCase()
+        : null;
+    statusLabel = flow === 'Pickup' && task.status ? 'SUKSES' : statusLabel;
     const customerData = parseCustomerString(task.customerOrder || task.customerName);
     const { name: customerName, id: customerId, location: customerLocation } = customerData;
     const pickupCustomerName = `${task.title} (${customerName})`;
-    const flow = task.flow;
     const orderId = task.orderId || '';
 
     if (driverName !== 'N/A') {
@@ -123,7 +127,7 @@ export function generateDeliveryWorkbook(
     }
 
     let actualArrival, actualDeparture;
-    if (flow && flow.toUpperCase().includes('GR')) {
+    if (flow && (flow.toUpperCase().includes('GR') || flow.toUpperCase().includes('PICKUP'))) {
       actualArrival = task.page1DoneTime;
       actualDeparture = task.page1DoneTime;
     } else {
@@ -650,7 +654,7 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.headers.ro_seq'),
     translate('excel.delivery.headers.real_seq'),
     translate('excel.delivery.headers.is_match'),
-    translate('dashboard.tab.routingreal.is_within_hours'), 
+    translate('dashboard.tab.routingreal.is_within_hours'),
   ];
   let finalSheetData3 = [headers3];
   const tasksByNameMap = new Map();
@@ -713,7 +717,6 @@ export function generateDeliveryWorkbook(
           ? translate('excel.delivery.match')
           : translate('excel.delivery.mismatch');
 
-      // Translasi untuk Status Jam
       let withinHoursText = '-';
       if (task.isWithinHoursStatus === 'yes')
         withinHoursText = translate('dashboard.tab.routingreal.yes');
@@ -721,13 +724,34 @@ export function generateDeliveryWorkbook(
         withinHoursText = translate('dashboard.tab.routingreal.early');
       else if (task.isWithinHoursStatus === 'no')
         withinHoursText = translate('dashboard.tab.routingreal.no');
+      let newStatusLabel = '-';
+
+      switch (task.statusLabel) {
+        case 'SUKSES':
+          newStatusLabel = translate('common.status.success');
+          break;
+        case 'TERIMA SEBAGIAN':
+          newStatusLabel = translate('common.status.partial');
+          break;
+        case 'PENDING':
+          newStatusLabel = translate('common.status.pending');
+          break;
+        case 'BATAL':
+          newStatusLabel = translate('common.status.cancel');
+          break;
+        case 'PENDING GR':
+          newStatusLabel = translate('common.status.pending_gr');
+          break;
+        default:
+          newStatusLabel = task.statusLabel;
+      }
 
       finalSheetData3.push([
         task.flow || '-',
         task.plat || '-',
         task.driver || '-',
         customerData || '-',
-        task.statusLabel || '-',
+        isEmpty(newStatusLabel) ? '-' : newStatusLabel.toUpperCase(),
         task.openTime || '-',
         task.closeTime || '-',
         task.eta || '-',
@@ -739,7 +763,7 @@ export function generateDeliveryWorkbook(
         ro,
         real,
         isSame,
-        withinHoursText, // <--- Tambahan Data Baru
+        withinHoursText,
       ]);
     }
     finalSheetData3.push([
@@ -793,7 +817,7 @@ export function generateDeliveryWorkbook(
         const etaValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etaColIndex })]?.v;
         const etdValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etdColIndex })]?.v;
         const roValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: roColIndex })]?.v;
-        if (!etaValue || !etdValue || !roValue) {
+        if (isEmpty(etaValue) || isEmpty(etdValue) || isEmpty(roValue)) {
           isMissingRequiredData = true;
         }
       }
@@ -807,9 +831,9 @@ export function generateDeliveryWorkbook(
         if (C === 16) {
           cell.c = [
             {
-              a: 'Info', // Author/Judul tooltip
-              t: translate('excel.delivery.info_within_hours'), // Teks pesan yang ingin ditampilkan
-              h: true, // hidden = true (komentar disembunyikan sampai cell di-hover)
+              a: 'Info', 
+              t: translate('excel.delivery.info_within_hours'), 
+              h: true, 
             },
           ];
         }
@@ -835,18 +859,34 @@ export function generateDeliveryWorkbook(
           cell.s.fill = redFillStyleRoVsReal.fill;
         }
 
-        if (C === 12 && !cell.v) {
-          if (cell.v === '0' || cell.v === 0) cell.s = textRedStyle;
+        if (C === 12 && (cell.v === '0' || cell.v === 0)) {
+          if (!cell.s) cell.s = {};
+          cell.s.font = { ...cell.s.font, bold: true };
+          if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
         }
 
         if (C === 15 && cell.v) {
-          if (cell.v === translate('excel.delivery.match')) cell.s = textGreenStyle;
-          else if (cell.v === translate('excel.delivery.mismatch')) cell.s = textRedStyle;
+          if (!cell.s) cell.s = {};
+          cell.s.font = { ...cell.s.font, bold: true };
+
+          if (cell.v === translate('excel.delivery.match')) {
+            cell.s.font.color = { rgb: '16A34A' }; // Hijau
+          } else if (cell.v === translate('excel.delivery.mismatch')) {
+            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
+          }
         }
+
         if (C === 16 && cell.v) {
-          if (cell.v === translate('dashboard.tab.routingreal.yes')) cell.s = textGreenStyle;
-          else if (cell.v === translate('dashboard.tab.routingreal.early')) cell.s = textAmberStyle;
-          else if (cell.v === translate('dashboard.tab.routingreal.no')) cell.s = textRedStyle;
+          if (!cell.s) cell.s = {};
+          cell.s.font = { ...cell.s.font, bold: true };
+
+          if (cell.v === translate('dashboard.tab.routingreal.yes')) {
+            cell.s.font.color = { rgb: '16A34A' }; // Hijau
+          } else if (cell.v === translate('dashboard.tab.routingreal.early')) {
+            cell.s.font.color = { rgb: 'F59E0B' }; // Kuning/Amber
+          } else if (cell.v === translate('dashboard.tab.routingreal.no')) {
+            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
+          }
         }
         // ---------------------------------------------------------
       }

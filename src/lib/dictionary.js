@@ -35,6 +35,15 @@ export const dictionary = {
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
       warning: '⚠️ Peringatan!',
+      status: {
+        success: 'Sukses',
+        pending: 'Pending',
+        partial: 'Terima Sebagian',
+        cancel: 'Batal',
+        pending_gr: 'Pending GR',
+        ongoing: 'Berjalan',
+        done: 'Selesai',
+      },
       toast: {
         error: 'Proses gagal: {err}',
         success: 'Proses berhasil!',
@@ -769,6 +778,15 @@ export const dictionary = {
       total_task: 'Total Tasks',
       vehicle: 'Vehicle',
       warning: '⚠️ Warning!',
+      status: {
+        success: 'Success',
+        pending: 'Pending',
+        partial: 'Partial',
+        cancel: 'Cancel',
+        pending_gr: 'Pending GR',
+        ongoing: 'Ongoing',
+        done: 'Done',
+      },
       toast: {
         error: 'Process failed: {err}',
         success: 'Process completed successfully!',

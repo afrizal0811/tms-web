@@ -361,6 +361,7 @@ export function formatLongDate(dateInput, language = 'id-ID') {
 export function isEmpty(value) {
   if (Array.isArray(value)) return value.length === 0;
   return (
+    !value ||
     value === undefined ||
     value === null ||
     value === '' ||
