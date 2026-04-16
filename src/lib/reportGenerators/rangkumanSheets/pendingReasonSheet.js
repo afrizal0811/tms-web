@@ -187,11 +187,11 @@ export function generatePendingReasonSheet(
     translate('summary.tabs.pending_reasons.date'),
     translate('common.number_plates'),
     translate('common.driver'),
-    translate('summary.tabs.pending_reasons.cancel'),
-    translate('summary.tabs.pending_reasons.partial'),
-    translate('summary.tabs.pending_reasons.pending'),
+    translate('common.status.cancel'),
+    translate('common.status.partial'),
+    translate('common.status.pending'),
   ];
-  if (shouldShowPendingGR) headers.push(translate('summary.tabs.pending_reasons.pending_gr'));
+  if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
   headers.push(
     translate('summary.tabs.pending_reasons.reason'),
     translate('summary.tabs.pending_reasons.open_time'),

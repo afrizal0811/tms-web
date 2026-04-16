@@ -20,11 +20,11 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
   };
 
   const STATUS_LANGUAGE = {
-    SUKSES: translate('summary.tabs.truck_detail.modal.success'),
-    PENDING: translate('summary.tabs.truck_detail.modal.pending'),
-    'TERIMA SEBAGIAN': translate('summary.tabs.truck_detail.modal.pending_gr'),
-    BATAL: translate('summary.tabs.truck_detail.modal.cancel'),
-    'PENDING GR': translate('summary.tabs.truck_detail.modal.pending_gr'),
+    SUKSES: translate('common.status.success'),
+    PENDING: translate('common.status.pending'),
+    'TERIMA SEBAGIAN': translate('common.status.pending_gr'),
+    BATAL: translate('common.status.cancel'),
+    'PENDING GR': translate('common.status.pending_gr'),
     DONE: translate('summary.tabs.truck_detail.modal.done'),
     ONGOING: translate('summary.tabs.truck_detail.modal.ongoing'),
   };

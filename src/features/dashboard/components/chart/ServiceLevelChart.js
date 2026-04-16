@@ -25,30 +25,30 @@ const CustomTooltip = ({ active, payload, label, t }) => {
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
 
         <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
-          <span>● {t('dashboard.charts.service_level.success')}</span>
+          <span>● {t('common.status.success')}</span>
           <span className="font-mono">{data.SUKSES}</span>
         </div>
         {data.PENDING > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-amber-400">
-            <span>● {t('dashboard.charts.service_level.pending')}</span>
+            <span>● {t('common.status.pending')}</span>
             <span className="font-mono">{data.PENDING}</span>
           </div>
         )}
         {data.BATAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('dashboard.charts.service_level.cancel')}</span>
+            <span>● {t('common.status.cancel')}</span>
             <span className="font-mono">{data.BATAL}</span>
           </div>
         )}
         {data.PARTIAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-orange-400">
-            <span>● {t('dashboard.charts.service_level.partial')}</span>
+            <span>● {t('common.status.partial')}</span>
             <span className="font-mono">{data.PARTIAL}</span>
           </div>
         )}
         {data.PENDING_GR > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-yellow-600">
-            <span>● {t('dashboard.charts.service_level.pending_gr')}</span>
+            <span>● {t('common.status.pending_gr')}</span>
             <span className="font-mono">{data.PENDING_GR}</span>
           </div>
         )}
@@ -175,10 +175,8 @@ function ServiceLevelChart({ allTasks, hubId }) {
         <h3 className="text-lg font-bold text-slate-800">Service Level</h3>
         <p className="text-sm text-gray-500">
           {t('dashboard.charts.service_level.subtitle')}{' '}
-          <span className="font-bold text-emerald-600">
-            {t('dashboard.charts.service_level.success')}
-          </span>{' '}
-          vs <span className="font-bold text-red-600">{t('common.others')}</span>
+          <span className="font-bold text-emerald-600">{t('common.status.success')}</span> vs{' '}
+          <span className="font-bold text-red-600">{t('common.others')}</span>
         </p>
       </div>
 
@@ -221,7 +219,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="SUKSES"
                 fill="#22c55e"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.success')}
+                name={t('common.status.success')}
                 onClick={handleBarClick}
                 radius={[0, 0, 0, 0]}
                 stackId="a"
@@ -231,7 +229,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="PENDING"
                 fill="#eab308"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.pending')}
+                name={t('common.status.pending')}
                 onClick={handleBarClick}
                 radius={[0, 0, 0, 0]}
                 stackId="a"
@@ -241,7 +239,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="BATAL"
                 fill="#ef4444"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.cancel')}
+                name={t('common.status.cancel')}
                 onClick={handleBarClick}
                 radius={[0, 0, 0, 0]}
                 stackId="a"
@@ -251,7 +249,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="PARTIAL"
                 fill="#f97316"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.partial')}
+                name={t('common.status.partial')}
                 onClick={handleBarClick}
                 radius={[0, 0, 0, 0]}
                 stackId="a"
@@ -261,7 +259,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="PENDING_GR"
                 fill="#d97706"
                 maxBarSize={50}
-                name={t('dashboard.charts.service_level.pending_gr')}
+                name={t('common.status.pending_gr')}
                 onClick={handleBarClick}
                 radius={[4, 4, 0, 0]}
                 stackId="a"

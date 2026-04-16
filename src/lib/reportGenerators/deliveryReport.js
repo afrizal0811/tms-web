@@ -452,11 +452,11 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.headers.date'),
     translate('common.number_plates'),
     translate('common.driver'),
-    translate('excel.delivery.headers.faktur_batal'),
-    translate('excel.delivery.headers.partial'),
-    translate('excel.delivery.headers.pending'),
+    translate('common.status.cancel'),
+    translate('common.status.partial'),
+    translate('common.status.pending'),
   ];
-  if (isSpecialHub) headers2.push(translate('excel.delivery.headers.pending_gr'));
+  if (isSpecialHub) headers2.push(translate('common.status.pending_gr'));
   headers2.push(
     translate('excel.delivery.headers.reason'),
     '',
@@ -831,9 +831,9 @@ export function generateDeliveryWorkbook(
         if (C === 16) {
           cell.c = [
             {
-              a: 'Info', 
-              t: translate('excel.delivery.info_within_hours'), 
-              h: true, 
+              a: 'Info',
+              t: translate('excel.delivery.info_within_hours'),
+              h: true,
             },
           ];
         }

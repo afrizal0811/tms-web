@@ -32,30 +32,30 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
         </p>
 
         <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
-          <span>● {t('dashboard.charts.service_level.success')}</span>
+          <span>● {t('common.status.success')}</span>
           <span className="font-mono">{data.SUKSES}</span>
         </div>
         {data.PENDING > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-amber-400">
-            <span>● {t('dashboard.charts.service_level.pending')}</span>
+            <span>● {t('common.status.pending')}</span>
             <span className="font-mono">{data.PENDING}</span>
           </div>
         )}
         {data.BATAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('dashboard.charts.service_level.cancel')}</span>
+            <span>● {t('common.status.cancel')}</span>
             <span className="font-mono">{data.BATAL}</span>
           </div>
         )}
         {data.PARTIAL > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-orange-400">
-            <span>● {t('dashboard.charts.service_level.partial')}</span>
+            <span>● {t('common.status.partial')}</span>
             <span className="font-mono">{data.PARTIAL}</span>
           </div>
         )}
         {data.PENDING_GR > 0 && (
           <div className="flex justify-between gap-4 mb-1 text-yellow-600">
-            <span>● {t('dashboard.charts.service_level.pending_gr')}</span>
+            <span>● {t('common.status.pending_gr')}</span>
             <span className="font-mono">{data.PENDING_GR}</span>
           </div>
         )}
@@ -83,24 +83,24 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
     <div className="flex flex-wrap gap-4 font-medium text-xs text-gray-500">
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
-        <span>{t('dashboard.charts.service_level.success')}</span>
+        <span>{t('common.status.success')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#eab308] rounded-sm" />
-        <span>{t('dashboard.charts.service_level.pending')}</span>
+        <span>{t('common.status.pending')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-        <span>{t('dashboard.charts.service_level.cancel')}</span>
+        <span>{t('common.status.cancel')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="w-3 h-3 bg-[#f97316] rounded-sm" />
-        <span>{t('dashboard.charts.service_level.partial')}</span>
+        <span>{t('common.status.partial')}</span>
       </div>
       {hasPendingGR && (
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 bg-[#d97706] rounded-sm" />
-          <span>{t('dashboard.charts.service_level.pending_gr')}</span>
+          <span>{t('common.status.pending_gr')}</span>
         </div>
       )}
     </div>
@@ -139,7 +139,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
               />
 
               <Bar
-                name={t('dashboard.charts.service_level.success')}
+                name={t('common.status.success')}
                 dataKey="SUKSES"
                 stackId="a"
                 fill="#22c55e"
@@ -147,7 +147,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
                 maxBarSize={40}
               />
               <Bar
-                name={t('dashboard.charts.service_level.pending')}
+                name={t('common.status.pending')}
                 dataKey="PENDING"
                 stackId="a"
                 fill="#eab308"
@@ -155,7 +155,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
                 maxBarSize={40}
               />
               <Bar
-                name={t('dashboard.charts.service_level.cancel')}
+                name={t('common.status.cancel')}
                 dataKey="BATAL"
                 stackId="a"
                 fill="#ef4444"
@@ -163,7 +163,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
                 maxBarSize={40}
               />
               <Bar
-                name={t('dashboard.charts.service_level.partial')}
+                name={t('common.status.partial')}
                 dataKey="PARTIAL"
                 stackId="a"
                 fill="#f97316"
@@ -172,7 +172,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
               />
               {hasPendingGR && (
                 <Bar
-                  name={t('dashboard.charts.service_level.pending_gr')}
+                  name={t('common.status.pending_gr')}
                   dataKey="PENDING_GR"
                   stackId="a"
                   fill="#d97706"

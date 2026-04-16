@@ -56,9 +56,9 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       <button
         onClick={handleSave}
         disabled={!isAllSelected || isLoading || isSaving}
-        className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
+        className={`px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto ${isSaving ? 'hover:cursor-progress' : 'hover:cursor-pointer '}`}
       >
-        {isSaving ? 'Menyimpan...' : t('common.save')}
+        {isSaving && t('common.save')}
       </button>
     </div>
   );
