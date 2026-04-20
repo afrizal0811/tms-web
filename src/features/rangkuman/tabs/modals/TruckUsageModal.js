@@ -1,7 +1,7 @@
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteTruckUsage, upsertTruckUsage } from '@/lib/api';
-import { toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -155,7 +155,7 @@ export default function TruckUsageModal({
       onSuccess(resData.data ? resData.data : resData);
       onClose();
     } catch (e) {
-      console.error(e);
+      toastError(t('common.toast.error', { err: e.message }));
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +177,7 @@ export default function TruckUsageModal({
       onSuccess({ id: data.id, isDelete: true });
       onClose();
     } catch (e) {
-      console.error(e);
+      toastError(t('common.toast.error', { err: e.message }));
     } finally {
       setIsLoading(false);
     }

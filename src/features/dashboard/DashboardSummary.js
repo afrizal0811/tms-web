@@ -10,7 +10,7 @@ import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
-import { formatToApiUtc, isEmpty, normalizeEmail } from '@/lib/utils';
+import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboardSummary } from './help';
 import DiagramTab from './tab/DiagramTab';
@@ -374,6 +374,7 @@ export default function DashboardSummary({ driverData }) {
       dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
       showYearPicker={isDiagramTab}
       className="custom-year-picker"
+      maxDate={isDiagramTab ? null : tomorrowDate()}
     />
   );
 

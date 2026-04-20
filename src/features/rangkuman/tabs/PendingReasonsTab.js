@@ -123,11 +123,11 @@ export default function PendingReasonsTab({ data, locationName, translate }) {
             <th className={thClass}>{translate('summary.tabs.pending_reasons.date')}</th>
             <th className={thClass}>{translate('common.number_plates')}</th>
             <th className={thClass}>{translate('common.driver')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.cancel')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.partial')}</th>
-            <th className={thClass}>{translate('summary.tabs.pending_reasons.pending')}</th>
+            <th className={thClass}>{translate('common.status.cancel')}</th>
+            <th className={thClass}>{translate('common.status.partial')}</th>
+            <th className={thClass}>{translate('common.status.pending')}</th>
             {shouldShowPendingGR && (
-              <th className={thClass}>{translate('summary.tabs.pending_reasons.pending_gr')}</th>
+              <th className={thClass}>{translate('common.status.pending_gr')}</th>
             )}
             <th className={thClass}>{translate('summary.tabs.pending_reasons.reason')}</th>
             <th className={thClass}>{translate('summary.tabs.pending_reasons.open_time')}</th>

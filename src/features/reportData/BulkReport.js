@@ -7,12 +7,14 @@ import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings }
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
   formatDateUniversal,
   formatTimer,
   formatToApiUtc,
+  tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { bulkDownloader } from './help';
@@ -66,9 +68,9 @@ export default function BulkReport({ driverData }) {
         return acc;
       }, {});
     } catch (e) {
-      console.error('Gagal memuat mapping kendaraan:', e);
+      toastError(t('common.toast.error', { err: e.message }));
     } finally {
-      setIsLoading(false); // bulkDownloader akan mengaturnya kembali
+      setIsLoading(false);
     }
 
     bulkDownloader({
@@ -217,6 +219,7 @@ export default function BulkReport({ driverData }) {
             isLoading={isLoading}
             dateFormat="dd/MM/yyyy"
             className="sm:w-64"
+            maxDate={tomorrowDate()}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { getVehicleTypes, saveVehicleMappings } from '@/lib/api';
+import { toastError } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
 
 export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {
@@ -16,13 +17,13 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         const types = await getVehicleTypes();
         setVehicleTypes(types.map((type) => type.name));
       } catch (error) {
-        console.error(error);
+        toastError(t('common.toast.error', { err: error.message }));
       } finally {
         setIsLoading(false);
       }
     }
     fetchVehicleTypes();
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -43,7 +44,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       }
       onCompleted();
     } catch (error) {
-      console.error(error);
+      toastError(t('common.toast.error', { err: error.message }));
     } finally {
       setIsSaving(false);
     }
@@ -56,9 +57,9 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       <button
         onClick={handleSave}
         disabled={!isAllSelected || isLoading || isSaving}
-        className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto hover:cursor-pointer"
+        className={`px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto ${isSaving ? 'hover:cursor-progress' : 'hover:cursor-pointer '}`}
       >
-        {isSaving ? 'Menyimpan...' : t('common.save')}
+        {isSaving && t('common.save')}
       </button>
     </div>
   );

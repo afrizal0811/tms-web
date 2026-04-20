@@ -440,7 +440,7 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
     t('dashboard.tab.routingreal.visit_actual'),
     t('dashboard.tab.routingreal.ro_seq'),
     t('dashboard.tab.routingreal.actual_seq'),
-    t('dashboard.tab.routingreal.is_same'),
+    t('dashboard.tab.routingreal.is_match'),
     t('dashboard.tab.routingreal.is_within_hours'),
   ];
 

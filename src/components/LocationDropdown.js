@@ -97,7 +97,6 @@ export default function LocationDropdown({
       if (localValue) localStorage.setItem(saveToLocalStorageKey, localValue);
       else localStorage.removeItem(saveToLocalStorageKey);
     } catch (e) {
-      console.error(e);
       toastError(translate('common.toast.error', { err: e.message }));
     }
   }, [localValue, saveToLocalStorageKey, translate]);

@@ -361,6 +361,7 @@ export function formatLongDate(dateInput, language = 'id-ID') {
 export function isEmpty(value) {
   if (Array.isArray(value)) return value.length === 0;
   return (
+    !value ||
     value === undefined ||
     value === null ||
     value === '' ||
@@ -381,3 +382,5 @@ export function convertWibToUtc(dateInput) {
 
 export const capitalizeText = (text = '') =>
   text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+export const tomorrowDate = () => new Date(new Date().setDate(new Date().getDate() + 1));

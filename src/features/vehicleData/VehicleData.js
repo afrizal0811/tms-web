@@ -208,9 +208,9 @@ export default function VehicleData() {
   );
 
   const headerItems = [
-    { label: t('common.search'), component: searchBar, hideLabel: true },
+    { label: 'Filter', component: searchBar },
     { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
-    { label: t('common.download'), component: downloadBtn, hideLabel: true },
+    { label: 'Export', component: downloadBtn, hideLabel: true },
   ];
 
   const totalItems = filteredData.length;

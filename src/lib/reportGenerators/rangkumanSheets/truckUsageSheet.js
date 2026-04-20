@@ -1,5 +1,6 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api';
 import { calculateMasterTruckStorage } from '@/lib/driverDataHelper';
+import { toastError } from '@/lib/toastHelper';
 import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -7,22 +8,6 @@ import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from '.
 
 function formatMonthName(dateObj) {
   return dateObj.toLocaleDateString('en-GB', { month: 'long' });
-}
-
-function getDeliveryDateFromRouting(isoString) {
-  if (!isoString) return null;
-  try {
-    const date = new Date(isoString);
-    const wibTimestamp = date.getTime() + 7 * 60 * 60 * 1000;
-    const dateWIB = new Date(wibTimestamp);
-    const routingDay = dateWIB.getUTCDay();
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2;
-    const deliveryTimestamp = wibTimestamp + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryTimestamp).toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
 }
 
 function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
@@ -166,7 +151,7 @@ async function getTruckUsageData(hubId, startDate, endDate) {
     if (!res.ok) return [];
     return await res.json();
   } catch (e) {
-    console.error('Gagal mengambil data Truck Usage', e);
+    toastError(e.message);
     return [];
   }
 }

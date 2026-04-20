@@ -1,13 +1,74 @@
-// File: src/features/estimasiDelivery/components/TableData.js
 import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, isEmpty, parseCustomerString } from '@/lib/utils'; // Pastikan isEmpty diimport
+import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import { parseSONumber } from '../help';
 
-export default function TableData({ activeRoute, searchQuery, t }) {
+export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
   const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
+
+  const processedTrips = [];
+  activeRoute.trips.forEach((trip, index) => {
+    const isHub = trip.isHub;
+    let outletName;
+    if (isHub) {
+      outletName = trip.visitName;
+    } else if (trip.flow === 'Pickup' && trip.warehouseName) {
+      outletName = trip.warehouseName;
+    } else {
+      outletName = parseCustomerString(trip.visitName)?.name || trip.visitName;
+    }
+
+    const mapping = trip.soWarehouseMapping || [];
+
+    // --- CASE 1: DETAIL VIEW ---
+    if (!isHub && isDetailView && mapping.length > 0) {
+      mapping.forEach((item, idx) => {
+        const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
+
+        // Pengecekan spesifik: Apakah SO ini Unsync?
+        const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
+        const soIsUnsync = !!soPartner;
+
+        processedTrips.push({
+          ...trip,
+          outletName,
+          displaySo: item.so,
+          displayNo: trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`,
+          pickupWh: trip.flow !== 'Pickup' ? item.wh : null,
+          isSplit: mapping.length > 1,
+          originalIndex: index,
+
+          isUnsync: soIsUnsync,
+          partnerVehicle: soPartner,
+        });
+      });
+      return;
+    }
+
+    // --- CASE 2: SUMMARY VIEW ---
+    let displaySo = '-';
+    if (!isHub) {
+      if (mapping.length > 0) {
+        displaySo = mapping
+          .map((item) => (item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so))
+          .join(', ');
+      } else {
+        displaySo = parseSONumber(trip.visitName) || trip.orderId || '-';
+      }
+    }
+
+    processedTrips.push({
+      ...trip,
+      outletName,
+      displaySo,
+      displayNo: isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
+      pickupWh: null,
+      isSplit: false,
+      originalIndex: index,
+    });
+  });
 
   return (
     <table className="w-full border-collapse min-w-4xl">
@@ -23,116 +84,113 @@ export default function TableData({ activeRoute, searchQuery, t }) {
         </tr>
       </thead>
       <tbody className="bg-white">
-        {activeRoute.trips.map((trip, index) => {
+        {processedTrips.map((trip, idx) => {
           const isHub = trip.isHub;
-          const isFirstHub = index === 0 && isHub;
-          const isLastHub = index === activeRoute.trips.length - 1 && isHub;
-          let outletName;
-          if (isHub) {
-            outletName = trip.visitName;
-          } else if (trip.flow === 'Pickup' && trip.warehouseName) {
-            outletName = trip.warehouseName;
-          } else {
-            outletName = parseCustomerString(trip.visitName);
-          }
-
-          let soNumber = isHub ? '' : parseSONumber(trip.visitName);
-          if (!isHub && isEmpty(soNumber)) {
-            const rawOrderId = trip.orderId;
-            const standardRegex = /^(SO|SC|SE)\d{4}-\d+$/;
-
-            if (rawOrderId && standardRegex.test(rawOrderId)) {
-              soNumber = rawOrderId;
-            } else {
-              soNumber = '-';
-            }
-          } else if (!isHub && isEmpty(soNumber)) {
-            soNumber = '-';
-          }
+          const isFirstHub = trip.originalIndex === 0 && isHub;
+          const isLastHub = trip.originalIndex === activeRoute.trips.length - 1 && isHub;
 
           let textClass = '';
-          if (isHub) {
-            textClass = 'text-red-600 font-semibold';
-          } else if (trip.isManual) {
-            textClass = 'text-red-600 font-medium';
-          }
-
           const isManual = trip.isManual;
           const isUnsync = trip.isUnsync;
 
-          let rowClass = 'transition-colors ';
-          let rowStyle = {};
+          if (isHub) {
+            textClass = 'text-red-600 font-semibold';
+          } else if (isManual) {
+            textClass = 'text-red-600 font-medium';
+          }
 
+          let rowClass = 'transition-colors ';
           if (isManual) {
-            rowClass += 'bg-red-100 hover:bg-red-200 ';
+            rowClass += 'bg-[#E6EEFF] hover:bg-[#C9D9FF] ';
           } else {
             rowClass += 'hover:bg-gray-50 ';
           }
 
-          if (isUnsync) {
-            rowStyle = {
-              boxShadow:
-                'inset 0 2px 0 0 #60a5fa, inset 0 -2px 0 0 #60a5fa, inset 2px 0 0 0 #60a5fa, inset -2px 0 0 0 #60a5fa',
-              position: 'relative',
-              zIndex: 1,
-            };
-          } else {
-            rowClass += 'border-b border-gray-100 ';
-          }
+          rowClass += 'border-b border-gray-100 ';
 
           let tooltipMsg = '';
-          const partnerText = isUnsync
-            ? `${t('estimation.group')} ${trip.groupLetter} - ${trip.partnerVehicle}`
-            : '';
-
-          if (isManual && isUnsync) {
-            tooltipMsg = `${t('estimation.tooltip.manual_assign')} (${partnerText})`;
+          if (isUnsync) {
+            tooltipMsg = t('common.click_for_detail');
           } else if (isManual) {
             tooltipMsg = t('estimation.tooltip.manual_assign');
-          } else if (isUnsync) {
-            tooltipMsg = `${t('estimation.no_match')}: ${partnerText}`;
           }
+
+          // --- PERBAIKAN LOGIKA KLIK ---
+          const handleRowClick = () => {
+            if (isUnsync && setSearchQuery) {
+              let filterTarget = '';
+
+              if (trip.isSplit) {
+                // Di mode Detail, ambil nomor SO di baris tersebut
+                filterTarget = trip.displaySo;
+              } else {
+                // Di mode Ringkas, ambil SO yang benar-benar memicu "unsync" dari syncDetails
+                const unsyncSOs = trip.syncDetails ? Object.keys(trip.syncDetails) : [];
+                if (unsyncSOs.length > 0) {
+                  filterTarget = unsyncSOs[0];
+                } else if (trip.orderId) {
+                  // Fallback jika tidak ada di syncDetails
+                  filterTarget = trip.orderId.split(',')[0].trim();
+                }
+              }
+
+              if (filterTarget) {
+                setSearchQuery(filterTarget);
+              }
+            }
+          };
 
           const RowContent = (
             <tr
-              key={`${trip.visitId}-${index}`}
-              className={`${rowClass} ${tooltipMsg ? 'cursor-help' : ''}`}
-              style={rowStyle}
+              key={`${trip.visitId}-${idx}`}
+              className={`${rowClass} ${tooltipMsg ? (isUnsync ? 'cursor-pointer' : 'cursor-help') : ''}`}
+              onClick={handleRowClick}
             >
               <Td>
-                <p className={isManual || isUnsync ? 'text-red-600 font-medium' : ''}>
-                  {trip.isManual ? '-' : trip.routePlannedOrder}
+                <p
+                  className={`text-right w-full ${trip.isSplit ? 'text-green-600 font-bold' : isManual ? 'text-[#4F76C7] font-medium' : ''}`}
+                >
+                  {trip.displayNo}
                 </p>
               </Td>
 
-              {/* Kolom Visit */}
               <Td>
                 {isHub ? (
-                  <strong
-                    className={
-                      trip.isManual || trip.isUnsync || trip.isHub
-                        ? 'text-red-600 font-semibold'
-                        : ''
-                    }
-                  >
-                    HUB
-                  </strong>
+                  <strong className="text-red-600 font-semibold">HUB</strong>
                 ) : (
-                  <HighlightText text={outletName || ''} highlight={searchQuery} />
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <HighlightText text={trip.outletName || ''} highlight={searchQuery} />
+
+                      {trip.isReDelivery && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 text-red-700 border border-red-300 uppercase tracking-tight">
+                          Redelivery
+                        </span>
+                      )}
+
+                      {trip.isUnsync && trip.partnerVehicle && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 tracking-tight shadow-sm hover:bg-blue-200 transition-colors">
+                          Partner: {trip.partnerVehicle}
+                        </span>
+                      )}
+                    </div>
+
+                    {isDetailView && trip.pickupWh && (
+                      <span className="text-[10px] text-gray-500 font-medium leading-none italic">
+                        ↳ Pickup: {trip.pickupWh}
+                      </span>
+                    )}
+                  </div>
                 )}
               </Td>
 
-              {/* Kolom SO */}
               <Td>
-                {/* Tampilkan SO atau strip jika kosong/tidak valid */}
-                {isHub ? '' : <HighlightText text={soNumber} highlight={searchQuery} />}
+                {isHub ? '' : <HighlightText text={trip.displaySo} highlight={searchQuery} />}
               </Td>
 
-              {/* Kolom Open/Close */}
               <Td>{isHub ? '' : trip.openTime || '-'}</Td>
               <Td>{isHub ? '' : trip.closeTime || '-'}</Td>
 
-              {/* Kolom ETA */}
               <Td>
                 {isFirstHub
                   ? ''
@@ -151,7 +209,6 @@ export default function TableData({ activeRoute, searchQuery, t }) {
                     })()}
               </Td>
 
-              {/* Kolom ETD */}
               <Td>
                 <p className={textClass}>
                   {isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-'}
@@ -160,9 +217,9 @@ export default function TableData({ activeRoute, searchQuery, t }) {
             </tr>
           );
 
-          if (isManual || isUnsync) {
+          if (tooltipMsg) {
             return (
-              <Tooltip key={trip.visitId} tooltipContent={tooltipMsg}>
+              <Tooltip key={`${trip.visitId}-${idx}-tooltip`} tooltipContent={tooltipMsg}>
                 {RowContent}
               </Tooltip>
             );

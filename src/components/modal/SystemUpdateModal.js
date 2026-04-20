@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import { toastError } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -45,7 +46,7 @@ export default function SystemUpdateModal() {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       } catch (err) {
-        console.error('Gagal menghapus cache browser', err);
+        toastError(t('common.toast.error', { err: err.message }));
       }
     }
 

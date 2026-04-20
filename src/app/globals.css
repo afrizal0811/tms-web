@@ -2,12 +2,13 @@
 @import 'tailwindcss';
 
 /* Pastikan React Hot Toast selalu di atas Modal Map (z-index modal: 2000) */
-body > div[style*="z-index: 9999"] {
+body > div[style*='z-index: 9999'] {
   z-index: 99999 !important;
 }
 
 /* Atau jika React Hot Toast punya container ID/Class tertentu */
-.go3958317564 { /* Class default react-hot-toast, tapi bisa berubah */
+.go3958317564 {
+  /* Class default react-hot-toast, tapi bisa berubah */
   z-index: 99999 !important;
 }
 
@@ -157,6 +158,21 @@ body > div[style*="z-index: 9999"] {
   background-color: #0284c7 !important; /* Sky-600 (Sesuai tema dashboard Anda) */
 }
 
+/* Disabled year */
+.react-datepicker__year-text--disabled {
+  color: #cbd5f5 !important; /* abu-abu (Slate-300) */
+  background-color: #f8fafc !important; /* sangat soft */
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.6;
+}
+
+/* Hover tidak bereaksi */
+.react-datepicker__year-text--disabled:hover {
+  background-color: #f8fafc !important;
+  color: #cbd5f5 !important;
+}
+
 /* ========================= */
 /* MOBILE OPTIMIZATION    */
 /* ========================= */
@@ -252,7 +268,7 @@ body > div[style*="z-index: 9999"] {
   margin: 0 !important;
   height: auto !important;
   padding: 0.75rem 0.25rem !important;
-  
+
   /* Font Styling */
   font-weight: 700 !important;
   font-size: 1.25rem !important;
@@ -264,7 +280,7 @@ body > div[style*="z-index: 9999"] {
 /* Menggunakan selector ganda agar lebih spesifik dan menang dari rule nomor 3 */
 .react-datepicker__year-text.react-datepicker__year-text--selected,
 .react-datepicker__year-text.react-datepicker__year-text--keyboard-selected {
-  color: #ffffff !important;       /* Pasti Putih */
+  color: #ffffff !important; /* Pasti Putih */
   background-color: #0284c7 !important; /* Sky-600 */
 }
 
@@ -299,6 +315,6 @@ body > div[style*="z-index: 9999"] {
 }
 
 .section-title::before {
-  content: counter(section) ". ";
+  content: counter(section) '. ';
   font-weight: bold;
 }

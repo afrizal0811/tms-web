@@ -8,7 +8,7 @@ const encryptData = (data) => {
   try {
     return CryptoJS.AES.encrypt(data, SECRET_KEY).toString();
   } catch (error) {
-    console.error('Encrypt error:', error);
+    toastError(error.message);
     return data;
   }
 };
