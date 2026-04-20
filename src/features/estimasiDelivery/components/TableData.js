@@ -90,18 +90,18 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           const isLastHub = trip.originalIndex === activeRoute.trips.length - 1 && isHub;
 
           let textClass = '';
-          if (isHub) {
-            textClass = 'text-red-600 font-semibold';
-          } else if (trip.isManual) {
-            textClass = 'text-red-600 font-medium';
-          }
-
           const isManual = trip.isManual;
           const isUnsync = trip.isUnsync;
 
+          if (isHub) {
+            textClass = 'text-red-600 font-semibold';
+          } else if (isManual) {
+            textClass = 'text-red-600 font-medium';
+          }
+
           let rowClass = 'transition-colors ';
           if (isManual) {
-            rowClass += 'bg-red-100 hover:bg-red-200 ';
+            rowClass += 'bg-[#E6EEFF] hover:bg-[#C9D9FF] ';
           } else {
             rowClass += 'hover:bg-gray-50 ';
           }
@@ -148,7 +148,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
             >
               <Td>
                 <p
-                  className={`text-right w-full ${trip.isSplit ? 'text-green-600 font-bold' : isManual ? 'text-red-600 font-medium' : ''}`}
+                  className={`text-right w-full ${trip.isSplit ? 'text-green-600 font-bold' : isManual ? 'text-[#4F76C7] font-medium' : ''}`}
                 >
                   {trip.displayNo}
                 </p>
@@ -163,7 +163,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                       <HighlightText text={trip.outletName || ''} highlight={searchQuery} />
 
                       {trip.isReDelivery && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-tight">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 text-red-700 border border-red-300 uppercase tracking-tight">
                           Redelivery
                         </span>
                       )}

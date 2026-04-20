@@ -451,6 +451,7 @@ export default function EstimasiDelivery() {
           .filter(Boolean);
 
         let isUnsync = false;
+        const isRedelivery = trip.flow?.toLowerCase().includes('re delivery');
         let partnerVehicles = new Set();
         const syncDetails = {};
 
@@ -473,7 +474,7 @@ export default function EstimasiDelivery() {
         const partnerVehicle =
           partnerVehicles.size > 0 ? Array.from(partnerVehicles).join(', ') : null;
 
-        return { ...trip, isUnsync, partnerVehicle, syncDetails };
+        return { ...trip, isUnsync, partnerVehicle, syncDetails, isRedelivery };
       });
 
       return {
@@ -481,6 +482,7 @@ export default function EstimasiDelivery() {
         trips: tripsWithSyncStatus,
         hasManual: tripsWithSyncStatus.some((t) => t.isManual),
         hasUnsync: tripsWithSyncStatus.some((t) => t.isUnsync),
+        isRedelivery: tripsWithSyncStatus.some((t) => t.isRedelivery),
       };
     });
   }, [allRoutes]);
@@ -675,21 +677,19 @@ export default function EstimasiDelivery() {
       let tabClass =
         'cursor-help block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ';
 
-      if (route.hasManual && route.hasUnsync) {
-        tabClass += 'bg-red-100 border-blue-400 text-red-800';
-      } else if (route.hasManual) {
-        tabClass += 'bg-red-100 border-transparent text-red-800';
-      } else if (route.hasUnsync) {
-        tabClass += 'bg-transparent border-blue-400 text-gray-700';
+      if (route.hasManual) {
+        tabClass += 'bg-[#E6EEFF] border-transparent text-[#4F76C7]';
       } else {
         tabClass += 'bg-transparent border-transparent';
       }
-
+      const redeliveryBadge = route.isRedelivery && '[R]';
       return {
         id: route.vehicleId,
         label: (
           <Tooltip tooltipContent={noDriverName ? t('estimation.no_driver') : tooltipName}>
-            <span className={tabClass}>{route.vehicleName}</span>
+            <span className={tabClass}>
+              {route.vehicleName} <span className="text-red-600">{redeliveryBadge}</span>
+            </span>
           </Tooltip>
         ),
       };

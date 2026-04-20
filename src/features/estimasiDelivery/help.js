@@ -225,7 +225,7 @@ export const handleConfirmDownload = async ({
           };
 
           if (trip.isManual) {
-            cellStyle.fill = { fgColor: { rgb: 'FEE2E2' } };
+            cellStyle.fill = { fgColor: { rgb: 'E6EEFF' } };
           }
 
           if (isHub) {
