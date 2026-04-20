@@ -16,6 +16,7 @@ import {
   formatTimer,
   isDateSunday,
   isEmpty,
+  tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
@@ -275,9 +276,6 @@ export default function SingleReport({
     setSelectedDate(date);
   };
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
   const informationComp = (tooltipContent) => (
     <Tooltip tooltipContent={tooltipContent}>
       <span className="flex items-center">
@@ -315,7 +313,7 @@ export default function SingleReport({
             className="max-w-xs cursor-pointer"
             disabled={disabledCommon}
             id="shippingDate"
-            maxDate={tomorrow}
+            maxDate={tomorrowDate()}
             onChange={handleDateChange}
             selected={selectedDate}
           />

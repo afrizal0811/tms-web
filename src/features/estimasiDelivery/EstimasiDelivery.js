@@ -15,6 +15,7 @@ import {
   formatDateUniversal,
   isEmpty,
   normalizeEmail,
+  tomorrowDate,
 } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
@@ -595,16 +596,13 @@ export default function EstimasiDelivery() {
     />
   );
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
   const datePicker = (
     <CustomDatePicker
       id="estimasiDate"
       isLoading={isLoading || isAnyDownloading}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
-      maxDate={tomorrow}
+      maxDate={tomorrowDate()}
       className="w-full xl:w-40!"
     />
   );

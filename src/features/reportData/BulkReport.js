@@ -13,6 +13,7 @@ import {
   formatDateUniversal,
   formatTimer,
   formatToApiUtc,
+  tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { bulkDownloader } from './help';
@@ -217,6 +218,7 @@ export default function BulkReport({ driverData }) {
             isLoading={isLoading}
             dateFormat="dd/MM/yyyy"
             className="sm:w-64"
+            maxDate={tomorrowDate()}
           />
         </div>
       </div>

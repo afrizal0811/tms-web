@@ -17,6 +17,7 @@ import {
   isEmpty,
   normalizeEmail,
   parseCustomerString,
+  tomorrowDate,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UpdateLonglatTable from './components/UpdateLonglatTable';
@@ -301,6 +302,7 @@ export default function UpdateLonglatPage() {
       isLoading={loading || isDownloading}
       onChange={handleDateChange}
       selected={selectedDate}
+      maxDate={tomorrowDate()}
     />
   );
 

@@ -21,31 +21,6 @@ function formatMonthRange(startDateStr, endDateStr, isIndo) {
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-function determineTargetDate(createdTimeStr, apiRoutingDate) {
-  if (!createdTimeStr) return null;
-
-  try {
-    const d = new Date(createdTimeStr);
-    const wibMs = d.getTime() + 7 * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const dayOfWeek = wibDate.getUTCDay(); // 0=Minggu, 6=Sabtu
-
-    if (dayOfWeek === 6) {
-      const mondayMs = wibMs + 2 * 24 * 60 * 60 * 1000;
-      return new Date(mondayMs).toISOString().split('T')[0];
-    }
-
-    if (apiRoutingDate) {
-      return apiRoutingDate;
-    }
-
-    const tomorrowMs = wibMs + 1 * 24 * 60 * 60 * 1000;
-    return new Date(tomorrowMs).toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
-}
-
 export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo, driverData) {
   const unifiedMap = getUnifiedVehicleMap(resultsData, driverData);
   const summaryData = [];
