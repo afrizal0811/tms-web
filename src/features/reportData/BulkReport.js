@@ -7,6 +7,7 @@ import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings }
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
   calculateTargetDates,
@@ -67,9 +68,9 @@ export default function BulkReport({ driverData }) {
         return acc;
       }, {});
     } catch (e) {
-      console.error('Gagal memuat mapping kendaraan:', e);
+      toastError(t('common.toast.error', { err: e.message }));
     } finally {
-      setIsLoading(false); // bulkDownloader akan mengaturnya kembali
+      setIsLoading(false);
     }
 
     bulkDownloader({

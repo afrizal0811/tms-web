@@ -83,7 +83,7 @@ export default function SettingsPage() {
 
         await fetchAllData();
       } catch (error) {
-        console.error(error);
+        toastError(t('common.toast.error', { err: error.message }));
         router.push('/');
       } finally {
         setIsLoadingPage(false);
@@ -91,7 +91,7 @@ export default function SettingsPage() {
     };
 
     checkAuthAndLoadData();
-  }, [router, fetchAllData]);
+  }, [router, fetchAllData, t]);
 
   if (isLoadingPage) {
     return (

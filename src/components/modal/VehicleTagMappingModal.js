@@ -2,6 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { getVehicleTypes, saveVehicleMappings } from '@/lib/api';
+import { toastError } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
 
 export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {
@@ -16,13 +17,13 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         const types = await getVehicleTypes();
         setVehicleTypes(types.map((type) => type.name));
       } catch (error) {
-        console.error(error);
+        toastError(t('common.toast.error', { err: error.message }));
       } finally {
         setIsLoading(false);
       }
     }
     fetchVehicleTypes();
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -43,7 +44,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       }
       onCompleted();
     } catch (error) {
-      console.error(error);
+      toastError(t('common.toast.error', { err: error.message }));
     } finally {
       setIsSaving(false);
     }

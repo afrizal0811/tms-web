@@ -620,7 +620,7 @@ export default function useRangkumanData() {
         );
         setMasterTruckData(calculatedMaster);
       } catch (e) {
-        console.error('Gagal menghitung master truck:', e);
+        toastError(t('common.toast.error', { err: e.message }));
         setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
       }
 
@@ -657,6 +657,7 @@ export default function useRangkumanData() {
     fetchWithTracker,
     processTaskSummaryMetrics,
     lang,
+    t,
   ]);
 
   return {
