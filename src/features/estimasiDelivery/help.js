@@ -186,7 +186,6 @@ export const handleConfirmDownload = async ({
 
         const mapping = trip.soWarehouseMapping || [];
 
-        // pushRow diupdate agar mengambil nilai override parameter (jika Detail)
         const pushRow = (
           displayNo,
           displaySo,
@@ -200,7 +199,6 @@ export const handleConfirmDownload = async ({
           let etaVal = isFirstHub ? '' : trip.eta ? formatSimpleTime(trip.eta) : '-';
           const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
 
-          // Memprioritaskan parameter override (untuk split line SO) dibandingkan info global trip
           const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
           const rowPartner = partnerOverride !== null ? partnerOverride : trip.partnerVehicle;
 
@@ -246,6 +244,10 @@ export const handleConfirmDownload = async ({
               colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
             }
 
+            if (c === 1 && trip.isReDelivery && !isHub) {
+              colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
+            }
+
             if (c === 5 && isLastHub && hasManualInRoute && trip.eta) {
               comment = [{ a: 'Info', t: t('estimation.hub_eta_short'), h: true }];
             }
@@ -255,14 +257,12 @@ export const handleConfirmDownload = async ({
           currentRowIndex++;
         };
 
-        // --- EXCEL CASE: DETAIL (Pecah Baris) ---
         if (!isHub && isDetailView && mapping.length > 0) {
           mapping.forEach((item, idx) => {
             const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
             const displayNo = trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`;
             const whInfo = trip.flow !== 'Pickup' ? item.wh : null;
 
-            // Dapatkan informasi unsync khusus untuk SO ini
             const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
             const soIsUnsync = !!soPartner;
 
@@ -271,7 +271,6 @@ export const handleConfirmDownload = async ({
           return;
         }
 
-        // --- EXCEL CASE: SUMMARY (Gabung SO + Warehouse) ---
         let displaySo = '-';
         if (!isHub) {
           if (mapping.length > 0) {
@@ -337,7 +336,6 @@ export const handleConfirmDownload = async ({
   }
 };
 
-// ... (Sisa variabel styles untuk PDF tidak ada perubahan sama sekali)
 export const styles = StyleSheet.create({
   page: {
     padding: 20,

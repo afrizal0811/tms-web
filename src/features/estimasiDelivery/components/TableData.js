@@ -110,7 +110,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
           let tooltipMsg = '';
           if (isUnsync) {
-            tooltipMsg = 'Klik untuk filter kendaraan';
+            tooltipMsg = t('common.click_for_detail');
           } else if (isManual) {
             tooltipMsg = t('estimation.tooltip.manual_assign');
           }
