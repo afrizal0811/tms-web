@@ -31,6 +31,7 @@ export const dictionary = {
       scroll_down: 'Scroll ke bawah',
       storage_type: 'Tipe Penyimpanan',
       task: 'Tugas',
+      to: 'Ke',
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
       warning: '⚠️ Peringatan!',
@@ -392,10 +393,8 @@ export const dictionary = {
     longlat: {
       highlight_subtitle: 'pembaruan koordinat lokasi',
       subtitle: 'Daftar customer yang memerlukan',
+      table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
-      tooltip: {
-        table_detail: 'Klik untuk melihat riwayat update lokasi',
-      },
       table: {
         diff_dist: 'Beda Jarak (m)',
         loc_id: 'ID Lokasi',
@@ -497,7 +496,7 @@ export const dictionary = {
       },
     },
     summary: {
-      caution: 'Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
+      caution: '*Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
       click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       label: 'Tanggal Performa',
       long_message: 'Memproses banyak data, silakan tunggu sebentar',
@@ -754,6 +753,7 @@ export const dictionary = {
       save: 'Save',
       scroll_down: 'Scroll Down',
       storage_type: 'Storage Type',
+      to: 'To',
       task: 'Task',
       total_task: 'Total Tasks',
       vehicle: 'Vehicle',
@@ -1118,10 +1118,8 @@ export const dictionary = {
     longlat: {
       highlight_subtitle: 'location coordinate updates',
       subtitle: 'List of customers that require',
+      table_detail: '*Click to view map location',
       title: 'Update Coordinates',
-      tooltip: {
-        table_detail: 'Click to view location update history',
-      },
       table: {
         diff_dist: 'Distance Difference (m)',
         loc_id: 'Location ID',
@@ -1223,7 +1221,7 @@ export const dictionary = {
       },
     },
     summary: {
-      caution: 'Displayed data may be inaccurate. Verify before use',
+      caution: '*Displayed data may be inaccurate. Verify before use',
       click_box_hint: 'Click text with red underline to view details',
       label: 'Performance Date',
       long_message: 'Processing a lot of data, please wait a moment.',

@@ -1,14 +1,10 @@
-// File: src/features/updateLonglat/components/UpdateLonglatTable.js
 'use client';
 
-import Tooltip from '@/components/Tooltip';
-import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
-export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
-  const { t } = useLanguage();
+export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, lang }) {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,7 +18,7 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
     setSelectedRow(null);
   };
 
-  const currentHistory = selectedRow ? historyMap.get(selectedRow.customerName) || [] : [];
+  const currentHistory = selectedRow ? historyMap.get(selectedRow.customerData) || [] : [];
 
   return (
     <>
@@ -32,7 +28,7 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
             <p>{t('longlat.table.no_data')}</p>
           </div>
         ) : (
-          <div className="overflow-auto h-full rounded-lg    bg-white">
+          <div className="overflow-auto h-full rounded-lg bg-white">
             <table className="min-w-full text-xs text-left">
               <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
                 <tr>
@@ -56,28 +52,27 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
                     : 'hover:bg-gray-50 cursor-pointer';
 
                   return (
-                    <Tooltip tooltipContent={t('longlat.tooltip.table_detail')} key={index}>
-                      <tr
-                        className={`${rowClass} border-b border-gray-100 transition-colors`}
-                        onClick={() => handleRowClick(row)}
+                    <tr
+                      className={`${rowClass} border-b border-gray-100 transition-colors`}
+                      onClick={() => handleRowClick(row)}
+                      key={row.customerData}
+                    >
+                      <td className="px-4 py-2 text-center text-gray-600">{index + 1}</td>
+                      <td
+                        className="px-4 py-2 font-medium truncate max-w-[200px]"
+                        title={row.customerData}
                       >
-                        <td className="px-4 py-2 text-center text-gray-600">{index + 1}</td>
-                        <td
-                          className="px-4 py-2 font-medium truncate max-w-[200px]"
-                          title={row.customerName}
-                        >
-                          {row.customerName}
-                        </td>
-                        <td className="px-4 py-2 font-mono text-slate-700">{displayCustId}</td>
-                        <td className="px-4 py-2 font-mono text-slate-700">{displayLocId}</td>
-                        <td className="px-4 py-2 text-center font-mono text-slate-600 text-[11px]">
-                          {row.newLonglat}
-                        </td>
-                        <td className="px-4 py-2 text-center font-semibold">
-                          {row.bedaJarak?.toLocaleString('id-ID')} m
-                        </td>
-                      </tr>
-                    </Tooltip>
+                        {row.customerName}
+                      </td>
+                      <td className="px-4 py-2 font-mono text-slate-700">{displayCustId}</td>
+                      <td className="px-4 py-2 font-mono text-slate-700">{displayLocId}</td>
+                      <td className="px-4 py-2 text-center font-mono text-slate-600 text-[11px]">
+                        {row.newLonglat}
+                      </td>
+                      <td className="px-4 py-2 text-center font-semibold">
+                        {row.bedaJarak?.toLocaleString(lang)}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -90,8 +85,8 @@ export default function UpdateLonglatTable({ data, historyMap, historyRange }) {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           data={currentHistory}
-          customerName={selectedRow?.customerName}
-          dateRange={historyRange}
+          customerData={selectedRow?.customerData}
+          selectedDate={selectedDate}
         />
       )}
     </>

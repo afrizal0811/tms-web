@@ -1,4 +1,3 @@
-// File: src/features/updateLonglat/UpdateLonglatPage.js
 'use client';
 
 import BodyCard from '@/components/card/BodyCard';
@@ -9,7 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
   formatCoordinates,
@@ -29,12 +28,10 @@ export default function UpdateLonglatPage() {
   const [loading, setLoading] = useState(true);
   const [tasksData, setTasksData] = useState([]);
   const [historyMap, setHistoryMap] = useState(new Map());
-  const [historyRange, setHistoryRange] = useState({ start: '', end: '' });
   const [isDownloading, setIsDownloading] = useState(false);
 
   const driverMapRef = useRef(new Map());
   const { storedLocationName: hubName } = getLocalStorage();
-  const isIndo = lang === 'id';
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -45,19 +42,15 @@ export default function UpdateLonglatPage() {
     setSelectedDate(date);
   };
 
-  // --- HELPER: Process Raw Tasks to Map ---
-  // Fungsi ini dipisahkan agar bisa dipakai saat Initial Load maupun saat Retry
   const processHistoryRawData = (rawTasks, targetCustomerSet) => {
     const tempMap = new Map();
 
-    // Sort tanggal lama -> baru
     rawTasks.sort((a, b) => new Date(a.doneTime) - new Date(b.doneTime));
 
     rawTasks.forEach((task) => {
       if (!task.klikLokasiClient) return;
       const name = task.customerName || '';
       if (!name) return;
-      // Filter hanya customer yg relevan
       if (!targetCustomerSet.has(name)) return;
 
       if (!tempMap.has(name)) {
@@ -109,7 +102,7 @@ export default function UpdateLonglatPage() {
     try {
       if (typeof window === 'undefined') return;
       const { storedLocation: hubId } = getLocalStorage();
-      if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
+      if (!hubId) throw new Error(t('common.no_data'));
 
       // 1. Ambil Data Driver
       const drivers = await getOrFetchDriverData(hubId);
@@ -142,7 +135,7 @@ export default function UpdateLonglatPage() {
       const currentData = todayTasks || [];
       setTasksData(currentData);
 
-      // Identifikasi Customer
+      // Identifikasi Customer yang butuh update hari ini
       const uniqueCustomersWithUpdates = new Set();
       currentData.forEach((task) => {
         if (task.klikLokasiClient && task.customerName) {
@@ -150,139 +143,40 @@ export default function UpdateLonglatPage() {
         }
       });
 
-      // Early Return jika tidak ada update
       if (uniqueCustomersWithUpdates.size === 0) {
         setLoading(false);
         return;
       }
 
-      const historyEndDate = new Date(selectedDate);
-      const historyStartDate = new Date(selectedDate);
-      historyStartDate.setMonth(historyStartDate.getMonth() - 2);
-
-      const displayOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-      setHistoryRange({
-        start: historyStartDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', displayOptions),
-        end: historyEndDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', displayOptions),
-      });
-
-      const createDateChunks = (start, end, daysPerChunk = 15) => {
-        const chunks = [];
-        let current = new Date(start);
-        const finalEnd = new Date(end);
-        while (current < finalEnd) {
-          const chunkStart = new Date(current);
-          const chunkEnd = new Date(current);
-          chunkEnd.setDate(chunkEnd.getDate() + daysPerChunk);
-          if (chunkEnd > finalEnd) chunkEnd.setTime(finalEnd.getTime());
-          chunkStart.setHours(0, 0, 0, 0);
-          chunkEnd.setHours(23, 59, 59, 999);
-
-          chunks.push({
-            startStr: formatToApiUtc(chunkStart),
-            endStr: formatToApiUtc(chunkEnd),
-          });
-          current.setDate(current.getDate() + daysPerChunk + 1);
-        }
-        return chunks;
-      };
-
-      const dateChunks = createDateChunks(historyStartDate, historyEndDate, 15);
-
-      const chunkPromises = dateChunks.map((chunk) =>
-        getTasks({
-          status: 'DONE',
-          hubId,
-          timeFrom: chunk.startStr,
-          timeTo: chunk.endStr,
-          timeBy: 'startTime',
-          limit: 2000,
-          fields: 'customerName,klikLokasiClient,longlat,doneTime,assignee',
-        })
-          .then((res) => ({ status: 'ok', data: res || [] }))
-          .catch((err) => ({ status: 'failed', chunk: chunk, error: err }))
-      );
-
-      const results = await Promise.all(chunkPromises);
-
-      const successfulChunks = results.filter((r) => r.status === 'ok').flatMap((r) => r.data);
-      const failedChunks = results.filter((r) => r.status === 'failed').map((r) => r.chunk);
-      const initialMap = processHistoryRawData(successfulChunks, uniqueCustomersWithUpdates);
+      // 3. Proses Data Map (Hanya berdasarkan data hari ini saja)
+      const initialMap = processHistoryRawData(currentData, uniqueCustomersWithUpdates);
       setHistoryMap(initialMap);
       setLoading(false);
-      if (failedChunks.length > 0) {
-        toastWarning(t('longlat.toast.retry_chunk', { count: failedChunks.length }));
-
-        const retryPromises = failedChunks.map((chunk) =>
-          getTasks({
-            status: 'DONE',
-            hubId,
-            timeFrom: chunk.startStr,
-            timeTo: chunk.endStr,
-            timeBy: 'startTime',
-            limit: 2000,
-            fields: 'customerName,klikLokasiClient,longlat,doneTime,assignee',
-          })
-            .then((res) => res || [])
-            .catch((err) => {
-              toastError(t('longlat.toast.all_failed', { time: chunk.startStr }));
-              return [];
-            })
-        );
-
-        const retryResults = await Promise.all(retryPromises);
-        const recoveredTasks = retryResults.flat();
-
-        if (recoveredTasks.length > 0) {
-          setLoading(true);
-          await new Promise((r) => setTimeout(r, 500));
-          const newRecoveredMap = processHistoryRawData(recoveredTasks, uniqueCustomersWithUpdates);
-          setHistoryMap((prevMap) => {
-            const mergedMap = new Map(prevMap); // Clone map lama
-            for (const [customerName, newItems] of newRecoveredMap.entries()) {
-              if (mergedMap.has(customerName)) {
-                const existingItems = mergedMap.get(customerName);
-                const combined = [...existingItems, ...newItems];
-                combined.sort((a, b) => {
-                  return 0;
-                });
-                mergedMap.set(customerName, combined);
-              } else {
-                mergedMap.set(customerName, newItems);
-              }
-            }
-            return mergedMap;
-          });
-
-          setLoading(false);
-          toastSuccess(t('longlat.toast.recovered', { count: recoveredTasks.length }));
-        }
-      }
     } catch (err) {
       toastError(t('longlat.toast.failed_get_data'));
       setLoading(false);
     }
-  }, [selectedDate, isIndo, t]);
+  }, [selectedDate, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // --- PROCESSING DATA ---
   const processedData = useMemo(() => {
-    if (loading && isEmpty(tasksData)) return []; // Only block if no data at all
+    if (loading && isEmpty(tasksData)) return [];
 
     const updateList = [];
 
     for (const task of tasksData) {
       if (task.klikLokasiClient) {
         const customerName = task.customerName || '';
-        const { id: custId, location: locId } = parseCustomerString(customerName);
+        const { id: custId, location: locId, name: custName } = parseCustomerString(customerName);
         const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
         const isDataIncomplete = !custId || !locId;
 
         updateList.push({
-          customerName: customerName,
+          customerData: customerName,
+          customerName: custName,
           customerId: custId,
           locationId: locId,
           newLonglat: formatCoordinates(task.klikLokasiClient),
@@ -295,7 +189,7 @@ export default function UpdateLonglatPage() {
 
     updateList.sort((a, b) => a.bedaJarak - b.bedaJarak);
     return updateList;
-  }, [tasksData, loading]); // Added deps
+  }, [tasksData, loading]);
 
   const datePicker = (
     <CustomDatePicker
@@ -339,10 +233,15 @@ export default function UpdateLonglatPage() {
           <UpdateLonglatTable
             data={processedData}
             historyMap={historyMap}
-            historyRange={historyRange}
+            selectedDate={selectedDate}
+            t={t}
+            lang={lang}
           />
         </div>
       </BodyCard>
+      <span className="mt-2 block text-xs text-amber-600 text-right italic">
+        {t('longlat.table_detail')}
+      </span>
     </div>
   );
 }
