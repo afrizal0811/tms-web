@@ -29,7 +29,7 @@ export default function SearchBar({
 
       <input
         type="text"
-        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+        className="w-full pl-10 pr-10 h-[42px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-shadow disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
         placeholder={placeholder}
         disabled={disabled}
         value={value}

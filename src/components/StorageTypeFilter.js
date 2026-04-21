@@ -7,7 +7,7 @@ export default function StorageTypeFilter({
   selectedTypes,
   onApply,
   disabled = false,
-  className = 'w-full xl:w-40', 
+  className = 'w-full xl:w-40',
 }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -77,7 +77,7 @@ export default function StorageTypeFilter({
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center justify-between gap-2 px-3 py-2.5 h-[42px] rounded-md shadow-sm border transition-all text-sm font-medium w-full
+        className={`flex items-center justify-between gap-2 px-3 h-[42px] rounded-lg shadow-sm border transition-all text-sm font-medium w-full
           ${
             disabled
               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
