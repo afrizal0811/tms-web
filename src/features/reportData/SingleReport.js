@@ -152,8 +152,8 @@ export default function SingleReport({
 
       if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
-      const timeFrom = `${selectedDateString} 00:00:00`;
-      const timeTo = `${selectedDateString} 23:59:59`;
+      const timeFrom = new Date(`${selectedDateString}T00:00:00`).toISOString();
+      const timeTo = new Date(`${selectedDateString}T23:59:59`).toISOString();
 
       let targetRoutingDateObj;
       if (isCustomRouting) {
