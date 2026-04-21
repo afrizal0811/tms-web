@@ -314,7 +314,7 @@ export default function Navbar() {
   return (
     <nav
       ref={navRef}
-      className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm transition-colors duration-200"
+      className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm transition-colors duration-200"
     >
       <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
         <div

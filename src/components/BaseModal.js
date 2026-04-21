@@ -6,7 +6,7 @@ export default function BaseModal({
   children,
   contentClassName = '',
   footer,
-  headerClassName = 'bg-slate-800 text-white',
+  headerClassName = 'bg-slate-800 dark:bg-slate-950 text-white',
   headerContent = '',
   isOpen,
   maxWidth = 'max-w-4xl',
@@ -22,7 +22,7 @@ export default function BaseModal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
+        className={`bg-white dark:bg-slate-900 border border-transparent dark:border-slate-700 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -47,11 +47,15 @@ export default function BaseModal({
         </div>
 
         {/* Body */}
-        <div className={`flex-1 ${bodyClassName}`}>{children}</div>
+        <div className={`flex-1 text-slate-800 dark:text-slate-200 ${bodyClassName}`}>
+          {children}
+        </div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 shrink-0">{footer}</div>
+          <div className="px-6 py-3 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
+            {footer}
+          </div>
         )}
       </div>
     </div>

@@ -16,13 +16,12 @@ export default function DownloadButton(props) {
     <button
       onClick={onClick}
       disabled={disabled}
-      // Class width akan mengikuti prop di atas
-      className={`${width} px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap`}
+      className={`${width} px-6 h-[42px] bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 transition-all disabled:bg-gray-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap`}
     >
       {isLoading ? (
         <Spinner
           addClass="inline-block"
-          border="border-2 border-slate-400 border-t-white"
+          border="border-2 border-slate-400 dark:border-slate-500 border-t-white"
           size="w-5 h-5"
         />
       ) : (

@@ -8,7 +8,7 @@ export default function Footer() {
   const endYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full text-center text-slate-500 text-xs mt-auto py-2">
+    <footer className="w-full text-center text-slate-500 dark:text-slate-400 text-xs mt-auto py-2 transition-colors">
       <span suppressHydrationWarning>{t('common.copyright')}</span>: Afi - EDP © {startYear} -{' '}
       {endYear}
     </footer>

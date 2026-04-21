@@ -193,7 +193,7 @@ export default function Home() {
             <button
               onClick={handleSaveLocation}
               disabled={!tempSelectedLocation}
-              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors"
+              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors text-sm"
             >
               {t('home.select_btn')}
             </button>
@@ -214,7 +214,7 @@ export default function Home() {
           />
           <button
             onClick={handleResetAll}
-            className="mt-4 px-4 py-2 cursor-pointer bg-slate-600 text-white rounded hover:bg-slate-700 text-sm disabled:bg-slate-500 disabled:text-slate-300"
+            className="mt-4 px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors text-sm"
           >
             {t('home.back_btn')}
           </button>

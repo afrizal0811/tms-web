@@ -62,7 +62,7 @@ export default function Tooltip({ children, tooltipContent, width = 'w-max' }) {
       {isVisible &&
         createPortal(
           <div
-            className={`fixed z-99999 ${width} max-w-xs whitespace-pre-line px-3 py-2  text-xs font-medium text-white bg-slate-800 rounded-md shadow-xl border border-slate-600 pointer-events-none`}
+            className={`fixed z-99999 ${width} max-w-xs whitespace-pre-line px-3 py-2 text-xs font-medium text-white bg-slate-800 dark:bg-slate-700 rounded-md shadow-xl border border-slate-600 dark:border-slate-500 pointer-events-none transition-colors`}
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
@@ -75,7 +75,8 @@ export default function Tooltip({ children, tooltipContent, width = 'w-max' }) {
             <div
               className="
               absolute left-1/2 top-full -translate-x-1/2 
-              border-4 border-transparent border-t-slate-800
+              border-4 border-transparent border-t-slate-800 dark:border-t-slate-700
+              transition-colors
             "
             />
           </div>,
