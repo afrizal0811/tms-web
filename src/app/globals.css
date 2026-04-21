@@ -1,6 +1,6 @@
 @import 'react-datepicker/dist/react-datepicker.css';
 @import 'tailwindcss';
-
+@custom-variant dark (&:where(.dark, .dark *));
 /* Pastikan React Hot Toast selalu di atas Modal Map (z-index modal: 2000) */
 body > div[style*='z-index: 9999'] {
   z-index: 99999 !important;
@@ -171,6 +171,16 @@ body > div[style*='z-index: 9999'] {
 .react-datepicker__year-text--disabled:hover {
   background-color: #f8fafc !important;
   color: #cbd5f5 !important;
+}
+
+.dark .react-datepicker {
+  background-color: #1e293b !important; /* Slate-800 */
+}
+.dark .react-datepicker-year-header {
+  color: #f8fafc !important; /* Teks putih */
+}
+.dark .react-datepicker__header {
+  background-color: #1e293b !important;
 }
 
 /* ========================= */
