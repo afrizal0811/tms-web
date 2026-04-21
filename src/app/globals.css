@@ -176,11 +176,87 @@ body > div[style*='z-index: 9999'] {
 .dark .react-datepicker {
   background-color: #1e293b !important; /* Slate-800 */
 }
-.dark .react-datepicker-year-header {
-  color: #f8fafc !important; /* Teks putih */
+/* 1. Judul Bulan & Tahun (Contoh: April 2026) */
+.dark .react-datepicker__current-month {
+  color: #f8fafc !important; /* Slate-50 */
 }
+
+/* 2. Nama-nama Hari (Sen, Sel, Rab, dll) */
+.dark .react-datepicker__day-name {
+  color: #cbd5e1 !important; /* Slate-300 */
+}
+
+/* 3. Angka Tanggal Normal (1, 2, 3, dll) */
+.dark .react-datepicker__day {
+  color: #f8fafc !important; /* Slate-50 */
+}
+
+/* 4. Angka Tanggal di Luar Bulan Ini (Bulan lalu/depan yang biasanya redup) */
+.dark .react-datepicker__day--outside-month {
+  color: #475569 !important; /* Slate-600 */
+}
+
+/* 5. Efek Hover Saat Tanggal Disorot Mouse */
+.dark .react-datepicker__day:hover:not(.react-datepicker__day--selected) {
+  background-color: #334155 !important; /* Slate-700 */
+  color: #38bdf8 !important; /* Sky-400 */
+}
+
+/* 6. Memastikan Border Pemisah Header dan Tanggal Tidak Terlalu Terang */
 .dark .react-datepicker__header {
-  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important; /* Slate-700 */
+}
+
+/* ========================================================= */
+/* --- PERBAIKAN DARK MODE DATE PICKER (HEADER & DISABLED) --- */
+/* ========================================================= */
+
+/* 1. Paksa semua area Header dan Judul Bulan menjadi gelap */
+.dark .react-datepicker__header,
+.dark .custom-year-picker .react-datepicker__header,
+.dark .react-datepicker__current-month,
+.dark .react-datepicker-year-header,
+.dark .react-datepicker__header__dropdown {
+  background-color: #1e293b !important; /* Slate-800 */
+  border-bottom-color: #334155 !important; /* Slate-700 */
+}
+
+/* Jika menggunakan dropdown bulan/tahun bawaan */
+.dark .react-datepicker__month-select,
+.dark .react-datepicker__year-select {
+  background-color: #334155 !important; /* Slate-700 */
+  color: #f8fafc !important; /* Teks putih */
+  border-color: #475569 !important; /* Slate-600 */
+}
+
+/* 2. Ubah warna Segitiga (Pointer) ke arah input */
+.dark .react-datepicker__triangle {
+  fill: #1e293b !important;
+  color: #1e293b !important;
+  stroke: #334155 !important;
+}
+.dark .react-datepicker__triangle::after {
+  border-bottom-color: #1e293b !important;
+}
+.dark .react-datepicker__triangle::before {
+  border-bottom-color: #334155 !important;
+}
+
+/* 3. TANGGAL DISABLED (Tidak bisa diklik) */
+.dark .react-datepicker__day--disabled,
+.dark .react-datepicker__month-text--disabled,
+.dark .react-datepicker__year-text--disabled {
+  color: #475569 !important; /* Slate-600 (gelap/redup) */
+  background-color: transparent !important;
+  cursor: not-allowed !important;
+}
+
+/* Hilangkan efek hover untuk tanggal disabled */
+.dark .react-datepicker__day--disabled:hover,
+.dark .react-datepicker__month-text--disabled:hover,
+.dark .react-datepicker__year-text--disabled:hover {
+  background-color: transparent !important;
+  color: #475569 !important;
 }
 
 /* ========================= */
