@@ -442,7 +442,14 @@ export default function EstimasiDelivery() {
     return allRoutes.map((route) => {
       const tripsWithSyncStatus = route.trips.map((trip) => {
         if (trip.isHub || !trip.orderId) {
-          return { ...trip, isUnsync: false, partnerVehicle: null, syncDetails: {} };
+          return {
+            ...trip,
+            isUnsync: false,
+            partnerVehicle: null,
+            syncDetails: {},
+            hasAnyPartner: false,
+            partnerSOs: [],
+          };
         }
 
         const individualSOs = trip.orderId
@@ -455,18 +462,27 @@ export default function EstimasiDelivery() {
         let partnerVehicles = new Set();
         const syncDetails = {};
 
+        let hasAnyPartner = false;
+        const partnerSOs = [];
+
         individualSOs.forEach((so) => {
           const pickupVehicle = soTracker[so]?.Pickup;
           const deliveryVehicle = soTracker[so]?.Delivery;
-          const isThisSOUnsync =
-            pickupVehicle && deliveryVehicle && pickupVehicle !== deliveryVehicle;
+          const hasBothFlows = pickupVehicle && deliveryVehicle;
 
-          if (isThisSOUnsync) {
-            isUnsync = true;
-            const partner = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
-            if (partner) {
-              partnerVehicles.add(partner);
-              syncDetails[so] = partner;
+          if (hasBothFlows) {
+            hasAnyPartner = true;
+            partnerSOs.push(so);
+
+            const isThisSOUnsync = pickupVehicle !== deliveryVehicle;
+
+            if (isThisSOUnsync) {
+              isUnsync = true;
+              const partner = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
+              if (partner) {
+                partnerVehicles.add(partner);
+                syncDetails[so] = partner;
+              }
             }
           }
         });
@@ -474,7 +490,15 @@ export default function EstimasiDelivery() {
         const partnerVehicle =
           partnerVehicles.size > 0 ? Array.from(partnerVehicles).join(', ') : null;
 
-        return { ...trip, isUnsync, partnerVehicle, syncDetails, isRedelivery };
+        return {
+          ...trip,
+          isUnsync,
+          partnerVehicle,
+          syncDetails,
+          isRedelivery,
+          hasAnyPartner,
+          partnerSOs,
+        };
       });
 
       return {

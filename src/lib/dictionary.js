@@ -491,8 +491,9 @@ export const dictionary = {
         success_zip: 'Berhasil mengunduh {length} Form Pengiriman dalam ZIP!',
       },
       tooltip: {
-        manual_assign: 'Penugasan Manual',
+        find_so: 'Klik untuk filter berdasarkan nomor SO',
         hub_eta: 'Terdapat task yang manual assign. Estimasi menjadi tidak akurat',
+        manual_assign: 'Penugasan Manual',
       },
     },
     summary: {
@@ -1216,8 +1217,9 @@ export const dictionary = {
         success_zip: 'Successfully downloaded {length} Delivery Forms in a ZIP!',
       },
       tooltip: {
-        manual_assign: 'Manual Assign',
+        find_so: 'Click to filter by SO number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
+        manual_assign: 'Manual Assign',
       },
     },
     summary: {

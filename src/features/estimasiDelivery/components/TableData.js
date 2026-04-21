@@ -27,9 +27,9 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
       mapping.forEach((item, idx) => {
         const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
 
-        // Pengecekan spesifik: Apakah SO ini Unsync?
         const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
         const soIsUnsync = !!soPartner;
+        const soHasPartner = trip.partnerSOs?.includes(item.so) || false;
 
         processedTrips.push({
           ...trip,
@@ -42,6 +42,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
           isUnsync: soIsUnsync,
           partnerVehicle: soPartner,
+          hasPartner: soHasPartner,
         });
       });
       return;
@@ -67,6 +68,8 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
       pickupWh: null,
       isSplit: false,
       originalIndex: index,
+      hasPartner: trip.hasAnyPartner,
+      partnerSOs: trip.partnerSOs,
     });
   });
 
@@ -91,12 +94,12 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
           let textClass = '';
           const isManual = trip.isManual;
-          const isUnsync = trip.isUnsync;
+          const hasPartner = trip.hasPartner;
 
           if (isHub) {
             textClass = 'text-red-600 font-semibold';
           } else if (isManual) {
-            textClass = 'text-red-600 font-medium';
+            textClass = 'text-[#4F76C7] font-medium';
           }
 
           let rowClass = 'transition-colors ';
@@ -109,27 +112,24 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           rowClass += 'border-b border-gray-100 ';
 
           let tooltipMsg = '';
-          if (isUnsync) {
-            tooltipMsg = t('common.click_for_detail');
+          if (hasPartner) {
+            tooltipMsg = t('estimation.tooltip.find_so');
           } else if (isManual) {
             tooltipMsg = t('estimation.tooltip.manual_assign');
           }
 
           // --- PERBAIKAN LOGIKA KLIK ---
           const handleRowClick = () => {
-            if (isUnsync && setSearchQuery) {
+            if (hasPartner && setSearchQuery) {
               let filterTarget = '';
 
               if (trip.isSplit) {
-                // Di mode Detail, ambil nomor SO di baris tersebut
                 filterTarget = trip.displaySo;
               } else {
-                // Di mode Ringkas, ambil SO yang benar-benar memicu "unsync" dari syncDetails
-                const unsyncSOs = trip.syncDetails ? Object.keys(trip.syncDetails) : [];
-                if (unsyncSOs.length > 0) {
-                  filterTarget = unsyncSOs[0];
+                const partnerSOs = trip.partnerSOs || [];
+                if (partnerSOs.length > 0) {
+                  filterTarget = partnerSOs[0];
                 } else if (trip.orderId) {
-                  // Fallback jika tidak ada di syncDetails
                   filterTarget = trip.orderId.split(',')[0].trim();
                 }
               }
@@ -143,7 +143,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           const RowContent = (
             <tr
               key={`${trip.visitId}-${idx}`}
-              className={`${rowClass} ${tooltipMsg ? (isUnsync ? 'cursor-pointer' : 'cursor-help') : ''}`}
+              className={`${rowClass} ${tooltipMsg ? (hasPartner ? 'cursor-pointer' : 'cursor-help') : ''}`}
               onClick={handleRowClick}
             >
               <Td>
@@ -199,7 +199,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                       if (isLastHub && hasManualTaskInRoute && trip.eta) {
                         return (
                           <Tooltip tooltipContent={t('estimation.tooltip.hub_eta')}>
-                            <span className="underline decoration-dashed decoration-red-400 cursor-help text-red-700 font-bold underline-offset-4">
+                            <span className="underline decoration-dashed decoration-red-600 cursor-help text-red-600 font-bold underline-offset-4">
                               {timeStr}
                             </span>
                           </Tooltip>
