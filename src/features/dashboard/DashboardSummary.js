@@ -45,17 +45,13 @@ export default function DashboardSummary({ driverData }) {
 
   // Handler khusus untuk Apply Filter dengan Loading Buatan
   const handleApplyFilter = (newSelectedTypes) => {
-    // 1. Reset timer loading di BodyCard
     fetchStartTimeRef.current = Date.now();
-
-    // 2. Set state loading filter
     setIsFiltering(true);
 
-    // 3. Gunakan setTimeout agar React merender state loading (spinner) DULU
     setTimeout(() => {
       setStorageFilter(newSelectedTypes);
       setIsFiltering(false);
-    }, 200); // Delay 200ms
+    }, 200);
   };
 
   const handleDateChange = (date) => {
@@ -292,7 +288,6 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData, hubId]);
 
-  // Memoized Driver Map
   const driverMap = useMemo(() => {
     const map = new Map();
     if (driverData) {
@@ -305,7 +300,6 @@ export default function DashboardSummary({ driverData }) {
     return map;
   }, [driverData]);
 
-  // FILTER LOGIC - CLIENT SIDE
   const filteredDailyTasks = useMemo(() => {
     if (isEmpty(rawData.tasks)) return [];
     if (storageFilter.length === 0) return [];
@@ -328,16 +322,12 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [yearlyTasks, storageFilter]);
 
-  // Calculate Summary from Filtered Data
   const summaryData = useMemo(() => {
     return calculateDashboardSummary(filteredDailyTasks, driverMap, lang);
   }, [filteredDailyTasks, driverMap, lang]);
 
   const isDiagramTab = activeTab === 'Diagram';
 
-  // UPDATED: Logic isLoadingSelected agar spinner muncul di semua tab saat filter berubah
-  // (isDiagramTab ? isYearlyLoading : loading) => Logika asli per-tab
-  // || isFiltering => Override jika sedang filter client-side
   const isLoadingSelected = (isDiagramTab ? isYearlyLoading : loading) || isFiltering;
 
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
@@ -374,7 +364,8 @@ export default function DashboardSummary({ driverData }) {
       dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
       showYearPicker={isDiagramTab}
       className="custom-year-picker"
-      maxDate={isDiagramTab ? null : tomorrowDate()}
+      maxDate={isDiagramTab ? new Date() : tomorrowDate()}
+      disableSunday={!isDiagramTab}
     />
   );
 
@@ -382,7 +373,6 @@ export default function DashboardSummary({ driverData }) {
     <StorageTypeFilter selectedTypes={storageFilter} onApply={handleApplyFilter} />
   );
 
-  // UPDATED: Posisi Storage Filter ditukar menjadi index 0 (pertama)
   const headerItems = [
     {
       label: t('common.storage_type'),

@@ -1,61 +1,67 @@
 @import 'react-datepicker/dist/react-datepicker.css';
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
-/* Pastikan React Hot Toast selalu di atas Modal Map (z-index modal: 2000) */
-body > div[style*='z-index: 9999'] {
-  z-index: 99999 !important;
-}
 
-/* Atau jika React Hot Toast punya container ID/Class tertentu */
+/* ========================================================= */
+/* 1. REACT HOT TOAST CUSTOMIZATION                          */
+/* ========================================================= */
+body > div[style*='z-index: 9999'],
 .go3958317564 {
-  /* Class default react-hot-toast, tapi bisa berubah */
   z-index: 99999 !important;
 }
 
-/* Style untuk warning kustom Anda */
 .my-toast-warning {
-  background: #f59e0b !important; /* Kuning (Amber 500) */
-  color: #000000 !important; /* Teks hitam agar terbaca */
+  background: #f59e0b !important;
+  color: #000000 !important;
 }
 
-/* Style untuk error Anda */
 .my-toast-error {
-  background: #dc2626 !important; /* Merah (Red 600) */
-  color: #ffffff !important; /* Teks putih */
+  background: #dc2626 !important;
+  color: #ffffff !important;
 }
 
 .my-toast-success {
-  background: #22c55e !important; /* Merah (Red 600) */
-  color: #ffffff !important; /* Teks putih */
+  background: #22c55e !important;
+  color: #ffffff !important;
 }
 
 .my-toast-info {
   background: #2196f3 !important;
-  color: #ffffff !important; /* Teks putih */
+  color: #ffffff !important;
 }
 
+
+/* ========================================================= */
+/* 2. DATEPICKER BASE & LAYOUT (LIGHT MODE)                  */
+/* ========================================================= */
 .react-datepicker {
   font-family: inherit;
   border: none !important;
   border-radius: 0.75rem !important;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  padding: 1.2rem !important; /* Padding diperbesar sedikit */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  padding: 1.2rem !important;
   background-color: white !important;
-  width: max-content !important; /* INI KUNCINYA: Lebar mengikuti isi */
+  width: max-content !important;
   display: flex !important;
   flex-direction: column;
   align-items: center;
 }
 
-/* 2. Header (Tahun) */
+.custom-year-picker .react-datepicker,
+.react-datepicker--year-only {
+  width: 420px !important;
+  max-width: 92vw !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Header & Navigasi */
 .react-datepicker__header {
   background-color: white !important;
-  border-bottom: none !important;
-  padding-top: 0 !important;
-  padding-bottom: 1rem !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 14px 0 1rem 0 !important;
   width: 100% !important;
+  border-top-left-radius: 0.75rem !important;
+  border-top-right-radius: 0.75rem !important;
 }
 
 .react-datepicker-year-header {
@@ -65,171 +71,172 @@ body > div[style*='z-index: 9999'] {
   margin-top: 0 !important;
 }
 
-/* 3. Area Bulan */
-.react-datepicker__month {
-  margin: 0 !important;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* Jarak vertikal antar baris */
-}
-
-/* 4. Tombol Bulan (Jan, Feb): PERBESAR DI SINI */
-.react-datepicker__month-text {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 5rem !important; /* Diperlebar agar kotak besar */
-  height: 3rem !important; /* Dipertinggi */
-  margin: 0.4rem !important; /* Jarak antar tombol */
-  border-radius: 0.5rem !important;
-  font-size: 1rem !important; /* Font diperbesar */
-  font-weight: 500 !important;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Efek Hover */
-.react-datepicker__month-text:hover {
-  background-color: #f1f5f9 !important;
-  color: #0284c7 !important;
-  transform: scale(1.05); /* Efek zoom sedikit saat hover */
-}
-
-/* Bulan Terpilih */
-.react-datepicker__month-text--keyboard-selected,
-.react-datepicker__month-text--selected {
-  background-color: #0284c7 !important;
-  color: white !important;
-  font-weight: bold !important;
-  box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3); /* Shadow biru */
-}
-
-/* Panah Navigasi */
 .react-datepicker__navigation {
   top: 1.3rem !important;
 }
 
-.custom-year-picker .react-datepicker {
-  font-family: inherit;
-  width: 420px !important; /* Lebih besar */
-  max-width: 92vw !important; /* Tetap aman di HP */
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 0.75rem !important;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+
+/* ========================================================= */
+/* 3. DATEPICKER GRIDS & ITEMS (MONTH & YEAR)                */
+/* ========================================================= */
+
+/* Grid Wrapper */
+.react-datepicker__month {
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-/* Header */
-.custom-year-picker .react-datepicker__header {
-  width: 100% !important;
-  background-color: white !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  border-top-left-radius: 0.75rem !important;
-  border-top-right-radius: 0.75rem !important;
-  padding-top: 14px !important; /* Sedikit lebih besar */
-}
-
-/* Grid tahun */
+.react-datepicker__year-wrapper,
 .custom-year-picker .react-datepicker__year-wrapper {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 10px !important; /* Lebih lega */
-  padding: 20px !important;
+  gap: 10px !important;
+  padding: 16px !important;
   max-width: 100% !important;
+  margin: 0 !important;
 }
 
-/* Individual year item */
-.custom-year-picker .react-datepicker__year-text {
-  padding: 12px 0 !important; /* Lebih besar */
-  font-size: 1.1rem !important;
-  font-weight: 500 !important;
+/* Styling Base Item (Bulan & Tahun) */
+.react-datepicker__month-text,
+.react-datepicker__year-text {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
   border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  transition: all 0.2s ease-in-out;
+  margin: 0 !important;
 }
 
-/* Hover */
+.react-datepicker__month-text {
+  width: 5rem !important;
+  height: 3rem !important;
+  margin: 0.4rem !important;
+  font-size: 1rem !important;
+}
+
+.react-datepicker__year-text {
+  width: auto !important;
+  height: auto !important;
+  padding: 12px 0 !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+}
+
+
+/* ========================================================= */
+/* 4. DATEPICKER STATES (HOVER, SELECTED, DISABLED)          */
+/* ========================================================= */
+
+/* Hover Normal */
+.react-datepicker__month-text:hover,
 .react-datepicker__year-text:hover {
-  background-color: #e0f2fe !important; /* Sky-100 saat di-hover */
+  background-color: #e0f2fe !important; /* Sky-100 */
+  color: #0284c7 !important; /* Sky-600 */
+}
+.react-datepicker__month-text:hover {
+  transform: scale(1.05);
 }
 
-/* Active */
+/* Selected Active */
+.react-datepicker__month-text--selected,
+.react-datepicker__month-text--keyboard-selected,
 .react-datepicker__year-text--selected,
 .react-datepicker__year-text--keyboard-selected {
-  color: #ffffff !important; /* Teks Putih */
-  background-color: #0284c7 !important; /* Sky-600 (Sesuai tema dashboard Anda) */
+  color: #ffffff !important;
+  background-color: #0284c7 !important;
+}
+.react-datepicker__month-text--selected {
+  box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3);
 }
 
-/* Disabled year */
-.react-datepicker__year-text--disabled {
-  color: #cbd5f5 !important; /* abu-abu (Slate-300) */
-  background-color: #f8fafc !important; /* sangat soft */
+/* Selected Hover */
+.react-datepicker__year-text--selected:hover {
+  background-color: #0369a1 !important; /* Sky-700 */
+  color: #ffffff !important;
+}
+
+/* Disabled */
+.react-datepicker__year-text--disabled,
+.react-datepicker__month-text--disabled {
+  color: #cbd5f5 !important;
+  background-color: #f8fafc !important;
   cursor: not-allowed !important;
   pointer-events: none !important;
-  opacity: 0.6;
+  opacity: 0.6 !important;
 }
 
-/* Hover tidak bereaksi */
-.react-datepicker__year-text--disabled:hover {
+
+/* ========================================================= */
+/* 5. SELECT DROPDOWNS (BULAN & TAHUN HEADER)                */
+/* ========================================================= */
+.react-datepicker__header__dropdown {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 8px 0 !important;
+}
+
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  appearance: none !important;
   background-color: #f8fafc !important;
-  color: #cbd5f5 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  outline: none !important;
+  margin: 0 4px !important;
+  transition: all 0.2s !important;
 }
 
+.react-datepicker__month-select:hover,
+.react-datepicker__year-select:hover,
+.react-datepicker__month-select:focus,
+.react-datepicker__year-select:focus {
+  border-color: #0ea5e9 !important;
+}
+.react-datepicker__month-select:focus,
+.react-datepicker__year-select:focus {
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+  background-color: white !important;
+}
+
+
+/* ========================================================= */
+/* 6. DARK MODE OVERRIDES                                    */
+/* ========================================================= */
 .dark .react-datepicker {
   background-color: #1e293b !important; /* Slate-800 */
-}
-/* 1. Judul Bulan & Tahun (Contoh: April 2026) */
-.dark .react-datepicker__current-month {
-  color: #f8fafc !important; /* Slate-50 */
+  border-color: #334155 !important; /* Slate-700 */
 }
 
-/* 2. Nama-nama Hari (Sen, Sel, Rab, dll) */
-.dark .react-datepicker__day-name {
-  color: #cbd5e1 !important; /* Slate-300 */
-}
-
-/* 3. Angka Tanggal Normal (1, 2, 3, dll) */
-.dark .react-datepicker__day {
-  color: #f8fafc !important; /* Slate-50 */
-}
-
-/* 4. Angka Tanggal di Luar Bulan Ini (Bulan lalu/depan yang biasanya redup) */
-.dark .react-datepicker__day--outside-month {
-  color: #475569 !important; /* Slate-600 */
-}
-
-/* 5. Efek Hover Saat Tanggal Disorot Mouse */
-.dark .react-datepicker__day:hover:not(.react-datepicker__day--selected) {
-  background-color: #334155 !important; /* Slate-700 */
-  color: #38bdf8 !important; /* Sky-400 */
-}
-
-/* 6. Memastikan Border Pemisah Header dan Tanggal Tidak Terlalu Terang */
-.dark .react-datepicker__header {
-  border-bottom: 1px solid #334155 !important; /* Slate-700 */
-}
-
-/* ========================================================= */
-/* --- PERBAIKAN DARK MODE DATE PICKER (HEADER & DISABLED) --- */
-/* ========================================================= */
-
-/* 1. Paksa semua area Header dan Judul Bulan menjadi gelap */
+/* Headers & Dropdowns */
 .dark .react-datepicker__header,
-.dark .custom-year-picker .react-datepicker__header,
+.dark .react-datepicker__header__dropdown {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
 .dark .react-datepicker__current-month,
 .dark .react-datepicker-year-header,
-.dark .react-datepicker__header__dropdown {
-  background-color: #1e293b !important; /* Slate-800 */
-  border-bottom-color: #334155 !important; /* Slate-700 */
+.dark .react-datepicker__day-name,
+.dark .react-datepicker__day {
+  color: #f8fafc !important;
 }
-
-/* Jika menggunakan dropdown bulan/tahun bawaan */
 .dark .react-datepicker__month-select,
 .dark .react-datepicker__year-select {
-  background-color: #334155 !important; /* Slate-700 */
-  color: #f8fafc !important; /* Teks putih */
-  border-color: #475569 !important; /* Slate-600 */
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
 }
 
-/* 2. Ubah warna Segitiga (Pointer) ke arah input */
+/* Pointer Segitiga */
 .dark .react-datepicker__triangle {
   fill: #1e293b !important;
   color: #1e293b !important;
@@ -242,151 +249,65 @@ body > div[style*='z-index: 9999'] {
   border-bottom-color: #334155 !important;
 }
 
-/* 3. TANGGAL DISABLED (Tidak bisa diklik) */
+/* Item Texts (Days, Months, Years) */
+.dark .react-datepicker__day--outside-month {
+  color: #475569 !important;
+}
+
+.dark .react-datepicker__year-text,
+.dark .react-datepicker__month-text {
+  color: #e2e8f0 !important; /* Slate-200 */
+}
+
+/* Dark Mode Hover */
+.dark .react-datepicker__day:hover:not(.react-datepicker__day--selected),
+.dark .react-datepicker__year-text:hover:not(.react-datepicker__year-text--disabled):not(.react-datepicker__year-text--selected),
+.dark .react-datepicker__month-text:hover:not(.react-datepicker__month-text--disabled):not(.react-datepicker__month-text--selected) {
+  background-color: #334155 !important;
+  color: #38bdf8 !important; /* Sky-400 */
+}
+
+/* Dark Mode Disabled (Fix Bug Tahun Tidak Terbaca) */
 .dark .react-datepicker__day--disabled,
 .dark .react-datepicker__month-text--disabled,
 .dark .react-datepicker__year-text--disabled {
-  color: #475569 !important; /* Slate-600 (gelap/redup) */
+  color: #94a3b8 !important; /* Slate-400 */
   background-color: transparent !important;
+  opacity: 0.25 !important; /* Sengaja dibuat sangat pudar */
   cursor: not-allowed !important;
 }
 
-/* Hilangkan efek hover untuk tanggal disabled */
+/* Pastikan disabled hover tidak berubah */
 .dark .react-datepicker__day--disabled:hover,
 .dark .react-datepicker__month-text--disabled:hover,
 .dark .react-datepicker__year-text--disabled:hover {
   background-color: transparent !important;
-  color: #475569 !important;
+  color: #94a3b8 !important;
 }
 
-/* ========================= */
-/* MOBILE OPTIMIZATION    */
-/* ========================= */
 
-/* HP ukuran < 420px */
+/* ========================================================= */
+/* 7. MOBILE OPTIMIZATION                                    */
+/* ========================================================= */
 @media (max-width: 420px) {
-  .custom-year-picker .react-datepicker {
-    width: 95vw !important; /* Full tapi masih ada margin */
+  .custom-year-picker .react-datepicker,
+  .react-datepicker--year-only {
+    width: 95vw !important;
   }
-
   .custom-year-picker .react-datepicker__year-wrapper {
-    grid-template-columns: repeat(3, 1fr) !important; /* Ini tetap 3 kolom */
     gap: 8px !important;
-    padding: 16px !important;
+    padding: 12px !important;
   }
-
   .custom-year-picker .react-datepicker__year-text {
     font-size: 1rem !important;
     padding: 10px 0 !important;
   }
 }
 
-.react-datepicker__header__dropdown {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin-top: 8px !important;
-  margin-bottom: 8px !important;
-}
-
-/* Styling Elemen <select> (Bulan & Tahun) */
-.react-datepicker__month-select,
-.react-datepicker__year-select {
-  appearance: none !important; /* Hapus gaya default browser */
-  background-color: #f8fafc !important; /* Slate-50 */
-  border: 1px solid #e2e8f0 !important; /* Slate-200 */
-  color: #334155 !important; /* Slate-700 */
-  padding: 4px 8px !important;
-  border-radius: 6px !important;
-  font-size: 0.875rem !important; /* text-sm */
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  outline: none !important;
-  margin: 0 4px !important;
-  transition: all 0.2s !important;
-}
-
-/* Efek Hover pada dropdown */
-.react-datepicker__month-select:hover,
-.react-datepicker__year-select:hover {
-  border-color: #0ea5e9 !important; /* Sky-500 */
-  background-color: white !important;
-}
-
-/* Fokus state */
-.react-datepicker__month-select:focus,
-.react-datepicker__year-select:focus {
-  border-color: #0ea5e9 !important;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
-}
-
-/* Pastikan header mengakomodasi tinggi dropdown */
-.react-datepicker__header {
-  padding-bottom: 8px !important; /* Tambah padding bawah agar tidak terlalu mepet */
-}
 
 /* ========================================================= */
-/* --- OVERRIDE REACT-DATEPICKER YEAR VIEW (FINAL FIX) --- */
+/* 8. MISC / UTILITIES                                       */
 /* ========================================================= */
-
-/* 1. Container Utama */
-.react-datepicker--year-only {
-  width: auto !important;
-  min-width: 280px;
-}
-
-/* 2. Wrapper Grid 3 Kolom */
-.react-datepicker__year-wrapper {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 0.5rem;
-  padding: 1rem !important;
-  max-width: none !important;
-  margin: 0 !important;
-}
-
-/* 3. Style Dasar Item Tahun (Teks Abu Gelap) */
-.react-datepicker__year-text {
-  width: auto !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  margin: 0 !important;
-  height: auto !important;
-  padding: 0.75rem 0.25rem !important;
-
-  /* Font Styling */
-  font-weight: 700 !important;
-  font-size: 1.25rem !important;
-  color: #334155 !important; /* Warna default (Slate-700) */
-  border-radius: 0.5rem !important;
-}
-
-/* 4. State Selected (Tahun Terpilih) - Text Putih & BG Biru */
-/* Menggunakan selector ganda agar lebih spesifik dan menang dari rule nomor 3 */
-.react-datepicker__year-text.react-datepicker__year-text--selected,
-.react-datepicker__year-text.react-datepicker__year-text--keyboard-selected {
-  color: #ffffff !important; /* Pasti Putih */
-  background-color: #0284c7 !important; /* Sky-600 */
-}
-
-/* 5. Efek Hover (Saat mouse di atas tahun yg BELUM dipilih) */
-.react-datepicker__year-text:hover {
-  background-color: #e0f2fe !important; /* Sky-100 */
-  color: #0284c7 !important; /* Teks jadi biru */
-}
-
-/* 6. Efek Hover pada tahun yang SUDAH dipilih (Tetap Putih) */
-.react-datepicker__year-text.react-datepicker__year-text--selected:hover {
-  background-color: #0369a1 !important; /* Sky-700 (lebih gelap dikit) */
-  color: #ffffff !important; /* Tetap Putih */
-}
-
-/* Opsional: Sedikit penyesuaian pada header agar lebarnya konsisten */
-.react-datepicker--year-only .react-datepicker__header {
-  width: 100% !important;
-}
-
 .section-list {
   counter-reset: section;
 }
@@ -395,7 +316,6 @@ body > div[style*='z-index: 9999'] {
   counter-increment: section;
 }
 
-/* Sembunyikan marker HANYA di list utama */
 .section-list > li::marker {
   content: '';
 }
