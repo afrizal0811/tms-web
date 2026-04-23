@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 const LoadingState = ({ elapsed, text }) => (
-  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 space-y-4 animate-in fade-in duration-200">
+  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-800 dark:border-slate-700 space-y-4 animate-in fade-in duration-200">
     <Spinner />
     <div className="text-center space-y-1">
       <p className="text-lg font-medium text-slate-700 dark:text-slate-300">{text}</p>
@@ -146,7 +146,7 @@ export default function BodyCard({
     }
     if (isHasTabs) {
       return (
-        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-slate-700 px-2 scrollbar-hide relative bg-white dark:bg-slate-800 rounded-t-xl shrink-0 transition-colors">
+        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-slate-700 px-2 scrollbar-hide relative bg-white dark:bg-slate-900 rounded-t-xl shrink-0 transition-colors">
           {tabs.map((tab) => (
             <TabButton
               isActive={activeTabId === tab.id}
@@ -182,7 +182,7 @@ export default function BodyCard({
           </>
         ) : isEmpty ? (
           <div
-            className={`flex-1 flex items-center justify-center bg-gray-50 border border-gray-300 text-gray-400 m-0 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
+            className={`flex-1 flex items-center justify-center bg-gray-50 border border-gray-300 text-gray-400 m-0 dark:bg-slate-800 dark:border-slate-700 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
           >
             <p>{message}</p>
           </div>

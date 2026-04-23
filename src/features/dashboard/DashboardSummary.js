@@ -418,7 +418,7 @@ export default function DashboardSummary({ driverData }) {
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
       >
-        <div className="flex-1 flex flex-col p-3 overflow-hidden">
+        <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
 
           {activeTab === 'RoutingVsActual' && (

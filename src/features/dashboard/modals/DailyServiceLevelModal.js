@@ -3,23 +3,22 @@
 
 import BaseModal from '@/components/BaseModal';
 import Spinner from '@/components/Spinner';
-import { useLanguage } from '@/context/LanguageContext';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { serviceLevelData } from '../help';
 
-// Update parameter: terima lang dan selectedDate
-const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
+const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     let dayName = '';
+
     if (selectedDate) {
       try {
         const year = selectedDate.getFullYear();
         const month = selectedDate.getMonth();
         const day = parseInt(label, 10);
         const dateObj = new Date(year, month, day);
-        const locale = lang === 'id' ? 'id-ID' : 'en-GB';
-        dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
+        dayName = dateObj.toLocaleDateString(lang, { weekday: 'long' });
       } catch (e) {
         toastError(t('dashboard.toast.parsing_date_error', { err: e.message }));
       }
@@ -31,34 +30,20 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
           {t('common.date')} {label} {dayName && `(${dayName})`}
         </p>
 
-        <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
-          <span>● {t('common.status.success')}</span>
-          <span className="font-mono">{data.SUKSES}</span>
-        </div>
-        {data.PENDING > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-amber-400">
-            <span>● {t('common.status.pending')}</span>
-            <span className="font-mono">{data.PENDING}</span>
-          </div>
-        )}
-        {data.BATAL > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('common.status.cancel')}</span>
-            <span className="font-mono">{data.BATAL}</span>
-          </div>
-        )}
-        {data.PARTIAL > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-orange-400">
-            <span>● {t('common.status.partial')}</span>
-            <span className="font-mono">{data.PARTIAL}</span>
-          </div>
-        )}
-        {data.PENDING_GR > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-yellow-600">
-            <span>● {t('common.status.pending_gr')}</span>
-            <span className="font-mono">{data.PENDING_GR}</span>
-          </div>
-        )}
+        {serviceLevelData.map((item) => {
+          const value = data[item.name];
+          if (!item.alwaysShow && !(value > 0)) return null;
+          return (
+            <div
+              key={item.name}
+              className="flex justify-between gap-4 mb-1"
+              style={{ color: isDarkMode ? item.dark_color : item.light_color }}
+            >
+              <span>● {t(`common.status.${item.tKey}`)}</span>
+              <span className="font-mono">{value || 0}</span>
+            </div>
+          );
+        })}
 
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
           <span>{t('dashboard.charts.service_level.success_rate')}</span>
@@ -70,10 +55,17 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
   return null;
 };
 
-// Update props: terima selectedDate
-function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selectedDate }) {
-  const { t, lang } = useLanguage(); // Ambil lang
-
+function DailyServiceLevelModal({
+  isOpen,
+  onClose,
+  title,
+  data,
+  isLoading,
+  selectedDate,
+  isDarkMode,
+  t,
+  lang,
+}) {
   if (!isOpen) return null;
 
   const hasData = Array.isArray(data) && data.length > 0;
@@ -81,28 +73,19 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
 
   const footerContent = (
     <div className="flex flex-wrap gap-4 font-medium text-xs text-gray-500">
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
-        <span>{t('common.status.success')}</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#eab308] rounded-sm" />
-        <span>{t('common.status.pending')}</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-        <span>{t('common.status.cancel')}</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#f97316] rounded-sm" />
-        <span>{t('common.status.partial')}</span>
-      </div>
-      {hasPendingGR && (
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 bg-[#d97706] rounded-sm" />
-          <span>{t('common.status.pending_gr')}</span>
-        </div>
-      )}
+      {serviceLevelData.map((item) => {
+        return (
+          <div key={item.name} className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-sm"
+              style={{
+                backgroundColor: isDarkMode ? item.dark_color : item.light_color,
+              }}
+            />
+            <span className="text-slate-400">{t(`common.status.${item.tKey}`)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -114,7 +97,7 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
       maxWidth="max-w-5xl"
       footer={footerContent}
     >
-      <div className="h-[400px] w-full bg-white">
+      <div className="h-[400px] w-full bg-white dark:bg-slate-900">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <Spinner />
@@ -125,61 +108,43 @@ function DailyServiceLevelModal({ isOpen, onClose, title, data, isLoading, selec
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
                 dataKey="label"
-                name="Tanggal"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
                 dy={10}
               />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              {/* Passing props lang & selectedDate ke tooltip */}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
+              />
               <Tooltip
-                content={<DailyTooltip t={t} lang={lang} selectedDate={selectedDate} />}
-                cursor={{ fill: '#f1f5f9' }}
+                content={
+                  <DailyTooltip
+                    t={t}
+                    lang={lang}
+                    selectedDate={selectedDate}
+                    isDarkMode={isDarkMode}
+                  />
+                }
+                cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
               />
-
-              <Bar
-                name={t('common.status.success')}
-                dataKey="SUKSES"
-                stackId="a"
-                fill="#22c55e"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                name={t('common.status.pending')}
-                dataKey="PENDING"
-                stackId="a"
-                fill="#eab308"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                name={t('common.status.cancel')}
-                dataKey="BATAL"
-                stackId="a"
-                fill="#ef4444"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                name={t('common.status.partial')}
-                dataKey="PARTIAL"
-                stackId="a"
-                fill="#f97316"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              {hasPendingGR && (
-                <Bar
-                  name={t('common.status.pending_gr')}
-                  dataKey="PENDING_GR"
-                  stackId="a"
-                  fill="#d97706"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
-                />
-              )}
+              {serviceLevelData
+                .filter((item) => item.name !== 'PENDING_GR' || hasPendingGR)
+                .map((item, index, filteredArray) => {
+                  const isTopBar = index === filteredArray.length - 1;
+                  return (
+                    <Bar
+                      key={item.name}
+                      name={t(`common.status.${item.tKey}`)}
+                      dataKey={item.name}
+                      stackId="a"
+                      fill={isDarkMode ? item.dark_color : item.light_color}
+                      radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                      maxBarSize={40}
+                    />
+                  );
+                })}
             </BarChart>
           </ResponsiveContainer>
         ) : (

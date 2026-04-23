@@ -9,6 +9,98 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
+export const serviceLevelData = [
+  {
+    name: 'SUKSES',
+    tKey: 'success',
+    dark_color: '#7bf1a8',
+    light_color: '#00a63e',
+  },
+  {
+    name: 'PENDING',
+    tKey: 'pending',
+    dark_color: '#FC9827',
+    light_color: '#d97706',
+  },
+  {
+    name: 'BATAL',
+    tKey: 'cancel',
+    dark_color: '#ffa2a2',
+    light_color: '#e7000b',
+  },
+  {
+    name: 'PARTIAL',
+    tKey: 'partial',
+    dark_color: '#86BBF9',
+    light_color: '#4c9bf4',
+  },
+  {
+    name: 'PENDING_GR',
+    tKey: 'pending_gr',
+    dark_color: '#CF9FFF',
+    light_color: '#962EFF',
+  },
+];
+
+export const seqAccuracyData = [
+  {
+    name: 'manual',
+    tKey: 'manual',
+    dark_color: '#86BBF9',
+    light_color: '#4c9bf4',
+  },
+  {
+    name: 'match',
+    tKey: 'match',
+    dark_color: '#7bf1a8',
+    light_color: '#00a63e',
+  },
+  {
+    name: 'mismatch',
+    tKey: 'mismatch',
+    dark_color: '#ffa2a2',
+    light_color: '#e7000b',
+  },
+];
+
+export const loadCapacityData = [
+  {
+    name: 'veryLow',
+    tKey: 'very_low',
+    footer: '< 10%',
+    dark_color: '#86BBF9',
+    light_color: '#4c9bf4',
+  },
+  {
+    name: 'low',
+    tKey: 'low',
+    footer: '40-60%',
+    dark_color: '#CF9FFF',
+    light_color: '#962EFF',
+  },
+  {
+    name: 'normal',
+    tKey: 'normal',
+    footer: '60-85%',
+    dark_color: '#7bf1a8',
+    light_color: '#00a63e',
+  },
+  {
+    name: 'full',
+    tKey: 'full',
+    footer: '85-100%',
+    dark_color: '#FC9827',
+    light_color: '#d97706',
+  },
+  {
+    name: 'overload',
+    tKey: 'overload',
+    footer: '> 100%',
+    dark_color: '#ffa2a2',
+    light_color: '#e7000b',
+  },
+];
+
 export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery }) => {
   if (!tasks || !drivers) return [];
 
@@ -644,10 +736,10 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
   const monthlyData = Array.from({ length: 12 }, (_, i) => ({
     monthIndex: i,
     key: `${year}-${String(i + 1).padStart(2, '0')}`,
-    sangatRendah: 0,
-    rendah: 0,
-    optimal: 0,
-    penuh: 0,
+    veryLow: 0,
+    low: 0,
+    normal: 0,
+    full: 0,
     overload: 0,
     details: {},
   }));
@@ -729,13 +821,13 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
       if (maxPct > 100) {
         monthlyData[monthIdx].overload += 1;
       } else if (maxPct >= 85) {
-        monthlyData[monthIdx].penuh += 1;
+        monthlyData[monthIdx].full += 1;
       } else if (maxPct >= 60) {
-        monthlyData[monthIdx].optimal += 1;
+        monthlyData[monthIdx].normal += 1;
       } else if (maxPct >= 40) {
-        monthlyData[monthIdx].rendah += 1;
+        monthlyData[monthIdx].low += 1;
       } else {
-        monthlyData[monthIdx].sangatRendah += 1;
+        monthlyData[monthIdx].veryLow += 1;
       }
 
       const day = parseInt(trip.date.split('-')[2], 10);
@@ -753,30 +845,30 @@ export const getStatusBadge = (pct, t) => {
   if (pct > 100)
     return {
       label: t('dashboard.charts.load_capacity.overload'),
-      classes: 'bg-red-50 text-red-600 border-red-200',
+      classes: 'text-[#e7000b] border-[#e7000b] dark:text-[#ffa2a2] dark:border-[#ffa2a2]',
       range: '> 100%',
     };
   if (pct >= 85)
     return {
       label: t('dashboard.charts.load_capacity.full'),
-      classes: 'bg-orange-50 text-orange-600 border-orange-200',
+      classes: 'text-[#d97706] border-[#d97706] dark:text-[#FC9827] dark:border-[#FC9827]',
       range: '85-100%',
     };
   if (pct >= 60)
     return {
-      label: t('dashboard.charts.load_capacity.optimal'),
-      classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      label: t('dashboard.charts.load_capacity.normal'),
+      classes: ' text-[#00a63e] border-[#00a63e] dark:text-[#7bf1a8] dark:border-[#7bf1a8]',
       range: '60-85%',
     };
   if (pct >= 40)
     return {
       label: t('dashboard.charts.load_capacity.low'),
-      classes: 'bg-blue-50 text-blue-600 border-blue-200',
+      classes: 'text-[#962EFF] border-[#962EFF] dark:text-[#CF9FFF] dark:border-[#CF9FFF]',
       range: '40-60%',
     };
   return {
     label: t('dashboard.charts.load_capacity.very_low'),
-    classes: 'bg-slate-100 text-slate-600 border-slate-200',
+    classes: 'text-[#4c9bf4] border-[#4c9bf4] dark:text-[#86BBF9] dark:border-[#86BBF9]',
     range: '< 40%',
   };
 };

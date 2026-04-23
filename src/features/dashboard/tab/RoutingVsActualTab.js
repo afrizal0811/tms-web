@@ -55,10 +55,99 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   };
 
   const hoursStatusConfig = {
-    yes: { text: t('dashboard.tab.routingreal.yes'), color: 'text-green-600' },
-    early: { text: t('dashboard.tab.routingreal.early'), color: 'text-amber-500' },
-    no: { text: t('dashboard.tab.routingreal.no'), color: 'text-red-600' },
+    yes: { text: t('dashboard.tab.routingreal.yes'), color: 'text-green-600 dark:text-green-300' },
+    early: {
+      text: t('dashboard.tab.routingreal.early'),
+      color: 'text-amber-500 dark:text-amber-300',
+    },
+    no: { text: t('dashboard.tab.routingreal.no'), color: 'text-red-600 dark:text-red-300' },
   };
+
+  const tableColumns = [
+    { header: t('dashboard.tab.routingreal.flow'), render: (row) => row.flow },
+    {
+      header: t('common.number_plates'),
+      render: (row) => <HighlightText text={row.plat} highlight={searchQuery} />,
+    },
+    {
+      header: t('common.driver'),
+      className: 'font-medium',
+      render: (row) => <HighlightText text={row.driver} highlight={searchQuery} />,
+    },
+    {
+      header: t('common.customer_name'),
+      render: (row) => <HighlightText text={row.customerName} highlight={searchQuery} />,
+    },
+    { header: t('dashboard.tab.routingreal.status'), render: (row) => row.statusLabel },
+    {
+      header: t('dashboard.tab.routingreal.open_time'),
+      render: (row) => row.openTime,
+    },
+    {
+      header: t('dashboard.tab.routingreal.close_time'),
+      render: (row) => row.closeTime,
+    },
+    { header: t('common.eta'), render: (row) => row.eta },
+    {
+      header: t('dashboard.tab.routingreal.actual_arrival'),
+      render: (row) => row.actualArrival,
+    },
+    { header: t('common.etd'), render: (row) => row.etd },
+    {
+      header: t('dashboard.tab.routingreal.actual_departure'),
+      render: (row) => row.actualDeparture,
+    },
+    {
+      header: t('dashboard.tab.routingreal.visit_plan'),
+      render: (row) => row.visitTime,
+    },
+    {
+      header: t('dashboard.tab.routingreal.visit_actual'),
+      render: (row) => row.actualVisitTime,
+    },
+    {
+      header: t('dashboard.tab.routingreal.ro_seq'),
+      className: 'font-semibold',
+      render: (row) => (isEmpty(row.roSequence) ? '-' : row.roSequence),
+    },
+    {
+      header: t('dashboard.tab.routingreal.actual_seq'),
+      className: 'font-semibold',
+      render: (row) => row.realSequence ?? '-',
+    },
+    {
+      header: t('dashboard.tab.routingreal.is_match'),
+      tooltip: t('dashboard.tab.routingreal.tooltip.exp_is_same'),
+      render: (row) => {
+        if (isEmpty(row.realSequence)) {
+          return <span className="font-bold text-slate-100">-</span>;
+        }
+        const isMatch = row.roSequence == row.realSequence;
+
+        return (
+          <span
+            className={`font-bold ${
+              isMatch ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'
+            }`}
+          >
+            {t(`dashboard.tab.routingreal.${isMatch ? 'match' : 'mismatch'}`)}
+          </span>
+        );
+      },
+    },
+    {
+      header: t('dashboard.tab.routingreal.is_within_hours'),
+      tooltip: t('dashboard.tab.routingreal.tooltip.exp_within_hours'),
+      tooltipWidth: 'w-40',
+      render: (row) => {
+        const statusUI = hoursStatusConfig[row.isWithinHoursStatus] || {
+          text: '-',
+          color: 'text-slate-100',
+        };
+        return <span className={`font-bold ${statusUI.color}`}>{statusUI.text}</span>;
+      },
+    },
+  ];
 
   return (
     <div className="flex-1 flex flex-col h-full space-y-4">
@@ -88,152 +177,88 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
           />
         </div>
       </div>
-      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white">
-        <table className="min-w-full text-xs text-left">
-          <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm">
-            <tr>
-              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.flow')}</th>
-              <th className="px-4 py-3 border-b">{t('common.number_plates')}</th>
-              <th className="px-4 py-3 border-b">{t('common.driver')}</th>
-              <th className="px-4 py-3 border-b">{t('common.customer_name')}</th>
-              <th className="px-4 py-3 border-b">{t('dashboard.tab.routingreal.status')}</th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.open_time')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.close_time')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">{t('common.eta')}</th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.actual_arrival')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">{t('common.etd')}</th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.actual_departure')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.visit_plan')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.visit_actual')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.ro_seq')}
-              </th>
-              <th className="px-4 py-3 border-b text-center">
-                {t('dashboard.tab.routingreal.actual_seq')}
-              </th>
-              <Tooltip tooltipContent={t('dashboard.tab.routingreal.tooltip.exp_is_same')}>
-                <th className="px-4 py-3 border-b text-center cursor-help">
-                  {t('dashboard.tab.routingreal.is_match')}
-                </th>
-              </Tooltip>
-              <Tooltip
-                tooltipContent={t('dashboard.tab.routingreal.tooltip.exp_within_hours')}
-                width="w-40"
-              >
-                <th className="px-4 py-3 border-b text-center cursor-help">
-                  {t('dashboard.tab.routingreal.is_within_hours')}
-                </th>
-              </Tooltip>
+      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white dark:border-slate-700">
+        <table className="min-w-full text-xs text-left ">
+          <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm dark:bg-slate-900 dark:text-slate-700!">
+            <tr className="text-gray-600 dark:text-slate-300">
+              {tableColumns.map((col, index) => {
+                const baseClass = `px-4 py-3 border-b border-gray-300 dark:border-slate-700 text-center`;
+                return (
+                  <th key={index} className={`${baseClass} ${col.tooltip ? 'cursor-help' : ''}`}>
+                    {col.tooltip ? (
+                      <Tooltip tooltipContent={col.tooltip} width={col.tooltipWidth}>
+                        <span>{col.header}</span>
+                      </Tooltip>
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {processedData.map((row, index) => {
+
+          {/* ===== BODY ===== */}
+          <tbody className="divide-y divide-gray-100 dark:bg-slate-800 dark:divide-gray-500/30!">
+            {processedData.map((row, rowIndex) => {
               const hubStart = row.type === 'HUB_START';
               const hubEnd = row.type === 'HUB_END';
-
               if (row.type === 'SPACER') {
-                return <tr key={index} className="bg-gray-50 h-4 border-b border-gray-200"></tr>;
+                return (
+                  <tr key={rowIndex} className="bg-gray-50 dark:bg-slate-800">
+                    <td colSpan={17} className="h-4 sm:h-6"></td>
+                  </tr>
+                );
               }
-
-              if (hubStart) {
+              if (hubStart || hubEnd) {
                 return (
                   <tr
-                    key={index}
-                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
+                    key={rowIndex}
+                    className="text-red-600 dark:text-red-300 font-bold border-b border-gray-100 bg-white  dark:bg-slate-800"
                   >
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
+                    {Array.from({ length: 17 }).map((_, colIndex) => {
+                      if (colIndex === 3)
+                        return (
+                          <td key={colIndex} className="px-4 py-2">
+                            {!searchQuery ? 'HUB' : ''}
+                          </td>
+                        );
+                      if (colIndex === 9 && hubStart)
+                        return (
+                          <td key={colIndex} className="px-4 py-2 text-center">
+                            {!searchQuery ? row.time : ''}
+                          </td>
+                        );
+                      if (colIndex === 7 && hubEnd)
+                        return (
+                          <td key={colIndex} className="px-4 py-2 text-center">
+                            {!searchQuery ? row.time : ''}
+                          </td>
+                        );
+                      return <td key={colIndex} className="px-4 py-2" />;
+                    })}
                   </tr>
                 );
               }
 
-              const isMatch = row.roSequence == row.realSequence;
-              const rowClass = row.isManualAssign ? 'bg-red-100' : 'hover:bg-gray-50';
-              const realSeq = row.realSequence ?? '-';
-              const realSeqEmpty = isEmpty(realSeq);
-              const match = realSeqEmpty
-                ? '-'
-                : isMatch
-                  ? t('dashboard.tab.routingreal.match')
-                  : t('dashboard.tab.routingreal.mismatch');
+              const rowClass = row.isManualAssign
+                ? 'bg-red-100/70 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-[#88191b] divide-y divide-red-200/30 dark:divide-red-900/30!'
+                : 'hover:bg-gray-50 dark:hover:bg-[#1f2c42]';
 
-              const cellContent = (
-                <>
-                  <td className="px-4 py-2">{row.flow}</td>
-                  <td className="px-4 py-2">
-                    <HighlightText text={row.plat} highlight={searchQuery} />
-                  </td>
-                  <td className="px-4 py-2 font-medium">
-                    <HighlightText text={row.driver} highlight={searchQuery} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <HighlightText text={row.customerName} highlight={searchQuery} />
-                  </td>
-                  <td className="px-4 py-2">{row.statusLabel}</td>
-                  <td className="px-4 py-2 text-center">{row.openTime}</td>
-                  <td className="px-4 py-2 text-center">{row.closeTime}</td>
-                  <td className="px-4 py-2 text-center">{row.eta}</td>
-                  <td className="px-4 py-2 text-center">{row.actualArrival}</td>
-                  <td className="px-4 py-2 text-center">{row.etd}</td>
-                  <td className="px-4 py-2 text-center">{row.actualDeparture}</td>
-                  <td className="px-4 py-2 text-center">{row.visitTime}</td>
-                  <td className="px-4 py-2 text-center">{row.actualVisitTime}</td>
-                  <td className="px-4 py-2 text-center font-semibold">
-                    {isEmpty(row.roSequence) ? '-' : row.roSequence}
-                  </td>
-                  <td className="px-4 py-2 text-center font-semibold">{realSeq}</td>
-                  <td
-                    className={`px-4 py-2 text-center font-bold ${
-                      isMatch ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {match}
-                  </td>
-                  {(() => {
-                    const statusUI = hoursStatusConfig[row.isWithinHoursStatus] || {
-                      text: '-',
-                      color: 'text-gray-400',
-                    };
-                    return (
-                      <td className={`px-4 py-2 text-center font-bold ${statusUI.color}`}>
-                        {statusUI.text}
-                      </td>
-                    );
-                  })()}
-                </>
-              );
+              const cellContent = tableColumns.map((col, colIndex) => (
+                <td
+                  key={colIndex}
+                  className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}
+                >
+                  {col.render(row)}
+                </td>
+              ));
 
+              // 4. Return baris
               if (row.isManualAssign) {
                 return (
                   <Tooltip
-                    key={index}
+                    key={rowIndex}
                     tooltipContent={t('dashboard.tab.routingreal.tooltip.manual')}
                   >
                     <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
@@ -243,34 +268,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 );
               }
 
-              if (hubEnd) {
-                return (
-                  <tr
-                    key={index}
-                    className="text-red-600 font-bold border-b border-gray-100 bg-white"
-                  >
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2">{!searchQuery ? 'HUB' : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2 text-center">{!searchQuery ? row.time : ''}</td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2"></td>
-                  </tr>
-                );
-              }
-
               return (
-                <tr key={index} className={`${rowClass} border-b border-gray-100`}>
+                <tr key={rowIndex} className={`${rowClass} border-b border-gray-100`}>
                   {cellContent}
                 </tr>
               );

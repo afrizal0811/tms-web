@@ -145,9 +145,9 @@ export const dictionary = {
       },
       charts: {
         service_level: {
-          subtitle: 'Persentase task',
-          success_rate: 'Success Rate',
-          title: 'Service Level',
+          subtitle: 'Persentase Tugas',
+          success_rate: 'Berhasil (%)',
+          title: 'Tingkat Servis',
         },
         sequence: {
           actual: 'Aktual',
@@ -156,7 +156,7 @@ export const dictionary = {
           mismatch: 'Beda',
           routing: 'Routing',
           subtitle: 'Kesesuaian urutan',
-          title: 'Sequence Accuracy',
+          title: 'Akurasi Urutan',
           total_accuracy: 'Total Akurasi',
         },
         load_capacity: {
@@ -164,10 +164,10 @@ export const dictionary = {
           full: 'Penuh',
           highlight: 'kapasitas kendaraan',
           low: 'Rendah',
-          optimal: 'Optimal',
-          overload: 'Kelebihan Muatan',
+          normal: 'Normal',
+          overload: 'Lebih Muatan',
           subtitle: 'Persentase pemakaian',
-          title: 'Load Capacity',
+          title: 'Kapasitas Muatan',
           very_low: 'Sangat Rendah',
           volume: 'Volume',
           weight: 'Berat',
@@ -875,7 +875,7 @@ export const dictionary = {
       charts: {
         service_level: {
           subtitle: 'Task percentage',
-          success_rate: 'Success Rate',
+          success_rate: 'Success (%)',
           title: 'Service Level',
         },
         sequence: {
@@ -893,7 +893,7 @@ export const dictionary = {
           full: 'Full',
           highlight: 'vehicle capacity',
           low: 'Low',
-          optimal: 'Optimal',
+          normal: 'Normal',
           overload: 'Overload',
           subtitle: 'Usage percentage of',
           title: 'Load Capacity',

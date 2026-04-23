@@ -16,59 +16,48 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { serviceLevelData } from '../../help';
 
-const CustomTooltip = ({ active, payload, label, t }) => {
+const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
-
-        <div className="flex justify-between gap-4 mb-1 text-emerald-400 font-bold">
-          <span>● {t('common.status.success')}</span>
-          <span className="font-mono">{data.SUKSES}</span>
-        </div>
-        {data.PENDING > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-amber-400">
-            <span>● {t('common.status.pending')}</span>
-            <span className="font-mono">{data.PENDING}</span>
-          </div>
-        )}
-        {data.BATAL > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-red-400">
-            <span>● {t('common.status.cancel')}</span>
-            <span className="font-mono">{data.BATAL}</span>
-          </div>
-        )}
-        {data.PARTIAL > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-orange-400">
-            <span>● {t('common.status.partial')}</span>
-            <span className="font-mono">{data.PARTIAL}</span>
-          </div>
-        )}
-        {data.PENDING_GR > 0 && (
-          <div className="flex justify-between gap-4 mb-1 text-yellow-600">
-            <span>● {t('common.status.pending_gr')}</span>
-            <span className="font-mono">{data.PENDING_GR}</span>
-          </div>
-        )}
-
+        {serviceLevelData.map((item) => {
+          const value = data[item.name];
+          if (!(value > 0)) return null;
+          return (
+            <div
+              key={item.name}
+              className="flex justify-between gap-4 mb-1"
+              style={{ color: isDarkMode ? item.dark_color : item.light_color }}
+            >
+              <span>● {t(`common.status.${item.tKey}`)}</span>
+              <span className="font-mono">{value || 0}</span>
+            </div>
+          );
+        })}
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between text-white">
           <span>{t('common.total_task')}</span>
           <span>{data.total}</span>
         </div>
-        <div className=" border-slate-600 font-bold flex justify-between text-white">
+
+        <div className="border-slate-600 font-bold flex justify-between text-white">
           <span>{t('dashboard.charts.service_level.success_rate')}</span>
           <span>{data.rate}%</span>
         </div>
+
         <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
+
   return null;
 };
 
-function ServiceLevelChart({ allTasks, hubId }) {
+function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
   const { t, lang } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
@@ -97,7 +86,7 @@ function ServiceLevelChart({ allTasks, hubId }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          label: date.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short' }),
+          label: date.toLocaleDateString(lang, { month: 'short' }),
         };
       }
       return item;
@@ -133,7 +122,6 @@ function ServiceLevelChart({ allTasks, hubId }) {
     setSelectedMonth(entry);
   };
 
-  // --- PERBAIKAN: Siapkan object Date untuk dikirim ke Modal ---
   const selectedDateObj = useMemo(() => {
     if (!selectedMonth || !selectedMonth.key) return null;
     try {
@@ -145,9 +133,9 @@ function ServiceLevelChart({ allTasks, hubId }) {
   }, [selectedMonth]);
 
   const getModalTitle = () => {
-    if (!selectedDateObj) return ''; // Gunakan selectedDateObj
+    if (!selectedDateObj) return ''; 
     try {
-      const fullMonth = selectedDateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+      const fullMonth = selectedDateObj.toLocaleDateString(lang, {
         month: 'long',
         year: 'numeric',
       });
@@ -170,13 +158,17 @@ function ServiceLevelChart({ allTasks, hubId }) {
   const hasData = Array.isArray(monthlyData) && monthlyData.length > 0;
 
   return (
-    <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-6">
-        <h3 className="text-lg font-bold text-slate-800">Service Level</h3>
-        <p className="text-sm text-gray-500">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          {t('dashboard.charts.service_level.title')}
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           {t('dashboard.charts.service_level.subtitle')}{' '}
-          <span className="font-bold text-emerald-600">{t('common.status.success')}</span> vs{' '}
-          <span className="font-bold text-red-600">{t('common.others')}</span>
+          <span className="font-bold text-green-600 dark:text-green-300">
+            {t('common.status.success')}
+          </span>{' '}
+          vs <span className="font-bold text-red-600 dark:text-red-300">{t('common.others')}</span>
         </p>
       </div>
 
@@ -201,11 +193,18 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
                 dy={10}
               />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip t={t} />} cursor={{ fill: '#f1f5f9' }} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
+              />
+              <Tooltip
+                content={<CustomTooltip t={t} isDarkMode={isDarkMode} />}
+                cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
+              />
               <Legend
                 iconType="circle"
                 layout="horizontal"
@@ -214,56 +213,23 @@ function ServiceLevelChart({ allTasks, hubId }) {
                 wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
               />
 
-              <Bar
-                cursor="pointer"
-                dataKey="SUKSES"
-                fill="#22c55e"
-                maxBarSize={50}
-                name={t('common.status.success')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="PENDING"
-                fill="#eab308"
-                maxBarSize={50}
-                name={t('common.status.pending')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="BATAL"
-                fill="#ef4444"
-                maxBarSize={50}
-                name={t('common.status.cancel')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="PARTIAL"
-                fill="#f97316"
-                maxBarSize={50}
-                name={t('common.status.partial')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="PENDING_GR"
-                fill="#d97706"
-                maxBarSize={50}
-                name={t('common.status.pending_gr')}
-                onClick={handleBarClick}
-                radius={[4, 4, 0, 0]}
-                stackId="a"
-              />
+              {serviceLevelData.map((item, index) => {
+                const isTopBar = index === serviceLevelData.length - 1;
+
+                return (
+                  <Bar
+                    key={item.name}
+                    cursor="pointer"
+                    dataKey={item.name}
+                    fill={isDarkMode ? item.dark_color : item.light_color}
+                    maxBarSize={50}
+                    name={t(`common.status.${item.tKey}`)}
+                    onClick={handleBarClick}
+                    radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    stackId="a"
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -279,7 +245,10 @@ function ServiceLevelChart({ allTasks, hubId }) {
         title={getModalTitle()}
         data={dailyData}
         isLoading={isModalLoading}
-        selectedDate={selectedDateObj} // PERBAIKAN: Kirim props ini
+        selectedDate={selectedDateObj}
+        isDarkMode={isDarkMode}
+        t={t}
+        lang={lang}
       />
     </div>
   );
