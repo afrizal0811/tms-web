@@ -133,7 +133,7 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
   }, [selectedMonth]);
 
   const getModalTitle = () => {
-    if (!selectedDateObj) return ''; 
+    if (!selectedDateObj) return '';
     try {
       const fullMonth = selectedDateObj.toLocaleDateString(lang, {
         month: 'long',
@@ -174,9 +174,9 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
 
       <div className="h-[350px] w-full">
         {isPreparing ? (
-          <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300">
-            <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 animate-pulse" />
-            <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 animate-pulse" />
+          <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300 dark:bg-slate-800 dark:border-slate-700">
+            <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 dark:bg-slate-600 animate-pulse" />
+            <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 dark:bg-slate-600 animate-pulse" />
             <p className="mt-4 text-xs font-semibold tracking-wide uppercase">
               {t('common.preparing_chart')}
             </p>

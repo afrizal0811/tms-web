@@ -1,6 +1,9 @@
 // File: src/features/dashboard/components/chart/LoadCapacityChart.js
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
+import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
+import { isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
   Bar,
@@ -12,10 +15,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-
-import { useLanguage } from '@/context/LanguageContext';
-import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
-import { isEmpty } from '@/lib/utils';
 import { loadCapacityData, processLoadCapacityData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
@@ -47,7 +46,6 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
 
   return null;
 };
-
 
 const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
   const { t, lang } = useLanguage();
