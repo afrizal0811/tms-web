@@ -634,16 +634,16 @@ export default function EstimasiDelivery() {
   );
 
   const viewToggle = (
-    <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px]">
+    <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px] dark:bg-slate-800 dark:border-slate-700">
       <button
         onClick={() => handleToggleView(false)}
-        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700 dark:bg-slate-900/50 dark:text-slate-300' : 'text-slate-500 hover:text-slate-600'}`}
       >
         {t('estimation.view_summary')}
       </button>
       <button
         onClick={() => handleToggleView(true)}
-        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700 dark:bg-slate-900/50 dark:text-slate-300' : 'text-slate-500 hover:text-slate-600'}`}
       >
         {t('estimation.view_detail')}
       </button>
@@ -697,22 +697,28 @@ export default function EstimasiDelivery() {
     if (!filteredVehicleRoutes) return [];
     return filteredVehicleRoutes.map((route) => {
       const tooltipName = getDriverName(route, driverData);
+      const isRedelivery = route.isRedelivery;
+      const isManual = route.hasManual;
+      const redeliveryBadge = isRedelivery && '[R]';
       const noDriverName = isEmpty(tooltipName);
+
       let tabClass =
         'cursor-help block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ';
 
-      if (route.hasManual) {
-        tabClass += 'bg-[#E6EEFF] border-transparent text-[#4F76C7]';
+      if (isManual) {
+        tabClass +=
+          'bg-[#E6EEFF] border-[#b3cbfe] text-[#4F76C7] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-900';
       } else {
         tabClass += 'bg-transparent border-transparent';
       }
-      const redeliveryBadge = route.isRedelivery && '[R]';
+
       return {
         id: route.vehicleId,
         label: (
           <Tooltip tooltipContent={noDriverName ? t('estimation.no_driver') : tooltipName}>
             <span className={tabClass}>
-              {route.vehicleName} <span className="text-red-600">{redeliveryBadge}</span>
+              {route.vehicleName}{' '}
+              <span className={`text-red-600 dark:text-red-300 `}>{redeliveryBadge}</span>
             </span>
           </Tooltip>
         ),
@@ -741,8 +747,8 @@ export default function EstimasiDelivery() {
         onTabClick={setActiveVehicleId}
         tabs={vehicleTabs}
       >
-        <div className="bg-white rounded-xl h-full flex flex-col border-none">
-          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 rounded-b-xl">
+        <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors ">
+          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
             {!isLoading && activeRoute && (
               <TableData
                 activeRoute={activeRoute}

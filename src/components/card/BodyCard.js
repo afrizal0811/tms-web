@@ -171,7 +171,7 @@ export default function BodyCard({
 
       <div
         ref={cardWrapperRef}
-        className="flex-1 p-0 flex flex-col relative rounded-b-xl bg-white overflow-hidden"
+        className="flex-1 p-0 flex flex-col relative rounded-b-xl bg-white dark:bg-slate-800 overflow-hidden"
       >
         {isLoading ? (
           <>
