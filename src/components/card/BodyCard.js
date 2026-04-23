@@ -164,7 +164,9 @@ export default function BodyCard({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col w-full h-[600px] relative group transition-colors duration-200">
+    <div
+      className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col w-full h-[600px] relative group transition-colors duration-200 overflow-hidden`}
+    >
       {renderHeader()}
 
       <div

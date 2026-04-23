@@ -394,7 +394,7 @@ export const dictionary = {
     },
     longlat: {
       highlight_subtitle: 'pembaruan koordinat lokasi',
-      subtitle: 'Daftar customer yang memerlukan',
+      subtitle: 'Daftar pelanggan yang memerlukan',
       table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
       table: {

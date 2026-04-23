@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 const MapLoader = () => {
   const { t } = useLanguage();
   return (
-    <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400 font-medium">
+    <div className="h-full w-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 font-medium">
       {t('common.loading')}...
     </div>
   );
@@ -42,7 +42,9 @@ export default function CustomerHistoryModal({
         {t('longlat.modal.title')} ({formatLongDate(selectedDate, lang)})
       </h3>
       <div className="flex mt-1 font-normal">
-        <p className="text-sm text-white/70 font-small break-all">{customerData}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-300 font-small break-all">
+          {customerData}
+        </p>
       </div>
     </div>
   );
@@ -56,12 +58,12 @@ export default function CustomerHistoryModal({
       contentClassName="h-[80vh] sm:h-[70vh]"
       bodyClassName="p-0 flex flex-col overflow-hidden h-full"
     >
-      <div className="w-full h-full bg-slate-50 relative shrink-0">
+      <div className="w-full h-full bg-slate-50 dark:bg-slate-900 relative shrink-0">
         {mapData.length > 0 ? (
           <div className="absolute inset-0 p-4">
             <MapLocation data={mapData} t={t} lang={lang} />
             <div
-              className="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-3 py-2 rounded shadow text-[10px] border border-gray-200"
+              className="absolute bottom-6 left-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 rounded shadow text-[10px] border border-gray-200 dark:border-slate-700 dark:text-slate-200"
               style={{ zIndex: 1000 }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -75,7 +77,7 @@ export default function CustomerHistoryModal({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+          <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-sm">
             {t('longlat.modal.no_coordinate')}
           </div>
         )}
