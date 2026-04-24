@@ -1,6 +1,6 @@
 'use client';
 
-import DownloadButton from '@/components/DownloadButton';
+import Button from '@/components/Button';
 import HighlightText from '@/components/HighlightText';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
@@ -161,19 +161,17 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
           />
         </div>
         <div className="w-full md:w-auto order-2">
-          <button
+          <Button
+            disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleOpenMap}
-            disabled={loading || isEmpty(processedData)}
-            className="flex items-center justify-center gap-2 px-4 h-[42px] bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white shadow-sm w-full sm:w-auto cursor-pointer"
-          >
-            <span className="whitespace-nowrap">{t('dashboard.tab.routingreal.show_map')}</span>
-          </button>
+            text={t('dashboard.tab.routingreal.show_map')}
+          />
         </div>
         <div className="w-full md:w-auto order-3">
-          <DownloadButton
+          <Button
             disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleDownload}
-            text={t('common.download') + ' Excel'}
+            text={t('common.download')}
           />
         </div>
       </div>

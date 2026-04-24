@@ -5,6 +5,8 @@ import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { forwardRef } from 'react';
+import Th from '@/components/table/Th';
+import Td from '@/components/table/Td';
 
 const StatCard = forwardRef(function StatCard(
   { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
@@ -71,15 +73,15 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
       ) : data?.length > 0 ? (
         <div className="overflow-y-auto grow">
           <table className="min-w-full">
-            <thead className="bg-gray-50 sticky top-0 dark:bg-[#1b2639]">
+            <thead className="bg-gray-50 sticky top-0">
               <tr>
                 {headers.map((headerItem, index) => (
-                  <th
+                  <Th
                     key={index}
-                    className="p-3 text-left text-xs font-semibold text-gray-600 uppercase dark:text-slate-300"
+                    className="p-3 text-left text-xs font-semibold text-gray-600 uppercase"
                   >
                     {headerItem}
-                  </th>
+                  </Th>
                 ))}
               </tr>
             </thead>
@@ -213,9 +215,10 @@ export default function DetailTab({ loading, summaryData }) {
             ]}
             renderRow={(item) => (
               <>
-                <td className="p-3 text-xs">{item.flow}</td>
-                <td className="p-3 text-xs">{item.customer}</td>
-                <td className="p-3 text-xs">{item.truncateSoNumber}</td>
+              
+                <Td className="p-3 text-xs">{item.flow}</Td>
+                <Td className="p-3 text-xs">{item.customer}</Td>
+                <Td className="p-3 text-xs">{item.truncateSoNumber}</Td>
               </>
             )}
           />
@@ -231,9 +234,9 @@ export default function DetailTab({ loading, summaryData }) {
             ]}
             renderRow={(item) => (
               <>
-                <td className="p-3 text-xs">{item.flow}</td>
-                <td className="p-3 text-xs">{item.customer}</td>
-                <td className="p-3 text-xs font-semibold">{item.driver}</td>
+                <Td className="p-3 text-xs">{item.flow}</Td>
+                <Td className="p-3 text-xs">{item.customer}</Td>
+                <Td className="p-3 text-xs font-semibold">{item.driver}</Td>
               </>
             )}
           />
@@ -249,9 +252,9 @@ export default function DetailTab({ loading, summaryData }) {
             ]}
             renderRow={(item) => (
               <>
-                <td className="p-3 text-xs">{item.customer}</td>
-                <td className="p-3 text-xs text-red-500">{item.doneDateDisplay}</td>
-                <td className="p-3 text-xs">{item.driver}</td>
+                <Td className="p-3 text-xs">{item.customer}</Td>
+                <Td className="p-3 text-xs text-red-500">{item.doneDateDisplay}</Td>
+                <Td className="p-3 text-xs">{item.driver}</Td>
               </>
             )}
           />

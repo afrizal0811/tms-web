@@ -3,7 +3,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import DownloadButton from '@/components/DownloadButton';
+import Button from '@/components/Button';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
@@ -201,11 +201,11 @@ export default function UpdateLonglatPage() {
   );
 
   const downloadBtn = (
-    <DownloadButton
-      disabled={loading || isDownloading || isEmpty(processedData)}
+    <Button
+      Button={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
-      text={t('common.download') + ' Excel'}
+      text={t('common.download')}
     />
   );
 

@@ -1,9 +1,9 @@
 // File: src/features/vehicleData/VehicleData.js
 'use client';
 
+import Button from '@/components/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import DownloadButton from '@/components/DownloadButton';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
@@ -186,7 +186,7 @@ export default function VehicleData() {
   );
 
   const downloadBtn = (
-    <DownloadButton
+    <Button
       onClick={handleExcelDownload}
       isLoading={isDownloading}
       disabled={
@@ -194,7 +194,7 @@ export default function VehicleData() {
         isDownloading ||
         (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
       }
-      text={t('common.download') + ' Excel'}
+      text={t('common.download')}
       width="w-auto"
     />
   );

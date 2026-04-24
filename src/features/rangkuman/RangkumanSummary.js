@@ -3,7 +3,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import DownloadButton from '@/components/DownloadButton';
+import Button from '@/components/Button';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
@@ -277,11 +277,11 @@ export default function RangkumanSummary() {
     {
       label: 'Action',
       component: (
-        <DownloadButton
+        <Button
           disabled={isLoading || isEmpty(rawData.tasks)}
           isLoading={isLoading}
           onClick={handleDownloadExcel}
-          text={`${t('common.download')} Excel`}
+          text={`${t('common.download')}`}
         />
       ),
       hideLabel: true,
