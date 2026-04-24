@@ -241,7 +241,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
 
               const rowClass = row.isManualAssign
                 ? 'bg-red-100/70 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-[#88191b] divide-y divide-red-200/30 dark:divide-red-900/30!'
-                : 'hover:bg-gray-50 dark:hover:bg-[#1f2c42]';
+                : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
 
               const cellContent = tableColumns.map((col, colIndex) => (
                 <td

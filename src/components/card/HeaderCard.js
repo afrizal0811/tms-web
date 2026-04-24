@@ -6,7 +6,7 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
 
   return (
     <div
-      className={`flex flex-col ${itemsLength >= 2 ? 'lg:flex-row' : 'md:flex-row'} justify-between items-start md:items-center bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 mb-6 gap-4 transition-colors duration-200`}
+      className={`flex flex-col ${itemsLength >= 2 ? 'lg:flex-row' : 'md:flex-row'} justify-between items-start md:items-center bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 gap-4 transition-colors duration-200`}
     >
       {(title || subtitle) && (
         <div

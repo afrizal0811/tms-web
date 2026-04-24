@@ -15,7 +15,7 @@ const StatCard = forwardRef(function StatCard(
   const cardElement = (
     <div
       ref={ref}
-      className={`bg-white shadow-md rounded-lg p-6 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 ${className}`}
+      className={`bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700 shadow-md dark:shadow-slate-700/40 hover:bg-gray-50 dark:hover:bg-slate-700/10 cursor-help ${className}`}
     >
       <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400">{title}</h3>
       {isLoading ? (
@@ -61,8 +61,8 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
   };
 
   return (
-    <div className="bg-white shadow border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64 dark:border-slate-700 dark:bg-slate-800/75">
-      <h3 className="text-sm font-bold text-gray-700 bg-gray-100 p-3 border-b dark:bg-slate-900 dark:text-white dark:border-slate-700">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64 dark:border-slate-700 dark:bg-slate-800/75 shadow-md dark:shadow-slate-700/40">
+      <h3 className="text-sm font-bold text-gray-700 bg-gray-100 p-3 border-b dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
         {title}
       </h3>
 
@@ -71,7 +71,7 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
           <Spinner />
         </div>
       ) : data?.length > 0 ? (
-        <div className="overflow-y-auto grow">
+        <div className="overflow-y-auto grow ">
           <table className="min-w-full">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
@@ -90,7 +90,7 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
               {data.map((tItem, i) => (
                 <Tooltip key={i} tooltipContent={tItem.truncateSoNumber}>
                   <tr
-                    className="hover:bg-gray-100 cursor-copy dark:hover:bg-[#1f2c42]"
+                    className="hover:bg-gray-100 dark:hover:bg-slate-700/10! cursor-copy "
                     onClick={() => handleCopy(tItem)}
                   >
                     {renderRow(tItem)}
@@ -215,7 +215,6 @@ export default function DetailTab({ loading, summaryData }) {
             ]}
             renderRow={(item) => (
               <>
-              
                 <Td className="p-3 text-xs">{item.flow}</Td>
                 <Td className="p-3 text-xs">{item.customer}</Td>
                 <Td className="p-3 text-xs">{item.truncateSoNumber}</Td>
@@ -236,7 +235,7 @@ export default function DetailTab({ loading, summaryData }) {
               <>
                 <Td className="p-3 text-xs">{item.flow}</Td>
                 <Td className="p-3 text-xs">{item.customer}</Td>
-                <Td className="p-3 text-xs font-semibold">{item.driver}</Td>
+                <Td className="p-3 text-xs">{item.driver}</Td>
               </>
             )}
           />

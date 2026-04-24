@@ -5,9 +5,11 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
 import { avatarColorStyles } from '@/lib/constants';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import ThemeToggle from '../ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
@@ -20,7 +22,9 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [avatarColor, setAvatarColor] = useState('sky');
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
+  const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
   const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
@@ -256,7 +260,7 @@ export default function Navbar() {
     <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
       <LocationSwitcher />
       <div className="h-4 w-px bg-gray-300 dark:bg-slate-700" aria-hidden="true"></div>
-      <UserDropdown />
+      <UserDropdown isDarkMode={isDarkMode} />
     </div>
   );
 
@@ -314,7 +318,7 @@ export default function Navbar() {
   return (
     <nav
       ref={navRef}
-      className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4 sticky top-0 z-100 shadow-sm transition-colors duration-200"
+      className="sticky top-0 z-100 w-full px-4 py-4 sm:px-6 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-md dark:shadow-slate-700/40 transition-colors duration-200"
     >
       <div className="max-w-8xl mx-auto flex justify-between items-center px-4">
         <div
@@ -348,11 +352,11 @@ export default function Navbar() {
       </div>
 
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 overflow-hidden transition-all duration-200 ease-in-out ${
           isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="flex flex-col pb-4">
+        <div className="flex flex-col pb-4 ">
           {isLoggedIn ? (
             <>
               <div className=" px-4 py-5 flex items-center justify-between text-slate-800 dark:text-slate-200 gap-3">
@@ -396,6 +400,13 @@ export default function Navbar() {
           {isLoggedIn && (
             <>
               <MobileNavLink href="/settings">{t('setting.title')}</MobileNavLink>
+              <ThemeToggle
+                isActive={isDarkMode}
+                onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
+                darkLabel={t('common.dark_mode')}
+                lightLabel={t('common.light_mode')}
+                className="text-md px-3"
+              />
               <button
                 onClick={() => {
                   switchLanguage(isIndo ? 'en' : 'id');

@@ -11,10 +11,11 @@ import { useTheme } from 'next-themes'; // Import useTheme
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import ThemeToggle from '../ThemeToggle';
 
-export default function UserDropdown() {
+export default function UserDropdown({isDarkMode}) {
   const { t, lang, switchLanguage } = useLanguage();
-  const { theme, setTheme, resolvedTheme } = useTheme(); // Hook tema
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const dropdownRef = useRef(null);
   const pathname = usePathname();
 
@@ -84,8 +85,6 @@ export default function UserDropdown() {
     window.location.href = '/';
   };
 
-  const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-
   if (!userName) return null;
 
   return (
@@ -117,31 +116,13 @@ export default function UserDropdown() {
         {isOpen && (
           <div className="mt-2 rounded-md ring-1 ring-black dark:ring-slate-700 ring-opacity-5 dark:ring-opacity-100 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 lg:absolute lg:right-0 lg:w-56 lg:shadow-lg lg:border-none lg:bg-white lg:dark:bg-slate-800">
             <div className="py-1">
-              {/* --- BARIS DARK MODE SWITCH --- */}
-              <div className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 border-b border-gray-100 dark:border-slate-700/50 mb-1">
-                <span className="font-medium">
-                  {isDarkMode ? t('common.dark_mode') : t('common.light_mode')}
-                </span>
-                <button
-                  onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isDarkMode ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-600'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none relative h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-                      isDarkMode ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  >
-                    {isDarkMode ? (
-                      <span className="text-[10px]">🌙</span>
-                    ) : (
-                      <span className="text-[10px]">🌞</span>
-                    )}
-                  </span>
-                </button>
-              </div>
-
+              <ThemeToggle
+                isActive={isDarkMode}
+                onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
+                darkLabel={t('common.dark_mode')}
+                lightLabel={t('common.light_mode')}
+                className='text-sm px-4'
+              />
               <button
                 onClick={() => {
                   setSelectedLang(lang);

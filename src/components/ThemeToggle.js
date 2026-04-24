@@ -1,35 +1,25 @@
+// components/ThemeToggleItem.js
 'use client';
 
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
-
-export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Mencegah hydration mismatch error DAN menghindari linter "cascading render"
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMounted(true);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Opsional: Daripada return null, lebih baik return elemen kosong dengan ukuran yang sama
-  // agar layout tidak "melompat" (layout shift) saat tombolnya tiba-tiba muncul
-  if (!mounted) {
-    return (
-      <div className="h-10 w-[140px] bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
-    );
-  }
-
+export default function ThemeToggle({ isActive, onToggle, darkLabel, lightLabel, className }) {
   return (
-    <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="p-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200 transition-colors shadow-sm text-sm font-medium cursor-pointer"
-    >
-      {theme === 'dark' ? '🌞 Mode Terang' : '🌙 Mode Gelap'}
-    </button>
+    <div className={`flex items-center justify-between py-2.5 mb-1 border-b border-gray-100 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 ${className}`}>
+      <span className="font-medium">{isActive ? darkLabel : lightLabel}</span>
+
+      <button
+        onClick={onToggle}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+          isActive ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-600'
+        }`}
+      >
+        <span
+          className={`pointer-events-none relative flex h-5 w-5 items-center justify-center rounded-full bg-white shadow ring-0 transform transition duration-200 ease-in-out ${
+            isActive ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        >
+          <span className="text-[10px]">{isActive ? '🌙' : '🌞'}</span>
+        </span>
+      </button>
+    </div>
   );
 }
