@@ -22,7 +22,7 @@ export default function BaseModal({
       onClick={onClose}
     >
       <div
-        className={`bg-white dark:bg-slate-900 border border-transparent dark:border-slate-700 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
+        className={`bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

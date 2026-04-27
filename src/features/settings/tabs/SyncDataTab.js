@@ -91,7 +91,9 @@ export default function SyncDataTab({
             disabled={syncLoading[type]}
             className="w-full mt-4 py-2.5 text-sm bg-white text-slate-700 hover:bg-sky-50 border border-slate-300 hover:border-sky-300 hover:text-sky-700 rounded-md font-medium disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed cursor-pointer transition-all"
           >
-            {syncLoading[type] ? translate('setting.sync_loading') : translate('setting.btn_sync')}
+            {syncLoading[type]
+              ? translate('setting.sync_loading')
+              : translate('setting.tab.button.btn_sync')}
           </button>
         )}
       </div>
@@ -103,10 +105,10 @@ export default function SyncDataTab({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 pb-4 gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-800">
-              {translate('setting.tab.sync_data.subtitle_1')}
+              {translate('setting.tab.sync_data.sync_title')}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              {translate('setting.tab.sync_data.subtitle_2')}
+              {translate('setting.tab.sync_data.subtitle')}
             </p>
           </div>
         </div>

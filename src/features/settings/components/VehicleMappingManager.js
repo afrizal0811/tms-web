@@ -130,15 +130,17 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
       toastError(translate('common.toast.error', { err: error.message }));
     }
   };
-
+  const confirmModalText = translate('setting.tab.master_data.mapping_title');
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative flex flex-col h-full">
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('setting.tab.master_data.confirm_title')}
-        message={translate('setting.tab.master_data.confirm_message')}
+        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
+        message={translate('setting.tab.modal.confirm_message', {
+          text: confirmModalText.toLowerCase(),
+        })}
       />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3 shrink-0">
@@ -170,7 +172,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                 <div
                   key={item.id || item.plat}
                   ref={isEditing ? editRef : null}
-                  className="flex flex-col p-3 border border-gray-200 rounded-lg bg-slate-50 hover:bg-white transition-colors shadow-sm group"
+                  className="flex flex-col p-3 border border-gray-200 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors shadow-sm group"
                 >
                   <div className="font-bold text-slate-800 truncate mb-2" title={item.plat}>
                     {item.plat}
@@ -198,7 +200,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                         disabled={editType === item.mappedType || isLoading}
                         className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-3 py-1.5 rounded cursor-pointer disabled:opacity-60 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                       >
-                        {translate('setting.tab.master_data.btn_save')}
+                        {translate('setting.tab.button.btn_save')}
                       </button>
                     </div>
                   ) : (
@@ -216,13 +218,13 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                             onClick={() => handleEdit(item.id, item.plat, item.mappedType)}
                             className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                           >
-                            {translate('setting.tab.master_data.btn_edit')}
+                            {translate('setting.tab.button.btn_edit')}
                           </button>
                           <button
                             onClick={() => handleDeleteClick(item.id, item.plat)}
                             className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                           >
-                            {translate('setting.tab.master_data.btn_delete')}
+                            {translate('setting.tab.button.btn_delete')}
                           </button>
                         </div>
                       )}

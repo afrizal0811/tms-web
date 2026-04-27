@@ -105,7 +105,7 @@ export default function SettingsPage() {
   if (!isAuthorized) return null;
 
   const buttonData = [
-    { tab: 'general', label: 'General' },
+    { tab: 'general', label: t('setting.tab.general.title') },
     { tab: 'master', label: t('setting.tab.master_data.title') },
     { tab: 'sync', label: t('setting.tab.sync_data.title') },
   ];

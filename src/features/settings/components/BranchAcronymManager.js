@@ -1,13 +1,15 @@
 'use client';
 
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { updateHubAcronym } from '@/lib/api';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
 
 export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, translate }) {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
   const editRef = useRef(null);
 
   useEffect(() => {
@@ -56,31 +58,56 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDeleteClick = (id) => {
     if (isReadOnly) return;
-    handleSave(id, '');
+    setDeleteConfig({ isOpen: true, id });
   };
+
+  const confirmDeleteAcronym = async () => {
+    const targetId = deleteConfig.id;
+    setDeleteConfig({ isOpen: false, id: null });
+
+    if (!targetId) return;
+    await handleSave(targetId, '');
+  };
+  const confirmModalText = translate('setting.tab.general.acronym_title');
+  const isUnchanged = (old) => (editValue ?? '').trim() === (old ?? '').trim();
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col w-full">
-      <h2 className="text-lg font-bold text-slate-800 mb-4 border-b border-gray-100 pb-3">
-        {translate('setting.tab.general.acronym_title')}
-      </h2>
+      <ConfirmModal
+        isOpen={deleteConfig.isOpen}
+        onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
+        onConfirm={confirmDeleteAcronym}
+        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
+        message={translate('setting.tab.modal.confirm_message', {
+          text: confirmModalText.toLowerCase(),
+        })}
+      />
+
+      <div className=" mb-4 border-b border-gray-100 pb-3">
+        <h2 className="text-lg font-bold text-slate-800">
+          {translate('setting.tab.general.acronym_title')}
+        </h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {translate('setting.tab.general.acronym_subtitle')}
+        </p>
+      </div>
       <div className="flex flex-col gap-2 overflow-y-auto pr-1 max-h-72">
         {hubs.map((hub) => {
           const hubId = hub._id || hub.id;
           const isEditing = editingId === hubId;
-
+          const hubAcronym = hub.acronym || '';
+          const cardColor = hubAcronym
+            ? 'bg-slate-50  hover:bg-slate-100  border-gray-200 '
+            : 'bg-red-200 hover:bg-red-300  border-red-400/20 ';
           return (
             <div
               key={hubId}
               ref={isEditing ? editRef : null}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-slate-50 hover:bg-white transition-colors group gap-2 overflow-hidden shrink-0"
+              className={`flex items-center justify-between p-3 border rounded-md transition-colors group gap-2 overflow-hidden shrink-0 ${cardColor}`}
             >
-              <span
-                className="font-semibold text-slate-700 text-sm truncate flex-1 mr-2"
-                title={hub.name}
-              >
+              <span className="font-semibold text-slate-700 text-sm truncate flex-1 mr-2">
                 {hub.name}
               </span>
 
@@ -91,35 +118,34 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 min-w-0 w-20 px-2 py-1 border border-sky-400 rounded outline-none text-sm font-medium mr-1 uppercase"
+                      className="flex-1 min-w-0 w-20 px-2 py-1 border border-slate-400 bg-slate-50 rounded outline-none text-sm font-medium mr-1 uppercase"
                       autoFocus
-                      onKeyDown={(e) => e.key === 'Enter' && handleSave(hubId)}
                     />
                     <button
                       onClick={() => handleSave(hubId)}
-                      disabled={isLoading}
-                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-2 py-1 rounded cursor-pointer disabled:opacity-50"
+                      disabled={isLoading || isUnchanged(hubAcronym)}
+                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-400 font-bold px-2 py-1 rounded cursor-pointer disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                     >
-                      {translate('setting.tab.general.btn_save')}
+                      {translate('setting.tab.button.btn_save')}
                     </button>
                   </>
                 ) : (
                   <>
-                    <span className="text-sm font-bold text-sky-700 mr-2">{hub.acronym || ''}</span>
+                    <span className="text-sm font-bold text-sky-700 mr-2">{hubAcronym || '-'}</span>
                     {!isReadOnly && (
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEdit(hub)}
                           className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                         >
-                          {translate('setting.tab.general.btn_edit')}
+                          {translate('setting.tab.button.btn_edit')}
                         </button>
                         <button
-                          onClick={() => handleDelete(hubId)}
-                          disabled={isLoading || !hub.acronym}
+                          onClick={() => handleDeleteClick(hubId)}
+                          disabled={isLoading || !hubAcronym}
                           className="text-xs bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                         >
-                          {translate('setting.tab.general.btn_delete')}
+                          {translate('setting.tab.button.btn_delete')}
                         </button>
                       </div>
                     )}
