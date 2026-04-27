@@ -4,6 +4,7 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { updateHubAcronym } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
+import Card from './Card';
 
 export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, translate }) {
   const [editingId, setEditingId] = useState(null);
@@ -74,7 +75,7 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
   const isUnchanged = (old) => (editValue ?? '').trim() === (old ?? '').trim();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col w-full">
+    <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
@@ -85,11 +86,11 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
         })}
       />
 
-      <div className=" mb-4 border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-bold text-slate-800">
+      <div className=" mb-4 border-b border-gray-100 pb-3 ">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
           {translate('setting.tab.general.acronym_title')}
         </h2>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {translate('setting.tab.general.acronym_subtitle')}
         </p>
       </div>
@@ -99,15 +100,15 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
           const isEditing = editingId === hubId;
           const hubAcronym = hub.acronym || '';
           const cardColor = hubAcronym
-            ? 'bg-slate-50  hover:bg-slate-100  border-gray-200 '
-            : 'bg-red-200 hover:bg-red-300  border-red-400/20 ';
+            ? 'bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/10'
+            : 'bg-red-200 dark:bg-red-800 border border-red-400/20 hover:bg-red-300 dark:hover:bg-red-700/90';
           return (
             <div
               key={hubId}
               ref={isEditing ? editRef : null}
               className={`flex items-center justify-between p-3 border rounded-md transition-colors group gap-2 overflow-hidden shrink-0 ${cardColor}`}
             >
-              <span className="font-semibold text-slate-700 text-sm truncate flex-1 mr-2">
+              <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate flex-1 mr-2">
                 {hub.name}
               </span>
 
@@ -118,32 +119,34 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 min-w-0 w-20 px-2 py-1 border border-slate-400 bg-slate-50 rounded outline-none text-sm font-medium mr-1 uppercase"
+                      className="flex-1 min-w-0 w-20 px-2 py-1 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-900 dark:text-slate-100 border border-slate-400 dark:border-slate-600 rounded outline-none uppercase mr-1"
                       autoFocus
                     />
                     <button
                       onClick={() => handleSave(hubId)}
                       disabled={isLoading || isUnchanged(hubAcronym)}
-                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-400 font-bold px-2 py-1 rounded cursor-pointer disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                      className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded whitespace-nowrap hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     >
                       {translate('setting.tab.button.btn_save')}
                     </button>
                   </>
                 ) : (
                   <>
-                    <span className="text-sm font-bold text-sky-700 mr-2">{hubAcronym || '-'}</span>
+                    <span className="text-sm font-bold text-sky-700 dark:text-sky-400 mr-2">
+                      {hubAcronym || '-'}
+                    </span>
                     {!isReadOnly && (
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEdit(hub)}
-                          className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                          className="text-xs font-bold px-3 py-1.5 bg-sky-100 text-sky-700 rounded whitespace-nowrap hover:bg-sky-200 cursor-pointer transition-colors"
                         >
                           {translate('setting.tab.button.btn_edit')}
                         </button>
                         <button
                           onClick={() => handleDeleteClick(hubId)}
                           disabled={isLoading || !hubAcronym}
-                          className="text-xs bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                          className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded whitespace-nowrap hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
                         >
                           {translate('setting.tab.button.btn_delete')}
                         </button>
@@ -156,6 +159,6 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

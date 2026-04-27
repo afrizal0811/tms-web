@@ -4,6 +4,7 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useEffect, useRef, useState } from 'react';
+import Card from './Card';
 
 export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, translate }) {
   const [newTypeName, setNewTypeName] = useState('');
@@ -76,7 +77,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
   const isUnchanged = (old) => (editTypeName ?? '').trim() === (old ?? '').trim();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col w-full">
+    <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
@@ -88,10 +89,10 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
       />
 
       <div className=" mb-4 border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-bold text-slate-800">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
           {translate('setting.tab.general.standard_title')}
         </h2>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {translate('setting.tab.general.standard_subtitle')}
         </p>
       </div>
@@ -103,13 +104,12 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
             value={newTypeName}
             onChange={(e) => setNewTypeName(e.target.value.toUpperCase())}
             placeholder={translate('setting.tab.general.add_placeholder')}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-sm"
-            onKeyDown={(e) => e.key === 'Enter' && handleAddVehicleType()}
+            className="flex-1 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500"
           />
           <button
             onClick={handleAddVehicleType}
             disabled={!newTypeName.trim()}
-            className="bg-sky-600 text-white px-3 py-2 rounded-md hover:bg-sky-700 font-medium text-sm disabled:bg-gray-400 cursor-pointer shrink-0 mr-1"
+            className="shrink-0 mr-1 px-3 py-2 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
           >
             {translate('setting.tab.button.btn_add')}
           </button>
@@ -126,19 +126,19 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
             <div
               key={type.id}
               ref={editTypeId === type.id ? editRef : null}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors group gap-2 overflow-hidden shrink-0"
+              className="flex items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 hover:bg-gray-100 dark:hover:bg-slate-700/10 transition-colors overflow-hidden shrink-0 group"
             >
               {editTypeId === type.id ? (
                 <input
                   type="text"
                   value={editTypeName}
                   onChange={(e) => setEditTypeName(e.target.value.toUpperCase())}
-                  className="flex-1 min-w-0 px-2 py-1 border border-slate-400 bg-slate-50 rounded outline-none text-sm font-medium mr-1"
+                  className="flex-1 min-w-0 px-2 py-1 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-900 dark:text-slate-100 border border-slate-400 dark:border-slate-600 rounded outline-none mr-1"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleUpdateVehicleType(type.id)}
                 />
               ) : (
-                <span className="font-semibold text-slate-700 text-sm truncate flex-1 mr-2">
+                <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate flex-1 mr-2">
                   {type.name}
                 </span>
               )}
@@ -149,7 +149,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
                     <button
                       onClick={() => handleUpdateVehicleType(type.id)}
                       disabled={isUnchanged(type.name)}
-                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-2 py-1 rounded cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 transition-colors whitespace-nowrap"
+                      className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded whitespace-nowrap hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     >
                       {translate('setting.tab.button.btn_save')}
                     </button>
@@ -160,13 +160,13 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
                           setEditTypeId(type.id);
                           setEditTypeName(type.name);
                         }}
-                        className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-xs font-bold px-3 py-1.5 bg-sky-100 text-sky-700 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 hover:bg-sky-200 cursor-pointer transition-opacity"
                       >
                         {translate('setting.tab.button.btn_edit')}
                       </button>
                       <button
                         onClick={() => handleDeleteClick(type.id)}
-                        className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 hover:bg-red-200 cursor-pointer transition-opacity"
                       >
                         {translate('setting.tab.button.btn_delete')}
                       </button>
@@ -178,6 +178,6 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
           ))
         )}
       </div>
-    </div>
+    </Card>
   );
 }

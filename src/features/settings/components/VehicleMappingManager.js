@@ -5,17 +5,16 @@ import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Card from './Card';
+import Spinner from '@/components/Spinner';
 
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
   const [activeHubId, setActiveHubId] = useState('');
-  const [activeHubName, setActiveHubName] = useState('');
   const [mappings, setMappings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
   const [editingId, setEditingId] = useState(null);
   const [editingPlat, setEditingPlat] = useState('');
   const [editType, setEditType] = useState('');
-
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, plat: null });
 
   const editRef = useRef(null);
@@ -34,7 +33,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     }
 
     setActiveHubId(hubId || '');
-    setActiveHubName(hubName || 'Cabang Aktif');
   }, []);
 
   const loadMappings = useCallback(async () => {
@@ -132,7 +130,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   };
   const confirmModalText = translate('setting.tab.master_data.mapping_title');
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative flex flex-col h-full">
+    <Card className="h-full">
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
@@ -145,10 +143,10 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3 shrink-0">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
             {translate('setting.tab.master_data.mapping_title')}
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {translate('setting.tab.master_data.mapping_subtitle')}
           </p>
         </div>
@@ -156,8 +154,8 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
 
       <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         {isLoading ? (
-          <div className="py-8 flex justify-center">
-            <span className="animate-spin h-6 w-6 border-4 border-slate-300 border-t-sky-600 rounded-full"></span>
+          <div className="py-8 flex justify-center items-center h-full">
+            <Spinner />
           </div>
         ) : mappings.length === 0 ? (
           <p className="text-center text-slate-500 text-sm py-4 italic">
@@ -167,14 +165,16 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 content-start items-start">
             {mappings.map((item) => {
               const isEditing = editingId === item.id || editingPlat === item.plat;
-
               return (
                 <div
                   key={item.id || item.plat}
                   ref={isEditing ? editRef : null}
-                  className="flex flex-col p-3 border border-gray-200 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors shadow-sm group"
+                  className="flex flex-col p-3 border bg-slate-50 border-gray-200 dark:bg-slate-800 rounded-lg dark:border-slate-700 shadow-md dark:shadow-slate-700/40 hover:bg-gray-100 dark:hover:bg-slate-700/10 transition-colors group"
                 >
-                  <div className="font-bold text-slate-800 truncate mb-2" title={item.plat}>
+                  <div
+                    className="font-bold text-slate-700 dark:text-slate-200 truncate mb-2"
+                    title={item.plat}
+                  >
                     {item.plat}
                   </div>
 
@@ -183,7 +183,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                       <select
                         value={editType}
                         onChange={(e) => setEditType(e.target.value)}
-                        className="flex-1 px-2 py-1.5 text-sm border border-sky-400 rounded outline-none cursor-pointer bg-white"
+                        className="flex-1 px-2 py-1.5 text-sm border border-sky-400 rounded outline-none cursor-pointer bg-white dark:bg-slate-700"
                       >
                         <option value="" disabled>
                           {translate('setting.tab.master_data.dropdown_title')}
@@ -206,7 +206,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                   ) : (
                     <div className="flex items-center gap-2">
                       <div
-                        className="flex-1 text-sm text-sky-700 font-medium truncate"
+                        className="flex-1 text-sm text-sky-700 dark:text-sky-400 font-medium truncate"
                         title={item.mappedType}
                       >
                         {item.mappedType}
@@ -236,6 +236,6 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
