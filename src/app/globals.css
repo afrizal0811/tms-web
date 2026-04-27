@@ -30,7 +30,6 @@ body > div[style*='z-index: 9999'],
   color: #ffffff !important;
 }
 
-
 /* ========================================================= */
 /* 2. DATEPICKER BASE & LAYOUT (LIGHT MODE)                  */
 /* ========================================================= */
@@ -38,7 +37,9 @@ body > div[style*='z-index: 9999'],
   font-family: inherit;
   border: none !important;
   border-radius: 0.75rem !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   padding: 1.2rem !important;
   background-color: white !important;
   width: max-content !important;
@@ -75,6 +76,37 @@ body > div[style*='z-index: 9999'],
   top: 1.3rem !important;
 }
 
+/* ========================================================= */
+/* --- PERBAIKAN LAYOUT MONTH PICKER (FLEXBOX 4x3) --- */
+/* ========================================================= */
+
+.react-datepicker__monthPicker .react-datepicker__month {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 12px !important;
+}
+
+/* Memaksa setiap baris (yang berisi 3 bulan) menjadi flex horizontal */
+.react-datepicker__monthPicker .react-datepicker__month-wrapper {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+/* Memaksa setiap kotak bulan melebar seragam */
+.react-datepicker__monthPicker .react-datepicker__month-text {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+}
 
 /* ========================================================= */
 /* 3. DATEPICKER GRIDS & ITEMS (MONTH & YEAR)                */
@@ -126,7 +158,6 @@ body > div[style*='z-index: 9999'],
   font-weight: 700 !important;
 }
 
-
 /* ========================================================= */
 /* 4. DATEPICKER STATES (HOVER, SELECTED, DISABLED)          */
 /* ========================================================= */
@@ -169,7 +200,6 @@ body > div[style*='z-index: 9999'],
   opacity: 0.6 !important;
 }
 
-
 /* ========================================================= */
 /* 5. SELECT DROPDOWNS (BULAN & TAHUN HEADER)                */
 /* ========================================================= */
@@ -207,7 +237,6 @@ body > div[style*='z-index: 9999'],
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
   background-color: white !important;
 }
-
 
 /* ========================================================= */
 /* 6. DARK MODE OVERRIDES                                    */
@@ -261,8 +290,14 @@ body > div[style*='z-index: 9999'],
 
 /* Dark Mode Hover */
 .dark .react-datepicker__day:hover:not(.react-datepicker__day--selected),
-.dark .react-datepicker__year-text:hover:not(.react-datepicker__year-text--disabled):not(.react-datepicker__year-text--selected),
-.dark .react-datepicker__month-text:hover:not(.react-datepicker__month-text--disabled):not(.react-datepicker__month-text--selected) {
+.dark
+  .react-datepicker__year-text:hover:not(.react-datepicker__year-text--disabled):not(
+    .react-datepicker__year-text--selected
+  ),
+.dark
+  .react-datepicker__month-text:hover:not(.react-datepicker__month-text--disabled):not(
+    .react-datepicker__month-text--selected
+  ) {
   background-color: #334155 !important;
   color: #38bdf8 !important; /* Sky-400 */
 }
@@ -285,7 +320,6 @@ body > div[style*='z-index: 9999'],
   color: #94a3b8 !important;
 }
 
-
 /* ========================================================= */
 /* 7. MOBILE OPTIMIZATION                                    */
 /* ========================================================= */
@@ -303,7 +337,6 @@ body > div[style*='z-index: 9999'],
     padding: 10px 0 !important;
   }
 }
-
 
 /* ========================================================= */
 /* 8. MISC / UTILITIES                                       */

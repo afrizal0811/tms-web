@@ -238,6 +238,15 @@ export default function Navbar() {
           >
             {t('navbar.period_report')}
           </Link>
+          {isSuperadmin && (
+            <Link
+              href="/laporan/task-counter"
+              className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
+              onClick={() => setIsLaporanOpen(false)}
+            >
+              {t('navbar.task_counter_report')}
+            </Link>
+          )}
         </div>
       </div>
     </div>

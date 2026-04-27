@@ -33,7 +33,7 @@ export const dictionary = {
       scroll_down: 'Scroll ke bawah',
       storage_type: 'Tipe Penyimpanan',
       task: 'Tugas',
-      to: 'Ke',
+      to: 'Sampai',
       total_task: 'Total Tugas',
       vehicle: 'Kendaraan',
       warning: '⚠️ Peringatan!',
@@ -109,6 +109,7 @@ export const dictionary = {
       report: 'Laporan',
       setting: 'Pengaturan',
       summary: 'Rangkuman',
+      task_counter_report: 'Laporan Jumlah Tugas',
       update: 'Perbarui',
       vehicle: 'Kendaraan',
       modal: {
@@ -272,7 +273,18 @@ export const dictionary = {
       period_title: 'Laporan Periode',
       routing_date: 'Tanggal Routing',
       routing_summary: 'Ringkasan Routing',
+      task_counter_report: 'Laporan Jumlah Tugas',
       time_summary: 'Ringkasan Waktu',
+      tc_detail: {
+        choose_hub: 'Pilih HUB',
+        custom_time: 'Kustom Rentang Waktu',
+        date_range: 'Rentang Waktu',
+        note_one:
+          '*Catatan: Server hanya menyimpan riwayat penghapusan (trash) selama 30 hari terakhir.',
+        note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
+        time_from: 'Waktu Mulai',
+        time_to: 'Waktu Akhir',
+      },
       toast: {
         failed_prossesing: 'Gagal memproses {dateForFile}: {err}',
         failed_zip: 'Tidak ada file {zipPrefix} yang berhasil dibuat.',
@@ -290,6 +302,7 @@ export const dictionary = {
         success: 'File berhasil diunduh!',
       },
       tooltip: {
+        cut_off: 'Batas Waktu',
         info_change_time: 'Untuk routing non H-1',
         info_delivery: 'Routing otomatis H-1',
       },
@@ -836,6 +849,7 @@ export const dictionary = {
       report: 'Reports',
       setting: 'Setting',
       summary: 'Summary',
+      task_counter_report: 'Task Counter Report',
       update: 'Update',
       vehicle: 'Vehicles',
       modal: {
@@ -1002,6 +1016,16 @@ export const dictionary = {
       routing_date: 'Routing Date',
       routing_summary: 'Routing Summary',
       time_summary: 'Time Summary',
+      task_counter_report: 'Task Counter Report',
+      tc_detail: {
+        choose_hub: 'Choose HUB',
+        custom_time: 'Custom Time Range',
+        date_range: 'Date Range',
+        note_one: '*Note: Server only keeps track of deleted tasks for 30 days.',
+        note_two: '  Total task counts may not be accurate.',
+        time_from: 'Start Time',
+        time_to: 'End Time',
+      },
       toast: {
         failed_prossesing: 'Failed to process {dateForFile}: {err.message}`',
         failed_zip: 'No {zipPrefix} file was successfully created.',
@@ -1018,6 +1042,7 @@ export const dictionary = {
         success: 'File downloaded successfully!',
       },
       tooltip: {
+        cut_off: 'Cut-off Time',
         info_change_time: 'For non D-1 routing',
         info_delivery: 'Auto D-1 routing',
       },

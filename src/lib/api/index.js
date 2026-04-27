@@ -2,6 +2,7 @@ export * from './drivers';
 export * from './hubs';
 export * from './roles';
 export * from './tasks';
+export * from './trash';
 export * from './truckUsage';
 export * from './users';
 export * from './vehicleMappings';
