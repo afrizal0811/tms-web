@@ -1,9 +1,9 @@
 'use client';
 
+import Button from '@/components/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Button from '@/components/Button';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
@@ -12,6 +12,7 @@ import { toastError } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
   formatCoordinates,
+  formatDateWIB,
   formatToApiUtc,
   isEmpty,
   normalizeEmail,
@@ -59,15 +60,7 @@ export default function UpdateLonglatPage() {
 
       let dateStr = '-';
       if (task.doneTime) {
-        try {
-          dateStr = new Date(task.doneTime).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          });
-        } catch (e) {
-          dateStr = String(task.doneTime);
-        }
+        dateStr = formatDateWIB(task.doneTime, 'HH:mm');
       }
 
       const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
@@ -104,7 +97,6 @@ export default function UpdateLonglatPage() {
       const { storedLocation: hubId } = getLocalStorage();
       if (!hubId) throw new Error(t('common.no_data'));
 
-      // 1. Ambil Data Driver
       const drivers = await getOrFetchDriverData(hubId);
       if (drivers) {
         drivers.forEach((d) => {
@@ -113,7 +105,6 @@ export default function UpdateLonglatPage() {
         });
       }
 
-      // 2. Fetch Data Hari Ini
       const localStart = new Date(selectedDate);
       localStart.setHours(0, 0, 0, 0);
 
@@ -135,7 +126,6 @@ export default function UpdateLonglatPage() {
       const currentData = todayTasks || [];
       setTasksData(currentData);
 
-      // Identifikasi Customer yang butuh update hari ini
       const uniqueCustomersWithUpdates = new Set();
       currentData.forEach((task) => {
         if (task.klikLokasiClient && task.customerName) {
@@ -148,7 +138,6 @@ export default function UpdateLonglatPage() {
         return;
       }
 
-      // 3. Proses Data Map (Hanya berdasarkan data hari ini saja)
       const initialMap = processHistoryRawData(currentData, uniqueCustomersWithUpdates);
       setHistoryMap(initialMap);
       setLoading(false);
@@ -174,11 +163,22 @@ export default function UpdateLonglatPage() {
         const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
         const isDataIncomplete = !custId || !locId;
 
+        const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
+        const normAssignee = normalizeEmail(rawAssignee);
+        const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
+
+        let dateStr = '-';
+        if (task.doneTime) {
+          dateStr = formatDateWIB(task.doneTime, 'HH:mm');
+        }
+
         updateList.push({
           customerData: customerName,
           customerName: custName,
           customerId: custId,
           locationId: locId,
+          driverName: driverName,
+          updateTime: dateStr,
           newLonglat: formatCoordinates(task.klikLokasiClient),
           bedaJarak: bedaJarak !== null ? bedaJarak : 0,
           originalTask: task,
@@ -202,7 +202,7 @@ export default function UpdateLonglatPage() {
 
   const downloadBtn = (
     <Button
-      Button={loading || isDownloading || isEmpty(processedData)}
+      disabled={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
       text={t('common.download')}

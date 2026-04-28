@@ -3,6 +3,7 @@
 import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
+
 export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, lang }) {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,15 +31,15 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
           <div className="overflow-auto h-full rounded-lg bg-white dark:bg-slate-800">
             <table className="min-w-full text-xs text-left">
               <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm dark:bg-slate-900">
-                <tr className="dark:text-slate-300">
-                  <th className="px-4 py-3 w-[5%] text-center">No</th>
-                  <th className="px-4 py-3 w-[30%]">{t('common.customer_name')}</th>
-                  <th className="px-4 py-3 w-[15%]">{t('common.customer_id')}</th>
-                  <th className="px-4 py-3 w-[15%]">{t('longlat.table.loc_id')}</th>
-                  <th className="px-4 py-3 w-[20%] text-center">
-                    {t('longlat.table.new_longlat')}
-                  </th>
-                  <th className="px-4 py-3 w-[15%] text-center">{t('longlat.table.diff_dist')}</th>
+                <tr className="dark:text-slate-300 text-center">
+                  <th className="px-4 py-3 w-[5%]">No</th>
+                  <th className="px-4 py-3 w-[20%]">{t('common.customer_name')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('common.customer_id')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.loc_id')}</th>
+                  <th className="px-4 py-3 w-[20%]">{t('longlat.table.new_longlat')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.diff_dist')}</th>
+                  <th className="px-4 py-3 w-[15%]">{t('common.driver')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.update_time')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -52,14 +53,12 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
 
                   return (
                     <tr
-                      className={`${rowClass} border-b border-gray-100 transition-colors dark:border-slate-800/70`}
+                      className={`${rowClass} border-b border-gray-100 transition-colors dark:border-slate-800/70 text-center`}
                       onClick={() => handleRowClick(row)}
-                      key={row.customerData}
+                      key={`${row.customerData}-${index}`}
                     >
-                      <td className="px-4 py-2 text-center text-gray-600 dark:text-slate-300">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-2 truncate max-w-[200px] dark:text-slate-300">
+                      <td className="px-4 py-2 text-gray-600 dark:text-slate-300">{index + 1}</td>
+                      <td className="px-4 py-2 truncate text-left max-w-[200px] dark:text-slate-300">
                         {row.customerName}
                       </td>
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
@@ -68,11 +67,17 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
                         {displayLocId}
                       </td>
-                      <td className="px-4 py-2 text-center font-mono text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-2 font-mono text-slate-700 dark:text-slate-300">
                         {row.newLonglat}
                       </td>
                       <td className="px-4 py-2 text-center dark:text-slate-300">
                         {row.bedaJarak?.toLocaleString(lang)}
+                      </td>
+                      <td className="px-4 py-2 text-left text-slate-700 dark:text-slate-300">
+                        {row.driverName}
+                      </td>
+                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                        {row.updateTime}
                       </td>
                     </tr>
                   );
