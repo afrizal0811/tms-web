@@ -1,27 +1,25 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { capitalizeText } from '@/lib/utils';
-import { useTheme } from 'next-themes'; // Import useTheme
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
 
-export default function UserDropdown({isDarkMode}) {
-  const { t, lang, switchLanguage } = useLanguage();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+export default function UserDropdown({ isDarkMode }) {
+  const { t } = useLanguage();
+  const { setTheme } = useTheme();
   const dropdownRef = useRef(null);
   const pathname = usePathname();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState(lang);
   const [mounted, setMounted] = useState(false); // State untuk mencegah hydration error
 
   const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
@@ -74,18 +72,12 @@ export default function UserDropdown({isDarkMode}) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSaveLang = () => {
-    switchLanguage(selectedLang);
-    setIsLangModalOpen(false);
-    window.location.reload();
-  };
-
   const handleLogout = () => {
     removeLocalStorage('data');
     window.location.href = '/';
   };
 
-  if (!userName) return null;
+  if (!userName || !mounted) return null;
 
   return (
     <>
@@ -121,23 +113,16 @@ export default function UserDropdown({isDarkMode}) {
                 onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
                 darkLabel={t('common.dark_mode')}
                 lightLabel={t('common.light_mode')}
-                className='text-sm px-4'
+                className="text-sm px-4"
               />
-              <button
-                onClick={() => {
-                  setSelectedLang(lang);
-                  setIsOpen(false);
-                  setIsLangModalOpen(true);
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                {t('navbar.language')}
-              </button>
+
+              {/* Menggunakan LanguageToggle baru */}
+              <LanguageToggle showLabel={true} className="text-sm px-4" />
 
               <Link
                 href="/settings"
                 onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
               >
                 {t('navbar.setting')}
               </Link>
@@ -151,43 +136,6 @@ export default function UserDropdown({isDarkMode}) {
             </div>
           </div>
         )}
-
-        <BaseModal
-          isOpen={isLangModalOpen}
-          onClose={() => setIsLangModalOpen(false)}
-          title={t('navbar.language')}
-          maxWidth="max-w-md"
-          footer={
-            <div className="flex justify-end gap-3 w-full">
-              <button
-                onClick={() => setIsLangModalOpen(false)}
-                className="px-4 py-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm cursor-pointer"
-              >
-                {t('navbar.modal.btn_cancel')}
-              </button>
-              <button
-                onClick={handleSaveLang}
-                className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 transition-colors font-medium text-sm cursor-pointer"
-              >
-                {t('navbar.modal.btn_save')}
-              </button>
-            </div>
-          }
-        >
-          <div className="flex flex-col gap-2 pt-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              {t('navbar.modal.language_title')}
-            </label>
-            <select
-              value={selectedLang}
-              onChange={(e) => setSelectedLang(e.target.value)}
-              className="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-md outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 cursor-pointer"
-            >
-              <option value="id">🇮🇩 Indonesia (ID)</option>
-              <option value="en">🇬🇧 English (EN)</option>
-            </select>
-          </div>
-        </BaseModal>
       </div>
 
       {showModal && (

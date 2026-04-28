@@ -9,13 +9,13 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import LanguageToggle from '../LanguageToggle'; // Import Toggle Bahasa yang baru
 import ThemeToggle from '../ThemeToggle';
-import LanguageSwitcher from './LanguageSwitcher';
 import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
 
 export default function Navbar() {
-  const { t, lang, switchLanguage } = useLanguage();
+  const { t, lang } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
@@ -353,9 +353,8 @@ export default function Navbar() {
             {hamburger}
           </>
         ) : (
-          <div className="flex items-center">
-            <LanguageSwitcher />
-            <div className="lg:hidden ml-2">{hamburger}</div>
+          <div className="flex items-center gap-3">
+            <div className="lg:hidden">{hamburger}</div>
           </div>
         )}
       </div>
@@ -416,15 +415,7 @@ export default function Navbar() {
                 lightLabel={t('common.light_mode')}
                 className="text-md px-3"
               />
-              <button
-                onClick={() => {
-                  switchLanguage(isIndo ? 'en' : 'id');
-                  window.location.reload();
-                }}
-                className="block w-full text-left px-3 py-3 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                {t('common.language')} : {isIndo ? 'Indonesia' : 'English'}
-              </button>
+              <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-3 py-3 text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
