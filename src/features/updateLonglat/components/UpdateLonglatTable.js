@@ -49,7 +49,7 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
 
                   const rowClass = row.isIncomplete
                     ? 'bg-red-100 hover:bg-red-200 cursor-pointer'
-                    : 'hover:bg-gray-50 cursor-pointer dark:hover:bg-[#1f2c42]';
+                    : 'hover:bg-gray-50 cursor-pointer dark:hover:bg-slate-700/10';
 
                   return (
                     <tr

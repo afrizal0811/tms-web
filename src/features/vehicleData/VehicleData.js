@@ -241,7 +241,7 @@ export default function VehicleData() {
         onTabClick={setActiveTab}
         tabs={tabs}
       >
-        <div className="flex-1 flex flex-col m-0 border border-gray-300 rounded-b-xl overflow-auto">
+        <div className="flex-1 flex flex-col m-0 rounded-b-xl overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
           )}

@@ -19,7 +19,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
         </thead>
         <tbody>
           {paginatedData.map((v) => (
-            <tr key={v.id} className="hover:bg-gray-50">
+            <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
               <Td>
                 <HighlightText text={v.plat} highlight={searchQuery} />
               </Td>
