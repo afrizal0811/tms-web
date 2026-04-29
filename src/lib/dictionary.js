@@ -76,8 +76,8 @@ export const dictionary = {
       welcome: 'SELAMAT DATANG!',
       note: 'Gunakan surel yang terdaftar di MileApp',
       modal: {
-        question: 'Anda yakin ingin memilih user',
-        title: 'Konfirmasi Pilihan User',
+        question: 'Anda yakin ingin memilih',
+        title: 'Konfirmasi Pilihan Pengguna',
       },
       toast: {
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,

@@ -354,6 +354,13 @@ export default function Navbar() {
           </>
         ) : (
           <div className="flex items-center gap-3">
+            <ThemeToggle
+              isActive={isDarkMode}
+              onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
+              className="text-md px-3 hidden lg:block"
+              isLargeIcon={true}
+            />
+            <LanguageToggle isLargeIcon={true} className="hidden lg:block" />
             <div className="lg:hidden">{hamburger}</div>
           </div>
         )}
@@ -399,23 +406,23 @@ export default function Navbar() {
               </MobileNavLink>
               {mobileLinkEstimate}
               {mobileLinkDelivery}
+              <div className="pt-2 pb-1 px-3">
+                <div className="border-t border-gray-200 dark:border-slate-800"></div>
+              </div>
             </>
           ) : null}
-          <div className="pt-2 pb-1 px-3">
-            <div className="border-t border-gray-200 dark:border-slate-800"></div>
-          </div>
+          <ThemeToggle
+            isActive={isDarkMode}
+            onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
+            darkLabel={t('common.dark_mode')}
+            lightLabel={t('common.light_mode')}
+            className="text-md px-3"
+          />
+          <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
           {isLoggedIn && (
             <>
               <MobileNavLink href="/settings">{t('setting.title')}</MobileNavLink>
-              <ThemeToggle
-                isActive={isDarkMode}
-                onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
-                darkLabel={t('common.dark_mode')}
-                lightLabel={t('common.light_mode')}
-                className="text-md px-3"
-              />
-              <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-3 py-3 text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"

@@ -17,7 +17,6 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
-
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToConfirm, setUserToConfirm] = useState(null);
 
@@ -79,6 +78,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
   const handleConfirmLogin = async () => {
     if (!userToConfirm) return;
+    setLoading(true);
     const { storedLocation } = getLocalStorage();
     const targetCheckHubId = storedLocation || hubId;
 
@@ -95,7 +95,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
         toastError(t('home.toast.login_failed', { err: err.message }));
       }
     });
-
+    setLoading(false);
     setIsConfirmOpen(false);
   };
 
@@ -115,7 +115,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
   const modalMessage = (
     <div className="flex flex-col gap-2">
-      <div className="text-slate-800 dark:text-slate-200">
+      <div className="text-slate-200">
         {t('home.modal.question')}{' '}
         <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>
@@ -142,6 +142,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
         onCancel={handleCancelConfirm}
         onConfirm={handleConfirmLogin}
         title={t('home.modal.title')}
+        loading={loading}
       />
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 transition-colors">
