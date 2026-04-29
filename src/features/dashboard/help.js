@@ -436,12 +436,15 @@ export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
 
     const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
     if (manualCategory && isAssigned) {
+      const customerName = parseCustomerString(
+        task.customerName || task.customerOrder
+      ).fullCustomerName;
       const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
       let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
       if (finalAssignee === 'N/A') finalAssignee = '-';
 
       manualAssignList.push({
-        customer: task.customerName || 'N/A',
+        customer: customerName || 'N/A',
         driver: finalAssignee,
         flow,
         soNumber: task.orderId || '-',
