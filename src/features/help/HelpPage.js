@@ -1,8 +1,7 @@
-// File: src/features/help/HelpPage.js
 'use client';
 
-import ContentBlockRenderer from '@/components/ContentBlockRenderer';
-import ImageLightbox from '@/components/ImageLightbox';
+import ContentBlockRenderer from '@/features/help/components/ContentBlockRenderer';
+import ImageLightbox from '@/features/help/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -10,7 +9,7 @@ import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { useEffect, useMemo, useState } from 'react';
 import { helpTopics } from './data';
-import { PdfDocument } from './PdfDocument';
+import { PdfDocument } from './components/PdfDocument';
 
 export default function HelpPage() {
   const { t, lang } = useLanguage();
@@ -21,6 +20,32 @@ export default function HelpPage() {
   const [zoomedImage, setZoomedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const themeStyles = {
+    planner: {
+      headerBg: 'bg-sky-100',
+      headerText: 'text-sky-800',
+      level1: 'bg-sky-50 text-sky-700',
+      level2: 'bg-sky-50/95 text-sky-600',
+      level3: 'bg-sky-50/90 text-sky-600',
+    },
+    driver: {
+      headerBg: 'bg-amber-100',
+      headerText: 'text-amber-800',
+      level1: 'bg-amber-50 text-amber-700',
+      level2: 'bg-amber-50/95 text-amber-600 ',
+      level3: 'bg-amber-50/90 text-amber-600 ',
+    },
+    slate: {
+      headerBg: 'bg-slate-100',
+      headerText: 'text-slate-800',
+      level1: 'bg-slate-50 text-slate-700',
+      level2: 'bg-slate-50/95 text-slate-600',
+      level3: 'bg-slate-50/90 text-slate-600 ',
+    },
+  };
+
+  const currentTheme = themeStyles[activeCategory] || themeStyles.slate;
 
   const getAllExpandedIds = (category) => {
     const catTopics = helpTopics.filter((t) => t.category === category);
@@ -203,21 +228,16 @@ export default function HelpPage() {
     }
   };
 
-  const getThemeColor = () => {
-    if (activeCategory === 'planner') return 'sky';
-    if (activeCategory === 'driver') return 'emerald';
-    return 'slate';
-  };
-  const theme = getThemeColor();
-  const LAST_UPDATE = '02/12/2026'; //12 februari 2026
+  const LAST_UPDATE = '02/12/2026';
   const categories = [
     { label: t('help.planner_guide'), value: 'planner' },
     { label: t('help.driver_guide'), value: 'driver' },
   ];
   const colorMap = {
-    planner: 'bg-sky-50 text-sky-700 ',
-    driver: 'bg-emerald-50 text-emerald-700',
+    planner: 'bg-sky-200 text-sky-700 ',
+    driver: 'bg-amber-200 text-amber-700',
   };
+
   return (
     <>
       {zoomedImage && (
@@ -232,10 +252,13 @@ export default function HelpPage() {
       <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-6">
           <div className="text-left min-w-sm max-w-xl">
-            <h1 className="text-3xl font-bold text-slate-900" suppressHydrationWarning>
+            <h1
+              className="text-3xl font-bold text-gray-900 dark:text-slate-200"
+              suppressHydrationWarning
+            >
               {t('help.title')}
             </h1>
-            <p className="text-slate-500 mt-1" suppressHydrationWarning>
+            <p className="text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
               {t('help.subtitle')}
             </p>
             <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
@@ -243,22 +266,21 @@ export default function HelpPage() {
             </p>
             {!isIndo && (
               <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
-                <span className="text-red-500">*</span>
-                {t('help.notice')}
+                <span className="text-red-600 dark:text-red-300">*{t('help.notice')}</span>
               </p>
             )}
           </div>
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+          <div className="flex bg-gray-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1 rounded-lg">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.value;
               return (
                 <button
                   key={cat.value}
                   onClick={() => handleCategoryChange(cat.value)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize cursor-pointer ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize ${
                     isActive
                       ? `${colorMap[cat.value] || 'bg-slate-50 text-slate-700'} shadow`
-                      : 'text-gray-500 hover:text-gray-700'
+                      : 'text-gray-400 hover:text-gray-700  cursor-pointer'
                   }`}
                 >
                   {cat.value}
@@ -281,10 +303,12 @@ export default function HelpPage() {
                 />
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className={`px-4 py-3 border-b border-gray-100 bg-${theme}-50`}>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-600">
+                <div
+                  className={`px-4 py-3 border-b border-gray-100 text-slate-900 ${currentTheme.headerBg}`}
+                >
                   <h3
-                    className={`font-semibold text-${theme}-800 text-sm uppercase`}
+                    className={`font-semibold text-sm uppercase ${currentTheme.headerText}`}
                     suppressHydrationWarning
                   >
                     {t('help.categories')}
@@ -300,12 +324,11 @@ export default function HelpPage() {
 
                       return (
                         <div key={topic.id} className="mb-1">
-                          {/* LEVEL 1: Main Topic */}
                           <div
-                            className={`group flex items-center justify-between w-full px-3 py-2.5 rounded-md text-sm font-bold transition-all cursor-pointer ${
+                            className={`group flex items-center justify-between w-full px-3 py-2.5 rounded-md text-sm font-bold transition-all ${
                               isParentActive
-                                ? `bg-${theme}-50 text-${theme}-700`
-                                : 'text-slate-700 hover:bg-gray-50'
+                                ? currentTheme.level1
+                                : 'text-slate-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-700/10 cursor-pointer'
                             }`}
                             onClick={() => handleParentClick(topic)}
                           >
@@ -332,7 +355,6 @@ export default function HelpPage() {
                             )}
                           </div>
 
-                          {/* LEVEL 2: Sub Topic */}
                           {hasSubTopics && isExpanded && (
                             <div className="mt-1 ml-3 pl-3 border-l-2 border-gray-100 space-y-1 animate-in slide-in-from-top-1 duration-200">
                               {topic.subTopics.map((sub) => {
@@ -347,8 +369,8 @@ export default function HelpPage() {
                                         onClick={() => setManualSelection(sub)}
                                         className={`flex-1 text-left px-3 py-2 rounded-md text-sm font-medium transition-all truncate ${
                                           isSubActive
-                                            ? `text-${theme}-600 bg-${theme}-50/50`
-                                            : 'text-slate-500 hover:text-slate-800 hover:bg-gray-50'
+                                            ? currentTheme.level2
+                                            : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/10 cursor-pointer'
                                         }`}
                                       >
                                         {sub.title}
@@ -376,7 +398,6 @@ export default function HelpPage() {
                                       )}
                                     </div>
 
-                                    {/* LEVEL 3: Sub-Sub Topic */}
                                     {hasSubSub && isSubExpanded && (
                                       <div className="ml-4 pl-3 border-l border-gray-200 space-y-1 mt-1">
                                         {sub.subSubTopics.map((subSub) => {
@@ -387,8 +408,8 @@ export default function HelpPage() {
                                               onClick={() => setManualSelection(subSub)}
                                               className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-all truncate ${
                                                 isSubSubActive
-                                                  ? `text-${theme}-600 bg-${theme}-50/30`
-                                                  : 'text-slate-500 hover:text-slate-800 hover:bg-gray-50'
+                                                  ? currentTheme.level3
+                                                  : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/10 cursor-pointer'
                                               }`}
                                             >
                                               {subSub.title}
@@ -414,7 +435,7 @@ export default function HelpPage() {
               </div>
 
               <div className="space-y-2 pl-1">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                   {t('common.download')}
                 </p>
                 {categories.map((category) => {
@@ -426,12 +447,12 @@ export default function HelpPage() {
                       key={value}
                       onClick={() => handleDownload(value)}
                       disabled={isGenerating}
-                      className={`w-full flex items-center justify-center gap-2 text-sm text-slate-600 border border-gray-200 bg-white px-3 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isActive ? 'hover:text-sky-600 hover:border-sky-300' : 'hover:text-emerald-600 hover:border-emerald-300'}`}
+                      className={`w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${value === 'driver' ? 'hover:text-amber-600 hover:border-amber-300' : 'hover:text-sky-600 hover:border-sky-300'}`}
                     >
                       {isGenerating ? (
                         <span
                           className={`animate-spin h-4 w-4 border-2 border-gray-300 ${
-                            isActive ? 'border-t-sky-600' : 'border-t-emerald-600'
+                            isActive ? 'border-t-sky-600' : 'border-t-amber-600'
                           } rounded-full`}
                         ></span>
                       ) : (
@@ -451,7 +472,7 @@ export default function HelpPage() {
             {currentTopic ? (
               <div
                 key={currentTopic.id}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-10 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-600 shadow-sm p-6 sm:p-10 animate-in fade-in slide-in-from-bottom-2 duration-300"
               >
                 <div className="mb-6 pb-6 border-b border-gray-100">
                   <span
@@ -459,13 +480,13 @@ export default function HelpPage() {
                       activeCategory === 'planner'
                         ? 'bg-sky-50 text-sky-700 ring-sky-600/20'
                         : activeCategory === 'driver'
-                          ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
+                          ? 'bg-amber-50 text-amber-700 ring-amber-600/20'
                           : 'bg-gray-50 text-gray-600 ring-gray-500/10'
                     }`}
                   >
                     {t('help.module', { category: activeCategory })}
                   </span>
-                  <h2 className="text-3xl font-bold text-slate-900">{currentTopic.title}</h2>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{currentTopic.title}</h2>
                 </div>
                 <div className="content-area">
                   {currentTopic.blocks && currentTopic.blocks.length > 0 ? (
@@ -474,7 +495,7 @@ export default function HelpPage() {
                     ))
                   ) : (
                     <div
-                      className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
+                      className="prose prose-slate max-w-none text-slate-600 dark:text-slate-200 leading-relaxed"
                       dangerouslySetInnerHTML={{
                         __html: currentTopic.content || '<p>Konten sedang diperbarui.</p>',
                       }}

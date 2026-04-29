@@ -23,7 +23,7 @@ export const routeTransactionTopic = [
         <p>Berikut ini penjelasannya: </p>
         <ul class="list-decimal pl-5 space-y-2 mt-2">
             <li>
-                <p>Setelah melakukan dispatch, <em>export</em> hasil optimalisasinya.</p>
+                <p>Setelah melakukan <em>dispatch</em>, lakukan <em>export</em> untuk hasil optimalisasinya.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                     <img src="/images/tutorial/planner/rk-1.png" alt="Routing Transaction - 1" style="width: 100%; border-radius: 4px;" />
                 </div>

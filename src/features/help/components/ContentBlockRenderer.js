@@ -18,7 +18,7 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
           const caption = document.createElement('p');
           caption.innerText = altText;
           caption.className =
-            'p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 italic generated-caption';
+            'p-2 text-center text-xs text-gray-500 dark:text-slate-300 italic generated-caption';
 
           if (img.parentNode) {
             img.parentNode.insertBefore(caption, img.nextSibling);
@@ -32,19 +32,18 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
   if (block.type === 'image') {
     return (
       <div
-        className="my-6 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in shadow-sm hover:shadow-md transition-all"
+        className="rounded-lg overflow-hidden cursor-zoom-in transition-all "
         onClick={() => onImageClick({ src: block.src, alt: block.alt })}
       >
-        <div className="relative w-full h-64 sm:h-80 bg-gray-50">
+        <div className="relative w-full h-64 sm:h-80">
           <Image
             src={block.src}
             alt={block.alt || 'Tutorial Image'}
             fill
-            className="object-contain p-2"
           />
         </div>
         {block.alt && (
-          <p className="p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 italic">
+          <p className="p-2 text-center text-xs text-gray-500 dark:text-slate-200 italic ">
             {block.alt}
           </p>
         )}
@@ -58,7 +57,7 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
       <div
         ref={textContentRef}
         // PERBAIKAN DI SINI: className dijadikan satu baris full (jangan di-enter)
-        className="prose prose-slate max-w-none text-slate-600 leading-relaxed mb-4 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all"
+        className="prose prose-slate max-w-none text-slate-600 dark:text-slate-200 leading-relaxed mb-4 [&_img]:cursor-zoom-in [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:shadow-sm hover:[&_img]:shadow-md [&_img]:transition-all [&_img]:dark:border-slate-700"
         onClick={(e) => {
           if (e.target.tagName === 'IMG') {
             onImageClick({
