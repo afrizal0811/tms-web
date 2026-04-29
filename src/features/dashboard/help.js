@@ -397,6 +397,7 @@ export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
   let assignedFrozen = 0;
 
   for (const task of tasksArray) {
+    const customerName = parseCustomerString(task.customerName || task.customerOrder).name || 'N/A';
     const flow = task.flow || 'N/A';
     let displayOrderId = '-';
     if (task.orderId) {
@@ -420,7 +421,7 @@ export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
     else if (task.status === 'UNASSIGNED') {
       unassigned++;
       unassignedList.push({
-        customer: task.customerName || '-',
+        customer: customerName,
         flow,
         soNumber: task.orderId || '-',
         truncateSoNumber: displayOrderId,
@@ -436,15 +437,12 @@ export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
 
     const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
     if (manualCategory && isAssigned) {
-      const customerName = parseCustomerString(
-        task.customerName || task.customerOrder
-      ).fullCustomerName;
       const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
       let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
       if (finalAssignee === 'N/A') finalAssignee = '-';
 
       manualAssignList.push({
-        customer: customerName || 'N/A',
+        customer: customerName,
         driver: finalAssignee,
         flow,
         soNumber: task.orderId || '-',
@@ -469,7 +467,7 @@ export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
         const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
         const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
         crossDayTasks.push({
-          customer: task.customerName || 'N/A',
+          customer: customerName,
           doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
           driver: driverName,
           soNumber: task.orderId || '-',
