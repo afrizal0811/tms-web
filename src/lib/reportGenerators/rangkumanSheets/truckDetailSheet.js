@@ -463,7 +463,7 @@ export function generateTruckDetailSheet(
 
   const row1 = [
     translate('common.storage_type'),
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
   ];
   const row2 = ['', '', ''];

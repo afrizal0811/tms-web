@@ -216,7 +216,7 @@ export default function TruckUsageModal({
                   onClick={() => setIsConfirmOpen(true)}
                   className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium text-sm transition-colors cursor-pointer"
                 >
-                  {translate('summary.tabs.truck_usage.modal.btn_delete')}
+                  {translate('common.button.btn_delete')}
                 </button>
               )}
             </div>
@@ -235,7 +235,7 @@ export default function TruckUsageModal({
               >
                 {isLoading
                   ? translate('summary.tabs.truck_usage.modal.loading_text')
-                  : translate('summary.tabs.truck_usage.modal.btn_save')}
+                  : translate('common.button.btn_save')}
               </button>
             </div>
           </div>

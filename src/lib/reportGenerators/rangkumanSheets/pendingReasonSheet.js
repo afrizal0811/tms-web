@@ -183,9 +183,9 @@ export function generatePendingReasonSheet(
   );
 
   let headers = [
-    translate('summary.tabs.pending_reasons.flow'),
-    translate('summary.tabs.pending_reasons.date'),
-    translate('common.number_plates'),
+    translate('common.flow'),
+    translate('common.date'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),
     translate('common.status.partial'),
@@ -194,17 +194,17 @@ export function generatePendingReasonSheet(
   if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
   headers.push(
     translate('summary.tabs.pending_reasons.reason'),
-    translate('summary.tabs.pending_reasons.open_time'),
-    translate('summary.tabs.pending_reasons.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
     translate('common.etd'),
-    translate('summary.tabs.pending_reasons.actual_arrival'),
-    translate('summary.tabs.pending_reasons.actual_departure'),
-    translate('summary.tabs.pending_reasons.visit_plan'),
-    translate('summary.tabs.pending_reasons.visit_actual'),
+    translate('common.actual_arrival'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
     translate('common.customer_id'),
-    translate('summary.tabs.pending_reasons.ro_seq'),
-    translate('summary.tabs.pending_reasons.real_seq'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('common.storage_type')
   );
 

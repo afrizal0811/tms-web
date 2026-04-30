@@ -104,8 +104,8 @@ export default function Navbar() {
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
   const primaryEstimate = isIndo ? t('navbar.estimate') : t('navbar.deliveries');
   const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
-  const primaryDeliveries = isIndo ? 'Data' : t('navbar.vehicle');
-  const secondaryDeliveries = isIndo ? t('navbar.vehicle') : 'Data';
+  const primaryDeliveries = isIndo ? 'Data' : t('common.vehicle');
+  const secondaryDeliveries = isIndo ? t('common.vehicle') : 'Data';
 
   function NavLink({ href, children, className }) {
     const pathname = usePathname();

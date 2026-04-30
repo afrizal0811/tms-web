@@ -204,7 +204,7 @@ export default function TaskSummaryTab({
           <thead className="text-xs text-gray-700 capitalize  sticky top-0 z-10 font-bold">
             <tr>
               <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>
-                {translate('summary.tabs.task_summary.date')}
+                {translate('common.date')}
               </th>
               <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>
                 {translate('summary.tabs.task_summary.type')}
@@ -212,7 +212,7 @@ export default function TaskSummaryTab({
               {headerData(translate('summary.tabs.task_summary.dp'), cPink, 'DP')}
               {headerData(translate('summary.tabs.task_summary.dt'), cGreen, 'DT')}
               {headerData(translate('summary.tabs.task_summary.dt_persentage'), cGreen, '% DT')}
-              {headerData(translate('summary.tabs.task_summary.ma'), cRed, 'MA')}
+              {headerData(translate('common.status.manual_assign'), cRed, 'MA')}
               {headerData(translate('summary.tabs.task_summary.ma_persentage'), cRed, '% MA')}
               {headerData(translate('summary.tabs.task_summary.rt'), cCyan, 'RT')}
               {headerData(translate('summary.tabs.task_summary.rt_persentage'), cCyan, '% RT')}

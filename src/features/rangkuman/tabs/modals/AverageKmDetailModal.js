@@ -15,7 +15,7 @@ export default function AverageKmDetailModal({
   const columns = [
     {
       key: 'plate',
-      label: translate('common.number_plates'),
+      label: translate('common.license_number'),
       render: (item) => item.plate || '-',
     },
     {

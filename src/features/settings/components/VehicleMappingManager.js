@@ -200,7 +200,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                         disabled={editType === item.mappedType || isLoading}
                         className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-3 py-1.5 rounded cursor-pointer disabled:opacity-60 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                       >
-                        {translate('setting.tab.button.btn_save')}
+                        {translate('common.button.btn_save')}
                       </button>
                     </div>
                   ) : (
@@ -224,7 +224,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
                             onClick={() => handleDeleteClick(item.id, item.plat)}
                             className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                           >
-                            {translate('setting.tab.button.btn_delete')}
+                            {translate('common.button.btn_delete')}
                           </button>
                         </div>
                       )}

@@ -85,7 +85,7 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
               <thead className="bg-gray-50">
                 <tr>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.date')} (
+                    {translate('common.date')} (
                     {translate('summary.tabs.average_km.month')})
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>

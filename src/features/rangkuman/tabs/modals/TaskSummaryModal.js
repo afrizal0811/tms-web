@@ -52,7 +52,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                 <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
                   <tr>
                     <th className="px-4 py-3 text-center">#</th>
-                    <th className="px-4 py-3 text-center">{translate('common.number_plates')}</th>
+                    <th className="px-4 py-3 text-center">{translate('common.license_number')}</th>
                     <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
                   </tr>
                 </thead>

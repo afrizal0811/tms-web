@@ -127,7 +127,7 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
                       disabled={isLoading || isUnchanged(hubAcronym)}
                       className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded whitespace-nowrap hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
                     >
-                      {translate('setting.tab.button.btn_save')}
+                      {translate('common.button.btn_save')}
                     </button>
                   </>
                 ) : (
@@ -148,7 +148,7 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
                           disabled={isLoading || !hubAcronym}
                           className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded whitespace-nowrap hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
                         >
-                          {translate('setting.tab.button.btn_delete')}
+                          {translate('common.button.btn_delete')}
                         </button>
                       </div>
                     )}

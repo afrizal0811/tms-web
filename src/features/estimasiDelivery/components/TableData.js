@@ -86,13 +86,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 {t('estimation.visit')}
               </Th>
               <Th widthClass="w-[20%]" alignClass="text-center">
-                {t('estimation.no_so')}
+                {t('common.so_number')}
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
-                {t('estimation.open_time')}
+                {t('common.open_time')}
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
-                {t('estimation.close_time')}
+                {t('common.close_time')}
               </Th>
               <Th widthClass="w-[12.5%]" alignClass="text-center">
                 {t('estimation.est_arrival')}

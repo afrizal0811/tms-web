@@ -64,9 +64,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   };
 
   const tableColumns = [
-    { header: t('dashboard.tab.routingreal.flow'), render: (row) => row.flow },
+    { header: t('common.flow'), render: (row) => row.flow },
     {
-      header: t('common.number_plates'),
+      header: t('common.license_number'),
       render: (row) => <HighlightText text={row.plat} highlight={searchQuery} />,
     },
     {
@@ -76,33 +76,34 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
     },
     {
       header: t('common.customer_name'),
+      align: 'left',
       render: (row) => <HighlightText text={row.customerName} highlight={searchQuery} />,
     },
     { header: t('dashboard.tab.routingreal.status'), render: (row) => row.statusLabel },
     {
-      header: t('dashboard.tab.routingreal.open_time'),
+      header: t('common.open_time'),
       render: (row) => row.openTime,
     },
     {
-      header: t('dashboard.tab.routingreal.close_time'),
+      header: t('common.close_time'),
       render: (row) => row.closeTime,
     },
     { header: t('common.eta'), render: (row) => row.eta },
     {
-      header: t('dashboard.tab.routingreal.actual_arrival'),
+      header: t('common.actual_arrival'),
       render: (row) => row.actualArrival,
     },
     { header: t('common.etd'), render: (row) => row.etd },
     {
-      header: t('dashboard.tab.routingreal.actual_departure'),
+      header: t('common.actual_departure'),
       render: (row) => row.actualDeparture,
     },
     {
-      header: t('dashboard.tab.routingreal.visit_plan'),
+      header: t('common.visit_plan'),
       render: (row) => row.visitTime,
     },
     {
-      header: t('dashboard.tab.routingreal.visit_actual'),
+      header: t('common.visit_actual'),
       render: (row) => row.actualVisitTime,
     },
     {
@@ -111,7 +112,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
       render: (row) => (isEmpty(row.roSequence) ? '-' : row.roSequence),
     },
     {
-      header: t('dashboard.tab.routingreal.actual_seq'),
+      header: t('common.actual_seq'),
       className: 'font-semibold',
       render: (row) => row.realSequence ?? '-',
     },
@@ -246,7 +247,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               const cellContent = tableColumns.map((col, colIndex) => (
                 <td
                   key={colIndex}
-                  className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : ''} ${col.className || ''}`}
+                  className={`px-4 py-2 ${col.align === 'left' ? 'text-left' : 'text-center'} ${col.className || ''}`}
                 >
                   {col.render(row)}
                 </td>
@@ -255,10 +256,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               // 4. Return baris
               if (row.isManualAssign) {
                 return (
-                  <Tooltip
-                    key={rowIndex}
-                    tooltipContent={t('dashboard.tab.routingreal.tooltip.manual')}
-                  >
+                  <Tooltip key={rowIndex} tooltipContent={t('common.status.manual_assign')}>
                     <tr className={`${rowClass} border-b border-gray-100 cursor-help`}>
                       {cellContent}
                     </tr>

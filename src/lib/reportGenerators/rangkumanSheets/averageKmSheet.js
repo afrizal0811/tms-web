@@ -126,7 +126,7 @@ export function generateAverageKmSheet(
   );
 
   const monthHeader1 = [
-    `${translate('summary.tabs.average_km.date') || 'Routing Date'} (${translate('summary.tabs.average_km.month')})`,
+    `${translate('common.date') || 'Routing Date'} (${translate('summary.tabs.average_km.month')})`,
     translate('summary.tabs.average_km.km_routing'),
     '',
     translate('summary.tabs.average_km.total_km_routing'),
@@ -142,7 +142,7 @@ export function generateAverageKmSheet(
   ];
 
   const dailyHeader1 = [
-    translate('summary.tabs.average_km.date') || 'Routing Date',
+    translate('common.date') || 'Routing Date',
     translate('summary.tabs.average_km.total_vehicle'),
     '',
     translate('summary.tabs.average_km.km_routing'),

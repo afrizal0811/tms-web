@@ -25,8 +25,8 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
     'TERIMA SEBAGIAN': translate('common.status.pending_gr'),
     BATAL: translate('common.status.cancel'),
     'PENDING GR': translate('common.status.pending_gr'),
-    DONE: translate('summary.tabs.truck_detail.modal.done'),
-    ONGOING: translate('summary.tabs.truck_detail.modal.ongoing'),
+    DONE: translate('common.status.done'),
+    ONGOING: translate('common.status.ongoing'),
   };
 
   const ERROR_COLORS = {
@@ -82,9 +82,9 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                   <Tooltip
                     tooltipContent={
                       <span>
-                        {translate('summary.tabs.truck_detail.modal.ro_seq')}: <b>{displayRO}</b>{' '}
+                        {translate('common.ro_seq')}: <b>{displayRO}</b>{' '}
                         <br />
-                        {translate('summary.tabs.truck_detail.modal.act_seq')}: <b>{displayReal}</b>
+                        {translate('common.actual_seq')}: <b>{displayReal}</b>
                       </span>
                     }
                   >
@@ -111,7 +111,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.MANUAL}`}
                     >
-                      {translate('summary.tabs.truck_detail.modal.manual').toUpperCase()}
+                      {translate('common.status.manual_assign').toUpperCase()}
                     </span>
                   )}
                   {task.isDateDiff && (

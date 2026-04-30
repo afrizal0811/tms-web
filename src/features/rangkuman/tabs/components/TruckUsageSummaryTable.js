@@ -169,7 +169,7 @@ export default function TruckUsageSummaryTable({
         <thead>
           <tr>
             <th className={`${thClass} w-[200px]`}>
-              {translate('summary.tabs.truck_usage.vehicle_type')}
+              {translate('common.vehicle_type')}
             </th>
             {headerTooltip(translate('summary.tabs.truck_usage.tms'), 'TMS')}
             {headerTooltip(translate('summary.tabs.truck_usage.non_tms'), 'Non TMS')}
@@ -179,7 +179,7 @@ export default function TruckUsageSummaryTable({
               <>
                 {headerTooltip(translate('summary.tabs.truck_usage.tv'), 'TV')}
                 {headerTooltip(translate('summary.tabs.truck_usage.tvu_percentage'), '% TVU')}
-                {headerTooltip(translate('summary.tabs.truck_usage.vehicle'), 'V')}
+                {headerTooltip(translate('common.vehicle'), 'V')}
                 {headerTooltip(translate('summary.tabs.truck_usage.vu'), 'VU')}
                 {headerTooltip(translate('summary.tabs.truck_usage.iv'), 'IV')}
               </>

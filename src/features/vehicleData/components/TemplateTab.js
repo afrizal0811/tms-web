@@ -16,8 +16,8 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
           <tr>
             <Th>{t('vehicle.tabs.template.name')}</Th>
             <Th>{t('vehicle.tabs.template.assignee')}</Th>
-            <Th>{t('vehicle.tabs.template.start_time')}</Th>
-            <Th>{t('vehicle.tabs.template.end_time')}</Th>
+            <Th>{t('common.start_time')}</Th>
+            <Th>{t('common.finish_time')}</Th>
             <Th>{t('vehicle.tabs.template.break_start_time')}</Th>
             <Th>{t('vehicle.tabs.template.break_end_time')}</Th>
             <Th>{t('vehicle.tabs.template.multiday')}</Th>

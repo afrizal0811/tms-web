@@ -263,7 +263,7 @@ export default function TaskCountReport({ driverData }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col">
               <label className="text-sm font-semibold text-gray-600 dark:text-slate-300 mb-2">
-                {t('report.tc_detail.time_from')}
+                {t('common.start_time')}
               </label>
               <CustomDatePicker
                 selected={startDate}
@@ -276,7 +276,7 @@ export default function TaskCountReport({ driverData }) {
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-semibold text-gray-600 dark:text-slate-300 mb-2">
-                {t('report.tc_detail.time_to')}
+                {t('common.finish_time')}
               </label>
               <CustomDatePicker
                 selected={endDate}

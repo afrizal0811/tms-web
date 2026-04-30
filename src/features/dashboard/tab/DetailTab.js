@@ -43,8 +43,8 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
   const handleCopy = (task) => {
     const isIndo = lang === 'id';
     const copyText = isIndo
-      ? `${t('dashboard.copy')} ${t('dashboard.tab.detail.so_number')}`
-      : `${t('dashboard.tab.detail.so_number')} ${t('dashboard.copy')}`;
+      ? `${t('dashboard.copy')} ${t('common.so_number')}`
+      : `${t('common.so_number')} ${t('dashboard.copy')}`;
 
     if (!task.soNumber) {
       toastWarning(t('dashboard.empty_so'));
@@ -159,19 +159,19 @@ export default function DetailTab({ loading, summaryData }) {
             tooltipContent={t('dashboard.tab.detail.tooltip.unassigned')}
           />
           <StatCard
-            title={t('dashboard.tab.detail.ongoing')}
+            title={t('common.status.ongoing')}
             value={summaryData?.ongoing}
             isLoading={loading}
             tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
           />
           <StatCard
-            title={t('dashboard.tab.detail.done')}
+            title={t('common.status.done')}
             value={summaryData?.done}
             isLoading={loading}
             tooltipContent={t('dashboard.tab.detail.tooltip.done')}
           />
           <StatCard
-            title={t('dashboard.tab.detail.manual')}
+            title={t('common.status.manual_assign')}
             value={summaryData?.manualAssignList?.length}
             isLoading={loading}
             tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
@@ -208,11 +208,7 @@ export default function DetailTab({ loading, summaryData }) {
             title={t('dashboard.tab.detail.unassigned_list')}
             data={summaryData?.unassignedList}
             loading={loading}
-            headers={[
-              t('dashboard.tab.detail.flow'),
-              t('common.customer_name'),
-              t('dashboard.tab.detail.so_number'),
-            ]}
+            headers={[t('common.flow'), t('common.customer_name'), t('common.so_number')]}
             renderRow={(item) => (
               <>
                 <Td className="p-3 text-xs">{item.flow}</Td>
@@ -226,11 +222,7 @@ export default function DetailTab({ loading, summaryData }) {
             title={t('dashboard.tab.detail.manual_list')}
             data={summaryData?.manualAssignList}
             loading={loading}
-            headers={[
-              t('dashboard.tab.detail.flow'),
-              t('common.customer_name'),
-              t('common.driver'),
-            ]}
+            headers={[t('common.flow'), t('common.customer_name'), t('common.driver')]}
             renderRow={(item) => (
               <>
                 <Td className="p-3 text-xs">{item.flow}</Td>

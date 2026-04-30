@@ -316,7 +316,7 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 2: Total Delivered ---
   const headers1 = [
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('excel.delivery.headers.total_outlet'),
     translate('excel.delivery.headers.total_delivery'),
@@ -447,10 +447,10 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
-    translate('excel.delivery.headers.flow'),
-    translate('excel.delivery.headers.no_so'),
-    translate('excel.delivery.headers.date'),
-    translate('common.number_plates'),
+    translate('common.flow'),
+    translate('common.so_number'),
+    translate('common.date'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),
     translate('common.status.partial'),
@@ -460,17 +460,17 @@ export function generateDeliveryWorkbook(
   headers2.push(
     translate('excel.delivery.headers.reason'),
     '',
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_arr'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
+    translate('common.actual_arrival'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('common.storage_type')
   );
   const finalSheetData2 = [
@@ -510,17 +510,17 @@ export function generateDeliveryWorkbook(
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
   const separatorColIndex = isSpecialHub ? 10 : 9;
   const centerAlignedIndices = [
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_arr'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
+    translate('common.actual_arrival'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('common.storage_type'),
   ];
   const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
@@ -638,21 +638,21 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
-    translate('excel.delivery.headers.flow'),
-    translate('common.number_plates'),
+    translate('common.flow'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('common.customer_name'),
     translate('excel.delivery.headers.status_del'),
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
-    translate('excel.delivery.headers.act_arr'),
+    translate('common.actual_arrival'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('excel.delivery.headers.is_match'),
     translate('dashboard.tab.routingreal.is_within_hours'),
   ];

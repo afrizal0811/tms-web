@@ -106,7 +106,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                 rowSpan="2"
                 className={`${thClass} min-w-[180px] md:sticky md:left-20 md:z-40 ${titleColor}`}
               >
-                {translate('common.number_plates')}
+                {translate('common.license_number')}
               </th>
               <th
                 rowSpan="2"

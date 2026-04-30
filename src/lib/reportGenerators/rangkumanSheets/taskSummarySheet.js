@@ -32,7 +32,7 @@ export function generateTaskSummarySheet(
   translate
 ) {
   const headers = [
-    translate('summary.tabs.task_summary.date'),
+    translate('common.date'),
     translate('summary.tabs.task_summary.type'),
     'DP',
     'DT',

@@ -451,7 +451,7 @@ export default function TruckUsageTable({
               className={`${thClass} w-[150px] min-w-[150px] max-w-[150px] sticky left-[100px] z-50`}
               style={{ backgroundColor: colorHeader }}
             >
-              {translate('summary.tabs.truck_usage.vehicle_type')}
+              {translate('common.vehicle_type')}
             </th>
             <th
               rowSpan="2"

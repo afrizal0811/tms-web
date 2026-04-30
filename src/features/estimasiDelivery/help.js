@@ -132,9 +132,9 @@ export const handleConfirmDownload = async ({
         [
           'No.',
           t('estimation.visit'),
-          t('estimation.no_so'),
-          t('estimation.open_time'),
-          t('estimation.close_time'),
+          t('common.so_number'),
+          t('common.open_time'),
+          t('common.close_time'),
           t('estimation.est_arrival'),
           t('estimation.est_depart'),
         ],

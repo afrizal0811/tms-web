@@ -216,12 +216,12 @@ export function generateTimeSummaryWorkbook(
   const wb = XLSX.utils.book_new();
 
   const headers = [
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('excel.time.headers.start_date'),
-    translate('excel.time.headers.start_time'),
+    translate('common.start_time'),
     translate('excel.time.headers.finish_date'),
-    translate('excel.time.headers.finish_time'),
+    translate('common.finish_time'),
     translate('excel.time.headers.duration'),
     translate('excel.time.headers.travel_time'),
     translate('excel.time.headers.travel_dist'),

@@ -11,7 +11,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
       <table className="w-full border-collapse min-w-4xl">
         <thead className="sticky top-0 z-10">
           <tr>
-            <Th>{t('common.number_plates')}</Th>
+            <Th>{t('common.license_number')}</Th>
             <Th>{t('vehicle.tabs.type')}</Th>
             <Th>{t('vehicle.tabs.name')}</Th>
             <Th>{t('vehicle.tabs.email')}</Th>

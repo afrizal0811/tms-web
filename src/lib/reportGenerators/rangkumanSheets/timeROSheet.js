@@ -113,8 +113,8 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   const excelData = [
     [
       translate('summary.tabs.time_ro.date_ro'),
-      translate('summary.tabs.time_ro.start_ro'),
-      translate('summary.tabs.time_ro.end_ro'),
+      translate('common.start_time'),
+      translate('common.finish_time'),
     ],
   ];
   const merges = [];

@@ -61,7 +61,7 @@ export default function TimeDriverTab({ data, translate, language }) {
               {translate('common.storage_type')}
             </th>
             <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              {translate('common.number_plates')}
+              {translate('common.license_number')}
             </th>
             <th
               rowSpan="2"
@@ -91,11 +91,9 @@ export default function TimeDriverTab({ data, translate, language }) {
               return (
                 <Fragment key={i}>
                   <th className={`${thClass} ${metricColor} border-l-2 border-l-gray-400`}>
-                    {translate('summary.tabs.time_driver.start_time')}
+                    {translate('common.start_time')}
                   </th>
-                  <th className={`${thClass} ${metricColor}`}>
-                    {translate('summary.tabs.time_driver.finish_time')}
-                  </th>
+                  <th className={`${thClass} ${metricColor}`}>{translate('common.finish_time')}</th>
                   <th className={`${thClass} ${metricColor}`}>
                     {translate('summary.tabs.time_driver.duration')}
                   </th>
