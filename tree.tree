@@ -16,6 +16,8 @@
 │   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
+│   │   ├── get-trash
+│   │   │   └── route.js
 │   │   ├── get-users
 │   │   │   └── route.js
 │   │   ├── get-vehicles
@@ -35,7 +37,9 @@
 │   ├── laporan
 │   │   ├── bulk
 │   │   │   └── page.js
-│   │   └── page.js
+│   │   ├── page.js
+│   │   └── task-counter
+│   │       └── page.js
 │   ├── layout.js
 │   ├── not-found.js
 │   ├── old.ico
@@ -51,16 +55,16 @@
 ├── components
 │   ├── AppLayout.js
 │   ├── BaseModal.js
+│   ├── Button.js
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
-│   ├── ContentBlockRenderer.js
 │   ├── CustomDatePicker.js
 │   ├── DownloadButton.js
 │   ├── ErrorPage.js
 │   ├── Footer.js
 │   ├── HighlightText.js
-│   ├── ImageLightbox.js
+│   ├── LanguageToggle.js
 │   ├── LocationDropdown.js
 │   ├── modal
 │   │   ├── ConfirmModal.js
@@ -71,7 +75,7 @@
 │   │   ├── LanguageSwitcher.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
-│   │   └── UserDisplay.js
+│   │   └── UserDropdown.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
 │   ├── SessionGuard.js
@@ -81,9 +85,11 @@
 │   │   ├── TabButton.js
 │   │   ├── Td.js
 │   │   └── Th.js
+│   ├── ThemeToggle.js
 │   └── Tooltip.js
 ├── context
-│   └── LanguageContext.js
+│   ├── LanguageContext.js
+│   └── ThemeProvider.js
 ├── features
 │   ├── dashboard
 │   │   ├── components
@@ -111,6 +117,10 @@
 │   │   ├── EstimasiDelivery.js
 │   │   └── help.js
 │   ├── help
+│   │   ├── components
+│   │   │   ├── ContentBlockRenderer.js
+│   │   │   ├── ImageLightbox.js
+│   │   │   └── PdfDocument.js
 │   │   ├── data
 │   │   │   ├── driver
 │   │   │   │   ├── dataDriver.js
@@ -125,8 +135,7 @@
 │   │   │       ├── start.js
 │   │   │       └── task.js
 │   │   ├── data.js
-│   │   ├── HelpPage.js
-│   │   └── PdfDocument.js
+│   │   └── HelpPage.js
 │   ├── rangkuman
 │   │   ├── RangkumanSummary.js
 │   │   └── tabs
@@ -149,10 +158,13 @@
 │   ├── reportData
 │   │   ├── BulkReport.js
 │   │   ├── help.js
-│   │   └── SingleReport.js
+│   │   ├── SingleReport.js
+│   │   └── TaskCountReport.js
 │   ├── settings
 │   │   ├── components
 │   │   │   ├── BranchAcronymManager.js
+│   │   │   ├── Card.js
+│   │   │   ├── StandardType.js
 │   │   │   └── VehicleMappingManager.js
 │   │   ├── SettingsPage.js
 │   │   └── tabs
@@ -161,8 +173,8 @@
 │   │       └── SyncDataTab.js
 │   ├── updateLonglat
 │   │   ├── components
-│   │   │   ├── UpdateLonglatTable.js
-│   │   │   └── UpdateMap.js
+│   │   │   ├── MapLocation.js
+│   │   │   └── UpdateLonglatTable.js
 │   │   ├── help.js
 │   │   ├── modal
 │   │   │   └── CustomerHistoryModal.js
@@ -183,6 +195,7 @@
     │   ├── index.js
     │   ├── roles.js
     │   ├── tasks.js
+    │   ├── trash.js
     │   ├── truckUsage.js
     │   ├── users.js
     │   ├── vehicleMappings.js
@@ -210,6 +223,7 @@
     │   │   ├── truckDetailSheet.js
     │   │   └── truckUsageSheet.js
     │   ├── routingReport.js
+    │   ├── taskCountReport.js
     │   └── timeReport.js
     ├── toastHelper.js
     ├── unifiedRouting.js

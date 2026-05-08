@@ -3,12 +3,11 @@
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDriversSyncStatus, getHubs, getRoles, getVehicleTypes } from '@/lib/api';
+import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
-import MasterDataTab from './tabs/MasterDataTab';
 import SyncDataTab from './tabs/SyncDataTab';
 
 export default function SettingsPage() {
@@ -22,14 +21,16 @@ export default function SettingsPage() {
   const [lastUpdated, setLastUpdated] = useState({});
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
+  const [reasons, setReasons] = useState([]);
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [hubsDb, rolesDb, dStatus, vTypes] = await Promise.all([
+      const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
         getHubs(),
         getRoles(),
         getDriversSyncStatus(),
         getVehicleTypes(),
+        getReasons(),
       ]);
 
       setHubs(hubsDb);
@@ -50,6 +51,7 @@ export default function SettingsPage() {
       });
       setDriverSyncStatus(dMap);
       setVehicleTypes(vTypes);
+      setReasons(reasonsDb || []);
     } catch (error) {
       toastError(t('common.error', { err: error.message }));
     }
@@ -104,7 +106,6 @@ export default function SettingsPage() {
 
   const buttonData = [
     { tab: 'general', label: t('setting.tab.general.title') },
-    { tab: 'master', label: t('setting.tab.master_data.title') },
     { tab: 'sync', label: t('setting.tab.sync_data.title') },
   ];
 
@@ -115,15 +116,7 @@ export default function SettingsPage() {
           <GeneralTab
             vehicleTypes={vehicleTypes}
             hubs={hubs}
-            onRefresh={fetchAllData}
-            isReadOnly={isReadOnly}
-            translate={t}
-          />
-        );
-      case 'master':
-        return (
-          <MasterDataTab
-            vehicleTypes={vehicleTypes}
+            reasons={reasons}
             onRefresh={fetchAllData}
             isReadOnly={isReadOnly}
             translate={t}

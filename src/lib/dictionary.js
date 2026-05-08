@@ -4,6 +4,7 @@ export const dictionary = {
   id: {
     common: {
       accuracy: 'Akurasi',
+      action: 'Aksi',
       actual_arrival: 'Waktu Datang',
       actual_departure: 'Waktu Berangkat',
       actual_seq: 'Aktual Urutan',
@@ -643,12 +644,18 @@ export const dictionary = {
       title: 'Pengaturan',
       tab: {
         general: {
+          acronym_subtitle: 'Tentukan akronim cabang untuk standar identifikasi dan penamaan.',
           acronym_title: 'Akronim Nama Cabang',
           add_placeholder: 'Tambah tipe baru...',
+          dropdown_title: 'Pilih Tipe Kendaraan',
+          mapping_subtitle: 'Sesuaikan tipe kendaraan sesuai standar yang digunakan',
+          mapping_title: 'Pemetaan Tipe Kendaraan',
+          reasons_subtitle: 'Kategori alasan untuk pengiriman yang tidak berhasil.',
+          reasons_title: 'Alasan Penolakan',
+          select_placeholder: 'Pilih PIC',
+          standard_subtitle: 'Sesuaikan tipe kendaraan dengan standar sistem.',
           standard_title: 'Tipe Kendaraan Standar',
           title: 'Umum',
-          standard_subtitle: 'Sesuaikan tipe kendaraan dengan standar sistem.',
-          acronym_subtitle: 'Tentukan akronim cabang untuk standar identifikasi dan penamaan.',
         },
         sync_data: {
           driver_vehicles: 'Data Sopir & Kendaraan',
@@ -657,12 +664,6 @@ export const dictionary = {
           sync_title: 'Sinkronisasi Data Terpusat',
           subtitle: 'Penyelarasan data master tiap cabang dengan server MileApp',
           title: 'Sinkronisasi',
-        },
-        master_data: {
-          dropdown_title: 'Pilih Tipe Kendaraan',
-          mapping_subtitle: 'Sesuaikan tipe kendaraan sesuai standar yang digunakan',
-          mapping_title: 'Pemetaan Tipe Kendaraan',
-          title: 'Master',
         },
         button: {
           btn_add: 'Tambah',
@@ -685,6 +686,7 @@ export const dictionary = {
   en: {
     common: {
       accuracy: 'Accuracy',
+      action: 'Action',
       actual_arrival: 'Arrival Time',
       actual_departure: 'Departure Time',
       actual_seq: 'Actual Sequence',
@@ -1323,12 +1325,18 @@ export const dictionary = {
       title: 'Settings',
       tab: {
         general: {
+          acronym_subtitle: 'Define branch acronyms for standard identification and naming.',
           acronym_title: 'Branch Name Acronym',
-          add_placeholder: 'Add new type...',
-          standard_title: 'Standard Vehicle Type',
+          add_placeholder: 'Add new data...',
+          dropdown_title: 'Select Vehicle Type',
+          mapping_subtitle: 'Adjust vehicle types according to the standard used',
+          mapping_title: 'Vehicle Type Mapping',
+          reasons_subtitle: 'Reason categories for unsuccessful deliveries.',
+          reasons_title: 'Rejection Reasons',
+          select_placeholder: 'Select PIC',
+          standard_subtitle: 'Align vehicle types with system standards.',
+          standard_title: 'Standard Vehicle Types',
           title: 'General',
-          standard_subtitle: 'Adjust vehicle types to align with the system’s defined standards.',
-          acronym_subtitle: 'Define branch acronyms for standardized identification and naming.',
         },
         sync_data: {
           driver_vehicles: 'Driver & Vehicle Data',
@@ -1337,12 +1345,6 @@ export const dictionary = {
           sync_title: 'Centralized Data Synchronization',
           subtitle: 'Master data alignment for each branch with the MileApp server',
           title: 'Synchronize',
-        },
-        master_data: {
-          dropdown_title: 'Select Vehicle Type',
-          mapping_subtitle: 'Adjust vehicle types according to the standard used',
-          mapping_title: 'Vehicle Type Mapping',
-          title: 'Master',
         },
         button: {
           btn_add: 'Add',

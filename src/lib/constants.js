@@ -16,3 +16,11 @@ export const avatarColorStyles = {
   pink: 'bg-pink-100 text-pink-600',
   gray: 'bg-gray-100 text-gray-600',
 };
+export const PIC_OPTIONS = [
+  'Sales',
+  'Warehouse',
+  'Customer',
+  'Expedition',
+  'Back Office',
+  'Others',
+];

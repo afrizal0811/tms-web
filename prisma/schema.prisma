@@ -90,3 +90,13 @@ model TruckUsage {
   @@unique([hubId, date, storageType, vehicleType])
   @@map("truck_usages")
 }
+
+model Reason {
+  id          Int      @id @default(autoincrement())
+  reasons     String 
+  pic         String
+  lastUpdated DateTime @updatedAt @default(now())
+
+  @@unique([reasons, pic])
+  @@map("reasons")
+}
