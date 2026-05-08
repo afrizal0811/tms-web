@@ -497,6 +497,7 @@ export const dictionary = {
       },
       tabs: {
         time_ro: {
+          end_ro: 'Selesai RO',
           date_ro: 'Tanggal Routing',
           holiday: 'Libur (Minggu)',
           title: 'Waktu Routing',

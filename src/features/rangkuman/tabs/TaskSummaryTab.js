@@ -1,10 +1,67 @@
-// File: features/rangkuman/tabs/TaskSummaryTab.js
 'use client';
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useState, useMemo } from 'react';
 import TaskSummaryModal from './modals/TaskSummaryModal';
+
+const TableHeader = ({ tooltip, colorClass, text }) => (
+  <Tooltip tooltipContent={tooltip}>
+    <th
+      className={`cursor-help px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[60px] ${colorClass}`}
+    >
+      <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+        {text}
+      </span>
+    </th>
+  </Tooltip>
+);
+
+const TableCell = ({ children, colorClass = '', className = '' }) => (
+  <td
+    className={`px-2 py-2 border border-gray-300 dark:border-slate-700 ${colorClass} ${className}`}
+  >
+    {children}
+  </td>
+);
+
+const LoadingSpinner = () => (
+  <Spinner
+    addClass="inline-block"
+    border="border-2 border-slate-400 dark:border-slate-500 border-t-transparent"
+    size="w-3 h-3"
+  />
+);
+
+const COLORS = {
+  yellow: 'bg-[#fff2cc] dark:bg-[#42311c]',
+  pink: 'bg-[#ead1dc] dark:bg-[#4a2438]',
+  green: 'bg-[#d9ead3] dark:bg-[#1a3d28]',
+  red: 'bg-[#f4cccc] dark:bg-[#4a1c1c]',
+  cyan: 'bg-[#d0e0e3] dark:bg-[#164150]',
+  blue: 'bg-[#cfe2f3] dark:bg-[#1a2d52]',
+  gray: 'bg-[#cccccc] dark:bg-[#2c394b]',
+  violet: 'bg-[#d9d2e9] dark:bg-[#34205c]',
+};
+
+const HEADER_COLUMNS = [
+  { key: 'dp', color: COLORS.pink, text: 'DP' },
+  { key: 'dt', color: COLORS.green, text: 'DT' },
+  { key: 'dt_persentage', color: COLORS.green, text: '% DT' },
+  { key: 'ma', color: COLORS.red, text: 'MA' },
+  { key: 'ma_persentage', color: COLORS.red, text: '% MA' },
+  { key: 'rt', color: COLORS.cyan, text: 'RT' },
+  { key: 'rt_persentage', color: COLORS.cyan, text: '% RT' },
+  { key: 'co', color: COLORS.blue, text: 'CO' },
+  { key: 'co_persentage', color: COLORS.blue, text: '% CO' },
+  { key: 'pr', color: COLORS.gray, text: 'PR' },
+  { key: 'pr_persentage', color: COLORS.gray, text: '% PR' },
+  { key: 'mt', color: COLORS.yellow, text: 'MT' },
+  { key: 'tv', color: COLORS.yellow, text: 'TV' },
+  { key: 'va', color: COLORS.yellow, text: 'VA' },
+  { key: 'tvu', color: COLORS.violet, text: 'TVU' },
+  { key: 'tvu_persentage', color: COLORS.violet, text: '% TVU' },
+];
 
 export default function TaskSummaryTab({
   metrics,
@@ -13,7 +70,7 @@ export default function TaskSummaryTab({
   startDateStr,
   endDateStr,
   translate,
-  masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } }, // Terima data dari props
+  masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } },
 }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
 
@@ -40,40 +97,30 @@ export default function TaskSummaryTab({
     return dates;
   }, [startDateStr, endDateStr]);
 
-  const renderValue = (val) => {
-    if (isLoading && val === undefined) {
-      return (
-        <Spinner
-          addClass="inline-block"
-          border="border-2 border-slate-400 border-t-transparent"
-          size="w-3 h-3"
-        />
-      );
-    }
-    return val || 0;
+  const calculatePct = (num, den) => {
+    if (isLoading && (num === undefined || den === undefined)) return <LoadingSpinner />;
+    const n = num || 0;
+    const d = den || 0;
+    return d === 0 ? '0%' : ((n / d) * 100).toFixed(2) + '%';
   };
 
-  const renderClickableCell = (val, tasksArray, typeKey, category, dateObj, isFrozen = false) => {
-    if (isLoading && val === undefined) {
-      return (
-        <td className="px-2 py-2 border border-gray-300">
-          <Spinner
-            addClass="inline-block"
-            border="border-2 border-slate-400 border-t-transparent"
-            size="w-3 h-3"
-          />
-        </td>
-      );
-    }
+  const renderValue = (val) => (isLoading && val === undefined ? <LoadingSpinner /> : val || 0);
 
+  const renderClickableCell = (val, tasksArray, typeKey, category, dateObj, isFrozen = false) => {
+    if (isLoading && val === undefined)
+      return (
+        <TableCell>
+          <LoadingSpinner />
+        </TableCell>
+      );
     const num = val || 0;
-    if (num === 0) {
-      return <td className="px-2 py-2 border border-gray-300">0</td>;
-    }
+    if (num === 0) return <TableCell>0</TableCell>;
 
     const armada = isFrozen ? 'Frozen' : 'Dry';
-    const typeLabel = translate(`summary.tabs.task_summary.${typeKey}`);
-    const title = `${typeLabel} - ${armada}`;
+    const typeLabel =
+      typeKey === 'ma'
+        ? translate('common.status.manual_assign')
+        : translate(`summary.tabs.task_summary.${typeKey}`);
     const hasWrongGR = tasksArray && tasksArray.some((t) => t.isWrongGR);
 
     return (
@@ -81,12 +128,17 @@ export default function TaskSummaryTab({
         onClick={() =>
           setModalConfig({
             isOpen: true,
-            data: { title, dateObj, type: category, tasks: tasksArray || [] },
+            data: {
+              title: `${typeLabel} - ${armada}`,
+              dateObj,
+              type: category,
+              tasks: tasksArray || [],
+            },
           })
         }
-        className={`px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors ${hasWrongGR ? 'text-red-600' : 'text-slate-800'}`}
+        className={`px-2 py-2 border border-gray-300 dark:border-slate-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors ${hasWrongGR ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}
       >
-        <span className="inline-block border-b-2 border-dotted border-red-700 px-2 pb-0.5">
+        <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-2 pb-0.5">
           {num} {hasWrongGR && <span className="ml-1 text-xs">⚠️</span>}
         </span>
       </td>
@@ -94,104 +146,119 @@ export default function TaskSummaryTab({
   };
 
   const renderClickableTvCell = (val, tvArray, dateObj, isFrozen = false) => {
-    if (isLoading && val === undefined) {
+    if (isLoading && val === undefined)
       return (
-        <td className="px-2 py-2 border border-gray-300">
-          <Spinner
-            addClass="inline-block"
-            border="border-2 border-slate-400 border-t-transparent"
-            size="w-3 h-3"
-          />
-        </td>
+        <TableCell>
+          <LoadingSpinner />
+        </TableCell>
       );
-    }
-
     const num = val || 0;
-    if (num === 0) {
-      return <td className="px-2 py-2 border border-gray-300">0</td>;
-    }
+    if (num === 0) return <TableCell>0</TableCell>;
 
-    const armada = isFrozen ? 'Frozen' : 'Dry';
     const typeLabel = translate('summary.tabs.task_summary.tv') || 'Total Vehicle';
-    const title = `${typeLabel} - ${armada}`;
-
     return (
       <td
         onClick={() =>
           setModalConfig({
             isOpen: true,
-            data: { title, dateObj, vehicles: tvArray || [] },
+            data: {
+              title: `${typeLabel} - ${isFrozen ? 'Frozen' : 'Dry'}`,
+              dateObj,
+              vehicles: tvArray || [],
+            },
           })
         }
-        className="px-2 py-2 border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors text-slate-800"
+        className="px-2 py-2 border border-gray-300 dark:border-slate-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors text-slate-800 dark:text-slate-200"
       >
-        <span className="inline-block border-b-2 border-dotted border-red-700 px-2 pb-0.5">
+        <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-2 pb-0.5">
           {num}
         </span>
       </td>
     );
   };
 
-  const calculatePct = (num, den) => {
-    if (isLoading && (num === undefined || den === undefined)) {
-      return (
-        <Spinner
-          addClass="inline-block"
-          border="border-2 border-slate-400 border-t-transparent"
-          size="w-3 h-3"
-        />
-      );
-    }
-    const n = num || 0;
-    const d = den || 0;
-    if (d === 0) return '0%';
-    return ((n / d) * 100).toFixed(2) + '%';
+  const renderArmadaRow = (data, mtTotal, dateObj, isFrozen, isFirstRow, rowSpanProps) => {
+    const isPastOrToday = dateObj <= new Date().setHours(0, 0, 0, 0);
+    const isZeroDP = (data.dp || 0) === 0 && isPastOrToday;
+    const dateCellClass = isZeroDP
+      ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
+      : 'bg-white dark:bg-slate-800 font-medium';
+
+    return (
+      <tr
+        key={isFrozen ? 'frozen' : 'dry'}
+        className="hover:bg-gray-50 dark:hover:bg-slate-700/50 bg-white dark:bg-slate-800"
+      >
+        {isFirstRow && (
+          <td
+            rowSpan={2}
+            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center ${dateCellClass}`}
+          >
+            {rowSpanProps.display}
+          </td>
+        )}
+
+        <TableCell className="font-semibold text-slate-600 dark:text-slate-300">
+          {isFrozen ? 'Frozen' : 'Dry'}
+        </TableCell>
+
+        <TableCell>{renderValue(data.dp)}</TableCell>
+
+        {renderClickableCell(data.dt_total, data.dt_tasks, 'dt', 'DT', dateObj, isFrozen)}
+        <TableCell colorClass={COLORS.green}>{calculatePct(data.dt_total, data.dp)}</TableCell>
+
+        {renderClickableCell(data.ma_total, data.ma_tasks, 'ma', 'MA', dateObj, isFrozen)}
+        <TableCell colorClass={COLORS.red}>{calculatePct(data.ma_total, data.dp)}</TableCell>
+
+        {renderClickableCell(data.rt, data.rt_tasks, 'rt', 'RT', dateObj, isFrozen)}
+        <TableCell colorClass={COLORS.cyan}>{calculatePct(data.rt, data.dp)}</TableCell>
+
+        {renderClickableCell(data.co, data.co_tasks, 'co', 'CO', dateObj, isFrozen)}
+        <TableCell colorClass={COLORS.blue}>{calculatePct(data.co, data.dp)}</TableCell>
+
+        {renderClickableCell(data.pr, data.pr_tasks, 'pr', 'PR', dateObj, isFrozen)}
+        <TableCell colorClass={COLORS.gray}>{calculatePct(data.pr, data.dp)}</TableCell>
+
+        <TableCell className="font-semibold">{mtTotal}</TableCell>
+
+        {renderClickableTvCell(data.tv, data.tv_details, dateObj, isFrozen)}
+
+        <TableCell>{renderValue(data.va)}</TableCell>
+        <TableCell>{renderValue(data.tvu)}</TableCell>
+        <TableCell colorClass={COLORS.violet}>{calculatePct(data.tvu, mtTotal)}</TableCell>
+      </tr>
+    );
   };
 
   const renderSundayRows = (key, display) => [
-    <tr key={`${key}-sun-1`} className="bg-red-200 text-red-900 border-b border-gray-300">
+    <tr
+      key={`${key}-sun-1`}
+      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700"
+    >
       <td
         rowSpan={2}
-        className="px-2 py-2 border border-gray-300 font-medium align-middle bg-red-200 text-center"
+        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-medium align-middle bg-red-200 dark:bg-[#4a1c1c] text-center"
       >
         {display}
       </td>
       <td
         rowSpan={2}
         colSpan={17}
-        className="px-2 py-2 border border-gray-300 font-bold text-center align-middle"
+        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle dark:bg-[#4a1c1c]"
       >
         {translate('summary.tabs.task_summary.holiday')}
       </td>
     </tr>,
-    <tr key={`${key}-sun-2`} className="bg-red-200 text-red-900"></tr>,
+    <tr
+      key={`${key}-sun-2`}
+      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300"
+    ></tr>,
   ];
-
-  const cYellow = 'bg-[#fff2cc]';
-  const cPink = 'bg-[#ead1dc]';
-  const cGreen = 'bg-[#d9ead3]';
-  const cRed = 'bg-[#f4cccc]';
-  const cCyan = 'bg-[#d0e0e3]';
-  const cBlue = 'bg-[#cfe2f3]';
-  const cGray = 'bg-[#cccccc]';
-  const cViolet = 'bg-[#d9d2e9]';
-
-  const headerData = (tooltip, color, text) => {
-    return (
-      <Tooltip tooltipContent={tooltip}>
-        <th className={`cursor-help px-2 py-3 border border-gray-300 min-w-[60px] ${color}`}>
-          <span className="cursor-help border-b-2 border-dotted border-slate-700 pb-0.5">
-            {text}
-          </span>
-        </th>
-      </Tooltip>
-    );
-  };
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden p-0">
       {isLoading && (
-        <div className="w-full h-1 bg-gray-100">
+        <div className="w-full h-1 bg-gray-100 dark:bg-slate-700">
           <div
             className="h-full bg-emerald-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
@@ -199,160 +266,57 @@ export default function TaskSummaryTab({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-white rounded-b-xl border border-gray-200 ">
-        <table className="min-w-full text-xs text-center border-collapse text-gray-700 ">
-          <thead className="text-xs text-gray-700 capitalize  sticky top-0 z-10 font-bold">
+      <div className="flex-1 overflow-auto bg-white dark:bg-slate-800">
+        <table className="min-w-full text-xs text-center border-collapse text-gray-700 dark:text-slate-200">
+          <thead className="text-xs text-gray-700 dark:text-slate-200 capitalize sticky top-0 z-10 font-bold">
             <tr>
-              <th className={`px-2 py-3 border border-gray-300 min-w-[100px] ${cYellow}`}>
+              <th
+                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.yellow}`}
+              >
                 {translate('common.date')}
               </th>
-              <th className={`px-2 py-3 border border-gray-300 min-w-20 ${cYellow}`}>
+              <th
+                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.yellow}`}
+              >
                 {translate('summary.tabs.task_summary.type')}
               </th>
-              {headerData(translate('summary.tabs.task_summary.dp'), cPink, 'DP')}
-              {headerData(translate('summary.tabs.task_summary.dt'), cGreen, 'DT')}
-              {headerData(translate('summary.tabs.task_summary.dt_persentage'), cGreen, '% DT')}
-              {headerData(translate('common.status.manual_assign'), cRed, 'MA')}
-              {headerData(translate('summary.tabs.task_summary.ma_persentage'), cRed, '% MA')}
-              {headerData(translate('summary.tabs.task_summary.rt'), cCyan, 'RT')}
-              {headerData(translate('summary.tabs.task_summary.rt_persentage'), cCyan, '% RT')}
-              {headerData(translate('summary.tabs.task_summary.co'), cBlue, 'CO')}
-              {headerData(translate('summary.tabs.task_summary.co_persentage'), cBlue, '% CO')}
-              {headerData(translate('summary.tabs.task_summary.pr'), cGray, 'PR')}
-              {headerData(translate('summary.tabs.task_summary.pr_persentage'), cGray, '% PR')}
-              {headerData(translate('summary.tabs.task_summary.mt'), cYellow, 'MT')}
-              {headerData(translate('summary.tabs.task_summary.tv'), cYellow, 'TV')}
-              {headerData(translate('summary.tabs.task_summary.va'), cYellow, 'VA')}
-              {headerData(translate('summary.tabs.task_summary.tvu'), cViolet, 'TVU')}
-              {headerData(translate('summary.tabs.task_summary.tvu_persentage'), cViolet, '% TVU')}
+              {HEADER_COLUMNS.map((col) => {
+                const keyColumn =
+                  col.key === 'ma'
+                    ? translate(`common.status.manual_assign`)
+                    : translate(`summary.tabs.task_summary.${col.key}`);
+                return (
+                  <TableHeader
+                    key={col.key}
+                    colorClass={col.color}
+                    text={col.text}
+                    tooltip={keyColumn}
+                  />
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {allDates.map((item) => {
-              const { key, display, isSunday, dateObj } = item;
-              if (isSunday) return renderSundayRows(key, display);
+              if (item.isSunday) return renderSundayRows(item.key, item.display);
 
-              const data = metrics ? metrics[key] : null;
-
+              const data = metrics ? metrics[item.key] : null;
               const d = data?.dry || {};
               const f = data?.frozen || {};
-
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const isPastOrToday = item.dateObj <= today;
-
-              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
-              const dateCellClass = isZeroDP
-                ? 'bg-red-100 text-red-600 font-bold'
-                : 'bg-white font-medium';
-
               return [
-                // ROW 1: DRY
-                <tr key={`${key}-dry`} className="hover:bg-gray-50 bg-white">
-                  <td
-                    rowSpan={2}
-                    className={`px-2 py-2 border border-gray-300 align-middle text-center ${dateCellClass}`}
-                  >
-                    {display}
-                  </td>
-                  <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
-                    Dry
-                  </td>
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.dp)}</td>
-
-                  {renderClickableCell(d.dt_total, d.dt_tasks, 'dt', 'DT', dateObj, false)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
-                    {calculatePct(d.dt_total, d.dp)}
-                  </td>
-
-                  {renderClickableCell(d.ma_total, d.ma_tasks, 'ma', 'MA', dateObj, false)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
-                    {calculatePct(d.ma_total, d.dp)}
-                  </td>
-
-                  {renderClickableCell(d.rt, d.rt_tasks, 'rt', 'RT', dateObj, false)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
-                    {calculatePct(d.rt, d.dp)}
-                  </td>
-
-                  {renderClickableCell(d.co, d.co_tasks, 'co', 'CO', dateObj, false)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
-                    {calculatePct(d.co, d.dp)}
-                  </td>
-
-                  {renderClickableCell(d.pr, d.pr_tasks, 'pr', 'PR', dateObj, false)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
-                    {calculatePct(d.pr, d.dp)}
-                  </td>
-
-                  <td className="px-2 py-2 border border-gray-300 font-semibold">{mtDry}</td>
-
-                  {renderClickableTvCell(d.tv, d.tv_details, dateObj, false)}
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.va)}</td>
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(d.tvu)}</td>
-                  <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
-                    {calculatePct(d.tvu, mtDry)}
-                  </td>
-                </tr>,
-
-                // ROW 2: FROZEN
-                <tr key={`${key}-frozen`} className="hover:bg-gray-50 bg-white">
-                  <td className="px-2 py-2 border border-gray-300 font-semibold text-slate-600 bg-white">
-                    Frozen
-                  </td>
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.dp)}</td>
-
-                  {renderClickableCell(f.dt_total, f.dt_tasks, 'dt', 'DT', dateObj, true)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cGreen}`}>
-                    {calculatePct(f.dt_total, f.dp)}
-                  </td>
-
-                  {renderClickableCell(f.ma_total, f.ma_tasks, 'ma', 'MA', dateObj, true)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cRed}`}>
-                    {calculatePct(f.ma_total, f.dp)}
-                  </td>
-
-                  {renderClickableCell(f.rt, f.rt_tasks, 'rt', 'RT', dateObj, true)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cCyan}`}>
-                    {calculatePct(f.rt, f.dp)}
-                  </td>
-
-                  {renderClickableCell(f.co, f.co_tasks, 'co', 'CO', dateObj, true)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cBlue}`}>
-                    {calculatePct(f.co, f.dp)}
-                  </td>
-
-                  {renderClickableCell(f.pr, f.pr_tasks, 'pr', 'PR', dateObj, true)}
-                  <td className={`px-2 py-2 border border-gray-300 ${cGray}`}>
-                    {calculatePct(f.pr, f.dp)}
-                  </td>
-
-                  <td className="px-2 py-2 border border-gray-300 font-semibold">{mtFrozen}</td>
-
-                  {renderClickableTvCell(f.tv, f.tv_details, dateObj, true)}
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.va)}</td>
-
-                  <td className="px-2 py-2 border border-gray-300">{renderValue(f.tvu)}</td>
-                  <td className={`px-2 py-2 border border-gray-300 ${cViolet}`}>
-                    {calculatePct(f.tvu, mtFrozen)}
-                  </td>
-                </tr>,
+                renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
               ];
             })}
           </tbody>
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
-        <div className="text-xs text-slate-500 italic">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg shadow-sm shrink-0">
+        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
           *{translate('summary.click_box_hint')}
         </div>
       </div>

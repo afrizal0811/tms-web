@@ -1,14 +1,13 @@
 'use client';
 
-import Tooltip from '@/components/Tooltip'; // Sesuaikan path ini jika berbeda
-import { formatDateWIB, isDateSunday, formatLongDate } from '@/lib/utils';
+import Tooltip from '@/components/Tooltip';
+import { formatDateWIB, formatLongDate, isDateSunday } from '@/lib/utils';
 import { useMemo } from 'react';
 
-const violetColor = 'bg-[#d9d2e9]';
 const headerClass =
-  'px-6 py-3 border-r border-b border-gray-300 font-bold w-1/3 text-center min-w-[200px]';
+  'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold w-1/3 text-center min-w-[200px]';
 const dataClass =
-  'px-6 py-4 font-medium text-gray-900 border-r border-b border-gray-200 text-center';
+  'px-6 py-4 font-medium text-slate-900 dark:text-slate-200 border-r border-b border-gray-200 dark:border-slate-700 text-center';
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
@@ -122,27 +121,38 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr, language]);
 
-  const headerTitle = ['date_ro', 'start_ro', 'end_ro'];
+  const headerTitle = [
+    {
+      tooltip: 'summary.tabs.time_ro.date_ro',
+      name: 'summary.tabs.time_ro.date_ro',
+    },
+    {
+      name: 'common.start_time',
+      tooltip: 'summary.tabs.time_ro.tooltip.start_ro',
+    },
+    {
+      name: 'common.finish_time',
+      tooltip: 'summary.tabs.time_ro.tooltip.end_ro',
+    },
+  ];
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-b-lx shadow-sm border border-gray-200 p-0 overflow-auto">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-b-xl shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
-        <table className="min-w-full text-sm text-left border-separate border border-gray-300 border-spacing-0">
-          <thead className={`text-xs text-gray-700 uppercase sticky top-0 z-10 ${violetColor}`}>
+        <table className="min-w-full text-sm text-left border-collapse">
+          <thead className="text-xs text-slate-900 dark:text-slate-200 uppercase sticky top-0 z-10 bg-purple-200 dark:bg-[#34205c]">
             <tr>
               {headerTitle.map((header, index) => (
                 <th key={index} className={headerClass}>
-                  <Tooltip
-                    tooltipContent={translate(`summary.tabs.time_ro.tooltip.${header}`)}
-                  >
-                    <span className="cursor-help border-b-2 border-dotted border-slate-700 pb-0.5">
-                      {translate(`summary.tabs.time_ro.${header}`)}
+                  <Tooltip tooltipContent={translate(`${header.tooltip}`)}>
+                    <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                      {translate(`${header.name}`)}
                     </span>
                   </Tooltip>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white dark:bg-slate-800">
             {processedData.map((row, idx) => {
               const isSunday = isDateSunday(row.dateKey);
 
@@ -150,12 +160,15 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                 return (
                   <tr
                     key={idx}
-                    className="bg-red-200 border-b border-red-300 text-red-900 text-center"
+                    className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 text-center"
                   >
-                    <td className="px-6 py-4 font-medium border-r border-red-300">
+                    <td className="px-6 py-4 font-medium border-r border-b border-gray-300 dark:border-slate-700">
                       {row.dateDisplay}
                     </td>
-                    <td colSpan={2} className="px-6 py-4 font-bold text-center">
+                    <td
+                      colSpan={2}
+                      className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
+                    >
                       {translate('summary.tabs.time_ro.holiday')}
                     </td>
                   </tr>
@@ -171,10 +184,14 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
               const startDisplay = hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-';
               const endDisplay = hasEnd ? formatDateWIB(row.lastAssignedTime, 'HH:mm') : '-';
 
-              const errorClass = 'bg-red-100 text-red-600 font-bold';
+              const errorClass =
+                'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
 
               return (
-                <tr key={idx} className="bg-white border-b hover:bg-gray-50">
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                >
                   <td className={dataClass}>{row.dateDisplay}</td>
 
                   {/* CELL START RO */}

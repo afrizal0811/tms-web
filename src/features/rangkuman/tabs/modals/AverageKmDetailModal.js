@@ -44,9 +44,9 @@ export default function AverageKmDetailModal({
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title={title} maxWidth="max-w-3xl">
       <div className="p-0">
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
           <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+            <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 text-center">#</th>
                 {columns.map((col) => (
@@ -57,13 +57,21 @@ export default function AverageKmDetailModal({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
               {data.map((item, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-center text-slate-700">{idx + 1}</td>
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
+                    {idx + 1}
+                  </td>
 
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-2 text-center text-slate-700">
+                    <td
+                      key={col.key}
+                      className="px-4 py-2 text-center text-slate-700 dark:text-slate-300"
+                    >
                       {col.render(item)}
                     </td>
                   ))}

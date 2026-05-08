@@ -91,7 +91,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             </tfoot>
           </table>
         </div>
-        <div className="mt-3 text-xs text-slate-500 italic">
+        <div className="mt-3 text-xs text-slate-500 dark:text-slate-400 italic">
           {translate('summary.tabs.time_driver.modal.footer_note')}
         </div>
       </div>

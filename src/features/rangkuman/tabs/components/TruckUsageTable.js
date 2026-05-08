@@ -11,24 +11,25 @@ export default function TruckUsageTable({
   translate,
   onCellClick,
 }) {
-  const colorHeader = '#d9d2e9';
-  const colorDry = '#fae2d5';
-  const colorDryTotal = '#f9cb9c';
-  const colorFrozen = '#dbe9f7';
-  const colorFrozenTotal = '#c9daf8';
-  const colorOTV = '#d9f2d0';
-  const colorSunday = '#ffc7ce';
-  const colorAlert = '#FF0000';
+  const bgHeader = 'bg-[#d9d2e9] dark:bg-violet-900/30';
+  const bgDry = 'bg-[#fae2d5] dark:bg-orange-900/30';
+  const bgDryTotal = 'bg-[#f9cb9c] dark:bg-orange-900/50';
+  const bgFrozen = 'bg-[#dbe9f7] dark:bg-blue-900/30';
+  const bgFrozenTotal = 'bg-[#c9daf8] dark:bg-blue-900/50';
+  const bgOTV = 'bg-[#d9f2d0] dark:bg-green-900/30';
+  const bgSunday = 'bg-[#ffc7ce] dark:bg-red-900/40';
 
-  const colorPctLow = '#f4cccc';
-  const colorPctMid = '#f1c232';
-  const colorPctHigh = '#b7e1cd';
-  const colorPctOver = '#ff0000';
+  const bgAlert = 'bg-[#FF0000] dark:bg-red-700 text-white font-bold';
+  const bgPctLow = 'bg-[#f4cccc] dark:bg-red-900/40';
+  const bgPctMid = 'bg-[#f1c232] dark:bg-yellow-900/50';
+  const bgPctHigh = 'bg-[#b7e1cd] dark:bg-emerald-900/50';
+  const bgPctOver = 'bg-[#ff0000] dark:bg-red-700 text-white font-bold';
 
   const thClass =
-    'border border-gray-400 px-2 py-2 text-center min-w-[60px] text-xs font-bold text-slate-700';
-  const tdClass = 'border-b border-gray-200 px-2 py-1 text-center text-xs text-slate-700';
-  const thickBorderClass = 'border-r-[3px] border-r-slate-400';
+    'border border-gray-400 dark:border-slate-600 px-2 py-2 text-center min-w-[60px] text-xs font-bold text-slate-700 dark:text-slate-200';
+  const tdClass =
+    'border-b border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300';
+  const thickBorderClass = 'border-r-[3px] border-r-slate-400 dark:border-r-slate-500';
 
   const todayStr = formatDateUniversal(new Date());
 
@@ -60,8 +61,8 @@ export default function TruckUsageTable({
     return numVal;
   };
 
-  const getDataStyle = (
-    baseColor,
+  const getDataClass = (
+    baseBgClass,
     isSunday,
     value,
     masterTotal,
@@ -73,15 +74,15 @@ export default function TruckUsageTable({
     const maxNum = parseInt(masterTotal || 0);
 
     if (isPercentage) {
-      if (isSunday) return { backgroundColor: colorSunday };
+      if (isSunday) return bgSunday;
       if (maxNum > 0 && valNum > 0) {
         const pct = (valNum / maxNum) * 100;
-        if (pct > 100) return { backgroundColor: colorPctOver, fontWeight: 'bold', color: 'white' };
-        if (pct >= 75) return { backgroundColor: colorPctHigh };
-        if (pct >= 50) return { backgroundColor: colorPctMid };
-        return { backgroundColor: colorPctLow };
+        if (pct > 100) return bgPctOver;
+        if (pct >= 75) return bgPctHigh;
+        if (pct >= 50) return bgPctMid;
+        return bgPctLow;
       }
-      return { backgroundColor: baseColor };
+      return baseBgClass;
     }
 
     let isOverLimit = false;
@@ -91,10 +92,10 @@ export default function TruckUsageTable({
       if (cellType === 'TVU' && valNum > maxNum) isOverLimit = true;
     }
 
-    if (isOverLimit) return { backgroundColor: colorAlert, fontWeight: 'bold', color: 'white' };
-    if (isSunday) return { backgroundColor: colorSunday };
+    if (isOverLimit) return bgAlert;
+    if (isSunday) return bgSunday;
 
-    return { backgroundColor: baseColor };
+    return baseBgClass;
   };
 
   const getRowValues = (d, category, label2) => {
@@ -143,7 +144,7 @@ export default function TruckUsageTable({
     return { tmsDisp, manualDisp, tvuDisp, tmsRaw, manualRaw, manualDesc, manualId, tmsDetails };
   };
 
-  const renderSectionRows = (cat, bgColor, types) => {
+  const renderSectionRows = (cat, bgClass, types) => {
     return types.map((type, idx) => {
       const masterTotal = getMasterVal(cat, type);
       return (
@@ -151,21 +152,18 @@ export default function TruckUsageTable({
           {idx === 0 && (
             <td
               rowSpan={types.length}
-              className={`${tdClass} w-[100px] min-w-[100px] max-w-[100px] font-bold align-middle sticky left-0 z-30 border-r border-gray-300`}
-              style={{ backgroundColor: bgColor }}
+              className={`${tdClass} w-[100px] min-w-[100px] max-w-[100px] font-bold align-middle sticky left-0 z-30 border-r border-gray-300 dark:border-slate-600 ${bgClass}`}
             >
               {cat}
             </td>
           )}
           <td
-            className={`${tdClass} w-[150px] min-w-[150px] max-w-[150px] text-left sticky left-[100px] z-30 border-r border-gray-300`}
-            style={{ backgroundColor: bgColor }}
+            className={`${tdClass} w-[150px] min-w-[150px] max-w-[150px] text-left sticky left-[100px] z-30 border-r border-gray-300 dark:border-slate-600 ${bgClass}`}
           >
             {type}
           </td>
           <td
-            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass}`}
-            style={{ backgroundColor: bgColor }}
+            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass} ${bgClass}`}
           >
             {masterTotal}
           </td>
@@ -189,8 +187,7 @@ export default function TruckUsageTable({
             return (
               <Fragment key={i}>
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 transition-colors' : ''}`}
-                  style={getDataStyle(bgColor, d.isSunday, tmsDisp, masterTotal, true, 'TMS')}
+                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, d.isSunday, tmsDisp, masterTotal, true, 'TMS')}`}
                   onClick={() => {
                     if (isClickableTMS && onCellClick) {
                       onCellClick({
@@ -205,8 +202,8 @@ export default function TruckUsageTable({
                   }}
                 >
                   {isClickableTMS ? (
-                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 hover:text-slate-800 transition-all group/tms">
-                      <span className="inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5">
+                    <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all group/tms">
+                      <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
                         {formatValue(tmsDisp, masterTotal)}
                       </span>
                     </div>
@@ -218,16 +215,15 @@ export default function TruckUsageTable({
                 </td>
 
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5' : ''}`}
-                  style={getDataStyle(
-                    bgColor,
+                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(
+                    bgClass,
                     d.isSunday,
                     manualDisp,
                     masterTotal,
                     true,
                     'MANUAL',
                     tmsDisp
-                  )}
+                  )}`}
                   onClick={() => {
                     if (isClickableManual && onCellClick) {
                       onCellClick({
@@ -246,8 +242,10 @@ export default function TruckUsageTable({
                 >
                   {isClickableManual && !hasDataManual && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-10">
-                      <div className="absolute inset-0 bg-white/30"></div>
-                      <span className="relative text-slate-600/30 text-xl font-bold">+</span>
+                      <div className="absolute inset-0 bg-white/30 dark:bg-white/10"></div>
+                      <span className="relative text-slate-600/30 dark:text-slate-400/30 text-xl font-bold">
+                        +
+                      </span>
                     </div>
                   )}
 
@@ -256,7 +254,7 @@ export default function TruckUsageTable({
                       <span
                         className={
                           isClickableManual
-                            ? `inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5`
+                            ? `inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5`
                             : ''
                         }
                       >
@@ -267,8 +265,7 @@ export default function TruckUsageTable({
                 </td>
 
                 <td
-                  className={getCellClass(true)}
-                  style={getDataStyle(bgColor, d.isSunday, tvuDisp, masterTotal, true, 'TVU')}
+                  className={`${getCellClass(true)} ${getDataClass(bgClass, d.isSunday, tvuDisp, masterTotal, true, 'TVU')}`}
                 >
                   {formatValue(tvuDisp, masterTotal)}
                 </td>
@@ -280,17 +277,18 @@ export default function TruckUsageTable({
     });
   };
 
-  const renderSpecialRow = (label, cat, bgColor, isBold = false, tooltip, type = '') => {
+  const renderSpecialRow = (label, cat, bgClass, isBold = false, tooltip, type = '') => {
     const masterTotal = getMasterVal(cat);
     const isInterbranch = type === 'Interbranch';
 
     const labelTable = (
       <td
         colSpan="2"
-        className={`${tooltip && 'cursor-help'} ${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 pl-4`}
-        style={{ backgroundColor: bgColor }}
+        className={`${tooltip && 'cursor-help'} ${tdClass} w-[250px] min-w-[250px] max-w-[250px] text-left font-bold sticky left-0 z-30 border-r border-gray-300 dark:border-slate-600 pl-4 ${bgClass}`}
       >
-        <span className={tooltip && `border-b-2 border-dotted border-red-700 pb-px`}>
+        <span
+          className={tooltip && `border-b-2 border-dotted border-red-700 dark:border-red-400 pb-px`}
+        >
           {label}
         </span>
       </td>
@@ -305,8 +303,7 @@ export default function TruckUsageTable({
       <tr className={isBold ? 'font-bold' : ''}>
         {hasTooltip}
         <td
-          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass}`}
-          style={{ backgroundColor: bgColor }}
+          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass} ${bgClass}`}
         >
           {masterTotal}
         </td>
@@ -330,8 +327,7 @@ export default function TruckUsageTable({
           return (
             <Fragment key={i}>
               <td
-                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 transition-colors' : ''}`}
-                style={getDataStyle(bgColor, d.isSunday, tmsDisp, masterTotal, false)}
+                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, d.isSunday, tmsDisp, masterTotal, false)}`}
                 onClick={() => {
                   if (isClickableTMS && onCellClick) {
                     onCellClick({
@@ -346,8 +342,8 @@ export default function TruckUsageTable({
                 }}
               >
                 {isClickableTMS ? (
-                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 hover:text-slate-800 transition-all group/tms">
-                    <span className="inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5">
+                  <div className="relative z-20 w-full min-h-5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-800 dark:hover:text-white transition-all group/tms">
+                    <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
                       {formatValue(tmsDisp, masterTotal)}
                     </span>
                   </div>
@@ -360,8 +356,7 @@ export default function TruckUsageTable({
 
               {isInterbranch ? (
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5' : ''}`}
-                  style={getDataStyle(bgColor, d.isSunday, manualDisp, 0, false, 'MANUAL', tmsDisp)}
+                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(bgClass, d.isSunday, manualDisp, 0, false, 'MANUAL', tmsDisp)}`}
                   onClick={() => {
                     if (isClickableManual && onCellClick) {
                       onCellClick({
@@ -380,8 +375,10 @@ export default function TruckUsageTable({
                 >
                   {isClickableManual && !hasDataManual && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-10">
-                      <div className="absolute inset-0 bg-white/20"></div>
-                      <span className="relative text-slate-600/30 text-xl font-bold">+</span>
+                      <div className="absolute inset-0 bg-white/20 dark:bg-white/10"></div>
+                      <span className="relative text-slate-600/30 dark:text-slate-400/30 text-xl font-bold">
+                        +
+                      </span>
                     </div>
                   )}
 
@@ -390,7 +387,7 @@ export default function TruckUsageTable({
                       <span
                         className={
                           isClickableManual
-                            ? `inline-block border-b-2 border-dotted border-red-700 px-1 pb-0.5`
+                            ? `inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5`
                             : ''
                         }
                       >
@@ -401,16 +398,14 @@ export default function TruckUsageTable({
                 </td>
               ) : (
                 <td
-                  className={getCellClass(false)}
-                  style={getDataStyle(bgColor, d.isSunday, manualDisp, 0, false)}
+                  className={`${getCellClass(false)} ${getDataClass(bgClass, d.isSunday, manualDisp, 0, false)}`}
                 >
                   {formatValue(manualDisp, masterTotal)}
                 </td>
               )}
 
               <td
-                className={getCellClass(true)}
-                style={getDataStyle(bgColor, d.isSunday, tvuDisp, masterTotal, false)}
+                className={`${getCellClass(true)} ${getDataClass(bgClass, d.isSunday, tvuDisp, masterTotal, false)}`}
               >
                 {formatValue(tvuDisp, masterTotal)}
               </td>
@@ -425,8 +420,7 @@ export default function TruckUsageTable({
     return (
       <Tooltip tooltipContent={tooltip}>
         <th
-          className={`${thClass} ${isLast ? thickBorderClass : ''} cursor-help`}
-          style={{ backgroundColor: data.isSunday ? colorSunday : colorHeader }}
+          className={`${thClass} ${isLast ? thickBorderClass : ''} cursor-help ${data.isSunday ? bgSunday : bgHeader}`}
         >
           {text}
         </th>
@@ -437,26 +431,23 @@ export default function TruckUsageTable({
   return (
     <div className="w-full">
       <table className="border-collapse border-0 text-sm whitespace-nowrap">
-        <thead className="sticky top-0 z-40" style={{ backgroundColor: colorHeader }}>
+        <thead className="sticky top-0 z-40">
           <tr>
             <th
               rowSpan="2"
-              className={`${thClass} w-[100px] min-w-[100px] max-w-[100px] sticky left-0 z-50`}
-              style={{ backgroundColor: colorHeader }}
+              className={`${thClass} w-[100px] min-w-[100px] max-w-[100px] sticky left-0 z-50 ${bgHeader}`}
             >
               {translate('common.storage_type')}
             </th>
             <th
               rowSpan="2"
-              className={`${thClass} w-[150px] min-w-[150px] max-w-[150px] sticky left-[100px] z-50`}
-              style={{ backgroundColor: colorHeader }}
+              className={`${thClass} w-[150px] min-w-[150px] max-w-[150px] sticky left-[100px] z-50 ${bgHeader}`}
             >
               {translate('common.vehicle_type')}
             </th>
             <th
               rowSpan="2"
-              className={`${thClass} w-[60px] min-w-[60px] sticky left-[250px] z-50 ${thickBorderClass}`}
-              style={{ backgroundColor: colorHeader }}
+              className={`${thClass} w-[60px] min-w-[60px] sticky left-[250px] z-50 ${thickBorderClass} ${bgHeader}`}
             >
               Total
             </th>
@@ -464,8 +455,7 @@ export default function TruckUsageTable({
               <th
                 key={i}
                 colSpan="3"
-                className={`${thClass} ${thickBorderClass} min-w-[90px]`}
-                style={{ backgroundColor: d.isSunday ? colorSunday : colorHeader }}
+                className={`${thClass} ${thickBorderClass} min-w-[90px] ${d.isSunday ? bgSunday : bgHeader}`}
               >
                 {formatDateUniversal(d.str, 'DD-MM-YYYY')}
               </th>
@@ -482,11 +472,11 @@ export default function TruckUsageTable({
           </tr>
         </thead>
         <tbody>
-          {renderSectionRows('Dry', colorDry, vehicleTypes)}
+          {renderSectionRows('Dry', bgDry, vehicleTypes)}
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.interbranch'),
             'Dry',
-            colorDry,
+            bgDry,
             false,
             null,
             'Interbranch'
@@ -494,15 +484,15 @@ export default function TruckUsageTable({
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.total_used'),
             'DryTotal',
-            colorDryTotal,
+            bgDryTotal,
             true
           )}
 
-          {renderSectionRows('Frozen', colorFrozen, vehicleTypes)}
+          {renderSectionRows('Frozen', bgFrozen, vehicleTypes)}
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.interbranch'),
             'Frozen',
-            colorFrozen,
+            bgFrozen,
             false,
             null,
             'Interbranch'
@@ -510,17 +500,11 @@ export default function TruckUsageTable({
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.total_used'),
             'FrozenTotal',
-            colorFrozenTotal,
+            bgFrozenTotal,
             true
           )}
 
-          {renderSpecialRow(
-            'OTV',
-            'OTV',
-            colorOTV,
-            true,
-            translate('summary.tabs.truck_usage.otv')
-          )}
+          {renderSpecialRow('OTV', 'OTV', bgOTV, true, translate('summary.tabs.truck_usage.otv'))}
         </tbody>
       </table>
     </div>

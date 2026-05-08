@@ -91,13 +91,13 @@ export default function TruckUsageModal({
         }
       >
         <div className="flex flex-col gap-3 pt-2 pb-2">
-          <div className="bg-sky-50 text-sky-700 text-sm px-3 py-2.5 rounded-md border border-sky-100 flex justify-between items-center">
+          <div className="bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-sm px-3 py-2.5 rounded-md border border-sky-100 dark:border-sky-800 flex justify-between items-center">
             <span>Total</span>
             <span className="font-bold text-lg">{data.tmsCount}</span>
           </div>
 
           <div className="mt-1">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
               {translate('summary.tabs.truck_usage.modal.vehicle_list')}
             </h4>
             {sortedDetails.length > 0 ? (
@@ -105,24 +105,28 @@ export default function TruckUsageModal({
                 {sortedDetails.map((vh, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col p-3 border border-gray-200 rounded-lg bg-slate-50 hover:bg-white transition-colors shadow-sm"
+                    className="flex flex-col p-3 border border-gray-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700/50 transition-colors shadow-sm"
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <div className="font-bold text-slate-800 text-base">{vh.plate}</div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-base">
+                        {vh.plate}
+                      </div>
                       {vh.type && (
-                        <div className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-600 rounded">
+                        <div className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded">
                           {vh.type}
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1 border-t border-gray-100 pt-1">
-                      <span className="font-medium text-slate-700">{vh.driverName}</span>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 border-t border-gray-100 dark:border-slate-700/50 pt-1">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {vh.driverName}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center text-slate-400 text-sm py-6 italic border border-dashed border-gray-300 rounded-lg bg-gray-50">
+              <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-6 italic border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
                 {translate('common.no_data')}
               </div>
             )}
@@ -155,7 +159,7 @@ export default function TruckUsageModal({
       onSuccess(resData.data ? resData.data : resData);
       onClose();
     } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }));
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +181,7 @@ export default function TruckUsageModal({
       onSuccess({ id: data.id, isDelete: true });
       onClose();
     } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }));
     } finally {
       setIsLoading(false);
     }
@@ -214,7 +218,7 @@ export default function TruckUsageModal({
                 <button
                   disabled={isLoading}
                   onClick={() => setIsConfirmOpen(true)}
-                  className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium text-sm transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 font-medium text-sm transition-colors cursor-pointer"
                 >
                   {translate('common.button.btn_delete')}
                 </button>
@@ -224,14 +228,14 @@ export default function TruckUsageModal({
               <button
                 disabled={isLoading}
                 onClick={onClose}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 font-medium text-sm cursor-pointer transition-colors"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 font-medium text-sm cursor-pointer transition-colors"
               >
                 {translate('summary.tabs.truck_usage.modal.btn_cancel')}
               </button>
               <button
                 disabled={isSaveDisabled}
                 onClick={handleSave}
-                className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 font-medium text-sm min-w-[90px] disabled:bg-slate-300 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 font-medium text-sm min-w-[90px] disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
                 {isLoading
                   ? translate('summary.tabs.truck_usage.modal.loading_text')
@@ -243,7 +247,7 @@ export default function TruckUsageModal({
       >
         <div className="flex flex-col gap-4 pt-2 pb-2 relative">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.truck_usage.modal.manual_total')}{' '}
               <span className="text-red-500">*</span>
             </label>
@@ -253,18 +257,18 @@ export default function TruckUsageModal({
               value={count}
               onChange={(e) => setCount(e.target.value)}
               placeholder={translate('summary.tabs.truck_usage.modal.manual_total_placeholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
             />
           </div>
 
           {isOverLimit && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs font-medium">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded-md text-xs font-medium">
               ⚠️ {translate('summary.tabs.truck_usage.modal.over_limit')}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.truck_usage.modal.comment')}{' '}
               <span className="text-red-500">*</span>
             </label>
@@ -273,7 +277,7 @@ export default function TruckUsageModal({
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder={translate('summary.tabs.truck_usage.modal.comment_placeholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
             ></textarea>
           </div>
         </div>

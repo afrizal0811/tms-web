@@ -59,7 +59,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         disabled={!isAllSelected || isLoading || isSaving}
         className={`px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto ${isSaving ? 'hover:cursor-progress' : 'hover:cursor-pointer '}`}
       >
-        {isSaving && t('common.save')}
+        {t('common.save')}
       </button>
     </div>
   );
@@ -102,22 +102,28 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
           unmappedData.map((info, idx) => (
             <div
               key={idx}
-              className="p-4 border border-gray-200 rounded-lg mb-4 bg-gray-50 shadow-sm"
+              className="p-4 border border-gray-200 rounded-lg mb-4 bg-gray-50 shadow-sm dark:bg-slate-800 dark:border-slate-700"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
                 <div>
-                  <p className="text-sm text-gray-500 text-left">{t('common.license_number')}</p>
-                  <p className="font-bold text-lg text-slate-800">{info.plat}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-left">
+                    {t('common.license_number')}
+                  </p>
+                  <p className="font-bold text-lg text-slate-800 dark:text-slate-200">
+                    {info.plat}
+                  </p>
                 </div>
-                <div className="mt-3 sm:mt-0 text-left sm:text-right w-full sm:w-auto">
-                  <p className="text-sm text-gray-500">{t('vehicle_tag.tag')}</p>
+                <div className="mt-3 sm:mt-0 text-left sm:text-right w-full sm:w-auto ">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t('vehicle_tag.tag')}
+                  </p>
                   <code className="bg-gray-200 px-2 py-1 rounded text-sm font-mono text-red-600 inline-block wrap-break-words max-w-full">
                     {info.fullTag}
                   </code>
                 </div>
               </div>
               <div className="mt-2">
-                <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide text-left">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide text-left">
                   {t('vehicle_tag.message_choose')}:
                 </p>
                 <div className="flex flex-wrap gap-2">

@@ -1,4 +1,3 @@
-// File: features/rangkuman/tabs/TruckDetailTab.js
 import { formatLongDate, formatMinutesToHHMM } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -24,15 +23,15 @@ export default function TruckDetailTab({ data, translate, language }) {
   const errorColor = [
     {
       name: 'blue',
-      colors: 'bg-[#4F76C7] text-white',
+      colors: 'bg-[#4F76C7] text-white dark:bg-[#4f75c74d]',
     },
     {
       name: 'magenta',
-      colors: 'bg-[#C85D86] text-white',
+      colors: 'bg-[#C85D86] text-white dark:bg-[#c85d864d]',
     },
     {
       name: 'indigo',
-      colors: 'bg-[#5C5FB2] text-white',
+      colors: 'bg-[#5C5FB2] text-white dark:bg-[#5c5fb24d]',
     },
   ];
   const displayData = [
@@ -66,21 +65,21 @@ export default function TruckDetailTab({ data, translate, language }) {
       getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
     },
   ];
-  const titleColor = 'bg-[#fae2d5]';
-  const dateColor = 'bg-[#dbe9f7]';
-  const holidayColor = 'bg-[#f4cccc]';
-  const thClass = 'border border-gray-300 px-2 py-2 text-center text-xs font-bold text-slate-700';
+  const titleColor = 'bg-[#fae2d5] dark:bg-[#3f2113]';
+  const dateColor = 'bg-[#dbe9f7] dark:bg-[#15233b]';
+  const holidayColor = 'bg-[#f4cccc] dark:bg-[#451a1a]';
+  const thClass =
+    'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
   const thMetricClass =
-    'border border-gray-300 px-2 py-2 text-center text-xs font-bold text-slate-700';
+    'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
   const tdClass =
-    'border border-gray-200 px-2 py-1 text-center text-xs text-slate-700 whitespace-nowrap';
+    'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
   const tdClickable = `${tdClass} cursor-pointer hover:opacity-80 transition-opacity`;
 
-  // UPDATE: Tambahkan md: dan sesuaikan kalkulasi jarak left-nya
-  // Col 1 (80px), Col 2 (180px) -> total 260px sebelum Col 3
-  const stickyType = 'md:sticky md:left-0 md:z-20 md:border-r';
-  const stickyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r';
-  const stickyDriver = 'md:sticky md:left-[260px] md:z-20 md:border-r md:shadow-md';
+  const stickyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r-slate-700';
+  const stickyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r dark:md:border-r-slate-700';
+  const stickyDriver =
+    'md:sticky md:left-[260px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
 
   return (
     <div className="w-full h-full flex flex-col relative p-0">
@@ -91,11 +90,10 @@ export default function TruckDetailTab({ data, translate, language }) {
         onClose={closeModal}
         translate={translate}
       />
-      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200">
+      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200 dark:border-slate-700">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
-          <thead className="sticky top-0 z-30 bg-gray-100">
+          <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-slate-800">
             <tr>
-              {/* UPDATE HEADER: Tambahkan md: dan sesuaikan min-w & left */}
               <th
                 rowSpan="2"
                 className={`${thClass} min-w-20 md:sticky md:left-0 md:z-40 ${titleColor}`}
@@ -110,7 +108,7 @@ export default function TruckDetailTab({ data, translate, language }) {
               </th>
               <th
                 rowSpan="2"
-                className={`${thClass} min-w-[200px] md:sticky md:left-[260px] md:z-40 ${titleColor} md:border-r-2 md:border-slate-400`}
+                className={`${thClass} min-w-[200px] md:sticky md:left-[260px] md:z-40 ${titleColor} md:border-r-2 md:border-slate-400 dark:md:border-slate-600`}
               >
                 {translate('common.driver')}
               </th>
@@ -121,7 +119,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                   <th
                     key={i}
                     colSpan="7"
-                    className={`${thClass} border-l-2 border-l-gray-400 ${headerColor}`}
+                    className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
                   >
                     {date}
                   </th>
@@ -137,7 +135,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                       <th
                         key={key}
                         className={`${thMetricClass} ${metricColor} ${
-                          border ? 'border-l-2 border-l-gray-400' : ''
+                          border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
                         }`}
                       >
                         {translate(`summary.tabs.truck_detail.${key}`)}
@@ -148,15 +146,19 @@ export default function TruckDetailTab({ data, translate, language }) {
               })}
             </tr>
           </thead>
-          <tbody className="bg-white">
+          <tbody className="bg-white dark:bg-slate-800">
             {driverEmails.map((email) => {
               const driver = driverMap[email];
               return (
-                <tr key={email} className="hover:bg-gray-50">
-                  <td className={`${tdClass} ${stickyType} bg-white`}>{driver.type}</td>
-                  <td className={`${tdClass} ${stickyPlate} bg-white`}>{driver.plat}</td>
+                <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-800">
+                  <td className={`${tdClass} ${stickyType} bg-white dark:bg-slate-800`}>
+                    {driver.type}
+                  </td>
+                  <td className={`${tdClass} ${stickyPlate} bg-white dark:bg-slate-800`}>
+                    {driver.plat}
+                  </td>
                   <td
-                    className={`${tdClass} ${stickyDriver} bg-white text-left md:border-r-2 md:border-slate-400`}
+                    className={`${tdClass} ${stickyDriver} bg-white dark:bg-slate-800 text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600`}
                   >
                     {driver.name}
                   </td>
@@ -168,7 +170,7 @@ export default function TruckDetailTab({ data, translate, language }) {
 
                     const isSun = isSunday(d.str);
                     let cellBg = isSun ? holidayColor : '';
-                    const emptyBg = isSun ? holidayColor : 'bg-gray-50';
+                    const emptyBg = isSun ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
 
                     if (metrics && outletData > 0) {
                       if (metrics.hasManualError && metrics.hasBedaHariError)
@@ -186,7 +188,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                             <td
                               key={key}
                               className={`${tdClass} ${emptyBg} ${
-                                border ? 'border-l-2 border-l-gray-400' : ''
+                                border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
                               }`}
                             ></td>
                           ))}
@@ -200,7 +202,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                           <td
                             key={key}
                             onClick={onClick}
-                            className={`${tdClickable} ${cellBg} ${border ? 'border-l-2 border-l-gray-400' : ''}`}
+                            className={`${tdClickable} ${cellBg} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''}`}
                           >
                             {getValue(metrics)}
                           </td>
@@ -215,21 +217,22 @@ export default function TruckDetailTab({ data, translate, language }) {
         </table>
       </div>
 
-      {/* LEGENDA WARNA BARU */}
-      <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0">
         <div>
           <div className="flex flex-col justify-between gap-2 pb-1">
-            <div className="text-xs text-slate-500 italic">
+            <div className="text-xs text-slate-500 dark:text-slate-400 italic">
               *{translate('summary.tabs.truck_detail.click_row_hint')}
             </div>
-            <h4 className="text-xs font-bold mb-2 text-slate-700">
+            <h4 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-200">
               {translate('summary.tabs.truck_detail.color_exp')}
             </h4>
           </div>
-          <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600">
+          <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">
             {errorColor.map((color, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className={`w-4 h-4 border border-gray-400 rounded-sm ${color.colors}`} />
+                <span
+                  className={`w-4 h-4 border border-gray-400 dark:border-slate-600 rounded-sm ${color.colors}`}
+                />
                 <span>{translate(`summary.tabs.truck_detail.${color.name}`)}</span>
               </div>
             ))}

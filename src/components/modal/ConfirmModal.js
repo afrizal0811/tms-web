@@ -13,14 +13,14 @@ export default function ConfirmModal({
   onCancel,
   onConfirm,
   title,
-  loading = true,
+  loading = false,
 }) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   if (cancelText === undefined || confirmText === undefined) {
-    cancelText = t('button.btn_cancel');
-    confirmText = t('button.btn_confirm');
+    cancelText = t('common.button.btn_cancel');
+    confirmText = t('common.button.btn_confirm');
   }
   useEffect(() => {
     setTimeout(() => {
