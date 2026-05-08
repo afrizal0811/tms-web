@@ -107,7 +107,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
       render: (row) => row.actualVisitTime,
     },
     {
-      header: t('dashboard.tab.routingreal.ro_seq'),
+      header: t('common.ro_seq'),
       className: 'font-semibold',
       render: (row) => (isEmpty(row.roSequence) ? '-' : row.roSequence),
     },
