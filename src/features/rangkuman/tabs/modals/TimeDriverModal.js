@@ -1,4 +1,3 @@
-// File: src/features/rangkuman/tabs/modals/TimeDriverModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
@@ -25,6 +24,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
   const totalDurationFormatted = `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
+
   return (
     <BaseModal
       isOpen={isOpen}
@@ -32,14 +32,14 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       title={
         <div>
           <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-300 text-sm font-normal">{dateStr}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-normal">{dateStr}</p>
         </div>
       }
     >
       <div>
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
           <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+            <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 text-center">#</th>
                 <th className="px-4 py-3 text-center">
@@ -56,37 +56,48 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
               {entries.map((entry, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-center text-gray-500 font-medium">{idx + 1}</td>
-                  <td className="px-4 py-2 text-center">{entry.startDisplay}</td>
-                  <td className="px-4 py-2 text-center">
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
+                    {idx + 1}
+                  </td>
+                  <td className="px-4 py-2 text-center dark:text-slate-300">
+                    {entry.startDisplay}
+                  </td>
+                  <td className="px-4 py-2 text-center dark:text-slate-300">
                     {entry.finishDisplay}
                     {entry.dayDiff > 0 && (
-                      <span className="text-red-600 text-xs ml-1 font-bold">
+                      <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
                         (+{entry.dayDiff})
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-center font-medium text-slate-700">
+                  <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
                     {entry.durationDisplay}
                   </td>
-                  <td className="px-4 py-2 text-center text-slate-600">
+                  <td className="px-4 py-2 text-center text-slate-600 dark:text-slate-300">
                     {entry.distance ? entry.distance.toFixed(2) : '-'}
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
+            <tfoot className="bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
               <tr>
-                <td className="px-4 py-3 text-center text-gray-600 uppercase text-[10px] tracking-wider   ">
+                <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
                   Total
                 </td>
                 <td></td>
                 <td></td>
-                <td className="px-4 py-3 text-center text-slate-800">{totalDurationFormatted}</td>
-                <td className="px-4 py-3 text-center text-slate-800">{totalDistance.toFixed(2)}</td>
+                <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
+                  {totalDurationFormatted}
+                </td>
+                <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
+                  {totalDistance.toFixed(2)}
+                </td>
               </tr>
             </tfoot>
           </table>

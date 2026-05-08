@@ -23,15 +23,15 @@ export default function TruckDetailTab({ data, translate, language }) {
   const errorColor = [
     {
       name: 'blue',
-      colors: 'bg-[#4F76C7] text-white dark:bg-[#4f75c74d]',
+      colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
     },
     {
       name: 'magenta',
-      colors: 'bg-[#C85D86] text-white dark:bg-[#c85d864d]',
+      colors: 'bg-[#C85D86] text-white dark:bg-[#964263]',
     },
     {
       name: 'indigo',
-      colors: 'bg-[#5C5FB2] text-white dark:bg-[#5c5fb24d]',
+      colors: 'bg-[#5C5FB2] text-white dark:bg-[#45488c]',
     },
   ];
   const displayData = [
