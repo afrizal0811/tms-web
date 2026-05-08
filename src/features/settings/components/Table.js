@@ -197,7 +197,7 @@ export default function EditableTable({
                             <>
                               <button
                                 onClick={() => handleEditClick(item)}
-                                className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 cursor-pointer"
+                                className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
                                 title={translate('setting.tab.button.btn_edit')}
                               >
                                 <EditIcon />
@@ -205,7 +205,7 @@ export default function EditableTable({
                               <button
                                 onClick={() => onDelete(item)}
                                 disabled={disableDelete ? disableDelete(item) : false}
-                                className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 disabled:opacity-50 cursor-pointer"
+                                className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors  disabled:opacity-50 cursor-pointer"
                                 title={translate('common.button.btn_delete')}
                               >
                                 <DeleteIcon />
