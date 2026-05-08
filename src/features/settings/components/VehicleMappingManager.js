@@ -9,28 +9,28 @@ import Card from './Card';
 import Table from './Table';
 
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
-  const [activeHubId, setActiveHubId] = useState('');
+  const [activeHub, setActiveHub] = useState({ hubId: '', hubName: '' });
   const [mappings, setMappings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, plat: null });
 
   useEffect(() => {
-    const { storedUser, storedLocation } = getLocalStorage();
+    const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
     let hubId = storedLocation;
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        if (parsed.activeHubId) hubId = parsed.activeHubId;
+        if (parsed.activeHub) hubId = parsed.activeHub;
       } catch (e) {}
     }
-    setActiveHubId(hubId || '');
+    setActiveHub({ hubId, hubName: storedLocationName });
   }, []);
 
   const loadMappings = useCallback(async () => {
-    if (!activeHubId) return;
+    if (!activeHub) return;
     setIsLoading(true);
     try {
-      const data = await getVehicleMappings(activeHubId);
+      const data = await getVehicleMappings(activeHub.hubId);
       const sortedData = data.sort((a, b) => a.plat.localeCompare(b.plat));
       setMappings(sortedData);
     } catch (error) {
@@ -40,11 +40,11 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     } finally {
       setIsLoading(false);
     }
-  }, [activeHubId, translate]);
+  }, [activeHub, translate]);
 
   useEffect(() => {
-    if (activeHubId) loadMappings();
-  }, [activeHubId, loadMappings]);
+    if (activeHub) loadMappings();
+  }, [activeHub, loadMappings]);
 
   const handleUpdateMapping = async (id, editValues, item) => {
     if (!editValues.mappedType || isReadOnly) return;
@@ -129,7 +129,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
 
       <div className="mb-4 border-b border-gray-100 pb-3">
         <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
-          {translate('setting.tab.general.mapping_title')}
+          {translate('setting.tab.general.mapping_title')} ({activeHub.hubName})
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {translate('setting.tab.general.mapping_subtitle')}

@@ -15,6 +15,12 @@ export default function GeneralTab({
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-start">
+      <BranchManager
+        hubs={hubs}
+        onRefresh={onRefresh}
+        isReadOnly={isReadOnly}
+        translate={translate}
+      />
       <StandardType
         vehicleTypes={vehicleTypes}
         onRefresh={onRefresh}
@@ -23,12 +29,6 @@ export default function GeneralTab({
       />
       <VehicleMappingManager
         vehicleTypes={vehicleTypes}
-        isReadOnly={isReadOnly}
-        translate={translate}
-      />
-      <BranchManager
-        hubs={hubs}
-        onRefresh={onRefresh}
         isReadOnly={isReadOnly}
         translate={translate}
       />
