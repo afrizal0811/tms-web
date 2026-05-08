@@ -140,7 +140,7 @@ export default function EditableTable({
               ))}
               {!isReadOnly && (
                 <th className="px-4 py-3 text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-400 w-20 text-center">
-                  Aksi
+                  {translate('common.action')}
                 </th>
               )}
             </tr>

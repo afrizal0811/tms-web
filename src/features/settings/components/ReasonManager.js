@@ -10,7 +10,7 @@ import Table from './Table';
 
 export default function ReasonManager({ reasons, onRefresh, isReadOnly, translate }) {
   const [newReason, setNewReason] = useState('');
-  const [newPic, setNewPic] = useState(PIC_OPTIONS[0]);
+  const [newPic, setNewPic] = useState('');
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
 
   const handleAddReason = async () => {
@@ -18,7 +18,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
     try {
       await createReason(newReason, newPic);
       setNewReason('');
-      setNewPic(PIC_OPTIONS[0]);
+      setNewPic('');
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (err) {
@@ -53,7 +53,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
 
   const columns = [
     {
-      header: 'Group Reason',
+      header: translate('setting.tab.general.reasons_title'),
       field: 'reasons',
       render: (item) => (
         <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
@@ -95,21 +95,25 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       ),
     },
   ];
-
+  const confirmModalText = translate('setting.tab.general.reasons_title');
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteReason}
-        title="Hapus Data"
-        message="Apakah Anda yakin ingin menghapus data reason ini?"
+        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
+        message={translate('setting.tab.modal.confirm_message', {
+          text: confirmModalText.toLowerCase(),
+        })}
       />
 
       <div className="mb-4 border-b border-gray-100 pb-3">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">Master Data Reasons</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
+          {translate('setting.tab.general.reasons_title')}
+        </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Kelola Group Reason dan PIC yang menangani masalah tersebut.
+          {translate('setting.tab.general.reasons_subtitle')}
         </p>
       </div>
 
@@ -119,7 +123,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             type="text"
             value={newReason}
             onChange={(e) => setNewReason(e.target.value)}
-            placeholder="Group Reason"
+            placeholder={translate('setting.tab.general.add_placeholder')}
             className="flex-1 min-w-0 px-2 sm:px-3 py-2 text-[10px] sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800"
           />
           <select
@@ -127,6 +131,9 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             onChange={(e) => setNewPic(e.target.value)}
             className="w-[85px] sm:w-28 md:w-48 min-w-0 shrink-0 px-1 sm:px-3 py-2 text-[10px] sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800 cursor-pointer"
           >
+            <option disabled value="">
+              {translate('setting.tab.general.select_placeholder')}
+            </option>
             {PIC_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}

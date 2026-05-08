@@ -30,7 +30,7 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
 
   const columns = [
     {
-      header: 'Cabang',
+      header: 'HUB',
       field: 'name',
       render: (item) => (
         <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
@@ -39,7 +39,7 @@ export default function BranchAcronymManager({ hubs, onRefresh, isReadOnly, tran
       ),
     },
     {
-      header: 'Akronim',
+      header: 'Data',
       field: 'acronym',
       headerClassName: 'w-24 md:w-32',
       render: (item) => (
