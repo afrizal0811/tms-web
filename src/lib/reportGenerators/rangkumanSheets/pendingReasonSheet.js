@@ -39,7 +39,6 @@ function getDriverStorageType(driver) {
   return '-';
 }
 
-// --- UPDATE: Tambahkan startDateStr & endDateStr ---
 export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
   const processedData = [];
   const driverMap = new Map();
@@ -56,19 +55,15 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
   const rawTasks = [];
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
-      // --- LOGIKA FILTER TANGGAL ---
-      // Cek apakah tanggal task berada dalam range laporan (Desember)
-      // Abaikan jika task berasal dari buffer (Januari)
       if (startDateStr && endDateStr) {
         const dObj = parseApiDateString(task.doneTime || task.createdTime);
         if (dObj) {
           const wibDate = formatDateWIB(dObj, 'YYYY-MM-DD');
           if (wibDate < startDateStr || wibDate > endDateStr) {
-            return; // SKIP data di luar range
+            return;
           }
         }
       }
-      // -----------------------------
 
       const status = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : '';
       if (TARGET_STATUSES.includes(status)) {
@@ -164,7 +159,6 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
   return processedData;
 }
 
-// --- UPDATE: Tambahkan startDateStr & endDateStr ke parameter ---
 export function generatePendingReasonSheet(
   wb,
   driverData,
@@ -172,15 +166,13 @@ export function generatePendingReasonSheet(
   currentHubName,
   translate,
   startDateStr,
-  endDateStr
+  endDateStr,
+  hasPendingGR // <-- Tambahkan parameter ini
 ) {
-  // Pass tanggal ke calculation function
   const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
-  const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 
-  const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
-    (currentHubName || '').toLowerCase().includes(loc.toLowerCase())
-  );
+  // <-- Menggunakan parameter yang dilempar, bukan array hardcode -->
+  const shouldShowPendingGR = hasPendingGR;
 
   let headers = [
     translate('common.flow'),

@@ -96,7 +96,8 @@ export async function generateRangkumanWorkbook(
   taskSummaryMetrics,
   masterTruckData,
   translate,
-  language
+  language,
+  hasPendingGR // <-- Tambahkan parameter ini
 ) {
   const wb = XLSX.utils.book_new();
   const isIndo = language === 'id';
@@ -118,7 +119,8 @@ export async function generateRangkumanWorkbook(
     hubName,
     translate,
     startDateStr,
-    endDateStr
+    endDateStr,
+    hasPendingGR // <-- Operkan parameter ini
   );
 
   generateTimeDriverSheet(
