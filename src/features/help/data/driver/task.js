@@ -118,7 +118,7 @@ export const taskTopic = [
                             <p>Saat terdapat pelanggan yang maka <u>mengharuskan</u> untuk mengambil nomor antrian, maka <em>driver</em> cukup tekan tombol <strong>Klik Jika Sudah Sampai</strong> tanpa perlu melanjutkan proses tekan tombol <strong>Lanjut</strong> (<em>Next</em>). Tombol <strong>Lanjut</strong> ditekan saat nomor antrian selesai dan akan melakukan bongkar muatan barang.</p>
                         </li>
                         <li>
-                            <p>Saat terdapat pelanggan yang maka <u>tidak mengharuskan</u> untuk antri dan dapat langsung bongkar muatan barang, maka maka <em>driver</em> tekan tombol <strong>Klik Jika Sudah Sampai</strong> dan tombol <strong>Lanjut</strong></p>
+                            <p>Saat terdapat pelanggan yang <u>tidak mengharuskan</u> untuk antri dan dapat langsung bongkar muatan barang, maka <em>driver</em> tekan tombol <strong>Klik Jika Sudah Sampai</strong> dan tombol <strong>Lanjut</strong></p>
                         </li>
                     </ol>
                 </li>
@@ -341,7 +341,7 @@ export const taskTopic = [
                     </div>
                   </li>
                   <li>
-                    <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Tidak</strong>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>
+                    <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Tidak</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                         <img src="/images/tutorial/driver/confirm-location-2.png" alt="GPS Sesuai - Terima Sebagian" style="width: 100%; border-radius: 4px;" />
                     </div>
@@ -385,7 +385,7 @@ export const taskTopic = [
                     </div>
                   </li>
                   <li>
-                    <p>Pada opsi <strong>Status Delivery</strong>, pilih opsi <strong>Pending</strong>.</p>
+                    <p>Pada opsi <strong>Status Delivery</strong>, pilih opsi <strong>Batal</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                         <img src="/images/tutorial/driver/status-delivery.png" alt="Status Delivery - Pending" style="width: 100%; border-radius: 4px;" />
                     </div>
@@ -397,27 +397,15 @@ export const taskTopic = [
                     </div>
                   </li>
                   <li>
-                    <p>Pada <strong>Photo Delivery</strong>, foto barang yang diterima oleh pelanggan (beserta PIC penerima) di lokasi pelanggan yang dikirim</p>
+                    <p>Pada <strong>Photo Delivery</strong>, foto barang yang diterima oleh pelanggan (beserta PIC penerima) di lokasi pelanggan yang dikirim. Lalu tekan tombol <strong>Lanjut</strong></p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/photo-delivery.png" alt="Photo Delivery - Pending" style="width: 100%; border-radius: 4px;" />
-                    </div>
-                  </li>
-                  <li>
-                    <p>Pada <strong>Nama Penerima PIC</strong>, isikan dengan nama PIC penerima barang.</p>
-                    <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/pic-name.png" alt="Nama PIC - Pending" style="width: 100%; border-radius: 4px;" />
-                    </div>
-                  </li>
-                  <li>
-                    <p>Pada <strong>Tanda Tangan Penerima</strong>, isikan tanda tangan PIC yang menerima. Lalu tekan tombol <strong>Lanjut</strong></p>
-                    <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/sign.png" alt="Tanda Tangan - Pending" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/driver/photo-delivery-end.png" alt="Photo Delivery - Pending" style="width: 100%; border-radius: 4px;" />
                     </div>
                   </li>
                   <li>
                     <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Ya</strong>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/confirm-location-4.png" alt="GPS Sesuai - Sukses" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/driver/confirm-location-4.png" alt="GPS Sesuai - Pending" style="width: 100%; border-radius: 4px;" />
                     </div>
                   </li>
                 </ul>
@@ -465,25 +453,13 @@ export const taskTopic = [
                     </div>
                   </li>
                   <li>
-                    <p>Pada <strong>Photo Delivery</strong>, foto barang yang diterima oleh pelanggan (beserta PIC penerima) di lokasi pelanggan yang dikirim</p>
+                    <p>Pada <strong>Photo Delivery</strong>, foto barang yang diterima oleh pelanggan (beserta PIC penerima) di lokasi pelanggan yang dikirim. Lalu tekan tombol <strong>Lanjut</strong></p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/photo-delivery.png" alt="Photo Delivery - Batal" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/driver/photo-delivery-end.png" alt="Photo Delivery - Batal" style="width: 100%; border-radius: 4px;" />
                     </div>
                   </li>
                   <li>
-                    <p>Pada <strong>Nama Penerima PIC</strong>, isikan dengan nama PIC penerima barang.</p>
-                    <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/pic-name.png" alt="Nama PIC - Batal" style="width: 100%; border-radius: 4px;" />
-                    </div>
-                  </li>
-                  <li>
-                    <p>Pada <strong>Tanda Tangan Penerima</strong>, isikan tanda tangan PIC yang menerima. Lalu tekan tombol <strong>Lanjut</strong></p>
-                    <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/sign.png" alt="Tanda Tangan - Batal" style="width: 100%; border-radius: 4px;" />
-                    </div>
-                  </li>
-                  <li>
-                    <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Tidak</strong>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>
+                    <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Tidak</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                         <img src="/images/tutorial/driver/confirm-location-2.png" alt="GPS Sesuai - Batal" style="width: 100%; border-radius: 4px;" />
                     </div>
@@ -560,7 +536,7 @@ export const taskTopic = [
                   <li>
                     <p>Pada opsi <strong>GPS Sesuai</strong>, sebagai contoh akan dipilih <strong>Ya</strong>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                        <img src="/images/tutorial/driver/confirm-location-4.png" alt="GPS Sesuai - Sukses" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/driver/confirm-location-4.png" alt="GPS Sesuai - Pending GR" style="width: 100%; border-radius: 4px;" />
                     </div>
                   </li>
                 </ul>

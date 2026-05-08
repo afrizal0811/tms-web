@@ -1,15 +1,15 @@
 'use client';
 
-import ContentBlockRenderer from '@/features/help/components/ContentBlockRenderer';
-import ImageLightbox from '@/features/help/components/ImageLightbox';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
+import ContentBlockRenderer from '@/features/help/components/ContentBlockRenderer';
+import ImageLightbox from '@/features/help/components/ImageLightbox';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { useEffect, useMemo, useState } from 'react';
-import { helpTopics } from './data';
 import { PdfDocument } from './components/PdfDocument';
+import { helpTopics } from './data';
 
 export default function HelpPage() {
   const { t, lang } = useLanguage();
@@ -23,25 +23,25 @@ export default function HelpPage() {
 
   const themeStyles = {
     planner: {
-      headerBg: 'bg-sky-100',
-      headerText: 'text-sky-800',
-      level1: 'bg-sky-50 text-sky-700',
-      level2: 'bg-sky-50/95 text-sky-600',
-      level3: 'bg-sky-50/90 text-sky-600',
+      headerBg: 'bg-sky-100 dark:bg-sky-900/30',
+      headerText: 'text-sky-800 dark:text-sky-400',
+      level1: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300',
+      level2: 'bg-sky-50/95 dark:bg-sky-900/10 text-sky-600 dark:text-sky-400',
+      level3: 'bg-sky-50/90 dark:bg-transparent text-sky-600 dark:text-sky-500',
     },
     driver: {
-      headerBg: 'bg-amber-100',
-      headerText: 'text-amber-800',
-      level1: 'bg-amber-50 text-amber-700',
-      level2: 'bg-amber-50/95 text-amber-600 ',
-      level3: 'bg-amber-50/90 text-amber-600 ',
+      headerBg: 'bg-amber-100 dark:bg-amber-900/30',
+      headerText: 'text-amber-800 dark:text-amber-400',
+      level1: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300',
+      level2: 'bg-amber-50/95 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400',
+      level3: 'bg-amber-50/90 dark:bg-transparent text-amber-600 dark:text-amber-500',
     },
     slate: {
-      headerBg: 'bg-slate-100',
-      headerText: 'text-slate-800',
-      level1: 'bg-slate-50 text-slate-700',
-      level2: 'bg-slate-50/95 text-slate-600',
-      level3: 'bg-slate-50/90 text-slate-600 ',
+      headerBg: 'bg-slate-100 dark:bg-slate-800/80',
+      headerText: 'text-slate-800 dark:text-slate-300',
+      level1: 'bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300',
+      level2: 'bg-slate-50/95 dark:bg-slate-800/20 text-slate-600 dark:text-slate-400',
+      level3: 'bg-slate-50/90 dark:bg-transparent text-slate-600 dark:text-slate-500',
     },
   };
 
@@ -234,8 +234,8 @@ export default function HelpPage() {
     { label: t('help.driver_guide'), value: 'driver' },
   ];
   const colorMap = {
-    planner: 'bg-sky-200 text-sky-700 ',
-    driver: 'bg-amber-200 text-amber-700',
+    planner: 'bg-sky-200 dark:bg-sky-900 text-sky-700 dark:text-sky-300',
+    driver: 'bg-amber-200 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
   };
 
   return (
@@ -250,7 +250,7 @@ export default function HelpPage() {
       )}
 
       <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 dark:border-slate-700 pb-6">
           <div className="text-left min-w-sm max-w-xl">
             <h1
               className="text-3xl font-bold text-gray-900 dark:text-slate-200"
@@ -279,8 +279,8 @@ export default function HelpPage() {
                   onClick={() => handleCategoryChange(cat.value)}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize ${
                     isActive
-                      ? `${colorMap[cat.value] || 'bg-slate-50 text-slate-700'} shadow`
-                      : 'text-gray-400 hover:text-gray-700  cursor-pointer'
+                      ? `${colorMap[cat.value] || 'bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200'} shadow`
+                      : 'text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'
                   }`}
                 >
                   {cat.value}
@@ -305,7 +305,7 @@ export default function HelpPage() {
 
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-600">
                 <div
-                  className={`px-4 py-3 border-b border-gray-100 text-slate-900 ${currentTheme.headerBg}`}
+                  className={`px-4 py-3 border-b border-gray-100 dark:border-slate-700 text-slate-900 dark:text-slate-100 ${currentTheme.headerBg}`}
                 >
                   <h3
                     className={`font-semibold text-sm uppercase ${currentTheme.headerText}`}
@@ -328,7 +328,7 @@ export default function HelpPage() {
                             className={`group flex items-center justify-between w-full px-3 py-2.5 rounded-md text-sm font-bold transition-all ${
                               isParentActive
                                 ? currentTheme.level1
-                                : 'text-slate-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-700/10 cursor-pointer'
+                                : 'text-slate-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-700/50 cursor-pointer'
                             }`}
                             onClick={() => handleParentClick(topic)}
                           >
@@ -336,10 +336,10 @@ export default function HelpPage() {
                             {hasSubTopics && (
                               <button
                                 onClick={(e) => toggleExpand(e, topic.id)}
-                                className={`p-1 rounded-full hover:bg-gray-200 transition-colors ml-2 focus:outline-none`}
+                                className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors ml-2 focus:outline-none`}
                               >
                                 <svg
-                                  className={`w-4 h-4 transition-transform duration-200 text-slate-400 group-hover:text-slate-600 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}
+                                  className={`w-4 h-4 transition-transform duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -356,7 +356,7 @@ export default function HelpPage() {
                           </div>
 
                           {hasSubTopics && isExpanded && (
-                            <div className="mt-1 ml-3 pl-3 border-l-2 border-gray-100 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                            <div className="mt-1 ml-3 pl-3 border-l-2 border-gray-100 dark:border-slate-700 space-y-1 animate-in slide-in-from-top-1 duration-200">
                               {topic.subTopics.map((sub) => {
                                 const isSubActive = currentTopic?.id === sub.id;
                                 const hasSubSub = sub.subSubTopics && sub.subSubTopics.length > 0;
@@ -370,7 +370,7 @@ export default function HelpPage() {
                                         className={`flex-1 text-left px-3 py-2 rounded-md text-sm font-medium transition-all truncate ${
                                           isSubActive
                                             ? currentTheme.level2
-                                            : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/10 cursor-pointer'
+                                            : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/30 cursor-pointer'
                                         }`}
                                       >
                                         {sub.title}
@@ -379,10 +379,10 @@ export default function HelpPage() {
                                       {hasSubSub && (
                                         <button
                                           onClick={(e) => toggleSubExpand(e, sub.id)}
-                                          className={`p-1 mr-1 rounded-full hover:bg-gray-200 transition-colors ml-1 focus:outline-none`}
+                                          className={`p-1 mr-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors ml-1 focus:outline-none`}
                                         >
                                           <svg
-                                            className={`w-3 h-3 transition-transform duration-200 text-slate-400 ${isSubExpanded ? 'rotate-90' : 'rotate-0'}`}
+                                            className={`w-3 h-3 transition-transform duration-200 text-slate-400 dark:text-slate-500 ${isSubExpanded ? 'rotate-90' : 'rotate-0'}`}
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
@@ -399,7 +399,7 @@ export default function HelpPage() {
                                     </div>
 
                                     {hasSubSub && isSubExpanded && (
-                                      <div className="ml-4 pl-3 border-l border-gray-200 space-y-1 mt-1">
+                                      <div className="ml-4 pl-3 border-l border-gray-200 dark:border-slate-700 space-y-1 mt-1">
                                         {sub.subSubTopics.map((subSub) => {
                                           const isSubSubActive = currentTopic?.id === subSub.id;
                                           return (
@@ -409,7 +409,7 @@ export default function HelpPage() {
                                               className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-all truncate ${
                                                 isSubSubActive
                                                   ? currentTheme.level3
-                                                  : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/10 cursor-pointer'
+                                                  : 'text-slate-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/30 cursor-pointer'
                                               }`}
                                             >
                                               {subSub.title}
@@ -447,12 +447,14 @@ export default function HelpPage() {
                       key={value}
                       onClick={() => handleDownload(value)}
                       disabled={isGenerating}
-                      className={`w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${value === 'driver' ? 'hover:text-amber-600 hover:border-amber-300' : 'hover:text-sky-600 hover:border-sky-300'}`}
+                      className={`w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${value === 'driver' ? 'hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-700' : 'hover:text-sky-600 dark:hover:text-sky-400 hover:border-sky-300 dark:hover:border-sky-700'}`}
                     >
                       {isGenerating ? (
                         <span
-                          className={`animate-spin h-4 w-4 border-2 border-gray-300 ${
-                            isActive ? 'border-t-sky-600' : 'border-t-amber-600'
+                          className={`animate-spin h-4 w-4 border-2 border-gray-300 dark:border-slate-600 ${
+                            isActive
+                              ? 'border-t-sky-600 dark:border-t-sky-400'
+                              : 'border-t-amber-600 dark:border-t-amber-400'
                           } rounded-full`}
                         ></span>
                       ) : (
@@ -474,19 +476,21 @@ export default function HelpPage() {
                 key={currentTopic.id}
                 className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-600 shadow-sm p-6 sm:p-10 animate-in fade-in slide-in-from-bottom-2 duration-300"
               >
-                <div className="mb-6 pb-6 border-b border-gray-100">
+                <div className="mb-6 pb-6 border-b border-gray-100 dark:border-slate-700">
                   <span
                     className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset uppercase mb-3 ${
                       activeCategory === 'planner'
-                        ? 'bg-sky-50 text-sky-700 ring-sky-600/20'
+                        ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 ring-sky-600/20 dark:ring-sky-400/20'
                         : activeCategory === 'driver'
-                          ? 'bg-amber-50 text-amber-700 ring-amber-600/20'
-                          : 'bg-gray-50 text-gray-600 ring-gray-500/10'
+                          ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-600/20 dark:ring-amber-400/20'
+                          : 'bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 ring-gray-500/10 dark:ring-slate-500/20'
                     }`}
                   >
                     {t('help.module', { category: activeCategory })}
                   </span>
-                  <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{currentTopic.title}</h2>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                    {currentTopic.title}
+                  </h2>
                 </div>
                 <div className="content-area">
                   {currentTopic.blocks && currentTopic.blocks.length > 0 ? (
@@ -504,7 +508,7 @@ export default function HelpPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+              <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-800/50">
                 <svg
                   className="w-12 h-12 mb-2 opacity-50"
                   fill="none"

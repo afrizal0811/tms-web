@@ -6,14 +6,14 @@ export const startTopic = [
     blocks: [
       {
         type: 'text',
-        content: `<p>Transportation Management System (TMS) adalah solusi untuk memudahkan pengelolaan transportasi di perusahaan. Berikut ini adalah beberapa manfaat untuk <em>driver</em> saat menggunakan TMS:</p>
+        content: `<p><em>Transportation Management System</em> (TMS) adalah solusi untuk memudahkan pengelolaan transportasi di perusahaan. Berikut ini adalah beberapa manfaat untuk <em>driver</em> saat menggunakan TMS:</p>
         <ul class="list-disc pl-5 space-y-2 mt-2">
           <li>
             <p class="font-bold">Navigasi Otomatis</p>
             <p>Terintegrasi dengan aplikasi maps untuk panduan rute tercepat dan terdekat dari lokasi.</p>
           </li>
           <li>
-            <p class="font-bold">Update Tugas Real-time</p>
+            <p class="font-bold">Update Tugas <em>Real-time</em></p>
             <p>Menerima dan memperbarui status pengiriman langsung dari aplikasi, tanpa perlu komunikasi manual.</p>
           </li>
           <li>
