@@ -12,11 +12,12 @@ datasource db {
 
 // Tambahkan baris relasi "drivers" ini ke dalam model Hub yang sudah ada
 model Hub {
-  id        String   @id
-  name      String
-  acronym   String?
-  updatedAt DateTime @updatedAt
-  drivers   Driver[] 
+  id             String   @id
+  name           String
+  acronym        String?
+  hasPendingGR   Boolean  @default(false) // Kolom Baru
+  updatedAt      DateTime @updatedAt
+  drivers        Driver[] 
 }
 
 // Tambahkan model Driver baru ini di bawah

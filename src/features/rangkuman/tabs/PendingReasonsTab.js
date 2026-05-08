@@ -1,5 +1,4 @@
 import Tooltip from '@/components/Tooltip';
-import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { toastSuccess } from '@/lib/toastHelper';
 import { isEmpty, parseCustomerString } from '@/lib/utils';
 import { useRef, useState } from 'react';
@@ -82,10 +81,8 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
   );
 };
 
-export default function PendingReasonsTab({ data, locationName, translate }) {
-  const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
-    (locationName || '').toLowerCase().includes(loc.toLowerCase())
-  );
+export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
+  const shouldShowPendingGR = hasPendingGR;
 
   const getCustId = (name) => {
     if (!name) return '-';

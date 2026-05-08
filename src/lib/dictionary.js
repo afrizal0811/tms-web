@@ -51,8 +51,8 @@ export const dictionary = {
       visit_plan: 'Perkiraan Waktu Kunjung (min)',
       warning: '⚠️ Peringatan!',
       button: {
-        btn_confirm: 'Ya',
-        btn_cancel: 'Tidak',
+        btn_yes: 'Ya',
+        btn_no: 'Tidak',
         btn_delete: 'Delete',
         btn_save: 'Simpan',
       },
@@ -644,9 +644,9 @@ export const dictionary = {
       title: 'Pengaturan',
       tab: {
         general: {
-          acronym_subtitle: 'Tentukan akronim cabang untuk standar identifikasi dan penamaan.',
-          acronym_title: 'Akronim Nama Cabang',
           add_placeholder: 'Tambah tipe baru...',
+          branch_subtitle: 'Menentukan pengaturan untuk masing-masing cabang',
+          branch_title: 'Manajemen Cabang',
           dropdown_title: 'Pilih Tipe Kendaraan',
           mapping_subtitle: 'Sesuaikan tipe kendaraan sesuai standar yang digunakan',
           mapping_title: 'Pemetaan Tipe Kendaraan',
@@ -1325,9 +1325,9 @@ export const dictionary = {
       title: 'Settings',
       tab: {
         general: {
-          acronym_subtitle: 'Define branch acronyms for standard identification and naming.',
-          acronym_title: 'Branch Name Acronym',
           add_placeholder: 'Add new data...',
+          branch_subtitle: 'Determine settings for each branch',
+          branch_title: 'Branch Management',
           dropdown_title: 'Select Vehicle Type',
           mapping_subtitle: 'Adjust vehicle types according to the standard used',
           mapping_title: 'Vehicle Type Mapping',

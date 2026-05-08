@@ -3,7 +3,13 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
+import {
+  getHubs,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+  getVehicleMappings,
+} from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -108,8 +114,23 @@ export default function BulkReport({ driverData }) {
     });
   };
 
-  const handleBulkDeliverySummary = (t) => {
+  const handleBulkDeliverySummary = async (t) => {
     setElapsedTime(0);
+
+    let hubsMap = {};
+    try {
+      setIsLoading(true);
+      const hubsDB = await getHubs();
+      hubsMap = hubsDB.reduce((acc, curr) => {
+        acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
+        return acc;
+      }, {});
+    } catch (e) {
+      toastError(t('common.toast.error', { err: e.message }));
+    } finally {
+      setIsLoading(false);
+    }
+
     bulkDownloader({
       startDate,
       endDate,
@@ -147,14 +168,16 @@ export default function BulkReport({ driverData }) {
         ]);
 
         if (allTasks.length > 0) {
+          const hasPendingGR = hubsMap[String(hubId)] || false;
+
           return generateDeliveryWorkbook(
             driverData,
             allTasks,
             resultsData || [],
             dateForFile,
             apiDate,
-            hubId,
             hubName,
+            hasPendingGR,
             t
           );
         }

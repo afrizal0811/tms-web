@@ -4,7 +4,13 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
+import {
+  getHubs,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+  getVehicleMappings,
+} from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -172,7 +178,7 @@ export default function SingleReport({
 
       const { storedLocationAcronym } = getLocalStorage();
 
-      const [allTasks, resultsData] = await Promise.all([
+      const [allTasks, resultsData, hubsData] = await Promise.all([
         getTasks({
           hubId: selectedLocation,
           status: 'DONE,ONGOING',
@@ -187,11 +193,17 @@ export default function SingleReport({
           limit: 1000,
           hubId: selectedLocation,
         }),
+        getHubs(),
       ]);
 
       if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
         throw new Error(t('report.toast.no_delivery'));
       }
+
+      const activeHub = (hubsData || []).find(
+        (h) => String(h._id || h.id) === String(selectedLocation)
+      );
+      const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
 
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
@@ -201,8 +213,8 @@ export default function SingleReport({
         resultsData || [],
         selectedDateString,
         targetRoutingStr,
-        selectedLocation,
         hubLabel,
+        hasPendingGR,
         t
       );
 

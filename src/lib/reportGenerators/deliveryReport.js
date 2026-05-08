@@ -24,17 +24,15 @@ export function generateDeliveryWorkbook(
   driverData,
   allTasks,
   resultsData,
-  selectedDate, // Tanggal Asli (pilihan user, misal "2025-11-11")
+  selectedDate,
   apiDate,
-  selectedLocation,
   selectedLocationName,
+  hasPendingGR,
   t
 ) {
-  // --- (SEMUA LOGIC DARI DeliverySummary.js 'handleDeliverySummary' DIPINDAH KE SINI) ---
   const translate = t || ((key) => key);
-  // 1. Cek Hub Spesial
-  const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
-  const isSpecialHub = specialHubs.includes(selectedLocation);
+
+  const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
   if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
@@ -894,7 +892,6 @@ export function generateDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsRoVsReal, t('excel.delivery.sheets.ro_vs_real'));
 
-  // --- 9. Kembalikan Hasil ---
   const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.delivery.filename')} - ${date} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };

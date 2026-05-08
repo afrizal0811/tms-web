@@ -1,6 +1,6 @@
 'use client';
 
-import BranchAcronymManager from '../components/BranchAcronymManager';
+import BranchManager from '../components/BranchManager';
 import ReasonManager from '../components/ReasonManager';
 import StandardType from '../components/StandardType';
 import VehicleMappingManager from '../components/VehicleMappingManager';
@@ -26,7 +26,7 @@ export default function GeneralTab({
         isReadOnly={isReadOnly}
         translate={translate}
       />
-      <BranchAcronymManager
+      <BranchManager
         hubs={hubs}
         onRefresh={onRefresh}
         isReadOnly={isReadOnly}

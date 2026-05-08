@@ -7,7 +7,7 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
-import { getResultsSummary, getTasks } from '@/lib/api';
+import { getHubs, getResultsSummary, getTasks } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
@@ -42,6 +42,25 @@ export default function DashboardSummary({ driverData }) {
   });
 
   const { storedLocation: hubId } = getLocalStorage();
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+
+  useEffect(() => {
+    const fetchHubSettings = async () => {
+      if (!hubId) return;
+      try {
+        const hubs = await getHubs();
+        const activeHub = hubs.find(
+          (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
+        );
+        if (activeHub) {
+          setHasPendingGR(activeHub.hasPendingGR || false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hub settings:', error);
+      }
+    };
+    fetchHubSettings();
+  }, [hubId]);
 
   // Handler khusus untuk Apply Filter dengan Loading Buatan
   const handleApplyFilter = (newSelectedTypes) => {
@@ -323,8 +342,8 @@ export default function DashboardSummary({ driverData }) {
   }, [yearlyTasks, storageFilter]);
 
   const summaryData = useMemo(() => {
-    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang);
-  }, [filteredDailyTasks, driverMap, lang]);
+    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang, hasPendingGR);
+  }, [filteredDailyTasks, driverMap, lang, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';
 
@@ -409,7 +428,9 @@ export default function DashboardSummary({ driverData }) {
         isEmpty={isCardEmpty}
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
-          {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
+          {activeTab === 'Detail' && (
+            <DetailTab loading={loading} summaryData={summaryData} hasPendingGR={hasPendingGR} />
+          )}
 
           {activeTab === 'RoutingVsActual' && (
             <RoutingVsActualTab
@@ -418,6 +439,7 @@ export default function DashboardSummary({ driverData }) {
               results={rawData.results}
               drivers={driverData}
               selectedDate={selectedDate}
+              hasPendingGR={hasPendingGR}
             />
           )}
 
@@ -427,6 +449,7 @@ export default function DashboardSummary({ driverData }) {
               hubId={currentHubId}
               driverData={driverData}
               selectedDate={selectedDate}
+              hasPendingGR={hasPendingGR}
             />
           )}
         </div>

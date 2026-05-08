@@ -19,8 +19,8 @@ export default function ConfirmModal({
   const [mounted, setMounted] = useState(false);
 
   if (cancelText === undefined || confirmText === undefined) {
-    cancelText = t('common.button.btn_cancel');
-    confirmText = t('common.button.btn_confirm');
+    cancelText = t('common.button.btn_no');
+    confirmText = t('common.button.btn_yes');
   }
   useEffect(() => {
     setTimeout(() => {

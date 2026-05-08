@@ -1,11 +1,12 @@
 'use client';
 
+import Button from '@/components/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Button from '@/components/Button';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { getHubs } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -47,6 +48,25 @@ export default function RangkumanSummary() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+  useEffect(() => {
+    const fetchHubSettings = async () => {
+      if (!selectedLocation) return;
+      try {
+        const hubs = await getHubs();
+        const activeHub = hubs.find(
+          (h) =>
+            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
+        );
+        if (activeHub) {
+          setHasPendingGR(activeHub.hasPendingGR || false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hub settings:', error);
+      }
+    };
+    fetchHubSettings();
+  }, [selectedLocation]);
 
   const handleTempDateChange = (update) => {
     setTempDateRange(update);
@@ -96,7 +116,8 @@ export default function RangkumanSummary() {
         taskSummaryMetrics,
         masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
         t,
-        lang
+        lang,
+        hasPendingGR
       );
       XLSX.writeFile(wb, excelFileName);
       toastSuccess(t('summary.toast.success'));
@@ -205,7 +226,7 @@ export default function RangkumanSummary() {
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
           data: reportPreview?.pendingReasonsData || [],
-          locationName: selectedLocationName,
+          hasPendingGR: hasPendingGR,
           translate: t,
         });
       case 'Time Driver':
