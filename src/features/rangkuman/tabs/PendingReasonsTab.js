@@ -2,6 +2,7 @@ import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
 import { isEmpty, parseCustomerString } from '@/lib/utils';
 import { useRef, useState } from 'react';
+import PendingReasonModal from './modals/PendingReasonModal';
 
 const ReasonCell = ({ text, className }) => {
   const [isTruncated, setIsTruncated] = useState(false);
@@ -30,6 +31,55 @@ const ReasonCell = ({ text, className }) => {
         )
       ) : (
         '-'
+      )}
+    </td>
+  );
+};
+
+// Komponen ActionCell baru untuk 4 kolom interaktif dengan fitur hover tanda plus (+)
+const ActionCell = ({ text, className, onClick }) => {
+  const [isTruncated, setIsTruncated] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const textRef = useRef(null);
+
+  const checkOverflow = () => {
+    if (textRef.current) {
+      const isOverflow = textRef.current.scrollWidth > textRef.current.clientWidth;
+      setIsTruncated(isOverflow);
+    }
+  };
+
+  const innerContent = (
+    <div ref={textRef} className="truncate w-full cursor-pointer" onMouseEnter={checkOverflow}>
+      {text}
+    </div>
+  );
+
+  const hasData = text && !isEmpty(text) && text !== '-';
+
+  return (
+    <td
+      className={`${className} max-w-[150px]`}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {hasData ? (
+        isTruncated ? (
+          <Tooltip tooltipContent={text}>{innerContent}</Tooltip>
+        ) : (
+          innerContent
+        )
+      ) : (
+        <div className="w-full h-full flex items-center justify-center transition-colors">
+          {isHovered ? (
+            <span className="inline-block font-bold text-lg leading-none text-sky-600 dark:text-sky-400 transform scale-125 transition-transform duration-200">
+              +
+            </span>
+          ) : (
+            <span className="text-slate-400 dark:text-slate-500">-</span>
+          )}
+        </div>
       )}
     </td>
   );
@@ -81,8 +131,16 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
   );
 };
 
-export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
+export default function PendingReasonsTab({
+  data,
+  pendingDetails,
+  reasons,
+  hasPendingGR,
+  translate,
+  onUpdatePendingDetail,
+}) {
   const shouldShowPendingGR = hasPendingGR;
+  const [modalData, setModalData] = useState(null);
 
   const getCustId = (name) => {
     if (!name) return '-';
@@ -108,6 +166,10 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
     translate('common.status.pending'),
     ...(shouldShowPendingGR ? [translate('common.status.pending_gr')] : []),
     translate('summary.tabs.pending_reasons.reason'),
+    'Internal/External',
+    'Detail Reason',
+    'Group Reason',
+    'PIC',
     translate('common.open_time'),
     translate('common.close_time'),
     translate('common.eta'),
@@ -123,7 +185,16 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
   ];
 
   return (
-    <div className="rounded-b-xl overflow-auto m-0">
+    <div className="rounded-b-xl overflow-auto m-0 relative">
+      <PendingReasonModal
+        isOpen={!!modalData}
+        onClose={() => setModalData(null)}
+        data={modalData}
+        reasons={reasons || []}
+        onSuccess={onUpdatePendingDetail}
+        translate={translate}
+      />
+
       <table className="border-collapse w-full text-sm">
         <thead className="sticky top-0 z-20">
           <tr>
@@ -136,7 +207,9 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
         </thead>
         <tbody className="bg-white dark:bg-slate-800">
           {data.map((item, idx) => {
-            const { name: customerName } = parseCustomerString(item.customerName);
+            const { name: customerName } = parseCustomerString(
+              item.customerName || item.customerOrder
+            );
             const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
             const borderBottomClass = isLastInDate
               ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
@@ -156,6 +229,18 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
 
             const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
 
+            // Cari data detail dari props
+            const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+            const isAllEmpty =
+              !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
+            const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
+            const actionCellClass = isAllEmpty
+              ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
+              : `${actionCellBase} hover:bg-sky-50 dark:hover:bg-slate-700/80`;
+
+            const openModal = () =>
+              setModalData({ ...item, pendingDetail: pd, customer: customerName });
+
             const rowCells = [
               { type: 'text', val: item.flow || '-' },
               { type: 'text', val: item.dateStr },
@@ -168,6 +253,10 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
                 ? [{ type: 'so', val: textPendingGR, content: item.content }]
                 : []),
               { type: 'reason', val: item.alasan },
+              { type: 'action', val: pd.internalExternal, cls: actionCellClass },
+              { type: 'action', val: pd.detailReason, cls: actionCellClass },
+              { type: 'action', val: pd.groupReason, cls: actionCellClass },
+              { type: 'action', val: pd.pic, cls: actionCellClass },
               { type: 'text', val: item.openStr || '-' },
               { type: 'text', val: item.closeStr || '-' },
               { type: 'redEmpty', val: item.etaStr },
@@ -205,6 +294,16 @@ export default function PendingReasonsTab({ data, hasPendingGR, translate }) {
                   }
                   if (cell.type === 'reason') {
                     return <ReasonCell key={cIdx} text={cell.val} className={cellClass} />;
+                  }
+                  if (cell.type === 'action') {
+                    return (
+                      <ActionCell
+                        key={cIdx}
+                        text={cell.val}
+                        className={cell.cls}
+                        onClick={openModal}
+                      />
+                    );
                   }
                   if (cell.type === 'redEmpty') {
                     return (

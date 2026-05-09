@@ -101,3 +101,17 @@ model Reason {
   @@unique([reasons, pic])
   @@map("reasons")
 }
+
+model PendingDetail {
+  id               String   @id @default(cuid())
+  taskId           String   @unique
+  date             String   // Format YYYY-MM-DD
+  internalExternal String?
+  detailReason     String?  @db.Text
+  groupReason      String?
+  pic              String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("pending_details")
+}

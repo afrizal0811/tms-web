@@ -163,15 +163,13 @@ export function generatePendingReasonSheet(
   wb,
   driverData,
   allTasks,
-  currentHubName,
   translate,
   startDateStr,
   endDateStr,
-  hasPendingGR // <-- Tambahkan parameter ini
+  hasPendingGR,
+  pendingDetails
 ) {
   const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
-
-  // <-- Menggunakan parameter yang dilempar, bukan array hardcode -->
   const shouldShowPendingGR = hasPendingGR;
 
   let headers = [
@@ -186,6 +184,10 @@ export function generatePendingReasonSheet(
   if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
   headers.push(
     translate('summary.tabs.pending_reasons.reason'),
+    'Internal/External', // Kolom Tambahan 1
+    'Detail Reason', // Kolom Tambahan 2
+    'Group Reason', // Kolom Tambahan 3
+    'PIC', // Kolom Tambahan 4
     translate('common.open_time'),
     translate('common.close_time'),
     translate('common.eta'),
@@ -213,6 +215,8 @@ export function generatePendingReasonSheet(
     if (item.status === 'PENDING' || isWrongGR) pending = customerName;
     const pendingGR = item.status === 'PENDING GR' ? customerName : '';
 
+    const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+
     const row = [
       item.flow || '-',
       item.dateStr,
@@ -223,8 +227,14 @@ export function generatePendingReasonSheet(
       pending,
     ];
     if (shouldShowPendingGR) row.push(pendingGR);
+
+    // Terapkan Kolom Tambahannya
     row.push(
       item.alasan || '-',
+      pd.internalExternal || '-',
+      pd.detailReason || '-',
+      pd.groupReason || '-',
+      pd.pic || '-',
       item.openStr || '-',
       item.closeStr || '-',
       item.etaStr || '-',
@@ -253,12 +263,14 @@ export function generatePendingReasonSheet(
     },
   ];
 
+  // Logic Indexer setelah dimasukan 4 Kolom Baru (Geser 4)
   const shift = shouldShowPendingGR ? 0 : -1;
+  const shiftNew = 4;
   const idxPending = 6;
-  const idxETA = 11 + shift;
-  const idxETD = 12 + shift;
-  const idxVisitTime = 16 + shift;
-  const idxRO = 18 + shift;
+  const idxETA = 11 + shift + shiftNew;
+  const idxETD = 12 + shift + shiftNew;
+  const idxVisitTime = 16 + shift + shiftNew;
+  const idxRO = 18 + shift + shiftNew;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
 
@@ -295,7 +307,8 @@ export function generatePendingReasonSheet(
           currentStyle = { ...currentStyle, font: { color: COLORS.alert, bold: true } };
         }
         if ([idxETA, idxETD, idxRO].includes(C)) {
-          if (isEmpty(val)) currentStyle = { ...currentStyle, fill: FILL_STYLES.red };
+          if (isEmpty(val) || val === '-')
+            currentStyle = { ...currentStyle, fill: FILL_STYLES.red };
         }
         if (C === idxVisitTime) {
           if (val === 0 || val === '0')
@@ -306,7 +319,7 @@ export function generatePendingReasonSheet(
     }
   }
 
-  ws['!cols'] = [
+  const widths = [
     { wch: 10 },
     { wch: 12 },
     { wch: 12 },
@@ -315,9 +328,15 @@ export function generatePendingReasonSheet(
     { wch: 20 },
     { wch: 20 },
   ];
-  if (shouldShowPendingGR) ws['!cols'].push({ wch: 20 });
-  ws['!cols'].push(
+  if (shouldShowPendingGR) widths.push({ wch: 20 });
+
+  // Masukkan Lebar 4 Kolom Baru
+  widths.push(
     { wch: 25 },
+    { wch: 20 }, // internalExternal
+    { wch: 30 }, // detailReason
+    { wch: 20 }, // groupReason
+    { wch: 20 }, // PIC
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },
@@ -331,6 +350,8 @@ export function generatePendingReasonSheet(
     { wch: 10 },
     { wch: 10 }
   );
+
+  ws['!cols'] = widths;
 
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.pending_reasons.title'));
 }

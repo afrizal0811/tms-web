@@ -1,3 +1,4 @@
+// File: src/lib/reportGenerators/rangkumanReport.js
 'use client';
 
 import { formatDateUniversal } from '@/lib/utils';
@@ -97,7 +98,8 @@ export async function generateRangkumanWorkbook(
   masterTruckData,
   translate,
   language,
-  hasPendingGR // <-- Tambahkan parameter ini
+  hasPendingGR,
+  pendingDetails // <-- Parameter Baru
 ) {
   const wb = XLSX.utils.book_new();
   const isIndo = language === 'id';
@@ -116,11 +118,11 @@ export async function generateRangkumanWorkbook(
     wb,
     driverData,
     taskData,
-    hubName,
     translate,
     startDateStr,
     endDateStr,
-    hasPendingGR // <-- Operkan parameter ini
+    hasPendingGR,
+    pendingDetails // <-- Diteruskan
   );
 
   generateTimeDriverSheet(

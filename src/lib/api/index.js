@@ -1,5 +1,6 @@
 export * from './drivers';
 export * from './hubs';
+export * from './pendingDetails';
 export * from './reasons';
 export * from './roles';
 export * from './tasks';
