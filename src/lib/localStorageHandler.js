@@ -86,7 +86,7 @@ export function getLocalStorage() {
     }
   }
 
-  const storedLanguage = localStorage.getItem('lang') || 'id';
+  const storedLanguage = localStorage.getItem('language') || 'en';
 
   return {
     storedSession,

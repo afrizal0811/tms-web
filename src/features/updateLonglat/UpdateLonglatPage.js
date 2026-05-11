@@ -203,9 +203,15 @@ export default function UpdateLonglatPage() {
   const downloadBtn = (
     <Button
       disabled={loading || isDownloading || isEmpty(processedData)}
-      isLoading={isDownloading}
+      isLoading={loading || isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
-      text={t('common.download')}
+      text={
+        loading
+          ? t('common.loading')
+          : isDownloading
+            ? t('common.downlading')
+            : t('common.download')
+      }
     />
   );
 

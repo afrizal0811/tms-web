@@ -165,18 +165,18 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
           <Button
             disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleOpenMap}
-            text={t('dashboard.tab.routingreal.show_map')}
+            text={isDownloading ? t('common.downlading') : t('dashboard.tab.routingreal.show_map')}
           />
         </div>
         <div className="w-full md:w-auto order-3">
           <Button
             disabled={loading || isDownloading || isEmpty(processedData)}
             onClick={handleDownload}
-            text={t('common.download')}
+            text={isDownloading ? t('common.downlading') : t('common.download')}
           />
         </div>
       </div>
-      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white dark:border-slate-700">
+      <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white dark:border-slate-700 dark:bg-slate-800">
         <table className="min-w-full text-xs text-left ">
           <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm dark:bg-slate-900 dark:text-slate-700!">
             <tr className="text-gray-600 dark:text-slate-300">

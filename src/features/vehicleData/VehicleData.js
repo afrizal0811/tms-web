@@ -194,8 +194,14 @@ export default function VehicleData() {
         isDownloading ||
         (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
       }
-      text={t('common.download')}
-      width="w-auto"
+      text={
+        isLoading
+          ? t('common.loading')
+          : isDownloading
+            ? t('common.downloading')
+            : t('common.download')
+      }
+      width="w-full"
     />
   );
 

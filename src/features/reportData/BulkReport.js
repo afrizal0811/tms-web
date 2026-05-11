@@ -1,7 +1,7 @@
 'use client';
 
+import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getHubs,
@@ -223,6 +223,20 @@ export default function BulkReport({ driverData }) {
   const isRangeInvalid =
     !startDate || !endDate || startDate > endDate || startDate.getTime() === endDate.getTime();
 
+  const actionButtons = [
+    {
+      id: 'routing',
+      label: t('report.routing_summary'),
+      onClick: () => handleBulkRoutingSummary(t),
+    },
+    {
+      id: 'delivery',
+      label: t('report.delivery_summary'),
+      onClick: () => handleBulkDeliverySummary(t),
+    },
+    { id: 'time', label: t('report.time_summary'), onClick: () => handleBulkTimeSummary(t) },
+  ];
+
   return (
     <div className="w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center text-slate-900 dark:text-slate-100">
@@ -249,70 +263,17 @@ export default function BulkReport({ driverData }) {
         </div>
       </div>
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
-        <button
-          onClick={() => handleBulkRoutingSummary(t)}
-          disabled={isLoading || isRangeInvalid}
-          className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              isLoading || isRangeInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {isLoading && currentReport === 'routing' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.routing_summary')
-          )}
-        </button>
-
-        <button
-          onClick={() => handleBulkDeliverySummary(t)}
-          disabled={isLoading || isRangeInvalid}
-          className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              isLoading || isRangeInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {isLoading && currentReport === 'delivery' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.delivery_summary')
-          )}
-        </button>
-        <button
-          onClick={() => handleBulkTimeSummary(t)}
-          disabled={isLoading || isRangeInvalid}
-          className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              isLoading || isRangeInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {isLoading && currentReport === 'time' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-5 h-5" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.time_summary')
-          )}
-        </button>
+        {actionButtons.map(({ id, label, onClick }) => (
+          <Button
+            key={id}
+            onClick={onClick}
+            disabled={isLoading || isRangeInvalid}
+            isLoading={isLoading && currentReport === id}
+            text={label}
+            loadingText={formatTimer(elapsedTime)}
+            width="w-full sm:w-64"
+          />
+        ))}
       </div>
     </div>
   );

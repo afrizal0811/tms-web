@@ -1,7 +1,7 @@
 'use client';
 
-import CustomDatePicker from '@/components/CustomDatePicker';
 import Button from '@/components/Button';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
@@ -652,7 +652,7 @@ export default function EstimasiDelivery() {
             className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all 
             ${
               isActive
-                ? 'bg-white shadow-sm text-sky-700 dark:bg-slate-900/50 dark:text-slate-300 '
+                ? 'bg-white shadow-sm border text-sky-700 dark:bg-sky-600 dark:border-sky-700 dark:text-slate-300 '
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer hover:bg-slate-300/20 dark:hover:bg-slate-900/20'
             }
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400
@@ -669,9 +669,15 @@ export default function EstimasiDelivery() {
     <div className="w-full z-50 relative" ref={downloadDropdownRef}>
       <Button
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
-        isLoading={isAnyDownloading}
+        isLoading={isLoading || isAnyDownloading}
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-        text={t('common.download')}
+        text={
+          isLoading
+            ? t('common.loading')
+            : isAnyDownloading
+              ? t('common.downloading')
+              : t('common.download')
+        }
       />
 
       {isDownloadDropdownOpen && (

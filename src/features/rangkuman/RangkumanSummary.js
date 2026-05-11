@@ -7,7 +7,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getReasons, getPendingDetails } from '@/lib/api'; // Penambahan Import
+import { getHubs, getPendingDetails, getReasons } from '@/lib/api'; // Penambahan Import
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -49,10 +49,10 @@ export default function RangkumanSummary() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
-
   const [hasPendingGR, setHasPendingGR] = useState(false);
   const [reasons, setReasons] = useState([]);
   const [pendingDetails, setPendingDetails] = useState([]);
+  const [isDownload, setIsDownload] = useState(false);
 
   // Ambil Data Reasons (Group Reason & PIC)
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function RangkumanSummary() {
       toastError(t('summary.toast.no_driver_data'));
       return;
     }
-
+    setIsDownload(true);
     const startDate = new Date(dateRange[0]);
     const endDate = new Date(dateRange[1]);
 
@@ -152,12 +152,14 @@ export default function RangkumanSummary() {
         t,
         lang,
         hasPendingGR,
-        pendingDetails // <-- Lewatkan ke Fungsi Excel
+        pendingDetails
       );
       XLSX.writeFile(wb, excelFileName);
       toastSuccess(t('summary.toast.success'));
     } catch (err) {
       toastError(t('summary.toast.error', { err: err.message }));
+    } finally {
+      setIsDownload(false);
     }
   };
 
@@ -337,10 +339,10 @@ export default function RangkumanSummary() {
       label: 'Action',
       component: (
         <Button
-          disabled={isLoading || isEmpty(rawData.tasks)}
+          disabled={isLoading || isDownload || isEmpty(rawData.tasks)}
           isLoading={isLoading}
           onClick={handleDownloadExcel}
-          text={`${t('common.download')}`}
+          text={`${isLoading ? t('common.loading') : isDownload ? t('common.downloading') : t('common.download')}`}
         />
       ),
       hideLabel: true,

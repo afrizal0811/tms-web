@@ -330,7 +330,7 @@ export default function TaskCountReport({ driverData }) {
           <Button
             onClick={handleProcess}
             isLoading={isLoading}
-            text={isLoading ? t('common.loading') : t('common.download')}
+            text={isLoading ? t('common.downloading') : t('common.download')}
             width="w-full md:w-auto"
             disabled={selectedHubs.length === 0}
           />

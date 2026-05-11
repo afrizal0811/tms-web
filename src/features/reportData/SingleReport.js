@@ -1,7 +1,7 @@
 'use client';
 
+import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -309,6 +309,12 @@ export default function SingleReport({
     </Tooltip>
   );
 
+  const actionButtons = [
+    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting },
+    { id: 'delivery', label: t('report.delivery_summary'), onClick: handleDelivery },
+    { id: 'time', label: t('report.time_summary'), onClick: handleTime },
+  ];
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
@@ -373,74 +379,16 @@ export default function SingleReport({
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
-        <button
-          onClick={handleRouting}
-          disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              disabledCommon || isDateInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : currentRunning === 'routing'
-                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
-                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {currentRunning === 'routing' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.routing_summary')
-          )}
-        </button>
-
-        <button
-          onClick={handleDelivery}
-          disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              disabledCommon || isDateInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : currentRunning === 'delivery'
-                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
-                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {currentRunning === 'delivery' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.delivery_summary')
-          )}
-        </button>
-
-        <button
-          onClick={handleTime}
-          disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
-            ${
-              disabledCommon || isDateInvalid
-                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
-                : currentRunning === 'time'
-                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
-                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
-            }
-          `}
-        >
-          {currentRunning === 'time' ? (
-            <div className="flex justify-center items-center gap-2">
-              <Spinner size="w-6 h-6" border="border-4 border-amber-400 border-t-white" />
-              <span>{formatTimer(elapsedTime)}</span>
-            </div>
-          ) : (
-            t('report.time_summary')
-          )}
-        </button>
+        {actionButtons.map(({ id, label, onClick }) => (
+          <Button
+            key={id}
+            onClick={onClick}
+            disabled={disabledCommon || isDateInvalid}
+            isLoading={currentRunning === id}
+            text={label}
+            loadingText={formatTimer(elapsedTime)}
+          />
+        ))}
       </div>
     </div>
   );

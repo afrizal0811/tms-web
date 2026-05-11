@@ -3,9 +3,9 @@
 
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { upsertPendingDetail, deletePendingDetail } from '@/lib/api'; // Pastikan deletePendingDetail diimport
+import { deletePendingDetail, upsertPendingDetail } from '@/lib/api'; // Pastikan deletePendingDetail diimport
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function PendingReasonModal({
   isOpen,
@@ -108,8 +108,8 @@ export default function PendingReasonModal({
     }
   };
 
-  const isAllEmpty = !intExt && !detail.trim() && !groupReason && !pic;
-  const isSaveDisabled = isLoading || isAllEmpty;
+  const isEmptyData = !intExt || !detail.trim() || !groupReason || !pic;
+  const isSaveDisabled = isLoading || isEmptyData;
 
   const hasExistingData =
     data?.pendingDetail &&
@@ -150,7 +150,7 @@ export default function PendingReasonModal({
                   onClick={() => setIsConfirmOpen(true)}
                   className="px-4 py-2 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {translate('common.button.btn_delete') || 'Hapus'}
+                  {translate('common.button.btn_delete')}
                 </button>
               ) : (
                 <div></div>
@@ -162,14 +162,14 @@ export default function PendingReasonModal({
                 onClick={onClose}
                 className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Batal
+                {translate('common.button.btn_cancel')}
               </button>
               <button
                 disabled={isSaveDisabled}
                 onClick={handleSave}
                 className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 font-medium text-sm min-w-[90px] disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Menyimpan...' : translate('common.button.btn_save')}
+                {isLoading ? translate('common.saving') : translate('common.button.btn_save')}
               </button>
             </div>
           </div>
