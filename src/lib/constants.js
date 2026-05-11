@@ -1,4 +1,3 @@
-export const LOCATIONS_SHOW_PENDING_GR = ['Cikarang', 'Daan Mogot'];
 export const avatarColorStyles = {
   red: 'bg-red-100 text-red-600',
   orange: 'bg-orange-100 text-orange-600',
