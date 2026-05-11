@@ -34,7 +34,7 @@ export function setLocalStorage(name, value) {
       const encryptedValue = encryptData(stringifiedValue);
       localStorage.setItem(name, encryptedValue);
     } catch (e) {
-      const encryptedValue = encryptData(typeof value === 'string' ? value : JSON.stringify(value));
+      const encryptedValue = encryptData(value);
       localStorage.setItem(name, encryptedValue);
     }
   } else {
@@ -43,7 +43,6 @@ export function setLocalStorage(name, value) {
 }
 
 export function removeLocalStorage(name) {
-  // Penjaga untuk SSR Next.js
   if (typeof window === 'undefined') return;
 
   localStorage.removeItem(name);
@@ -87,7 +86,7 @@ export function getLocalStorage() {
     }
   }
 
-  const storedLanguage = localStorage.getItem('language');
+  const storedLanguage = localStorage.getItem('lang') || 'id';
 
   return {
     storedSession,
@@ -98,4 +97,32 @@ export function getLocalStorage() {
     storedLanguage,
     appVersion,
   };
+}
+
+export function getColumnPreferences() {
+  if (typeof window === 'undefined') return null;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      return parsed.colPrefs || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function setColumnPreferences(prefs) {
+  if (typeof window === 'undefined') return;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      parsed.colPrefs = prefs;
+      setLocalStorage('data', parsed);
+    } catch (e) {}
+  }
 }

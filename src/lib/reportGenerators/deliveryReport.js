@@ -578,7 +578,7 @@ export function generateDeliveryWorkbook(
   const headers4 = [
     translate('common.customer_name'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.loc_id'),
+    translate('common.location_id'),
     translate('excel.delivery.headers.new_longlat'),
     translate('excel.delivery.headers.dist_diff'),
   ];

@@ -35,7 +35,7 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
                   <th className="px-4 py-3 w-[5%]">No</th>
                   <th className="px-4 py-3 w-[20%]">{t('common.customer_name')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('common.customer_id')}</th>
-                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.loc_id')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('common.location_id')}</th>
                   <th className="px-4 py-3 w-[20%]">{t('longlat.table.new_longlat')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('longlat.table.diff_dist')}</th>
                   <th className="px-4 py-3 w-[15%]">{t('common.driver')}</th>

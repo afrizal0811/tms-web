@@ -16,7 +16,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       'No',
       t('common.customer_name'),
       t('common.customer_id'),
-      t('longlat.table.loc_id'),
+      t('common.location_id'),
       t('longlat.table.new_longlat'),
       t('longlat.table.diff_dist'),
       t('common.driver'),
