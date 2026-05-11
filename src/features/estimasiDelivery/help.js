@@ -1,5 +1,4 @@
-// File: src/features/estimasiDelivery/help.js
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getColumnPreferences, getLocalStorage } from '@/lib/localStorageHandler';
 import {
   formatDateUniversal,
   formatSimpleTime,
@@ -118,6 +117,32 @@ export const handleConfirmDownload = async ({
   setIsDownloading(true);
   try {
     const wb = XLSX.utils.book_new();
+
+    const prefs = getColumnPreferences() || {
+      custId: false,
+      locId: false,
+    };
+
+    const activeCols = [
+      { key: 'no', title: 'No.' },
+      { key: 'visit', title: t('estimation.visit') },
+    ];
+
+    if (prefs.custId) {
+      activeCols.push({ key: 'custId', title: t('common.customer_id') || 'ID Customer' });
+    }
+    if (prefs.locId) {
+      activeCols.push({ key: 'locId', title: t('common.location_id') || 'ID Location' });
+    }
+
+    activeCols.push(
+      { key: 'so', title: t('common.so_number') },
+      { key: 'openTime', title: t('common.open_time') },
+      { key: 'closeTime', title: t('common.close_time') },
+      { key: 'eta', title: t('estimation.est_arrival') },
+      { key: 'etd', title: t('estimation.est_depart') }
+    );
+
     filteredVehicleRoutes.forEach((route) => {
       const cleanName = (route.vehicleName || 'Vehicle')
         .replace(/[\\/:*?\[\]]/g, '')
@@ -126,19 +151,12 @@ export const handleConfirmDownload = async ({
 
       const hasManualInRoute = route.trips?.some((t) => t.isManual);
       const wsData = [
-        [t('common.vehicle'), route.vehicleName], // Baris 1
-        [t('common.driver'), driverName], // Baris 2
-        [], // Baris 3 (Spacer)
-        [
-          'No.',
-          t('estimation.visit'),
-          t('estimation.no_so'),
-          t('estimation.open_time'),
-          t('estimation.close_time'),
-          t('estimation.est_arrival'),
-          t('estimation.est_depart'),
-        ],
+        [t('common.vehicle'), route.vehicleName],
+        [t('common.driver'), driverName],
+        [],
+        activeCols.map((col) => col.title),
       ];
+
       const stylingMeta = [];
       stylingMeta.push(
         { row: 0, col: 0, style: { font: { bold: true } } },
@@ -147,13 +165,13 @@ export const handleConfirmDownload = async ({
       );
 
       const headerRowIndex = 3;
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < activeCols.length; i++) {
         stylingMeta.push({
           row: headerRowIndex,
           col: i,
           style: {
             font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '4F46E5' } }, // Indigo
+            fill: { fgColor: { rgb: '4F46E5' } },
             alignment: { horizontal: 'center', vertical: 'center' },
             border: {
               top: { style: 'thin' },
@@ -172,12 +190,22 @@ export const handleConfirmDownload = async ({
         const isLastHub = index === route.trips.length - 1 && isHub;
 
         let baseOutletName = '';
+        let custId = '-';
+        let locId = '-';
+
+        const parsedCust = parseCustomerString(trip.visitName);
         if (isHub) {
           baseOutletName = 'HUB';
+          custId = '';
+          locId = '';
         } else if (trip.flow === 'Pickup' && trip.warehouseName) {
           baseOutletName = trip.warehouseName;
+          custId = parsedCust?.id || '-';
+          locId = parsedCust?.location || '-';
         } else {
-          baseOutletName = parseCustomerString(trip.visitName)?.name || trip.visitName;
+          baseOutletName = parsedCust?.name || trip.visitName;
+          custId = parsedCust?.id || '-';
+          locId = parsedCust?.location || '-';
         }
 
         if (trip.isReDelivery && !isHub) {
@@ -188,6 +216,8 @@ export const handleConfirmDownload = async ({
 
         const pushRow = (
           displayNo,
+          displayCustId,
+          displayLocId,
           displaySo,
           whInfo = null,
           isSplit = false,
@@ -209,7 +239,19 @@ export const handleConfirmDownload = async ({
             outletWithWh += `\n[Partner: ${rowPartner}]`;
           }
 
-          wsData.push([displayNo, outletWithWh, displaySo, openVal, closeVal, etaVal, etdVal]);
+          const rowVals = {
+            no: displayNo,
+            visit: outletWithWh,
+            custId: displayCustId,
+            locId: displayLocId,
+            so: displaySo,
+            openTime: openVal,
+            closeTime: closeVal,
+            eta: etaVal,
+            etd: etdVal,
+          };
+
+          wsData.push(activeCols.map((col) => rowVals[col.key]));
 
           const cellStyle = {
             border: {
@@ -232,23 +274,23 @@ export const handleConfirmDownload = async ({
             cellStyle.font = { color: { rgb: 'DC2626' }, bold: true };
           }
 
-          for (let c = 0; c < 7; c++) {
+          for (let c = 0; c < activeCols.length; c++) {
+            const colKey = activeCols[c].key;
             let colStyle = { ...cellStyle };
             let comment = null;
 
-            if (c === 0) {
+            if (colKey === 'no') {
               colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
+              if (isSplit && !isHub) {
+                colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
+              }
             }
 
-            if (c === 0 && isSplit && !isHub) {
-              colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
-            }
-
-            if (c === 1 && trip.isReDelivery && !isHub) {
+            if (colKey === 'visit' && trip.isReDelivery && !isHub) {
               colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
             }
 
-            if (c === 5 && isLastHub && hasManualInRoute && trip.eta) {
+            if (colKey === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
               comment = [{ a: 'Info', t: t('estimation.hub_eta_short'), h: true }];
             }
 
@@ -266,7 +308,16 @@ export const handleConfirmDownload = async ({
             const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
             const soIsUnsync = !!soPartner;
 
-            pushRow(displayNo, item.so, whInfo, mapping.length > 1, soIsUnsync, soPartner);
+            pushRow(
+              displayNo,
+              custId,
+              locId,
+              item.so,
+              whInfo,
+              mapping.length > 1,
+              soIsUnsync,
+              soPartner
+            );
           });
           return;
         }
@@ -285,7 +336,7 @@ export const handleConfirmDownload = async ({
         }
 
         const displayNo = isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder;
-        pushRow(displayNo, displaySo, null, false);
+        pushRow(displayNo, custId, locId, displaySo, null, false);
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -296,7 +347,7 @@ export const handleConfirmDownload = async ({
         if (meta.comment) ws[cellRef].c = meta.comment;
       });
 
-      const colWidths = [0, 1, 2, 3, 4, 5, 6].map((colIndex) => {
+      const colWidths = activeCols.map((col, colIndex) => {
         let maxLength = 0;
         for (let r = 3; r < wsData.length; r++) {
           const cellValue = wsData[r][colIndex];

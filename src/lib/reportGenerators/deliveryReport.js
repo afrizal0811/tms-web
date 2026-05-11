@@ -24,17 +24,15 @@ export function generateDeliveryWorkbook(
   driverData,
   allTasks,
   resultsData,
-  selectedDate, // Tanggal Asli (pilihan user, misal "2025-11-11")
+  selectedDate,
   apiDate,
-  selectedLocation,
   selectedLocationName,
+  hasPendingGR,
   t
 ) {
-  // --- (SEMUA LOGIC DARI DeliverySummary.js 'handleDeliverySummary' DIPINDAH KE SINI) ---
   const translate = t || ((key) => key);
-  // 1. Cek Hub Spesial
-  const specialHubs = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
-  const isSpecialHub = specialHubs.includes(selectedLocation);
+
+  const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
   if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
@@ -316,7 +314,7 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 2: Total Delivered ---
   const headers1 = [
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('excel.delivery.headers.total_outlet'),
     translate('excel.delivery.headers.total_delivery'),
@@ -447,10 +445,10 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
-    translate('excel.delivery.headers.flow'),
-    translate('excel.delivery.headers.no_so'),
-    translate('excel.delivery.headers.date'),
-    translate('common.number_plates'),
+    translate('common.flow'),
+    translate('common.so_number'),
+    translate('common.date'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),
     translate('common.status.partial'),
@@ -460,17 +458,17 @@ export function generateDeliveryWorkbook(
   headers2.push(
     translate('excel.delivery.headers.reason'),
     '',
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_arr'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
+    translate('common.actual_arrival'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('common.storage_type')
   );
   const finalSheetData2 = [
@@ -510,17 +508,17 @@ export function generateDeliveryWorkbook(
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
   const separatorColIndex = isSpecialHub ? 10 : 9;
   const centerAlignedIndices = [
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_arr'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
+    translate('common.actual_arrival'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('common.storage_type'),
   ];
   const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
@@ -580,7 +578,7 @@ export function generateDeliveryWorkbook(
   const headers4 = [
     translate('common.customer_name'),
     translate('common.customer_id'),
-    translate('excel.delivery.headers.loc_id'),
+    translate('common.location_id'),
     translate('excel.delivery.headers.new_longlat'),
     translate('excel.delivery.headers.dist_diff'),
   ];
@@ -638,21 +636,21 @@ export function generateDeliveryWorkbook(
 
   // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
-    translate('excel.delivery.headers.flow'),
-    translate('common.number_plates'),
+    translate('common.flow'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('common.customer_name'),
     translate('excel.delivery.headers.status_del'),
-    translate('excel.delivery.headers.open_time'),
-    translate('excel.delivery.headers.close_time'),
+    translate('common.open_time'),
+    translate('common.close_time'),
     translate('common.eta'),
-    translate('excel.delivery.headers.act_arr'),
+    translate('common.actual_arrival'),
     translate('common.etd'),
-    translate('excel.delivery.headers.act_dep'),
-    translate('excel.delivery.headers.visit_time'),
-    translate('excel.delivery.headers.act_visit_time'),
-    translate('excel.delivery.headers.ro_seq'),
-    translate('excel.delivery.headers.real_seq'),
+    translate('common.actual_departure'),
+    translate('common.visit_plan'),
+    translate('common.visit_actual'),
+    translate('common.ro_seq'),
+    translate('common.actual_seq'),
     translate('excel.delivery.headers.is_match'),
     translate('dashboard.tab.routingreal.is_within_hours'),
   ];
@@ -894,7 +892,6 @@ export function generateDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsRoVsReal, t('excel.delivery.sheets.ro_vs_real'));
 
-  // --- 9. Kembalikan Hasil ---
   const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.delivery.filename')} - ${date} - ${selectedLocationName}.xlsx`;
   return { wb, excelFileName };

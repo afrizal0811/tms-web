@@ -7,7 +7,7 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
-import { getResultsSummary, getTasks } from '@/lib/api';
+import { getHubs, getResultsSummary, getTasks } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
@@ -42,20 +42,35 @@ export default function DashboardSummary({ driverData }) {
   });
 
   const { storedLocation: hubId } = getLocalStorage();
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+
+  useEffect(() => {
+    const fetchHubSettings = async () => {
+      if (!hubId) return;
+      try {
+        const hubs = await getHubs();
+        const activeHub = hubs.find(
+          (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
+        );
+        if (activeHub) {
+          setHasPendingGR(activeHub.hasPendingGR || false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hub settings:', error);
+      }
+    };
+    fetchHubSettings();
+  }, [hubId]);
 
   // Handler khusus untuk Apply Filter dengan Loading Buatan
   const handleApplyFilter = (newSelectedTypes) => {
-    // 1. Reset timer loading di BodyCard
     fetchStartTimeRef.current = Date.now();
-
-    // 2. Set state loading filter
     setIsFiltering(true);
 
-    // 3. Gunakan setTimeout agar React merender state loading (spinner) DULU
     setTimeout(() => {
       setStorageFilter(newSelectedTypes);
       setIsFiltering(false);
-    }, 200); // Delay 200ms
+    }, 200);
   };
 
   const handleDateChange = (date) => {
@@ -292,7 +307,6 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [selectedDate, activeTab, fetchYearlyData, hubId]);
 
-  // Memoized Driver Map
   const driverMap = useMemo(() => {
     const map = new Map();
     if (driverData) {
@@ -305,7 +319,6 @@ export default function DashboardSummary({ driverData }) {
     return map;
   }, [driverData]);
 
-  // FILTER LOGIC - CLIENT SIDE
   const filteredDailyTasks = useMemo(() => {
     if (isEmpty(rawData.tasks)) return [];
     if (storageFilter.length === 0) return [];
@@ -328,16 +341,12 @@ export default function DashboardSummary({ driverData }) {
     });
   }, [yearlyTasks, storageFilter]);
 
-  // Calculate Summary from Filtered Data
   const summaryData = useMemo(() => {
-    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang);
-  }, [filteredDailyTasks, driverMap, lang]);
+    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang, hasPendingGR);
+  }, [filteredDailyTasks, driverMap, lang, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';
 
-  // UPDATED: Logic isLoadingSelected agar spinner muncul di semua tab saat filter berubah
-  // (isDiagramTab ? isYearlyLoading : loading) => Logika asli per-tab
-  // || isFiltering => Override jika sedang filter client-side
   const isLoadingSelected = (isDiagramTab ? isYearlyLoading : loading) || isFiltering;
 
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
@@ -374,7 +383,8 @@ export default function DashboardSummary({ driverData }) {
       dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
       showYearPicker={isDiagramTab}
       className="custom-year-picker"
-      maxDate={isDiagramTab ? null : tomorrowDate()}
+      maxDate={isDiagramTab ? new Date() : tomorrowDate()}
+      disableSunday={!isDiagramTab}
     />
   );
 
@@ -382,7 +392,6 @@ export default function DashboardSummary({ driverData }) {
     <StorageTypeFilter selectedTypes={storageFilter} onApply={handleApplyFilter} />
   );
 
-  // UPDATED: Posisi Storage Filter ditukar menjadi index 0 (pertama)
   const headerItems = [
     {
       label: t('common.storage_type'),
@@ -418,8 +427,10 @@ export default function DashboardSummary({ driverData }) {
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
       >
-        <div className="flex-1 flex flex-col p-3 overflow-hidden">
-          {activeTab === 'Detail' && <DetailTab loading={loading} summaryData={summaryData} />}
+        <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
+          {activeTab === 'Detail' && (
+            <DetailTab loading={loading} summaryData={summaryData} hasPendingGR={hasPendingGR} />
+          )}
 
           {activeTab === 'RoutingVsActual' && (
             <RoutingVsActualTab
@@ -428,6 +439,7 @@ export default function DashboardSummary({ driverData }) {
               results={rawData.results}
               drivers={driverData}
               selectedDate={selectedDate}
+              hasPendingGR={hasPendingGR}
             />
           )}
 
@@ -437,6 +449,7 @@ export default function DashboardSummary({ driverData }) {
               hubId={currentHubId}
               driverData={driverData}
               selectedDate={selectedDate}
+              hasPendingGR={hasPendingGR}
             />
           )}
         </div>

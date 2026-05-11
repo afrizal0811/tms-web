@@ -1,18 +1,16 @@
 'use client';
 
 import Spinner from '@/components/Spinner';
+import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDriversSyncStatus, getHubs, getRoles, getVehicleTypes } from '@/lib/api';
+import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
-import MasterDataTab from './tabs/MasterDataTab';
 import SyncDataTab from './tabs/SyncDataTab';
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { t } = useLanguage();
 
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -23,14 +21,16 @@ export default function SettingsPage() {
   const [lastUpdated, setLastUpdated] = useState({});
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
+  const [reasons, setReasons] = useState([]);
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [hubsDb, rolesDb, dStatus, vTypes] = await Promise.all([
+      const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
         getHubs(),
         getRoles(),
         getDriversSyncStatus(),
         getVehicleTypes(),
+        getReasons(),
       ]);
 
       setHubs(hubsDb);
@@ -51,6 +51,7 @@ export default function SettingsPage() {
       });
       setDriverSyncStatus(dMap);
       setVehicleTypes(vTypes);
+      setReasons(reasonsDb || []);
     } catch (error) {
       toastError(t('common.error', { err: error.message }));
     }
@@ -61,7 +62,7 @@ export default function SettingsPage() {
       try {
         const { storedUser } = getLocalStorage();
         if (!storedUser) {
-          router.push('/');
+          toastError(t('home.toast.no_session'));
           return;
         }
 
@@ -84,14 +85,13 @@ export default function SettingsPage() {
         await fetchAllData();
       } catch (error) {
         toastError(t('common.toast.error', { err: error.message }));
-        router.push('/');
       } finally {
         setIsLoadingPage(false);
       }
     };
 
     checkAuthAndLoadData();
-  }, [router, fetchAllData, t]);
+  }, [fetchAllData, t]);
 
   if (isLoadingPage) {
     return (
@@ -105,8 +105,7 @@ export default function SettingsPage() {
   if (!isAuthorized) return null;
 
   const buttonData = [
-    { tab: 'general', label: 'General' },
-    { tab: 'master', label: t('setting.tab.master_data.title') },
+    { tab: 'general', label: t('setting.tab.general.title') },
     { tab: 'sync', label: t('setting.tab.sync_data.title') },
   ];
 
@@ -117,15 +116,7 @@ export default function SettingsPage() {
           <GeneralTab
             vehicleTypes={vehicleTypes}
             hubs={hubs}
-            onRefresh={fetchAllData}
-            isReadOnly={isReadOnly}
-            translate={t}
-          />
-        );
-      case 'master':
-        return (
-          <MasterDataTab
-            vehicleTypes={vehicleTypes}
+            reasons={reasons}
             onRefresh={fetchAllData}
             isReadOnly={isReadOnly}
             translate={t}
@@ -149,17 +140,19 @@ export default function SettingsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
       <div className="mb-2">
-        <h1 className="text-3xl font-bold text-slate-900">{t('setting.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+          {t('setting.title')}
+        </h1>
       </div>
-      <div className="flex border-b border-gray-200 mb-6 mt-4">
+      <div className="flex border-b border-gray-200 dark:border-slate-700 mb-6 mt-4 overflow-x-auto">
         {buttonData.map((data) => (
-          <button
+          <TabButton
             key={data.tab}
+            isActive={activeTab === data.tab}
             onClick={() => setActiveTab(data.tab)}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 cursor-pointer ${activeTab === data.tab ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-600 hover:text-slate-800'}`}
           >
             {data.label}
-          </button>
+          </TabButton>
         ))}
       </div>
       {renderTabContent()}

@@ -251,7 +251,7 @@ export async function generateRoutingWorkbook(
   };
 
   const headers1 = [
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
     translate('excel.routing.headers.weight_pct'),
     translate('excel.routing.headers.volume_pct'),
@@ -430,7 +430,7 @@ export async function generateRoutingWorkbook(
   );
 
   const usageHeader = [
-    translate('excel.routing.headers.veh_type'),
+    translate('common.vehicle_type'),
     translate('excel.routing.headers.count_dry'),
     translate('excel.routing.headers.count_frozen'),
   ];

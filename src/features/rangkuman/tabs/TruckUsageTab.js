@@ -96,16 +96,18 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, lang
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
         {tableSections.map(({ title, Component, props }, index) => (
           <div key={index} className="flex flex-col gap-2 min-w-max">
-            <h3 className="font-bold text-slate-700 px-1 sticky left-0">{translate(title)}</h3>
-            <div className={`border border-gray-300 overflow-hidden`}>
+            <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
+              {translate(title)}
+            </h3>
+            <div className={`border border-gray-300 dark:border-slate-700 overflow-hidden`}>
               <Component translate={translate} {...props} />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg shadow-sm shrink-0 z-10">
-        <div className="text-xs text-slate-500 italic">
+      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0 z-10">
+        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
           *{translate('summary.click_box_hint')}
         </div>
       </div>

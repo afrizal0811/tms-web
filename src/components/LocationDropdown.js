@@ -1,3 +1,4 @@
+// File: src/components/LocationDropdown.js
 'use client';
 
 import { toastError } from '@/lib/toastHelper';
@@ -110,10 +111,15 @@ export default function LocationDropdown({
   };
 
   const paddingClass = compact ? 'px-3 py-1 text-sm' : 'px-3 py-2';
+
+  // PENYESUAIAN DARK MODE: Latar belakang dan teks
   const disabledClass =
-    disabled || loading || error ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white';
+    disabled || loading || error
+      ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500 cursor-not-allowed'
+      : 'bg-white dark:bg-slate-800';
+
   const base =
-    'rounded-md border transition border-gray-300 text-gray-700 cursor-pointer hover:bg-gray-50';
+    'rounded-md border transition border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500';
 
   return (
     <select

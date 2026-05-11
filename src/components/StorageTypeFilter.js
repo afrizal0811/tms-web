@@ -1,3 +1,4 @@
+// File: src/components/StorageTypeFilter.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
@@ -7,7 +8,7 @@ export default function StorageTypeFilter({
   selectedTypes,
   onApply,
   disabled = false,
-  className = 'w-full xl:w-40', 
+  className = 'w-full xl:w-40',
 }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -77,11 +78,11 @@ export default function StorageTypeFilter({
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center justify-between gap-2 px-3 py-2.5 h-[42px] rounded-md shadow-sm border transition-all text-sm font-medium w-full
+        className={`flex items-center justify-between gap-2 px-3 h-[42px] rounded-lg shadow-sm border transition-all text-sm font-medium w-full outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500
           ${
             disabled
-              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              : 'bg-white text-slate-700 border-gray-300 hover:bg-gray-50 cursor-pointer'
+              ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed'
+              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer'
           }
         `}
       >
@@ -99,28 +100,28 @@ export default function StorageTypeFilter({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute right-0 mt-2 w-full min-w-[150px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-full min-w-[150px] bg-white dark:bg-slate-800 rounded-lg shadow-xl ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-10 dark:border dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
           <div className="p-3 flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors select-none">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 rounded transition-colors select-none">
               <input
                 type="checkbox"
                 checked={tempSelected.includes('DRY')}
                 onChange={() => handleCheckboxChange('DRY')}
-                className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 border-gray-300"
+                className="rounded text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 w-4 h-4 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer"
               />
               Dry
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors select-none">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 rounded transition-colors select-none">
               <input
                 type="checkbox"
                 checked={tempSelected.includes('FROZEN')}
                 onChange={() => handleCheckboxChange('FROZEN')}
-                className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 border-gray-300"
+                className="rounded text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 w-4 h-4 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer"
               />
               Frozen
             </label>
           </div>
-          <div className="bg-gray-50 p-2 border-t border-gray-100">
+          <div className="bg-gray-50 dark:bg-slate-800/80 p-2 border-t border-gray-100 dark:border-slate-700 transition-colors">
             <button
               onClick={handleApply}
               disabled={isApplyDisabled}
@@ -128,8 +129,8 @@ export default function StorageTypeFilter({
                 w-full text-white text-xs font-bold px-3 py-2 rounded transition-all capitalize
                 ${
                   isApplyDisabled
-                    ? 'bg-gray-400 cursor-not-allowed opacity-70'
-                    : 'bg-sky-600 hover:bg-sky-700 cursor-pointer shadow-sm hover:shadow'
+                    ? 'bg-gray-400 dark:bg-slate-700 dark:text-slate-400 cursor-not-allowed opacity-70'
+                    : 'bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer shadow-sm hover:shadow'
                 }
               `}
             >

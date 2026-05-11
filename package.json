@@ -1,6 +1,6 @@
 {
   "name": "tms-web",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "next": "^16.0.10",
+    "next-themes": "^0.4.6",
     "react": "19.2.0",
     "react-datepicker": "^8.9.0",
     "react-dom": "19.2.0",

@@ -290,7 +290,7 @@ export async function generateTruckUsageSheet(
     '',
   ]);
   excelData.push([
-    translate('summary.tabs.truck_usage.vehicle_type'),
+    translate('common.vehicle_type'),
     'TMS',
     'Non TMS',
     'TVU',
@@ -360,7 +360,7 @@ export async function generateTruckUsageSheet(
     '',
     '',
   ]);
-  excelData.push([translate('summary.tabs.truck_usage.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
+  excelData.push([translate('common.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
 
   addSummarySection('Dry', true);
   addSummarySection('Frozen', true);
@@ -376,11 +376,7 @@ export async function generateTruckUsageSheet(
     const row1 = [isPercentage ? `${monthName} (%)` : monthName, 'Date', 'Total'];
     dateKeys.forEach((d) => row1.push(d.day, '', ''));
     tableRows.push(row1);
-    const row2 = [
-      translate('common.storage_type'),
-      translate('summary.tabs.truck_usage.vehicle_type'),
-      '',
-    ];
+    const row2 = [translate('common.storage_type'), translate('common.vehicle_type'), ''];
     dateKeys.forEach(() => row2.push('TMS', 'Non TMS', 'TVU'));
     tableRows.push(row2);
     const rowMasterTotals = {};
@@ -495,7 +491,7 @@ export async function generateTruckUsageSheet(
     { key: 'Non TMS', desc: translate('summary.tabs.truck_usage.non_tms') },
     { key: 'TVU', desc: translate('summary.tabs.truck_usage.tvu') },
     { key: 'TV', desc: translate('summary.tabs.truck_usage.tv') },
-    { key: 'V', desc: translate('summary.tabs.truck_usage.vehicle') },
+    { key: 'V', desc: translate('common.vehicle') },
     { key: 'VU', desc: translate('summary.tabs.truck_usage.vu') },
     { key: 'IV', desc: translate('summary.tabs.truck_usage.iv') },
     { key: 'OTV', desc: translate('summary.tabs.truck_usage.otv') },

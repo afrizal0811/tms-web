@@ -4,6 +4,7 @@ import { syncDriversData, syncHubsData, syncRolesData } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useEffect, useState } from 'react';
+import Card from '../components/Card';
 
 export default function SyncDataTab({
   lastUpdated,
@@ -45,6 +46,7 @@ export default function SyncDataTab({
       }
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
+      window.location.reload();
     } catch (error) {
       toastError(translate('common.toast.error', { err: error.message }));
     } finally {
@@ -70,15 +72,15 @@ export default function SyncDataTab({
   const renderSyncButton = (type, label) => {
     return (
       <div
-        className={`p-5 border border-gray-200 rounded-lg hover:border-sky-300 transition-colors bg-slate-50 flex flex-col justify-between h-full ${
+        className={`flex h-full flex-col justify-between p-5 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 transition-colors ${
           isReadOnly ? '' : 'min-h-40'
         }`}
       >
         <div className="text-center md:text-left">
-          <div className="font-bold text-slate-800">{label}</div>
-          <div className="text-xs text-slate-500 mt-1.5">
+          <span className="font-bold text-slate-800 dark:text-slate-200">{label}</span>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
             {translate('setting.last_updated')} <br />
-            <span className="font-medium text-slate-600">
+            <span className="font-medium text-slate-600 dark:text-slate-500">
               {type === `drivers-${activeHubId}`
                 ? driverSyncStatus[activeHubId]
                 : lastUpdated[type]}
@@ -89,9 +91,11 @@ export default function SyncDataTab({
           <button
             onClick={() => executeSync(type)}
             disabled={syncLoading[type]}
-            className="w-full mt-4 py-2.5 text-sm bg-white text-slate-700 hover:bg-sky-50 border border-slate-300 hover:border-sky-300 hover:text-sky-700 rounded-md font-medium disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed cursor-pointer transition-all"
+            className="w-full mt-4 py-2.5 bg-slate-50 dark:bg-sky-100 text-sm font-medium text-slate-700 dark:text-sky-600 border border-slate-300 hover:border-sky-400 dark:hover:border-sky-600 disabled:border-slate-200 rounded-md shadow-none hover:bg-slate-100 dark:hover:bg-sky-200 hover:text-sky-700 dark:hover:text-sky-700 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed "
           >
-            {syncLoading[type] ? translate('setting.sync_loading') : translate('setting.btn_sync')}
+            {syncLoading[type]
+              ? translate('setting.sync_loading')
+              : translate('setting.tab.button.btn_sync')}
           </button>
         )}
       </div>
@@ -99,14 +103,14 @@ export default function SyncDataTab({
   };
   return (
     <div className="w-full">
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <Card>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 pb-4 gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
-              {translate('setting.tab.sync_data.subtitle_1')}
+            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
+              {translate('setting.tab.sync_data.sync_title')}
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              {translate('setting.tab.sync_data.subtitle_2')}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {translate('setting.tab.sync_data.subtitle')}
             </p>
           </div>
         </div>
@@ -118,7 +122,7 @@ export default function SyncDataTab({
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

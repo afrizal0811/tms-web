@@ -4,44 +4,33 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Card from './Card';
+import Table from './Table';
 
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
-  const [activeHubId, setActiveHubId] = useState('');
-  const [activeHubName, setActiveHubName] = useState('');
+  const [activeHub, setActiveHub] = useState({ hubId: '', hubName: '' });
   const [mappings, setMappings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  const [editingId, setEditingId] = useState(null);
-  const [editingPlat, setEditingPlat] = useState('');
-  const [editType, setEditType] = useState('');
-
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, plat: null });
-
-  const editRef = useRef(null);
 
   useEffect(() => {
     const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
     let hubId = storedLocation;
-    let hubName = storedLocationName;
-
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        if (parsed.activeHubId) hubId = parsed.activeHubId;
-        if (parsed.activeHubName) hubName = parsed.activeHubName;
+        if (parsed.activeHub) hubId = parsed.activeHub;
       } catch (e) {}
     }
-
-    setActiveHubId(hubId || '');
-    setActiveHubName(hubName || 'Cabang Aktif');
+    setActiveHub({ hubId, hubName: storedLocationName });
   }, []);
 
   const loadMappings = useCallback(async () => {
-    if (!activeHubId) return;
+    if (!activeHub) return;
     setIsLoading(true);
     try {
-      const data = await getVehicleMappings(activeHubId);
+      const data = await getVehicleMappings(activeHub.hubId);
       const sortedData = data.sort((a, b) => a.plat.localeCompare(b.plat));
       setMappings(sortedData);
     } catch (error) {
@@ -51,78 +40,33 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     } finally {
       setIsLoading(false);
     }
-  }, [activeHubId, translate]);
+  }, [activeHub, translate]);
 
   useEffect(() => {
-    if (activeHubId) {
-      loadMappings();
-    }
-  }, [activeHubId, loadMappings]);
+    if (activeHub) loadMappings();
+  }, [activeHub, loadMappings]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        event.target.closest('[role="dialog"]') ||
-        event.target.closest('.swal2-container') ||
-        event.target.closest('.toast')
-      ) {
-        return;
-      }
-
-      if (editRef.current && !editRef.current.contains(event.target)) {
-        setEditingId(null);
-        setEditingPlat('');
-        setEditType('');
-      }
-    };
-
-    if (editingId || editingPlat) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [editingId, editingPlat]);
-
-  const handleEdit = (id, plat, currentType) => {
-    setEditingId(id);
-    setEditingPlat(plat);
-    setEditType(currentType);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editType || isReadOnly) return;
-    setIsLoading(true);
+  const handleUpdateMapping = async (id, editValues, item) => {
+    if (!editValues.mappedType || isReadOnly) return;
     try {
-      await updateVehicleMapping(editingId, editingPlat, editType);
-
+      await updateVehicleMapping(id, item.plat, editValues.mappedType);
       toastSuccess(translate('common.toast.success'));
-      setEditingId(null);
-      setEditingPlat('');
       await loadMappings();
     } catch (error) {
-      setIsLoading(false);
       toastError(translate('common.toast.error', { err: error.message }));
+      throw error;
     }
-  };
-
-  const handleDeleteClick = (id, plat) => {
-    if (isReadOnly) return;
-    setDeleteConfig({ isOpen: true, id, plat });
   };
 
   const confirmDelete = async () => {
     const targetId = deleteConfig.id;
     const targetPlat = deleteConfig.plat;
     setDeleteConfig({ isOpen: false, id: null, plat: null });
-
     if (!targetId && !targetPlat) return;
-    setIsLoading(true);
 
+    setIsLoading(true);
     try {
       await deleteVehicleMapping(targetId, targetPlat);
-
       toastSuccess(translate('common.toast.success'));
       await loadMappings();
     } catch (error) {
@@ -131,109 +75,78 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     }
   };
 
+  const columns = [
+    {
+      header: translate('common.license_number') || 'Plat',
+      field: 'plat',
+      render: (item) => (
+        <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
+          {item.plat}
+        </span>
+      ),
+    },
+    {
+      header: translate('common.vehicle_type') || 'Tipe',
+      field: 'mappedType',
+      headerClassName: 'w-32 md:w-48',
+      render: (item) => (
+        <span className="text-[10px] md:text-sm font-medium text-sky-700 dark:text-sky-400">
+          {item.mappedType}
+        </span>
+      ),
+      renderEdit: (value, onChange) => (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full min-w-0 px-1 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none cursor-pointer"
+        >
+          <option value="" disabled>
+            Pilih Tipe
+          </option>
+          {vehicleTypes.map((v) => (
+            <option key={v.id} value={v.name}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+  ];
+
+  const confirmModalText = translate('setting.tab.general.mapping_title');
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative flex flex-col h-full">
+    <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('setting.tab.master_data.confirm_title')}
-        message={translate('setting.tab.master_data.confirm_message')}
+        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
+        message={translate('setting.tab.modal.confirm_message', {
+          text: confirmModalText.toLowerCase(),
+        })}
       />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-gray-100 pb-3 gap-3 shrink-0">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">
-            {translate('setting.tab.master_data.mapping_title')}
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {translate('setting.tab.master_data.mapping_subtitle')}
-          </p>
-        </div>
+      <div className="mb-4 border-b border-gray-100 pb-3">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
+          {translate('setting.tab.general.mapping_title')} ({activeHub.hubName})
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          {translate('setting.tab.general.mapping_subtitle')}
+        </p>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-        {isLoading ? (
-          <div className="py-8 flex justify-center">
-            <span className="animate-spin h-6 w-6 border-4 border-slate-300 border-t-sky-600 rounded-full"></span>
-          </div>
-        ) : mappings.length === 0 ? (
-          <p className="text-center text-slate-500 text-sm py-4 italic">
-            {translate('common.no_data')}
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 content-start items-start">
-            {mappings.map((item) => {
-              const isEditing = editingId === item.id || editingPlat === item.plat;
-
-              return (
-                <div
-                  key={item.id || item.plat}
-                  ref={isEditing ? editRef : null}
-                  className="flex flex-col p-3 border border-gray-200 rounded-lg bg-slate-50 hover:bg-white transition-colors shadow-sm group"
-                >
-                  <div className="font-bold text-slate-800 truncate mb-2" title={item.plat}>
-                    {item.plat}
-                  </div>
-
-                  {isEditing ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={editType}
-                        onChange={(e) => setEditType(e.target.value)}
-                        className="flex-1 px-2 py-1.5 text-sm border border-sky-400 rounded outline-none cursor-pointer bg-white"
-                      >
-                        <option value="" disabled>
-                          {translate('setting.tab.master_data.dropdown_title')}
-                        </option>
-                        {vehicleTypes.map((v) => (
-                          <option key={v.id} value={v.name}>
-                            {v.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        onClick={handleSaveEdit}
-                        disabled={editType === item.mappedType || isLoading}
-                        className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold px-3 py-1.5 rounded cursor-pointer disabled:opacity-60 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-                      >
-                        {translate('setting.tab.master_data.btn_save')}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="flex-1 text-sm text-sky-700 font-medium truncate"
-                        title={item.mappedType}
-                      >
-                        {item.mappedType}
-                      </div>
-
-                      {!isReadOnly && (
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEdit(item.id, item.plat, item.mappedType)}
-                            className="text-xs bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
-                          >
-                            {translate('setting.tab.master_data.btn_edit')}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(item.id, item.plat)}
-                            className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1.5 rounded cursor-pointer transition-colors whitespace-nowrap"
-                          >
-                            {translate('setting.tab.master_data.btn_delete')}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+      <Table
+        data={mappings}
+        columns={columns}
+        isReadOnly={isReadOnly}
+        isLoading={isLoading}
+        containerHeight="h-[408px]"
+        emptyMessage={translate('common.no_data')}
+        translate={translate}
+        onSave={handleUpdateMapping}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, plat: item.plat })}
+      />
+    </Card>
   );
 }

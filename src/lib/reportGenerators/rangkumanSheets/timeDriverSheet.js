@@ -296,15 +296,15 @@ export function generateTimeDriverSheet(
 
   const row1 = [
     translate('common.storage_type'),
-    translate('common.number_plates'),
+    translate('common.license_number'),
     translate('common.driver'),
   ];
   const row2 = ['', '', ''];
   dateKeys.forEach((d) => {
     row1.push(d.display, '', '');
     row2.push(
-      translate('summary.tabs.time_driver.start_time'),
-      translate('summary.tabs.time_driver.finish_time'),
+      translate('common.start_time'),
+      translate('common.finish_time'),
       translate('summary.tabs.time_driver.duration')
     );
   });

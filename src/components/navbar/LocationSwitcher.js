@@ -1,3 +1,4 @@
+// File: src/components/navbar/LocationSwitcher.js
 'use client';
 
 import LocationDropdown from '@/components/LocationDropdown';
@@ -88,13 +89,17 @@ export default function LocationSwitcher() {
   if (!currentUser) return null;
 
   if (allowedHubs.length <= 1) {
-    return <span className="text-sm font-medium text-slate-700">{currentLocationName}</span>;
+    return (
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        {currentLocationName}
+      </span>
+    );
   }
 
   return (
     <>
       <LocationDropdown
-        className="w-full sm:w-auto text-xs sm:text-sm font-semibold text-slate-700 bg-white! border-0! rounded-lg! focus:ring-2! focus:ring-white/50! py-2! px-3! cursor-pointer transition-all"
+        className="w-full sm:w-auto text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white! dark:bg-slate-800! border-0! rounded-lg! focus:ring-2! focus:ring-sky-500/50! py-2! px-3! cursor-pointer transition-all"
         compact={true}
         hubsToShow={allowedHubs}
         onChange={handleLocationChange}

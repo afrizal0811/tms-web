@@ -4,8 +4,8 @@
 // Komponen spinner sederhana menggunakan utilitas Tailwind
 export default function Spinner({
   addClass = '',
-  border = 'border-4 border-gray-200 ',
-  colorClass = 'border-t-sky-600',
+  border = 'border-4 border-gray-200 dark:border-gray-400',
+  colorClass = 'border-t-sky-600 dark:border-t-slate-700',
   size = 'w-12 h-12',
 }) {
   return (

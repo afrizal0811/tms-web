@@ -29,6 +29,7 @@ export default function CustomDatePicker({
   startDate = null,
   endDate = null,
   useCustomRangeFormat = false,
+  showDropdowns = true, // Prop baru untuk mengontrol tampilan dropdown
   ...props
 }) {
   const isDisabled = isLoading || disabled;
@@ -38,8 +39,8 @@ export default function CustomDatePicker({
   const baseClasses =
     'px-4 py-2.5 h-[42px] rounded-lg border text-center font-medium shadow-sm transition-colors outline-none w-full';
   const stateClasses = isDisabled
-    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-    : 'bg-white text-slate-700 cursor-pointer border-gray-300 hover:bg-gray-50';
+    ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 cursor-not-allowed border-gray-200 dark:border-slate-700'
+    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700';
 
   const handleFilterDate = (date) => {
     if (disableSunday && date.getDay() === 0) {
@@ -63,7 +64,6 @@ export default function CustomDatePicker({
   };
 
   const getCustomRangeValue = () => {
-    // KUNCI: Hanya jalan jika prop useCustomRangeFormat = true
     if (!useCustomRangeFormat || !selectsRange || !startDate) return undefined;
 
     const isId = lang === 'id';
@@ -112,17 +112,21 @@ export default function CustomDatePicker({
       wrapperClassName={wrapperClassName}
       shouldCloseOnSelect={!showApplyButton}
       value={customValue}
+      /* --- Tambahan Fitur Dropdown --- */
+      showMonthDropdown={showDropdowns}
+      showYearDropdown={showDropdowns}
+      dropdownMode="select"
       {...props}
     >
       {showApplyButton && (
-        <div className="flex justify-end pt-2 -mb-4 border-t border-gray-200 bg-white">
+        <div className="flex justify-end pt-2 -mb-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-lg">
           <button
             type="button"
             onClick={() => {
               if (onApply) onApply();
               datePickerRef.current?.setOpen(false);
             }}
-            className="px-3 py-1.5 bg-sky-600 text-white text-xs font-medium rounded-md hover:bg-sky-700 transition-colors shadow-sm cursor-pointer"
+            className="px-3 py-1.5 bg-sky-600 dark:bg-sky-700 text-white text-xs font-medium rounded-md hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors shadow-sm cursor-pointer"
           >
             {applyText}
           </button>

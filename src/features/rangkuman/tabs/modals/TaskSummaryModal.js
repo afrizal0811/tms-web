@@ -46,24 +46,25 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
     >
       {vehicles ? (
         vehicles.length > 0 ? (
-          <div className="p-5">
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="p-5 dark:bg-slate-800">
+            <div className="overflow-x-auto border border-gray-200 rounded-lg dark:bg-slate-800 dark:border-slate-600">
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                <thead className="bg-gray-100 dark:bg-slate-900 text-gray-700 dark:text-slate-100 font-bold border-b border-gray-200 dark:border-slate-600">
                   <tr>
                     <th className="px-4 py-3 text-center">#</th>
-                    <th className="px-4 py-3 text-center">{translate('common.number_plates')}</th>
+                    <th className="px-4 py-3 text-center">{translate('common.license_number')}</th>
                     <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-600">
                   {vehicles.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-center text-gray-700">{idx + 1}</td>
-                      <td className="px-4 py-2 text-center text-slate-700">{item.plate || '-'}</td>
-                      <td className="px-4 py-2 text-center text-slate-700">
-                        {item.driverName || '-'}
-                      </td>
+                    <tr
+                      key={idx}
+                      className="hover:bg-gray-50 dark:hover:bg-slate-700/10 text-slate-700 dark:text-slate-200 text-center "
+                    >
+                      <td className="px-4 py-2">{idx + 1}</td>
+                      <td className="px-4 py-2">{item.plate || '-'}</td>
+                      <td className="px-4 py-2">{item.driverName || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -74,21 +75,22 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
           emptyDataContent
         )
       ) : tasks && tasks.length > 0 ? (
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-gray-200 dark:divide-slate-600">
           {tasks.map((task, idx) => {
             const flow = task.flow;
+            console.log(' task.isNoRouting:', task.isNoRouting);
             const customerData = parseCustomerString(task.customerOrder || '');
             const invoice = customerData.invoiceNumber || task.content || '-';
             const finalCustomerName = customerData.name || task.customerName;
             const pickupCustomerName = `${task.title} (${finalCustomerName})`;
 
             return (
-              <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 transition-colors">
+              <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                    {task.flow} <span className="text-slate-300 mx-1">|</span> {invoice}
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                    {task.flow} <span className="text-slate-300 dark:text-slate-500 mx-1">|</span> {invoice}
                   </span>
-                  <span className="text-sm font-semibold text-slate-800 leading-tight">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight">
                     {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}
                   </span>
                   {(task.isWrongGR || task.isNoRouting) && (

@@ -11,7 +11,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
       <table className="w-full border-collapse min-w-4xl">
         <thead className="sticky top-0 z-10">
           <tr>
-            <Th>{t('common.number_plates')}</Th>
+            <Th>{t('common.license_number')}</Th>
             <Th>{t('vehicle.tabs.type')}</Th>
             <Th>{t('vehicle.tabs.name')}</Th>
             <Th>{t('vehicle.tabs.email')}</Th>
@@ -19,7 +19,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
         </thead>
         <tbody>
           {paginatedData.map((v) => (
-            <tr key={v.id} className="hover:bg-gray-50">
+            <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
               <Td>
                 <HighlightText text={v.plat} highlight={searchQuery} />
               </Td>

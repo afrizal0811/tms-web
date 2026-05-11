@@ -3,7 +3,13 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
+import {
+  getHubs,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+  getVehicleMappings,
+} from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
@@ -58,7 +64,6 @@ export default function BulkReport({ driverData }) {
   const handleBulkRoutingSummary = async (t) => {
     setElapsedTime(0);
 
-    // Ambil data mapping dari database sebelum menjalankan proses bulk
     let mappingsObj = {};
     try {
       setIsLoading(true);
@@ -97,7 +102,7 @@ export default function BulkReport({ driverData }) {
           return await generateRoutingWorkbook(
             driverData,
             filteredResults,
-            mappingsObj, // Kirim mapping dari DB, bukan local storage
+            mappingsObj,
             dateForFile,
             hubName,
             t
@@ -109,8 +114,23 @@ export default function BulkReport({ driverData }) {
     });
   };
 
-  const handleBulkDeliverySummary = (t) => {
+  const handleBulkDeliverySummary = async (t) => {
     setElapsedTime(0);
+
+    let hubsMap = {};
+    try {
+      setIsLoading(true);
+      const hubsDB = await getHubs();
+      hubsMap = hubsDB.reduce((acc, curr) => {
+        acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
+        return acc;
+      }, {});
+    } catch (e) {
+      toastError(t('common.toast.error', { err: e.message }));
+    } finally {
+      setIsLoading(false);
+    }
+
     bulkDownloader({
       startDate,
       endDate,
@@ -148,14 +168,16 @@ export default function BulkReport({ driverData }) {
         ]);
 
         if (allTasks.length > 0) {
+          const hasPendingGR = hubsMap[String(hubId)] || false;
+
           return generateDeliveryWorkbook(
             driverData,
             allTasks,
             resultsData || [],
             dateForFile,
             apiDate,
-            hubId,
             hubName,
+            hasPendingGR,
             t
           );
         }
@@ -203,12 +225,15 @@ export default function BulkReport({ driverData }) {
 
   return (
     <div className="w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center">
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center text-slate-900 dark:text-slate-100">
         {t('report.period_title')}
       </h1>
       <div className="flex flex-col sm:flex-row justify-center items-center mb-8 gap-4">
         <div className="text-center w-full max-w-xs">
-          <label htmlFor="shippingDate" className="block text-lg mb-2 text-gray-500">
+          <label
+            htmlFor="shippingDate"
+            className="block text-lg mb-2 text-gray-500 dark:text-slate-400"
+          >
             {t('common.range_delivery')}
           </label>
           <CustomDatePicker
@@ -228,9 +253,12 @@ export default function BulkReport({ driverData }) {
           onClick={() => handleBulkRoutingSummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
-            bg-sky-600 hover:bg-sky-700 cursor-pointer 
-            disabled:bg-gray-400 disabled:cursor-not-allowed
+            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              isLoading || isRangeInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {isLoading && currentReport === 'routing' ? (
@@ -247,9 +275,12 @@ export default function BulkReport({ driverData }) {
           onClick={() => handleBulkDeliverySummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
-            bg-sky-600 hover:bg-sky-700 cursor-pointer 
-            disabled:bg-gray-400 disabled:cursor-not-allowed
+            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              isLoading || isRangeInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {isLoading && currentReport === 'delivery' ? (
@@ -265,9 +296,12 @@ export default function BulkReport({ driverData }) {
           onClick={() => handleBulkTimeSummary(t)}
           disabled={isLoading || isRangeInvalid}
           className={`
-            px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg 
-            bg-sky-600 hover:bg-sky-700 cursor-pointer 
-            disabled:bg-gray-400 disabled:cursor-not-allowed
+            px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              isLoading || isRangeInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {isLoading && currentReport === 'time' ? (

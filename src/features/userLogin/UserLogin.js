@@ -17,7 +17,6 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
-
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToConfirm, setUserToConfirm] = useState(null);
 
@@ -79,6 +78,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
   const handleConfirmLogin = async () => {
     if (!userToConfirm) return;
+    setLoading(true);
     const { storedLocation } = getLocalStorage();
     const targetCheckHubId = storedLocation || hubId;
 
@@ -95,7 +95,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
         toastError(t('home.toast.login_failed', { err: err.message }));
       }
     });
-
+    setLoading(false);
     setIsConfirmOpen(false);
   };
 
@@ -108,28 +108,30 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     return (
       <div className="flex flex-col items-center">
         <Spinner />
-        <p className="mt-3 text-sm text-slate-600">{t('common.loading')}</p>
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('common.loading')}</p>
       </div>
     );
   }
 
   const modalMessage = (
     <div className="flex flex-col gap-2">
-      <div>
+      <div className="text-slate-200">
         {t('home.modal.question')}{' '}
         <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>
-      <div className="text-sm text-gray-500">{userToConfirm?.email}</div>
+      <div className="text-sm text-gray-500 dark:text-slate-400">{userToConfirm?.email}</div>
     </div>
   );
 
   return (
     <div className="w-full max-w-md mt-6 mx-auto relative">
       {isChecking && (
-        <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-sm flex items-center justify-center rounded-lg">
+        <div className="absolute inset-0 z-50 bg-white/40 dark:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center">
             <Spinner />
-            <p className="mt-3 text-sm text-slate-600">{t('home.vehicle_check')}</p>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              {t('home.vehicle_check')}
+            </p>
           </div>
         </div>
       )}
@@ -140,12 +142,15 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
         onCancel={handleCancelConfirm}
         onConfirm={handleConfirmLogin}
         title={t('home.modal.title')}
+        loading={loading}
       />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 transition-colors">
         <div className="flex flex-col gap-2 mb-4">
-          <h1 className="text-3xl font-bold">{t('home.input_email_title')}</h1>
-          <h2 className="text-lg mb-4 text-gray-500">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+            {t('home.input_email_title')}
+          </h1>
+          <h2 className="text-lg mb-4 text-gray-500 dark:text-slate-400">
             {t('home.location_label')}: <strong>{locationId}</strong>
           </h2>
         </div>
@@ -153,13 +158,13 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-500 mb-1 text-left"
+              className="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-1 text-left"
             >
               {t('home.email')}
             </label>
             <input
               autoComplete="off"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500 outline-none"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-md focus:ring-sky-500 focus:border-sky-500 outline-none transition-colors"
               id="email"
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder="john.doe@mail.com"
@@ -169,7 +174,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
             />
           </div>
           <button
-            className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:bg-gray-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
             disabled={!emailInput}
             type="submit"
           >
@@ -177,7 +182,9 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
           </button>
         </form>
         <div className="mt-4 text-right ">
-          <span className="text-xs text-gray-400 italic">*{t('home.note')}</span>
+          <span className="text-xs text-gray-400 dark:text-slate-500 italic">
+            *{t('home.note')}
+          </span>
         </div>
       </div>
 

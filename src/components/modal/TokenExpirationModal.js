@@ -47,13 +47,13 @@ export default function TokenExpirationModal() {
   // Konten pesan berdasarkan status hari
   const getMessage = () => {
     const formattedDate = targetDateObj ? formatLongDate(targetDateObj, lang) : '-';
-    const contact = <span className="font-bold text-red-600">{t('common.modal.contact_edp')}</span>;
+    const contact = <span className="font-bold text-red-600">{t('home.contact_edp')}</span>;
     const absDaysRemaining = Math.abs(daysRemaining);
 
     if (daysRemaining < 0) {
       return (
         <div className="text-red-600 font-medium">
-          {t('common.modal.already_exp', { remaining: absDaysRemaining })} ({formattedDate})
+          {t('home.already_exp', { remaining: absDaysRemaining })} ({formattedDate})
           <br />
           <br />
           {contact}
@@ -62,9 +62,9 @@ export default function TokenExpirationModal() {
     }
     return (
       <div className="text-slate-700">
-        {t('common.modal.exp_remaining')}{' '}
+        {t('home.exp_remaining')}{' '}
         <span className="font-bold text-red-600">
-          {t('common.modal.exp_remaining_days', { remaining: absDaysRemaining })}{' '}
+          {t('home.exp_remaining_days', { remaining: absDaysRemaining })}{' '}
         </span>
         ({formattedDate})
         <br />

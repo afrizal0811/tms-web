@@ -3,24 +3,22 @@
 
 import BaseModal from '@/components/BaseModal';
 import Spinner from '@/components/Spinner';
-import { useLanguage } from '@/context/LanguageContext'; // Import Hook
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { seqAccuracyData } from '../help';
 
-// Update parameter: terima lang dan selectedDate
-const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
+const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-
     let dayName = '';
+
     if (selectedDate) {
       try {
         const year = selectedDate.getFullYear();
-        const month = selectedDate.getMonth(); // 0-11
+        const month = selectedDate.getMonth();
         const day = parseInt(label, 10);
         const dateObj = new Date(year, month, day);
-        const locale = lang === 'id' ? 'id-ID' : 'en-GB';
-        dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
+        dayName = dateObj.toLocaleDateString(lang, { weekday: 'long' });
       } catch (e) {
         toastError(t('dashboard.toast.parsing_date_error', { err: e.message }));
       }
@@ -31,28 +29,25 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">
           {t('common.date')} {label} {dayName && `(${dayName})`}
         </p>
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-blue-400">● {t('dashboard.charts.sequence.manual')}</span>
-          <span className="font-mono">{data.manual}</span>
-        </div>
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-emerald-400">● {t('dashboard.charts.sequence.match')}</span>
-          <span className="font-mono">{data.match}</span>
-        </div>
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-red-400">● {t('dashboard.charts.sequence.mismatch')}</span>
-          <span className="font-mono">{data.mismatch}</span>
-        </div>
 
-        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex flex-col gap-0.5">
-          <div className="flex justify-between gap-4">
-            <span>{t('common.total_task')}</span>
-            <span>{data.total}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span>{t('common.accuracy')}</span>
-            <span>{data.rate}%</span>
-          </div>
+        {seqAccuracyData.map((item) => {
+          const value = data[item.name];
+          if (!(value > 0)) return null;
+          return (
+            <div
+              key={item.name}
+              className="flex justify-between gap-4 mb-1"
+              style={{ color: isDarkMode ? item.dark_color : item.light_color }}
+            >
+              <span>● {t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+              <span className="font-mono">{value || 0}</span>
+            </div>
+          );
+        })}
+
+        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
+          <span>{t('common.accuracy')}</span>
+          <span>{data.rate}%</span>
         </div>
       </div>
     );
@@ -60,28 +55,36 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate }) => {
   return null;
 };
 
-// Update props: terima selectedDate
-function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading, selectedDate }) {
-  const { t, lang } = useLanguage(); // Ambil lang
-
+function DailySequenceAccuracyModal({
+  isOpen,
+  onClose,
+  title,
+  data,
+  isLoading,
+  selectedDate,
+  isDarkMode,
+  t,
+  lang,
+}) {
   if (!isOpen) return null;
 
   const hasData = Array.isArray(data) && data.length > 0;
 
   const footerContent = (
-    <div className="flex gap-4 font-medium text-xs text-gray-500">
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#3b82f6] rounded-sm" />
-        <span>{t('dashboard.charts.sequence.manual')}</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#22c55e] rounded-sm" />
-        <span>{t('dashboard.charts.sequence.match')}</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 bg-[#ef4444] rounded-sm" />
-        <span>{t('dashboard.charts.sequence.mismatch')}</span>
-      </div>
+    <div className="flex flex-wrap gap-4 font-medium text-xs text-gray-500">
+      {seqAccuracyData.map((item) => {
+        return (
+          <div key={item.name} className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-sm"
+              style={{
+                backgroundColor: isDarkMode ? item.dark_color : item.light_color,
+              }}
+            />
+            <span className="text-slate-400">{t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -107,44 +110,44 @@ function DailySequenceAccuracyModal({ isOpen, onClose, title, data, isLoading, s
                 name={t('common.date')}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
                 dy={10}
               />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              {/* Passing props lang & selectedDate ke tooltip */}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
+              />
               <Tooltip
-                content={<DailyTooltip t={t} lang={lang} selectedDate={selectedDate} />}
-                cursor={{ fill: '#f1f5f9' }}
+                content={
+                  <DailyTooltip
+                    t={t}
+                    lang={lang}
+                    selectedDate={selectedDate}
+                    isDarkMode={isDarkMode}
+                  />
+                }
+                cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
               />
-              <Bar
-                name={t('dashboard.charts.sequence.match')}
-                dataKey="match"
-                stackId="a"
-                fill="#22c55e"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                name={t('dashboard.charts.sequence.manual')}
-                dataKey="manual"
-                stackId="a"
-                fill="#3b82f6"
-                radius={[0, 0, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                name={t('dashboard.charts.sequence.mismatch')}
-                dataKey="mismatch"
-                stackId="a"
-                fill="#ef4444"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
+              {seqAccuracyData.map((item, index) => {
+                const isTopBar = index === seqAccuracyData.length - 1;
+                return (
+                  <Bar
+                    key={item.name}
+                    name={t(`dashboard.charts.sequence.${item.tKey}`)}
+                    dataKey={item.name}
+                    stackId="a"
+                    fill={isDarkMode ? item.dark_color : item.light_color}
+                    radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    maxBarSize={40}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">
-            {t('common.no_data_month')}
+            {t('common.no_data')}
           </div>
         )}
       </div>

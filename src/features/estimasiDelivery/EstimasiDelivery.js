@@ -1,7 +1,7 @@
 'use client';
 
 import CustomDatePicker from '@/components/CustomDatePicker';
-import DownloadButton from '@/components/DownloadButton';
+import Button from '@/components/Button';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
@@ -442,7 +442,14 @@ export default function EstimasiDelivery() {
     return allRoutes.map((route) => {
       const tripsWithSyncStatus = route.trips.map((trip) => {
         if (trip.isHub || !trip.orderId) {
-          return { ...trip, isUnsync: false, partnerVehicle: null, syncDetails: {} };
+          return {
+            ...trip,
+            isUnsync: false,
+            partnerVehicle: null,
+            syncDetails: {},
+            hasAnyPartner: false,
+            partnerSOs: [],
+          };
         }
 
         const individualSOs = trip.orderId
@@ -455,18 +462,27 @@ export default function EstimasiDelivery() {
         let partnerVehicles = new Set();
         const syncDetails = {};
 
+        let hasAnyPartner = false;
+        const partnerSOs = [];
+
         individualSOs.forEach((so) => {
           const pickupVehicle = soTracker[so]?.Pickup;
           const deliveryVehicle = soTracker[so]?.Delivery;
-          const isThisSOUnsync =
-            pickupVehicle && deliveryVehicle && pickupVehicle !== deliveryVehicle;
+          const hasBothFlows = pickupVehicle && deliveryVehicle;
 
-          if (isThisSOUnsync) {
-            isUnsync = true;
-            const partner = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
-            if (partner) {
-              partnerVehicles.add(partner);
-              syncDetails[so] = partner;
+          if (hasBothFlows) {
+            hasAnyPartner = true;
+            partnerSOs.push(so);
+
+            const isThisSOUnsync = pickupVehicle !== deliveryVehicle;
+
+            if (isThisSOUnsync) {
+              isUnsync = true;
+              const partner = trip.flow === 'Pickup' ? deliveryVehicle : pickupVehicle;
+              if (partner) {
+                partnerVehicles.add(partner);
+                syncDetails[so] = partner;
+              }
             }
           }
         });
@@ -474,7 +490,15 @@ export default function EstimasiDelivery() {
         const partnerVehicle =
           partnerVehicles.size > 0 ? Array.from(partnerVehicles).join(', ') : null;
 
-        return { ...trip, isUnsync, partnerVehicle, syncDetails, isRedelivery };
+        return {
+          ...trip,
+          isUnsync,
+          partnerVehicle,
+          syncDetails,
+          isRedelivery,
+          hasAnyPartner,
+          partnerSOs,
+        };
       });
 
       return {
@@ -609,26 +633,41 @@ export default function EstimasiDelivery() {
     />
   );
 
+  const viewOptions = [
+    { isDetail: false, label: t('estimation.view_summary') },
+    { isDetail: true, label: t('estimation.view_detail') },
+  ];
+
+  const isToggleDisabled = isLoading || isAnyDownloading;
+
   const viewToggle = (
-    <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px]">
-      <button
-        onClick={() => handleToggleView(false)}
-        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${!isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
-      >
-        {t('estimation.view_summary')}
-      </button>
-      <button
-        onClick={() => handleToggleView(true)}
-        className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${isDetailView ? 'bg-white shadow-sm text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
-      >
-        {t('estimation.view_detail')}
-      </button>
+    <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px] dark:bg-slate-800 dark:border-slate-700">
+      {viewOptions.map((option) => {
+        const isActive = isDetailView === option.isDetail;
+        return (
+          <button
+            key={option.isDetail ? 'detail' : 'summary'}
+            onClick={() => handleToggleView(option.isDetail)}
+            disabled={isToggleDisabled}
+            className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all 
+            ${
+              isActive
+                ? 'bg-white shadow-sm text-sky-700 dark:bg-slate-900/50 dark:text-slate-300 '
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer hover:bg-slate-300/20 dark:hover:bg-slate-900/20'
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400
+          `}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 
   const downloadMenu = (
     <div className="w-full z-50 relative" ref={downloadDropdownRef}>
-      <DownloadButton
+      <Button
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
         isLoading={isAnyDownloading}
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
@@ -673,22 +712,28 @@ export default function EstimasiDelivery() {
     if (!filteredVehicleRoutes) return [];
     return filteredVehicleRoutes.map((route) => {
       const tooltipName = getDriverName(route, driverData);
+      const isRedelivery = route.isRedelivery;
+      const isManual = route.hasManual;
+      const redeliveryBadge = isRedelivery && '[R]';
       const noDriverName = isEmpty(tooltipName);
+
       let tabClass =
         'cursor-help block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ';
 
-      if (route.hasManual) {
-        tabClass += 'bg-[#E6EEFF] border-transparent text-[#4F76C7]';
+      if (isManual) {
+        tabClass +=
+          'bg-[#E6EEFF] border-[#b3cbfe] text-[#4F76C7] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-900';
       } else {
         tabClass += 'bg-transparent border-transparent';
       }
-      const redeliveryBadge = route.isRedelivery && '[R]';
+
       return {
         id: route.vehicleId,
         label: (
           <Tooltip tooltipContent={noDriverName ? t('estimation.no_driver') : tooltipName}>
             <span className={tabClass}>
-              {route.vehicleName} <span className="text-red-600">{redeliveryBadge}</span>
+              {route.vehicleName}{' '}
+              <span className={`text-red-600 dark:text-red-300 `}>{redeliveryBadge}</span>
             </span>
           </Tooltip>
         ),
@@ -717,8 +762,8 @@ export default function EstimasiDelivery() {
         onTabClick={setActiveVehicleId}
         tabs={vehicleTabs}
       >
-        <div className="bg-white rounded-xl h-full flex flex-col border-none">
-          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 rounded-b-xl">
+        <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors ">
+          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
             {!isLoading && activeRoute && (
               <TableData
                 activeRoute={activeRoute}

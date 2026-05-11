@@ -6,8 +6,8 @@ import {
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
+  getHubs,
 } from '@/lib/api';
-import { LOCATIONS_SHOW_PENDING_GR } from '@/lib/constants';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
@@ -117,7 +117,7 @@ export default function useRangkumanData() {
   }, []);
 
   const processTaskSummaryMetrics = useCallback(
-    async (allTasks, allResults, fetchedDrivers) => {
+    async (allTasks, allResults, fetchedDrivers, hasPendingGR) => {
       setIsCalculatingMetrics(true);
       setHistoryProgress(0);
       const tempMetrics = {};
@@ -223,10 +223,6 @@ export default function useRangkumanData() {
         });
       }
 
-      const shouldShowPendingGR = LOCATIONS_SHOW_PENDING_GR.some((loc) =>
-        (selectedLocationName || '').toLowerCase().includes(loc.toLowerCase())
-      );
-
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
           if (!task.doneTime) return;
@@ -249,7 +245,7 @@ export default function useRangkumanData() {
           if (statusArr.some((s) => s === 'PENDING')) {
             tempMetrics[dateKey][type].rt += 1;
             tempMetrics[dateKey][type].rt_tasks.push(task);
-          } else if (!shouldShowPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
+          } else if (!hasPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
             tempMetrics[dateKey][type].rt += 1;
             tempMetrics[dateKey][type].rt_tasks.push({ ...task, isWrongGR: true });
           }
@@ -454,7 +450,7 @@ export default function useRangkumanData() {
       setTaskSummaryMetrics(tempMetrics);
       setIsCalculatingMetrics(false);
     },
-    [t, fetchWithTracker, fetchWithRetry, selectedLocationName]
+    [t, fetchWithTracker, fetchWithRetry]
   );
 
   const fetchData = useCallback(async () => {
@@ -605,8 +601,14 @@ export default function useRangkumanData() {
 
       setDriverData(driversRes || []);
 
+      let hasPendingGRValue = false;
+
       try {
-        const [vTypesObj, mapsDB] = await Promise.all([getVehicleTypes(), getVehicleMappings()]);
+        const [vTypesObj, mapsDB, hubsDB] = await Promise.all([
+          getVehicleTypes(),
+          getVehicleMappings(),
+          getHubs(),
+        ]);
         const vTypes = vTypesObj.map((v) => v.name);
         const mapObj = mapsDB.reduce((acc, curr) => {
           acc[curr.plat] = curr.mappedType;
@@ -619,6 +621,12 @@ export default function useRangkumanData() {
           vTypes
         );
         setMasterTruckData(calculatedMaster);
+
+        const activeHub = hubsDB?.find(
+          (h) =>
+            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
+        );
+        hasPendingGRValue = activeHub?.hasPendingGR || false;
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }));
         setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
@@ -643,7 +651,12 @@ export default function useRangkumanData() {
       );
       setReportPreview(preview);
 
-      await processTaskSummaryMetrics(newRawData.tasks, newRawData.results, driversRes || []);
+      await processTaskSummaryMetrics(
+        newRawData.tasks,
+        newRawData.results,
+        driversRes || [],
+        hasPendingGRValue
+      );
     } catch (e) {
       toastError(e.message);
       setReportPreview(null);

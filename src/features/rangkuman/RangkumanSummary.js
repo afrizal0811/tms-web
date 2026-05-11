@@ -1,11 +1,13 @@
+// File: src/features/rangkuman/RangkumanSummary.js
 'use client';
 
+import Button from '@/components/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import DownloadButton from '@/components/DownloadButton';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { getHubs, getReasons, getPendingDetails } from '@/lib/api'; // Penambahan Import
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -47,6 +49,58 @@ export default function RangkumanSummary() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
+
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+  const [reasons, setReasons] = useState([]);
+  const [pendingDetails, setPendingDetails] = useState([]);
+
+  // Ambil Data Reasons (Group Reason & PIC)
+  useEffect(() => {
+    getReasons().then(setReasons).catch(console.error);
+  }, []);
+
+  // Ambil Detail Pending berdasar rentang tanggal
+  useEffect(() => {
+    if (dateRange && dateRange[0] && dateRange[1]) {
+      const start = formatDateUniversal(new Date(dateRange[0]), 'YYYY-MM-DD');
+      const end = formatDateUniversal(new Date(dateRange[1]), 'YYYY-MM-DD');
+      getPendingDetails(start, end).then(setPendingDetails).catch(console.error);
+    }
+  }, [dateRange]);
+
+  const handleUpdatePendingDetail = (updatedDetail) => {
+    setPendingDetails((prev) => {
+      if (updatedDetail.deleted) {
+        return prev.filter((p) => p.taskId !== updatedDetail.taskId);
+      }
+
+      // Jika aksi berupa simpan/update, perbarui array
+      const exists = prev.find((p) => p.taskId === updatedDetail.taskId);
+      if (exists) {
+        return prev.map((p) => (p.taskId === updatedDetail.taskId ? updatedDetail : p));
+      }
+      return [...prev, updatedDetail];
+    });
+  };
+
+  useEffect(() => {
+    const fetchHubSettings = async () => {
+      if (!selectedLocation) return;
+      try {
+        const hubs = await getHubs();
+        const activeHub = hubs.find(
+          (h) =>
+            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
+        );
+        if (activeHub) {
+          setHasPendingGR(activeHub.hasPendingGR || false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hub settings:', error);
+      }
+    };
+    fetchHubSettings();
+  }, [selectedLocation]);
 
   const handleTempDateChange = (update) => {
     setTempDateRange(update);
@@ -96,7 +150,9 @@ export default function RangkumanSummary() {
         taskSummaryMetrics,
         masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
         t,
-        lang
+        lang,
+        hasPendingGR,
+        pendingDetails // <-- Lewatkan ke Fungsi Excel
       );
       XLSX.writeFile(wb, excelFileName);
       toastSuccess(t('summary.toast.success'));
@@ -205,7 +261,10 @@ export default function RangkumanSummary() {
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
           data: reportPreview?.pendingReasonsData || [],
-          locationName: selectedLocationName,
+          pendingDetails: pendingDetails, // <-- Pass Data
+          reasons: reasons, // <-- Pass DB Reasons
+          onUpdatePendingDetail: handleUpdatePendingDetail, // <-- Pass callback save Modal
+          hasPendingGR: hasPendingGR,
           translate: t,
         });
       case 'Time Driver':
@@ -277,11 +336,11 @@ export default function RangkumanSummary() {
     {
       label: 'Action',
       component: (
-        <DownloadButton
+        <Button
           disabled={isLoading || isEmpty(rawData.tasks)}
           isLoading={isLoading}
           onClick={handleDownloadExcel}
-          text={`${t('common.download')} Excel`}
+          text={`${t('common.download')}`}
         />
       ),
       hideLabel: true,

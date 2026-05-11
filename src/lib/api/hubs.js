@@ -10,10 +10,10 @@ export async function syncHubsData() {
   });
 }
 
-export async function updateHubAcronym(id, acronym) {
-  return await apiFetch('/api/get-hubs', 'Gagal memperbarui akronim cabang', {
+export async function updateHubSettings(id, data) {
+  return await apiFetch('/api/get-hubs', 'Gagal memperbarui pengaturan cabang', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, acronym }),
+    body: JSON.stringify({ id, ...data }),
   });
 }

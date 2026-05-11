@@ -1,3 +1,4 @@
+// File: src/components/navbar/LanguageSwitcher.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
@@ -28,7 +29,7 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-all text-sm font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
+        className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800 transition-all text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
       >
         <span>{lang === 'id' ? '🇮🇩' : '🇬🇧'}</span>
         <span className="hidden sm:inline">{lang === 'id' ? 'Indonesia' : 'English'}</span>
@@ -47,7 +48,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in-95 duration-100 overflow-hidden z-50">
+        <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-lg shadow-xl ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-10 animate-in fade-in zoom-in-95 duration-100 overflow-hidden z-50">
           {languages.map((item) => (
             <button
               key={item.code}
@@ -55,13 +56,17 @@ export default function LanguageSwitcher() {
                 switchLanguage(item.code);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-sky-50 transition-colors cursor-pointer ${
-                lang === item.code ? 'text-sky-700 font-semibold bg-sky-50/50' : 'text-slate-600'
+              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer ${
+                lang === item.code
+                  ? 'text-sky-700 dark:text-sky-400 font-semibold bg-sky-50/50 dark:bg-sky-900/30'
+                  : 'text-slate-600 dark:text-slate-300'
               }`}
             >
               <span className="text-lg">{item.flag}</span>
               <span>{item.label}</span>
-              {lang === item.code && <span className="ml-auto text-sky-600">✓</span>}
+              {lang === item.code && (
+                <span className="ml-auto text-sky-600 dark:text-sky-400">✓</span>
+              )}
             </button>
           ))}
         </div>

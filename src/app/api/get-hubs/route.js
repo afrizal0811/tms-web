@@ -15,6 +15,7 @@ export async function GET() {
         _id: hub.id,
         name: hub.name.replace('Hub ', ''),
         acronym: hub.acronym,
+        hasPendingGR: hub.hasPendingGR || false,
         updatedAt: hub.updatedAt,
       }));
 
@@ -77,27 +78,31 @@ export async function POST() {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, acronym } = body;
+    const { id, acronym, hasPendingGR } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
     }
 
+    const updateData = {};
+    if (acronym !== undefined) updateData.acronym = acronym || null;
+    if (hasPendingGR !== undefined) updateData.hasPendingGR = hasPendingGR;
+
     const updatedHub = await prisma.hub.update({
       where: { id: String(id) },
-      data: { acronym: acronym || null },
+      data: updateData,
     });
 
     return NextResponse.json(
-      { message: 'Akronim berhasil diperbarui', data: updatedHub },
+      { message: 'Pengaturan cabang berhasil diperbarui', data: updatedHub },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error Update Hub Acronym:', error);
+    console.error('Error Update Hub Settings:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
-      { error: 'Gagal memperbarui akronim cabang', detail: errorMessage },
+      { error: 'Gagal memperbarui pengaturan cabang', detail: errorMessage },
       { status: 500 }
     );
   }

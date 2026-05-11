@@ -17,46 +17,47 @@ import { useLanguage } from '@/context/LanguageContext';
 import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
 import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
 import { isEmpty } from '@/lib/utils';
+import { seqAccuracyData } from '../../help';
 
-const CustomTooltip = ({ active, payload, label, t }) => {
+const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
+        {seqAccuracyData.map((item) => {
+          const value = data[item.name];
+          if (!(value > 0)) return null;
+          return (
+            <div
+              key={item.name}
+              className="flex justify-between gap-4 mb-1"
+              style={{ color: isDarkMode ? item.dark_color : item.light_color }}
+            >
+              <span>● {t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+              <span className="font-mono">{value || 0}</span>
+            </div>
+          );
+        })}
+        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between text-white">
+          <span>{t('common.total_task')}</span>
+          <span>{data.total}</span>
+        </div>
 
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-blue-400">● {t('dashboard.charts.sequence.manual')}</span>
-          <span className="font-mono">{data.manual}</span>
-        </div>
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-emerald-400">● {t('dashboard.charts.sequence.match')}</span>
-          <span className="font-mono">{data.match}</span>
-        </div>
-        <div className="flex justify-between gap-4 mb-1">
-          <span className="text-red-400">● {t('dashboard.charts.sequence.mismatch')}</span>
-          <span className="font-mono">{data.mismatch}</span>
-        </div>
-
-        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex flex-col gap-0.5">
-          <div className="flex justify-between gap-4">
-            <span>{t('common.total_task')}</span>
-            <span>{data.total}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span>{t('dashboard.charts.sequence.total_accuracy')}</span>
-            <span>{data.rate}%</span>
-          </div>
+        <div className="border-slate-600 font-bold flex justify-between text-white">
+          <span>{t('dashboard.charts.sequence.total_accuracy')}</span>
+          <span>{data.rate}%</span>
         </div>
 
         <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
+
   return null;
 };
 
-function SequenceAccuracyChart({ allTasks }) {
+function SequenceAccuracyChart({ allTasks, isDarkMode }) {
   const { t, lang } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
@@ -64,7 +65,6 @@ function SequenceAccuracyChart({ allTasks }) {
   const [dailyData, setDailyData] = useState([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // === Hitung data bulanan ===
   useEffect(() => {
     if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -85,14 +85,13 @@ function SequenceAccuracyChart({ allTasks }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          name: date.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { month: 'short' }),
+          name: date.toLocaleDateString(lang, { month: 'short' }),
         };
       }
       return item;
     });
   }, [monthlyData, lang]);
 
-  // === Hitung harian ===
   useEffect(() => {
     if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -120,12 +119,10 @@ function SequenceAccuracyChart({ allTasks }) {
     setSelectedMonth(payload);
   };
 
-  // --- PERBAIKAN: Siapkan object Date untuk dikirim ke Modal ---
   const selectedDateObj = useMemo(() => {
     if (!selectedMonth || !selectedMonth.key) return null;
     try {
       const [year, month] = selectedMonth.key.split('-').map(Number);
-      // Buat tanggal 1 pada bulan tersebut
       return new Date(year, month - 1, 1);
     } catch {
       return null;
@@ -133,9 +130,9 @@ function SequenceAccuracyChart({ allTasks }) {
   }, [selectedMonth]);
 
   const getModalTitle = () => {
-    if (!selectedDateObj) return ''; // Gunakan selectedDateObj yang sudah dibuat
+    if (!selectedDateObj) return '';
     try {
-      const fullMonth = selectedDateObj.toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', {
+      const fullMonth = selectedDateObj.toLocaleDateString(lang, {
         month: 'long',
         year: 'numeric',
       });
@@ -158,23 +155,28 @@ function SequenceAccuracyChart({ allTasks }) {
   const hasData = Array.isArray(monthlyData) && monthlyData.length > 0;
 
   return (
-    <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-6">
-        <h3 className="text-lg font-bold text-slate-800">Sequence Accuracy</h3>
-        <p className="text-sm text-gray-500">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+          {t('dashboard.charts.sequence.title')}
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           {t('dashboard.charts.sequence.subtitle')}{' '}
-          <span className="font-bold text-emerald-600">
+          <span className="font-bold text-green-600 dark:text-green-300">
             {t('dashboard.charts.sequence.routing')}
           </span>{' '}
-          vs <span className="font-bold text-red-600">{t('dashboard.charts.sequence.actual')}</span>
+          vs{' '}
+          <span className="font-bold  text-red-600 dark:text-red-300">
+            {t('dashboard.charts.sequence.actual')}
+          </span>
         </p>
       </div>
 
       <div className="h-[350px] w-full">
         {isPreparing ? (
-          <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300">
-            <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 animate-pulse" />
-            <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 animate-pulse" />
+          <div className="w-full h-full bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-slate-300 dark:bg-slate-800 dark:border-slate-700">
+            <div className="w-40 h-3 rounded-full bg-slate-100 mb-4 dark:bg-slate-600 animate-pulse" />
+            <div className="w-[90%] h-[70%] rounded-2xl bg-slate-100 dark:bg-slate-600 animate-pulse" />
             <p className="mt-4 text-xs font-semibold tracking-wide uppercase">
               {t('common.preparing_chart')}
             </p>
@@ -191,11 +193,18 @@ function SequenceAccuracyChart({ allTasks }) {
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
                 dy={10}
               />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip t={t} />} cursor={{ fill: '#f1f5f9' }} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
+              />
+              <Tooltip
+                content={<CustomTooltip t={t} isDarkMode={isDarkMode} />}
+                cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
+              />
               <Legend
                 iconType="circle"
                 layout="horizontal"
@@ -203,40 +212,29 @@ function SequenceAccuracyChart({ allTasks }) {
                 align="right"
                 wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
               />
-              <Bar
-                cursor="pointer"
-                dataKey="match"
-                fill="#22c55e"
-                maxBarSize={50}
-                name={t('dashboard.charts.sequence.match')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="manual"
-                fill="#3b82f6"
-                maxBarSize={50}
-                name={t('dashboard.charts.sequence.manual')}
-                onClick={handleBarClick}
-                radius={[0, 0, 0, 0]}
-                stackId="a"
-              />
-              <Bar
-                cursor="pointer"
-                dataKey="mismatch"
-                fill="#ef4444"
-                maxBarSize={50}
-                name={t('dashboard.charts.sequence.mismatch')}
-                onClick={handleBarClick}
-                radius={[4, 4, 0, 0]}
-                stackId="a"
-              />
+              {seqAccuracyData.map((item, index) => {
+                const isTopBar = index === seqAccuracyData.length - 1;
+                return (
+                  <Bar
+                    key={item.name}
+                    cursor="pointer"
+                    dataKey={item.name}
+                    fill={isDarkMode ? item.dark_color : item.light_color}
+                    maxBarSize={50}
+                    name={t(`dashboard.charts.sequence.${item.tKey}`)}
+                    onClick={handleBarClick}
+                    radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    stackId="a"
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
+      <p className="text-xs text-gray-400 mt-4 text-center italic">
+        {t('common.click_for_detail')}
+      </p>
 
       <DailySequenceAccuracyModal
         isOpen={!!selectedMonth}
@@ -244,7 +242,10 @@ function SequenceAccuracyChart({ allTasks }) {
         title={getModalTitle()}
         data={dailyData}
         isLoading={isModalLoading}
-        selectedDate={selectedDateObj} // PERBAIKAN: Kirim props ini
+        selectedDate={selectedDateObj}
+        isDarkMode={isDarkMode}
+        t={t}
+        lang={lang}
       />
     </div>
   );

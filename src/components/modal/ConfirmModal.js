@@ -3,6 +3,7 @@
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Spinner from '../Spinner';
 
 export default function ConfirmModal({
   cancelText,
@@ -12,13 +13,14 @@ export default function ConfirmModal({
   onCancel,
   onConfirm,
   title,
+  loading = false,
 }) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   if (cancelText === undefined || confirmText === undefined) {
-    cancelText = t('common.modal.btn_cancel');
-    confirmText = t('common.modal.btn_confirm');
+    cancelText = t('common.button.btn_no');
+    confirmText = t('common.button.btn_yes');
   }
   useEffect(() => {
     setTimeout(() => {
@@ -78,9 +80,12 @@ export default function ConfirmModal({
           </button>
           <button
             onClick={onConfirm}
-            className="px-6 py-2 rounded-md  cursor-pointer font-semibold text-white bg-sky-600 hover:bg-sky-700"
+            className={`px-6 py-2 rounded-md font-semibold text-white ${loading ? 'bg-slate-700 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700 cursor-pointer'}`}
           >
-            {confirmText}
+            <div className="flex gap-2">
+              {loading && <Spinner size="w-5 h-5" />}
+              {confirmText}
+            </div>
           </button>
         </div>
       </div>

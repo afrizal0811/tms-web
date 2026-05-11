@@ -4,7 +4,13 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResultsSummary, getTasks, getVehicleMappings } from '@/lib/api';
+import {
+  getHubs,
+  getLocationHistories,
+  getResultsSummary,
+  getTasks,
+  getVehicleMappings,
+} from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -172,7 +178,7 @@ export default function SingleReport({
 
       const { storedLocationAcronym } = getLocalStorage();
 
-      const [allTasks, resultsData] = await Promise.all([
+      const [allTasks, resultsData, hubsData] = await Promise.all([
         getTasks({
           hubId: selectedLocation,
           status: 'DONE,ONGOING',
@@ -187,11 +193,17 @@ export default function SingleReport({
           limit: 1000,
           hubId: selectedLocation,
         }),
+        getHubs(),
       ]);
 
       if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
         throw new Error(t('report.toast.no_delivery'));
       }
+
+      const activeHub = (hubsData || []).find(
+        (h) => String(h._id || h.id) === String(selectedLocation)
+      );
+      const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
 
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
@@ -201,8 +213,8 @@ export default function SingleReport({
         resultsData || [],
         selectedDateString,
         targetRoutingStr,
-        selectedLocation,
         hubLabel,
+        hasPendingGR,
         t
       );
 
@@ -299,13 +311,15 @@ export default function SingleReport({
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{t('report.daily_title')}</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
+        {t('report.daily_title')}
+      </h1>
 
       <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 mb-10 w-full">
         <div className="flex flex-col items-center w-full max-w-xs">
           <label
             htmlFor="shippingDate"
-            className="text-lg mb-2 text-gray-500 font-medium text-center select-none flex items-center gap-1"
+            className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center gap-1"
           >
             {t('common.delivery_date')} {informationComp(t('report.tooltip.info_delivery'))}
           </label>
@@ -325,11 +339,11 @@ export default function SingleReport({
               disabled={disabledCommon}
               checked={isCustomRouting}
               onChange={(e) => setIsCustomRouting(e.target.checked)}
-              className="w-4 h-4 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
+              className="w-4 h-4 text-sky-600 rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 dark:focus:ring-sky-400 cursor-pointer"
             />
             <label
               htmlFor="customRouting"
-              className="text-sm text-gray-600 cursor-pointer select-none flex items-center gap-1"
+              className="text-sm text-gray-600 dark:text-slate-400 cursor-pointer select-none flex items-center gap-1"
             >
               {t('report.change_date')} {informationComp(t('report.tooltip.info_change_time'))}
             </label>
@@ -340,7 +354,7 @@ export default function SingleReport({
           <div className="flex flex-col items-center w-full max-w-xs transition-opacity duration-300">
             <label
               htmlFor="routingDate"
-              className="block text-lg mb-2 text-gray-500 font-medium text-center"
+              className="block text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center"
             >
               {t('report.routing_date')}
             </label>
@@ -362,8 +376,14 @@ export default function SingleReport({
         <button
           onClick={handleRouting}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
-            ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'routing' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              disabledCommon || isDateInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : currentRunning === 'routing'
+                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
+                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {currentRunning === 'routing' ? (
@@ -379,8 +399,14 @@ export default function SingleReport({
         <button
           onClick={handleDelivery}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
-            ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'delivery' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              disabledCommon || isDateInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : currentRunning === 'delivery'
+                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
+                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {currentRunning === 'delivery' ? (
@@ -396,8 +422,14 @@ export default function SingleReport({
         <button
           onClick={handleTime}
           disabled={disabledCommon || isDateInvalid}
-          className={`px-6 py-3 rounded w-full sm:w-64 text-center text-white font-bold text-lg cursor-pointer transition-colors
-            ${disabledCommon || isDateInvalid ? 'bg-gray-400 cursor-not-allowed' : currentRunning === 'time' ? 'bg-sky-600' : 'bg-sky-600 hover:bg-sky-700'}
+          className={`px-6 py-3 rounded w-full sm:w-64 text-center font-bold text-lg transition-colors
+            ${
+              disabledCommon || isDateInvalid
+                ? 'bg-gray-400 dark:bg-slate-700 text-white dark:text-slate-400 cursor-not-allowed'
+                : currentRunning === 'time'
+                  ? 'bg-sky-600 dark:bg-sky-700 text-white'
+                  : 'bg-sky-600 dark:bg-sky-700 text-white hover:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer'
+            }
           `}
         >
           {currentRunning === 'time' ? (
