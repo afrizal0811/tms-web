@@ -103,7 +103,7 @@ export default function BulkReport({ driverData }) {
             driverData,
             filteredResults,
             mappingsObj,
-            dateForFile,
+            apiDate,
             hubName,
             t
           );
@@ -142,9 +142,9 @@ export default function BulkReport({ driverData }) {
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const { dateFrom: apiDate, dateTo: apiDateTo } = calculateTargetDates(dateForFile);
 
-        const startD = new Date(apiDate);
+        const startD = new Date(dateForFile);
         startD.setHours(0, 0, 0, 0);
-        const endD = new Date(apiDateTo);
+        const endD = new Date(dateForFile);
         endD.setHours(23, 59, 59, 999);
 
         const timeFrom = formatToApiUtc(startD);
@@ -160,8 +160,8 @@ export default function BulkReport({ driverData }) {
             limit: 1000,
           }),
           getResultsSummary({
-            dateFrom: timeFrom,
-            dateTo: timeTo,
+            dateFrom: `${apiDate} 00:00:00`,
+            dateTo: `${apiDateTo} 23:59:59`,
             limit: 500,
             hubId: hubId,
           }),
