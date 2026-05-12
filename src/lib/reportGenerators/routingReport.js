@@ -35,10 +35,23 @@ export async function generateRoutingWorkbook(
       };
   });
 
+  const normalizedMappings = {};
+  if (mappingsObj) {
+    Object.keys(mappingsObj).forEach((key) => {
+      if (key) {
+        normalizedMappings[String(key).replace(/\s+/g, '').toLowerCase()] = mappingsObj[key];
+      }
+    });
+  }
+
   let processedDataRows = [];
   let totalDryDistance = 0;
   let totalFrozenDistance = 0;
   let truckUsageCount = {};
+
+  // Array dan Set untuk menampung detail kendaraan Lainnya/Other (Plat, Driver, Tag)
+  let lainnyaDetails = [];
+  const uniqueLainnya = new Set();
 
   [...vehicleTypes, 'Lainnya'].forEach((type) => {
     truckUsageCount[type] = { Dry: 0, Frozen: 0 };
@@ -184,11 +197,31 @@ export async function generateRoutingWorkbook(
               }
             }
 
+            let searchPlat = '';
+            if (vehiclePlat !== 'N/A') {
+              searchPlat = String(vehiclePlat).replace(/\s+/g, '').toLowerCase();
+            } else if (route.vehicleName) {
+              searchPlat = String(route.vehicleName).replace(/\s+/g, '').toLowerCase();
+            }
+
             let category = 'Lainnya';
-            if (mappingsObj[vehiclePlat]) {
-              category = mappingsObj[vehiclePlat];
+            if (searchPlat && normalizedMappings[searchPlat]) {
+              category = normalizedMappings[searchPlat];
             } else if (vehicleTypes.includes(specificType)) {
               category = specificType;
+            }
+
+            // Menyimpan data kendaraan Other untuk dicetak di kolom F,G,H
+            if (category === 'Lainnya') {
+              const platStr = vehiclePlat !== 'N/A' ? vehiclePlat : route.vehicleName || '-';
+              const driverStr = driverName || '-';
+              const tagStr = firstTag || '-';
+              const keyLainnya = `${platStr}|${driverStr}|${tagStr}`;
+
+              if (!uniqueLainnya.has(keyLainnya)) {
+                uniqueLainnya.add(keyLainnya);
+                lainnyaDetails.push([platStr, driverStr, tagStr]);
+              }
             }
 
             if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
@@ -429,26 +462,43 @@ export async function generateRoutingWorkbook(
     translate('excel.routing.sheets.dist_summary')
   );
 
+  // Modifikasi header truck usage untuk menampilkan kolom F, G, H
   const usageHeader = [
     translate('common.vehicle_type'),
     translate('excel.routing.headers.count_dry'),
     translate('excel.routing.headers.count_frozen'),
+    '',
+    '',
+    translate('common.license_number') + ' (Other)',
+    translate('common.driver') + ' (Other)',
+    'Vehicle Tag (Other)',
   ];
+
   const usageDataRows = vehicleTypes.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
     const frozenCount = truckUsageCount[type]['Frozen'];
     return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];
   });
+
   const lainDryCount = truckUsageCount['Lainnya']['Dry'];
   const lainFrozenCount = truckUsageCount['Lainnya']['Frozen'];
   if (lainDryCount > 0 || lainFrozenCount > 0) {
     usageDataRows.push([
-      translate('excel.routing.data.other'),
+      translate('common.others'),
       lainDryCount > 0 ? lainDryCount : null,
       lainFrozenCount > 0 ? lainFrozenCount : null,
     ]);
   }
-  const finalUsageData = [usageHeader, ...usageDataRows];
+
+  const finalUsageData = [usageHeader];
+  const maxUsageRows = Math.max(usageDataRows.length, lainnyaDetails.length);
+
+  for (let i = 0; i < maxUsageRows; i++) {
+    const uRow = usageDataRows[i] || ['', null, null];
+    const lRow = lainnyaDetails[i] || ['', '', ''];
+    finalUsageData.push([...uRow, '', '', ...lRow]);
+  }
+
   const wsTruckUsage = XLSX.utils.aoa_to_sheet(finalUsageData);
   const usageHeaderStyle = {
     font: { bold: true },
@@ -456,20 +506,43 @@ export async function generateRoutingWorkbook(
   };
   const usageDataNumStyle = { alignment: { horizontal: 'center', vertical: 'center' }, t: 'n' };
   const usageDataLabelStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
+
   wsTruckUsage['A1'].s = usageHeaderStyle;
   wsTruckUsage['B1'].s = usageHeaderStyle;
   wsTruckUsage['C1'].s = usageHeaderStyle;
+  // Header styling untuk kolom F, G, H
+  if (wsTruckUsage['F1']) wsTruckUsage['F1'].s = usageHeaderStyle;
+  if (wsTruckUsage['G1']) wsTruckUsage['G1'].s = usageHeaderStyle;
+  if (wsTruckUsage['H1']) wsTruckUsage['H1'].s = usageHeaderStyle;
+
   finalUsageData.forEach((row, R) => {
     if (R === 0) return;
     const aRef = `A${R + 1}`;
     const bRef = `B${R + 1}`;
     const cRef = `C${R + 1}`;
+    const fRef = `F${R + 1}`;
+    const gRef = `G${R + 1}`;
+    const hRef = `H${R + 1}`;
+
     if (wsTruckUsage[aRef]) wsTruckUsage[aRef].s = usageDataLabelStyle;
     if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = usageDataNumStyle;
     if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
+    if (wsTruckUsage[fRef]) wsTruckUsage[fRef].s = usageDataLabelStyle;
+    if (wsTruckUsage[gRef]) wsTruckUsage[gRef].s = usageDataLabelStyle;
+    if (wsTruckUsage[hRef]) wsTruckUsage[hRef].s = usageDataLabelStyle;
   });
 
-  wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
+  wsTruckUsage['!cols'] = [
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 2 },
+    { wch: 2 },
+    { wch: 20 },
+    { wch: 25 },
+    { wch: 25 },
+  ];
+
   XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
 
   const helpHeader = [

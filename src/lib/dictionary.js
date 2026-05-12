@@ -55,7 +55,7 @@ export const dictionary = {
       warning: '⚠️ Peringatan!',
       button: {
         btn_cancel: 'Batal',
-        btn_delete: 'Delete',
+        btn_delete: 'Hapus',
         btn_no: 'Tidak',
         btn_save: 'Simpan',
         btn_yes: 'Ya',
@@ -327,7 +327,6 @@ export const dictionary = {
           weight_pct: 'Persentase Berat',
         },
         data: {
-          other: 'Lainnya',
           dispatch_message: '{success} dari {total} tugas berhasil diproses',
         },
       },
@@ -739,10 +738,10 @@ export const dictionary = {
       warning: '⚠️ Warning!',
       button: {
         btn_cancel: 'Cancel',
-        btn_confirm: 'Yes',
         btn_delete: 'Delete',
         btn_no: 'No',
         btn_save: 'Save',
+        btn_yes: 'Yes',
       },
       status: {
         success: 'Success',
@@ -1011,7 +1010,6 @@ export const dictionary = {
           weight_pct: 'Weight Percentage',
         },
         data: {
-          other: 'Other',
           dispatch_message: '{success} from {total} task have been dispatched',
         },
       },
