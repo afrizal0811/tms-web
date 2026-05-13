@@ -628,7 +628,7 @@ export default function EstimasiDelivery() {
       isLoading={isLoading || isAnyDownloading}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
-      maxDate={tomorrowDate()}
+      // maxDate={tomorrowDate()}
       className="w-full xl:w-40!"
     />
   );
