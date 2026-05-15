@@ -1,4 +1,3 @@
-// File: lib/reportGenerators/routingReport.js
 'use client';
 
 import { getVehicleTypes } from '@/lib/api';
@@ -20,19 +19,36 @@ export async function generateRoutingWorkbook(
 ) {
   const vehicleTypesObj = await getVehicleTypes();
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
-
   const translate = t || ((key) => key);
 
   const emailMap = {};
   const platMap = {};
+
   driverData.forEach((driver) => {
-    if (driver.email)
-      emailMap[driver.email.trim().toLowerCase()] = { name: driver.name, plat: driver.plat };
-    if (driver.plat)
+    let typeVal = driver.type;
+    if (!typeVal && driver.tags) {
+      try {
+        const parsed = JSON.parse(driver.tags);
+        if (Array.isArray(parsed) && parsed.length > 0) typeVal = parsed[0];
+      } catch (e) {
+        typeVal = driver.tags;
+      }
+    }
+
+    if (driver.email) {
+      emailMap[driver.email.trim().toLowerCase()] = {
+        name: driver.name,
+        plat: driver.plat,
+        type: typeVal,
+      };
+    }
+    if (driver.plat) {
       platMap[driver.plat.replace(/\s+/g, '').toLowerCase()] = {
         name: driver.name,
         plat: driver.plat,
+        type: typeVal,
       };
+    }
   });
 
   const normalizedMappings = {};
@@ -49,11 +65,7 @@ export async function generateRoutingWorkbook(
   let totalFrozenDistance = 0;
   let truckUsageCount = {};
 
-  // Array dan Set untuk menampung detail kendaraan Lainnya/Other (Plat, Driver, Tag)
-  let lainnyaDetails = [];
-  const uniqueLainnya = new Set();
-
-  [...vehicleTypes, 'Lainnya'].forEach((type) => {
+  vehicleTypes.forEach((type) => {
     truckUsageCount[type] = { Dry: 0, Frozen: 0 };
   });
 
@@ -172,25 +184,30 @@ export async function generateRoutingWorkbook(
           shipDurationRaw: manualSpentTime || route.totalSpentTime || 0,
           etaFirstStore: etaFirstStoreVal,
           etdHub: etdHubVal,
-
           hasTrips: hasTrips,
           totalTravelTime: totalTravelTime,
           totalVisitTime: totalVisitTime,
         });
 
-        const tags = route.vehicleTags;
+        let tags = route.vehicleTags || [];
+        if (driverInfo && driverInfo.type) {
+          tags = [driverInfo.type];
+        }
+
         const distance = finalTotalDistance || 0;
         const vehiclePlat = driverInfo && driverInfo.plat ? driverInfo.plat : 'N/A';
 
         if (hasTrips && Array.isArray(tags) && tags.length > 0) {
           const firstTag = String(tags[0]);
           const parts = firstTag.split('-');
-          if (parts.length >= 2) {
-            const generalType = parts[0].toUpperCase();
+          if (parts.length >= 1) {
+            let generalType = parts[0].toUpperCase();
+            if (!['DRY', 'FROZEN'].includes(generalType)) generalType = 'DRY';
+
             if (generalType === 'FROZEN') totalFrozenDistance += distance;
             else if (generalType === 'DRY') totalDryDistance += distance;
 
-            let specificType = parts[1].toUpperCase();
+            let specificType = parts.length > 1 ? parts[1].toUpperCase() : firstTag.toUpperCase();
             if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
               if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
                 specificType = `${specificType}-LONG`;
@@ -204,24 +221,13 @@ export async function generateRoutingWorkbook(
               searchPlat = String(route.vehicleName).replace(/\s+/g, '').toLowerCase();
             }
 
-            let category = 'Lainnya';
+            let category = specificType;
             if (searchPlat && normalizedMappings[searchPlat]) {
               category = normalizedMappings[searchPlat];
-            } else if (vehicleTypes.includes(specificType)) {
-              category = specificType;
             }
 
-            // Menyimpan data kendaraan Other untuk dicetak di kolom F,G,H
-            if (category === 'Lainnya') {
-              const platStr = vehiclePlat !== 'N/A' ? vehiclePlat : route.vehicleName || '-';
-              const driverStr = driverName || '-';
-              const tagStr = firstTag || '-';
-              const keyLainnya = `${platStr}|${driverStr}|${tagStr}`;
-
-              if (!uniqueLainnya.has(keyLainnya)) {
-                uniqueLainnya.add(keyLainnya);
-                lainnyaDetails.push([platStr, driverStr, tagStr]);
-              }
+            if (!truckUsageCount[category]) {
+              truckUsageCount[category] = { Dry: 0, Frozen: 0 };
             }
 
             if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
@@ -256,7 +262,6 @@ export async function generateRoutingWorkbook(
           ? existing.etaFirstStore
           : row.etaFirstStore,
         etdHub: !isEmpty(existing.etdHub) ? existing.etdHub : row.etdHub,
-
         hasTrips: existing.hasTrips || row.hasTrips,
         totalTravelTime: existing.totalTravelTime && row.totalTravelTime,
         totalVisitTime: existing.totalVisitTime && row.totalVisitTime,
@@ -267,20 +272,11 @@ export async function generateRoutingWorkbook(
   const wb = XLSX.utils.book_new();
 
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
-  const defaultHeaderStyle = {
-    ...centerStyle,
-    font: { bold: true },
-  };
-
+  const defaultHeaderStyle = { ...centerStyle, font: { bold: true } };
   const greenHeaderStyle = {
     ...centerStyle,
     font: { bold: true },
     fill: { patternType: 'solid', fgColor: { rgb: '84FA92' } },
-  };
-
-  const redFillStyle = {
-    ...centerStyle,
-    fill: { patternType: 'solid', fgColor: { rgb: 'FF0000' } },
   };
 
   const headers1 = [
@@ -299,8 +295,7 @@ export async function generateRoutingWorkbook(
   const seenIdentifiers = new Set();
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
-    if (isEmpty(plat)) return false;
-    if (plat.toUpperCase().includes('DEMO')) return false;
+    if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return false;
 
     const emailKey = driver.email ? driver.email.trim().toLowerCase() : '';
     const nameKey = driver.name ? driver.name.trim().toLowerCase() : '';
@@ -357,16 +352,10 @@ export async function generateRoutingWorkbook(
   };
 
   excelDataRows.sort((a, b) => {
-    const platA = a.Plat || '';
-    const platB = b.Plat || '';
-    const driverA = a.Driver || '';
-    const driverB = b.Driver || '';
-    const groupA = getSortGroup(platA);
-    const groupB = getSortGroup(platB);
-    if (groupA !== groupB) {
-      return groupA - groupB;
-    }
-    return driverA.localeCompare(driverB);
+    const groupA = getSortGroup(a.Plat);
+    const groupB = getSortGroup(b.Plat);
+    if (groupA !== groupB) return groupA - groupB;
+    return (a.Driver || '').localeCompare(b.Driver || '');
   });
 
   const finalSheetData1 = [
@@ -387,7 +376,6 @@ export async function generateRoutingWorkbook(
 
   const wsTruckDetail = XLSX.utils.aoa_to_sheet(finalSheetData1);
   const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
-
   const centerAlignedDataColumns1 = [2, 3, 4, 7, 8, 9];
   const greenHeaders = [
     translate('excel.routing.headers.weight_pct'),
@@ -405,25 +393,20 @@ export async function generateRoutingWorkbook(
 
       if (R === 0) {
         const headerName = finalSheetData1[0][C];
-
-        if (greenHeaders.includes(headerName)) {
-          wsTruckDetail[cellRef].s = greenHeaderStyle;
-        } else {
-          wsTruckDetail[cellRef].s = defaultHeaderStyle;
-        }
+        wsTruckDetail[cellRef].s = greenHeaders.includes(headerName)
+          ? greenHeaderStyle
+          : defaultHeaderStyle;
       } else if (centerAlignedDataColumns1.includes(C)) {
         wsTruckDetail[cellRef].s = centerStyle;
       }
     }
   }
 
-  const colWidths1 = headers1.map((_, i) => ({
+  wsTruckDetail['!cols'] = headers1.map((_, i) => ({
     wch:
       finalSheetData1.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0) +
       2,
   }));
-  wsTruckDetail['!cols'] = colWidths1;
-
   XLSX.utils.book_append_sheet(wb, wsTruckDetail, translate('excel.routing.sheets.truck_detail'));
 
   const totalDryKm = totalDryDistance / 1000;
@@ -442,6 +425,7 @@ export async function generateRoutingWorkbook(
     t: 'n',
     z: '0.00',
   };
+
   wsDistanceSummary['A1'] = {
     v: translate('excel.routing.headers.dry_km'),
     t: 's',
@@ -455,94 +439,48 @@ export async function generateRoutingWorkbook(
   wsDistanceSummary['A2'] = { v: totalDryKm, t: 'n', s: distanceDataStyle };
   wsDistanceSummary['B2'] = { v: totalFrozenKm, t: 'n', s: distanceDataStyle };
   wsDistanceSummary['!cols'] = [{ wch: 15 }, { wch: 15 }];
-
   XLSX.utils.book_append_sheet(
     wb,
     wsDistanceSummary,
     translate('excel.routing.sheets.dist_summary')
   );
 
-  // Modifikasi header truck usage untuk menampilkan kolom F, G, H
   const usageHeader = [
     translate('common.vehicle_type'),
     translate('excel.routing.headers.count_dry'),
     translate('excel.routing.headers.count_frozen'),
-    '',
-    '',
-    translate('common.license_number') + ' (Other)',
-    translate('common.driver') + ' (Other)',
-    'Vehicle Tag (Other)',
   ];
 
-  const usageDataRows = vehicleTypes.map((type) => {
+  const dynamicTypes = Object.keys(truckUsageCount).filter((t) => !vehicleTypes.includes(t));
+  const allTypes = [...vehicleTypes, ...dynamicTypes];
+
+  const usageDataRows = allTypes.map((type) => {
     const dryCount = truckUsageCount[type]['Dry'];
     const frozenCount = truckUsageCount[type]['Frozen'];
     return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];
   });
 
-  const lainDryCount = truckUsageCount['Lainnya']['Dry'];
-  const lainFrozenCount = truckUsageCount['Lainnya']['Frozen'];
-  if (lainDryCount > 0 || lainFrozenCount > 0) {
-    usageDataRows.push([
-      translate('common.others'),
-      lainDryCount > 0 ? lainDryCount : null,
-      lainFrozenCount > 0 ? lainFrozenCount : null,
-    ]);
-  }
-
-  const finalUsageData = [usageHeader];
-  const maxUsageRows = Math.max(usageDataRows.length, lainnyaDetails.length);
-
-  for (let i = 0; i < maxUsageRows; i++) {
-    const uRow = usageDataRows[i] || ['', null, null];
-    const lRow = lainnyaDetails[i] || ['', '', ''];
-    finalUsageData.push([...uRow, '', '', ...lRow]);
-  }
-
+  const finalUsageData = [usageHeader, ...usageDataRows];
   const wsTruckUsage = XLSX.utils.aoa_to_sheet(finalUsageData);
-  const usageHeaderStyle = {
-    font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
   const usageDataNumStyle = { alignment: { horizontal: 'center', vertical: 'center' }, t: 'n' };
   const usageDataLabelStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
 
-  wsTruckUsage['A1'].s = usageHeaderStyle;
-  wsTruckUsage['B1'].s = usageHeaderStyle;
-  wsTruckUsage['C1'].s = usageHeaderStyle;
-  // Header styling untuk kolom F, G, H
-  if (wsTruckUsage['F1']) wsTruckUsage['F1'].s = usageHeaderStyle;
-  if (wsTruckUsage['G1']) wsTruckUsage['G1'].s = usageHeaderStyle;
-  if (wsTruckUsage['H1']) wsTruckUsage['H1'].s = usageHeaderStyle;
+  wsTruckUsage['A1'].s = distanceHeaderStyle;
+  wsTruckUsage['B1'].s = distanceHeaderStyle;
+  wsTruckUsage['C1'].s = distanceHeaderStyle;
 
   finalUsageData.forEach((row, R) => {
     if (R === 0) return;
     const aRef = `A${R + 1}`;
     const bRef = `B${R + 1}`;
     const cRef = `C${R + 1}`;
-    const fRef = `F${R + 1}`;
-    const gRef = `G${R + 1}`;
-    const hRef = `H${R + 1}`;
 
     if (wsTruckUsage[aRef]) wsTruckUsage[aRef].s = usageDataLabelStyle;
     if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = usageDataNumStyle;
     if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
-    if (wsTruckUsage[fRef]) wsTruckUsage[fRef].s = usageDataLabelStyle;
-    if (wsTruckUsage[gRef]) wsTruckUsage[gRef].s = usageDataLabelStyle;
-    if (wsTruckUsage[hRef]) wsTruckUsage[hRef].s = usageDataLabelStyle;
   });
 
-  wsTruckUsage['!cols'] = [
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 2 },
-    { wch: 2 },
-    { wch: 20 },
-    { wch: 25 },
-    { wch: 25 },
-  ];
-
+  wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
 
   const helpHeader = [
@@ -554,7 +492,6 @@ export async function generateRoutingWorkbook(
   ];
 
   const helpDataRows = [];
-
   const sortedHelpItems = filteredResults
     .filter((r) => r.dispatchStatus && String(r.dispatchStatus).toLowerCase() === 'done')
     .sort((a, b) => {
@@ -582,10 +519,7 @@ export async function generateRoutingWorkbook(
     if (routingResult.includes('/')) {
       const [success, total] = routingResult.split('/');
       if (!isNaN(success) && !isNaN(total)) {
-        routingResult = translate('excel.routing.data.dispatch_message', {
-          success,
-          total,
-        });
+        routingResult = translate('excel.routing.data.dispatch_message', { success, total });
       }
     }
 
@@ -594,19 +528,13 @@ export async function generateRoutingWorkbook(
 
   const finalHelpData = [helpHeader, ...helpDataRows];
   const wsHelp = XLSX.utils.aoa_to_sheet(finalHelpData);
-  const helpHeaderStyle = {
-    font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  const helpDataStyle = {
-    alignment: { horizontal: 'left', vertical: 'center' },
-  };
+  const helpDataStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
 
-  wsHelp['A1'].s = helpHeaderStyle;
-  wsHelp['B1'].s = helpHeaderStyle;
-  wsHelp['C1'].s = helpHeaderStyle;
-  wsHelp['D1'].s = helpHeaderStyle;
-  wsHelp['E1'].s = helpHeaderStyle;
+  wsHelp['A1'].s = distanceHeaderStyle;
+  wsHelp['B1'].s = distanceHeaderStyle;
+  wsHelp['C1'].s = distanceHeaderStyle;
+  wsHelp['D1'].s = distanceHeaderStyle;
+  wsHelp['E1'].s = distanceHeaderStyle;
 
   helpDataRows.forEach((row, idx) => {
     const rowNum = idx + 2;
