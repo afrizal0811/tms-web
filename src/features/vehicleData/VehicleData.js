@@ -1,4 +1,3 @@
-// File: src/features/vehicleData/VehicleData.js
 'use client';
 
 import Button from '@/components/Button';
@@ -51,7 +50,7 @@ export default function VehicleData() {
             try {
               parsedTags = JSON.parse(v.tags);
             } catch (e) {
-              parsedTags = [v.type];
+              parsedTags = [v.tags];
             }
           } else if (v.type) {
             parsedTags = [v.type];
@@ -75,8 +74,6 @@ export default function VehicleData() {
 
               const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
               vehicle.type = newFullTag;
-              if (vehicle.parsedTags.length > 0) vehicle.parsedTags[0] = newFullTag;
-              else vehicle.parsedTags = [newFullTag];
             }
           });
         } catch (error) {
