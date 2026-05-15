@@ -655,6 +655,7 @@ export function generateDeliveryWorkbook(
     translate('dashboard.tab.routingreal.is_within_hours'),
   ];
   let finalSheetData3 = [headers3];
+  const manualAssignRows3 = new Set();
   const tasksByNameMap = new Map();
   for (const task of allTaskDataForSequence) {
     if (!tasksByNameMap.has(task.driver)) {
@@ -744,6 +745,8 @@ export function generateDeliveryWorkbook(
           newStatusLabel = task.statusLabel;
       }
 
+      // Catat baris manual assign (roSequence === 0, sama seperti dashboard)
+      if (task.roSequence === 0) manualAssignRows3.add(finalSheetData3.length);
       finalSheetData3.push([
         task.flow || '-',
         task.plat || '-',
@@ -794,99 +797,113 @@ export function generateDeliveryWorkbook(
     );
     return { wch: Math.min(maxLength + 2, 50) };
   });
+  // Override lebar kolom sempit (visit plan, visit actual, ro seq, actual seq)
+  colWidths3[11] = { wch: 10 };
+  colWidths3[12] = { wch: 10 };
+  colWidths3[13] = { wch: 10 };
+  colWidths3[14] = { wch: 10 };
   wsRoVsReal['!cols'] = colWidths3;
-  const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; // Ditambah Index 16
-  const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
-  const etaColIndex = 7;
-  const etdColIndex = 9;
-  const platColIndex = 1;
-  const driverColIndex = 2;
-  const roColIndex = 13;
-  const redFillStyleRoVsReal = { fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } } };
 
+  // Warna background per kolom (sama seperti dashboard & help.js)
+  const colFillMap3 = {
+    5: { header: 'A7F3D0', data: 'D1FAE5' }, // open_time  - green
+    6: { header: 'A7F3D0', data: 'D1FAE5' }, // close_time - green
+    7: { header: 'FED7AA', data: 'FFEDD5' }, // eta        - orange
+    8: { header: 'FED7AA', data: 'FFEDD5' }, // actual arr - orange
+    9: { header: 'FDE68A', data: 'FEF9C3' }, // etd        - yellow
+    10: { header: 'FDE68A', data: 'FEF9C3' }, // actual dep - yellow
+    11: { header: 'FBCFE8', data: 'FCE7F3' }, // visit plan - pink
+    12: { header: 'FBCFE8', data: 'FCE7F3' }, // visit act  - pink
+    13: { header: 'BFDBFE', data: 'DBEAFE' }, // ro seq     - blue
+    14: { header: 'BFDBFE', data: 'DBEAFE' }, // actual seq - blue
+  };
+  const leftAlign3 = { alignment: { horizontal: 'left', vertical: 'center' } };
+  const hubRedStyle3 = {
+    ...centerStyle,
+    font: { bold: true, color: { rgb: 'FF0000' } },
+  };
+
+  const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
   for (let R = range3.s.r; R <= range3.e.r; ++R) {
     const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
     const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
-    let isMissingRequiredData = false;
-    if (R > 0 && !isHubRow) {
-      const platValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: platColIndex })]?.v;
-      const driverValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: driverColIndex })]?.v;
-      if (platValue && driverValue) {
-        const etaValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etaColIndex })]?.v;
-        const etdValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etdColIndex })]?.v;
-        const roValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: roColIndex })]?.v;
-        if (isEmpty(etaValue) || isEmpty(etdValue) || isEmpty(roValue)) {
-          isMissingRequiredData = true;
-        }
-      }
-    }
+
     for (let C = range3.s.c; C <= range3.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsRoVsReal[cellRef]) wsRoVsReal[cellRef] = { t: 's', v: '' };
       const cell = wsRoVsReal[cellRef];
+
       if (R === 0) {
-        cell.s = headerStyle;
+        // Header: warna kolom + wrapText untuk kolom sempit (11-14)
+        const colFill = colFillMap3[C];
+        const isNarrow = C >= 11 && C <= 14;
+        cell.s = {
+          font: { bold: true },
+          alignment: {
+            horizontal: 'center',
+            vertical: 'center',
+            ...(isNarrow ? { wrapText: true } : {}),
+          },
+          ...(colFill ? { fill: { fgColor: { rgb: colFill.header } } } : {}),
+        };
         if (C === 16) {
-          cell.c = [
-            {
-              a: 'Info',
-              t: translate('excel.delivery.info_within_hours'),
-              h: true,
-            },
-          ];
+          cell.c = [{ a: 'Info', t: translate('excel.delivery.info_within_hours'), h: true }];
         }
       } else if (isHubRow) {
-        cell.s = redTextStyle;
-        if (C === 3) {
-          cell.s = {
-            ...redTextStyle,
-            ...centerStyle,
-            font: { ...redTextStyle.font, bold: true },
-          };
-        } else if ([7, 9].includes(C)) {
-          cell.s = { ...redTextStyle, ...centerStyle };
+        // HUB row: teks merah center
+        if ([7, 9].includes(C)) {
+          cell.s = { ...hubRedStyle3 };
+        } else if (C === 3) {
+          cell.s = { ...hubRedStyle3 };
+        } else {
+          cell.s = { font: { color: { rgb: 'FF0000' } } };
         }
       } else {
-        if (centerAlignedROColumns.includes(C)) {
-          if (!cell.s) cell.s = {};
-          cell.s.alignment = centerStyle.alignment;
-          if (typeof cell.v === 'number') cell.t = 'n';
-        }
-        if (isMissingRequiredData) {
-          if (!cell.s) cell.s = {};
-          cell.s.fill = redFillStyleRoVsReal.fill;
+        // Spacer row: skip semua styling
+        const isSpacerRow =
+          isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 0 })]?.v) &&
+          isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 2 })]?.v);
+        if (isSpacerRow) continue;
+
+        // Data row: cols 0-3 rata kiri, cols 4-16 rata kanan + warna kolom
+        const isManual = manualAssignRows3.has(R);
+        if (isManual) {
+          // Manual assign: merah di semua kolom
+          cell.s = {
+            ...(C <= 3 ? leftAlign3 : centerStyle),
+            fill: { fgColor: { rgb: 'FECACA' } },
+          };
+        } else if (C <= 3) {
+          cell.s = { ...leftAlign3 };
+        } else {
+          const colFill = colFillMap3[C];
+          cell.s = {
+            ...centerStyle,
+            ...(colFill ? { fill: { fgColor: { rgb: colFill.data } } } : {}),
+          };
         }
 
-        if (C === 12 && (cell.v === '0' || cell.v === 0)) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-          if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-        }
+        if (typeof cell.v === 'number') cell.t = 'n';
 
+        // Kolom is_match (15): warna teks
         if (C === 15 && cell.v) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-
-          if (cell.v === translate('excel.delivery.match')) {
-            cell.s.font.color = { rgb: '16A34A' }; // Hijau
-          } else if (cell.v === translate('excel.delivery.mismatch')) {
-            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-          }
+          cell.s = {
+            ...cell.s,
+            font: {
+              bold: true,
+              color: { rgb: cell.v === translate('excel.delivery.match') ? '16A34A' : 'DC2626' },
+            },
+          };
         }
 
+        // Kolom is_within_hours (16): warna teks
         if (C === 16 && cell.v) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-
-          if (cell.v === translate('dashboard.tab.routingreal.yes')) {
-            cell.s.font.color = { rgb: '16A34A' }; // Hijau
-          } else if (cell.v === translate('dashboard.tab.routingreal.early')) {
-            cell.s.font.color = { rgb: 'F59E0B' }; // Kuning/Amber
-          } else if (cell.v === translate('dashboard.tab.routingreal.no')) {
-            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-          }
+          let color = null;
+          if (cell.v === translate('dashboard.tab.routingreal.yes')) color = '16A34A';
+          else if (cell.v === translate('dashboard.tab.routingreal.early')) color = 'F59E0B';
+          else if (cell.v === translate('dashboard.tab.routingreal.no')) color = 'DC2626';
+          if (color) cell.s = { ...cell.s, font: { bold: true, color: { rgb: color } } };
         }
-        // ---------------------------------------------------------
       }
     }
   }

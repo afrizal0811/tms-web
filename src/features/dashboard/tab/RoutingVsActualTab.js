@@ -79,41 +79,58 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
       align: 'left',
       render: (row) => <HighlightText text={row.customerName} highlight={searchQuery} />,
     },
-    { header: t('dashboard.tab.routingreal.status'), render: (row) => row.statusLabel },
+    {
+      header: t('dashboard.tab.routingreal.status'),
+      render: (row) => row.statusLabel,
+    },
     {
       header: t('common.open_time'),
+      className: 'bg-green-100 dark:bg-green-900/40',
       render: (row) => row.openTime,
     },
     {
       header: t('common.close_time'),
+      className: 'bg-green-100 dark:bg-green-900/40',
       render: (row) => row.closeTime,
     },
-    { header: t('common.eta'), render: (row) => row.eta },
+    {
+      header: t('common.eta'),
+      className: 'bg-orange-100 dark:bg-orange-900/40',
+      render: (row) => row.eta,
+    },
     {
       header: t('common.actual_arrival'),
+      className: 'bg-orange-100 dark:bg-orange-900/40',
       render: (row) => row.actualArrival,
     },
-    { header: t('common.etd'), render: (row) => row.etd },
+    {
+      header: t('common.etd'),
+      className: 'bg-yellow-100 dark:bg-yellow-900/40',
+      render: (row) => row.etd,
+    },
     {
       header: t('common.actual_departure'),
+      className: 'bg-yellow-100 dark:bg-yellow-900/40',
       render: (row) => row.actualDeparture,
     },
     {
       header: t('common.visit_plan'),
+      className: 'bg-pink-100 dark:bg-pink-900/40',
       render: (row) => row.visitTime,
     },
     {
       header: t('common.visit_actual'),
+      className: 'bg-pink-100 dark:bg-pink-900/40',
       render: (row) => row.actualVisitTime,
     },
     {
       header: t('common.ro_seq'),
-      className: 'font-semibold',
+      className: 'font-semibold bg-blue-100 dark:bg-blue-900/40',
       render: (row) => (isEmpty(row.roSequence) ? '-' : row.roSequence),
     },
     {
       header: t('common.actual_seq'),
-      className: 'font-semibold',
+      className: 'font-semibold bg-blue-100 dark:bg-blue-900/40',
       render: (row) => row.realSequence ?? '-',
     },
     {
@@ -183,7 +200,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               {tableColumns.map((col, index) => {
                 const baseClass = `px-4 py-3 border-b border-gray-300 dark:border-slate-700 text-center`;
                 return (
-                  <th key={index} className={`${baseClass} ${col.tooltip ? 'cursor-help' : ''}`}>
+                  <th
+                    key={index}
+                    className={`${baseClass} ${col.tooltip ? 'cursor-help' : ''} ${col.className || ''}`}
+                  >
                     {col.tooltip ? (
                       <Tooltip tooltipContent={col.tooltip} width={col.tooltipWidth}>
                         <span>{col.header}</span>
@@ -244,14 +264,20 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 ? 'bg-red-100/70 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-[#88191b] divide-y divide-red-200/30 dark:divide-red-900/30!'
                 : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
 
-              const cellContent = tableColumns.map((col, colIndex) => (
-                <td
-                  key={colIndex}
-                  className={`px-4 py-2 ${col.align === 'left' ? 'text-left' : 'text-center'} ${col.className || ''}`}
-                >
-                  {col.render(row)}
-                </td>
-              ));
+              const cellContent = tableColumns.map((col, colIndex) => {
+                // Hapus semua bg-* class saat baris manual assign agar merah tetap prioritas
+                const colClass = row.isManualAssign
+                  ? (col.className || '').replace(/\S*bg-\S+/g, '').trim()
+                  : col.className || '';
+                return (
+                  <td
+                    key={colIndex}
+                    className={`px-4 py-2 ${col.align === 'left' ? 'text-left' : 'text-center'} ${colClass}`}
+                  >
+                    {col.render(row)}
+                  </td>
+                );
+              });
 
               // 4. Return baris
               if (row.isManualAssign) {

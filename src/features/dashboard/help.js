@@ -163,6 +163,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       statusLabel = task.status && task.status.toUpperCase();
     }
     statusLabel = task.status !== 'ONGOING' ? statusLabel : '-';
+    if (flow === 'Pickup' && statusLabel === 'DONE') statusLabel = 'SUKSES';
     let { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
     if (isEmpty(customerName)) customerName = task.customerName;
 
@@ -531,13 +532,14 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
     t('common.actual_departure'),
     t('common.visit_plan'),
     t('common.visit_actual'),
-    t('dashboard.tab.routingreal.ro_seq'),
+    t('common.ro_seq'),
     t('common.actual_seq'),
     t('dashboard.tab.routingreal.is_match'),
     t('dashboard.tab.routingreal.is_within_hours'),
   ];
 
   const sheetData = [headers];
+  const manualAssignRows = new Set();
 
   let lastDriver = null;
 
@@ -555,6 +557,10 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
       sheetData.push(Array(17).fill(''));
     }
     lastDriver = currentDriver;
+
+    if (!isHub && row.isManualAssign) {
+      manualAssignRows.add(sheetData.length);
+    }
 
     const flow = isHub ? null : row.flow;
     const plat = isHub ? null : row.plat;
@@ -634,6 +640,13 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
 
   ws['!cols'] = colWidths;
 
+  // Override lebar kolom sempit (nilai 3-4 char, header wrap text)
+  colWidths[11] = { wch: 10 }; // visit plan
+  colWidths[12] = { wch: 10 }; // visit actual
+  colWidths[13] = { wch: 10 }; // ro seq
+  colWidths[14] = { wch: 10 }; // actual seq
+
+  const leftAlignment = { alignment: { horizontal: 'left', vertical: 'center' } };
   const centerAlignment = {
     alignment: { horizontal: 'center', vertical: 'center' },
   };
@@ -659,6 +672,21 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
   const textAmberStyle = { ...centerAlignment, font: { bold: true, color: { rgb: 'F59E0B' } } };
   const textRedStyle = { ...centerAlignment, font: { bold: true, color: { rgb: 'DC2626' } } };
 
+  // Warna background per kolom: header (lebih gelap) & data (lebih terang)
+  // Col 5,6=Green | 7,8=Orange | 9,10=Yellow | 11,12=Pink | 13,14=Blue
+  const colFillMap = {
+    5: { header: 'A7F3D0', data: 'D1FAE5' }, // open_time  - green
+    6: { header: 'A7F3D0', data: 'D1FAE5' }, // close_time - green
+    7: { header: 'FED7AA', data: 'FFEDD5' }, // eta        - orange
+    8: { header: 'FED7AA', data: 'FFEDD5' }, // actual arr - orange
+    9: { header: 'FDE68A', data: 'FEF9C3' }, // etd        - yellow
+    10: { header: 'FDE68A', data: 'FEF9C3' }, // actual dep - yellow
+    11: { header: 'FBCFE8', data: 'FCE7F3' }, // visit plan - pink
+    12: { header: 'FBCFE8', data: 'FCE7F3' }, // visit act  - pink
+    13: { header: 'BFDBFE', data: 'DBEAFE' }, // ro seq     - blue
+    14: { header: 'BFDBFE', data: 'DBEAFE' }, // actual seq - blue
+  };
+
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -666,26 +694,40 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
       if (!ws[cellRef]) continue;
 
       if (R === 0) {
-        if (C >= 4 && C <= 16) {
-          ws[cellRef].s = {
-            ...headerStyle,
-          };
-        } else {
-          ws[cellRef].s = headerStyle;
-        }
+        const colFill = colFillMap[C];
+        const isNarrowCol = C >= 11 && C <= 14;
+        ws[cellRef].s = {
+          ...headerStyle,
+          ...(isNarrowCol
+            ? { alignment: { horizontal: 'center', vertical: 'center', wrapText: true } }
+            : {}),
+          ...(colFill ? { fill: { fgColor: { rgb: colFill.header } } } : {}),
+        };
       } else {
         const firstCellRef = XLSX.utils.encode_cell({ r: R, c: 0 });
-        if (C >= 4 && C <= 16) {
+        const isSpacerRow =
+          (!ws[firstCellRef] || isEmpty(ws[firstCellRef].v)) &&
+          !(ws[XLSX.utils.encode_cell({ r: R, c: 3 })]?.v === 'HUB');
+
+        // Spacer row: skip semua styling (tidak ada warna apapun)
+        if (isSpacerRow) continue;
+
+        // Cols 0-3: rata kiri | Cols 4-16: rata kanan
+        if (C <= 3) {
+          ws[cellRef].s = { ...leftAlignment };
+        } else if (C >= 4 && C <= 16) {
+          const colFill = colFillMap[C];
           ws[cellRef].s = {
             ...centerAlignment,
+            ...(colFill ? { fill: { fgColor: { rgb: colFill.data } } } : {}),
           };
         }
 
-        if (
-          (!ws[firstCellRef] || isEmpty(ws[firstCellRef].v)) &&
-          !(ws[XLSX.utils.encode_cell({ r: R, c: 3 })]?.v === 'HUB')
-        ) {
-          continue;
+        if (manualAssignRows.has(R)) {
+          ws[cellRef].s = {
+            ...(C <= 3 ? leftAlignment : centerAlignment),
+            fill: { fgColor: { rgb: 'FECACA' } },
+          };
         }
 
         const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
