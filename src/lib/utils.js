@@ -383,9 +383,10 @@ export function convertWibToUtc(dateInput) {
 export const capitalizeText = (text = '') =>
   text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
-export const tomorrowDate = () => {
+export const tomorrowDate = (isTommorrow = true) => {
   const date = new Date();
-  date.setDate(date.getDate() + 1);
+  const day = isTommorrow ? 1 : 7;
+  date.setDate(date.getDate() + day);
   if (date.getDay() === 0) {
     date.setDate(date.getDate() + 1);
   }
