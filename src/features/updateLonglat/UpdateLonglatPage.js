@@ -209,7 +209,7 @@ export default function UpdateLonglatPage() {
         loading
           ? t('common.loading')
           : isDownloading
-            ? t('common.downlading')
+            ? t('common.downloading')
             : t('common.download')
       }
     />
