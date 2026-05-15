@@ -42,7 +42,20 @@ export async function POST(request) {
       .filter((r) => r.name.toLowerCase().includes('driver'))
       .map((r) => r.id);
 
-    let allUpserts = [];
+    let allTransactions = [];
+
+    // Hapus semua data driver berdasarkan hubId yang aktif sebelum menarik data baru
+    allTransactions.push(
+      prisma.driver.deleteMany({
+        where: {
+          hubs: {
+            some: {
+              id: { in: hubIds },
+            },
+          },
+        },
+      })
+    );
 
     for (const hubId of hubIds) {
       let rawDrivers = [];
@@ -92,25 +105,22 @@ export async function POST(request) {
           const cleanPlate = plat.replace(/\s+/g, '').toUpperCase();
           const uniqueId = `${driverInfo._id}-${cleanPlate}`;
 
-          // Kapasitas Berat
           let wMax = vehicle.capacity?.weight?.max ? parseFloat(vehicle.capacity.weight.max) : null;
           if (isNaN(wMax)) wMax = null;
           let wMin = vehicle.capacity?.weight?.min ? parseFloat(vehicle.capacity.weight.min) : null;
           if (isNaN(wMin)) wMin = null;
           else if (isEmpty(wMin)) wMin = 0;
 
-          // Kapasitas Volume
           let vMax = vehicle.capacity?.volume?.max ? parseFloat(vehicle.capacity.volume.max) : null;
           if (isNaN(vMax)) vMax = null;
           let vMin = vehicle.capacity?.volume?.min ? parseFloat(vehicle.capacity.volume.min) : null;
           if (isNaN(vMin)) vMin = null;
           else if (isEmpty(vMin)) vMin = 0;
 
-          // Multiday
           let mDay = vehicle.workingTime?.multiday;
           if (mDay !== null && mDay !== undefined) {
             mDay = parseInt(mDay, 10);
-            if (isNaN(mDay)) mDay = null; // Jika ternyata isinya bukan angka, set null
+            if (isNaN(mDay)) mDay = null;
           } else {
             mDay = 0;
           }
@@ -145,33 +155,8 @@ export async function POST(request) {
         }
       }
 
-      // 1. Dapatkan semua ID yang "Aktif" dari API vendor untuk Hub ini
-      const activeIdsFromApi = Array.from(uniquePayloads.keys());
-
-      // 2. Ambil semua ID driver yang saat ini terdaftar di Hub ini dari Database
-      const existingHub = await prisma.hub.findUnique({
-        where: { id: hubId },
-        include: { drivers: { select: { id: true } } }, // Ambil ID-nya saja biar ringan
-      });
-      const existingIdsInDb = existingHub?.drivers.map((d) => d.id) || [];
-
-      // 3. Cari ID mana yang ada di DB, tapi TIDAK ADA di API (Data Usang)
-      const staleIds = existingIdsInDb.filter((id) => !activeIdsFromApi.includes(id));
-
-      // 4. Putuskan hubungan (disconnect) data usang tersebut dari Hub saat ini
-      if (staleIds.length > 0) {
-        await prisma.hub.update({
-          where: { id: hubId },
-          data: {
-            drivers: {
-              disconnect: staleIds.map((id) => ({ id })),
-            },
-          },
-        });
-      }
-
       for (const [uniqueId, payload] of uniquePayloads.entries()) {
-        allUpserts.push(
+        allTransactions.push(
           prisma.driver.upsert({
             where: { id: uniqueId },
             update: {
@@ -188,23 +173,29 @@ export async function POST(request) {
       }
     }
 
-    await prisma.driver.deleteMany({
-      where: { OR: [{ plat: null }, { plat: '' }] },
-    });
+    allTransactions.push(
+      prisma.driver.deleteMany({
+        where: { OR: [{ plat: null }, { plat: '' }] },
+      })
+    );
 
-    await prisma.driver.deleteMany({
-      where: { NOT: { id: { contains: '-' } } },
-    });
+    allTransactions.push(
+      prisma.driver.deleteMany({
+        where: { NOT: { id: { contains: '-' } } },
+      })
+    );
 
-    await prisma.driver.deleteMany({
-      where: {
-        hubs: {
-          none: {},
+    allTransactions.push(
+      prisma.driver.deleteMany({
+        where: {
+          hubs: {
+            none: {},
+          },
         },
-      },
-    });
+      })
+    );
 
-    await prisma.$transaction(allUpserts);
+    await prisma.$transaction(allTransactions);
     return NextResponse.json({ message: 'Sync Drivers Berhasil' }, { status: 200 });
   } catch (error) {
     console.error('Error Sync Driver:', error);
