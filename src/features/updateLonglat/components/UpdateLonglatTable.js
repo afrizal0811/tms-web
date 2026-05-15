@@ -73,7 +73,7 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
                       <td className="px-4 py-2 text-center dark:text-slate-300">
                         {row.bedaJarak?.toLocaleString(lang)}
                       </td>
-                      <td className="px-4 py-2 text-left text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
                         {row.driverName}
                       </td>
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
