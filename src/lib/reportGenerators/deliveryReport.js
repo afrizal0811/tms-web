@@ -1,6 +1,5 @@
 'use client';
 
-// (PERHATIKAN PATH: Sesuaikan path ke 'constants' dan 'utils' jika perlu)
 import {
   calculateHaversineDistance,
   calculateMinuteDifference,
@@ -15,7 +14,6 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-// Definisikan konstanta yang dibutuhkan
 
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -37,7 +35,6 @@ export function generateDeliveryWorkbook(
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
   if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
 
-  // 2. Buat Peta Lookup Driver
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     if (normalizedEmail) {
@@ -46,7 +43,6 @@ export function generateDeliveryWorkbook(
     return acc;
   }, {});
 
-  // 3. Buat Map Waktu HUB (dari resultsData)
   const hubTimesMap = new Map();
   if (resultsData) {
     const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
@@ -72,7 +68,6 @@ export function generateDeliveryWorkbook(
     }
   }
 
-  // 4. Proses Data Utama (Gabungan)
   const driverStats = new Map();
   let allTaskDataForSequence = [];
   let updateLonglatData = [];
@@ -133,7 +128,6 @@ export function generateDeliveryWorkbook(
       actualDeparture = task.page3DoneTime;
     }
 
-    // --- TAMBAHAN LOGIKA PENGECEKAN STATUS JAM OPERASIONAL ---
     const openTimeVal = formatSimpleTime(task.openTime) || '-';
     const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
     const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
@@ -153,7 +147,6 @@ export function generateDeliveryWorkbook(
         hoursStatus = 'no';
       }
     }
-    // ---------------------------------------------------------
 
     let fakturBatal = null,
       terkirimSebagian = null,
@@ -200,7 +193,7 @@ export function generateDeliveryWorkbook(
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
       orderId: orderId,
-      isWithinHoursStatus: hoursStatus, // <--- Data Status Jam
+      isWithinHoursStatus: hoursStatus,
     });
 
     if (task.klikLokasiClient) {
@@ -214,7 +207,6 @@ export function generateDeliveryWorkbook(
     }
   }
 
-  // 5. Hitung Real Sequence
   allTaskDataForSequence.sort((a, b) => {
     const driverCompare = a.driver.localeCompare(b.driver);
     if (driverCompare !== 0) return driverCompare;
@@ -244,7 +236,6 @@ export function generateDeliveryWorkbook(
     return 1;
   };
 
-  // 6. Filter & Sortir data "Hasil Pending SO"
   const pendingSOData = allTaskDataForSequence.filter(
     (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
   );
@@ -259,7 +250,6 @@ export function generateDeliveryWorkbook(
     return (a.roSequence || 0) - (b.roSequence || 0);
   });
 
-  // 7. Siapkan Data Excel
   const wb = XLSX.utils.book_new();
   const headerStyle = {
     font: { bold: true },
@@ -277,7 +267,6 @@ export function generateDeliveryWorkbook(
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   };
 
-  // Warna khusus untuk kolom Status Jam
   const textGreenStyle = {
     alignment: centerStyle.alignment,
     font: { bold: true, color: { rgb: '16A34A' } },
@@ -291,7 +280,6 @@ export function generateDeliveryWorkbook(
     font: { bold: true, color: { rgb: 'DC2626' } },
   };
 
-  // --- Sheet 1: Routing Date ---
   const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
@@ -312,7 +300,12 @@ export function generateDeliveryWorkbook(
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
   XLSX.utils.book_append_sheet(wb, wsRoutingDate, translate('excel.delivery.sheets.routing_date'));
 
-  // --- Sheet 2: Total Delivered ---
+  function getBasePlate(plat) {
+    if (!plat) return '';
+    const parts = plat.trim().split(/\s+/);
+    return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
+  }
+
   const headers1 = [
     translate('common.license_number'),
     translate('common.driver'),
@@ -327,58 +320,112 @@ export function generateDeliveryWorkbook(
     if (plat.toUpperCase().includes('DEMO')) return false;
     return true;
   });
-  let sheetData1Objects = validDriverData.map((driver) => {
+
+  const aggregatedMap = new Map();
+
+  validDriverData.forEach((driver) => {
     const driverName = driver.name;
-    const driverPlat = driver.plat;
+    const originalPlat = driver.plat;
+    const basePlate = getBasePlate(originalPlat);
     const driverEmail = normalizeEmail(driver.email);
     const stats = driverStats.get(driverName);
 
+    if (!aggregatedMap.has(basePlate)) {
+      aggregatedMap.set(basePlate, {
+        plat: basePlate,
+        driver: driverName,
+        totalOutlet: 0,
+        totalDelivery: 0,
+        driverEmail: driverEmail,
+        mismatchCustomers: [],
+        missingDataCustomers: [],
+        hasData: false,
+      });
+    }
+
+    const agg = aggregatedMap.get(basePlate);
+
+    const cleanExisting = agg.driver.replace(/['"]?(DRY|FRZ)['"]?\s*/i, '').trim();
+    const cleanNew = driverName.replace(/['"]?(DRY|FRZ)['"]?\s*/i, '').trim();
+    if (cleanExisting !== cleanNew && !agg.driver.includes(cleanNew)) {
+      agg.driver += ` / ${driverName}`;
+    }
+
     if (stats) {
-      const totalDelivery = stats.totalOutlet - stats.failedCount;
-      const mismatchText = stats.mismatchCustomers
-        .map((task) => {
-          let formattedDate = task.date;
-          if (task.date) {
-            const [y, m, d] = task.date.split('-');
-            if (y && m && d) formattedDate = `${d}-${m}-${y}`;
-          }
-          return `• ${task.name} (done: ${formattedDate})`;
-        })
-        .join('\n');
-      const missingDataText = stats.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
-      const hasManualError = stats.missingDataCustomers.length > 0;
-      const hasBedaHariError = stats.mismatchCustomers.length > 0;
-      let highlightType = 'none';
-      if (hasManualError && hasBedaHariError) {
-        highlightType = 'green';
-      } else if (hasManualError) {
-        highlightType = 'blue';
-      } else if (hasBedaHariError) {
-        highlightType = 'yellow';
-      }
+      agg.hasData = true;
+      // Memperbaiki dengan override nilai agar tidak ada duplikasi kalkulasi outlet/delivery
+      agg.totalOutlet = stats.totalOutlet;
+      agg.totalDelivery = stats.totalOutlet - stats.failedCount;
+
+      stats.mismatchCustomers.forEach((mc) => {
+        if (
+          !agg.mismatchCustomers.some(
+            (existing) => existing.name === mc.name && existing.date === mc.date
+          )
+        ) {
+          agg.mismatchCustomers.push(mc);
+        }
+      });
+
+      stats.missingDataCustomers.forEach((md) => {
+        if (!agg.missingDataCustomers.some((existing) => existing.name === md.name)) {
+          agg.missingDataCustomers.push(md);
+        }
+      });
+    }
+  });
+
+  let sheetData1Objects = Array.from(aggregatedMap.values()).map((agg) => {
+    if (!agg.hasData) {
       return {
-        plat: driverPlat || stats.plat,
-        driver: driverName,
-        totalOutlet: stats.totalOutlet,
-        totalDelivery: totalDelivery,
-        driverEmail: stats.driverEmail,
-        highlightType: highlightType,
-        mismatchText: mismatchText,
-        missingDataText: missingDataText,
-      };
-    } else {
-      return {
-        plat: driverPlat,
-        driver: driverName,
+        plat: agg.plat,
+        driver: agg.driver,
         totalOutlet: null,
         totalDelivery: null,
-        driverEmail: driverEmail,
+        driverEmail: agg.driverEmail,
         highlightType: 'none',
         mismatchText: '',
         missingDataText: '',
       };
     }
+
+    const mismatchText = agg.mismatchCustomers
+      .map((task) => {
+        let formattedDate = task.date;
+        if (task.date) {
+          const [y, m, d] = task.date.split('-');
+          if (y && m && d) formattedDate = `${d}-${m}-${y}`;
+        }
+        return `• ${task.name} (done: ${formattedDate})`;
+      })
+      .join('\n');
+
+    const missingDataText = agg.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
+
+    const hasManualError = agg.missingDataCustomers.length > 0;
+    const hasBedaHariError = agg.mismatchCustomers.length > 0;
+    let highlightType = 'none';
+
+    if (hasManualError && hasBedaHariError) {
+      highlightType = 'green';
+    } else if (hasManualError) {
+      highlightType = 'blue';
+    } else if (hasBedaHariError) {
+      highlightType = 'yellow';
+    }
+
+    return {
+      plat: agg.plat,
+      driver: agg.driver,
+      totalOutlet: agg.totalOutlet,
+      totalDelivery: agg.totalDelivery,
+      driverEmail: agg.driverEmail,
+      highlightType: highlightType,
+      mismatchText: mismatchText,
+      missingDataText: missingDataText,
+    };
   });
+
   sheetData1Objects.sort((a, b) => {
     const groupA = getSortGroup(a.plat);
     const groupB = getSortGroup(b.plat);
@@ -387,6 +434,7 @@ export function generateDeliveryWorkbook(
     }
     return (a.driver || '').localeCompare(b.driver || '');
   });
+
   const finalSheetData1 = [
     headers1,
     ...sheetData1Objects.map((row) => [
@@ -443,7 +491,6 @@ export function generateDeliveryWorkbook(
   });
   XLSX.utils.book_append_sheet(wb, wsDelivered, translate('excel.delivery.sheets.total_delivered'));
 
-  // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
     translate('common.flow'),
     translate('common.so_number'),
@@ -574,7 +621,6 @@ export function generateDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsPendingSO, translate('excel.delivery.sheets.pending_so'));
 
-  // --- Sheet 5: Update Longlat ---
   const headers4 = [
     translate('common.customer_name'),
     translate('common.customer_id'),
@@ -634,7 +680,6 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.sheets.update_longlat')
   );
 
-  // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
     translate('common.flow'),
     translate('common.license_number'),
@@ -699,7 +744,7 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
-      null, // 17 Elemen
+      null,
     ]);
     tasks.sort((a, b) => a.roSequence - b.roSequence);
     for (const task of tasks) {
@@ -745,7 +790,6 @@ export function generateDeliveryWorkbook(
           newStatusLabel = task.statusLabel;
       }
 
-      // Catat baris manual assign (roSequence === 0, sama seperti dashboard)
       if (task.roSequence === 0) manualAssignRows3.add(finalSheetData3.length);
       finalSheetData3.push([
         task.flow || '-',
@@ -784,7 +828,7 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
-      null, // 17 Elemen
+      null,
     ]);
     finalSheetData3.push(Array(headers3.length).fill(null));
   }
@@ -797,25 +841,23 @@ export function generateDeliveryWorkbook(
     );
     return { wch: Math.min(maxLength + 2, 50) };
   });
-  // Override lebar kolom sempit (visit plan, visit actual, ro seq, actual seq)
   colWidths3[11] = { wch: 10 };
   colWidths3[12] = { wch: 10 };
   colWidths3[13] = { wch: 10 };
   colWidths3[14] = { wch: 10 };
   wsRoVsReal['!cols'] = colWidths3;
 
-  // Warna background per kolom (sama seperti dashboard & help.js)
   const colFillMap3 = {
-    5: { header: 'A7F3D0', data: 'D1FAE5' }, // open_time  - green
-    6: { header: 'A7F3D0', data: 'D1FAE5' }, // close_time - green
-    7: { header: 'FED7AA', data: 'FFEDD5' }, // eta        - orange
-    8: { header: 'FED7AA', data: 'FFEDD5' }, // actual arr - orange
-    9: { header: 'FDE68A', data: 'FEF9C3' }, // etd        - yellow
-    10: { header: 'FDE68A', data: 'FEF9C3' }, // actual dep - yellow
-    11: { header: 'FBCFE8', data: 'FCE7F3' }, // visit plan - pink
-    12: { header: 'FBCFE8', data: 'FCE7F3' }, // visit act  - pink
-    13: { header: 'BFDBFE', data: 'DBEAFE' }, // ro seq     - blue
-    14: { header: 'BFDBFE', data: 'DBEAFE' }, // actual seq - blue
+    5: { header: 'A7F3D0', data: 'D1FAE5' },
+    6: { header: 'A7F3D0', data: 'D1FAE5' },
+    7: { header: 'FED7AA', data: 'FFEDD5' },
+    8: { header: 'FED7AA', data: 'FFEDD5' },
+    9: { header: 'FDE68A', data: 'FEF9C3' },
+    10: { header: 'FDE68A', data: 'FEF9C3' },
+    11: { header: 'FBCFE8', data: 'FCE7F3' },
+    12: { header: 'FBCFE8', data: 'FCE7F3' },
+    13: { header: 'BFDBFE', data: 'DBEAFE' },
+    14: { header: 'BFDBFE', data: 'DBEAFE' },
   };
   const leftAlign3 = { alignment: { horizontal: 'left', vertical: 'center' } };
   const hubRedStyle3 = {
@@ -834,7 +876,6 @@ export function generateDeliveryWorkbook(
       const cell = wsRoVsReal[cellRef];
 
       if (R === 0) {
-        // Header: warna kolom + wrapText untuk kolom sempit (11-14)
         const colFill = colFillMap3[C];
         const isNarrow = C >= 11 && C <= 14;
         cell.s = {
@@ -850,7 +891,6 @@ export function generateDeliveryWorkbook(
           cell.c = [{ a: 'Info', t: translate('excel.delivery.info_within_hours'), h: true }];
         }
       } else if (isHubRow) {
-        // HUB row: teks merah center
         if ([7, 9].includes(C)) {
           cell.s = { ...hubRedStyle3 };
         } else if (C === 3) {
@@ -859,16 +899,13 @@ export function generateDeliveryWorkbook(
           cell.s = { font: { color: { rgb: 'FF0000' } } };
         }
       } else {
-        // Spacer row: skip semua styling
         const isSpacerRow =
           isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 0 })]?.v) &&
           isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 2 })]?.v);
         if (isSpacerRow) continue;
 
-        // Data row: cols 0-3 rata kiri, cols 4-16 rata kanan + warna kolom
         const isManual = manualAssignRows3.has(R);
         if (isManual) {
-          // Manual assign: merah di semua kolom
           cell.s = {
             ...(C <= 3 ? leftAlign3 : centerStyle),
             fill: { fgColor: { rgb: 'FECACA' } },
@@ -885,7 +922,6 @@ export function generateDeliveryWorkbook(
 
         if (typeof cell.v === 'number') cell.t = 'n';
 
-        // Kolom is_match (15): warna teks
         if (C === 15 && cell.v) {
           cell.s = {
             ...cell.s,
@@ -896,7 +932,6 @@ export function generateDeliveryWorkbook(
           };
         }
 
-        // Kolom is_within_hours (16): warna teks
         if (C === 16 && cell.v) {
           let color = null;
           if (cell.v === translate('dashboard.tab.routingreal.yes')) color = '16A34A';
