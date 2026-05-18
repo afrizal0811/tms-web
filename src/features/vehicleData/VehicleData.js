@@ -30,12 +30,12 @@ export default function VehicleData() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const { storedSession } = getLocalStorage();
-        const userLocation = storedSession?.activeHubId;
-        if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
+        const { storedLocation } = getLocalStorage();
+        if (!storedLocation)
+          throw new Error(t('common.toast.error', { err: 'Location not found' }));
 
         const [rawDriversData, mappingsDB] = await Promise.all([
-          getDrivers(userLocation),
+          getDrivers(storedLocation),
           getVehicleMappings(),
         ]);
 

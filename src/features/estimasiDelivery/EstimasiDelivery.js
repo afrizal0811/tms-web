@@ -101,8 +101,8 @@ export default function EstimasiDelivery() {
 
     try {
       const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-      const { storedSession } = getLocalStorage();
-      const locationName = storedSession?.activeHubName || 'Cabang';
+      const { storedLocationAcronym } = getLocalStorage();
+      const locationName = storedLocationAcronym || 'Cabang';
 
       const generatePdfBlob = async (route) => {
         const normalizedAssignee = normalizeEmail(route.assignee);
@@ -150,7 +150,7 @@ export default function EstimasiDelivery() {
         const url = URL.createObjectURL(content);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${t('estimation.delivery_form')} - ${locationName} - ${dateForFilename}.zip`;
+        link.download = `${t('estimation.delivery_form')} - ${dateForFilename} - ${locationName}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -197,13 +197,12 @@ export default function EstimasiDelivery() {
       setTimeMap(new Map());
 
       try {
-        const { storedSession } = getLocalStorage();
-        const userLocation = storedSession?.activeHubId;
-        if (!userLocation) {
-          throw new Error('userLocation tidak ditemukan di localStorage.');
+        const { storedLocation } = getLocalStorage();
+        if (!storedLocation) {
+          throw new Error(t('common.toast.error', { err: 'Location not found' }));
         }
 
-        const rawDrivers = await getOrFetchDriverData(userLocation);
+        const rawDrivers = await getOrFetchDriverData(storedLocation);
         const dataObj = {};
         const mapObj = new Map();
         if (Array.isArray(rawDrivers)) {
@@ -240,7 +239,7 @@ export default function EstimasiDelivery() {
 
         const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResultsSummary({
-            hubId: userLocation,
+            hubId: storedLocation,
             limit: 100,
             dateFrom: dateFromRouting,
             dateTo: dateToRouting,
@@ -254,7 +253,7 @@ export default function EstimasiDelivery() {
             timeBy: 'createdTime',
           }),
           getTasks({
-            hubId: userLocation,
+            hubId: storedLocation,
             limit: 2000,
             timeFrom: timeFrom,
             timeTo: timeTo,
