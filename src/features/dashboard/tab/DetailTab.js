@@ -1,12 +1,12 @@
 'use client';
 
 import Spinner from '@/components/Spinner';
+import Td from '@/components/table/Td';
+import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { forwardRef } from 'react';
-import Th from '@/components/table/Th';
-import Td from '@/components/table/Td';
 
 const StatCard = forwardRef(function StatCard(
   { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
@@ -39,7 +39,7 @@ StatCard.displayName = 'StatCard';
 
 const TableData = ({ title, data, headers, renderRow, loading }) => {
   const { t, lang } = useLanguage();
-  
+
   const handleCopy = (task) => {
     const isIndo = lang === 'id';
     const copyText = isIndo
@@ -162,19 +162,19 @@ export default function DetailTab({ loading, summaryData }) {
             title={t('common.status.ongoing')}
             value={summaryData?.ongoing}
             isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
+            tooltipContent={t('common.status.ongoing')}
           />
           <StatCard
             title={t('common.status.done')}
             value={summaryData?.done}
             isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.done')}
+            tooltipContent={t('common.status.done')}
           />
           <StatCard
             title={t('common.status.manual_assign')}
             value={summaryData?.manualAssignList?.length}
             isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
+            tooltipContent={t('common.status.manual_assign')}
           />
           <StatCard
             title={t('dashboard.tab.detail.diff_day')}

@@ -727,8 +727,8 @@ export function generateDeliveryWorkbook(
       const isSame = isRealEmpty
         ? '-'
         : ro === real
-          ? translate('excel.delivery.match')
-          : translate('excel.delivery.mismatch');
+          ? translate('common.status.match')
+          : translate('common.status.mismatch');
 
       let withinHoursText = '-';
       if (task.isWithinHoursStatus === 'yes')
@@ -890,7 +890,7 @@ export function generateDeliveryWorkbook(
             ...cell.s,
             font: {
               bold: true,
-              color: { rgb: cell.v === translate('excel.delivery.match') ? '16A34A' : 'DC2626' },
+              color: { rgb: cell.v === translate('common.status.match') ? '16A34A' : 'DC2626' },
             },
           };
         }

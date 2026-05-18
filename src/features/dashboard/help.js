@@ -45,7 +45,7 @@ export const serviceLevelData = [
 export const seqAccuracyData = [
   {
     name: 'manual',
-    tKey: 'manual',
+    tKey: 'manual_assign',
     dark_color: '#86BBF9',
     light_color: '#4c9bf4',
   },
@@ -593,8 +593,8 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
       : isRealSeqNull
         ? '-'
         : isMatch
-          ? t('dashboard.tab.routingreal.match')
-          : t('dashboard.tab.routingreal.mismatch');
+          ? t('common.status.match')
+          : t('common.status.mismatch');
 
     let withinHoursText = isHub ? null : '-';
     if (!isHub && row.isWithinHoursStatus) {
@@ -736,10 +736,8 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
         }
 
         if (C === 15) {
-          if (ws[cellRef].v === t('dashboard.tab.routingreal.mismatch'))
-            ws[cellRef].s = textRedStyle;
-          else if (ws[cellRef].v === t('dashboard.tab.routingreal.match'))
-            ws[cellRef].s = textGreenStyle;
+          if (ws[cellRef].v === t('common.status.mismatch')) ws[cellRef].s = textRedStyle;
+          else if (ws[cellRef].v === t('common.status.match')) ws[cellRef].s = textGreenStyle;
         }
 
         if (C === 16) {

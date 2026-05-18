@@ -63,12 +63,14 @@ export const dictionary = {
       status: {
         cancel: 'Batal',
         done: 'Selesai',
+        manual_assign: 'Penugasan Manual',
+        match: 'Sesuai',
+        mismatch: 'Beda',
         ongoing: 'Berjalan',
         partial: 'Terima Sebagian',
         pending: 'Pending',
         pending_gr: 'Pending GR',
         success: 'Sukses',
-        manual_assign: 'Penugasan Manual',
       },
       toast: {
         error: 'Proses gagal: {err}',
@@ -165,8 +167,6 @@ export const dictionary = {
         },
         sequence: {
           actual: 'Aktual',
-          match: 'Sesuai',
-          mismatch: 'Beda',
           routing: 'Routing',
           subtitle: 'Kesesuaian urutan',
           title: 'Akurasi Urutan',
@@ -213,8 +213,6 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Sesuai?',
-          match: 'Sesuai',
-          mismatch: 'Beda',
           search_placeholder: 'Cari Nomor Kendaraan, Driver, atau Customer',
           show_map: 'Lihat Peta',
           status: 'Status',
@@ -336,8 +334,6 @@ export const dictionary = {
         info_within_hours: 'Waktu kedatangan aktual dalam rentang waktu buka dan tutup pelanggan',
         info_wrong_status:
           'Warna merah menandakan seharusnya memilih "Pending", bukan "Pending GR"',
-        match: 'Sesuai',
-        mismatch: 'Beda',
         sheets: {
           pending_so: 'Hasil Pending SO',
           ro_vs_real: 'Hasil RO vs Aktual',
@@ -744,14 +740,16 @@ export const dictionary = {
         btn_yes: 'Yes',
       },
       status: {
-        success: 'Success',
-        pending: 'Pending',
-        partial: 'Partial',
         cancel: 'Cancel',
-        pending_gr: 'Pending GR',
-        ongoing: 'Ongoing',
         done: 'Done',
         manual_assign: 'Manual Assignment',
+        match: 'Match',
+        mismatch: 'Mismatch',
+        ongoing: 'Ongoing',
+        partial: 'Partial',
+        pending: 'Pending',
+        pending_gr: 'Pending GR',
+        success: 'Success',
       },
       toast: {
         error: 'Process failed: {err}',
@@ -850,8 +848,6 @@ export const dictionary = {
         },
         sequence: {
           actual: 'Actual',
-          match: 'Match',
-          mismatch: 'Mismatch',
           routing: 'Routing',
           subtitle: 'Sequence conformity',
           title: 'Sequence Accuracy',
@@ -898,8 +894,6 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Is Match?',
-          match: 'Match',
-          mismatch: 'Mismatch',
           search_placeholder: 'Search Plate, Driver, or Customer',
           show_map: 'View Map',
           status: 'Status',
@@ -1019,8 +1013,6 @@ export const dictionary = {
         info_within_hours: 'Actual arrival time within the customer operating hours',
         info_wrong_status:
           'Red color indicates that the status should be "Pending", not "Pending GR"',
-        match: 'Match',
-        mismatch: 'Mismatch',
         sheets: {
           pending_so: 'Pending SO Results',
           ro_vs_real: 'RO vs Real Results',

@@ -148,7 +148,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               isMatch ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'
             }`}
           >
-            {t(`dashboard.tab.routingreal.${isMatch ? 'match' : 'mismatch'}`)}
+            {t(`common.status.${isMatch ? 'match' : 'mismatch'}`)}
           </span>
         );
       },
