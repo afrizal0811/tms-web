@@ -681,24 +681,26 @@ export default function EstimasiDelivery() {
       />
 
       {isDownloadDropdownOpen && (
-        <div className="absolute right-0 mt-2 bg-white rounded-md shadow-xl border border-gray-200 z-10 p-2 animate-in fade-in zoom-in-95 duration-100 w-full min-w-40">
+        <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-10 p-2 animate-in fade-in zoom-in-95 duration-100 w-full min-w-40">
           <div className="flex flex-col gap-1">
             <button
               onClick={handleExcelDownload}
-              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer rounded-md text-slate-700 font-medium"
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer rounded-md text-slate-700 font-medium"
             >
-              <span className="text-green-600 font-bold">XLS</span>
-              <span>Excel</span>
+              <span className="text-green-600 dark:text-green-500 font-bold">XLS</span>
+              <span className="text-slate-600 dark:text-slate-300">Excel</span>
             </button>
 
             <button
               onClick={handleDeliveryDownload}
-              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer rounded-md text-slate-700 font-medium border-t border-gray-100"
+              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer rounded-md text-slate-700 font-medium border-t border-gray-100 dark:border-slate-600"
             >
-              <span className="text-red-600 font-bold">
+              <span className="text-red-600 dark:text-red-500 font-bold">
                 {filteredVehicleRoutes.length === 1 ? 'PDF' : 'ZIP'}
               </span>
-              <span>{t('estimation.delivery_form')}</span>
+              <span className="text-slate-600 dark:text-slate-300">
+                {t('estimation.delivery_form')}
+              </span>
             </button>
           </div>
         </div>

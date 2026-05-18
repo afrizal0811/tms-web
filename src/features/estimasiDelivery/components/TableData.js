@@ -151,7 +151,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                             className="w-3.5 h-3.5 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
                           />
                           <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
-                            {t('common.customer_id') || 'ID Customer'}
+                            {t('common.customer_id')}
                           </span>
                         </label>
                         <label className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700 rounded cursor-pointer select-none">
@@ -162,7 +162,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                             className="w-3.5 h-3.5 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
                           />
                           <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
-                            {t('common.location_id') || 'ID Location'}
+                            {t('common.location_id')}
                           </span>
                         </label>
                       </div>
@@ -213,8 +213,6 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
               if (isHub) {
                 textClass = 'text-red-600 dark:text-red-300 font-semibold';
-              } else if (isManual) {
-                textClass = 'text-[#4F76C7] dark:text-blue-300 font-medium';
               }
 
               let rowClass = 'transition-colors ';
@@ -234,6 +232,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 tooltipMsg = t('estimation.tooltip.manual_assign');
               }
 
+              const soAlignClass = isDetailView ? 'text-center' : 'text-left';
               const handleRowClick = () => {
                 if (hasPartner && setSearchQuery) {
                   let filterTarget = '';
@@ -282,7 +281,6 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                       <div className="flex flex-col gap-0.5">
                         <div className="flex flex-wrap items-center gap-2">
                           <HighlightText text={trip.outletName || ''} highlight={searchQuery} />
-
                           {trip.isReDelivery && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-300 uppercase tracking-tight">
                               Redelivery
@@ -317,7 +315,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                     </Td>
                   )}
 
-                  <Td>
+                  <Td alignClass={soAlignClass}>
                     {isHub ? '' : <HighlightText text={trip.displaySo} highlight={searchQuery} />}
                   </Td>
 
