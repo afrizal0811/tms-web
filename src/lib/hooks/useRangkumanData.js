@@ -1,12 +1,12 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getBatchHistories,
+  getHubs,
   getLocationHistories,
   getResultsSummary,
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
-  getHubs,
 } from '@/lib/api';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -16,8 +16,8 @@ import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedR
 import {
   formatDateUniversal,
   formatToApiUtc,
-  parseCustomerString,
   getBasePlate,
+  parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -71,10 +71,10 @@ export default function useRangkumanData() {
   const fetchStartTimeRef = useRef(null);
 
   useEffect(() => {
-    const { storedSession } = getLocalStorage();
+    const { storedLocation, storedLocationName } = getLocalStorage();
     if (typeof window !== 'undefined') {
-      if (storedSession?.activeHubId) setSelectedLocation(storedSession.activeHubId);
-      if (storedSession?.activeHubName) setSelectedLocationName(storedSession.activeHubName);
+      if (storedLocation) setSelectedLocation(storedLocation);
+      if (storedLocationName) setSelectedLocationName(storedLocationName);
     }
   }, []);
 

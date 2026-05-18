@@ -1,15 +1,19 @@
-// File: src/components/navbar/Navbar.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
 import { avatarColorStyles } from '@/lib/constants';
-import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import {
+  getLocalStorage,
+  removeLocalStorage,
+  getSuperadminRoleId,
+  setSuperadminRoleId,
+} from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import LanguageToggle from '../LanguageToggle'; // Import Toggle Bahasa yang baru
+import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
 import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
@@ -56,10 +60,20 @@ export default function Navbar() {
           if (storedUser) {
             const user = JSON.parse(storedUser);
             setIsLoggedIn(!!user);
-            const roles = await getRoles();
-            const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
 
-            setIsSuperadmin(user?.roleId === superadminRole?._id);
+            const cachedSuperadminId = getSuperadminRoleId();
+
+            if (cachedSuperadminId) {
+              setIsSuperadmin(user?.roleId === cachedSuperadminId);
+            } else {
+              const roles = await getRoles();
+              const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
+
+              if (superadminRole) {
+                setSuperadminRoleId(superadminRole._id);
+                setIsSuperadmin(user?.roleId === superadminRole._id);
+              }
+            }
           }
         }
       } catch (e) {

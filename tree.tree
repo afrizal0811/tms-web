@@ -22,6 +22,10 @@
 │   │   │   └── route.js
 │   │   ├── get-vehicles
 │   │   │   └── route.js
+│   │   ├── pending-details
+│   │   │   └── route.js
+│   │   ├── reasons
+│   │   │   └── route.js
 │   │   ├── truck-usage
 │   │   │   └── route.js
 │   │   ├── vehicle-mappings
@@ -60,7 +64,6 @@
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
 │   ├── CustomDatePicker.js
-│   ├── DownloadButton.js
 │   ├── ErrorPage.js
 │   ├── Footer.js
 │   ├── HighlightText.js
@@ -72,7 +75,6 @@
 │   │   ├── TokenExpirationModal.js
 │   │   └── VehicleTagMappingModal.js
 │   ├── navbar
-│   │   ├── LanguageSwitcher.js
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
 │   │   └── UserDropdown.js
@@ -145,6 +147,7 @@
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
 │   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── PendingReasonModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
 │   │       │   ├── TruckDetailModal.js
@@ -162,14 +165,15 @@
 │   │   └── TaskCountReport.js
 │   ├── settings
 │   │   ├── components
-│   │   │   ├── BranchAcronymManager.js
+│   │   │   ├── BranchManager.js
 │   │   │   ├── Card.js
+│   │   │   ├── ReasonManager.js
 │   │   │   ├── StandardType.js
+│   │   │   ├── Table.js
 │   │   │   └── VehicleMappingManager.js
 │   │   ├── SettingsPage.js
 │   │   └── tabs
 │   │       ├── GeneralTab.js
-│   │       ├── MasterDataTab.js
 │   │       └── SyncDataTab.js
 │   ├── updateLonglat
 │   │   ├── components
@@ -193,6 +197,8 @@
     │   ├── drivers.js
     │   ├── hubs.js
     │   ├── index.js
+    │   ├── pendingDetails.js
+    │   ├── reasons.js
     │   ├── roles.js
     │   ├── tasks.js
     │   ├── trash.js

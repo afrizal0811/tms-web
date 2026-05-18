@@ -1,10 +1,8 @@
-// File: src/features/userLogin/UserLogin.js
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import { useLanguage } from '@/context/LanguageContext';
 import { getRoles, getUsersByEmail } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -12,9 +10,13 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { capitalizeText, isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 
-export default function UserLogin({ onUserSelect, locationId, hubId }) {
-  const { t } = useLanguage();
-
+export default function LoginSelection({
+  t,
+  selectedLocation,
+  handleUserSelect,
+  selectedLocationName,
+  handleResetAll,
+}) {
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -27,14 +29,14 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     e.preventDefault();
     if (!emailInput) return;
 
-    if (!hubId) {
+    if (!selectedLocation) {
       toastError(t('home.toast.no_session'));
       return;
     }
 
     setLoading(true);
     try {
-      const response = await getUsersByEmail(emailInput, hubId);
+      const response = await getUsersByEmail(emailInput, selectedLocation);
       let usersArray = [];
       if (Array.isArray(response)) {
         usersArray = response;
@@ -80,7 +82,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     if (!userToConfirm) return;
     setLoading(true);
     const { storedLocation } = getLocalStorage();
-    const targetCheckHubId = storedLocation || hubId;
+    const targetCheckHubId = storedLocation || selectedLocation;
 
     if (!targetCheckHubId) {
       toastError(t('home.toast.no_session'));
@@ -89,7 +91,7 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
     }
     await triggerCheck(targetCheckHubId, async () => {
       try {
-        onUserSelect(userToConfirm);
+        handleUserSelect(userToConfirm);
         toastSuccess(t('home.toast.login_success'));
       } catch (err) {
         toastError(t('home.toast.login_failed', { err: err.message }));
@@ -147,11 +149,11 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 transition-colors">
         <div className="flex flex-col gap-2 mb-4">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 text-center">
             {t('home.input_email_title')}
           </h1>
-          <h2 className="text-lg mb-4 text-gray-500 dark:text-slate-400">
-            {t('home.location_label')}: <strong>{locationId}</strong>
+          <h2 className="text-lg mb-4 text-gray-500 dark:text-slate-400 text-center">
+            {t('home.location_label')}: <strong>{selectedLocationName}</strong>
           </h2>
         </div>
         <form onSubmit={handleSearchUser} className="flex flex-col gap-4">
@@ -181,6 +183,14 @@ export default function UserLogin({ onUserSelect, locationId, hubId }) {
             {t('home.login')}
           </button>
         </form>
+
+        <button
+          onClick={handleResetAll}
+          className="w-full mt-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold py-2 px-4 rounded transition-colors cursor-pointer text-sm"
+        >
+          {t('home.back_btn')}
+        </button>
+
         <div className="mt-4 text-right ">
           <span className="text-xs text-gray-400 dark:text-slate-500 italic">
             *{t('home.note')}

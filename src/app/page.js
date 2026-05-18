@@ -2,13 +2,19 @@
 
 import AppLayout from '@/components/AppLayout';
 import ErrorPage from '@/components/ErrorPage';
-import LocationDropdown from '@/components/LocationDropdown';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DashboardSummary from '@/features/dashboard/DashboardSummary';
-import UserLogin from '@/features/userLogin/UserLogin';
-import { getLocalStorage, removeLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import BranchSelection from '@/features/userLogin/BranchSelection';
+import LoginSelection from '@/features/userLogin/LoginSelection';
+import { getHubs } from '@/lib/api';
+import {
+  getCachedHubs,
+  getLocalStorage,
+  setCachedHubs,
+  setLocalStorage,
+} from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
@@ -33,18 +39,19 @@ export default function Home() {
     async function initializeApp() {
       setIsLoading(true);
       setPageError(null);
-      let processedHubs = [];
+      let processedHubs = getCachedHubs();
+
       try {
-        const res = await fetch('/api/get-hubs');
-        const hubs = await res.json();
-
-        processedHubs = hubs
-          .filter((hub) => hub.name !== 'Hub Demo')
-          .map((hub) => ({
-            ...hub,
-            name: hub.name.replace('Hub ', ''),
-          }));
-
+        if (!processedHubs || isEmpty(processedHubs)) {
+          const hubs = await getHubs();
+          processedHubs = hubs
+            .filter((hub) => hub.name !== 'Hub Demo')
+            .map((hub) => ({
+              ...hub,
+              name: hub.name.replace('Hub ', ''),
+            }));
+          setCachedHubs(processedHubs);
+        }
         setAllHubsList(processedHubs);
       } catch (e) {
         setPageError('Gagal terhubung ke database.');
@@ -53,7 +60,7 @@ export default function Home() {
       }
 
       try {
-        const { storedLocation, storedLocationName, storedUser } = getLocalStorage();
+        const { storedLocation, storedLocationName, storedUser, storedSession } = getLocalStorage();
 
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -72,7 +79,9 @@ export default function Home() {
               setTempSelectedLocation(storedLocation);
               setTempSelectedLocationName(storedLocationName);
             } else {
-              removeLocalStorage('data');
+              const newSession = { ...storedSession };
+              delete newSession.user;
+              setLocalStorage('data', JSON.stringify(newSession));
             }
           }
         } else if (storedLocation) {
@@ -121,27 +130,45 @@ export default function Home() {
 
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) return toastError(t('home.select_branch'));
-    if (!selectedUser) {
-      removeLocalStorage('data');
-      setSelectedUser(null);
-    }
 
     setDriverData({ data: [] });
 
     const selectedHubObj = allHubsList.find((h) => h._id === tempSelectedLocation);
-    const tempSession = {
-      activeHubId: tempSelectedLocation,
-      activeHubName: tempSelectedLocationName,
-      activeHubAcronym: selectedHubObj?.acronym || '',
-    };
-    setLocalStorage('data', JSON.stringify(tempSession));
+    const { storedSession } = getLocalStorage();
+    const currentData = storedSession || {};
 
+    let userObj = currentData.user || {};
+
+    if (!selectedUser) {
+      userObj = {
+        activeHubId: tempSelectedLocation,
+        activeHubName: tempSelectedLocationName,
+        activeHubAcronym: selectedHubObj?.acronym || '',
+      };
+    } else {
+      userObj = {
+        ...userObj,
+        activeHubId: tempSelectedLocation,
+        activeHubName: tempSelectedLocationName,
+        activeHubAcronym: selectedHubObj?.acronym || '',
+      };
+    }
+
+    const newSession = {
+      ...currentData,
+      user: userObj,
+    };
+
+    setLocalStorage('data', JSON.stringify(newSession));
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
 
   const handleUserSelect = (user) => {
     const selectedHubObj = allHubsList.find((h) => h._id === selectedLocation);
+    const { storedSession } = getLocalStorage();
+    const currentData = storedSession || {};
+
     const filteredUserSession = {
       _id: user._id,
       email: user.email,
@@ -154,12 +181,23 @@ export default function Home() {
       activeHubAcronym: selectedHubObj?.acronym || '',
     };
 
-    setLocalStorage('data', JSON.stringify(filteredUserSession));
+    const newSession = {
+      ...currentData,
+      user: filteredUserSession,
+    };
+
+    setLocalStorage('data', JSON.stringify(newSession));
     setSelectedUser(filteredUserSession);
   };
 
   const handleResetAll = () => {
-    removeLocalStorage('data');
+    const { storedSession } = getLocalStorage();
+    if (storedSession) {
+      const newSession = { ...storedSession };
+      delete newSession.user;
+      setLocalStorage('data', JSON.stringify(newSession));
+    }
+
     setSelectedUser(null);
     setSelectedLocation('');
     setSelectedLocationName('');
@@ -178,27 +216,13 @@ export default function Home() {
   if (!selectedLocation) {
     return (
       <SelectionLayout>
-        <div className="text-center w-full">
-          <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
-          <h2 className="text-xl mt-2 text-gray-500">{t('home.select_branch')}</h2>
-          <LocationDropdown
-            value={tempSelectedLocation}
-            onChange={handleLocationChange}
-            hubsToShow={currentHubListView}
-            className="mt-6 p-2 rounded border border-gray-300 w-64"
-            placeholder={`-- ${t('home.placeholder')} --`}
-            translate={t}
-          />
-          <div className="mt-4">
-            <button
-              onClick={handleSaveLocation}
-              disabled={!tempSelectedLocation}
-              className="px-6 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors text-sm"
-            >
-              {t('home.select_btn')}
-            </button>
-          </div>
-        </div>
+        <BranchSelection
+          t={t}
+          tempSelectedLocation={tempSelectedLocation}
+          handleLocationChange={handleLocationChange}
+          currentHubListView={currentHubListView}
+          handleSaveLocation={handleSaveLocation}
+        />
       </SelectionLayout>
     );
   }
@@ -206,19 +230,13 @@ export default function Home() {
   if (selectedLocation && !selectedUser) {
     return (
       <SelectionLayout>
-        <div className="text-center w-full">
-          <UserLogin
-            hubId={selectedLocation}
-            onUserSelect={handleUserSelect}
-            locationId={selectedLocationName}
-          />
-          <button
-            onClick={handleResetAll}
-            className="mt-4 px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer transition-colors text-sm"
-          >
-            {t('home.back_btn')}
-          </button>
-        </div>
+        <LoginSelection
+          t={t}
+          selectedLocation={selectedLocation}
+          handleUserSelect={handleUserSelect}
+          selectedLocationName={selectedLocationName}
+          handleResetAll={handleResetAll}
+        />
       </SelectionLayout>
     );
   }

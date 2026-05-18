@@ -4,7 +4,7 @@ import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
@@ -23,39 +23,50 @@ export default function SettingsPage() {
   const [hubs, setHubs] = useState([]);
   const [reasons, setReasons] = useState([]);
 
-  const fetchAllData = useCallback(async () => {
-    try {
-      const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
-        getHubs(),
-        getRoles(),
-        getDriversSyncStatus(),
-        getVehicleTypes(),
-        getReasons(),
-      ]);
+  const fetchAllData = useCallback(
+    async (userRoleId, cachedSuperadminId) => {
+      try {
+        const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
+          getHubs(),
+          getRoles(),
+          getDriversSyncStatus(),
+          getVehicleTypes(),
+          getReasons(),
+        ]);
 
-      setHubs(hubsDb);
-      setLastUpdated({
-        hubs:
-          hubsDb.length > 0 && hubsDb[0].updatedAt
-            ? new Date(hubsDb[0].updatedAt).toLocaleString('id-ID')
-            : '-',
-        roles:
-          rolesDb.length > 0 && rolesDb[0].updatedAt
-            ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
-            : '-',
-      });
+        setHubs(hubsDb);
+        setLastUpdated({
+          hubs:
+            hubsDb.length > 0 && hubsDb[0].updatedAt
+              ? new Date(hubsDb[0].updatedAt).toLocaleString('id-ID')
+              : '-',
+          roles:
+            rolesDb.length > 0 && rolesDb[0].updatedAt
+              ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
+              : '-',
+        });
 
-      const dMap = {};
-      dStatus.forEach((d) => {
-        if (d._max.updatedAt) dMap[d.hubId] = new Date(d._max.updatedAt).toLocaleString('id-ID');
-      });
-      setDriverSyncStatus(dMap);
-      setVehicleTypes(vTypes);
-      setReasons(reasonsDb || []);
-    } catch (error) {
-      toastError(t('common.error', { err: error.message }));
-    }
-  }, [t]);
+        const dMap = {};
+        dStatus.forEach((d) => {
+          if (d._max.updatedAt) dMap[d.hubId] = new Date(d._max.updatedAt).toLocaleString('id-ID');
+        });
+        setDriverSyncStatus(dMap);
+        setVehicleTypes(vTypes);
+        setReasons(reasonsDb || []);
+
+        const ownerRole = rolesDb.find((r) => r.name.toLowerCase() === 'owner');
+
+        if (userRoleId === cachedSuperadminId || (ownerRole && userRoleId === ownerRole._id)) {
+          setIsReadOnly(false);
+        } else {
+          setIsReadOnly(true);
+        }
+      } catch (error) {
+        toastError(t('common.error', { err: error.message }));
+      }
+    },
+    [t]
+  );
 
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -69,20 +80,9 @@ export default function SettingsPage() {
         setIsAuthorized(true);
 
         const user = JSON.parse(storedUser);
-        const roles = await getRoles();
-        const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
-        const ownerRole = roles.find((r) => r.name.toLowerCase() === 'owner');
+        const cachedSuperadminId = getSuperadminRoleId();
 
-        if (
-          (superadminRole && user.roleId === superadminRole._id) ||
-          (ownerRole && user.roleId === ownerRole._id)
-        ) {
-          setIsReadOnly(false);
-        } else {
-          setIsReadOnly(true);
-        }
-
-        await fetchAllData();
+        await fetchAllData(user.roleId, cachedSuperadminId);
       } catch (error) {
         toastError(t('common.toast.error', { err: error.message }));
       } finally {
@@ -110,6 +110,14 @@ export default function SettingsPage() {
   ];
 
   const renderTabContent = () => {
+    const triggerRefresh = () => {
+      const { storedUser } = getLocalStorage();
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        fetchAllData(user.roleId, getSuperadminRoleId());
+      }
+    };
+
     switch (activeTab) {
       case 'general':
         return (
@@ -117,7 +125,7 @@ export default function SettingsPage() {
             vehicleTypes={vehicleTypes}
             hubs={hubs}
             reasons={reasons}
-            onRefresh={fetchAllData}
+            onRefresh={triggerRefresh}
             isReadOnly={isReadOnly}
             translate={t}
           />
@@ -127,7 +135,7 @@ export default function SettingsPage() {
           <SyncDataTab
             lastUpdated={lastUpdated}
             driverSyncStatus={driverSyncStatus}
-            onRefresh={fetchAllData}
+            onRefresh={triggerRefresh}
             isReadOnly={isReadOnly}
             translate={t}
           />

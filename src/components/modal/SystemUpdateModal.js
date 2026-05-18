@@ -32,15 +32,23 @@ export default function SystemUpdateModal() {
   }, []);
 
   const handleApplyUpdate = async () => {
-    const { storedUser, storedLanguage } = getLocalStorage();
+    const { storedSession, storedLanguage } = getLocalStorage();
     localStorage.clear();
     sessionStorage.clear();
-    if (storedUser) {
-      setLocalStorage('data', storedUser);
+
+    if (storedSession) {
+      const newData = {
+        user: storedSession.user || null,
+        superadminRoleId: storedSession.superadminRoleId || null,
+        colPrefs: storedSession.colPrefs || null,
+      };
+      setLocalStorage('data', JSON.stringify(newData));
     }
+
     if (storedLanguage) {
       setLocalStorage('language', storedLanguage);
     }
+
     if ('caches' in window) {
       try {
         const cacheNames = await caches.keys();

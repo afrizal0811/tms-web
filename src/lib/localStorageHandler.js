@@ -73,13 +73,15 @@ export function getLocalStorage() {
     try {
       const sessionStr = decryptData(rawSessionStr);
       storedSession = JSON.parse(sessionStr);
-      storedLocation = storedSession.activeHubId || null;
-      storedLocationName = storedSession.activeHubName || null;
-      storedLocationAcronym = storedSession.activeHubAcronym || null;
+      const userData = storedSession.user || storedSession;
+
+      storedLocation = userData.activeHubId || null;
+      storedLocationName = userData.activeHubName || null;
+      storedLocationAcronym = userData.activeHubAcronym || null;
       appVersion = storedSession.app_version || null;
 
-      if (storedSession._id) {
-        storedUser = sessionStr;
+      if (userData._id) {
+        storedUser = JSON.stringify(userData);
       }
     } catch (e) {
       toastError(e.message);
@@ -122,6 +124,85 @@ export function setColumnPreferences(prefs) {
       const decrypted = decryptData(rawData);
       const parsed = JSON.parse(decrypted);
       parsed.colPrefs = prefs;
+      setLocalStorage('data', parsed);
+    } catch (e) {}
+  }
+}
+
+export function getSuperadminRoleId() {
+  if (typeof window === 'undefined') return null;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      return parsed.superadminRoleId || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function setSuperadminRoleId(roleId) {
+  if (typeof window === 'undefined') return;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      parsed.superadminRoleId = roleId;
+      setLocalStorage('data', parsed);
+    } catch (e) {}
+  }
+}
+
+export function getCachedHubs() {
+  if (typeof window === 'undefined') return null;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      return parsed.cachedHubs || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function setCachedHubs(hubs) {
+  if (typeof window === 'undefined') return;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      parsed.cachedHubs = hubs;
+      setLocalStorage('data', parsed);
+    } catch (e) {}
+  }
+}
+
+export function updateActiveHub(id, name, acronym) {
+  if (typeof window === 'undefined') return;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+
+      if (parsed.user) {
+        parsed.user.activeHubId = id;
+        parsed.user.activeHubName = name;
+        parsed.user.activeHubAcronym = acronym;
+      } else {
+        parsed.activeHubId = id;
+        parsed.activeHubName = name;
+        parsed.activeHubAcronym = acronym;
+      }
+
       setLocalStorage('data', parsed);
     } catch (e) {}
   }

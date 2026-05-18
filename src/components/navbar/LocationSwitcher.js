@@ -1,4 +1,3 @@
-// File: src/components/navbar/LocationSwitcher.js
 'use client';
 
 import LocationDropdown from '@/components/LocationDropdown';
@@ -6,7 +5,12 @@ import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
-import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
+import {
+  getLocalStorage,
+  updateActiveHub,
+  getCachedHubs,
+  setCachedHubs,
+} from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -24,10 +28,16 @@ export default function LocationSwitcher() {
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
       try {
-        const hubsSimple = await getHubs();
-        if (isEmpty(hubsSimple)) {
-          throw new Error(t('common.no_data'));
+        let hubsSimple = getCachedHubs();
+
+        if (!hubsSimple || isEmpty(hubsSimple)) {
+          hubsSimple = await getHubs();
+          if (isEmpty(hubsSimple)) {
+            throw new Error(t('common.no_data'));
+          }
+          setCachedHubs(hubsSimple);
         }
+
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
@@ -59,23 +69,10 @@ export default function LocationSwitcher() {
 
   const handleLocationChange = (id, name) => {
     const updateLocationAndReload = () => {
-      const { storedUser } = getLocalStorage();
       const selectedHub = allowedHubs.find((h) => h._id === id);
       const acronym = selectedHub?.acronym || '';
 
-      let newSession = { activeHubId: id, activeHubName: name, activeHubAcronym: acronym };
-
-      if (storedUser) {
-        const userObj = JSON.parse(storedUser);
-        newSession = {
-          ...userObj,
-          activeHubId: id,
-          activeHubName: name,
-          activeHubAcronym: acronym,
-        };
-      }
-
-      setLocalStorage('data', JSON.stringify(newSession));
+      updateActiveHub(id, name, acronym);
       window.location.reload();
     };
 
