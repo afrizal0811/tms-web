@@ -78,7 +78,6 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
         <div className="divide-y divide-gray-200 dark:divide-slate-600">
           {tasks.map((task, idx) => {
             const flow = task.flow;
-            console.log(' task.isNoRouting:', task.isNoRouting);
             const customerData = parseCustomerString(task.customerOrder || '');
             const invoice = customerData.invoiceNumber || task.content || '-';
             const finalCustomerName = customerData.name || task.customerName;
