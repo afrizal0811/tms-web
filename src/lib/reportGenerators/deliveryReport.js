@@ -8,6 +8,7 @@ import {
   formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getBasePlate,
   getUTC7DateString,
   isEmpty,
   normalizeEmail,
@@ -29,7 +30,6 @@ export function generateDeliveryWorkbook(
   t
 ) {
   const translate = t || ((key) => key);
-
   const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
@@ -106,10 +106,7 @@ export function generateDeliveryWorkbook(
       const startDate = getUTC7DateString(task.startTime);
       const doneDate = getUTC7DateString(task.doneTime);
       if (startDate && doneDate && startDate !== doneDate) {
-        stats.mismatchCustomers.push({
-          name: customerName,
-          date: doneDate,
-        });
+        stats.mismatchCustomers.push({ name: customerName, date: doneDate });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
         stats.missingDataCustomers.push({
@@ -138,7 +135,6 @@ export function generateDeliveryWorkbook(
         openTimeVal > closeTimeVal
           ? actualArrVal >= openTimeVal || actualArrVal <= closeTimeVal
           : actualArrVal >= openTimeVal && actualArrVal <= closeTimeVal;
-
       if (isInside) {
         hoursStatus = 'yes';
       } else if (actualArrVal < openTimeVal) {
@@ -257,7 +253,6 @@ export function generateDeliveryWorkbook(
   };
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const wrapTextStyle = { alignment: { wrapText: true, vertical: 'center', horizontal: 'left' } };
-  const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
   const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } };
   const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
   const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } };
@@ -265,19 +260,6 @@ export function generateDeliveryWorkbook(
     ...centerStyle,
     font: { bold: true },
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
-  };
-
-  const textGreenStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: '16A34A' } },
-  };
-  const textAmberStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: 'F59E0B' } },
-  };
-  const textRedStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: 'DC2626' } },
   };
 
   const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
@@ -299,12 +281,6 @@ export function generateDeliveryWorkbook(
   ];
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
   XLSX.utils.book_append_sheet(wb, wsRoutingDate, translate('excel.delivery.sheets.routing_date'));
-
-  function getBasePlate(plat) {
-    if (!plat) return '';
-    const parts = plat.trim().split(/\s+/);
-    return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
-  }
 
   const headers1 = [
     translate('common.license_number'),
@@ -353,7 +329,6 @@ export function generateDeliveryWorkbook(
 
     if (stats) {
       agg.hasData = true;
-      // Memperbaiki dengan override nilai agar tidak ada duplikasi kalkulasi outlet/delivery
       agg.totalOutlet = stats.totalOutlet;
       agg.totalDelivery = stats.totalOutlet - stats.failedCount;
 
@@ -595,13 +570,7 @@ export function generateDeliveryWorkbook(
           cell.s = greenHeaderStyle;
         }
         if (migrationOccurred && C === pendingColIndex) {
-          cell.c = [
-            {
-              a: 'Info',
-              t: translate('excel.delivery.info_wrong_status'),
-              h: true,
-            },
-          ];
+          cell.c = [{ a: 'Info', t: translate('excel.delivery.info_wrong_status'), h: true }];
         }
       } else {
         if (C === separatorColIndex) {
@@ -860,10 +829,7 @@ export function generateDeliveryWorkbook(
     14: { header: 'BFDBFE', data: 'DBEAFE' },
   };
   const leftAlign3 = { alignment: { horizontal: 'left', vertical: 'center' } };
-  const hubRedStyle3 = {
-    ...centerStyle,
-    font: { bold: true, color: { rgb: 'FF0000' } },
-  };
+  const hubRedStyle3 = { ...centerStyle, font: { bold: true, color: { rgb: 'FF0000' } } };
 
   const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
   for (let R = range3.s.r; R <= range3.e.r; ++R) {
@@ -906,10 +872,7 @@ export function generateDeliveryWorkbook(
 
         const isManual = manualAssignRows3.has(R);
         if (isManual) {
-          cell.s = {
-            ...(C <= 3 ? leftAlign3 : centerStyle),
-            fill: { fgColor: { rgb: 'FECACA' } },
-          };
+          cell.s = { ...(C <= 3 ? leftAlign3 : centerStyle), fill: { fgColor: { rgb: 'FECACA' } } };
         } else if (C <= 3) {
           cell.s = { ...leftAlign3 };
         } else {

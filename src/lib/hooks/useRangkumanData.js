@@ -13,7 +13,12 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError } from '@/lib/toastHelper';
 import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedRouting';
-import { formatDateUniversal, formatToApiUtc, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  formatToApiUtc,
+  parseCustomerString,
+  getBasePlate,
+} from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const getInitialDateRange = () => {
@@ -479,14 +484,8 @@ export default function useRangkumanData() {
           let next = new Date(curr);
           next.setDate(next.getDate() + maxDays - 1);
           next.setHours(23, 59, 59, 999);
-
           if (next > end) next = new Date(end);
-
-          chunks.push({
-            from: formatToApiUtc(curr),
-            to: formatToApiUtc(next),
-          });
-
+          chunks.push({ from: formatToApiUtc(curr), to: formatToApiUtc(next) });
           curr = new Date(next);
           curr.setDate(curr.getDate() + 1);
           curr.setHours(0, 0, 0, 0);
@@ -497,13 +496,9 @@ export default function useRangkumanData() {
       const mergeResults = (resArray) => {
         let merged = [];
         resArray.forEach((res) => {
-          if (Array.isArray(res)) {
-            merged = [...merged, ...res];
-          } else if (res?.data) {
-            merged = [...merged, ...res.data];
-          } else if (res?.tasks?.data) {
-            merged = [...merged, ...res.tasks.data];
-          }
+          if (Array.isArray(res)) merged = [...merged, ...res];
+          else if (res?.data) merged = [...merged, ...res.data];
+          else if (res?.tasks?.data) merged = [...merged, ...res.tasks.data];
         });
         return merged;
       };
@@ -615,8 +610,18 @@ export default function useRangkumanData() {
           return acc;
         }, {});
 
+        const uniqueDriversForMT = [];
+        const seenBasePlates = new Set();
+        (driversRes || []).forEach((d) => {
+          const bp = getBasePlate(d.plat).toLowerCase();
+          if (bp && !seenBasePlates.has(bp)) {
+            seenBasePlates.add(bp);
+            uniqueDriversForMT.push(d);
+          }
+        });
+
         const calculatedMaster = await calculateMasterTruckStorage(
-          driversRes || [],
+          uniqueDriversForMT,
           mapObj,
           vTypes
         );

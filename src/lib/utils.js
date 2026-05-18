@@ -392,3 +392,9 @@ export const tomorrowDate = () => {
 
   return date;
 };
+
+export function getBasePlate(plat) {
+  if (!plat) return '';
+  const parts = plat.trim().split(/\s+/);
+  return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
+}
