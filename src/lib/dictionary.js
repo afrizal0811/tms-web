@@ -102,6 +102,7 @@ export const dictionary = {
         title: 'Konfirmasi Pilihan Pengguna',
       },
       toast: {
+        active: 'Aktif!',
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
         info_tutorial: 'Informasi Panduan ada di menu Bantuan',
         login_failed: 'Gagal login: {err}',
@@ -781,6 +782,7 @@ export const dictionary = {
         title: 'Confirmation User Selection',
       },
       toast: {
+        active: 'Active!',
         driver_error: `The driver can’t log in. Please use another account`,
         error: 'Failed to load data: {err}',
         info_tutorial: 'Information tutorial is in Help menu',
