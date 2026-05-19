@@ -32,6 +32,7 @@ export const dictionary = {
       location_id: 'ID Lokasi',
       minute: 'Menit',
       no_data: 'Tidak ada data',
+      no_driver: 'Tidak ada data sopir',
       license_number: 'Pelat Nomor',
       open_time: 'Waktu Buka',
       others: 'Lainnya',
@@ -243,7 +244,6 @@ export const dictionary = {
         status: {
           early: 'Tiba Lebih Awal',
           late: 'Melewati Batas Waktu',
-          no_data: 'Belum Ada Data',
           ontime: 'Tiba Sesuai Rentang Waktu',
           unknown: 'Tidak Diketahui',
         },
@@ -276,20 +276,12 @@ export const dictionary = {
         note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
       },
       toast: {
-        failed_prossesing: 'Gagal memproses {dateForFile}: {err}',
-        failed_zip: 'Tidak ada file {zipPrefix} yang berhasil dibuat.',
-        invalid_driver: 'Data driver tidak valid.',
-        no_data: 'Tidak ada data ditemukan untuk semua tanggal dalam rentang ini.',
-        no_delivery: 'Tidak ada data Delivery untuk tanggal ini',
-        no_routing: 'Tidak ada data Routing untuk tanggal ini',
-        no_time: 'Tidak ada data rekam waktu untuk tanggal ini',
         processing: 'Memulai proses...',
         select_date: 'Pilih tanggal pengiriman',
         select_diff_date: 'Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.',
         skip_data:
           'Terdapat {skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
         skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
-        success: 'File berhasil diunduh!',
       },
       tooltip: {
         cut_off: 'Batas Waktu',
@@ -386,7 +378,6 @@ export const dictionary = {
       table: {
         diff_dist: 'Selisih Jarak (m)',
         new_longlat: 'Titik Lokasi Baru',
-        no_data: 'Tidak ada data update lokasi ditemukan',
         update_time: 'Waktu Pembaruan',
       },
       modal: {
@@ -394,7 +385,6 @@ export const dictionary = {
         new_loc: 'Lokasi Baru',
         new_longlat: 'Titik Lokasi Baru',
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
-        no_data: 'Tidak ada riwayat update',
         old_loc: 'Lokasi Lama',
         times: 'kali',
         title: 'Riwayat Pembaruan Lokasi',
@@ -404,9 +394,6 @@ export const dictionary = {
       toast: {
         all_failed: 'Retry masih gagal: {time} chunk gagal',
         failed: 'Data gagal diunduh!',
-        failed_get_data: 'Gagal mengambil data',
-        no_data: 'Tidak ada data untuk diunduh',
-        no_sunday: 'Tidak ada pengiriman saat Minggu. Silakan pilih tanggal lain',
         recovered: 'Data riwayat sebanyak {count} telah berhasil dilengkapi',
         retry_chunk: 'Mengulang {count} chunk yang gagal...',
         success: 'Data berhasil diunduh!',
@@ -453,7 +440,6 @@ export const dictionary = {
       est_depart: 'Estimasi Keluar',
       group: 'Grup',
       hub_eta_short: 'Estimasi tidak akurat',
-      no_driver: 'Tidak ada data sopir',
       no_match: 'Tidak cocok',
       search_placeholder: 'Cari Plat, Customer, atau SO',
       subtitle: 'Monitoring estimasi',
@@ -465,8 +451,6 @@ export const dictionary = {
       visit: 'Kunjungan',
       toast: {
         download_failed: 'Gagal mengunduh file laporan: {err}',
-        no_data_downloaded: 'Tidak ada data untuk diunduh',
-        no_driver_data: 'Gagal memuat data sopir: {err}',
         success_excel: 'Berhasil mengunduh data Estimasi Pengiriman!',
         success_pdf: 'Berhasil mengunduh data Form Pengiriman!',
         success_zip: 'Berhasil mengunduh {length} Form Pengiriman dalam ZIP!',
@@ -481,7 +465,7 @@ export const dictionary = {
       caution: '*Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
       click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       label: 'Tanggal Performa',
-      long_message: 'Memproses banyak data, silakan tunggu sebentar',
+      long_message: 'Memproses banyak data, silakan tunggu sebentar...',
       subtitle_1: 'Rekapitulasi',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
@@ -492,7 +476,6 @@ export const dictionary = {
       toast: {
         success: 'Data rangkuman berhasil diunduh!',
         error: 'Data rangkuman gagal dibuat: {err}',
-        no_driver_data: 'Data sopir tidak ditemukan',
       },
       tabs: {
         time_ro: {
@@ -712,6 +695,7 @@ export const dictionary = {
       location_id: 'Location ID',
       minute: 'Minute',
       no_data: 'No data',
+      no_driver: 'No driver data',
       license_number: 'License Plate',
       open_time: 'Opening Time',
       others: 'Others',
@@ -925,7 +909,6 @@ export const dictionary = {
         status: {
           early: 'Arrived Early',
           late: 'Late Arrival',
-          no_data: 'No Data',
           ontime: 'Arrived On Time',
           unknown: 'Unknown',
         },
@@ -957,19 +940,11 @@ export const dictionary = {
         note_two: '  Total task counts may not be accurate.',
       },
       toast: {
-        failed_prossesing: 'Failed to process {dateForFile}: {err.message}`',
-        failed_zip: 'No {zipPrefix} file was successfully created.',
-        invalid_driver: 'Invalid driver data.',
-        no_data: 'No data found for any dates in this range.',
-        no_delivery: 'No delivery data found for this date.',
-        no_routing: 'No routing data found for this date.',
-        no_time: 'No time data found for this date',
         processing: 'Starting process...',
         select_date: 'Select delivery date',
         select_diff_date: 'Date range cannot be the same. Please select at least 2 days.',
         skip_data: 'There are {skippedDates} date(s) with no data (including Sundays).',
         skip_sunday: 'Skipped {sundaysSkipped} date(s) because they fall on Sunday.',
-        success: 'File downloaded successfully!',
       },
       tooltip: {
         cut_off: 'Cut-off Time',
@@ -1065,15 +1040,12 @@ export const dictionary = {
       table: {
         diff_dist: 'Distance Difference (m)',
         new_longlat: 'New Location Point',
-        no_data: 'No location update data found',
         update_time: 'Update Time',
       },
       modal: {
         diff_dist: 'Distance Difference (m)',
         new_loc: 'New Location',
         new_longlat: 'New Location Point',
-        no_coordinate: 'No coordinate data to display',
-        no_data: 'No update history',
         old_loc: 'Old Location',
         times: 'time(s)',
         title: 'Location Update History',
@@ -1083,9 +1055,6 @@ export const dictionary = {
       toast: {
         all_failed: 'Retry still failed: {time} chunk(s) failed',
         failed: 'Failed to download data!',
-        failed_get_data: 'Failed to fetch data',
-        no_data: 'No data to download',
-        no_sunday: 'No deliveries on Sunday. Please choose another date.',
         recovered: '{count} history records have been successfully restored.',
         retry_chunk: 'Retrying {count} failed chunk(s)...',
         success: 'Data downloaded successfully!',
@@ -1133,7 +1102,6 @@ export const dictionary = {
       est_depart: 'Estimated Departure',
       group: 'Group',
       hub_eta_short: 'Estimation is not accurate',
-      no_driver: 'No driver data',
       no_match: 'No match',
       search_placeholder: 'Search Plate, Customer, or SO Number',
       subtitle: 'Monitoring estimation of',
@@ -1145,8 +1113,6 @@ export const dictionary = {
       visit: 'Visit',
       toast: {
         download_failed: 'Failed to download report file: {err}',
-        no_data_downloaded: 'No data available for download',
-        no_driver_data: 'Failed to load driver data: {err}',
         success_excel: 'Delivery Estimation data downloaded successfully!',
         success_pdf: 'Delivery Form downloaded successfully!',
         success_zip: 'Successfully downloaded {length} Delivery Forms in a ZIP!',
@@ -1161,7 +1127,7 @@ export const dictionary = {
       caution: '*Displayed data may be inaccurate. Verify before use',
       click_box_hint: 'Click text with red underline to view details',
       label: 'Performance Date',
-      long_message: 'Processing a lot of data, please wait a moment.',
+      long_message: 'Processing a lot of data, please wait a moment...',
       subtitle_1: 'Recap of',
       subtitle_highlight: 'task performance',
       title: 'Summary',
@@ -1172,7 +1138,6 @@ export const dictionary = {
       toast: {
         success: 'Summary data has been downloaded successfully!',
         error: 'Failed to generate summary data: {err}',
-        no_driver_data: 'No driver data',
       },
       tabs: {
         time_ro: {

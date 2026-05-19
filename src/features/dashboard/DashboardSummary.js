@@ -19,11 +19,8 @@ export default function DashboardSummary({ driverData }) {
   const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
-
-  // State Filter & Loading
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [isFiltering, setIsFiltering] = useState(false);
-
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
@@ -46,7 +43,7 @@ export default function DashboardSummary({ driverData }) {
 
   useEffect(() => {
     const fetchHubSettings = async () => {
-      if (!hubId) return;
+      if (!hubId || isEmpty(driverData)) return;
       try {
         const hubs = await getHubs();
         const activeHub = hubs.find(
@@ -55,14 +52,11 @@ export default function DashboardSummary({ driverData }) {
         if (activeHub) {
           setHasPendingGR(activeHub.hasPendingGR || false);
         }
-      } catch (error) {
-        console.error('Failed to fetch hub settings:', error);
-      }
+      } catch (error) {}
     };
     fetchHubSettings();
-  }, [hubId]);
+  }, [hubId, driverData]);
 
-  // Handler khusus untuk Apply Filter dengan Loading Buatan
   const handleApplyFilter = (newSelectedTypes) => {
     fetchStartTimeRef.current = Date.now();
     setIsFiltering(true);
@@ -143,6 +137,12 @@ export default function DashboardSummary({ driverData }) {
   }, []);
 
   const fetchData = useCallback(async () => {
+    if (isEmpty(driverData)) {
+      setLoading(false);
+      setRawData({ tasks: [], results: [] });
+      return;
+    }
+
     if (selectedDate.getDay() === 0) {
       setLoading(false);
       setRawData({ tasks: [], results: [] });
@@ -202,7 +202,7 @@ export default function DashboardSummary({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, fetchWithRetry, hubId, t]);
+  }, [selectedDate, fetchWithRetry, hubId, t, driverData]);
 
   useEffect(() => {
     fetchData();
@@ -278,8 +278,7 @@ export default function DashboardSummary({ driverData }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeTab !== 'Diagram') return;
-
-    if (!hubId) return;
+    if (!hubId || isEmpty(driverData)) return;
 
     const year = selectedDate.getFullYear();
     const cacheKey = `${hubId}:${year}`;
@@ -305,7 +304,7 @@ export default function DashboardSummary({ driverData }) {
     fetchYearlyData(hubId, year, cacheKey).finally(() => {
       inFlightYearFetchKey.current = null;
     });
-  }, [selectedDate, activeTab, fetchYearlyData, hubId]);
+  }, [selectedDate, activeTab, fetchYearlyData, hubId, driverData]);
 
   const driverMap = useMemo(() => {
     const map = new Map();
@@ -352,8 +351,12 @@ export default function DashboardSummary({ driverData }) {
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
   let isCardEmpty = false;
+  let emptyMessage = t('common.no_data');
 
-  if (activeTab === 'Diagram') {
+  if (isEmpty(driverData)) {
+    isCardEmpty = true;
+    emptyMessage = t('common.no_driver');
+  } else if (activeTab === 'Diagram') {
     isCardEmpty = !isYearlyLoading && (!filteredYearlyTasks || isEmpty(filteredYearlyTasks));
   } else if (activeTab === 'Detail') {
     isCardEmpty =
@@ -423,9 +426,9 @@ export default function DashboardSummary({ driverData }) {
         activeTabId={activeTab}
         onTabClick={handleTabClick}
         isLoading={isLoadingSelected}
-        loadingText={t('common.loading')}
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
+        emptyMessage={emptyMessage}
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (

@@ -30,18 +30,10 @@ export default function UpdateLonglatPage() {
   const [tasksData, setTasksData] = useState([]);
   const [historyMap, setHistoryMap] = useState(new Map());
   const [isDownloading, setIsDownloading] = useState(false);
+  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
 
   const driverMapRef = useRef(new Map());
   const { storedLocationName: hubName } = getLocalStorage();
-
-  const handleDateChange = (date) => {
-    if (!date) return;
-    if (date.getDay() === 0) {
-      toastError(t('longlat.toast.no_sunday'));
-      return;
-    }
-    setSelectedDate(date);
-  };
 
   const processHistoryRawData = (rawTasks, targetCustomerSet) => {
     const tempMap = new Map();
@@ -58,11 +50,6 @@ export default function UpdateLonglatPage() {
         tempMap.set(name, []);
       }
 
-      let dateStr = '-';
-      if (task.doneTime) {
-        dateStr = formatDateWIB(task.doneTime, 'HH:mm');
-      }
-
       const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
       const normAssignee = normalizeEmail(rawAssignee);
       const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
@@ -70,7 +57,7 @@ export default function UpdateLonglatPage() {
       const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
 
       tempMap.get(name).push({
-        date: dateStr,
+        date: formatDateWIB(task.doneTime, 'HH:mm'),
         newLonglat: task.klikLokasiClient,
         oldLonglat: task.longlat,
         distanceDiff: bedaJarak,
@@ -81,74 +68,90 @@ export default function UpdateLonglatPage() {
     return tempMap;
   };
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setTasksData([]);
-    setHistoryMap(new Map());
-    driverMapRef.current = new Map();
+  const fetchData = useCallback(
+    async (mountedContext) => {
+      setLoading(true);
+      setTasksData([]);
+      setHistoryMap(new Map());
+      driverMapRef.current = new Map();
 
-    if (selectedDate.getDay() === 0) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      if (typeof window === 'undefined') return;
-      const { storedLocation: hubId } = getLocalStorage();
-      if (!hubId) throw new Error(t('common.no_data'));
-
-      const drivers = await getOrFetchDriverData(hubId);
-      if (drivers) {
-        drivers.forEach((d) => {
-          const normEmail = normalizeEmail(d.email);
-          if (normEmail) driverMapRef.current.set(normEmail, d.name);
-        });
-      }
-
-      const localStart = new Date(selectedDate);
-      localStart.setHours(0, 0, 0, 0);
-
-      const localEnd = new Date(selectedDate);
-      localEnd.setHours(23, 59, 59, 999);
-
-      const timeFrom = formatToApiUtc(localStart);
-      const timeTo = formatToApiUtc(localEnd);
-
-      const todayTasks = await getTasks({
-        status: 'DONE',
-        hubId,
-        timeFrom,
-        timeTo,
-        timeBy: 'startTime',
-        limit: 1000,
-      });
-
-      const currentData = todayTasks || [];
-      setTasksData(currentData);
-
-      const uniqueCustomersWithUpdates = new Set();
-      currentData.forEach((task) => {
-        if (task.klikLokasiClient && task.customerName) {
-          uniqueCustomersWithUpdates.add(task.customerName);
-        }
-      });
-
-      if (uniqueCustomersWithUpdates.size === 0) {
+      if (selectedDate.getDay() === 0) {
         setLoading(false);
         return;
       }
 
-      const initialMap = processHistoryRawData(currentData, uniqueCustomersWithUpdates);
-      setHistoryMap(initialMap);
-      setLoading(false);
-    } catch (err) {
-      toastError(t('longlat.toast.failed_get_data'));
-      setLoading(false);
-    }
-  }, [selectedDate, t]);
+      try {
+        if (typeof window === 'undefined') return;
+        const { storedLocation: hubId } = getLocalStorage();
+        if (!hubId) throw new Error(t('common.no_data'));
+
+        const localStart = new Date(selectedDate);
+        localStart.setHours(0, 0, 0, 0);
+
+        const localEnd = new Date(selectedDate);
+        localEnd.setHours(23, 59, 59, 999);
+
+        const timeFrom = formatToApiUtc(localStart);
+        const timeTo = formatToApiUtc(localEnd);
+
+        const [drivers, todayTasks] = await Promise.all([
+          getOrFetchDriverData(hubId),
+          getTasks({
+            status: 'DONE',
+            hubId,
+            timeFrom,
+            timeTo,
+            timeBy: 'startTime',
+            limit: 1000,
+          }),
+        ]);
+
+        if (mountedContext && !mountedContext.isMounted) return;
+
+        if (isEmpty(drivers)) {
+          setEmptyMessage(t('common.no_driver'));
+          throw new Error(t('common.no_driver'));
+        }
+        else {
+          drivers.forEach((d) => {
+            const normEmail = normalizeEmail(d.email);
+            if (normEmail) driverMapRef.current.set(normEmail, d.name);
+          });
+        }
+
+        const currentData = todayTasks || [];
+        setTasksData(currentData);
+
+        const uniqueCustomersWithUpdates = new Set();
+        currentData.forEach((task) => {
+          if (task.klikLokasiClient && task.customerName) {
+            uniqueCustomersWithUpdates.add(task.customerName);
+          }
+        });
+
+        if (uniqueCustomersWithUpdates.size === 0) {
+          setLoading(false);
+          return;
+        }
+
+        const initialMap = processHistoryRawData(currentData, uniqueCustomersWithUpdates);
+        setHistoryMap(initialMap);
+        setLoading(false);
+      } catch (err) {
+        if (mountedContext && !mountedContext.isMounted) return;
+        toastError(t('common.toast.error', { err: err.message }));
+        setLoading(false);
+      }
+    },
+    [selectedDate, t]
+  );
 
   useEffect(() => {
-    fetchData();
+    const mountedContext = { isMounted: true };
+    fetchData(mountedContext);
+    return () => {
+      mountedContext.isMounted = false;
+    };
   }, [fetchData]);
 
   const processedData = useMemo(() => {
@@ -167,18 +170,13 @@ export default function UpdateLonglatPage() {
         const normAssignee = normalizeEmail(rawAssignee);
         const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
 
-        let dateStr = '-';
-        if (task.doneTime) {
-          dateStr = formatDateWIB(task.doneTime, 'HH:mm');
-        }
-
         updateList.push({
           customerData: customerName,
           customerName: custName,
           customerId: custId,
           locationId: locId,
           driverName: driverName,
-          updateTime: dateStr,
+          updateTime: formatDateWIB(task.doneTime, 'HH:mm'),
           newLonglat: formatCoordinates(task.klikLokasiClient),
           bedaJarak: bedaJarak !== null ? bedaJarak : 0,
           originalTask: task,
@@ -194,7 +192,7 @@ export default function UpdateLonglatPage() {
   const datePicker = (
     <CustomDatePicker
       isLoading={loading || isDownloading}
-      onChange={handleDateChange}
+      onChange={setSelectedDate}
       selected={selectedDate}
       maxDate={tomorrowDate()}
     />
@@ -232,8 +230,8 @@ export default function UpdateLonglatPage() {
       <HeaderCard title={t('longlat.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
         isEmpty={!loading && isEmpty(processedData)}
+        emptyMessage={emptyMessage}
         isLoading={loading}
-        loadingText={t('common.loading')}
       >
         <div className="p-0 h-full overflow-y-auto">
           <UpdateLonglatTable

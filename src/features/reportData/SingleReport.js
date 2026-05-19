@@ -11,6 +11,7 @@ import {
   getTasks,
   getVehicleMappings,
 } from '@/lib/api';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -82,9 +83,16 @@ export default function SingleReport({
   const isDateInvalid = isDateSunday(selectedDateString);
 
   const disabledCommon = isAnyLoading || isMapping;
+  const driversCheck = async () => {
+    const drivers = await getOrFetchDriverData(selectedLocation);
+    if (isEmpty(drivers)) {
+      throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
+    }
+  };
 
   const handleRouting = async () => {
     try {
+      await driversCheck();
       setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
@@ -119,7 +127,7 @@ export default function SingleReport({
 
       const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
       if (isEmpty(filteredResults)) {
-        throw new Error(t('report.toast.no_routing'));
+        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
 
       const mappingsDB = await getVehicleMappings();
@@ -140,7 +148,7 @@ export default function SingleReport({
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('report.toast.success'));
+      toastSuccess(t('common.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -152,6 +160,7 @@ export default function SingleReport({
 
   const handleDelivery = async () => {
     try {
+      await driversCheck();
       setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('delivery');
@@ -197,7 +206,7 @@ export default function SingleReport({
       ]);
 
       if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
-        throw new Error(t('report.toast.no_delivery'));
+        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
 
       const activeHub = (hubsData || []).find(
@@ -219,7 +228,7 @@ export default function SingleReport({
       );
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('report.toast.success'));
+      toastSuccess(t('common.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {
@@ -230,6 +239,7 @@ export default function SingleReport({
 
   const handleTime = async () => {
     try {
+      await driversCheck();
       setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('time');
@@ -271,7 +281,7 @@ export default function SingleReport({
       }
 
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('report.toast.success'));
+      toastSuccess(t('common.toast.success'));
     } catch (err) {
       toastError(err.message || String(err));
     } finally {

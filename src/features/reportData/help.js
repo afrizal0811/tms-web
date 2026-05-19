@@ -50,7 +50,7 @@ export const bulkDownloader = async ({
   }
 
   if (!driverData || isEmpty(driverData)) {
-    toastError(t('report.toast.invalid_driver'));
+    toastError(t('common.toast.error', { err: t('common.no_driver') }));
     return;
   }
 
@@ -102,17 +102,13 @@ export const bulkDownloader = async ({
         }
       } catch (err) {
         toastError(
-          t('report.toast.failed_prossesing', { dateForFile: dateForFile, err: err.message })
+          t('common.toast.error', { err: err.message })
         );
       }
     }
 
-    if (filesGenerated === 0) {
-      if (skippedDates.length > 0) {
-        toastWarning(t('report.toast.no_data'));
-      } else {
-        toastError(t('report.toast.failed_zip', { zipPrefix: zipPrefix }));
-      }
+    if (filesGenerated === 0 || skippedDates.length > 0) {
+      toastError(t('common.no_data'));
       return;
     }
 
@@ -129,7 +125,7 @@ export const bulkDownloader = async ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toastSuccess(t('report.toast.success'));
+    toastSuccess(t('common.toast.success'));
   } catch (e) {
     toastError(e.message);
   } finally {

@@ -1,4 +1,3 @@
-// File: src/features/rangkuman/RangkumanSummary.js
 'use client';
 
 import Button from '@/components/Button';
@@ -7,7 +6,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getPendingDetails, getReasons } from '@/lib/api'; // Penambahan Import
+import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
 import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -24,8 +23,6 @@ import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function RangkumanSummary() {
   const { t, lang } = useLanguage();
-  const [activeTab, setActiveTab] = useState('Time RO');
-
   const {
     selectedLocation,
     selectedLocationName,
@@ -34,7 +31,6 @@ export default function RangkumanSummary() {
     driverData,
     rawData,
     isLoading,
-    elapsedTime,
     reportPreview,
     pendingEndpoints,
     taskSummaryMetrics,
@@ -46,6 +42,7 @@ export default function RangkumanSummary() {
     setDismissedDots,
   } = useRangkumanData();
 
+  const [activeTab, setActiveTab] = useState('Time RO');
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
@@ -53,28 +50,36 @@ export default function RangkumanSummary() {
   const [reasons, setReasons] = useState([]);
   const [pendingDetails, setPendingDetails] = useState([]);
   const [isDownload, setIsDownload] = useState(false);
-
-  // Ambil Data Reasons (Group Reason & PIC)
+  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
   useEffect(() => {
-    getReasons().then(setReasons).catch(console.error);
-  }, []);
+    if (isEmpty(driverData)) {
+      setEmptyMessage(t('common.no_driver'));
+      return;
+    }
+    getReasons()
+      .then(setReasons)
+      .catch(() => {});
+  }, [driverData, t]);
 
-  // Ambil Detail Pending berdasar rentang tanggal
   useEffect(() => {
+    if (isEmpty(driverData)) {
+      setEmptyMessage(t('common.no_driver'));
+      return;
+    }
     if (dateRange && dateRange[0] && dateRange[1]) {
       const start = formatDateUniversal(new Date(dateRange[0]), 'YYYY-MM-DD');
       const end = formatDateUniversal(new Date(dateRange[1]), 'YYYY-MM-DD');
-      getPendingDetails(start, end).then(setPendingDetails).catch(console.error);
+      getPendingDetails(start, end)
+        .then(setPendingDetails)
+        .catch(() => {});
     }
-  }, [dateRange]);
+  }, [dateRange, driverData, t]);
 
   const handleUpdatePendingDetail = (updatedDetail) => {
     setPendingDetails((prev) => {
       if (updatedDetail.deleted) {
         return prev.filter((p) => p.taskId !== updatedDetail.taskId);
       }
-
-      // Jika aksi berupa simpan/update, perbarui array
       const exists = prev.find((p) => p.taskId === updatedDetail.taskId);
       if (exists) {
         return prev.map((p) => (p.taskId === updatedDetail.taskId ? updatedDetail : p));
@@ -86,6 +91,10 @@ export default function RangkumanSummary() {
   useEffect(() => {
     const fetchHubSettings = async () => {
       if (!selectedLocation) return;
+      if (isEmpty(driverData)) {
+        setEmptyMessage(t('common.no_driver'));
+        return;
+      }
       try {
         const hubs = await getHubs();
         const activeHub = hubs.find(
@@ -95,12 +104,10 @@ export default function RangkumanSummary() {
         if (activeHub) {
           setHasPendingGR(activeHub.hasPendingGR || false);
         }
-      } catch (error) {
-        console.error('Failed to fetch hub settings:', error);
-      }
+      } catch (error) {}
     };
     fetchHubSettings();
-  }, [selectedLocation]);
+  }, [selectedLocation, driverData, t]);
 
   const handleTempDateChange = (update) => {
     setTempDateRange(update);
@@ -128,16 +135,14 @@ export default function RangkumanSummary() {
   }, [fetchData]);
 
   const handleDownloadExcel = async () => {
-    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
-    if (isEmpty(driverData)) {
-      toastError(t('summary.toast.no_driver_data'));
-      return;
-    }
-    setIsDownload(true);
-    const startDate = new Date(dateRange[0]);
-    const endDate = new Date(dateRange[1]);
-
     try {
+      if (!dateRange || !dateRange[0] || !dateRange[1]) return;
+      if (isEmpty(driverData)) {
+        throw new Error(t('common.no_driver'));
+      }
+      setIsDownload(true);
+      const startDate = new Date(dateRange[0]);
+      const endDate = new Date(dateRange[1]);
       const { wb, excelFileName } = await generateRangkumanWorkbook(
         driverData,
         rawData.tasks,
@@ -155,9 +160,9 @@ export default function RangkumanSummary() {
         pendingDetails
       );
       XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('summary.toast.success'));
+      toastSuccess(t('common.toast.success'));
     } catch (err) {
-      toastError(t('summary.toast.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }));
     } finally {
       setIsDownload(false);
     }
@@ -187,8 +192,7 @@ export default function RangkumanSummary() {
 
   const isTabEmpty = () => {
     if (isLoading) return false;
-    if (activeTab !== 'Task Summary' && activeTab !== 'Time RO' && !reportPreview) return true;
-
+    if (isEmpty(driverData)) return true;
     switch (activeTab) {
       case 'Task Summary':
         return isEmpty(Object.keys(taskSummaryMetrics));
@@ -263,9 +267,9 @@ export default function RangkumanSummary() {
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
           data: reportPreview?.pendingReasonsData || [],
-          pendingDetails: pendingDetails, // <-- Pass Data
-          reasons: reasons, // <-- Pass DB Reasons
-          onUpdatePendingDetail: handleUpdatePendingDetail, // <-- Pass callback save Modal
+          pendingDetails: pendingDetails,
+          reasons: reasons,
+          onUpdatePendingDetail: handleUpdatePendingDetail,
           hasPendingGR: hasPendingGR,
           translate: t,
         });
@@ -374,6 +378,7 @@ export default function RangkumanSummary() {
       <BodyCard
         activeTabId={activeTab}
         isEmpty={isTabEmpty()}
+        emptyMessage={emptyMessage}
         isLoading={isLoading}
         onTabClick={handleTabClick}
         tabs={tabConfig.map((tab) => ({
@@ -385,19 +390,11 @@ export default function RangkumanSummary() {
           pendingEndpoints.length > 0 && (
             <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
               <p>{t('summary.long_message')}</p>
-              <p>{pendingEndpoints.join(', ')}</p>
+              <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
             </div>
           )
         }
       >
-        {isLoading && elapsedTime > 120 && pendingEndpoints.length > 0 && (
-          <div className="absolute top-20 left-0 right-0 z-50 flex justify-center pointer-events-none">
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse">
-              <p>{t('summary.long_message')}</p>
-              <p>{pendingEndpoints.join(', ')}</p>
-            </div>
-          </div>
-        )}
         {!isLoading && renderContent()}
       </BodyCard>
       <span className="-mt-4 block text-xs text-amber-600 text-right italic">

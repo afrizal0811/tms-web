@@ -28,6 +28,8 @@ import TableData from './components/TableData';
 import { getDriverName, handleConfirmDownload, processDriverTimeMap } from './help';
 
 export default function EstimasiDelivery() {
+  const { t } = useLanguage();
+
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [allRoutes, setAllRoutes] = useState([]);
   const [driverData, setDriverData] = useState({});
@@ -42,11 +44,10 @@ export default function EstimasiDelivery() {
   const [selectedDate, setSelectedDate] = useState('');
   const [timeMap, setTimeMap] = useState(new Map());
   const [isDetailView, setIsDetailView] = useState(false);
+  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
 
   const downloadDropdownRef = useRef(null);
   const isAnyDownloading = isDownloadingExcel || isDownloadingPdf;
-
-  const { t } = useLanguage();
 
   useEffect(() => {
     setIsClient(true);
@@ -92,7 +93,7 @@ export default function EstimasiDelivery() {
 
   const handleDeliveryDownload = async () => {
     if (isEmpty(filteredVehicleRoutes)) {
-      toastError(t('estimation.toast.no_data_downloaded'));
+      toastError(t('common.toast.error', { err: t('common.no_data') }));
       return;
     }
 
@@ -134,7 +135,7 @@ export default function EstimasiDelivery() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        toastSuccess(t('estimation.toast.success_pdf'));
+        toastSuccess(t('common.toast.success'));
       } else {
         const zip = new JSZip();
         const pdfPromises = filteredVehicleRoutes.map(async (route) => {
@@ -155,10 +156,10 @@ export default function EstimasiDelivery() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        toastSuccess(t('estimation.toast.success_zip', { length: generatedFiles.length }));
+        toastSuccess(t('common.toast.success', { length: generatedFiles.length }));
       }
     } catch (error) {
-      toastError(t('estimation.toast.download_failed', { err: error.message }));
+      toastError(t('common.toast.error', { err: error.message }));
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -203,6 +204,10 @@ export default function EstimasiDelivery() {
         }
 
         const rawDrivers = await getOrFetchDriverData(storedLocation);
+        if (isEmpty(rawDrivers)) {
+          setEmptyMessage(t('common.no_driver')); 
+          throw new Error(t('common.no_driver'));
+        }
         const dataObj = {};
         const mapObj = new Map();
         if (Array.isArray(rawDrivers)) {
@@ -412,7 +417,7 @@ export default function EstimasiDelivery() {
         const processedTime = processDriverTimeMap(historyData, selectedDate);
         setTimeMap(processedTime);
       } catch (err) {
-        toastError(err.message);
+        toastError(t('common.toast.error', { err: err.message }));
       } finally {
         setIsLoading(false);
       }
@@ -737,7 +742,7 @@ export default function EstimasiDelivery() {
       return {
         id: route.vehicleId,
         label: (
-          <Tooltip tooltipContent={noDriverName ? t('estimation.no_driver') : tooltipName}>
+          <Tooltip tooltipContent={noDriverName ? t('common.no_driver') : tooltipName}>
             <span className={tabClass}>
               {route.vehicleName}{' '}
               <span className={`text-red-600 dark:text-red-300 `}>{redeliveryBadge}</span>
@@ -765,9 +770,9 @@ export default function EstimasiDelivery() {
         className="min-h-[400px]"
         isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
         isLoading={isLoading}
-        loadingText={t('common.loading')}
         onTabClick={setActiveVehicleId}
         tabs={vehicleTabs}
+        emptyMessage={emptyMessage}
       >
         <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors ">
           <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
