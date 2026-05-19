@@ -5,7 +5,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import SingleReport from '@/features/reportData/SingleReport';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper'; // Pastikan path ini benar
+import { getDrivers } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
@@ -14,63 +14,33 @@ import { useEffect, useState } from 'react';
 export default function LaporanPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  // State untuk menyimpan data dari localStorage
-  const [data, setData] = useState({
-    selectedUser: null,
-    selectedLocation: null,
-    selectedLocationName: null,
-    driverData: [],
-  });
 
-  // State untuk loading halaman
-  const [isLoading, setIsLoading] = useState(true);
-
-  // State yang diperlukan oleh TmsSummary
+  const [data, setData] = useState(null);
   const [isAnyLoading, setIsAnyLoading] = useState(false);
   const [isMapping, setIsMapping] = useState(false);
 
   useEffect(() => {
-    // Gunakan 'async' untuk 'await getOrFetchDriverData'
     async function loadLaporanData() {
       try {
-        // 1. Ambil data sesi
-        const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
+        const { storedLocation, storedLocationName } = getLocalStorage();
 
-        // 2. Cek data sesi dasar
-        if (!storedUser || !storedLocation || !storedLocationName) {
-          toastError(t('home.toast.no_session'));
-          router.push('/');
-          return;
-        }
+        const drivers = await getDrivers(storedLocation);
 
-        // 3. Ambil data driver dengan "aman"
-        // Fungsi ini akan fetch dari API JIKA tidak ada di localStorage
-        const drivers = await getOrFetchDriverData(storedLocation);
-
-        if (!drivers) {
-          throw new Error('Gagal memuat data driver.');
-        }
-
-        // 4. Jika semua data ada, simpan ke state
         setData({
-          selectedUser: JSON.parse(storedUser),
           selectedLocation: storedLocation,
           selectedLocationName: storedLocationName,
-          driverData: drivers, // <-- Gunakan data dari 'drivers'
+          driverData: drivers || [],
         });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }));
         router.push('/');
-      } finally {
-        setIsLoading(false);
       }
     }
 
-    loadLaporanData(); // Panggil fungsi async
-  }, [router, t]); // 'router' sebagai dependensi sudah benar
+    loadLaporanData();
+  }, [router, t]);
 
-  // Tampilan loading selagi cek localStorage
-  if (isLoading) {
+  if (!data) {
     return (
       <SelectionLayout>
         <Spinner />
@@ -78,13 +48,11 @@ export default function LaporanPage() {
     );
   }
 
-  // Tampilan utama jika data berhasil dimuat
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
       <SingleReport
         selectedLocation={data.selectedLocation}
         selectedLocationName={data.selectedLocationName}
-        selectedUser={data.selectedUser}
         driverData={data.driverData}
         isAnyLoading={isAnyLoading}
         setIsAnyLoading={setIsAnyLoading}

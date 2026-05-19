@@ -1,4 +1,3 @@
-// File: src/features/reportData/TaskCountReport.js
 'use client';
 
 import Button from '@/components/Button';
@@ -6,18 +5,14 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks, getTrash } from '@/lib/api';
+import { getCachedHubs, setCachedHubs } from '@/lib/localStorageHandler';
 import { generateTaskCountWorkbook } from '@/lib/reportGenerators/taskCountReport';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatDateUniversal, formatLongDate } from '@/lib/utils'; // Import utils
+import { formatDateUniversal, formatLongDate, formatToApiUtc, isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
-const formatToApiUtcString = (dateObj) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${dateObj.getUTCFullYear()}-${pad(dateObj.getUTCMonth() + 1)}-${pad(dateObj.getUTCDate())} ${pad(dateObj.getUTCHours())}:${pad(dateObj.getUTCMinutes())}:${pad(dateObj.getUTCSeconds())}`;
-};
-
-export default function TaskCountReport({ driverData }) {
+export default function TaskCountReport() {
   const { t, lang } = useLanguage();
   const [hubs, setHubs] = useState([]);
   const [selectedHubs, setSelectedHubs] = useState([]);
@@ -28,16 +23,20 @@ export default function TaskCountReport({ driverData }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchHubs = async () => {
+    const loadHubs = async () => {
       try {
-        const res = await getHubs();
-        setHubs(res || []);
-        setSelectedHubs(res.map((h) => h._id));
+        let cached = getCachedHubs();
+        if (!cached || isEmpty(cached)) {
+          cached = await getHubs();
+          if (!isEmpty(cached)) setCachedHubs(cached);
+        }
+        setHubs(cached || []);
+        setSelectedHubs((cached || []).map((h) => h._id));
       } catch (err) {
         toastError(t('common.toast.error', { err: err.message }));
       }
     };
-    fetchHubs();
+    loadHubs();
   }, [t]);
 
   const isAllSelected = selectedHubs.length > 0 && selectedHubs.length === hubs.length;
@@ -66,7 +65,6 @@ export default function TaskCountReport({ driverData }) {
     if (!isCustomMode) {
       const y = selectedMonth.getFullYear();
       const m = selectedMonth.getMonth();
-      // Jam server UTC (01:34 UTC = 08:34 WIB)
       calcStart = new Date(Date.UTC(y, m, 24, 1, 34, 0));
       calcEnd = new Date(Date.UTC(y, m + 1, 24, 1, 34, 0));
     } else {
@@ -101,8 +99,8 @@ export default function TaskCountReport({ driverData }) {
       let isHitLimit = false;
 
       for (const chunk of chunks) {
-        const timeFrom = formatToApiUtcString(chunk.from);
-        const timeTo = formatToApiUtcString(chunk.to);
+        const timeFrom = formatToApiUtc(chunk.from);
+        const timeTo = formatToApiUtc(chunk.to);
 
         const response = await getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',
@@ -160,7 +158,6 @@ export default function TaskCountReport({ driverData }) {
         return { id, name: found ? found.name : 'Unknown Hub' };
       });
 
-      // --- PENAMAAN FILE DINAMIS DENGAN UTILS ---
       let fileName = '';
       if (!isCustomMode) {
         const startLabel = formatLongDate(calcStart, lang);

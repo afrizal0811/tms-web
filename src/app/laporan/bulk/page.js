@@ -3,42 +3,38 @@
 import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
+import { useLanguage } from '@/context/LanguageContext';
 import BulkReport from '@/features/reportData/BulkReport';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDrivers } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function LaporanBulkPage() {
-  const [driverData, setDriverData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { t } = useLanguage();
+  const [data, setData] = useState(null);
 
-  // Kita perlu memuat driverData sekali saat halaman ini dibuka
   useEffect(() => {
-    async function loadDriverCache() {
+    async function loadBulkData() {
       try {
         const { storedLocation } = getLocalStorage();
-        if (!storedLocation) {
-          throw new Error('Lokasi tidak ditemukan, harap kembali ke Home.');
-        }
+        const drivers = await getDrivers(storedLocation);
 
-        // Panggil helper "pintar"
-        const drivers = await getOrFetchDriverData(storedLocation);
-
-        if (!drivers) {
-          throw new Error('Gagal memuat data driver.');
-        }
-        setDriverData(drivers);
+        setData({
+          driverData: drivers || [],
+        });
       } catch (e) {
-        toastError(e.message);
-      } finally {
-        setIsLoading(false);
+        toastError(t('common.toast.error', { err: e.message }));
+        router.push('/');
       }
     }
-    loadDriverCache();
-  }, []); // Hanya jalan sekali
 
-  if (isLoading) {
+    loadBulkData();
+  }, [router, t]);
+
+  if (!data) {
     return (
       <SelectionLayout>
         <Spinner />
@@ -46,10 +42,9 @@ export default function LaporanBulkPage() {
     );
   }
 
-  // Tampilan utama
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <BulkReport driverData={driverData} />
+      <BulkReport driverData={data.driverData} />
     </AppLayout>
   );
 }
