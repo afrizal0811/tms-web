@@ -17,8 +17,7 @@ export default function SettingsPage() {
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-  const [driverSyncStatus, setDriverSyncStatus] = useState({});
-  const [lastUpdated, setLastUpdated] = useState({});
+  const [lastUpdated, setLastUpdated] = useState({ hubs: '-', roles: '-', drivers: '-' });
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
   const [reasons, setReasons] = useState([]);
@@ -34,6 +33,17 @@ export default function SettingsPage() {
           getReasons(),
         ]);
 
+        let maxDriverDate = null;
+        dStatus.forEach((d) => {
+          if (d._max && d._max.updatedAt) {
+            const dateObj = new Date(d._max.updatedAt);
+            if (!maxDriverDate || dateObj > maxDriverDate) {
+              maxDriverDate = dateObj;
+            }
+          }
+        });
+        const latestDriverSync = maxDriverDate ? maxDriverDate.toLocaleString('id-ID') : '-';
+
         setHubs(hubsDb);
         setLastUpdated({
           hubs:
@@ -44,13 +54,9 @@ export default function SettingsPage() {
             rolesDb.length > 0 && rolesDb[0].updatedAt
               ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
               : '-',
+          drivers: latestDriverSync,
         });
 
-        const dMap = {};
-        dStatus.forEach((d) => {
-          if (d._max.updatedAt) dMap[d.hubId] = new Date(d._max.updatedAt).toLocaleString('id-ID');
-        });
-        setDriverSyncStatus(dMap);
         setVehicleTypes(vTypes);
         setReasons(reasonsDb || []);
 
@@ -134,7 +140,6 @@ export default function SettingsPage() {
         return (
           <SyncDataTab
             lastUpdated={lastUpdated}
-            driverSyncStatus={driverSyncStatus}
             onRefresh={triggerRefresh}
             isReadOnly={isReadOnly}
             translate={t}

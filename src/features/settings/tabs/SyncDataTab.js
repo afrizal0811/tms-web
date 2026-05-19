@@ -3,54 +3,28 @@
 import { syncDriversData, syncHubsData, syncRolesData } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Card from '../components/Card';
 
-export default function SyncDataTab({
-  lastUpdated,
-  driverSyncStatus,
-  onRefresh,
-  isReadOnly,
-  translate,
-}) {
-  const [syncLoading, setSyncLoading] = useState({ all: false });
-  const [activeHubId, setActiveHubId] = useState('');
-
-  useEffect(() => {
-    const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
-    let hubId = storedLocation;
-    let hubName = storedLocationName;
-
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.activeHubId) hubId = parsed.activeHubId;
-        if (parsed.activeHubName) hubName = parsed.activeHubName;
-      } catch (e) {}
-    }
-
-    setActiveHubId(hubId || '');
-  }, []);
+export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, translate }) {
+  const [syncLoading, setSyncLoading] = useState({});
+  const { storedLocation: activeHubId } = getLocalStorage();
 
   const executeSync = async (type) => {
     if (isReadOnly) return;
 
-    setSyncLoading((prev) => ({ ...prev, [type]: true }));
+    setSyncLoading({ [type]: true });
     try {
       if (type === 'hubs') await syncHubsData();
       else if (type === 'roles') await syncRolesData();
-      else if (type.startsWith('drivers-')) {
-        const targetId = type.split('drivers-')[1];
-        if (targetId === 'all') await syncDriversData([]);
-        else await syncDriversData([targetId]);
-      }
+      else if (type === 'drivers') await syncDriversData([activeHubId]);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
       window.location.reload();
     } catch (error) {
       toastError(translate('common.toast.error', { err: error.message }));
     } finally {
-      setSyncLoading((prev) => ({ ...prev, [type]: false }));
+      setSyncLoading({ [type]: false });
     }
   };
 
@@ -64,7 +38,7 @@ export default function SyncDataTab({
       label: translate('setting.tab.sync_data.roles'),
     },
     {
-      type: `drivers-${activeHubId}`,
+      type: `drivers`,
       label: translate('setting.tab.sync_data.driver_vehicles'),
     },
   ];
@@ -81,9 +55,7 @@ export default function SyncDataTab({
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
             {translate('setting.last_updated')} <br />
             <span className="font-medium text-slate-600 dark:text-slate-500">
-              {type === `drivers-${activeHubId}`
-                ? driverSyncStatus[activeHubId]
-                : lastUpdated[type]}
+              {lastUpdated[type]}
             </span>
           </div>
         </div>
