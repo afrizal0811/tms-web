@@ -4,7 +4,7 @@ import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
-export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, lang }) {
+export default function TableData({ data, historyMap, selectedDate, t, lang }) {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

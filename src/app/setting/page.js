@@ -2,12 +2,12 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import SettingsPage from '@/features/settings/SettingsPage';
+import SettingPage from '@/features/setting/SettingPage';
 
 export default function Page() {
   return (
     <AppLayout mainClassName="items-center px-4">
-      <SettingsPage />
+      <SettingPage />
     </AppLayout>
   );
 }

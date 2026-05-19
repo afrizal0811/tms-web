@@ -184,7 +184,7 @@ export default function Navbar() {
   }
 
   const navLinkEstimate = (
-    <NavLink href="/estimasi">
+    <NavLink href="/estimate">
       <span className={!isIndo ? hiddenTextClassName : ''}> {primaryEstimate} </span>
       <span className={isIndo ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
     </NavLink>
@@ -198,7 +198,7 @@ export default function Navbar() {
   );
 
   const mobileLinkEstimate = (
-    <MobileNavLink href="/estimasi">
+    <MobileNavLink href="/estimate">
       {primaryEstimate} {secondaryEstimate}
     </MobileNavLink>
   );
@@ -239,14 +239,14 @@ export default function Navbar() {
       >
         <div className="py-1">
           <Link
-            href="/laporan"
+            href="/report/single"
             className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
             onClick={() => setIsLaporanOpen(false)}
           >
             {t('navbar.daily_report')}
           </Link>
           <Link
-            href="/laporan/bulk"
+            href="/report/bulk"
             className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
             onClick={() => setIsLaporanOpen(false)}
           >
@@ -254,7 +254,7 @@ export default function Navbar() {
           </Link>
           {isSuperadmin && (
             <Link
-              href="/laporan/task-counter"
+              href="/report/counter"
               className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
               onClick={() => setIsLaporanOpen(false)}
             >
@@ -269,8 +269,8 @@ export default function Navbar() {
   const LoggedInComps = (
     <>
       {navLinkReport}
-      {isSuperadmin && <NavLink href="/rangkuman">{t('navbar.summary')}</NavLink>}
-      <NavLink href="/update-longlat">
+      {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
+      <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
       </NavLink>
       {navLinkEstimate}
@@ -410,12 +410,10 @@ export default function Navbar() {
               <div className="pt-1 pb-1 px-3">
                 <div className="border-t border-gray-200 dark:border-slate-800"></div>
               </div>
-              <MobileNavLink href="/laporan">{t('navbar.daily_report')}</MobileNavLink>
-              <MobileNavLink href="/laporan/bulk">{t('navbar.period_report')}</MobileNavLink>
-              {isSuperadmin && (
-                <MobileNavLink href="/rangkuman">{t('navbar.summary')}</MobileNavLink>
-              )}
-              <MobileNavLink href="/update-longlat">
+              <MobileNavLink href="/report/single">{t('navbar.daily_report')}</MobileNavLink>
+              <MobileNavLink href="/report/bulk">{t('navbar.period_report')}</MobileNavLink>
+              {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
+              <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
               {mobileLinkEstimate}

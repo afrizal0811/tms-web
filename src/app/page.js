@@ -5,8 +5,8 @@ import ErrorPage from '@/components/ErrorPage';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import DashboardSummary from '@/features/dashboard/DashboardSummary';
-import UserLogin from '@/features/userLogin/UserLogin';
+import Dashboard from '@/features/dashboard/Dashboard';
+import UserLoginPage from '@/features/userLogin/UserLoginPage';
 import { getHubs } from '@/lib/api';
 import {
   getCachedHubs,
@@ -127,7 +127,7 @@ export default function Home() {
   if (!selectedUser || !selectedLocation) {
     return (
       <SelectionLayout>
-        <UserLogin
+        <UserLoginPage
           t={t}
           allHubsList={allHubsList}
           currentHubListView={currentHubListView}
@@ -139,7 +139,7 @@ export default function Home() {
 
   return (
     <AppLayout mainClassName="items-center px-4 relative">
-      <DashboardSummary driverData={driverData.data} />
+      <Dashboard driverData={driverData.data} />
     </AppLayout>
   );
 }

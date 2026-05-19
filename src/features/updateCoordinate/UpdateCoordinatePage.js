@@ -20,10 +20,10 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import UpdateLonglatTable from './components/UpdateLonglatTable';
+import TableData from './components/TableData';
 import { handleDownloadExcel } from './help';
 
-export default function UpdateLonglatPage() {
+export default function UpdateCoordinatePage() {
   const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -111,8 +111,7 @@ export default function UpdateLonglatPage() {
         if (isEmpty(drivers)) {
           setEmptyMessage(t('common.no_driver'));
           throw new Error(t('common.no_driver'));
-        }
-        else {
+        } else {
           drivers.forEach((d) => {
             const normEmail = normalizeEmail(d.email);
             if (normEmail) driverMapRef.current.set(normEmail, d.name);
@@ -234,7 +233,7 @@ export default function UpdateLonglatPage() {
         isLoading={loading}
       >
         <div className="p-0 h-full overflow-y-auto">
-          <UpdateLonglatTable
+          <TableData
             data={processedData}
             historyMap={historyMap}
             selectedDate={selectedDate}

@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
 import SyncDataTab from './tabs/SyncDataTab';
 
-export default function SettingsPage() {
+export default function SettingPage() {
   const { t } = useLanguage();
 
   const [isAuthorized, setIsAuthorized] = useState(false);

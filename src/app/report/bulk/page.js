@@ -4,31 +4,25 @@ import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import SingleReport from '@/features/reportData/SingleReport';
+import BulkReport from '@/features/reports/BulkReport';
 import { getDrivers } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function LaporanPage() {
+export default function LaporanBulkPage() {
   const router = useRouter();
   const { t } = useLanguage();
-
   const [data, setData] = useState(null);
-  const [isAnyLoading, setIsAnyLoading] = useState(false);
-  const [isMapping, setIsMapping] = useState(false);
 
   useEffect(() => {
-    async function loadLaporanData() {
+    async function loadBulkData() {
       try {
-        const { storedLocation, storedLocationName } = getLocalStorage();
-
+        const { storedLocation } = getLocalStorage();
         const drivers = await getDrivers(storedLocation);
 
         setData({
-          selectedLocation: storedLocation,
-          selectedLocationName: storedLocationName,
           driverData: drivers || [],
         });
       } catch (e) {
@@ -37,7 +31,7 @@ export default function LaporanPage() {
       }
     }
 
-    loadLaporanData();
+    loadBulkData();
   }, [router, t]);
 
   if (!data) {
@@ -50,15 +44,7 @@ export default function LaporanPage() {
 
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <SingleReport
-        selectedLocation={data.selectedLocation}
-        selectedLocationName={data.selectedLocationName}
-        driverData={data.driverData}
-        isAnyLoading={isAnyLoading}
-        setIsAnyLoading={setIsAnyLoading}
-        isMapping={isMapping}
-        setIsMapping={setIsMapping}
-      />
+      <BulkReport driverData={data.driverData} />
     </AppLayout>
   );
 }

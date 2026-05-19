@@ -12,7 +12,7 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { calculateDashboardSummary } from './help';
+import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
 
 export default function DashboardSummary({ driverData }) {
@@ -337,7 +337,7 @@ export default function DashboardSummary({ driverData }) {
   }, [yearlyTasks, storageFilter]);
 
   const summaryData = useMemo(() => {
-    return calculateDashboardSummary(filteredDailyTasks, driverMap, lang, hasPendingGR);
+    return calculateDashboard(filteredDailyTasks, driverMap, lang, hasPendingGR);
   }, [filteredDailyTasks, driverMap, lang, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';

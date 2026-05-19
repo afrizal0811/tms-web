@@ -120,7 +120,7 @@ export default function UserDropdown({ isDarkMode }) {
               <LanguageToggle showLabel={true} className="text-sm px-4" />
 
               <Link
-                href="/settings"
+                href="/setting"
                 onClick={() => setIsOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
               >

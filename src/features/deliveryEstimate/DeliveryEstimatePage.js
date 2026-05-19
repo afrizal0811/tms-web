@@ -27,7 +27,7 @@ import FormPengiriman from './components/FormPengiriman';
 import TableData from './components/TableData';
 import { getDriverName, handleConfirmDownload, processDriverTimeMap } from './help';
 
-export default function EstimasiDelivery() {
+export default function DeliveryEstimatePage() {
   const { t } = useLanguage();
 
   const [activeVehicleId, setActiveVehicleId] = useState(null);
@@ -205,7 +205,7 @@ export default function EstimasiDelivery() {
 
         const rawDrivers = await getOrFetchDriverData(storedLocation);
         if (isEmpty(rawDrivers)) {
-          setEmptyMessage(t('common.no_driver')); 
+          setEmptyMessage(t('common.no_driver'));
           throw new Error(t('common.no_driver'));
         }
         const dataObj = {};

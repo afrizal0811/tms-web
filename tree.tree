@@ -32,27 +32,28 @@
 │   │   │   └── route.js
 │   │   └── vehicle-types
 │   │       └── route.js
-│   ├── estimasi
+│   ├── coordinate
+│   │   └── page.js
+│   ├── estimate
 │   │   └── page.js
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── help
 │   │   └── page.js
-│   ├── laporan
-│   │   ├── bulk
-│   │   │   └── page.js
-│   │   ├── page.js
-│   │   └── task-counter
-│   │       └── page.js
 │   ├── layout.js
 │   ├── not-found.js
 │   ├── old.ico
 │   ├── page.js
-│   ├── rangkuman
+│   ├── report
+│   │   ├── bulk
+│   │   │   └── page.js
+│   │   ├── counter
+│   │   │   └── page.js
+│   │   └── single
+│   │       └── page.js
+│   ├── setting
 │   │   └── page.js
-│   ├── settings
-│   │   └── page.js
-│   ├── update-longlat
+│   ├── summary
 │   │   └── page.js
 │   └── vehicles
 │       └── page.js
@@ -101,7 +102,7 @@
 │   │   │   │   └── ServiceLevelChart.js
 │   │   │   ├── InfoCard.js
 │   │   │   └── MapViewSection.js
-│   │   ├── DashboardSummary.js
+│   │   ├── Dashboard.js
 │   │   ├── help.js
 │   │   ├── modals
 │   │   │   ├── DailyLoadCapacityModal.js
@@ -112,11 +113,11 @@
 │   │       ├── DetailTab.js
 │   │       ├── DiagramTab.js
 │   │       └── RoutingVsActualTab.js
-│   ├── estimasiDelivery
+│   ├── deliveryEstimate
 │   │   ├── components
 │   │   │   ├── FormPengiriman.js
 │   │   │   └── TableData.js
-│   │   ├── EstimasiDelivery.js
+│   │   ├── DeliveryEstimatePage.js
 │   │   └── help.js
 │   ├── help
 │   │   ├── components
@@ -138,8 +139,25 @@
 │   │   │       └── task.js
 │   │   ├── data.js
 │   │   └── HelpPage.js
-│   ├── rangkuman
-│   │   ├── RangkumanSummary.js
+│   ├── reports
+│   │   ├── BulkReport.js
+│   │   ├── help.js
+│   │   ├── SingleReport.js
+│   │   └── TaskCountReport.js
+│   ├── setting
+│   │   ├── components
+│   │   │   ├── BranchManager.js
+│   │   │   ├── Card.js
+│   │   │   ├── ReasonManager.js
+│   │   │   ├── StandardType.js
+│   │   │   ├── Table.js
+│   │   │   └── VehicleMappingManager.js
+│   │   ├── SettingPage.js
+│   │   └── tabs
+│   │       ├── GeneralTab.js
+│   │       └── SyncDataTab.js
+│   ├── summary
+│   │   ├── SummaryPage.js
 │   │   └── tabs
 │   │       ├── AverageKmTab.js
 │   │       ├── components
@@ -158,33 +176,16 @@
 │   │       ├── TimeROTab.js
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
-│   ├── reportData
-│   │   ├── BulkReport.js
-│   │   ├── help.js
-│   │   ├── SingleReport.js
-│   │   └── TaskCountReport.js
-│   ├── settings
-│   │   ├── components
-│   │   │   ├── BranchManager.js
-│   │   │   ├── Card.js
-│   │   │   ├── ReasonManager.js
-│   │   │   ├── StandardType.js
-│   │   │   ├── Table.js
-│   │   │   └── VehicleMappingManager.js
-│   │   ├── SettingsPage.js
-│   │   └── tabs
-│   │       ├── GeneralTab.js
-│   │       └── SyncDataTab.js
-│   ├── updateLonglat
+│   ├── updateCoordinate
 │   │   ├── components
 │   │   │   ├── MapLocation.js
-│   │   │   └── UpdateLonglatTable.js
+│   │   │   └── TableData.js
 │   │   ├── help.js
 │   │   ├── modal
 │   │   │   └── CustomerHistoryModal.js
-│   │   └── UpdateLonglatPage.js
+│   │   └── UpdateCoordinatePage.js
 │   ├── userLogin
-│   │   └── UserLogin.js
+│   │   └── UserLoginPage.js
 │   └── vehicleData
 │       ├── components
 │       │   ├── TemplateTab.js

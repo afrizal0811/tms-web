@@ -1224,7 +1224,7 @@ export const dictionary = {
     setting: {
       last_updated: 'Last updated:',
       sync_loading: 'Synchronizing...',
-      title: 'Settings',
+      title: 'Setting',
       tab: {
         general: {
           add_placeholder: 'Add new data...',

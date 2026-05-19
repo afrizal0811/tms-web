@@ -21,7 +21,7 @@ import TimeROTab from './tabs/TimeROTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
-export default function RangkumanSummary() {
+export default function SummaryPage() {
   const { t, lang } = useLanguage();
   const {
     selectedLocation,

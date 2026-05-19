@@ -362,7 +362,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   return finalRows;
 };
 
-export const calculateDashboardSummary = (tasksArray, driverMap, lang) => {
+export const calculateDashboard = (tasksArray, driverMap, lang) => {
   if (isEmpty(tasksArray)) {
     return {
       totalTasks: 0,

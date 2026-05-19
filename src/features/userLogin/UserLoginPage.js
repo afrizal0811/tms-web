@@ -11,7 +11,7 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { capitalizeText, isEmpty } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 
-export default function LoginSelection({ t, allHubsList, currentHubListView, handleUserSelect }) {
+export default function UserLoginPage({ t, allHubsList, currentHubListView, handleUserSelect }) {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [tempSelectedLocation, setTempSelectedLocation] = useState('');

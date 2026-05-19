@@ -4,25 +4,31 @@ import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import BulkReport from '@/features/reportData/BulkReport';
+import SingleReport from '@/features/reports/SingleReport';
 import { getDrivers } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function LaporanBulkPage() {
+export default function LaporanPage() {
   const router = useRouter();
   const { t } = useLanguage();
+
   const [data, setData] = useState(null);
+  const [isAnyLoading, setIsAnyLoading] = useState(false);
+  const [isMapping, setIsMapping] = useState(false);
 
   useEffect(() => {
-    async function loadBulkData() {
+    async function loadLaporanData() {
       try {
-        const { storedLocation } = getLocalStorage();
+        const { storedLocation, storedLocationName } = getLocalStorage();
+
         const drivers = await getDrivers(storedLocation);
 
         setData({
+          selectedLocation: storedLocation,
+          selectedLocationName: storedLocationName,
           driverData: drivers || [],
         });
       } catch (e) {
@@ -31,7 +37,7 @@ export default function LaporanBulkPage() {
       }
     }
 
-    loadBulkData();
+    loadLaporanData();
   }, [router, t]);
 
   if (!data) {
@@ -44,7 +50,15 @@ export default function LaporanBulkPage() {
 
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <BulkReport driverData={data.driverData} />
+      <SingleReport
+        selectedLocation={data.selectedLocation}
+        selectedLocationName={data.selectedLocationName}
+        driverData={data.driverData}
+        isAnyLoading={isAnyLoading}
+        setIsAnyLoading={setIsAnyLoading}
+        isMapping={isMapping}
+        setIsMapping={setIsMapping}
+      />
     </AppLayout>
   );
 }
