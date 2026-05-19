@@ -78,7 +78,7 @@ export default function CustomerHistoryModal({
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-sm">
-            {t('longlat.modal.no_coordinate')}
+            {t('common.no_data')}
           </div>
         )}
       </div>

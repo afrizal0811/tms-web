@@ -110,7 +110,7 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (isEmpty(filteredApiData)) return { error: translate('report.toast.no_time') };
+  if (isEmpty(filteredApiData)) return { error: translate('common.toast.error', { err: translate('common.no_data') }) };
 
   const groupedData = {};
   filteredApiData.forEach((item) => {

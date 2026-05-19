@@ -69,10 +69,6 @@ export default function DashboardSummary({ driverData }) {
 
   const handleDateChange = (date) => {
     if (!date) return;
-    if (activeTab !== 'Diagram' && date.getDay() === 0) {
-      toastError(t('dashboard.toast.sunday_error'));
-      return;
-    }
     if (activeTab === 'Diagram') {
       const newYear = date.getFullYear();
       const updatedDate = new Date(selectedDate);
@@ -198,7 +194,7 @@ export default function DashboardSummary({ driverData }) {
 
       setRawData({ tasks: tasksArray, results: resultsArray });
     } catch (err) {
-      toastError(err.message || t('dashboard.toast.daily_fetch_error'));
+      toastError(t('common.toast.error', { err: err.message }));
     } finally {
       setLoading(false);
     }
@@ -267,7 +263,7 @@ export default function DashboardSummary({ driverData }) {
         const cacheKey = `${hubId}:${year}`;
         yearlyCacheRef.current[cacheKey] = allTasks;
       } catch (err) {
-        toastError(t('dashboard.toast.yearly_fetch_error'), err);
+        toastError(t('common.toast.error'), { err: err.message });
       } finally {
         setIsYearlyLoading(false);
       }

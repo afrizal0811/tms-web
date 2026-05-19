@@ -379,9 +379,9 @@ export const handleConfirmDownload = async ({
     }
 
     XLSX.writeFile(wb, fileName);
-    toastSuccess(t('estimation.toast.success_excel'));
+    toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(t('estimation.toast.download_failed', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }));
   } finally {
     setIsDownloading(false);
   }

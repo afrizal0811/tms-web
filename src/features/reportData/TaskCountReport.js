@@ -146,7 +146,7 @@ export default function TaskCountReport() {
 
       const finalDataToProcess = [...allFetchedTasks, ...filteredTrashTasks];
       if (finalDataToProcess.length === 0) {
-        toastWarning(t('report.toast.no_data'));
+        toastWarning(t('common.no_data'));
         setIsLoading(false);
         return;
       }
@@ -177,7 +177,7 @@ export default function TaskCountReport() {
         t
       );
       XLSX.writeFile(wb, fileName);
-      toastSuccess(t('report.toast.success'));
+      toastSuccess(t('common.toast.success'));
     } catch (err) {
       toastError(t('common.toast.error', { err: err.message }));
     } finally {

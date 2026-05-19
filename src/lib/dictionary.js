@@ -110,7 +110,6 @@ export const dictionary = {
         login_success: 'Login berhasil!',
         no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
-        success: 'Data berhasil disimpan!',
       },
     },
     vehicle_tag: {
@@ -144,17 +143,8 @@ export const dictionary = {
       unable_copy: 'Gagal salin',
       year_performance: 'Tahun Performa',
       toast: {
-        daily_fetch_error: 'Gagal mengambil data harian.',
-        driver_cache_warning: 'Gagal memproses cache nama driver.',
-        generic_error: 'Terjadi kesalahan sistem.',
-        hub_not_found: 'Lokasi Hub tidak ditemukan. Harap login ulang.',
-        parsing_date_error: 'Gagal memproses tanggal untuk tooltip: {err}',
         partial_warning: 'Gagal memuat sebagian data tahunan: {err}',
-        sunday_error: 'Tidak ada pengiriman saat Minggu. silakan pilih tanggal lain',
-        user_load_error: 'Gagal memuat data user',
         view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
-        yearly_fetch_error: 'Gagal ambil data tahunan',
-        error_download: 'Gagal mengunduh data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -391,13 +381,6 @@ export const dictionary = {
         total_update: 'Total Pembaruan',
         valid_since: 'Berlaku sejak',
       },
-      toast: {
-        all_failed: 'Retry masih gagal: {time} chunk gagal',
-        failed: 'Data gagal diunduh!',
-        recovered: 'Data riwayat sebanyak {count} telah berhasil dilengkapi',
-        retry_chunk: 'Mengulang {count} chunk yang gagal...',
-        success: 'Data berhasil diunduh!',
-      },
     },
     vehicle: {
       search_placeholder: 'Cari Data Kendaraan',
@@ -430,8 +413,6 @@ export const dictionary = {
       },
       toast: {
         choose_one: 'Pilih setidaknya satu sheet untuk diunduh',
-        failed_mapping: 'Gagal melakukan mapping vehicle tag: {error}',
-        success: 'Data kendaraan berhasil diunduh!',
       },
     },
     estimation: {
@@ -449,12 +430,6 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Ringkas',
       visit: 'Kunjungan',
-      toast: {
-        download_failed: 'Gagal mengunduh file laporan: {err}',
-        success_excel: 'Berhasil mengunduh data Estimasi Pengiriman!',
-        success_pdf: 'Berhasil mengunduh data Form Pengiriman!',
-        success_zip: 'Berhasil mengunduh {length} Form Pengiriman dalam ZIP!',
-      },
       tooltip: {
         find_so: 'Klik untuk filter berdasarkan nomor SO',
         hub_eta: 'Terdapat task yang manual assign. Estimasi menjadi tidak akurat',
@@ -472,10 +447,6 @@ export const dictionary = {
       modal: {
         title: 'Peringatan Beban Data',
         text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
-      },
-      toast: {
-        success: 'Data rangkuman berhasil diunduh!',
-        error: 'Data rangkuman gagal dibuat: {err}',
       },
       tabs: {
         time_ro: {
@@ -768,13 +739,11 @@ export const dictionary = {
       toast: {
         active: 'Active!',
         driver_error: `The driver can’t log in. Please use another account`,
-        error: 'Failed to load data: {err}',
         info_tutorial: 'Information tutorial is in Help menu',
         login_failed: 'Login failed: {err}',
         login_success: 'Login success!',
         no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
-        success: 'Data has been saved!',
       },
     },
     vehicle_tag: {
@@ -808,18 +777,9 @@ export const dictionary = {
       unable_copy: 'Unable to copy',
       year_performance: 'Performance Year',
       toast: {
-        daily_fetch_error: 'Failed to fetch daily data.',
-        driver_cache_warning: 'Failed to process driver name cache.',
-        generic_error: 'System error occurred.',
-        hub_not_found: 'Hub location not found. Please login again.',
-        parsing_date_error: 'Error parsing date for tooltip: {err}',
         partial_warning: 'Partial yearly fetch failed: {err}',
-        sunday_error: 'No deliveries on Sunday. Please choose another date',
-        user_load_error: 'Failed to load user data',
         view_map_warning:
           'It is recommended to open the map on Desktop or Tablet for the best experience.',
-        yearly_fetch_error: 'Failed to fetch yearly data',
-        error_download: 'Failed to download data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -1052,13 +1012,6 @@ export const dictionary = {
         total_update: 'Total Update(s)',
         valid_since: 'Valid Since',
       },
-      toast: {
-        all_failed: 'Retry still failed: {time} chunk(s) failed',
-        failed: 'Failed to download data!',
-        recovered: '{count} history records have been successfully restored.',
-        retry_chunk: 'Retrying {count} failed chunk(s)...',
-        success: 'Data downloaded successfully!',
-      },
     },
     vehicle: {
       search_placeholder: 'Search Vehicle Data',
@@ -1092,8 +1045,6 @@ export const dictionary = {
       },
       toast: {
         choose_one: 'Select at least one sheet to download',
-        failed_mapping: 'Failed to map data vehicle tag: {error}',
-        success: 'Vehicle data has been downloaded successfully!',
       },
     },
     estimation: {
@@ -1111,12 +1062,6 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Summary',
       visit: 'Visit',
-      toast: {
-        download_failed: 'Failed to download report file: {err}',
-        success_excel: 'Delivery Estimation data downloaded successfully!',
-        success_pdf: 'Delivery Form downloaded successfully!',
-        success_zip: 'Successfully downloaded {length} Delivery Forms in a ZIP!',
-      },
       tooltip: {
         find_so: 'Click to filter by SO number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
@@ -1134,10 +1079,6 @@ export const dictionary = {
       modal: {
         title: 'Data Load Warning',
         text: `The data being processed is too large (more than 14 days). Do you want to continue?`,
-      },
-      toast: {
-        success: 'Summary data has been downloaded successfully!',
-        error: 'Failed to generate summary data: {err}',
       },
       tabs: {
         time_ro: {

@@ -390,7 +390,7 @@ export default function useRangkumanData() {
           });
         }
       } catch (err) {
-        toastError(t('summary.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }));
       }
 
       Object.keys(tempMetrics).forEach((dateKey) => {

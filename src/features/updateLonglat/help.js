@@ -1,11 +1,11 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName, t) => {
   if (isEmpty(processedData)) {
-    toastWarning(t('report.toast.no_data'));
+    toastError(t('common.toast.error', { err: t('common.no_data') }));
     return;
   }
 
@@ -80,9 +80,9 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
     const fileName = `${t('longlat.title')} - ${date} - ${locationName}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toastSuccess(t('report.toast.success'));
+    toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(t('report.toast.failed'));
+    toastError(t('common.toast.error', { err: e.message }));
   } finally {
     setIsDownloading(false);
   }

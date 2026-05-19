@@ -41,7 +41,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
       await new Promise((r) => setTimeout(r, 100));
       downloadRoutingVsActual(processedData, t, selectedDate, hubLabel);
     } catch (e) {
-      toastError(t('dashboard.error_download', { err: e.message }));
+      toastError(t('common.toast.error', { err: e.message }));
     } finally {
       setIsDownloading(false);
     }

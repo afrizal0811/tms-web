@@ -25,7 +25,7 @@ export default function UpdateLonglatTable({ data, historyMap, selectedDate, t, 
       <div className="flex flex-col h-full space-y-4">
         {isEmpty(data) ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
-            <p>{t('longlat.table.no_data')}</p>
+            <p>{t('common.no_data')}</p>
           </div>
         ) : (
           <div className="overflow-auto h-full rounded-lg bg-white dark:bg-slate-800">
