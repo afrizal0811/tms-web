@@ -10,6 +10,7 @@ import {
   getResultsSummary,
   getTasks,
   getVehicleMappings,
+  getVehicleTypes,
 } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
