@@ -513,12 +513,16 @@ export async function generateRoutingWorkbook(
       }
     }
 
-    let routingResult = resultItem.dispatchMessage || '-';
-    if (routingResult.includes('/')) {
-      const [success, total] = routingResult.split('/');
-      if (!isNaN(success) && !isNaN(total)) {
-        routingResult = translate('excel.routing.data.dispatch_message', { success, total });
-      }
+    const droppedVisits = resultItem?.summary?.droppedVisits || 0;
+    const totalVisits = resultItem?.summary?.totalVisits || 0;
+    const successVisits = resultItem?.summary?.routedVisits || totalVisits - droppedVisits || 0;
+    let routingResult = '-';
+
+    if (!isNaN(droppedVisits) && !isNaN(totalVisits)) {
+      routingResult = translate('excel.routing.data.dispatch_message', {
+        success: successVisits,
+        total: totalVisits,
+      });
     }
 
     helpDataRows.push([routingId, routingName, createdBy, routingTime, routingResult]);
