@@ -266,9 +266,9 @@ export const dictionary = {
         note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
       },
       toast: {
+        failed_zip: 'Gagal membuat file zip.',
         processing: 'Memulai proses...',
         select_date: 'Pilih tanggal pengiriman',
-        select_diff_date: 'Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.',
         skip_data:
           'Terdapat {skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
         skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
@@ -900,9 +900,9 @@ export const dictionary = {
         note_two: '  Total task counts may not be accurate.',
       },
       toast: {
+        failed_zip: 'Failed to create zip file.',
         processing: 'Starting process...',
         select_date: 'Select delivery date',
-        select_diff_date: 'Date range cannot be the same. Please select at least 2 days.',
         skip_data: 'There are {skippedDates} date(s) with no data (including Sundays).',
         skip_sunday: 'Skipped {sundaysSkipped} date(s) because they fall on Sunday.',
       },

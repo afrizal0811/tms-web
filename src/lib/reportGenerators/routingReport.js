@@ -1,6 +1,5 @@
 'use client';
 
-import { getVehicleTypes } from '@/lib/api';
 import { formatDateUniversal, formatDateWIB, formatMinutesToHHMM, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -15,10 +14,9 @@ export async function generateRoutingWorkbook(
   mappingsObj,
   dateForFile,
   hubName,
-  t
+  t,
+  vehicleTypes
 ) {
-  const vehicleTypesObj = await getVehicleTypes();
-  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
   const translate = t || ((key) => key);
 
   const emailMap = {};

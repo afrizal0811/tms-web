@@ -129,7 +129,8 @@ export default function SingleReport({
       if (isEmpty(filteredResults)) {
         throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
-
+      const vehicleTypesObj = await getVehicleTypes();
+      const vehicleTypes = vehicleTypesObj.map((v) => v.name);
       const mappingsDB = await getVehicleMappings();
       const mappingsObj = mappingsDB.reduce((acc, curr) => {
         acc[curr.plat] = curr.mappedType;
@@ -144,7 +145,8 @@ export default function SingleReport({
         mappingsObj,
         targetRoutingStr,
         hubLabel,
-        t
+        t,
+        vehicleTypes
       );
 
       XLSX.writeFile(wb, excelFileName);

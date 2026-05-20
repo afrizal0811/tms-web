@@ -31,24 +31,6 @@ export const bulkDownloader = async ({
   processDateCallback,
   t,
 }) => {
-  let isRangeInvalid = false;
-  if (!startDate || !endDate) {
-    isRangeInvalid = true;
-  } else if (startDate.getTime() === endDate.getTime()) {
-    isRangeInvalid = true;
-  } else if (startDate > endDate) {
-    isRangeInvalid = true;
-  }
-
-  if (isRangeInvalid) {
-    if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
-      toastError(t('report.toast.select_diff_date'));
-    } else {
-      toastError(t('common.invalid_date'));
-    }
-    return;
-  }
-
   if (!driverData || isEmpty(driverData)) {
     toastError(t('common.toast.error', { err: t('common.no_driver') }));
     return;
@@ -101,14 +83,16 @@ export const bulkDownloader = async ({
           skippedDates.push(dateForFile);
         }
       } catch (err) {
-        toastError(
-          t('common.toast.error', { err: err.message })
-        );
+        toastError(t('common.toast.error', { err: err.message }));
       }
     }
 
-    if (filesGenerated === 0 || skippedDates.length > 0) {
-      toastError(t('common.no_data'));
+    if (filesGenerated === 0) {
+      if (skippedDates.length > 0) {
+        toastError(t('common.no_data'));
+      } else {
+        toastError(t('report.toast.failed_zip'));
+      }
       return;
     }
 

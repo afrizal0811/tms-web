@@ -9,6 +9,7 @@ import {
   getResultsSummary,
   getTasks,
   getVehicleMappings,
+  getVehicleTypes,
 } from '@/lib/api';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
@@ -20,6 +21,7 @@ import {
   formatDateUniversal,
   formatTimer,
   formatToApiUtc,
+  isEmpty,
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -57,6 +59,10 @@ export default function BulkReport({ driverData }) {
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
+    if (isEmpty(start) && isEmpty(start)) {
+      toastError(t('report.toast.select_date'));
+      return;
+    }
     setStartDate(start);
     setEndDate(end);
   };
@@ -65,8 +71,11 @@ export default function BulkReport({ driverData }) {
     setElapsedTime(0);
 
     let mappingsObj = {};
+    let vehicleTypes = [];
     try {
       setIsLoading(true);
+      const vehicleTypesObj = await getVehicleTypes();
+      vehicleTypes = vehicleTypesObj.map((v) => v.name);
       const mappingsDB = await getVehicleMappings();
       mappingsObj = mappingsDB.reduce((acc, curr) => {
         acc[curr.plat] = curr.mappedType;
@@ -105,7 +114,8 @@ export default function BulkReport({ driverData }) {
             mappingsObj,
             apiDate,
             hubName,
-            t
+            t,
+            vehicleTypes
           );
         }
         return null;
