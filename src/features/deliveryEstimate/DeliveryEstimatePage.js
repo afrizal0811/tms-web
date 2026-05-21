@@ -21,11 +21,11 @@ import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
-import { getOrFetchDriverData } from '../../lib/driverDataHelper';
+import { getOrFetchDriverData, driverTimeStamps } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import FormPengiriman from './components/FormPengiriman';
 import TableData from './components/TableData';
-import { getDriverName, handleConfirmDownload, processDriverTimeMap } from './help';
+import { getDriverName, handleConfirmDownload } from './help';
 
 export default function DeliveryEstimatePage() {
   const { t } = useLanguage();
@@ -33,7 +33,6 @@ export default function DeliveryEstimatePage() {
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [allRoutes, setAllRoutes] = useState([]);
   const [driverData, setDriverData] = useState({});
-  const [driverMap, setDriverMap] = useState(new Map());
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -218,8 +217,6 @@ export default function DeliveryEstimatePage() {
           });
         }
         setDriverData(dataObj);
-        setDriverMap(mapObj);
-
         const routingDate = new Date(deliveryDateObj);
         if (deliveryDateObj.getDay() === 1) {
           routingDate.setDate(deliveryDateObj.getDate() - 2);
@@ -405,7 +402,7 @@ export default function DeliveryEstimatePage() {
           setActiveVehicleId(null);
         }
 
-        const processedTime = processDriverTimeMap(historyData, selectedDate);
+        const processedTime = driverTimeStamps(historyData, selectedDate);
         setTimeMap(processedTime);
       } catch (err) {
         toastError(t('common.toast.error', { err: err.message }));
