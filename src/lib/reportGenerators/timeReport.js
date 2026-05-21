@@ -110,7 +110,8 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (isEmpty(filteredApiData)) return { error: translate('common.toast.error', { err: translate('common.no_data') }) };
+  if (isEmpty(filteredApiData))
+    return { error: translate('common.toast.error', { err: translate('common.no_data') }) };
 
   const groupedData = {};
   filteredApiData.forEach((item) => {
@@ -254,8 +255,8 @@ export function generateTimeSummaryWorkbook(
     }),
     [],
     ['Note'],
-    ['', 'tanggal start dan finish berbeda'],
-    ['', 'driver klik start-finish lebih dari 1x'],
+    ['', translate('report.note_diff_date')],
+    ['', translate('report.note_double_click')],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
