@@ -166,7 +166,6 @@ export default function DashboardSummary({ driverData }) {
       } else {
         routingStart.setDate(routingStart.getDate() - 1);
       }
-      const routingTimeFrom = formatToApiUtc(routingStart);
 
       const [tasksData, resultsData] = await Promise.all([
         fetchWithRetry(() =>
@@ -181,9 +180,8 @@ export default function DashboardSummary({ driverData }) {
         ),
         fetchWithRetry(() =>
           getResultsSummary({
-            dateFrom: routingTimeFrom,
-            dateTo: timeTo,
-            limit: 500,
+            routingDateObj: routingStart,
+            deliveryDateObj: localStart,
             hubId: hubId,
           })
         ),

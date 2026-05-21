@@ -226,11 +226,6 @@ export default function DeliveryEstimatePage() {
         } else {
           routingDate.setDate(deliveryDateObj.getDate() - 1);
         }
-        const ry = routingDate.getFullYear();
-        const rm = String(routingDate.getMonth() + 1).padStart(2, '0');
-        const rd = String(routingDate.getDate()).padStart(2, '0');
-        const dateFromRouting = `${ry}-${rm}-${rd} 00:00:00`;
-        const dateToRouting = `${ry}-${rm}-${rd} 23:59:59`;
 
         const startD = new Date(selectedDate);
         startD.setHours(0, 0, 0, 0);
@@ -245,9 +240,8 @@ export default function DeliveryEstimatePage() {
         const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResultsSummary({
             hubId: storedLocation,
-            limit: 100,
-            dateFrom: dateFromRouting,
-            dateTo: dateToRouting,
+            routingDateObj: routingDate,
+            deliveryDateObj: deliveryDateObj,
           }),
           getLocationHistories({
             timeFrom: historyFrom,
@@ -305,11 +299,8 @@ export default function DeliveryEstimatePage() {
         }, {});
 
         const resultHubsByPlat = new Map();
-        const allDoneRoutingsRaw = (resultsData || [])
-          .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
-          .flatMap((item) => item.result.routing);
 
-        allDoneRoutingsRaw.forEach((route) => {
+        resultsData.forEach((route) => {
           const plat = route.vehicleName;
           if (plat) {
             const hubs = (route.trips || []).filter((t) => t.isHub);

@@ -112,24 +112,26 @@ export default function SingleReport({
       }
 
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-      const apiDateFrom = `${targetRoutingStr} 00:00:00`;
-      const apiDateTo = `${targetRoutingStr} 23:59:59`;
-
       const { storedLocationAcronym } = getLocalStorage();
 
-      const [resultsData] = await Promise.all([
-        getResultsSummary({
-          dateFrom: apiDateFrom,
-          dateTo: apiDateTo,
-          limit: 1000,
-          hubId: selectedLocation,
-        }),
-      ]);
+      const summaryPayload = isCustomRouting
+        ? {
+            dateFrom: `${targetRoutingStr} 00:00:00`,
+            dateTo: `${targetRoutingStr} 23:59:59`,
+            hubId: selectedLocation,
+          }
+        : {
+            routingDateObj: targetRoutingDateObj,
+            deliveryDateObj: selectedDate,
+            hubId: selectedLocation,
+          };
 
-      const filteredResults = (resultsData || []).filter((item) => item.dispatchStatus === 'done');
+      const [filteredResults] = await Promise.all([getResultsSummary(summaryPayload)]);
+
       if (isEmpty(filteredResults)) {
         throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
+
       const vehicleTypesObj = await getVehicleTypes();
       const vehicleTypes = vehicleTypesObj.map((v) => v.name);
       const mappingsDB = await getVehicleMappings();
@@ -185,10 +187,22 @@ export default function SingleReport({
       }
 
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-      const routingDateFrom = `${targetRoutingStr} 00:00:00`;
-      const routingDateTo = `${targetRoutingStr} 23:59:59`;
-
       const { storedLocationAcronym } = getLocalStorage();
+
+      // Penentuan payload secara dinamis untuk dikirim ke getResultsSummary
+      const summaryPayload = isCustomRouting
+        ? {
+            dateFrom: `${targetRoutingStr} 00:00:00`,
+            dateTo: `${targetRoutingStr} 23:59:59`,
+            limit: 1000,
+            hubId: selectedLocation,
+          }
+        : {
+            routingDateObj: targetRoutingDateObj,
+            deliveryDateObj: selectedDate,
+            limit: 1000,
+            hubId: selectedLocation,
+          };
 
       const [allTasks, resultsData, hubsData] = await Promise.all([
         getTasks({
@@ -199,12 +213,7 @@ export default function SingleReport({
           timeBy: 'startTime',
           limit: 5000,
         }),
-        getResultsSummary({
-          dateFrom: routingDateFrom,
-          dateTo: routingDateTo,
-          limit: 1000,
-          hubId: selectedLocation,
-        }),
+        getResultsSummary(summaryPayload),
         getHubs(),
       ]);
 

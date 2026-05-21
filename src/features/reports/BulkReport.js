@@ -17,7 +17,6 @@ import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
-  calculateTargetDates,
   formatDateUniversal,
   formatTimer,
   formatToApiUtc,
@@ -96,23 +95,26 @@ export default function BulkReport({ driverData }) {
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-        const { dateFrom: apiDate, dateTo: apiDateTo } = calculateTargetDates(dateForFile);
+        const deliveryDateObj = parseDate(dateForFile);
+        const targetRoutingDateObj = new Date(deliveryDateObj);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0) {
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        }
 
-        const resultsData = await getResultsSummary({
-          dateFrom: `${apiDate} 00:00:00`,
-          dateTo: `${apiDateTo} 23:59:59`,
-          limit: 500,
-          hubId,
+        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+        const filteredResults = await getResultsSummary({
+          routingDateObj: targetRoutingDateObj,
+          deliveryDateObj: deliveryDateObj,
+          hubId: hubId,
         });
-
-        const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
 
         if (filteredResults.length > 0) {
           return await generateRoutingWorkbook(
             driverData,
             filteredResults,
             mappingsObj,
-            apiDate,
+            targetRoutingStr,
             hubName,
             t,
             vehicleTypes
@@ -150,11 +152,18 @@ export default function BulkReport({ driverData }) {
       setIsLoading,
       setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-        const { dateFrom: apiDate, dateTo: apiDateTo } = calculateTargetDates(dateForFile);
+        const deliveryDateObj = parseDate(dateForFile);
+        const targetRoutingDateObj = new Date(deliveryDateObj);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0) {
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        }
 
-        const startD = new Date(dateForFile);
+        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+
+        const startD = new Date(deliveryDateObj);
         startD.setHours(0, 0, 0, 0);
-        const endD = new Date(dateForFile);
+        const endD = new Date(deliveryDateObj);
         endD.setHours(23, 59, 59, 999);
 
         const timeFrom = formatToApiUtc(startD);
@@ -170,9 +179,8 @@ export default function BulkReport({ driverData }) {
             limit: 1000,
           }),
           getResultsSummary({
-            dateFrom: `${apiDate} 00:00:00`,
-            dateTo: `${apiDateTo} 23:59:59`,
-            limit: 500,
+            routingDateObj: targetRoutingDateObj,
+            deliveryDateObj: deliveryDateObj,
             hubId: hubId,
           }),
         ]);
@@ -185,7 +193,7 @@ export default function BulkReport({ driverData }) {
             allTasks,
             resultsData || [],
             dateForFile,
-            apiDate,
+            targetRoutingStr,
             hubName,
             hasPendingGR,
             t

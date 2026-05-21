@@ -557,16 +557,13 @@ export default function useRangkumanData() {
           const res = await fetchWithRetry(() =>
             getResultsSummary({
               hubId: selectedLocation,
-              limit: 10000,
-              dateFrom: range.from,
-              dateTo: range.to,
+              routingDateObj: new Date(range.from),
+              deliveryDateObj: new Date(range.to),
             })
           );
           rawResults.push(res);
         }
-        return mergeResults(rawResults).filter(
-          (item) => item.dispatchStatus?.toLowerCase() === 'done'
-        );
+        return mergeResults(rawResults);
       }, 'Routing');
 
       const pHistory = fetchWithTracker(async () => {
