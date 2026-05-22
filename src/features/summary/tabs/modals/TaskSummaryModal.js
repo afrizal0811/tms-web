@@ -3,7 +3,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { formatLongDate, parseCustomerString } from '@/lib/utils';
+import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
 
 export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
   const { lang } = useLanguage();
@@ -63,7 +63,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                       className="hover:bg-gray-50 dark:hover:bg-slate-700/10 text-slate-700 dark:text-slate-200 text-center "
                     >
                       <td className="px-4 py-2">{idx + 1}</td>
-                      <td className="px-4 py-2">{item.plate || '-'}</td>
+                      <td className="px-4 py-2">{getBasePlate(item.plate) || '-'}</td>
                       <td className="px-4 py-2">{item.driverName || '-'}</td>
                     </tr>
                   ))}
@@ -84,10 +84,14 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
             const pickupCustomerName = `${task.title} (${finalCustomerName})`;
 
             return (
-              <div key={idx} className="px-6 py-4 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors">
+              <div
+                key={idx}
+                className="px-6 py-4 bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors"
+              >
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                    {task.flow} <span className="text-slate-300 dark:text-slate-500 mx-1">|</span> {invoice}
+                    {task.flow} <span className="text-slate-300 dark:text-slate-500 mx-1">|</span>{' '}
+                    {invoice}
                   </span>
                   <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight">
                     {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}

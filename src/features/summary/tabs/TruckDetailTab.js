@@ -1,4 +1,4 @@
-import { formatLongDate, formatMinutesToHHMM } from '@/lib/utils';
+import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TruckDetailModal from './modals/TruckDetailModal';
 
@@ -155,7 +155,7 @@ export default function TruckDetailTab({ data, translate, language }) {
                     {driver.type}
                   </td>
                   <td className={`${tdClass} ${stickyPlate} bg-white dark:bg-slate-800`}>
-                    {driver.plat}
+                    {getBasePlate(driver.plat)}
                   </td>
                   <td
                     className={`${tdClass} ${stickyDriver} bg-white dark:bg-slate-800 text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600`}

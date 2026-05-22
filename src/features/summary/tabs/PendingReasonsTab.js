@@ -1,6 +1,6 @@
 import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toastHelper';
-import { isEmpty, parseCustomerString } from '@/lib/utils';
+import { isEmpty, parseCustomerString, getBasePlate } from '@/lib/utils';
 import { useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
 
@@ -244,7 +244,7 @@ export default function PendingReasonsTab({
             const rowCells = [
               { type: 'text', val: item.flow || '-' },
               { type: 'text', val: item.dateStr },
-              { type: 'text', val: item.licensePlate },
+              { type: 'text', val: getBasePlate(item.licensePlate) },
               { type: 'text', val: item.driverName, cls: 'text-left' },
               { type: 'so', val: textBatal, content: item.content },
               { type: 'so', val: textParsial, content: item.content },

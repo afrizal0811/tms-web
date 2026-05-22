@@ -1,6 +1,6 @@
 'use client';
 
-import { formatLongDate } from '@/lib/utils';
+import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
@@ -112,7 +112,7 @@ export default function TimeDriverTab({ data, translate, language }) {
                   {driver.type}
                 </td>
                 <td className={`${tdClass} ${stickyBodyPlate} bg-white dark:bg-slate-800`}>
-                  {driver.plat}
+                  {getBasePlate(driver.plat)}
                 </td>
                 <td
                   className={`${tdClass} ${stickyBodyDriver} text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600 bg-white dark:bg-slate-800`}

@@ -1,6 +1,7 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
+import { getBasePlate } from '@/lib/utils';
 
 export default function AverageKmDetailModal({
   isOpen,
@@ -16,7 +17,7 @@ export default function AverageKmDetailModal({
     {
       key: 'plate',
       label: translate('common.license_number'),
-      render: (item) => item.plate || '-',
+      render: (item) => getBasePlate(item.plate) || '-',
     },
     {
       key: 'driverName',

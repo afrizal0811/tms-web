@@ -2,7 +2,7 @@ import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteTruckUsage, upsertTruckUsage } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
-import { formatLongDate } from '@/lib/utils';
+import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 export default function TruckUsageModal({
@@ -109,7 +109,7 @@ export default function TruckUsageModal({
                   >
                     <div className="flex justify-between items-start mb-1">
                       <div className="font-bold text-slate-800 dark:text-slate-200 text-base">
-                        {vh.plate}
+                        {getBasePlate(vh.plate)}
                       </div>
                       {vh.type && (
                         <div className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded">
