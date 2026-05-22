@@ -5,7 +5,6 @@ import Th from '@/components/table/Th';
 import { getColumnPreferences, setColumnPreferences } from '@/lib/localStorageHandler';
 import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { parseSONumber } from '../help';
 
 export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
   const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
@@ -95,7 +94,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           .map((item) => (item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so))
           .join(', ');
       } else {
-        displaySo = parseSONumber(trip.visitName) || trip.orderId || '-';
+        displaySo = parseCustomerString(trip.visitName).invoiceNumber || trip.orderId || '-';
       }
     }
 

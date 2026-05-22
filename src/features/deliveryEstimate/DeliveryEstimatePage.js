@@ -24,7 +24,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-import FormPengiriman from './components/FormPengiriman';
+import DeliveryForm from './components/DeliveryForm';
 import TableData from './components/TableData';
 import { getDriverName, handleConfirmDownload } from './help';
 
@@ -112,7 +112,7 @@ export default function DeliveryEstimatePage() {
         const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
 
         return await pdf(
-          <FormPengiriman
+          <DeliveryForm
             data={route}
             selectedDate={selectedDate}
             driverNameOverride={realDriverName}

@@ -1,6 +1,6 @@
-import { getBasePlate, parseCustomerString } from '@/lib/utils';
+import { getBasePlate, parseCustomerString, } from '@/lib/utils';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
-import { parseSONumber, styles } from '../help';
+import {  styles } from '../help';
 
 const cleanDriverName = (name) => {
   if (!name) return '';
@@ -20,7 +20,7 @@ const getShortMonth = (dateStr) => {
 };
 
 const calculateItemWeight = (item) => {
-  const soString = parseSONumber(item.visitName) || '';
+  const soString = parseCustomerString(item.visitName).invoiceNumber || '';
   const soList = soString ? soString.split(',') : [];
   const soCount = soList.length;
   return Math.max(1, Math.ceil(soCount / 4));
@@ -203,8 +203,8 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
             </View>
 
             {chunk.map((trip, idx) => {
-              const { name: outletDisplay } = parseCustomerString(trip.visitName);
-              const soNumbers = parseSONumber(trip.visitName) || '';
+              const { name: outletDisplay, invoiceNumber } = parseCustomerString(trip.visitName);
+              const soNumbers = invoiceNumber || '';
 
               return (
                 <View key={idx} style={styles.tableRow} wrap={false}>

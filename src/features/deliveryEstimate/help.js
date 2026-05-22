@@ -2,23 +2,12 @@ import { getColumnPreferences, getLocalStorage } from '@/lib/localStorageHandler
 import {
   formatDateUniversal,
   formatSimpleTime,
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getUTC7DateString,
-  isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
 import { StyleSheet } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
-
-export function parseSONumber(visitName) {
-  if (!visitName) return '';
-  const str = String(visitName);
-  const matches = str.match(/(SO|SS)\d{4}-\d+/g);
-  return matches ? matches.join(', ') : '';
-}
 
 export function getDriverName(route, driverData) {
   if (!route) return '';
@@ -253,7 +242,7 @@ export const handleConfirmDownload = async ({
               )
               .join(', ');
           } else {
-            displaySo = parseSONumber(trip.visitName) || trip.orderId || '-';
+            displaySo = parseCustomerString(trip.visitName).invoiceNumber || trip.orderId || '-';
           }
         }
 

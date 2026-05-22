@@ -105,12 +105,12 @@ export function parseCustomerString(fullString) {
     const commaSplit = rawLocation.split(',');
     location = commaSplit[0].trim();
     if (commaSplit.length > 1) {
-      invoiceNumber = commaSplit.slice(1).join(',').trim();
+      invoiceNumber = commaSplit.slice(1).join(', ').trim();
     }
   } else if (parts.length === 2 && id.includes(',')) {
     const commaSplit = id.split(',');
     id = commaSplit[0].trim();
-    invoiceNumber = commaSplit.slice(1).join(',').trim();
+    invoiceNumber = commaSplit.slice(1).join(', ').trim();
   }
   location = location !== null ? location : '';
 
