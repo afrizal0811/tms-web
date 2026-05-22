@@ -101,34 +101,6 @@ export function getLocalStorage() {
   };
 }
 
-export function getColumnPreferences() {
-  if (typeof window === 'undefined') return null;
-  const rawData = localStorage.getItem('data');
-  if (rawData) {
-    try {
-      const decrypted = decryptData(rawData);
-      const parsed = JSON.parse(decrypted);
-      return parsed.colPrefs || null;
-    } catch (e) {
-      return null;
-    }
-  }
-  return null;
-}
-
-export function setColumnPreferences(prefs) {
-  if (typeof window === 'undefined') return;
-  const rawData = localStorage.getItem('data');
-  if (rawData) {
-    try {
-      const decrypted = decryptData(rawData);
-      const parsed = JSON.parse(decrypted);
-      parsed.colPrefs = prefs;
-      setLocalStorage('data', parsed);
-    } catch (e) {}
-  }
-}
-
 export function getSuperadminRoleId() {
   if (typeof window === 'undefined') return null;
   const rawData = localStorage.getItem('data');

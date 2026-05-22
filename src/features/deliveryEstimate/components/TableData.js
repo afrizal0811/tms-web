@@ -2,41 +2,10 @@ import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { getColumnPreferences, setColumnPreferences } from '@/lib/localStorageHandler';
 import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
 
 export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
   const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
-
-  const [prefs, setPrefs] = useState(() => {
-    const savedPrefs = getColumnPreferences();
-    return {
-      custId: false,
-      locId: false,
-      ...savedPrefs,
-    };
-  });
-
-  const [showColMenu, setShowColMenu] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowColMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const toggleCol = (key) => {
-    const newPrefs = { ...prefs, [key]: !prefs[key] };
-    setPrefs(newPrefs);
-    setColumnPreferences(newPrefs);
-  };
-
   const processedTrips = [];
   activeRoute.trips.forEach((trip, index) => {
     const isHub = trip.isHub;
@@ -120,69 +89,17 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           <thead className="bg-gray-50 sticky top-0">
             <tr>
               <Th widthClass="w-[7%]" alignClass="text-center relative">
-                <div className="flex items-center justify-center gap-1.5">
-                  <div className="relative flex items-center" ref={menuRef}>
-                    <button
-                      onClick={() => setShowColMenu(!showColMenu)}
-                      className="p-1 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                        ></path>
-                      </svg>
-                    </button>
-                    {showColMenu && (
-                      <div className="absolute top-full mt-1 left-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg rounded z-50 p-2 min-w-40 flex flex-col gap-1 text-left font-normal">
-                        <label className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700 rounded cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={prefs.custId}
-                            onChange={() => toggleCol('custId')}
-                            className="w-3.5 h-3.5 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
-                          />
-                          <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
-                            {t('common.customer_id')}
-                          </span>
-                        </label>
-                        <label className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700 rounded cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={prefs.locId}
-                            onChange={() => toggleCol('locId')}
-                            className="w-3.5 h-3.5 text-sky-600 rounded border-gray-300 focus:ring-sky-500 cursor-pointer"
-                          />
-                          <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
-                            {t('common.location_id')}
-                          </span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                  <span>No.</span>
-                </div>
+                <span>No.</span>
               </Th>
               <Th widthClass="w-[20%]" alignClass="text-center">
                 {t('estimation.visit')}
               </Th>
-              {prefs.custId && (
-                <Th widthClass="w-[10%]" alignClass="text-center">
-                  {t('common.customer_id') || 'ID Customer'}
-                </Th>
-              )}
-              {prefs.locId && (
-                <Th widthClass="w-[10%]" alignClass="text-center">
-                  {t('common.location_id') || 'ID Location'}
-                </Th>
-              )}
+              <Th widthClass="w-[10%]" alignClass="text-center">
+                {t('common.customer_id') || 'ID Customer'}
+              </Th>
+              <Th widthClass="w-[10%]" alignClass="text-center">
+                {t('common.location_id') || 'ID Location'}
+              </Th>
               <Th widthClass="w-[15%]" alignClass="text-center">
                 {t('common.so_number')}
               </Th>
@@ -302,17 +219,12 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                     )}
                   </Td>
 
-                  {prefs.custId && (
-                    <Td alignClass="text-center">
-                      <p className={textClass}>{trip.custId}</p>
-                    </Td>
-                  )}
-
-                  {prefs.locId && (
-                    <Td alignClass="text-center">
-                      <p className={textClass}>{trip.locId}</p>
-                    </Td>
-                  )}
+                  <Td alignClass="text-center">
+                    <p className={textClass}>{trip.custId}</p>
+                  </Td>
+                  <Td alignClass="text-center">
+                    <p className={textClass}>{trip.locId}</p>
+                  </Td>
 
                   <Td alignClass={soAlignClass}>
                     {isHub ? '' : <HighlightText text={trip.displaySo} highlight={searchQuery} />}
