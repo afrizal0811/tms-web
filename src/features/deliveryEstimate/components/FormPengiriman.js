@@ -1,17 +1,10 @@
-import { parseCustomerString } from '@/lib/utils';
+import { getBasePlate, parseCustomerString } from '@/lib/utils';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { parseSONumber, styles } from '../help';
 
 const cleanDriverName = (name) => {
   if (!name) return '';
   return name.replace(/^'[^']+'\s*/, '');
-};
-
-const cleanLicensePlate = (plate) => {
-  if (!plate) return '';
-  const parts = plate.trim().split(/\s+/);
-  if (parts.length <= 3) return plate;
-  return parts.slice(0, 3).join(' ');
 };
 
 const formatIndoDate = (dateStr) => {
@@ -57,7 +50,7 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
   const rawDriverName = driverNameOverride || data?.vehicleName || '';
   const driverName = cleanDriverName(rawDriverName);
   const rawVehiclePlate = data?.vehicleName || '';
-  const vehiclePlate = cleanLicensePlate(rawVehiclePlate);
+  const vehiclePlate = getBasePlate(rawVehiclePlate);
   const trips = data?.trips || [];
 
   const validTrips = trips.filter((trip) => {

@@ -18,12 +18,11 @@ import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
-  formatTimer,
   formatToApiUtc,
   isEmpty,
   tomorrowDate,
 } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { bulkDownloader } from './help';
 
 const parseDate = (dateStr) => {
@@ -36,25 +35,7 @@ export default function BulkReport({ driverData }) {
   const [endDate, setEndDate] = useState(today);
   const [isLoading, setIsLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef(null);
   const { t } = useLanguage();
-
-  useEffect(() => {
-    let interval = null;
-    if (isLoading) {
-      startTimeRef.current = Date.now();
-      interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-    } else {
-      startTimeRef.current = null;
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isLoading]);
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
@@ -67,8 +48,6 @@ export default function BulkReport({ driverData }) {
   };
 
   const handleBulkRoutingSummary = async (t) => {
-    setElapsedTime(0);
-
     let mappingsObj = {};
     let vehicleTypes = [];
     try {
@@ -127,8 +106,6 @@ export default function BulkReport({ driverData }) {
   };
 
   const handleBulkDeliverySummary = async (t) => {
-    setElapsedTime(0);
-
     let hubsMap = {};
     try {
       setIsLoading(true);
@@ -206,7 +183,6 @@ export default function BulkReport({ driverData }) {
   };
 
   const handleBulkTimeSummary = (t) => {
-    setElapsedTime(0);
     bulkDownloader({
       startDate,
       endDate,

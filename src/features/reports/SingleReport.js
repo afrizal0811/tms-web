@@ -21,12 +21,11 @@ import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
-  formatTimer,
   isDateSunday,
   isEmpty,
   tomorrowDate,
 } from '@/lib/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
@@ -44,7 +43,6 @@ export default function SingleReport({
 
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
-
   const [isCustomRouting, setIsCustomRouting] = useState(false);
   const [routingDate, setRoutingDate] = useState(() => {
     const d = new Date(initialDate);
@@ -61,24 +59,6 @@ export default function SingleReport({
   }, [selectedDate]);
 
   const [currentRunning, setCurrentRunning] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef(null);
-
-  useEffect(() => {
-    let interval = null;
-    if (currentRunning) {
-      startTimeRef.current = Date.now();
-      interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-    } else {
-      startTimeRef.current = null;
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [currentRunning]);
 
   const selectedDateString = formatDateUniversal(selectedDate);
   const isDateInvalid = isDateSunday(selectedDateString);
@@ -94,7 +74,6 @@ export default function SingleReport({
   const handleRouting = async () => {
     try {
       await driversCheck();
-      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('routing');
       if (setIsMapping) setIsMapping(false);
@@ -166,7 +145,6 @@ export default function SingleReport({
   const handleDelivery = async () => {
     try {
       await driversCheck();
-      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('delivery');
 
@@ -252,7 +230,6 @@ export default function SingleReport({
   const handleTime = async () => {
     try {
       await driversCheck();
-      setElapsedTime(0);
       if (setIsAnyLoading) setIsAnyLoading(true);
       setCurrentRunning('time');
 

@@ -270,12 +270,11 @@ export const dictionary = {
         note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
       },
       toast: {
-        failed_zip: 'Gagal membuat file zip.',
+        failed_zip: 'Gagal membuat file zip',
         processing: 'Memulai proses...',
         select_date: 'Pilih tanggal pengiriman',
-        skip_data:
-          'Terdapat {skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
-        skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
+        skip_data: '{skippedDates} tanggal tidak memiliki data',
+        skip_sunday: 'Melewati {sundaysSkipped} tanggal hari Minggu',
       },
       tooltip: {
         cut_off: 'Batas Waktu',
@@ -908,11 +907,11 @@ export const dictionary = {
         note_two: '  Total task counts may not be accurate.',
       },
       toast: {
-        failed_zip: 'Failed to create zip file.',
+        failed_zip: 'Failed to create zip file',
         processing: 'Starting process...',
         select_date: 'Select delivery date',
-        skip_data: 'There are {skippedDates} date(s) with no data (including Sundays).',
-        skip_sunday: 'Skipped {sundaysSkipped} date(s) because they fall on Sunday.',
+        skip_data: 'Skipped {skippedDates} empty date(s)',
+        skip_sunday: 'Skipped {sundaysSkipped} Sunday date(s)',
       },
       tooltip: {
         cut_off: 'Cut-off Time',

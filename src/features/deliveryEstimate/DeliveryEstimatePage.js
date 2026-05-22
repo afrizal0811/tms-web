@@ -13,6 +13,7 @@ import {
   calculateStartFinishDates,
   convertWibToUtc,
   formatDateUniversal,
+  getBasePlate,
   isEmpty,
   normalizeEmail,
   tomorrowDate,
@@ -21,7 +22,7 @@ import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
-import { getOrFetchDriverData, driverTimeStamps } from '../../lib/driverDataHelper';
+import { driverTimeStamps, getOrFetchDriverData } from '../../lib/driverDataHelper';
 import { toastError, toastSuccess } from '../../lib/toastHelper';
 import FormPengiriman from './components/FormPengiriman';
 import TableData from './components/TableData';
@@ -213,7 +214,7 @@ export default function DeliveryEstimatePage() {
           rawDrivers.forEach((d) => {
             const email = normalizeEmail(d.email);
             dataObj[email] = d;
-            mapObj.set(email, d.plat || 'Other');
+            mapObj.set(email, getBasePlate(d.plat) || 'Other');
           });
         }
         setDriverData(dataObj);
@@ -298,7 +299,7 @@ export default function DeliveryEstimatePage() {
         const resultHubsByPlat = new Map();
 
         resultsData.forEach((route) => {
-          const plat = route.vehicleName;
+          const plat = getBasePlate(route.vehicleName);
           if (plat) {
             const hubs = (route.trips || []).filter((t) => t.isHub);
             if (hubs.length > 0) {

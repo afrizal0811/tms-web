@@ -45,20 +45,15 @@ export const bulkDownloader = async ({
       storedLocationName: hubName,
       storedLocationAcronym,
     } = getLocalStorage();
-
-    if (!hubId) throw new Error('Data Hub tidak valid (ID Lokasi tidak ditemukan).');
     const hubLabel = storedLocationAcronym || hubName;
-
     const datesToProcess = getDatesInRange(startDate, endDate);
     const zip = new JSZip();
-
     let filesGenerated = 0;
     let sundaysSkipped = 0;
     const skippedDates = [];
 
     for (const dateObj of datesToProcess) {
       const dateForFile = formatDateUniversal(dateObj);
-
       if (isDateSunday(dateForFile)) {
         sundaysSkipped++;
         continue;
@@ -70,33 +65,51 @@ export const bulkDownloader = async ({
           hubId,
           hubName: hubLabel,
         });
+        if (result?.error) {
+          skippedDates.push(dateForFile);
+          continue;
+        }
 
-        if (result) {
+        if (result?.wb || result?.excelFileName) {
           const { wb, excelFileName } = result;
-          const excelUint8Array = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+          const excelUint8Array = XLSX.write(wb, {
+            bookType: 'xlsx',
+            type: 'array',
+          });
           zip.file(excelFileName, excelUint8Array);
           filesGenerated++;
-        } else {
-          skippedDates.push(dateForFile);
+          continue;
         }
+
+        skippedDates.push(dateForFile);
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        skippedDates.push(dateForFile);
+        console.error(err);
       }
     }
+
+    const totalSkipped = skippedDates.length + sundaysSkipped;
+    const failedZipText = t('report.toast.failed_zip');
+    const noDataText = t('common.no_data');
+    const skipDateText = t('report.toast.skip_data', {
+      skippedDates: skippedDates.length,
+    });
+    const skipSundayText = t('report.toast.skip_sunday', {
+      sundaysSkipped,
+    });
 
     if (filesGenerated === 0) {
-      if (skippedDates.length > 0) {
-        toastError(t('common.no_data'));
-      } else {
-        toastError(t('report.toast.failed_zip'));
-      }
-      return;
+      throw new Error(`${failedZipText}, ${noDataText.toLowerCase()}`);
     }
 
-    if (sundaysSkipped > 0 && isEmpty(skippedDates)) {
-      toastWarning(t('report.toast.skip_sunday', { sundaysSkipped: sundaysSkipped }));
-    } else if (sundaysSkipped > 0) {
-      toastWarning(t('report.toast.skip_data', { skippedDates: skippedDates.length }));
+    if (totalSkipped > 0) {
+      if (skippedDates.length > 0 && sundaysSkipped > 0) {
+        toastWarning(`${skipDateText}, ${skipSundayText.toLowerCase()}`);
+      } else if (skippedDates.length > 0) {
+        toastWarning(skipDateText);
+      } else if (sundaysSkipped > 0) {
+        toastWarning(skipSundayText);
+      }
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -108,7 +121,7 @@ export const bulkDownloader = async ({
     document.body.removeChild(link);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(e.message);
+    toastError(t('common.toast.error', { err: e.message }));
   } finally {
     setIsLoading(false);
     setCurrentReport(null);

@@ -1,6 +1,12 @@
 'use client';
 
-import { formatDateUniversal, formatDateWIB, formatMinutesToHHMM, isEmpty } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  formatDateWIB,
+  formatMinutesToHHMM,
+  getBasePlate,
+  isEmpty,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 function formatSimpleTime(timeStr) {
@@ -310,11 +316,12 @@ export async function generateRoutingWorkbook(
   const excelDataRows = validDriverData.map((driver) => {
     const driverName = driver.name;
     const driverPlat = driver.plat;
+    const cleanPlat = getBasePlate(driverPlat);
     const mergedRow = mergedTruckDetailMap.get(driverName);
 
     if (mergedRow && mergedRow.hasTrips) {
       return {
-        Plat: driverPlat,
+        Plat: cleanPlat,
         Driver: driverName,
         WeightPercentage: mergedRow.weightPercentage > 0 ? `${mergedRow.weightPercentage}%` : null,
         VolumePercentage: mergedRow.volumePercentage > 0 ? `${mergedRow.volumePercentage}%` : null,
@@ -327,7 +334,7 @@ export async function generateRoutingWorkbook(
       };
     } else {
       return {
-        Plat: driverPlat,
+        Plat: cleanPlat,
         Driver: driverName,
         WeightPercentage: null,
         VolumePercentage: null,
