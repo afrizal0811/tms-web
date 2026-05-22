@@ -2,6 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getHubs,
@@ -35,6 +36,8 @@ export default function BulkReport({ driverData }) {
   const [endDate, setEndDate] = useState(today);
   const [isLoading, setIsLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
   const { t } = useLanguage();
 
   const handleDateChange = (dates) => {
@@ -45,6 +48,32 @@ export default function BulkReport({ driverData }) {
     }
     setStartDate(start);
     setEndDate(end);
+  };
+
+  const executeWithCheck = (actionFn) => {
+    const validEndDate = endDate || startDate;
+    const diffTime = Math.abs(validEndDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 14) {
+      setPendingAction(() => actionFn);
+      setShowWarningModal(true);
+    } else {
+      actionFn();
+    }
+  };
+
+  const handleConfirmProcess = () => {
+    setShowWarningModal(false);
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
+  const handleCancelProcess = () => {
+    setShowWarningModal(false);
+    setPendingAction(null);
   };
 
   const handleBulkRoutingSummary = async (t) => {
@@ -221,14 +250,18 @@ export default function BulkReport({ driverData }) {
     {
       id: 'routing',
       label: t('report.routing_summary'),
-      onClick: () => handleBulkRoutingSummary(t),
+      onClick: () => executeWithCheck(() => handleBulkRoutingSummary(t)),
     },
     {
       id: 'delivery',
       label: t('report.delivery_summary'),
-      onClick: () => handleBulkDeliverySummary(t),
+      onClick: () => executeWithCheck(() => handleBulkDeliverySummary(t)),
     },
-    { id: 'time', label: t('report.time_summary'), onClick: () => handleBulkTimeSummary(t) },
+    {
+      id: 'time',
+      label: t('report.time_summary'),
+      onClick: () => executeWithCheck(() => handleBulkTimeSummary(t)),
+    },
   ];
 
   return (
@@ -268,6 +301,14 @@ export default function BulkReport({ driverData }) {
           />
         ))}
       </div>
+
+      <ConfirmModal
+        isOpen={showWarningModal}
+        title={t('common.modal.data_load_title')}
+        message={t('common.modal.data_load_message', { days: 14 })}
+        onConfirm={handleConfirmProcess}
+        onCancel={handleCancelProcess}
+      />
     </div>
   );
 }

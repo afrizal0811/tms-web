@@ -77,6 +77,10 @@ export const dictionary = {
         error: 'Proses gagal: {err}',
         success: 'Proses berhasil!',
       },
+      modal: {
+        data_load_title: 'Peringatan Beban Data',
+        data_load_message: `Data yang diproses terlalu besar (lebih dari {days} hari). Tetap lanjutkan?`,
+      },
     },
     home: {
       already_exp: 'Token API Anda telah kadaluarsa {remaining} hari yang lalu.',
@@ -447,10 +451,6 @@ export const dictionary = {
       subtitle_1: 'Rekapitulasi',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
-      modal: {
-        title: 'Peringatan Beban Data',
-        text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
-      },
       tabs: {
         time_ro: {
           end_ro: 'Selesai RO',
@@ -713,6 +713,10 @@ export const dictionary = {
       toast: {
         error: 'Process failed: {err}',
         success: 'Process completed successfully!',
+      },
+      modal: {
+        data_load_title: 'Data Load Warning',
+        data_load_message: `The data being processed is too large (more than {days} days). Do you want to continue?`,
       },
     },
     home: {
@@ -1083,10 +1087,6 @@ export const dictionary = {
       subtitle_1: 'Recap of',
       subtitle_highlight: 'task performance',
       title: 'Summary',
-      modal: {
-        title: 'Data Load Warning',
-        text: `The data being processed is too large (more than 14 days). Do you want to continue?`,
-      },
       tabs: {
         time_ro: {
           date_ro: 'Routing Date',

@@ -401,8 +401,8 @@ export default function SummaryPage() {
       </span>
       <ConfirmModal
         isOpen={showWarningModal}
-        title={t('summary.modal.title')}
-        message={t('summary.modal.text')}
+        title={t('common.modal.data_load_title')}
+        message={t('common.modal.data_load_message', { days: 14 })}
         onConfirm={() => {
           setDateRange(pendingDateRange);
           setShowWarningModal(false);

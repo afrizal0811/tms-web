@@ -2,6 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResult, getTasks } from '@/lib/api';
 import { driverTimeStamps } from '@/lib/driverDataHelper';
@@ -256,10 +257,12 @@ export default function TaskDetailReport() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
   const { t } = useLanguage();
 
-  const handleProcess = async () => {
+  const executeProcess = async () => {
     setIsLoading(true);
+    setShowWarningModal(false);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
 
@@ -325,11 +328,11 @@ export default function TaskDetailReport() {
         });
 
         const content = await zip.generateAsync({ type: 'blob' });
-        const startFormat = formatDateUniversal(startDate, 'DD.MM.YYYY');
+        const startFormat = formatDateUniversal(startDate, 'DD-MM-YYYY');
         const endFormat = endDate ? formatDateUniversal(endDate, 'DD.MM.YYYY') : startFormat;
         const fileNameDate =
           startFormat === endFormat ? startFormat : `${startFormat} to ${endFormat}`;
-        const locationName = storedLocationAcronym || 'Report';
+        const locationName = storedLocationAcronym || storedLocationName;
 
         const zipUrl = URL.createObjectURL(content);
         const link = document.createElement('a');
@@ -346,6 +349,25 @@ export default function TaskDetailReport() {
       toastError(t('common.toast.error', { err: error.message }));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleProcess = () => {
+    if (!startDate) {
+      toastError('Silakan pilih tanggal terlebih dahulu.');
+      return;
+    }
+
+    const validEndDate = endDate || startDate;
+
+    // Menghitung selisih hari
+    const diffTime = Math.abs(validEndDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 14) {
+      setShowWarningModal(true);
+    } else {
+      executeProcess();
     }
   };
 
@@ -395,6 +417,14 @@ export default function TaskDetailReport() {
           width="w-full sm:w-64"
         />
       </div>
+
+      <ConfirmModal
+        isOpen={showWarningModal}
+        title={t('common.modal.data_load_title')}
+        message={t('common.modal.data_load_message', { days: 14 })}
+        onConfirm={executeProcess}
+        onCancel={() => setShowWarningModal(false)}
+      />
     </div>
   );
 }
