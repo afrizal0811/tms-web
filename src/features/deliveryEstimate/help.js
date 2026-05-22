@@ -1,4 +1,4 @@
-import { getColumnPreferences, getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
   formatDateUniversal,
   formatSimpleTime,
@@ -29,24 +29,14 @@ export const handleConfirmDownload = async ({
   try {
     const wb = XLSX.utils.book_new();
 
-    const prefs = getColumnPreferences() || {
-      custId: false,
-      locId: false,
-    };
-
     const activeCols = [
       { key: 'no', title: 'No.' },
       { key: 'visit', title: t('estimation.visit') },
     ];
 
-    if (prefs.custId) {
-      activeCols.push({ key: 'custId', title: t('common.customer_id') || 'ID Customer' });
-    }
-    if (prefs.locId) {
-      activeCols.push({ key: 'locId', title: t('common.location_id') || 'ID Location' });
-    }
-
     activeCols.push(
+      { key: 'custId', title: t('common.customer_id') },
+      { key: 'locId', title: t('common.location_id') },
       { key: 'so', title: t('common.so_number') },
       { key: 'openTime', title: t('common.open_time') },
       { key: 'closeTime', title: t('common.close_time') },
