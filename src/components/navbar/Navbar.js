@@ -5,8 +5,8 @@ import { getRoles } from '@/lib/api';
 import { avatarColorStyles } from '@/lib/constants';
 import {
   getLocalStorage,
-  removeLocalStorage,
   getSuperadminRoleId,
+  removeLocalStorage,
   setSuperadminRoleId,
 } from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
@@ -252,6 +252,13 @@ export default function Navbar() {
           >
             {t('navbar.period_report')}
           </Link>
+          <Link
+            href="/report/detail"
+            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
+            onClick={() => setIsLaporanOpen(false)}
+          >
+            {t('navbar.task_detail_report')}
+          </Link>
           {isSuperadmin && (
             <Link
               href="/report/counter"
@@ -412,6 +419,10 @@ export default function Navbar() {
               </div>
               <MobileNavLink href="/report/single">{t('navbar.daily_report')}</MobileNavLink>
               <MobileNavLink href="/report/bulk">{t('navbar.period_report')}</MobileNavLink>
+              <MobileNavLink href="/report/detail">{t('navbar.task_detail_report')}</MobileNavLink>
+              <MobileNavLink href="/report/counter">
+                {t('navbar.task_counter_report')}
+              </MobileNavLink>
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}

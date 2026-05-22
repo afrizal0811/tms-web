@@ -132,6 +132,7 @@ export const dictionary = {
       setting: 'Pengaturan',
       summary: 'Rangkuman',
       task_counter_report: 'Laporan Jumlah Tugas',
+      task_detail_report: 'Laporan Detail Tugas',
       update: 'Perbarui',
     },
     dashboard: {
@@ -258,6 +259,7 @@ export const dictionary = {
       routing_date: 'Tanggal Routing',
       routing_summary: 'Ringkasan Routing',
       task_counter_report: 'Laporan Jumlah Tugas',
+      task_detail_report: 'Laporan Detail Tugas',
       time_summary: 'Ringkasan Waktu',
       tc_detail: {
         choose_hub: 'Pilih HUB',
@@ -768,6 +770,7 @@ export const dictionary = {
       setting: 'Setting',
       summary: 'Summary',
       task_counter_report: 'Task Counter Report',
+      task_detail_report: 'Task Detail Report',
       update: 'Update',
     },
     dashboard: {
@@ -895,6 +898,7 @@ export const dictionary = {
       routing_date: 'Routing Date',
       routing_summary: 'Routing Summary',
       task_counter_report: 'Task Counter Report',
+      task_detail_report: 'Task Detail Report',
       time_summary: 'Time Summary',
       tc_detail: {
         choose_hub: 'Choose HUB',

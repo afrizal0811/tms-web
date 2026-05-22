@@ -1,3 +1,5 @@
+// File: lib/api/results.js
+
 import { formatDateUniversal } from '../utils';
 import { apiFetch } from './base';
 
@@ -43,4 +45,20 @@ export async function getResultsSummary({
   );
 
   return (results || []).filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
+}
+
+export async function getResult(id) {
+  if (!id) {
+    throw new Error('ID result harus disertakan');
+  }
+
+  const params = new URLSearchParams();
+  params.append('id', id);
+
+  const result = await apiFetch(
+    `/api/get-result?${params.toString()}`,
+    `Gagal mengambil data result dengan ID ${id}`
+  );
+
+  return result;
 }

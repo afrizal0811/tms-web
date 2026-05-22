@@ -26,6 +26,10 @@ export async function apiFetch(url, errorMessage, options = {}) {
       return [];
     }
 
+    if (data && typeof data === 'object') {
+      return data;
+    }
+
     throw new Error(`Format data API tidak dikenal dari ${url}`);
   } catch (err) {
     throw err;

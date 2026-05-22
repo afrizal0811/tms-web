@@ -1,18 +1,15 @@
-// File: app/api/get-results-summary/route.js
+// File: app/api/get-result/route.js
 
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
-    const limit = searchParams.get('limit') || 500;
-    const hubId = searchParams.get('hubId');
+    const id = searchParams.get('id');
 
-    if (!dateFrom || !dateTo || !hubId) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Parameter yang dibutuhkan tidak lengkap (dateFrom, dateTo, atau hubId)' },
+        { error: 'Parameter "id" sangat dibutuhkan untuk mengambil data spesifik' },
         { status: 400 }
       );
     }
@@ -27,12 +24,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Kesalahan konfigurasi server internal' }, { status: 500 });
     }
 
-    const externalUrl = new URL(`${apiUrl}/results`);
-
-    externalUrl.searchParams.append('dateFrom', dateFrom);
-    externalUrl.searchParams.append('dateTo', dateTo);
-    externalUrl.searchParams.append('limit', limit);
-    externalUrl.searchParams.append('hubId', hubId);
+    const externalUrl = new URL(`${apiUrl}/result/${id}`);
 
     const externalResponse = await fetch(externalUrl.toString(), {
       headers: {
@@ -44,10 +36,10 @@ export async function GET(request) {
     const data = await externalResponse.json();
 
     if (!externalResponse.ok) {
-      console.error('API eksternal (/results) error:', data);
+      console.error(`API eksternal (/result/${id}) error:`, data);
       return NextResponse.json(
         {
-          error: 'Gagal mengambil data results dari API eksternal',
+          error: `Gagal mengambil data result dengan ID ${id}`,
           details: data,
         },
         {
@@ -58,12 +50,12 @@ export async function GET(request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error Results:', error);
+    console.error('Error Single Result:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
       {
-        error: 'Gagal mengambil atau memproses data results dari API eksternal',
+        error: 'Gagal mengambil atau memproses data spesifik dari API eksternal',
         detail: errorMessage,
       },
       { status: 500 }
