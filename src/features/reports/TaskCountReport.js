@@ -327,7 +327,7 @@ export default function TaskCountReport() {
           <Button
             onClick={handleProcess}
             isLoading={isLoading}
-            text={isLoading ? t('common.downloading') : t('common.download')}
+            text={t('common.download')}
             width="w-full md:w-auto"
             disabled={selectedHubs.length === 0}
           />

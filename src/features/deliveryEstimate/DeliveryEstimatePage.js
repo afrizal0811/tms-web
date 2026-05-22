@@ -661,15 +661,9 @@ export default function DeliveryEstimatePage() {
     <div className="w-full z-50 relative" ref={downloadDropdownRef}>
       <Button
         disabled={isLoading || isAnyDownloading || isEmpty(filteredVehicleRoutes)}
-        isLoading={isLoading || isAnyDownloading}
+        isLoading={isAnyDownloading}
         onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-        text={
-          isLoading
-            ? t('common.loading')
-            : isAnyDownloading
-              ? t('common.downloading')
-              : t('common.download')
-        }
+        text={t('common.download')}
       />
 
       {isDownloadDropdownOpen && (

@@ -408,7 +408,6 @@ export default function SingleReport({
             disabled={disabledCommon || isDateInvalid}
             isLoading={currentRunning === id}
             text={label}
-            loadingText={formatTimer(elapsedTime)}
           />
         ))}
       </div>

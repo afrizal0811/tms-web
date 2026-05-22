@@ -344,9 +344,9 @@ export default function SummaryPage() {
       component: (
         <Button
           disabled={isLoading || isDownload || isEmpty(rawData.tasks)}
-          isLoading={isLoading}
+          isLoading={isDownload}
           onClick={handleDownloadExcel}
-          text={`${isLoading ? t('common.loading') : isDownload ? t('common.downloading') : t('common.download')}`}
+          text={t('common.download')}
         />
       ),
       hideLabel: true,

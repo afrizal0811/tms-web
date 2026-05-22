@@ -200,15 +200,9 @@ export default function UpdateCoordinatePage() {
   const downloadBtn = (
     <Button
       disabled={loading || isDownloading || isEmpty(processedData)}
-      isLoading={loading || isDownloading}
+      isLoading={isDownloading}
       onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
-      text={
-        loading
-          ? t('common.loading')
-          : isDownloading
-            ? t('common.downloading')
-            : t('common.download')
-      }
+      text={t('common.download')}
     />
   );
 

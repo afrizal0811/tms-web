@@ -288,7 +288,6 @@ export default function BulkReport({ driverData }) {
             disabled={isLoading || isRangeInvalid}
             isLoading={isLoading && currentReport === id}
             text={label}
-            loadingText={formatTimer(elapsedTime)}
             width="w-full sm:w-64"
           />
         ))}
