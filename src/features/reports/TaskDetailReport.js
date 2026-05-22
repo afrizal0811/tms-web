@@ -259,11 +259,6 @@ export default function TaskDetailReport() {
   const { t } = useLanguage();
 
   const handleProcess = async () => {
-    if (!startDate) {
-      toastError('Silakan pilih tanggal terlebih dahulu.');
-      return;
-    }
-
     setIsLoading(true);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
