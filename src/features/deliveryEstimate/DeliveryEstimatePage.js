@@ -102,8 +102,8 @@ export default function DeliveryEstimatePage() {
 
     try {
       const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-      const { storedLocationAcronym } = getLocalStorage();
-      const locationName = storedLocationAcronym || 'Cabang';
+      const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+      const locationName = storedLocationAcronym || storedLocationName;
 
       const generatePdfBlob = async (route) => {
         const normalizedAssignee = normalizeEmail(route.assignee);
@@ -130,7 +130,7 @@ export default function DeliveryEstimatePage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Tanda Terima Faktur - ${safeName} - ${dateForFilename}.pdf`;
+        link.download = `${t('estimation.delivery_form')} - ${safeName} - ${dateForFilename}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
