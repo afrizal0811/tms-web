@@ -243,7 +243,6 @@ export default function TaskCountReport() {
               dateFormat="MMMM yyyy"
               className="w-full"
               disabled={isLoading}
-              disableSunday={false}
             />
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-2 italic leading-relaxed flex flex-col gap-1 md:flex-row">
               <strong className="text-slate-700 dark:text-slate-300">

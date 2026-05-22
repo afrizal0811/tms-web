@@ -328,7 +328,6 @@ export default function SummaryPage() {
           startDate={tempDateRange ? tempDateRange[0] : null}
           endDate={tempDateRange ? tempDateRange[1] : null}
           onChange={handleTempDateChange}
-          disableSunday={false}
           isLoading={isLoading}
           showApplyButton={true}
           onApply={handleApplyDate}
