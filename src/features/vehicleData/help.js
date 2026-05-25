@@ -98,10 +98,10 @@ export const handleConfirmDownload = ({
       const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
       const fileName = `${t('vehicle.title')} - ${date} - ${locationName}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      toastSuccess(t('vehicle.toast.success'));
+      toastSuccess(t('common.toast.success'));
     }
   } catch (err) {
-    toastError(err.message);
+    toastError(t('common.toast.error', { err: err.message }));
   } finally {
     setIsDownloading(false);
     setIsDownloadDropdownOpen(false);

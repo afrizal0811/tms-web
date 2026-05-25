@@ -1,6 +1,5 @@
 'use client';
 
-// (PERHATIKAN PATH: Sesuaikan path ke 'constants' dan 'utils' jika perlu)
 import {
   calculateHaversineDistance,
   calculateMinuteDifference,
@@ -9,13 +8,13 @@ import {
   formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getBasePlate,
   getUTC7DateString,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-// Definisikan konstanta yang dibutuhkan
 
 const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
@@ -31,13 +30,11 @@ export function generateDeliveryWorkbook(
   t
 ) {
   const translate = t || ((key) => key);
-
   const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
   if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
 
-  // 2. Buat Peta Lookup Driver
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     if (normalizedEmail) {
@@ -46,7 +43,6 @@ export function generateDeliveryWorkbook(
     return acc;
   }, {});
 
-  // 3. Buat Map Waktu HUB (dari resultsData)
   const hubTimesMap = new Map();
   if (resultsData) {
     const filteredResults = resultsData.filter((item) => item.dispatchStatus === 'done');
@@ -72,7 +68,6 @@ export function generateDeliveryWorkbook(
     }
   }
 
-  // 4. Proses Data Utama (Gabungan)
   const driverStats = new Map();
   let allTaskDataForSequence = [];
   let updateLonglatData = [];
@@ -111,10 +106,7 @@ export function generateDeliveryWorkbook(
       const startDate = getUTC7DateString(task.startTime);
       const doneDate = getUTC7DateString(task.doneTime);
       if (startDate && doneDate && startDate !== doneDate) {
-        stats.mismatchCustomers.push({
-          name: customerName,
-          date: doneDate,
-        });
+        stats.mismatchCustomers.push({ name: customerName, date: doneDate });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
         stats.missingDataCustomers.push({
@@ -133,7 +125,6 @@ export function generateDeliveryWorkbook(
       actualDeparture = task.page3DoneTime;
     }
 
-    // --- TAMBAHAN LOGIKA PENGECEKAN STATUS JAM OPERASIONAL ---
     const openTimeVal = formatSimpleTime(task.openTime) || '-';
     const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
     const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
@@ -144,7 +135,6 @@ export function generateDeliveryWorkbook(
         openTimeVal > closeTimeVal
           ? actualArrVal >= openTimeVal || actualArrVal <= closeTimeVal
           : actualArrVal >= openTimeVal && actualArrVal <= closeTimeVal;
-
       if (isInside) {
         hoursStatus = 'yes';
       } else if (actualArrVal < openTimeVal) {
@@ -153,7 +143,6 @@ export function generateDeliveryWorkbook(
         hoursStatus = 'no';
       }
     }
-    // ---------------------------------------------------------
 
     let fakturBatal = null,
       terkirimSebagian = null,
@@ -200,7 +189,7 @@ export function generateDeliveryWorkbook(
       temperature: extractTempFromDriverName(driverName),
       realSequence: 0,
       orderId: orderId,
-      isWithinHoursStatus: hoursStatus, // <--- Data Status Jam
+      isWithinHoursStatus: hoursStatus,
     });
 
     if (task.klikLokasiClient) {
@@ -214,7 +203,6 @@ export function generateDeliveryWorkbook(
     }
   }
 
-  // 5. Hitung Real Sequence
   allTaskDataForSequence.sort((a, b) => {
     const driverCompare = a.driver.localeCompare(b.driver);
     if (driverCompare !== 0) return driverCompare;
@@ -244,7 +232,6 @@ export function generateDeliveryWorkbook(
     return 1;
   };
 
-  // 6. Filter & Sortir data "Hasil Pending SO"
   const pendingSOData = allTaskDataForSequence.filter(
     (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
   );
@@ -259,7 +246,6 @@ export function generateDeliveryWorkbook(
     return (a.roSequence || 0) - (b.roSequence || 0);
   });
 
-  // 7. Siapkan Data Excel
   const wb = XLSX.utils.book_new();
   const headerStyle = {
     font: { bold: true },
@@ -267,7 +253,6 @@ export function generateDeliveryWorkbook(
   };
   const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
   const wrapTextStyle = { alignment: { wrapText: true, vertical: 'center', horizontal: 'left' } };
-  const redTextStyle = { font: { color: { rgb: 'FF0000' } } };
   const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } };
   const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
   const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } };
@@ -277,21 +262,6 @@ export function generateDeliveryWorkbook(
     fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   };
 
-  // Warna khusus untuk kolom Status Jam
-  const textGreenStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: '16A34A' } },
-  };
-  const textAmberStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: 'F59E0B' } },
-  };
-  const textRedStyle = {
-    alignment: centerStyle.alignment,
-    font: { bold: true, color: { rgb: 'DC2626' } },
-  };
-
-  // --- Sheet 1: Routing Date ---
   const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
@@ -312,7 +282,6 @@ export function generateDeliveryWorkbook(
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
   XLSX.utils.book_append_sheet(wb, wsRoutingDate, translate('excel.delivery.sheets.routing_date'));
 
-  // --- Sheet 2: Total Delivered ---
   const headers1 = [
     translate('common.license_number'),
     translate('common.driver'),
@@ -327,58 +296,111 @@ export function generateDeliveryWorkbook(
     if (plat.toUpperCase().includes('DEMO')) return false;
     return true;
   });
-  let sheetData1Objects = validDriverData.map((driver) => {
+
+  const aggregatedMap = new Map();
+
+  validDriverData.forEach((driver) => {
     const driverName = driver.name;
-    const driverPlat = driver.plat;
+    const originalPlat = driver.plat;
+    const basePlate = getBasePlate(originalPlat);
     const driverEmail = normalizeEmail(driver.email);
     const stats = driverStats.get(driverName);
 
+    if (!aggregatedMap.has(basePlate)) {
+      aggregatedMap.set(basePlate, {
+        plat: basePlate,
+        driver: driverName,
+        totalOutlet: 0,
+        totalDelivery: 0,
+        driverEmail: driverEmail,
+        mismatchCustomers: [],
+        missingDataCustomers: [],
+        hasData: false,
+      });
+    }
+
+    const agg = aggregatedMap.get(basePlate);
+
+    const cleanExisting = agg.driver.replace(/['"]?(DRY|FRZ)['"]?\s*/i, '').trim();
+    const cleanNew = driverName.replace(/['"]?(DRY|FRZ)['"]?\s*/i, '').trim();
+    if (cleanExisting !== cleanNew && !agg.driver.includes(cleanNew)) {
+      agg.driver += ` / ${driverName}`;
+    }
+
     if (stats) {
-      const totalDelivery = stats.totalOutlet - stats.failedCount;
-      const mismatchText = stats.mismatchCustomers
-        .map((task) => {
-          let formattedDate = task.date;
-          if (task.date) {
-            const [y, m, d] = task.date.split('-');
-            if (y && m && d) formattedDate = `${d}-${m}-${y}`;
-          }
-          return `• ${task.name} (done: ${formattedDate})`;
-        })
-        .join('\n');
-      const missingDataText = stats.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
-      const hasManualError = stats.missingDataCustomers.length > 0;
-      const hasBedaHariError = stats.mismatchCustomers.length > 0;
-      let highlightType = 'none';
-      if (hasManualError && hasBedaHariError) {
-        highlightType = 'green';
-      } else if (hasManualError) {
-        highlightType = 'blue';
-      } else if (hasBedaHariError) {
-        highlightType = 'yellow';
-      }
+      agg.hasData = true;
+      agg.totalOutlet = stats.totalOutlet;
+      agg.totalDelivery = stats.totalOutlet - stats.failedCount;
+
+      stats.mismatchCustomers.forEach((mc) => {
+        if (
+          !agg.mismatchCustomers.some(
+            (existing) => existing.name === mc.name && existing.date === mc.date
+          )
+        ) {
+          agg.mismatchCustomers.push(mc);
+        }
+      });
+
+      stats.missingDataCustomers.forEach((md) => {
+        if (!agg.missingDataCustomers.some((existing) => existing.name === md.name)) {
+          agg.missingDataCustomers.push(md);
+        }
+      });
+    }
+  });
+
+  let sheetData1Objects = Array.from(aggregatedMap.values()).map((agg) => {
+    if (!agg.hasData) {
       return {
-        plat: driverPlat || stats.plat,
-        driver: driverName,
-        totalOutlet: stats.totalOutlet,
-        totalDelivery: totalDelivery,
-        driverEmail: stats.driverEmail,
-        highlightType: highlightType,
-        mismatchText: mismatchText,
-        missingDataText: missingDataText,
-      };
-    } else {
-      return {
-        plat: driverPlat,
-        driver: driverName,
+        plat: agg.plat,
+        driver: agg.driver,
         totalOutlet: null,
         totalDelivery: null,
-        driverEmail: driverEmail,
+        driverEmail: agg.driverEmail,
         highlightType: 'none',
         mismatchText: '',
         missingDataText: '',
       };
     }
+
+    const mismatchText = agg.mismatchCustomers
+      .map((task) => {
+        let formattedDate = task.date;
+        if (task.date) {
+          const [y, m, d] = task.date.split('-');
+          if (y && m && d) formattedDate = `${d}-${m}-${y}`;
+        }
+        return `• ${task.name} (done: ${formattedDate})`;
+      })
+      .join('\n');
+
+    const missingDataText = agg.missingDataCustomers.map((task) => `• ${task.name}`).join('\n');
+
+    const hasManualError = agg.missingDataCustomers.length > 0;
+    const hasBedaHariError = agg.mismatchCustomers.length > 0;
+    let highlightType = 'none';
+
+    if (hasManualError && hasBedaHariError) {
+      highlightType = 'green';
+    } else if (hasManualError) {
+      highlightType = 'blue';
+    } else if (hasBedaHariError) {
+      highlightType = 'yellow';
+    }
+
+    return {
+      plat: agg.plat,
+      driver: agg.driver,
+      totalOutlet: agg.totalOutlet,
+      totalDelivery: agg.totalDelivery,
+      driverEmail: agg.driverEmail,
+      highlightType: highlightType,
+      mismatchText: mismatchText,
+      missingDataText: missingDataText,
+    };
   });
+
   sheetData1Objects.sort((a, b) => {
     const groupA = getSortGroup(a.plat);
     const groupB = getSortGroup(b.plat);
@@ -387,6 +409,7 @@ export function generateDeliveryWorkbook(
     }
     return (a.driver || '').localeCompare(b.driver || '');
   });
+
   const finalSheetData1 = [
     headers1,
     ...sheetData1Objects.map((row) => [
@@ -443,7 +466,6 @@ export function generateDeliveryWorkbook(
   });
   XLSX.utils.book_append_sheet(wb, wsDelivered, translate('excel.delivery.sheets.total_delivered'));
 
-  // --- Sheet 3: Hasil Pending SO ---
   const headers2 = [
     translate('common.flow'),
     translate('common.so_number'),
@@ -548,13 +570,7 @@ export function generateDeliveryWorkbook(
           cell.s = greenHeaderStyle;
         }
         if (migrationOccurred && C === pendingColIndex) {
-          cell.c = [
-            {
-              a: 'Info',
-              t: translate('excel.delivery.info_wrong_status'),
-              h: true,
-            },
-          ];
+          cell.c = [{ a: 'Info', t: translate('excel.delivery.info_wrong_status'), h: true }];
         }
       } else {
         if (C === separatorColIndex) {
@@ -574,7 +590,6 @@ export function generateDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsPendingSO, translate('excel.delivery.sheets.pending_so'));
 
-  // --- Sheet 5: Update Longlat ---
   const headers4 = [
     translate('common.customer_name'),
     translate('common.customer_id'),
@@ -634,7 +649,6 @@ export function generateDeliveryWorkbook(
     translate('excel.delivery.sheets.update_longlat')
   );
 
-  // --- Sheet 4: Hasil RO vs Real ---
   const headers3 = [
     translate('common.flow'),
     translate('common.license_number'),
@@ -655,6 +669,7 @@ export function generateDeliveryWorkbook(
     translate('dashboard.tab.routingreal.is_within_hours'),
   ];
   let finalSheetData3 = [headers3];
+  const manualAssignRows3 = new Set();
   const tasksByNameMap = new Map();
   for (const task of allTaskDataForSequence) {
     if (!tasksByNameMap.has(task.driver)) {
@@ -698,7 +713,7 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
-      null, // 17 Elemen
+      null,
     ]);
     tasks.sort((a, b) => a.roSequence - b.roSequence);
     for (const task of tasks) {
@@ -712,8 +727,8 @@ export function generateDeliveryWorkbook(
       const isSame = isRealEmpty
         ? '-'
         : ro === real
-          ? translate('excel.delivery.match')
-          : translate('excel.delivery.mismatch');
+          ? translate('common.status.match')
+          : translate('common.status.mismatch');
 
       let withinHoursText = '-';
       if (task.isWithinHoursStatus === 'yes')
@@ -744,6 +759,7 @@ export function generateDeliveryWorkbook(
           newStatusLabel = task.statusLabel;
       }
 
+      if (task.roSequence === 0) manualAssignRows3.add(finalSheetData3.length);
       finalSheetData3.push([
         task.flow || '-',
         task.plat || '-',
@@ -781,7 +797,7 @@ export function generateDeliveryWorkbook(
       null,
       null,
       null,
-      null, // 17 Elemen
+      null,
     ]);
     finalSheetData3.push(Array(headers3.length).fill(null));
   }
@@ -794,99 +810,98 @@ export function generateDeliveryWorkbook(
     );
     return { wch: Math.min(maxLength + 2, 50) };
   });
+  colWidths3[11] = { wch: 10 };
+  colWidths3[12] = { wch: 10 };
+  colWidths3[13] = { wch: 10 };
+  colWidths3[14] = { wch: 10 };
   wsRoVsReal['!cols'] = colWidths3;
-  const centerAlignedROColumns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; // Ditambah Index 16
-  const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
-  const etaColIndex = 7;
-  const etdColIndex = 9;
-  const platColIndex = 1;
-  const driverColIndex = 2;
-  const roColIndex = 13;
-  const redFillStyleRoVsReal = { fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } } };
 
+  const colFillMap3 = {
+    5: { header: 'A7F3D0', data: 'D1FAE5' },
+    6: { header: 'A7F3D0', data: 'D1FAE5' },
+    7: { header: 'FED7AA', data: 'FFEDD5' },
+    8: { header: 'FED7AA', data: 'FFEDD5' },
+    9: { header: 'FDE68A', data: 'FEF9C3' },
+    10: { header: 'FDE68A', data: 'FEF9C3' },
+    11: { header: 'FBCFE8', data: 'FCE7F3' },
+    12: { header: 'FBCFE8', data: 'FCE7F3' },
+    13: { header: 'BFDBFE', data: 'DBEAFE' },
+    14: { header: 'BFDBFE', data: 'DBEAFE' },
+  };
+  const leftAlign3 = { alignment: { horizontal: 'left', vertical: 'center' } };
+  const hubRedStyle3 = { ...centerStyle, font: { bold: true, color: { rgb: 'FF0000' } } };
+
+  const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
   for (let R = range3.s.r; R <= range3.e.r; ++R) {
     const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
     const isHubRow = wsRoVsReal[customerCellRef] && wsRoVsReal[customerCellRef].v === 'HUB';
-    let isMissingRequiredData = false;
-    if (R > 0 && !isHubRow) {
-      const platValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: platColIndex })]?.v;
-      const driverValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: driverColIndex })]?.v;
-      if (platValue && driverValue) {
-        const etaValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etaColIndex })]?.v;
-        const etdValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: etdColIndex })]?.v;
-        const roValue = wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: roColIndex })]?.v;
-        if (isEmpty(etaValue) || isEmpty(etdValue) || isEmpty(roValue)) {
-          isMissingRequiredData = true;
-        }
-      }
-    }
+
     for (let C = range3.s.c; C <= range3.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsRoVsReal[cellRef]) wsRoVsReal[cellRef] = { t: 's', v: '' };
       const cell = wsRoVsReal[cellRef];
+
       if (R === 0) {
-        cell.s = headerStyle;
+        const colFill = colFillMap3[C];
+        const isNarrow = C >= 11 && C <= 14;
+        cell.s = {
+          font: { bold: true },
+          alignment: {
+            horizontal: 'center',
+            vertical: 'center',
+            ...(isNarrow ? { wrapText: true } : {}),
+          },
+          ...(colFill ? { fill: { fgColor: { rgb: colFill.header } } } : {}),
+        };
         if (C === 16) {
-          cell.c = [
-            {
-              a: 'Info',
-              t: translate('excel.delivery.info_within_hours'),
-              h: true,
-            },
-          ];
+          cell.c = [{ a: 'Info', t: translate('excel.delivery.info_within_hours'), h: true }];
         }
       } else if (isHubRow) {
-        cell.s = redTextStyle;
-        if (C === 3) {
-          cell.s = {
-            ...redTextStyle,
-            ...centerStyle,
-            font: { ...redTextStyle.font, bold: true },
-          };
-        } else if ([7, 9].includes(C)) {
-          cell.s = { ...redTextStyle, ...centerStyle };
+        if ([7, 9].includes(C)) {
+          cell.s = { ...hubRedStyle3 };
+        } else if (C === 3) {
+          cell.s = { ...hubRedStyle3 };
+        } else {
+          cell.s = { font: { color: { rgb: 'FF0000' } } };
         }
       } else {
-        if (centerAlignedROColumns.includes(C)) {
-          if (!cell.s) cell.s = {};
-          cell.s.alignment = centerStyle.alignment;
-          if (typeof cell.v === 'number') cell.t = 'n';
-        }
-        if (isMissingRequiredData) {
-          if (!cell.s) cell.s = {};
-          cell.s.fill = redFillStyleRoVsReal.fill;
+        const isSpacerRow =
+          isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 0 })]?.v) &&
+          isEmpty(wsRoVsReal[XLSX.utils.encode_cell({ r: R, c: 2 })]?.v);
+        if (isSpacerRow) continue;
+
+        const isManual = manualAssignRows3.has(R);
+        if (isManual) {
+          cell.s = { ...(C <= 3 ? leftAlign3 : centerStyle), fill: { fgColor: { rgb: 'FECACA' } } };
+        } else if (C <= 3) {
+          cell.s = { ...leftAlign3 };
+        } else {
+          const colFill = colFillMap3[C];
+          cell.s = {
+            ...centerStyle,
+            ...(colFill ? { fill: { fgColor: { rgb: colFill.data } } } : {}),
+          };
         }
 
-        if (C === 12 && (cell.v === '0' || cell.v === 0)) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-          if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-        }
+        if (typeof cell.v === 'number') cell.t = 'n';
 
         if (C === 15 && cell.v) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-
-          if (cell.v === translate('excel.delivery.match')) {
-            cell.s.font.color = { rgb: '16A34A' }; // Hijau
-          } else if (cell.v === translate('excel.delivery.mismatch')) {
-            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-          }
+          cell.s = {
+            ...cell.s,
+            font: {
+              bold: true,
+              color: { rgb: cell.v === translate('common.status.match') ? '16A34A' : 'DC2626' },
+            },
+          };
         }
 
         if (C === 16 && cell.v) {
-          if (!cell.s) cell.s = {};
-          cell.s.font = { ...cell.s.font, bold: true };
-
-          if (cell.v === translate('dashboard.tab.routingreal.yes')) {
-            cell.s.font.color = { rgb: '16A34A' }; // Hijau
-          } else if (cell.v === translate('dashboard.tab.routingreal.early')) {
-            cell.s.font.color = { rgb: 'F59E0B' }; // Kuning/Amber
-          } else if (cell.v === translate('dashboard.tab.routingreal.no')) {
-            if (!isMissingRequiredData) cell.s.font.color = { rgb: 'DC2626' };
-          }
+          let color = null;
+          if (cell.v === translate('dashboard.tab.routingreal.yes')) color = '16A34A';
+          else if (cell.v === translate('dashboard.tab.routingreal.early')) color = 'F59E0B';
+          else if (cell.v === translate('dashboard.tab.routingreal.no')) color = 'DC2626';
+          if (color) cell.s = { ...cell.s, font: { bold: true, color: { rgb: color } } };
         }
-        // ---------------------------------------------------------
       }
     }
   }

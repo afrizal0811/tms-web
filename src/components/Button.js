@@ -1,5 +1,7 @@
 'use client';
 
+import { formatTimer } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 import Spinner from './Spinner';
 
 export default function Button({
@@ -8,12 +10,30 @@ export default function Button({
   disabled = false,
   width = 'w-full',
   text = 'Button',
-  loadingText,
   icon = null,
   type = 'button',
   className = '',
   ...rest
 }) {
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [prevLoading, setPrevLoading] = useState(isLoading);
+
+  if (isLoading !== prevLoading) {
+    setPrevLoading(isLoading);
+    if (!isLoading) setElapsedTime(0);
+  }
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const start = Date.now();
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   const isDisabled = disabled || isLoading;
 
   return (
@@ -33,7 +53,7 @@ export default function Button({
             border="border-2 border-sky-200 border-t-white dark:border-sky-200 dark:border-t-white"
             size="w-5 h-5"
           />
-          <span>{loadingText !== undefined ? loadingText : text}</span>
+          <span>{formatTimer(elapsedTime)}</span>
         </>
       ) : (
         <>

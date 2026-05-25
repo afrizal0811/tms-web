@@ -1,4 +1,3 @@
-// File: src/lib/reportGenerators/taskCountReport.js
 import { formatDateUniversal, formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -57,9 +56,6 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
   const grandTotalStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'E2E8F0' } } };
   const noteStyle = { font: { italic: true, color: { rgb: '64748B' }, sz: 9 } };
 
-  // ==========================================
-  // SHEET 1: RANGKUMAN
-  // ==========================================
   const rangkumanData = [['Nama Cabang (Hub)', 'Jumlah Tugas']];
   let totalAllHubs = 0;
 
@@ -78,7 +74,6 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
   const idxGrand = rangkumanData.length;
   rangkumanData.push(['Grand Total', totalAllHubs + trashTasks.length]);
 
-  // Tambahkan Note 2 Baris di bawah Rangkuman
   rangkumanData.push([]);
   rangkumanData.push([noteRow1]);
   rangkumanData.push([noteRow2]);
@@ -88,23 +83,18 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
   wsRangkuman['B1'].s = headerStyle;
   wsRangkuman['!cols'] = [{ wch: 35 }, { wch: 15 }];
 
-  // Styling Baris Total
-  [idxTotal, idxTrash, idxGrand].forEach((idx, i) => {
+  [idxTotal, idxTrash, idxGrand].forEach((idx) => {
     const style = idx === idxGrand ? grandTotalStyle : subTotalStyle;
     const row = idx + 1;
     if (wsRangkuman[`A${row}`]) wsRangkuman[`A${row}`].s = style;
     if (wsRangkuman[`B${row}`]) wsRangkuman[`B${row}`].s = style;
   });
 
-  // Styling Note
   if (wsRangkuman[`A${idxGrand + 3}`]) wsRangkuman[`A${idxGrand + 3}`].s = noteStyle;
   if (wsRangkuman[`A${idxGrand + 4}`]) wsRangkuman[`A${idxGrand + 4}`].s = noteStyle;
 
   XLSX.utils.book_append_sheet(wb, wsRangkuman, 'Rangkuman');
 
-  // ==========================================
-  // SHEET 2..N: PER HUB
-  // ==========================================
   selectedHubs.forEach((hub) => {
     const hubData = [['Tanggal', 'Jumlah Tugas']];
     let hubTotal = 0;
@@ -130,16 +120,13 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
     XLSX.utils.book_append_sheet(wb, wsHub, sheetName || 'Hub');
   });
 
-  // ==========================================
-  // SHEET: TRASH
-  // ==========================================
   const dateRangeStr = `${formatLongDate(startDate)} - ${formatLongDate(endDate)}`;
 
   const trashRows = [
     [`Task dihapus dari tanggal ${dateRangeStr}: ${trashTasks.length}`],
     [],
-    [noteRow1], // Note Sebelum Tabel (Baris 1)
-    [noteRow2], // Note Sebelum Tabel (Baris 2)
+    [noteRow1],
+    [noteRow2],
     [],
     ['Task ID', 'Hub Name', 'Task Name', 'Created At (UTC+7)', 'Deleted At (UTC+7)', 'Deleted By'],
   ];
@@ -161,7 +148,6 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
     ]);
   });
 
-  // Note Sesudah Tabel
   trashRows.push([]);
   trashRows.push([noteRow1]);
   trashRows.push([noteRow2]);
@@ -169,19 +155,15 @@ export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, end
   const wsTrash = XLSX.utils.aoa_to_sheet(trashRows);
   wsTrash['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 25 }, { wch: 20 }];
 
-  // Styling
   wsTrash['A1'].s = { font: { bold: true, sz: 12 } };
 
-  // Style Note Sebelum Tabel (Baris 3 & 4)
   wsTrash['A3'].s = noteStyle;
   wsTrash['A4'].s = noteStyle;
 
-  // Style Header Tabel (Baris 6)
   ['A', 'B', 'C', 'D', 'E', 'F'].forEach((col) => {
     if (wsTrash[`${col}6`]) wsTrash[`${col}6`].s = headerStyle;
   });
 
-  // Style Note Sesudah Tabel
   const lastNoteIdx = trashRows.length;
   if (wsTrash[`A${lastNoteIdx - 1}`]) wsTrash[`A${lastNoteIdx - 1}`].s = noteStyle;
   if (wsTrash[`A${lastNoteIdx}`]) wsTrash[`A${lastNoteIdx}`].s = noteStyle;

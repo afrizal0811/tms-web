@@ -258,7 +258,7 @@ const InfoCard = ({
   const etdMin = timeToMin(task.etd);
   const arrMin = timeToMin(task.actualArrival);
 
-  let timeStatus = t('dashboard.map.status.no_data');
+  let timeStatus = t('common.no_data');
   let timeStatusColor = 'text-gray-500';
   let statusBg = 'bg-gray-100';
 

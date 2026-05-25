@@ -105,12 +105,12 @@ export function parseCustomerString(fullString) {
     const commaSplit = rawLocation.split(',');
     location = commaSplit[0].trim();
     if (commaSplit.length > 1) {
-      invoiceNumber = commaSplit.slice(1).join(',').trim();
+      invoiceNumber = commaSplit.slice(1).join(', ').trim();
     }
   } else if (parts.length === 2 && id.includes(',')) {
     const commaSplit = id.split(',');
     id = commaSplit[0].trim();
-    invoiceNumber = commaSplit.slice(1).join(',').trim();
+    invoiceNumber = commaSplit.slice(1).join(', ').trim();
   }
   location = location !== null ? location : '';
 
@@ -391,5 +391,15 @@ export const tomorrowDate = (isTommorrow = true) => {
     date.setDate(date.getDate() + 1);
   }
 
+  if (!isTommorrow && new Date().getDay() === 6) {
+    date.setDate(date.getDate() + 1);
+  }
+
   return date;
 };
+
+export function getBasePlate(plat) {
+  if (!plat) return '';
+  const parts = plat.trim().split(/\s+/);
+  return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
+}

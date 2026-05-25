@@ -20,7 +20,7 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMod
         const dateObj = new Date(year, month, day);
         dayName = dateObj.toLocaleDateString(lang, { weekday: 'long' });
       } catch (e) {
-        toastError(t('dashboard.toast.parsing_date_error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }));
       }
     }
 
@@ -39,7 +39,7 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMod
               className="flex justify-between gap-4 mb-1"
               style={{ color: isDarkMode ? item.dark_color : item.light_color }}
             >
-              <span>● {t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+              <span>● {t(`common.status.${item.tKey}`)}</span>
               <span className="font-mono">{value || 0}</span>
             </div>
           );
@@ -81,7 +81,7 @@ function DailySequenceAccuracyModal({
                 backgroundColor: isDarkMode ? item.dark_color : item.light_color,
               }}
             />
-            <span className="text-slate-400">{t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+            <span className="text-slate-400">{t(`common.status.${item.tKey}`)}</span>
           </div>
         );
       })}
@@ -134,7 +134,7 @@ function DailySequenceAccuracyModal({
                 return (
                   <Bar
                     key={item.name}
-                    name={t(`dashboard.charts.sequence.${item.tKey}`)}
+                    name={t(`common.status.${item.tKey}`)}
                     dataKey={item.name}
                     stackId="a"
                     fill={isDarkMode ? item.dark_color : item.light_color}

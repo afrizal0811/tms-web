@@ -177,7 +177,7 @@ export default function BodyCard({
           <>
             <LoadingState elapsed={elapsedTime} text={loadingText || t('common.loading')} />
             {longLoadingContent && elapsedTime > 120 && (
-              <div className="absolute top-36 left-0 right-0 z-50 flex justify-center pointer-events-none">
+              <div className="absolute top-30 left-0 right-0 z-50 flex justify-center pointer-events-none">
                 <div className="pointer-events-auto">{longLoadingContent}</div>
               </div>
             )}

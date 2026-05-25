@@ -6,6 +6,7 @@ import {
   formatMinutesToHHMM,
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
+  getBasePlate,
   isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
@@ -110,7 +111,8 @@ export function generateTimeSummaryWorkbook(
     return criteriaMet && emailExists && dateMatches;
   });
 
-  if (isEmpty(filteredApiData)) return { error: translate('report.toast.no_time') };
+  if (isEmpty(filteredApiData))
+    return { error: translate('common.toast.error', { err: translate('common.no_data') }) };
 
   const groupedData = {};
   filteredApiData.forEach((item) => {
@@ -123,12 +125,23 @@ export function generateTimeSummaryWorkbook(
   const apiDataMap = new Map();
 
   for (const [email, records] of Object.entries(groupedData)) {
-    if (records.length === 1) {
-      apiDataMap.set(email, [{ ...records[0], isMultiple: false }]);
+    const uniqueRecords = records.filter(
+      (value, index, self) =>
+        index ===
+        self.findIndex(
+          (t) =>
+            t.rawStartTime === value.rawStartTime &&
+            t.rawFinishTime === value.rawFinishTime &&
+            t.totalDistance === value.totalDistance
+        )
+    );
+
+    if (uniqueRecords.length === 1) {
+      apiDataMap.set(email, [{ ...uniqueRecords[0], isMultiple: false }]);
       continue;
     }
 
-    const filteredByShift = records.filter((r) =>
+    const filteredByShift = uniqueRecords.filter((r) =>
       checkShiftMidpoint(r.rawStartTime, r.rawFinishTime, r.workingTime)
     );
 
@@ -147,27 +160,33 @@ export function generateTimeSummaryWorkbook(
     );
   }
 
+  const seenEmails = new Set();
   const masterDriverList = driverData.filter((driver) => {
     const plat = driver.plat || '';
-    if (isEmpty(plat)) return false;
-    if (plat.toUpperCase().includes('DEMO')) return false;
+    if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return false;
+
+    const emailKey = normalizeEmail(driver.email);
+    if (emailKey && seenEmails.has(emailKey)) return false;
+    if (emailKey) seenEmails.add(emailKey);
+
     return true;
   });
 
   let excelDataObjects = masterDriverList.flatMap((driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     const apiDataArray = apiDataMap.get(normalizedEmail);
+    const cleanPlat = getBasePlate(driver.plat); // set clean plat
 
     if (apiDataArray && apiDataArray.length > 0) {
       return apiDataArray.map((apiData) => ({
         ...apiData,
-        plat: driver.plat,
+        plat: cleanPlat,
         driver: driver.name,
       }));
     } else {
       return [
         {
-          plat: driver.plat,
+          plat: cleanPlat,
           driver: driver.name,
           startDate: null,
           startTimeFormatted: null,
@@ -254,8 +273,8 @@ export function generateTimeSummaryWorkbook(
     }),
     [],
     ['Note'],
-    ['', 'tanggal start dan finish berbeda'],
-    ['', 'driver klik start-finish lebih dari 1x'],
+    ['', translate('report.note_diff_date')],
+    ['', translate('report.note_double_click')],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(finalSheetData);

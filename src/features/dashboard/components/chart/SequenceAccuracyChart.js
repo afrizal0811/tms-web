@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
               className="flex justify-between gap-4 mb-1"
               style={{ color: isDarkMode ? item.dark_color : item.light_color }}
             >
-              <span>● {t(`dashboard.charts.sequence.${item.tKey}`)}</span>
+              <span>● {t(`common.status.${item.tKey}`)}</span>
               <span className="font-mono">{value || 0}</span>
             </div>
           );
@@ -221,7 +221,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
                     dataKey={item.name}
                     fill={isDarkMode ? item.dark_color : item.light_color}
                     maxBarSize={50}
-                    name={t(`dashboard.charts.sequence.${item.tKey}`)}
+                    name={t(`common.status.${item.tKey}`)}
                     onClick={handleBarClick}
                     radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                     stackId="a"

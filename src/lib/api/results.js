@@ -1,0 +1,64 @@
+// File: lib/api/results.js
+
+import { formatDateUniversal } from '../utils';
+import { apiFetch } from './base';
+
+function getCutOffTime(dateObj) {
+  const isSaturday = dateObj.getDay() === 6;
+  return {
+    startTime: isSaturday ? '11:00:00' : '16:00:00',
+    endTime: isSaturday ? '10:59:59' : '15:59:59',
+  };
+}
+
+export async function getResultsSummary({
+  dateFrom,
+  dateTo,
+  routingDateObj,
+  deliveryDateObj,
+  hubId,
+  limit = 1000,
+}) {
+  let finalDateFrom = dateFrom;
+  let finalDateTo = dateTo;
+
+  if (routingDateObj && deliveryDateObj) {
+    const { startTime } = getCutOffTime(routingDateObj);
+    const { endTime } = getCutOffTime(deliveryDateObj);
+
+    const startStr = formatDateUniversal(routingDateObj, 'YYYY-MM-DD');
+    const endStr = formatDateUniversal(deliveryDateObj, 'YYYY-MM-DD');
+
+    finalDateFrom = `${startStr} ${startTime}`;
+    finalDateTo = `${endStr} ${endTime}`;
+  }
+
+  const params = new URLSearchParams();
+  if (finalDateFrom) params.append('dateFrom', finalDateFrom);
+  if (finalDateTo) params.append('dateTo', finalDateTo);
+  if (hubId) params.append('hubId', hubId);
+  if (limit) params.append('limit', limit);
+
+  const results = await apiFetch(
+    `/api/get-results-summary?${params.toString()}`,
+    'Gagal mengambil data results'
+  );
+
+  return (results || []).filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
+}
+
+export async function getResult(id) {
+  if (!id) {
+    throw new Error('ID result harus disertakan');
+  }
+
+  const params = new URLSearchParams();
+  params.append('id', id);
+
+  const result = await apiFetch(
+    `/api/get-result?${params.toString()}`,
+    `Gagal mengambil data result dengan ID ${id}`
+  );
+
+  return result;
+}

@@ -191,8 +191,10 @@ export function generateTaskSummarySheet(
     // Label Kolom A (misal: "DP")
     const label = `${item.label}`;
     // Deskripsi Kolom B
-    const desc = translate(`summary.tabs.task_summary.${item.key}`);
-
+    const desc =
+      item.key === 'ma'
+        ? translate('common.status.manual_assign')
+        : translate(`summary.tabs.task_summary.${item.key}`);
     excelData.push([label, desc]);
 
     // Merge Deskripsi (Kolom B sampai R)

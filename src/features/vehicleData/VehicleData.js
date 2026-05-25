@@ -1,4 +1,3 @@
-// File: src/features/vehicleData/VehicleData.js
 'use client';
 
 import Button from '@/components/Button';
@@ -7,10 +6,11 @@ import HeaderCard from '@/components/card/HeaderCard';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getDrivers, getVehicleMappings } from '../../lib/api';
+import { getVehicleMappings } from '../../lib/api';
 import { toastError } from '../../lib/toastHelper';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
@@ -28,20 +28,24 @@ export default function VehicleData() {
   const [templateData, setTemplateData] = useState([]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchData() {
       setIsLoading(true);
       try {
-        const { storedSession } = getLocalStorage();
-        const userLocation = storedSession?.activeHubId;
-        if (!userLocation) throw new Error('Lokasi user tidak ditemukan.');
+        const { storedLocation } = getLocalStorage();
+        if (!storedLocation) {
+          throw new Error(t('common.toast.error', { err: 'Location not found' }));
+        }
 
         const [rawDriversData, mappingsDB] = await Promise.all([
-          getDrivers(userLocation),
+          getOrFetchDriverData(storedLocation),
           getVehicleMappings(),
         ]);
 
-        if (!rawDriversData || isEmpty(rawDriversData))
-          throw new Error('Tidak ada data kendaraan.');
+        if (!rawDriversData || isEmpty(rawDriversData)) {
+          throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
+        }
 
         const sortByEmail = (a, b) => (a.email || '').localeCompare(b.email || '');
 
@@ -51,7 +55,7 @@ export default function VehicleData() {
             try {
               parsedTags = JSON.parse(v.tags);
             } catch (e) {
-              parsedTags = [v.type];
+              parsedTags = [v.tags];
             }
           } else if (v.type) {
             parsedTags = [v.type];
@@ -59,6 +63,7 @@ export default function VehicleData() {
           return { ...v, parsedTags };
         });
 
+        if (!isMounted) return;
         setTemplateData([...processedData].sort(sortByEmail));
 
         const mappingsObj = mappingsDB.reduce((acc, curr) => {
@@ -72,15 +77,12 @@ export default function VehicleData() {
             if (plate && mappingsObj[plate]) {
               const mappedType = mappingsObj[plate];
               const storagePrefix = vehicle.storage;
-
               const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
               vehicle.type = newFullTag;
-              if (vehicle.parsedTags.length > 0) vehicle.parsedTags[0] = newFullTag;
-              else vehicle.parsedTags = [newFullTag];
             }
           });
         } catch (error) {
-          toastError(t('vehicle.toast.failed_mapping', { error: error.message }));
+          if (isMounted) toastError(t('common.toast.error', { error: error.message }));
         }
 
         const emailToVehiclesMap = new Map();
@@ -106,15 +108,21 @@ export default function VehicleData() {
           }
         }
 
+        if (!isMounted) return;
         setMasterData(masterList.sort(sortByEmail));
         setConditionalData(conditionalList.sort(sortByEmail));
       } catch (err) {
-        toastError(err.message);
+        if (isMounted) toastError(err.message);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
+
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [t]);
 
   const applyStorageFilter = useCallback(
@@ -194,13 +202,7 @@ export default function VehicleData() {
         isDownloading ||
         (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
       }
-      text={
-        isLoading
-          ? t('common.loading')
-          : isDownloading
-            ? t('common.downloading')
-            : t('common.download')
-      }
+      text={t('common.download')}
       width="w-full"
     />
   );
@@ -243,7 +245,6 @@ export default function VehicleData() {
         activeTabId={activeTab}
         isEmpty={!isLoading && totalItems === 0}
         isLoading={isLoading}
-        loadingText={t('common.loading')}
         onTabClick={setActiveTab}
         tabs={tabs}
       >

@@ -32,6 +32,7 @@ export const dictionary = {
       location_id: 'ID Lokasi',
       minute: 'Menit',
       no_data: 'Tidak ada data',
+      no_driver: 'Tidak ada data sopir',
       license_number: 'Pelat Nomor',
       open_time: 'Waktu Buka',
       others: 'Lainnya',
@@ -55,7 +56,7 @@ export const dictionary = {
       warning: '⚠️ Peringatan!',
       button: {
         btn_cancel: 'Batal',
-        btn_delete: 'Delete',
+        btn_delete: 'Hapus',
         btn_no: 'Tidak',
         btn_save: 'Simpan',
         btn_yes: 'Ya',
@@ -63,16 +64,22 @@ export const dictionary = {
       status: {
         cancel: 'Batal',
         done: 'Selesai',
+        manual_assign: 'Penugasan Manual',
+        match: 'Sesuai',
+        mismatch: 'Beda',
         ongoing: 'Berjalan',
         partial: 'Terima Sebagian',
         pending: 'Pending',
         pending_gr: 'Pending GR',
         success: 'Sukses',
-        manual_assign: 'Penugasan Manual',
       },
       toast: {
         error: 'Proses gagal: {err}',
         success: 'Proses berhasil!',
+      },
+      modal: {
+        data_load_title: 'Peringatan Beban Data',
+        data_load_message: `Data yang diproses terlalu besar (lebih dari {days} hari). Tetap lanjutkan?`,
       },
     },
     home: {
@@ -100,13 +107,13 @@ export const dictionary = {
         title: 'Konfirmasi Pilihan Pengguna',
       },
       toast: {
+        active: 'Aktif!',
         driver_error: `Sopir tidak bisa login. Harap gunakan akun lain`,
         info_tutorial: 'Informasi Panduan ada di menu Bantuan',
         login_failed: 'Gagal login: {err}',
         login_success: 'Login berhasil!',
         no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
-        success: 'Data berhasil disimpan!',
       },
     },
     vehicle_tag: {
@@ -129,6 +136,7 @@ export const dictionary = {
       setting: 'Pengaturan',
       summary: 'Rangkuman',
       task_counter_report: 'Laporan Jumlah Tugas',
+      task_detail_report: 'Laporan Detail Tugas',
       update: 'Perbarui',
     },
     dashboard: {
@@ -140,17 +148,8 @@ export const dictionary = {
       unable_copy: 'Gagal salin',
       year_performance: 'Tahun Performa',
       toast: {
-        daily_fetch_error: 'Gagal mengambil data harian.',
-        driver_cache_warning: 'Gagal memproses cache nama driver.',
-        generic_error: 'Terjadi kesalahan sistem.',
-        hub_not_found: 'Lokasi Hub tidak ditemukan. Harap login ulang.',
-        parsing_date_error: 'Gagal memproses tanggal untuk tooltip: {err}',
         partial_warning: 'Gagal memuat sebagian data tahunan: {err}',
-        sunday_error: 'Tidak ada pengiriman saat Minggu. silakan pilih tanggal lain',
-        user_load_error: 'Gagal memuat data user',
         view_map_warning: 'Disarankan membuka peta di Desktop/Tablet untuk pengalaman terbaik.',
-        yearly_fetch_error: 'Gagal ambil data tahunan',
-        error_download: 'Gagal mengunduh data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -165,8 +164,6 @@ export const dictionary = {
         },
         sequence: {
           actual: 'Aktual',
-          match: 'Sesuai',
-          mismatch: 'Beda',
           routing: 'Routing',
           subtitle: 'Kesesuaian urutan',
           title: 'Akurasi Urutan',
@@ -213,8 +210,6 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Sesuai?',
-          match: 'Sesuai',
-          mismatch: 'Beda',
           search_placeholder: 'Cari Nomor Kendaraan, Driver, atau Customer',
           show_map: 'Lihat Peta',
           status: 'Status',
@@ -244,7 +239,6 @@ export const dictionary = {
         status: {
           early: 'Tiba Lebih Awal',
           late: 'Melewati Batas Waktu',
-          no_data: 'Belum Ada Data',
           ontime: 'Tiba Sesuai Rentang Waktu',
           unknown: 'Tidak Diketahui',
         },
@@ -263,10 +257,13 @@ export const dictionary = {
       change_date: 'Ubah Tanggal Routing',
       daily_title: 'Laporan Harian',
       delivery_summary: 'Ringkasan Pengiriman',
+      note_diff_date: 'Tanggal Mulai dan Selesai berbeda',
+      note_double_click: 'Sopir tekan Mulai-Selesai beberapa kali',
       period_title: 'Laporan Periode',
       routing_date: 'Tanggal Routing',
       routing_summary: 'Ringkasan Routing',
       task_counter_report: 'Laporan Jumlah Tugas',
+      task_detail_report: 'Laporan Detail Tugas',
       time_summary: 'Ringkasan Waktu',
       tc_detail: {
         choose_hub: 'Pilih HUB',
@@ -277,20 +274,11 @@ export const dictionary = {
         note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
       },
       toast: {
-        failed_prossesing: 'Gagal memproses {dateForFile}: {err}',
-        failed_zip: 'Tidak ada file {zipPrefix} yang berhasil dibuat.',
-        invalid_driver: 'Data driver tidak valid.',
-        no_data: 'Tidak ada data ditemukan untuk semua tanggal dalam rentang ini.',
-        no_delivery: 'Tidak ada data Delivery untuk tanggal ini',
-        no_routing: 'Tidak ada data Routing untuk tanggal ini',
-        no_time: 'Tidak ada data rekam waktu untuk tanggal ini',
+        failed_zip: 'Gagal membuat file zip',
         processing: 'Memulai proses...',
         select_date: 'Pilih tanggal pengiriman',
-        select_diff_date: 'Rentang tanggal tidak boleh sama. Harap pilih minimal 2 hari.',
-        skip_data:
-          'Terdapat {skippedDates} tanggal yang tidak memiliki data (termasuk hari Minggu)',
-        skip_sunday: 'Melewati {sundaysSkipped} tanggal untuk hari Minggu.',
-        success: 'File berhasil diunduh!',
+        skip_data: '{skippedDates} tanggal tidak memiliki data',
+        skip_sunday: 'Melewati {sundaysSkipped} tanggal hari Minggu',
       },
       tooltip: {
         cut_off: 'Batas Waktu',
@@ -327,7 +315,6 @@ export const dictionary = {
           weight_pct: 'Persentase Berat',
         },
         data: {
-          other: 'Lainnya',
           dispatch_message: '{success} dari {total} tugas berhasil diproses',
         },
       },
@@ -337,8 +324,6 @@ export const dictionary = {
         info_within_hours: 'Waktu kedatangan aktual dalam rentang waktu buka dan tutup pelanggan',
         info_wrong_status:
           'Warna merah menandakan seharusnya memilih "Pending", bukan "Pending GR"',
-        match: 'Sesuai',
-        mismatch: 'Beda',
         sheets: {
           pending_so: 'Hasil Pending SO',
           ro_vs_real: 'Hasil RO vs Aktual',
@@ -390,7 +375,6 @@ export const dictionary = {
       table: {
         diff_dist: 'Selisih Jarak (m)',
         new_longlat: 'Titik Lokasi Baru',
-        no_data: 'Tidak ada data update lokasi ditemukan',
         update_time: 'Waktu Pembaruan',
       },
       modal: {
@@ -398,22 +382,11 @@ export const dictionary = {
         new_loc: 'Lokasi Baru',
         new_longlat: 'Titik Lokasi Baru',
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
-        no_data: 'Tidak ada riwayat update',
         old_loc: 'Lokasi Lama',
         times: 'kali',
         title: 'Riwayat Pembaruan Lokasi',
         total_update: 'Total Pembaruan',
         valid_since: 'Berlaku sejak',
-      },
-      toast: {
-        all_failed: 'Retry masih gagal: {time} chunk gagal',
-        failed: 'Data gagal diunduh!',
-        failed_get_data: 'Gagal mengambil data',
-        no_data: 'Tidak ada data untuk diunduh',
-        no_sunday: 'Tidak ada pengiriman saat Minggu. Silakan pilih tanggal lain',
-        recovered: 'Data riwayat sebanyak {count} telah berhasil dilengkapi',
-        retry_chunk: 'Mengulang {count} chunk yang gagal...',
-        success: 'Data berhasil diunduh!',
       },
     },
     vehicle: {
@@ -447,8 +420,6 @@ export const dictionary = {
       },
       toast: {
         choose_one: 'Pilih setidaknya satu sheet untuk diunduh',
-        failed_mapping: 'Gagal melakukan mapping vehicle tag: {error}',
-        success: 'Data kendaraan berhasil diunduh!',
       },
     },
     estimation: {
@@ -457,7 +428,6 @@ export const dictionary = {
       est_depart: 'Estimasi Keluar',
       group: 'Grup',
       hub_eta_short: 'Estimasi tidak akurat',
-      no_driver: 'Tidak ada data sopir',
       no_match: 'Tidak cocok',
       search_placeholder: 'Cari Plat, Customer, atau SO',
       subtitle: 'Monitoring estimasi',
@@ -467,14 +437,6 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Ringkas',
       visit: 'Kunjungan',
-      toast: {
-        download_failed: 'Gagal mengunduh file laporan: {err}',
-        no_data_downloaded: 'Tidak ada data untuk diunduh',
-        no_driver_data: 'Gagal memuat data sopir: {err}',
-        success_excel: 'Berhasil mengunduh data Estimasi Pengiriman!',
-        success_pdf: 'Berhasil mengunduh data Form Pengiriman!',
-        success_zip: 'Berhasil mengunduh {length} Form Pengiriman dalam ZIP!',
-      },
       tooltip: {
         find_so: 'Klik untuk filter berdasarkan nomor SO',
         hub_eta: 'Terdapat task yang manual assign. Estimasi menjadi tidak akurat',
@@ -485,19 +447,10 @@ export const dictionary = {
       caution: '*Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
       click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
       label: 'Tanggal Performa',
-      long_message: 'Memproses banyak data, silakan tunggu sebentar',
+      long_message: 'Memproses banyak data, silakan tunggu sebentar...',
       subtitle_1: 'Rekapitulasi',
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
-      modal: {
-        title: 'Peringatan Beban Data',
-        text: `Data yang diproses terlalu besar (lebih dari 14 hari). Tetap lanjutkan?`,
-      },
-      toast: {
-        success: 'Data rangkuman berhasil diunduh!',
-        error: 'Data rangkuman gagal dibuat: {err}',
-        no_driver_data: 'Data sopir tidak ditemukan',
-      },
       tabs: {
         time_ro: {
           end_ro: 'Selesai RO',
@@ -684,6 +637,12 @@ export const dictionary = {
       text: 'Versi terbaru aplikasi telah tersedia. Silakan muat ulang untuk menerapkan pembaruan dan memastikan aplikasi berjalan optimal.',
       btn_update: 'Muat Ulang',
     },
+    routing_info: {
+      created_by: 'Dibuat oleh',
+      created_time: 'Dibuat pada',
+      routing_name: 'Nama Routing',
+      title: 'Informasi Routing',
+    },
   },
   en: {
     common: {
@@ -716,6 +675,7 @@ export const dictionary = {
       location_id: 'Location ID',
       minute: 'Minute',
       no_data: 'No data',
+      no_driver: 'No driver data',
       license_number: 'License Plate',
       open_time: 'Opening Time',
       others: 'Others',
@@ -739,24 +699,30 @@ export const dictionary = {
       warning: '⚠️ Warning!',
       button: {
         btn_cancel: 'Cancel',
-        btn_confirm: 'Yes',
         btn_delete: 'Delete',
         btn_no: 'No',
         btn_save: 'Save',
+        btn_yes: 'Yes',
       },
       status: {
-        success: 'Success',
-        pending: 'Pending',
-        partial: 'Partial',
         cancel: 'Cancel',
-        pending_gr: 'Pending GR',
-        ongoing: 'Ongoing',
         done: 'Done',
         manual_assign: 'Manual Assignment',
+        match: 'Match',
+        mismatch: 'Mismatch',
+        ongoing: 'Ongoing',
+        partial: 'Partial',
+        pending: 'Pending',
+        pending_gr: 'Pending GR',
+        success: 'Success',
       },
       toast: {
         error: 'Process failed: {err}',
         success: 'Process completed successfully!',
+      },
+      modal: {
+        data_load_title: 'Data Load Warning',
+        data_load_message: `The data being processed is too large (more than {days} days). Do you want to continue?`,
       },
     },
     home: {
@@ -784,14 +750,13 @@ export const dictionary = {
         title: 'Confirmation User Selection',
       },
       toast: {
+        active: 'Active!',
         driver_error: `The driver can’t log in. Please use another account`,
-        error: 'Failed to load data: {err}',
         info_tutorial: 'Information tutorial is in Help menu',
         login_failed: 'Login failed: {err}',
         login_success: 'Login success!',
         no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
-        success: 'Data has been saved!',
       },
     },
     vehicle_tag: {
@@ -814,6 +779,7 @@ export const dictionary = {
       setting: 'Setting',
       summary: 'Summary',
       task_counter_report: 'Task Counter Report',
+      task_detail_report: 'Task Detail Report',
       update: 'Update',
     },
     dashboard: {
@@ -825,18 +791,9 @@ export const dictionary = {
       unable_copy: 'Unable to copy',
       year_performance: 'Performance Year',
       toast: {
-        daily_fetch_error: 'Failed to fetch daily data.',
-        driver_cache_warning: 'Failed to process driver name cache.',
-        generic_error: 'System error occurred.',
-        hub_not_found: 'Hub location not found. Please login again.',
-        parsing_date_error: 'Error parsing date for tooltip: {err}',
         partial_warning: 'Partial yearly fetch failed: {err}',
-        sunday_error: 'No deliveries on Sunday. Please choose another date',
-        user_load_error: 'Failed to load user data',
         view_map_warning:
           'It is recommended to open the map on Desktop or Tablet for the best experience.',
-        yearly_fetch_error: 'Failed to fetch yearly data',
-        error_download: 'Failed to download data: {err}',
       },
       tabs: {
         detail: 'Detail',
@@ -851,8 +808,6 @@ export const dictionary = {
         },
         sequence: {
           actual: 'Actual',
-          match: 'Match',
-          mismatch: 'Mismatch',
           routing: 'Routing',
           subtitle: 'Sequence conformity',
           title: 'Sequence Accuracy',
@@ -899,8 +854,6 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Is Match?',
-          match: 'Match',
-          mismatch: 'Mismatch',
           search_placeholder: 'Search Plate, Driver, or Customer',
           show_map: 'View Map',
           status: 'Status',
@@ -930,7 +883,6 @@ export const dictionary = {
         status: {
           early: 'Arrived Early',
           late: 'Late Arrival',
-          no_data: 'No Data',
           ontime: 'Arrived On Time',
           unknown: 'Unknown',
         },
@@ -949,11 +901,14 @@ export const dictionary = {
       change_date: 'Change Routing Date',
       daily_title: 'Daily Report',
       delivery_summary: 'Delivery Summary',
+      note_diff_date: 'Start and Finish date are different',
+      note_double_click: 'Driver press Start-Finish multiple times',
       period_title: 'Period Report',
       routing_date: 'Routing Date',
       routing_summary: 'Routing Summary',
-      time_summary: 'Time Summary',
       task_counter_report: 'Task Counter Report',
+      task_detail_report: 'Task Detail Report',
+      time_summary: 'Time Summary',
       tc_detail: {
         choose_hub: 'Choose HUB',
         custom_time: 'Custom Time Range',
@@ -962,19 +917,11 @@ export const dictionary = {
         note_two: '  Total task counts may not be accurate.',
       },
       toast: {
-        failed_prossesing: 'Failed to process {dateForFile}: {err.message}`',
-        failed_zip: 'No {zipPrefix} file was successfully created.',
-        invalid_driver: 'Invalid driver data.',
-        no_data: 'No data found for any dates in this range.',
-        no_delivery: 'No delivery data found for this date.',
-        no_routing: 'No routing data found for this date.',
-        no_time: 'No time data found for this date',
+        failed_zip: 'Failed to create zip file',
         processing: 'Starting process...',
         select_date: 'Select delivery date',
-        select_diff_date: 'Date range cannot be the same. Please select at least 2 days.',
-        skip_data: 'There are {skippedDates} date(s) with no data (including Sundays).',
-        skip_sunday: 'Skipped {sundaysSkipped} date(s) because they fall on Sunday.',
-        success: 'File downloaded successfully!',
+        skip_data: 'Skipped {skippedDates} empty date(s)',
+        skip_sunday: 'Skipped {sundaysSkipped} Sunday date(s)',
       },
       tooltip: {
         cut_off: 'Cut-off Time',
@@ -1011,7 +958,6 @@ export const dictionary = {
           weight_pct: 'Weight Percentage',
         },
         data: {
-          other: 'Other',
           dispatch_message: '{success} from {total} task have been dispatched',
         },
       },
@@ -1021,8 +967,6 @@ export const dictionary = {
         info_within_hours: 'Actual arrival time within the customer operating hours',
         info_wrong_status:
           'Red color indicates that the status should be "Pending", not "Pending GR"',
-        match: 'Match',
-        mismatch: 'Mismatch',
         sheets: {
           pending_so: 'Pending SO Results',
           ro_vs_real: 'RO vs Real Results',
@@ -1073,30 +1017,17 @@ export const dictionary = {
       table: {
         diff_dist: 'Distance Difference (m)',
         new_longlat: 'New Location Point',
-        no_data: 'No location update data found',
         update_time: 'Update Time',
       },
       modal: {
         diff_dist: 'Distance Difference (m)',
         new_loc: 'New Location',
         new_longlat: 'New Location Point',
-        no_coordinate: 'No coordinate data to display',
-        no_data: 'No update history',
         old_loc: 'Old Location',
         times: 'time(s)',
         title: 'Location Update History',
         total_update: 'Total Update(s)',
         valid_since: 'Valid Since',
-      },
-      toast: {
-        all_failed: 'Retry still failed: {time} chunk(s) failed',
-        failed: 'Failed to download data!',
-        failed_get_data: 'Failed to fetch data',
-        no_data: 'No data to download',
-        no_sunday: 'No deliveries on Sunday. Please choose another date.',
-        recovered: '{count} history records have been successfully restored.',
-        retry_chunk: 'Retrying {count} failed chunk(s)...',
-        success: 'Data downloaded successfully!',
       },
     },
     vehicle: {
@@ -1131,8 +1062,6 @@ export const dictionary = {
       },
       toast: {
         choose_one: 'Select at least one sheet to download',
-        failed_mapping: 'Failed to map data vehicle tag: {error}',
-        success: 'Vehicle data has been downloaded successfully!',
       },
     },
     estimation: {
@@ -1141,7 +1070,6 @@ export const dictionary = {
       est_depart: 'Estimated Departure',
       group: 'Group',
       hub_eta_short: 'Estimation is not accurate',
-      no_driver: 'No driver data',
       no_match: 'No match',
       search_placeholder: 'Search Plate, Customer, or SO Number',
       subtitle: 'Monitoring estimation of',
@@ -1151,14 +1079,6 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Summary',
       visit: 'Visit',
-      toast: {
-        download_failed: 'Failed to download report file: {err}',
-        no_data_downloaded: 'No data available for download',
-        no_driver_data: 'Failed to load driver data: {err}',
-        success_excel: 'Delivery Estimation data downloaded successfully!',
-        success_pdf: 'Delivery Form downloaded successfully!',
-        success_zip: 'Successfully downloaded {length} Delivery Forms in a ZIP!',
-      },
       tooltip: {
         find_so: 'Click to filter by SO number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
@@ -1169,19 +1089,10 @@ export const dictionary = {
       caution: '*Displayed data may be inaccurate. Verify before use',
       click_box_hint: 'Click text with red underline to view details',
       label: 'Performance Date',
-      long_message: 'Processing a lot of data, please wait a moment.',
+      long_message: 'Processing a lot of data, please wait a moment...',
       subtitle_1: 'Recap of',
       subtitle_highlight: 'task performance',
       title: 'Summary',
-      modal: {
-        title: 'Data Load Warning',
-        text: `The data being processed is too large (more than 14 days). Do you want to continue?`,
-      },
-      toast: {
-        success: 'Summary data has been downloaded successfully!',
-        error: 'Failed to generate summary data: {err}',
-        no_driver_data: 'No driver data',
-      },
       tabs: {
         time_ro: {
           date_ro: 'Routing Date',
@@ -1326,7 +1237,7 @@ export const dictionary = {
     setting: {
       last_updated: 'Last updated:',
       sync_loading: 'Synchronizing...',
-      title: 'Settings',
+      title: 'Setting',
       tab: {
         general: {
           add_placeholder: 'Add new data...',
@@ -1365,6 +1276,12 @@ export const dictionary = {
       title: 'System Update',
       text: 'A new version of the application is available. Please reload to apply the update and ensure the application runs optimally.',
       btn_update: 'Reload',
+    },
+    routing_info: {
+      created_by: 'Created By',
+      created_time: 'Created At',
+      routing_name: 'Routing Name',
+      title: 'Routing Information',
     },
   },
 };

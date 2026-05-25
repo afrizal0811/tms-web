@@ -1,0 +1,24 @@
+{
+  "user": {
+    "activeHubAcronym": "SDA",
+    "activeHubId": "670369a8a5d2d4b5ee0b020d",
+    "activeHubName": "Sidoarjo",
+    "email": "afrizal.maulana@panganlestari.com",
+    "hubId": [
+      "69df3cdc938b3ec91f0be9ba",
+      "6895a281bc530d4a4908f5ef",
+      "68b8038b1aa98343380e3ab2",
+      "683924970c29c079e30d862f",
+      "67a41cb1480d2d3b580fc61c",
+      "670369a8a5d2d4b5ee0b020d",
+      "69f2dd4a11cc773f0e0c3e8b"
+    ],
+    "name": "Afrizal Maulana",
+    "roleId": "677c940ee491a8634b09defe",
+    "status": "active",
+    "_id": "6706312c1b19b5822c031e2f"
+  },
+  "app_version": "3.0.0",
+  "cachedHubs": [{}],
+  "superadminRoleId": "677c940ee491a8634b09defe"
+}
