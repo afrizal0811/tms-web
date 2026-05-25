@@ -298,7 +298,11 @@ export default function DeliveryEstimatePage() {
 
         const resultHubsByPlat = new Map();
 
-        resultsData.forEach((route) => {
+        const allDoneRoutingsRaw = (resultsData || [])
+          .filter((item) => item.dispatchStatus === 'done' && item.result && item.result.routing)
+          .flatMap((item) => item.result.routing);
+
+        allDoneRoutingsRaw.forEach((route) => {
           const plat = getBasePlate(route.vehicleName);
           if (plat) {
             const hubs = (route.trips || []).filter((t) => t.isHub);
