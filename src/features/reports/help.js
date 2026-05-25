@@ -341,3 +341,46 @@ export const taskDetailKeyMapping = {
   activity: 'activity',
   routingResultId: 'routingResultId',
 };
+
+export const tutorialData = {
+  routing: [
+    {
+      image: '/images/tutorial/routing/routing-1.png',
+      text: 'Masuk ke MileApp, lalu buka menu Routing (Rute) di sidebar. Pilih submenu Result (Hasil).',
+    },
+    {
+      image: '/images/tutorial/routing/routing-2.png',
+      text: 'Lakukan filter berdasarkan tanggal dilakukannya routing.',
+    },
+    {
+      image: '/images/tutorial/routing/routing-3.png',
+      text: 'Pilih hasil routing yang sudah di-dispatch (ditugaskan).',
+    },
+    {
+      image: '/images/tutorial/routing/routing-4.png',
+      text: 'Klik tombol Export (Ekspor). Lakukan untuk semua hasil routing.',
+    },
+  ],
+  delivery: [
+    {
+      image: '/images/tutorial/task/task-1.png',
+      text: 'Masuk ke MileApp, lalu buka menu Task (Tugas) di sidebar.',
+    },
+    {
+      image: '/images/tutorial/task/task-2.png',
+      text: 'Lakukan filter berdasarkan tanggal dilakukannya pengiriman. Gunakan filter Status dan Tanggal Pengiriman.',
+    },
+    {
+      image: '/images/tutorial/task/task-3.png',
+      text: 'Klik tombol Export (Ekspor), lalu klik Export Task (Ekspor Tugas).',
+    },
+    {
+      image: '/images/tutorial/task/task-4.png',
+      text: 'Buka menu Import & Export (Impor & Ekspor) di sidebar. Pilih submenu Data Export.',
+    },
+    {
+      image: '/images/tutorial/task/task-5.png',
+      text: 'Klik ikon unduh di kolom Action (Aksi) untuk mengunduh file Excel.',
+    },
+  ],
+};

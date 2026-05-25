@@ -1,7 +1,11 @@
 'use client';
 
+import Accordion from '@/components/Accordion';
+import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Carousel from '@/components/Carousel';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import FileUploader from '@/components/FileUploader';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -27,6 +31,7 @@ import {
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import { tutorialData } from './help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -40,7 +45,9 @@ export default function SingleReport({
   setIsMapping,
 }) {
   const { t } = useLanguage();
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reportType, setReportType] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [isCustomRouting, setIsCustomRouting] = useState(false);
@@ -287,6 +294,11 @@ export default function SingleReport({
     setSelectedDate(date);
   };
 
+  const handleModal = (type) => {
+    setReportType(type);
+    setIsModalOpen(true);
+  };
+
   const informationComp = (tooltipContent) => (
     <Tooltip tooltipContent={tooltipContent}>
       <span className="flex items-center">
@@ -309,9 +321,14 @@ export default function SingleReport({
   );
 
   const actionButtons = [
-    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting },
-    { id: 'delivery', label: t('report.delivery_summary'), onClick: handleDelivery },
-    { id: 'time', label: t('report.time_summary'), onClick: handleTime },
+    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting, hasOption: true },
+    {
+      id: 'delivery',
+      label: t('report.delivery_summary'),
+      onClick: handleDelivery,
+      hasOption: true,
+    },
+    { id: 'time', label: t('report.time_summary'), onClick: handleTime, hasOption: false },
   ];
 
   return (
@@ -378,16 +395,39 @@ export default function SingleReport({
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
-        {actionButtons.map(({ id, label, onClick }) => (
+        {actionButtons.map(({ id, label, onClick, hasOption }) => (
           <Button
             key={id}
             onClick={onClick}
             disabled={disabledCommon || isDateInvalid}
             isLoading={currentRunning === id}
             text={label}
+            hasOptions={hasOption}
+            options={[
+              {
+                label: 'Manual',
+                onClick: () => handleModal(id),
+              },
+            ]}
           />
         ))}
       </div>
+      <BaseModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedFiles([]);
+        }}
+        title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : reportType === 'delivery' ? t('report.delivery_summary') : t('report.time_summary')}`}
+        maxWidth="max-w-2xl w-[95%] sm:w-full"
+      >
+        <div className="p-4 flex flex-col gap-5">
+          <FileUploader files={selectedFiles} onUpdateFiles={setSelectedFiles} />
+          <Accordion title="Tutorial" className="mt-2">
+            <Carousel items={tutorialData[reportType] || []} />
+          </Accordion>
+        </div>
+      </BaseModal>
     </div>
   );
 }
