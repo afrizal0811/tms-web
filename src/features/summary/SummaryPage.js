@@ -5,6 +5,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import RoutingInfo from '@/components/RoutingInfo';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
@@ -396,9 +397,12 @@ export default function SummaryPage() {
       >
         {!isLoading && renderContent()}
       </BodyCard>
-      <span className="-mt-4 block text-xs text-amber-600 text-right italic">
-        {t('summary.caution')}
-      </span>
+      <div className="flex items-start justify-between -mt-5">
+        <RoutingInfo resultsData={rawData.results} />
+        <span className="text-xs text-amber-600 italic text-right mt-2">
+          {t('summary.caution')}
+        </span>
+      </div>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}

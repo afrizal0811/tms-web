@@ -2,6 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import RoutingInfo from '@/components/RoutingInfo';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
@@ -45,6 +46,7 @@ export default function DeliveryEstimatePage() {
   const [timeMap, setTimeMap] = useState(new Map());
   const [isDetailView, setIsDetailView] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
+  const [routingResults, setRoutingResults] = useState([]);
 
   const downloadDropdownRef = useRef(null);
   const isAnyDownloading = isDownloadingExcel || isDownloadingPdf;
@@ -258,7 +260,7 @@ export default function DeliveryEstimatePage() {
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
         ]);
-
+        setRoutingResults(resultsData || []);
         const rawTasks = tasksResponse;
         const filteredTasks = (Array.isArray(rawTasks) ? rawTasks : []).filter((task) => {
           const assignee = task?.assignee;
@@ -775,6 +777,7 @@ export default function DeliveryEstimatePage() {
           </div>
         </div>
       </BodyCard>
+      <RoutingInfo resultsData={routingResults} />
     </div>
   );
 }

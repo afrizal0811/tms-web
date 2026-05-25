@@ -3,6 +3,7 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import RoutingInfo from '@/components/RoutingInfo';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
@@ -451,6 +452,7 @@ export default function DashboardSummary({ driverData }) {
           )}
         </div>
       </BodyCard>
+      <RoutingInfo resultsData={rawData.results} />
     </div>
   );
 }

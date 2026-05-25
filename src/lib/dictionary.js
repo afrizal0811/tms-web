@@ -637,6 +637,12 @@ export const dictionary = {
       text: 'Versi terbaru aplikasi telah tersedia. Silakan muat ulang untuk menerapkan pembaruan dan memastikan aplikasi berjalan optimal.',
       btn_update: 'Muat Ulang',
     },
+    routing_info: {
+      created_by: 'Dibuat oleh',
+      created_time: 'Dibuat pada',
+      routing_name: 'Nama Routing',
+      title: 'Informasi Routing',
+    },
   },
   en: {
     common: {
@@ -1270,6 +1276,12 @@ export const dictionary = {
       title: 'System Update',
       text: 'A new version of the application is available. Please reload to apply the update and ensure the application runs optimally.',
       btn_update: 'Reload',
+    },
+    routing_info: {
+      created_by: 'Created By',
+      created_time: 'Created At',
+      routing_name: 'Routing Name',
+      title: 'Routing Information',
     },
   },
 };
