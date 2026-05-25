@@ -627,7 +627,7 @@ export default function DeliveryEstimatePage() {
       isLoading={isLoading || isAnyDownloading}
       onChange={handleDateChange}
       selected={selectedDate ? new Date(selectedDate) : new Date()}
-      maxDate={tomorrowDate()}
+      maxDate={tomorrowDate(false)}
       className="w-full xl:w-40!"
     />
   );
