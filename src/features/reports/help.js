@@ -128,259 +128,94 @@ export const bulkDownloader = async ({
   }
 };
 
-export const taskDetailHeaders = [
-  '_id',
-  'flow',
-  'flowId',
-  'organizationId',
-  'parentId',
-  'subId',
-  'hub',
-  'hubId',
-  'title',
-  'content',
-  'label',
-  'orderIndex',
-  'status',
-  'startTime',
-  'endTime',
-  'updatedTime',
-  'assignee',
-  'assignedTo',
-  'assignedBy',
-  'assignedTime',
-  'createdBy',
-  'createdFrom',
-  'createdTime',
-  'doneBy',
-  'doneCoordinate',
-  'doneTime',
-  'openTaskTime',
-  'waitingTime',
-  'travelDuration',
-  'distance',
-  'eta',
-  'etd',
-  'assignedVehicleId',
-  'assignedVehicle',
-  'routePlannedOrder',
-  'expectedCoordinate',
-  'createdCoordinate',
-  'doneFrom',
-  'updatedBy',
-  'autoSplit',
-  'splitNumber',
-  'visitGroup',
-  'visitGroupPriority',
-  'inLocation',
-  'outLocation',
-  'travelDistance',
-  'taskType',
-  'workflow',
-  'page1DoneTime',
-  'page2DoneTime',
-  'page3DoneTime',
-  'Customer Name',
-  'Order ID',
-  'Type Storage',
-  'Volume',
-  'Weight',
-  'Address',
-  'Longlat',
-  'Open Time',
-  'Close Time',
-  'Visit Time',
-  'Maksimum Vehicle Type',
-  'Priority',
-  'Status GR',
-  'Alasan',
-  'Customer Order',
-  'Warehouse Name',
-  'Type Storage (typeStorage)',
-  'Volume (Cbm)',
-  'Weight (Kg)',
-  'Location ID',
-  'Total SO',
-  'Group Visit',
-  'Address Pickup',
-  'Longlat Pickup',
-  'Klik Jika Anda Sudah Sampai di Gudang',
-  'Customer',
-  'Location',
-  'Klik Jika Anda Sudah Sampai',
-  'Kondisi Toko atau Customer',
-  'Alasan Tidak Bisa Dikunjungi',
-  'Status Delivery',
-  'Alasan Tolakan',
-  'Alasan Batal',
-  'Nama Penerima PIC',
-  'GPS Sesuai',
-  'Klik Lokasi Client',
-  'Original Weight',
-  'Original Volume',
-  'Expected Vehicle',
-  'Vehicle Capacity',
-  'Split Notes',
-  'Is Split Task',
-  'Klik Jika Sudah Sampai',
-  'List Product',
-  'List barang pickup',
-  'List Product Tolakan',
-  'Photo Delivery',
-  'photoDelivery_0_url',
-  'photoDelivery_0_category',
-  'Tanda Tangan Penerima',
-  'tandaTanganPenerima_url',
-  'activity',
-  'routingResultId',
-];
+export async function validateRoutingFile(file) {
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
 
-export const taskDetailKeyMapping = {
-  _id: '_id',
-  flow: 'flow',
-  flowId: 'flowId',
-  organizationId: 'organizationId',
-  parentId: 'parentId',
-  subId: 'subId',
-  hub: 'hub',
-  hubId: 'hubId',
-  title: 'title',
-  content: 'content',
-  label: 'label',
-  orderIndex: 'orderIndex',
-  status: 'status',
-  startTime: 'startTime',
-  endTime: 'endTime',
-  updatedTime: 'updatedTime',
-  assignee: 'assignee',
-  assignedTo: 'assignedTo',
-  assignedBy: 'assignedBy',
-  assignedTime: 'assignedTime',
-  createdBy: 'createdBy',
-  createdFrom: 'createdFrom',
-  createdTime: 'createdTime',
-  doneBy: 'doneBy',
-  doneCoordinate: 'doneCoordinate',
-  doneTime: 'doneTime',
-  openTaskTime: 'openTaskTime',
-  waitingTime: 'waitingTime',
-  travelDuration: 'travelDuration',
-  distance: 'distance',
-  eta: 'eta',
-  etd: 'etd',
-  assignedVehicleId: 'assignedVehicleId',
-  assignedVehicle: 'assignedVehicle',
-  routePlannedOrder: 'routePlannedOrder',
-  expectedCoordinate: 'expectedCoordinate',
-  createdCoordinate: 'createdCoordinate',
-  doneFrom: 'doneFrom',
-  updatedBy: 'updatedBy',
-  autoSplit: 'autoSplit',
-  splitNumber: 'splitNumber',
-  visitGroup: 'visitGroup',
-  visitGroupPriority: 'visitGroupPriority',
-  inLocation: 'inLocation',
-  outLocation: 'outLocation',
-  travelDistance: 'travelDistance',
-  taskType: 'taskType',
-  workflow: 'workflow',
-  page1DoneTime: 'page1DoneTime',
-  page2DoneTime: 'page2DoneTime',
-  page3DoneTime: 'page3DoneTime',
-  'Customer Name': 'customerName',
-  'Order ID': 'orderId',
-  'Type Storage': 'typeStorage',
-  Volume: 'volume',
-  Weight: 'weight',
-  Address: 'address',
-  Longlat: 'longlat',
-  'Open Time': 'openTime',
-  'Close Time': 'closeTime',
-  'Visit Time': 'visitTime',
-  'Maksimum Vehicle Type': 'maksimumVehicleType',
-  Priority: 'priority',
-  'Status GR': 'statusGr',
-  Alasan: 'alasan',
-  'Customer Order': 'customerOrder',
-  'Warehouse Name': 'warehouseName',
-  'Type Storage (typeStorage)': 'typeStorage',
-  'Volume (Cbm)': 'volumeCbm',
-  'Weight (Kg)': 'weightKg',
-  'Location ID': 'locationId',
-  'Total SO': 'totalSo',
-  'Group Visit': 'groupVisit',
-  'Address Pickup': 'addressPickup',
-  'Longlat Pickup': 'longlatPickup',
-  'Klik Jika Anda Sudah Sampai di Gudang': 'klikJikaAndaSudahSampaiDiGudang',
-  Customer: 'customer',
-  Location: 'location',
-  'Klik Jika Anda Sudah Sampai': 'klikJikaSudahSampai',
-  'Kondisi Toko atau Customer': 'kondisiTokoAtauCustomer',
-  'Alasan Tidak Bisa Dikunjungi': 'alasanTidakBisaDikunjungi',
-  'Status Delivery': 'statusDelivery',
-  'Alasan Tolakan': 'alasanTolakan',
-  'Alasan Batal': 'alasanBatal',
-  'Nama Penerima PIC': 'namaPenerimaPic',
-  'GPS Sesuai': 'gpsSesuai',
-  'Klik Lokasi Client': 'klikLokasiClient',
-  'Original Weight': 'originalWeight',
-  'Original Volume': 'originalVolume',
-  'Expected Vehicle': 'expectedVehicle',
-  'Vehicle Capacity': 'vehicleCapacity',
-  'Split Notes': 'splitNotes',
-  'Is Split Task': 'isSplitTask',
-  'Klik Jika Sudah Sampai': 'klikJikaSudahSampai',
-  'List Product': 'listProduct',
-  'List barang pickup': 'listBarangPickup',
-  'List Product Tolakan': 'listProductTolakan',
-  'Photo Delivery': 'photoDelivery',
-  photoDelivery_0_url: 'photoDelivery_0_url',
-  photoDelivery_0_category: 'photoDelivery_0_category',
-  'Tanda Tangan Penerima': 'tandaTanganPenerima',
-  tandaTanganPenerima_url: 'tandaTanganPenerima_url',
-  activity: 'activity',
-  routingResultId: 'routingResultId',
-};
+    const firstSheetName = workbook.SheetNames[0];
+    const isSheetNameMatch = firstSheetName === 'Summary';
 
-export const tutorialData = {
-  routing: [
-    {
-      image: '/images/tutorial/routing/routing-1.png',
-      text: 'Masuk ke MileApp, lalu buka menu Routing (Rute) di sidebar. Pilih submenu Result (Hasil).',
-    },
-    {
-      image: '/images/tutorial/routing/routing-2.png',
-      text: 'Lakukan filter berdasarkan tanggal dilakukannya routing.',
-    },
-    {
-      image: '/images/tutorial/routing/routing-3.png',
-      text: 'Pilih hasil routing yang sudah di-dispatch (ditugaskan).',
-    },
-    {
-      image: '/images/tutorial/routing/routing-4.png',
-      text: 'Klik tombol Export (Ekspor). Lakukan untuk semua hasil routing.',
-    },
-  ],
-  delivery: [
-    {
-      image: '/images/tutorial/task/task-1.png',
-      text: 'Masuk ke MileApp, lalu buka menu Task (Tugas) di sidebar.',
-    },
-    {
-      image: '/images/tutorial/task/task-2.png',
-      text: 'Lakukan filter berdasarkan tanggal dilakukannya pengiriman. Gunakan filter Status dan Tanggal Pengiriman.',
-    },
-    {
-      image: '/images/tutorial/task/task-3.png',
-      text: 'Klik tombol Export (Ekspor), lalu klik Export Task (Ekspor Tugas).',
-    },
-    {
-      image: '/images/tutorial/task/task-4.png',
-      text: 'Buka menu Import & Export (Impor & Ekspor) di sidebar. Pilih submenu Data Export.',
-    },
-    {
-      image: '/images/tutorial/task/task-5.png',
-      text: 'Klik ikon unduh di kolom Action (Aksi) untuk mengunduh file Excel.',
-    },
-  ],
-};
+    const worksheet = workbook.Sheets[firstSheetName];
+    const getCellVal = (cellRef) => {
+      const cell = worksheet ? worksheet[cellRef] : null;
+      return cell ? String(cell.v).trim() : '';
+    };
+
+    const expectedHeaders = [
+      'Vehicle Optimized',
+      'Total Vehicle',
+      'Vehicle Percentage',
+      'Visit Optimized',
+      'Total Visit',
+      'Visit Percentage',
+      'Total Distance (m)',
+      'Average Speed (Km/h)',
+    ];
+
+    const cellRefs = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
+
+    let isCellsMatch = true;
+    for (let i = 0; i < expectedHeaders.length; i++) {
+      if (getCellVal(cellRefs[i]) !== expectedHeaders[i]) {
+        isCellsMatch = false;
+        break;
+      }
+    }
+
+    return isSheetNameMatch || isCellsMatch;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function validateTaskFile(file) {
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+    let headerRowClean = [];
+    let headerFound = false;
+
+    // Cari baris header yang mengandung assignedTo dan status delivery
+    for (let i = 0; i < Math.min(15, rows.length); i++) {
+      const rowStr = rows[i]
+        .join('')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+      if (rowStr.includes('assignedto') && rowStr.includes('statusdelivery')) {
+        headerRowClean = rows[i].map((h) =>
+          String(h || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+        );
+        headerFound = true;
+        break;
+      }
+    }
+
+    if (!headerFound) return false;
+
+    // Syarat wajib kolom-kolom Task baru (Sudah dibersihkan dari spasi/karakter aneh)
+    const requiredHeaders = [
+      'flow',
+      'starttime',
+      'assignedto',
+      'assignedvehicle',
+      'statusgr',
+      'alasan',
+      'customerorder',
+      'typestorage',
+      'statusdelivery',
+      'gpssesuai',
+    ];
+
+    const isMatch = requiredHeaders.every((req) => headerRowClean.includes(req));
+    return isMatch;
+  } catch (error) {
+    return false;
+  }
+}

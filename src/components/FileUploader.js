@@ -6,10 +6,20 @@ export default function FileUploader({
   onUpdateFiles,
   accept = '.xlsx, .xls',
   multiple = true,
+  validator,
 }) {
-  const handleFileChange = (e) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
+  const handleFileChange = async (e) => {
+    const file = e.target.files;
+    if (validator) {
+      const isContentValid = await validator(file[0]);
+      if (!isContentValid) {
+        toastError(`File '${file[0].name}' ditolak. \n Gunakan file yang benar!`);
+        return false;
+      }
+    }
+
+    if (file) {
+      const newFiles = Array.from(file);
       const existingNames = new Set(files.map((f) => f.name));
       let hasDuplicate = false;
 

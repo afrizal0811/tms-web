@@ -31,8 +31,8 @@ import {
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { tutorialData } from './help';
-
+import { tutorialData } from './constants';
+import { validateRoutingFile, validateTaskFile } from './help';
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
 export default function SingleReport({
@@ -418,11 +418,15 @@ export default function SingleReport({
           setIsModalOpen(false);
           setSelectedFiles([]);
         }}
-        title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : reportType === 'delivery' ? t('report.delivery_summary') : t('report.time_summary')}`}
+        title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : t('report.delivery_summary')}`}
         maxWidth="max-w-2xl w-[95%] sm:w-full"
       >
         <div className="p-4 flex flex-col gap-5">
-          <FileUploader files={selectedFiles} onUpdateFiles={setSelectedFiles} />
+          <FileUploader
+            files={selectedFiles}
+            onUpdateFiles={setSelectedFiles}
+            validator={reportType === 'routing' ? validateRoutingFile : validateTaskFile}
+          />
           <Accordion title="Tutorial" className="mt-2">
             <Carousel items={tutorialData[reportType] || []} />
           </Accordion>

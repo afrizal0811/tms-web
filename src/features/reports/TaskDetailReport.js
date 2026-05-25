@@ -19,7 +19,8 @@ import {
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { getDatesInRange, taskDetailHeaders, taskDetailKeyMapping } from './help';
+import { taskDetailHeaders } from './constants';
+import { getDatesInRange, taskDetailKeyMapping } from './help';
 
 const getNameValue = (val) => {
   if (!val) return '';
