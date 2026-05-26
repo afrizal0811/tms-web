@@ -12,9 +12,11 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import {
+  generateDeliveryWorkbook,
+  generateRoutingWorkbook,
+  generateTimeSummaryWorkbook,
+} from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,

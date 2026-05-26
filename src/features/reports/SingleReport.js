@@ -18,10 +18,7 @@ import {
 } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateManualRoutingWorkbook } from '@/lib/reportGenerators/routingManualReport';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+refactor: use barrel export for reportGenerators
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,

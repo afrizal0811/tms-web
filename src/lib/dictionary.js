@@ -289,6 +289,7 @@ export const dictionary = {
     excel: {
       routing: {
         filename: 'Ringkasan Routing',
+        filename_manual: 'Manual Ringkasan Routing',
         sheets: {
           dist_summary: 'Ringkasan Total Jarak',
           truck_detail: 'Detail Truk',
@@ -932,6 +933,7 @@ export const dictionary = {
     excel: {
       routing: {
         filename: 'Routing Summary',
+        filename_manual: 'Manual Routing Summary',
         sheets: {
           dist_summary: 'Total Distance Summary',
           truck_detail: 'Truck Detail',

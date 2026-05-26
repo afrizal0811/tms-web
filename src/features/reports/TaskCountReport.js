@@ -6,7 +6,7 @@ import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks, getTrash } from '@/lib/api';
 import { getCachedHubs, setCachedHubs } from '@/lib/localStorageHandler';
-import { generateTaskCountWorkbook } from '@/lib/reportGenerators/taskCountReport';
+import { generateTaskCountWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
 import { formatDateUniversal, formatLongDate, formatToApiUtc, isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';

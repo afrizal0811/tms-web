@@ -9,7 +9,7 @@ import RoutingInfo from '@/components/RoutingInfo';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
-import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
+import { generateRangkumanWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';

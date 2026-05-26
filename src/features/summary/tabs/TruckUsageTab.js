@@ -1,4 +1,4 @@
-import { calculateUsageSummary } from '@/lib/reportGenerators/rangkumanSheets/truckUsageSheet';
+import { calculateUsageSummary } from '@/lib/reportGenerators/rangkuman/sheets/truckUsageSheet';
 import { useEffect, useState } from 'react';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';

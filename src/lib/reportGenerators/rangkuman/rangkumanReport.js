@@ -3,26 +3,21 @@
 
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { getLocalStorage } from '../localStorageHandler';
-import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
+import { getLocalStorage } from '../../localStorageHandler';
 import {
+  calculateAverageKmData,
   calculatePendingReasonData,
-  generatePendingReasonSheet,
-} from './rangkumanSheets/pendingReasonSheet';
-import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
-import {
   calculateTimeDriverData,
-  generateTimeDriverSheet,
-} from './rangkumanSheets/timeDriverSheet';
-import { generateTimeROSheet } from './rangkumanSheets/timeROSheet';
-import {
   calculateTruckDetailData,
-  generateTruckDetailSheet,
-} from './rangkumanSheets/truckDetailSheet';
-import {
   calculateTruckUsageData,
+  generateAverageKmSheet,
+  generatePendingReasonSheet,
+  generateTaskSummarySheet,
+  generateTimeDriverSheet,
+  generateTimeROSheet,
+  generateTruckDetailSheet,
   generateTruckUsageSheet,
-} from './rangkumanSheets/truckUsageSheet';
+} from './sheets';
 
 export async function generateRangkumanDataPreview(
   driverData,
@@ -148,7 +143,7 @@ export async function generateRangkumanWorkbook(
     isIndo
   );
 
-  await generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
+  await generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate, isIndo);
   generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo);
 
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');

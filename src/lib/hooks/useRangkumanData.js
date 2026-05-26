@@ -10,7 +10,7 @@ import {
 } from '@/lib/api';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
+import { generateRangkumanDataPreview } from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toastHelper';
 import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import {
