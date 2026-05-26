@@ -17,6 +17,13 @@ function parseToNum(val) {
   return isNaN(num) ? 0 : num;
 }
 
+function ultraNormalize(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\s\-'"]/g, '')
+    .toLowerCase();
+}
+
 export async function generateManualRoutingWorkbook(
   fileBuffers,
   driverData,
@@ -56,7 +63,7 @@ export async function generateManualRoutingWorkbook(
         });
       }
       if (driver.plat) {
-        platMap.set(driver.plat.replace(/\s+/g, '').toLowerCase(), {
+        platMap.set(ultraNormalize(driver.plat), {
           name: driver.name,
           plat: driver.plat,
           storage: storage,
@@ -70,7 +77,7 @@ export async function generateManualRoutingWorkbook(
   if (mappingsObj) {
     Object.keys(mappingsObj).forEach((key) => {
       if (key) {
-        normalizedMappings[String(key).replace(/\s+/g, '').toLowerCase()] = mappingsObj[key];
+        normalizedMappings[ultraNormalize(key)] = mappingsObj[key];
       }
     });
   }
@@ -136,10 +143,9 @@ export async function generateManualRoutingWorkbook(
 
       if (!rawPlate && !rawAssignee) continue;
 
-      const canonicalPlate =
-        rawPlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+      const ultraPlate = ultraNormalize(rawPlate);
+      const canonicalPlate = ultraNormalize(rawAssignee || rawPlate) || `unknown-${Math.random()}`;
 
-      // Ubah value ke number dengan fungsi bantu agar lebih aman
       const weightPct = idxWeight !== -1 ? parseToNum(row[idxWeight]) : 0;
       const volumePct = idxVolume !== -1 ? parseToNum(row[idxVolume]) : 0;
       const totalDistM = idxDist !== -1 ? parseToNum(row[idxDist]) : 0;
@@ -147,7 +153,7 @@ export async function generateManualRoutingWorkbook(
 
       let driverInfo = emailMap.get(rawAssignee);
       if (!driverInfo && rawPlate) {
-        driverInfo = platMap.get(canonicalPlate);
+        driverInfo = platMap.get(ultraPlate);
       }
 
       const cleanPlat = driverInfo && driverInfo.plat ? driverInfo.plat : rawPlate;
@@ -157,7 +163,7 @@ export async function generateManualRoutingWorkbook(
           ? row[idxAssignee]
           : rawPlate;
       const storageType = driverInfo ? driverInfo.storage : 'DRY';
-      const vehicleType = driverInfo ? driverInfo.type : 'UNKNOWN';
+      const vehicleType = driverInfo ? driverInfo.type : null;
 
       if (!unifiedMap.has(canonicalPlate)) {
         unifiedMap.set(canonicalPlate, {
@@ -169,7 +175,7 @@ export async function generateManualRoutingWorkbook(
           shipDurationRaw: spentTimeMins,
           storage: storageType,
           vehicleType: vehicleType,
-          originalPlateForMap: rawPlate, // Simpan untuk referensi mapping
+          originalPlateForMap: rawPlate,
         });
       } else {
         const existing = unifiedMap.get(canonicalPlate);
@@ -184,18 +190,18 @@ export async function generateManualRoutingWorkbook(
   let totalDryKm = 0;
   let totalFrozenKm = 0;
   const truckUsageCount = {};
+  const validVehicleTypeNames = vehicleTypes.map((v) => String(v.name).toUpperCase());
 
-  vehicleTypes.forEach((v) => {
-    truckUsageCount[v.name] = { Dry: 0, Frozen: 0 };
+  // Inisialisasi hitungan tipe master
+  validVehicleTypeNames.forEach((v) => {
+    truckUsageCount[v] = { Dry: 0, Frozen: 0 };
   });
 
-  const validVehicleTypeNames = vehicleTypes.map((v) => String(v.name).toUpperCase());
   const finalRows = [];
 
-  unifiedMap.forEach((data, canonicalPlate) => {
+  unifiedMap.forEach((data, canonicalKey) => {
     finalRows.push(data);
 
-    // Jangan dikonversi untuk Sheet Truck Detail, konversi ke KM hanya untuk Summary
     const distKm = data.totalDistance / 1000;
     if (data.storage === 'FROZEN') {
       totalFrozenKm += distKm;
@@ -204,17 +210,41 @@ export async function generateManualRoutingWorkbook(
     }
 
     let category = '';
-    const basePlateStr = data.plat ? String(data.plat).replace(/\s+/g, '').toLowerCase() : '';
-    const originalRawStr = data.originalPlateForMap
-      ? String(data.originalPlateForMap).replace(/\s+/g, '').toLowerCase()
-      : canonicalPlate;
+    const originalRawStr = ultraNormalize(data.originalPlateForMap || canonicalKey);
+    const basePlateStr = ultraNormalize(data.plat);
+    const dbKeys = Object.keys(normalizedMappings);
 
-    // Mapping perbaikan: Gunakan getBasePlate terlebih dahulu, lalu Fallback
+    // Proses pencarian mapping
+    let mapped = false;
     if (basePlateStr && normalizedMappings[basePlateStr]) {
-      category = String(normalizedMappings[basePlateStr]).toUpperCase();
-    } else if (normalizedMappings[originalRawStr]) {
-      category = String(normalizedMappings[originalRawStr]).toUpperCase();
+      category = normalizedMappings[basePlateStr];
+      mapped = true;
+    } else if (originalRawStr && normalizedMappings[originalRawStr]) {
+      category = normalizedMappings[originalRawStr];
+      mapped = true;
     } else {
+      for (const dbKey of dbKeys) {
+        if (
+          dbKey.length > 3 &&
+          (originalRawStr.includes(dbKey) || dbKey.includes(originalRawStr))
+        ) {
+          category = normalizedMappings[dbKey];
+          mapped = true;
+          break;
+        }
+      }
+      if (!mapped && basePlateStr) {
+        for (const dbKey of dbKeys) {
+          if (dbKey.length > 3 && (basePlateStr.includes(dbKey) || dbKey.includes(basePlateStr))) {
+            category = normalizedMappings[dbKey];
+            mapped = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!mapped) {
       let tempCategory = data.vehicleType;
       if (tempCategory && typeof tempCategory === 'string') {
         const parts = tempCategory.split('-');
@@ -225,26 +255,25 @@ export async function generateManualRoutingWorkbook(
           }
         }
         category = specificType;
-      }
-    }
-
-    category = category ? category.toUpperCase() : 'UNKNOWN';
-
-    // Cek agar nilai tidak sesuai standar seperti DIKICI/AANG dikembalikan ke UNKNOWN jika tidak ada kecocokan
-    if (!validVehicleTypeNames.includes(category)) {
-      const matchedValid = validVehicleTypeNames.find((v) => category.includes(v));
-      category = matchedValid || 'UNKNOWN';
-    }
-
-    if (category !== 'UNKNOWN') {
-      if (!truckUsageCount[category]) {
-        truckUsageCount[category] = { Dry: 0, Frozen: 0 };
-      }
-      if (data.storage === 'FROZEN') {
-        truckUsageCount[category]['Frozen'] += 1;
       } else {
-        truckUsageCount[category]['Dry'] += 1;
+        category = tempCategory; // Pertahankan nilai aslinya jika null/empty
       }
+    }
+
+    if (category && typeof category === 'string') {
+      category = category.toUpperCase();
+    }
+
+    const catKey = category || '';
+
+    if (!truckUsageCount[catKey]) {
+      truckUsageCount[catKey] = { Dry: 0, Frozen: 0 };
+    }
+
+    if (data.storage === 'FROZEN') {
+      truckUsageCount[catKey]['Frozen'] += 1;
+    } else {
+      truckUsageCount[catKey]['Dry'] += 1;
     }
   });
 
@@ -259,7 +288,7 @@ export async function generateManualRoutingWorkbook(
       row.driver,
       row.weightPercentage > 0 ? `${parseFloat(row.weightPercentage).toFixed(1)}%` : null,
       row.volumePercentage > 0 ? `${parseFloat(row.volumePercentage).toFixed(1)}%` : null,
-      row.totalDistance > 0 ? Number(row.totalDistance) : null, // Pastikan number tanpa konversi KM
+      row.totalDistance > 0 ? Number(row.totalDistance) : null,
       null,
       null,
       formatMinutesToHHMM(row.shipDurationRaw),
@@ -294,15 +323,13 @@ export async function generateManualRoutingWorkbook(
   }));
   XLSX.utils.book_append_sheet(wb, wsTruckDetail, sheetNames.truckDetail);
 
-  const distanceSummaryData = [headers.distanceSummary, [totalDryKm, totalFrozenKm]];
+  const formattedDryKm = Number(totalDryKm.toFixed(3));
+  const formattedFrozenKm = Number(totalFrozenKm.toFixed(3));
+
+  const distanceSummaryData = [headers.distanceSummary, [formattedDryKm, formattedFrozenKm]];
 
   const wsDistanceSummary = XLSX.utils.aoa_to_sheet(distanceSummaryData);
-
-  // Tambahkan 3 angka dibelakang koma pada format style 'z'
-  const distanceDataStyleWithDecimals = {
-    ...reportStyles.distanceDataStyle,
-    z: '0.000',
-  };
+  const distanceDataStyleWithDecimals = { ...reportStyles.distanceDataStyle, z: '0.000' };
 
   wsDistanceSummary['A1'] = {
     v: headers.distanceSummary[0],
@@ -314,24 +341,43 @@ export async function generateManualRoutingWorkbook(
     t: 's',
     s: reportStyles.distanceHeaderStyle,
   };
-  wsDistanceSummary['A2'] = { v: totalDryKm, t: 'n', s: distanceDataStyleWithDecimals };
-  wsDistanceSummary['B2'] = { v: totalFrozenKm, t: 'n', s: distanceDataStyleWithDecimals };
+  wsDistanceSummary['A2'] = { v: formattedDryKm, t: 'n', s: distanceDataStyleWithDecimals };
+  wsDistanceSummary['B2'] = { v: formattedFrozenKm, t: 'n', s: distanceDataStyleWithDecimals };
 
   wsDistanceSummary['!cols'] = reportColumns.distanceSummary;
   XLSX.utils.book_append_sheet(wb, wsDistanceSummary, sheetNames.distSummary);
 
-  const dynamicTypes = Object.keys(truckUsageCount).filter(
-    (t) => !vehicleTypes.some((vt) => vt.name === t)
-  );
-  const allTypes = [...vehicleTypes.map((v) => v.name), ...dynamicTypes];
+  const finalUsageData = [headers.truckUsage];
 
-  const usageDataRows = allTypes.map((type) => {
-    const dryCount = truckUsageCount[type]['Dry'];
-    const frozenCount = truckUsageCount[type]['Frozen'];
-    return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];
+  // Tipe terdaftar master (Selalu di push agar CDD-Long sampai Carry tetap ada walau kosong)
+  validVehicleTypeNames.forEach((type) => {
+    if (truckUsageCount[type]) {
+      const dryCount = truckUsageCount[type]['Dry'];
+      const frozenCount = truckUsageCount[type]['Frozen'];
+
+      finalUsageData.push([
+        type,
+        dryCount > 0 ? dryCount : null,
+        frozenCount > 0 ? frozenCount : null,
+      ]);
+
+      delete truckUsageCount[type]; // Hapus setelah diproses agar tidak duplikat
+    }
   });
 
-  const finalUsageData = [headers.truckUsage, ...usageDataRows];
+  // Tipe lainnya dan nilai yang kosong (Hanya dimunculkan jika ada isinya)
+  Object.keys(truckUsageCount).forEach((type) => {
+    const dryCount = truckUsageCount[type]['Dry'];
+    const frozenCount = truckUsageCount[type]['Frozen'];
+    if (dryCount > 0 || frozenCount > 0) {
+      finalUsageData.push([
+        type === '' ? null : type,
+        dryCount > 0 ? dryCount : null,
+        frozenCount > 0 ? frozenCount : null,
+      ]);
+    }
+  });
+
   const wsTruckUsage = XLSX.utils.aoa_to_sheet(finalUsageData);
 
   wsTruckUsage['A1'].s = reportStyles.distanceHeaderStyle;
@@ -353,7 +399,7 @@ export async function generateManualRoutingWorkbook(
   XLSX.utils.book_append_sheet(wb, wsTruckUsage, sheetNames.truckUsage);
 
   const formattedDate = formatDateUniversal(dateForFile, 'DD.MM.YYYY');
-  const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
+  const excelFileName = `${translate('excel.routing.filename_manual') || 'Routing Report Manual'} - ${formattedDate} - ${hubName}.xlsx`;
 
   return { wb, excelFileName };
 }
