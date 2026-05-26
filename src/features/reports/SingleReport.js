@@ -19,6 +19,7 @@ import {
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
+import { generateManualRoutingWorkbook } from '@/lib/reportGenerators/routingManualReport';
 import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
 import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
@@ -33,6 +34,7 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { tutorialData } from './constants';
 import { validateRoutingFile, validateTaskFile } from './help';
+
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
 export default function SingleReport({
@@ -46,6 +48,7 @@ export default function SingleReport({
 }) {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManualProcessing, setIsManualProcessing] = useState(false);
   const [reportType, setReportType] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const initialDate = parseDate(formatDateUniversal(new Date()));
@@ -174,7 +177,6 @@ export default function SingleReport({
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
       const { storedLocationAcronym } = getLocalStorage();
 
-      // Penentuan payload secara dinamis untuk dikirim ke getResultsSummary
       const summaryPayload = isCustomRouting
         ? {
             dateFrom: `${targetRoutingStr} 00:00:00`,
@@ -283,6 +285,67 @@ export default function SingleReport({
     } finally {
       setCurrentRunning(null);
       if (setIsAnyLoading) setIsAnyLoading(false);
+    }
+  };
+
+  const handleManualDownload = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) {
+      toastError(t('common.toast.error', { err: 'Pilih file excel terlebih dahulu' }));
+      return;
+    }
+
+    try {
+      await driversCheck();
+      setIsManualProcessing(true);
+
+      const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
+
+      const { storedLocationAcronym } = getLocalStorage();
+      const hubLabel = storedLocationAcronym || selectedLocationName;
+
+      let targetRoutingDateObj;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(routingDate);
+      } else {
+        if (!selectedDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(selectedDate);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0)
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+      }
+      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+
+      if (reportType === 'routing') {
+        const vehicleTypesObj = await getVehicleTypes();
+        const mappingsDB = await getVehicleMappings();
+        const mappingsObj = mappingsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
+        const { wb, excelFileName } = await generateManualRoutingWorkbook(
+          fileBuffers,
+          driverData,
+          mappingsObj,
+          targetRoutingStr,
+          hubLabel,
+          t,
+          vehicleTypesObj
+        );
+
+        XLSX.writeFile(wb, excelFileName);
+        toastSuccess(t('common.toast.success'));
+
+        setIsModalOpen(false);
+        setSelectedFiles([]);
+      } else if (reportType === 'delivery') {
+        toastError('Report manual untuk Delivery belum tersedia.');
+      }
+    } catch (err) {
+      toastError(err.message || String(err));
+    } finally {
+      setIsManualProcessing(false);
     }
   };
 
@@ -420,6 +483,14 @@ export default function SingleReport({
         }}
         title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : t('report.delivery_summary')}`}
         maxWidth="max-w-2xl w-[95%] sm:w-full"
+        footer={
+          <Button
+            text={t('common.download')}
+            onClick={handleManualDownload}
+            isLoading={isManualProcessing}
+            disabled={selectedFiles.length === 0 || isManualProcessing}
+          />
+        }
       >
         <div className="p-4 flex flex-col gap-5">
           <FileUploader

@@ -8,6 +8,12 @@ import {
   isEmpty,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import {
+  getRoutingHeaders,
+  getRoutingSheetNames,
+  reportColumns,
+  reportStyles,
+} from './routingConfig';
 
 function formatSimpleTime(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return '-';
@@ -24,6 +30,8 @@ export async function generateRoutingWorkbook(
   vehicleTypes
 ) {
   const translate = t || ((key) => key);
+  const headers = getRoutingHeaders(translate);
+  const sheetNames = getRoutingSheetNames(translate);
 
   const emailMap = {};
   const platMap = {};
@@ -275,27 +283,6 @@ export async function generateRoutingWorkbook(
 
   const wb = XLSX.utils.book_new();
 
-  const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
-  const defaultHeaderStyle = { ...centerStyle, font: { bold: true } };
-  const greenHeaderStyle = {
-    ...centerStyle,
-    font: { bold: true },
-    fill: { patternType: 'solid', fgColor: { rgb: '84FA92' } },
-  };
-
-  const headers1 = [
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('excel.routing.headers.weight_pct'),
-    translate('excel.routing.headers.volume_pct'),
-    translate('excel.routing.headers.total_dist'),
-    translate('excel.routing.headers.total_visits'),
-    translate('excel.routing.headers.total_delivery'),
-    translate('excel.routing.headers.ship_dur'),
-    translate('excel.routing.headers.eta_first'),
-    translate('excel.routing.headers.etd_hub'),
-  ];
-
   const seenIdentifiers = new Set();
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
@@ -364,7 +351,7 @@ export async function generateRoutingWorkbook(
   });
 
   const finalSheetData1 = [
-    headers1,
+    headers.truckDetail,
     ...excelDataRows.map((row) => [
       row.Plat,
       row.Driver,
@@ -381,15 +368,6 @@ export async function generateRoutingWorkbook(
 
   const wsTruckDetail = XLSX.utils.aoa_to_sheet(finalSheetData1);
   const range1 = XLSX.utils.decode_range(wsTruckDetail['!ref']);
-  const centerAlignedDataColumns1 = [2, 3, 4, 7, 8, 9];
-  const greenHeaders = [
-    translate('excel.routing.headers.weight_pct'),
-    translate('excel.routing.headers.volume_pct'),
-    translate('excel.routing.headers.total_dist'),
-    translate('excel.routing.headers.total_visits'),
-    translate('excel.routing.headers.total_delivery'),
-    translate('excel.routing.headers.ship_dur'),
-  ];
 
   for (let R = range1.s.r; R <= range1.e.r; ++R) {
     for (let C = range1.s.c; C <= range1.e.c; ++C) {
@@ -398,63 +376,42 @@ export async function generateRoutingWorkbook(
 
       if (R === 0) {
         const headerName = finalSheetData1[0][C];
-        wsTruckDetail[cellRef].s = greenHeaders.includes(headerName)
-          ? greenHeaderStyle
-          : defaultHeaderStyle;
-      } else if (centerAlignedDataColumns1.includes(C)) {
-        wsTruckDetail[cellRef].s = centerStyle;
+        wsTruckDetail[cellRef].s = headers.truckDetailGreen.includes(headerName)
+          ? reportStyles.greenHeaderStyle
+          : reportStyles.defaultHeaderStyle;
+      } else if (reportColumns.truckDetailCenterAligned.includes(C)) {
+        wsTruckDetail[cellRef].s = reportStyles.centerStyle;
       }
     }
   }
 
-  wsTruckDetail['!cols'] = headers1.map((_, i) => ({
+  wsTruckDetail['!cols'] = headers.truckDetail.map((_, i) => ({
     wch:
       finalSheetData1.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0) +
       2,
   }));
-  XLSX.utils.book_append_sheet(wb, wsTruckDetail, translate('excel.routing.sheets.truck_detail'));
+  XLSX.utils.book_append_sheet(wb, wsTruckDetail, sheetNames.truckDetail);
 
   const totalDryKm = totalDryDistance / 1000;
   const totalFrozenKm = totalFrozenDistance / 1000;
-  const distanceSummaryData = [
-    [translate('excel.routing.headers.dry_km'), translate('excel.routing.headers.frozen_km')],
-    [totalDryKm, totalFrozenKm],
-  ];
+  const distanceSummaryData = [headers.distanceSummary, [totalDryKm, totalFrozenKm]];
+
   const wsDistanceSummary = XLSX.utils.aoa_to_sheet(distanceSummaryData);
-  const distanceHeaderStyle = {
-    font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  const distanceDataStyle = {
-    alignment: { horizontal: 'center', vertical: 'center' },
-    t: 'n',
-    z: '0.00',
-  };
 
   wsDistanceSummary['A1'] = {
-    v: translate('excel.routing.headers.dry_km'),
+    v: headers.distanceSummary[0],
     t: 's',
-    s: distanceHeaderStyle,
+    s: reportStyles.distanceHeaderStyle,
   };
   wsDistanceSummary['B1'] = {
-    v: translate('excel.routing.headers.frozen_km'),
+    v: headers.distanceSummary[1],
     t: 's',
-    s: distanceHeaderStyle,
+    s: reportStyles.distanceHeaderStyle,
   };
-  wsDistanceSummary['A2'] = { v: totalDryKm, t: 'n', s: distanceDataStyle };
-  wsDistanceSummary['B2'] = { v: totalFrozenKm, t: 'n', s: distanceDataStyle };
-  wsDistanceSummary['!cols'] = [{ wch: 15 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(
-    wb,
-    wsDistanceSummary,
-    translate('excel.routing.sheets.dist_summary')
-  );
-
-  const usageHeader = [
-    translate('common.vehicle_type'),
-    translate('excel.routing.headers.count_dry'),
-    translate('excel.routing.headers.count_frozen'),
-  ];
+  wsDistanceSummary['A2'] = { v: totalDryKm, t: 'n', s: reportStyles.distanceDataStyle };
+  wsDistanceSummary['B2'] = { v: totalFrozenKm, t: 'n', s: reportStyles.distanceDataStyle };
+  wsDistanceSummary['!cols'] = reportColumns.distanceSummary;
+  XLSX.utils.book_append_sheet(wb, wsDistanceSummary, sheetNames.distSummary);
 
   const dynamicTypes = Object.keys(truckUsageCount).filter((t) => !vehicleTypes.includes(t));
   const allTypes = [...vehicleTypes, ...dynamicTypes];
@@ -465,14 +422,12 @@ export async function generateRoutingWorkbook(
     return [type, dryCount > 0 ? dryCount : null, frozenCount > 0 ? frozenCount : null];
   });
 
-  const finalUsageData = [usageHeader, ...usageDataRows];
+  const finalUsageData = [headers.truckUsage, ...usageDataRows];
   const wsTruckUsage = XLSX.utils.aoa_to_sheet(finalUsageData);
-  const usageDataNumStyle = { alignment: { horizontal: 'center', vertical: 'center' }, t: 'n' };
-  const usageDataLabelStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
 
-  wsTruckUsage['A1'].s = distanceHeaderStyle;
-  wsTruckUsage['B1'].s = distanceHeaderStyle;
-  wsTruckUsage['C1'].s = distanceHeaderStyle;
+  wsTruckUsage['A1'].s = reportStyles.distanceHeaderStyle;
+  wsTruckUsage['B1'].s = reportStyles.distanceHeaderStyle;
+  wsTruckUsage['C1'].s = reportStyles.distanceHeaderStyle;
 
   finalUsageData.forEach((row, R) => {
     if (R === 0) return;
@@ -480,21 +435,13 @@ export async function generateRoutingWorkbook(
     const bRef = `B${R + 1}`;
     const cRef = `C${R + 1}`;
 
-    if (wsTruckUsage[aRef]) wsTruckUsage[aRef].s = usageDataLabelStyle;
-    if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = usageDataNumStyle;
-    if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = usageDataNumStyle;
+    if (wsTruckUsage[aRef]) wsTruckUsage[aRef].s = reportStyles.usageDataLabelStyle;
+    if (wsTruckUsage[bRef]) wsTruckUsage[bRef].s = reportStyles.usageDataNumStyle;
+    if (wsTruckUsage[cRef]) wsTruckUsage[cRef].s = reportStyles.usageDataNumStyle;
   });
 
-  wsTruckUsage['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsTruckUsage, translate('excel.routing.sheets.truck_usage'));
-
-  const helpHeader = [
-    translate('excel.routing.headers.routing_id'),
-    translate('excel.routing.headers.routing_name'),
-    translate('excel.routing.headers.created_by'),
-    translate('excel.routing.headers.created_at'),
-    translate('excel.routing.headers.routing_result'),
-  ];
+  wsTruckUsage['!cols'] = reportColumns.truckUsage;
+  XLSX.utils.book_append_sheet(wb, wsTruckUsage, sheetNames.truckUsage);
 
   const helpDataRows = [];
   const sortedHelpItems = filteredResults
@@ -535,27 +482,26 @@ export async function generateRoutingWorkbook(
     helpDataRows.push([routingId, routingName, createdBy, routingTime, routingResult]);
   });
 
-  const finalHelpData = [helpHeader, ...helpDataRows];
+  const finalHelpData = [headers.help, ...helpDataRows];
   const wsHelp = XLSX.utils.aoa_to_sheet(finalHelpData);
-  const helpDataStyle = { alignment: { horizontal: 'left', vertical: 'center' } };
 
-  wsHelp['A1'].s = distanceHeaderStyle;
-  wsHelp['B1'].s = distanceHeaderStyle;
-  wsHelp['C1'].s = distanceHeaderStyle;
-  wsHelp['D1'].s = distanceHeaderStyle;
-  wsHelp['E1'].s = distanceHeaderStyle;
+  wsHelp['A1'].s = reportStyles.distanceHeaderStyle;
+  wsHelp['B1'].s = reportStyles.distanceHeaderStyle;
+  wsHelp['C1'].s = reportStyles.distanceHeaderStyle;
+  wsHelp['D1'].s = reportStyles.distanceHeaderStyle;
+  wsHelp['E1'].s = reportStyles.distanceHeaderStyle;
 
   helpDataRows.forEach((row, idx) => {
     const rowNum = idx + 2;
-    if (wsHelp[`A${rowNum}`]) wsHelp[`A${rowNum}`].s = helpDataStyle;
-    if (wsHelp[`B${rowNum}`]) wsHelp[`B${rowNum}`].s = helpDataStyle;
-    if (wsHelp[`C${rowNum}`]) wsHelp[`C${rowNum}`].s = helpDataStyle;
-    if (wsHelp[`D${rowNum}`]) wsHelp[`D${rowNum}`].s = helpDataStyle;
-    if (wsHelp[`E${rowNum}`]) wsHelp[`E${rowNum}`].s = helpDataStyle;
+    if (wsHelp[`A${rowNum}`]) wsHelp[`A${rowNum}`].s = reportStyles.helpDataStyle;
+    if (wsHelp[`B${rowNum}`]) wsHelp[`B${rowNum}`].s = reportStyles.helpDataStyle;
+    if (wsHelp[`C${rowNum}`]) wsHelp[`C${rowNum}`].s = reportStyles.helpDataStyle;
+    if (wsHelp[`D${rowNum}`]) wsHelp[`D${rowNum}`].s = reportStyles.helpDataStyle;
+    if (wsHelp[`E${rowNum}`]) wsHelp[`E${rowNum}`].s = reportStyles.helpDataStyle;
   });
 
-  wsHelp['!cols'] = [{ wch: 28 }, { wch: 30 }, { wch: 20 }, { wch: 22 }, { wch: 45 }];
-  XLSX.utils.book_append_sheet(wb, wsHelp, translate('excel.routing.sheets.help'));
+  wsHelp['!cols'] = reportColumns.help;
+  XLSX.utils.book_append_sheet(wb, wsHelp, sheetNames.help);
 
   const formattedDate = formatDateUniversal(dateForFile, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.routing.filename')} - ${formattedDate} - ${hubName}.xlsx`;
