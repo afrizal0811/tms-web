@@ -20,6 +20,7 @@ import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
   generateDeliveryWorkbook,
+  generateManualDeliveryWorkbook,
   generateManualRoutingWorkbook,
   generateRoutingWorkbook,
   generateTimeSummaryWorkbook,
@@ -342,7 +343,28 @@ export default function SingleReport({
         setIsModalOpen(false);
         setSelectedFiles([]);
       } else if (reportType === 'delivery') {
-        toastError('Report manual untuk Delivery belum tersedia.');
+        const [hubsData] = await Promise.all([getHubs()]);
+
+        const activeHub = (hubsData || []).find(
+          (h) => String(h._id || h.id) === String(selectedLocation)
+        );
+        const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
+
+        const { wb, excelFileName } = await generateManualDeliveryWorkbook(
+          fileBuffers,
+          driverData,
+          selectedDateString,
+          targetRoutingStr, 
+          hubLabel,
+          hasPendingGR,
+          t
+        );
+
+        XLSX.writeFile(wb, excelFileName);
+        toastSuccess(t('common.toast.success'));
+
+        setIsModalOpen(false);
+        setSelectedFiles([]);
       }
     } catch (err) {
       toastError(err.message || String(err));

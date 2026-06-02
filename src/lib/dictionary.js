@@ -321,6 +321,7 @@ export const dictionary = {
       },
       delivery: {
         filename: 'Ringkasan Pengiriman',
+        filename_manual: 'Manual Ringkasan Pengiriman',
         info_longlat: 'Jarak secara garis lurus',
         info_within_hours: 'Waktu kedatangan aktual dalam rentang waktu buka dan tutup pelanggan',
         info_wrong_status:
@@ -965,6 +966,7 @@ export const dictionary = {
       },
       delivery: {
         filename: 'Delivery Summary',
+        filename_manual: 'Manual Delivery Summary',
         info_longlat: 'Straight-line distance',
         info_within_hours: 'Actual arrival time within the customer operating hours',
         info_wrong_status:
