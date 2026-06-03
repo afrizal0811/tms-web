@@ -22,19 +22,32 @@ import {
   reportStyles,
 } from './help';
 
-// Ekstraksi YYYY-MM-DD dari format tanggal string
 function extractDateOnly(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return null;
   const parts = dateStr.split(/[T\s]/);
   return parts[0] || null;
 }
 
-// Ekstraksi dan re-format tanggal untuk Info Beda Hari (ke DD-MM-YYYY)
 function extractAndFormatDDMMYYYY(dateStr) {
   const datePart = extractDateOnly(dateStr);
   if (!datePart) return '';
   const [y, m, d] = datePart.split('-');
   return y && m && d ? `${d}-${m}-${y}` : datePart;
+}
+
+function getMajority(arr) {
+  if (!arr || arr.length === 0) return null;
+  const counts = {};
+  let max = 0;
+  let res = arr[0];
+  for (const val of arr) {
+    counts[val] = (counts[val] || 0) + 1;
+    if (counts[val] > max) {
+      max = counts[val];
+      res = val;
+    }
+  }
+  return res;
 }
 
 export async function generateManualDeliveryWorkbook(
@@ -55,7 +68,6 @@ export async function generateManualDeliveryWorkbook(
   const headers = getDeliveryHeaders(translate, isSpecialHub);
   const sheetNames = getDeliverySheetNames(translate);
 
-  // 1. Mapping Master Driver
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     if (normalizedEmail) {
@@ -67,11 +79,10 @@ export async function generateManualDeliveryWorkbook(
   const driverStats = new Map();
   let allTaskDataForSequence = [];
   let updateLonglatData = [];
+  const allAssignedDates = [];
 
-  // 2. Parsing Multi-File Excel Manual
   for (const fileBuffer of fileBuffers) {
     const wbInput = XLSX.read(fileBuffer, { type: 'array' });
-    // Gunakan sheet "Main" atau sheet pertama jika tidak bernama "Main"
     const targetSheetName =
       wbInput.SheetNames.find((s) => s.toLowerCase() === 'main') || wbInput.SheetNames[0];
     const rawRows = XLSX.utils.sheet_to_json(wbInput.Sheets[targetSheetName], { header: 1 });
@@ -99,7 +110,6 @@ export async function generateManualDeliveryWorkbook(
       typeof h === 'string' ? h.toLowerCase().trim() : ''
     );
 
-    // Identifikasi Indeks Kolom
     const idxAssignee = excelHeaders.findIndex((h) => h === 'assignee');
     const idxFlow = excelHeaders.findIndex((h) => h === 'flow');
     const idxCustOrder = excelHeaders.findIndex((h) => h === 'customer order');
@@ -124,8 +134,8 @@ export async function generateManualDeliveryWorkbook(
     const idxExpectedCoord = excelHeaders.findIndex((h) => h === 'expectedcoordinate');
     const idxGpsSesuai = excelHeaders.findIndex((h) => h === 'gps sesuai');
     const idxTitle = excelHeaders.findIndex((h) => h === 'title');
+    const idxAssignedTime = excelHeaders.findIndex((h) => h === 'assignedtime');
 
-    // 3. Ekstraksi Baris Data
     for (let i = headerRowIdx + 1; i < rawRows.length; i++) {
       const row = rawRows[i];
       if (!row || row.length === 0) continue;
@@ -135,6 +145,18 @@ export async function generateManualDeliveryWorkbook(
       const driverEmail = normalizeEmail(rawAssignee);
       const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
       const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
+
+      const assignedTime =
+        idxAssignedTime !== -1 && row[idxAssignedTime] ? String(row[idxAssignedTime]) : null;
+      if (assignedTime) {
+        const datePart = assignedTime.split(/[T\s]/)[0];
+        const p = datePart.split('-');
+        if (p.length === 3) {
+          allAssignedDates.push(`${p[2]}.${p[1]}.${p[0]}`);
+        } else if (datePart.includes('/')) {
+          allAssignedDates.push(datePart.replace(/\//g, '.'));
+        }
+      }
 
       const rawCustOrder =
         idxCustOrder !== -1 && row[idxCustOrder] ? String(row[idxCustOrder]) : '';
@@ -168,7 +190,6 @@ export async function generateManualDeliveryWorkbook(
         idxTypeStorage !== -1 && row[idxTypeStorage] ? String(row[idxTypeStorage]) : '';
       const visitTime = idxVisitTime !== -1 && row[idxVisitTime] ? row[idxVisitTime] : null;
 
-      // Stats untuk Sheet Total Delivered
       if (driverName !== 'N/A') {
         const stats = driverStats.get(driverName) || {
           totalOutlet: 0,
@@ -205,7 +226,6 @@ export async function generateManualDeliveryWorkbook(
         driverStats.set(driverName, stats);
       }
 
-      // Timing Logic
       const page1DoneTime = idxPage1 !== -1 && row[idxPage1] ? String(row[idxPage1]) : null;
       const page3DoneTime = idxPage3 !== -1 && row[idxPage3] ? String(row[idxPage3]) : null;
       const klikSampai =
@@ -261,7 +281,7 @@ export async function generateManualDeliveryWorkbook(
         driverEmail: driverEmail,
         driver: driverName,
         plat: driverInfo ? driverInfo.plat : null,
-        actualDepartureTimestamp: actualDeparture ? new Date(actualDeparture).getTime() : null, // Sorting base
+        actualDepartureTimestamp: actualDeparture ? new Date(actualDeparture).getTime() : null,
         roSequence: isNaN(routePlannedOrder) ? null : routePlannedOrder,
         statusLabel: statusLabel,
         isMigrated: isMigrated,
@@ -283,16 +303,15 @@ export async function generateManualDeliveryWorkbook(
         visitTime: visitTime,
         actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
         customerId: customerId,
-        invoiceNumber: invoiceNumber || orderId, // Priority
+        invoiceNumber: invoiceNumber || orderId,
         temperature: typeStorage || extractTempFromDriverName(driverName),
-        realSequence: 0, // Placeholder
+        realSequence: 0,
         startTimeFormatted: startTime
           ? extractAndFormatDDMMYYYY(startTime).replace(/-/g, '/')
           : '-',
         isWithinHoursStatus: hoursStatus,
       });
 
-      // Map Coordinate Updates
       const gpsSesuai =
         idxGpsSesuai !== -1 && row[idxGpsSesuai] ? String(row[idxGpsSesuai]).toUpperCase() : '';
       const klikLokasi =
@@ -312,7 +331,6 @@ export async function generateManualDeliveryWorkbook(
     }
   }
 
-  // 4. Kalkulasi Ranking Sequence Aktual
   allTaskDataForSequence.sort((a, b) => {
     const driverCompare = a.driver.localeCompare(b.driver);
     if (driverCompare !== 0) return driverCompare;
@@ -346,8 +364,9 @@ export async function generateManualDeliveryWorkbook(
 
   const wb = XLSX.utils.book_new();
 
-  // --- SHEET 0: Routing Date ---
-  const routingDateStr = formatDateUniversal(apiDate, 'DD.MM.YYYY');
+  const majorityAssignedDate = getMajority(allAssignedDates);
+  const routingDateStr = majorityAssignedDate || formatDateUniversal(apiDate, 'DD.MM.YYYY');
+
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
     [routingDateStr, null, null, null, null, null, null],
@@ -361,7 +380,6 @@ export async function generateManualDeliveryWorkbook(
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
   XLSX.utils.book_append_sheet(wb, wsRoutingDate, sheetNames.routingDate);
 
-  // --- SHEET 1: Total Delivered ---
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
     if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return false;
@@ -496,7 +514,6 @@ export async function generateManualDeliveryWorkbook(
   });
   XLSX.utils.book_append_sheet(wb, wsDelivered, sheetNames.totalDelivered);
 
-  // --- SHEET 2: Pending SO Result ---
   const pendingSOData = allTaskDataForSequence.filter(
     (row) => PENDING_SHEET_STATUSES.includes(row.statusLabel) || row.isMigrated
   );
@@ -515,7 +532,7 @@ export async function generateManualDeliveryWorkbook(
       const dataRow = [
         row.flow,
         row.invoiceNumber,
-        row.startTimeFormatted,
+        routingDateStr.replace(/\./g, '/'),
         getBasePlate(row.plat),
         row.driver,
         row.fakturBatal,
@@ -600,7 +617,6 @@ export async function generateManualDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsPendingSO, sheetNames.pendingSO);
 
-  // --- SHEET 3: Update Coordinate ---
   updateLonglatData.sort((a, b) => (a.bedaJarak ?? Infinity) - (b.bedaJarak ?? Infinity));
   const finalSheetData4 = [
     headers.updateLonglat,
@@ -639,7 +655,6 @@ export async function generateManualDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, sheetNames.updateLonglat);
 
-  // --- SHEET 4: RO vs Real Results ---
   let finalSheetData3 = [headers.roVsReal];
   const manualAssignRows3 = new Set();
 
@@ -663,7 +678,6 @@ export async function generateManualDeliveryWorkbook(
   for (const driverRow of roVsRealDriverList) {
     const tasks = tasksByNameMap.get(driverRow.driver) || [];
 
-    // Header HUB
     finalSheetData3.push([
       null,
       null,
@@ -753,7 +767,6 @@ export async function generateManualDeliveryWorkbook(
       ]);
     }
 
-    // Footer HUB
     finalSheetData3.push([
       null,
       null,
@@ -773,7 +786,7 @@ export async function generateManualDeliveryWorkbook(
       null,
       null,
     ]);
-    finalSheetData3.push(Array(headers.roVsReal.length).fill(null)); // Separator Row
+    finalSheetData3.push(Array(headers.roVsReal.length).fill(null));
   }
 
   const wsRoVsReal = XLSX.utils.aoa_to_sheet(finalSheetData3);
@@ -852,7 +865,7 @@ export async function generateManualDeliveryWorkbook(
   }
   XLSX.utils.book_append_sheet(wb, wsRoVsReal, sheetNames.roVsReal);
 
-  const formattedDate = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+  const formattedDate = majorityAssignedDate || formatDateUniversal(selectedDate, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.delivery.filename_manual') || 'Delivery Report Manual'} - ${formattedDate} - ${selectedLocationName}.xlsx`;
 
   return { wb, excelFileName };
