@@ -1,5 +1,5 @@
 export * from './delivery/deliveryManualReport';
-export * from './delivery/deliveryReport';
+export * from './delivery/deliveryAutoReport';
 export * from './rangkuman/rangkumanReport';
 export * from './routing/routingAutoReport';
 export * from './routing/routingManualReport';
