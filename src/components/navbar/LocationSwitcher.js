@@ -6,10 +6,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getHubs } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import {
-  getLocalStorage,
-  updateActiveHub,
   getCachedHubs,
+  getLocalStorage,
   setCachedHubs,
+  updateActiveHub,
 } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
@@ -28,24 +28,27 @@ export default function LocationSwitcher() {
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
       try {
-        let hubsSimple = getCachedHubs();
-
-        if (!hubsSimple || isEmpty(hubsSimple)) {
-          hubsSimple = await getHubs();
-          if (isEmpty(hubsSimple)) {
-            throw new Error(t('common.no_data'));
-          }
-          setCachedHubs(hubsSimple);
-        }
-
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
-        const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
-        const allowed =
-          userHubIds.length > 0 ? hubsSimple.filter((h) => userHubIds.includes(h._id)) : hubsSimple;
+        let hubsSimple = getCachedHubs();
+        if (hubsSimple && !isEmpty(hubsSimple)) {
+          const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
+          const allowed =
+            userHubIds.length > 0
+              ? hubsSimple.filter((h) => userHubIds.includes(h._id))
+              : hubsSimple;
+          setAllowedHubs(allowed);
+        }
 
-        setAllowedHubs(allowed);
+        const freshHubs = await getHubs();
+        if (!isEmpty(freshHubs)) {
+          setCachedHubs(freshHubs);
+          const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
+          const allowed =
+            userHubIds.length > 0 ? freshHubs.filter((h) => userHubIds.includes(h._id)) : freshHubs;
+          setAllowedHubs(allowed);
+        }
       } catch (e) {
         setAllowedHubs([]);
         toastError(t('common.toast.error', { err: e.message }));

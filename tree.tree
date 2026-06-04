@@ -149,8 +149,9 @@
 │   │   └── HelpPage.js
 │   ├── reports
 │   │   ├── BulkReport.js
-│   │   ├── constants.js
-│   │   ├── help.js
+│   │   ├── helper
+│   │   │   ├── constants.js
+│   │   │   └── help.js
 │   │   ├── SingleReport.js
 │   │   ├── TaskCountReport.js
 │   │   └── TaskDetailReport.js
@@ -230,7 +231,9 @@
     ├── prisma.js
     ├── reportGenerators
     │   ├── delivery
-    │   │   └── deliveryReport.js
+    │   │   ├── deliveryAutoReport.js
+    │   │   ├── deliveryManualReport.js
+    │   │   └── help.js
     │   ├── index.js
     │   ├── rangkuman
     │   │   ├── rangkumanReport.js

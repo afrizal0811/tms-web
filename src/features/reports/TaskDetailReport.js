@@ -6,9 +6,10 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResult, getTasks } from '@/lib/api';
 import { driverTimeStamps } from '@/lib/driverDataHelper';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
+  calculateHaversineDistance,
   calculateStartFinishDates,
   formatDateUniversal,
   formatToApiUtc,
@@ -19,8 +20,8 @@ import {
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { taskDetailHeaders, taskDetailKeyMapping } from './constants';
-import { getDatesInRange } from './help';
+import { taskDetailHeaders, taskDetailKeyMapping } from './helper/constants';
+import { getDatesInRange } from './helper/help';
 
 const getNameValue = (val) => {
   if (!val) return '';
@@ -114,31 +115,31 @@ const buildRoutingMap = (routingResults) => {
   return routingMap;
 };
 
-const groupTasksBySheet = (tasksData) => {
+const groupTasksByDriver = (tasksData) => {
   const groupedData = {};
   tasksData.forEach((task) => {
-    const sheetNameRaw = getNameValue(task.assignedTo) || getNameValue(task.assignee) || 'UNKNOWN';
+    const driverNameRaw = getNameValue(task.assignedTo) || getNameValue(task.assignee) || 'UNKNOWN';
 
-    let sheetName = sheetNameRaw
+    let driverName = driverNameRaw
       .replace(/[\\/?*[\]:']/g, '')
       .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
       .trim()
       .toUpperCase()
       .substring(0, 31);
 
-    if (!sheetName || sheetName === 'HISTORY') {
-      sheetName = 'UNKNOWN_DATA';
+    if (!driverName || driverName === 'HISTORY') {
+      driverName = 'UNKNOWN_DATA';
     }
 
-    if (!groupedData[sheetName]) {
-      groupedData[sheetName] = [];
+    if (!groupedData[driverName]) {
+      groupedData[driverName] = [];
     }
-    groupedData[sheetName].push(task);
+    groupedData[driverName].push(task);
   });
   return groupedData;
 };
 
-const generateWorkbook = (groupedData, timeMap, routingMap) => {
+const generateWorkbook = (groupedData, timeMap, routingMap, hubCoordsStr) => {
   const wb = XLSX.utils.book_new();
   const headerStyle = {
     font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -152,19 +153,25 @@ const generateWorkbook = (groupedData, timeMap, routingMap) => {
   const doneTimeCol = taskDetailHeaders.indexOf('doneTime');
   const etaCol = taskDetailHeaders.indexOf('eta');
   const etdCol = taskDetailHeaders.indexOf('etd');
+  const distanceCol = taskDetailHeaders.indexOf('distance');
+  const travelDistanceCol = taskDetailHeaders.indexOf('travelDistance');
+
+  const sheetData = [taskDetailHeaders];
 
   Object.keys(groupedData)
     .sort()
-    .forEach((sheetName) => {
-      const sheetTasks = groupedData[sheetName];
+    .forEach((driverName) => {
+      const driverTasks = groupedData[driverName];
 
-      sheetTasks.sort((a, b) => {
+      driverTasks.sort((a, b) => {
         const timeA = a.doneTime ? new Date(a.doneTime).getTime() : 0;
         const timeB = b.doneTime ? new Date(b.doneTime).getTime() : 0;
         return timeA - timeB;
       });
 
-      const firstTask = sheetTasks[0];
+      const firstTask = driverTasks[0];
+      const lastTask = driverTasks[driverTasks.length - 1];
+
       let driverEmail = '';
       if (firstTask.assignee) {
         driverEmail = Array.isArray(firstTask.assignee)
@@ -176,80 +183,92 @@ const generateWorkbook = (groupedData, timeMap, routingMap) => {
       const timeData = timeMap.get(normalizedDriverEmail);
       const routeInfo = routingMap[normalizedDriverEmail];
 
+      const doneCoord = lastTask?.doneCoordinate;
+      let returnHubDistanceMeters = '-';
+
+      if (doneCoord && hubCoordsStr) {
+        const rawDistance = calculateHaversineDistance(doneCoord, hubCoordsStr);
+        if (rawDistance !== null) {
+          returnHubDistanceMeters = Math.round(rawDistance * 1.3); // Faktor jalan raya (1.3x)
+        }
+      }
+
       const hubStartRow = taskDetailHeaders.map(() => null);
       const hubEndRow = taskDetailHeaders.map(() => null);
       const assignedToVal = getVal(firstTask, 'assignedTo');
 
+      // --- Setting Baris HUB Awal ---
       hubStartRow[hubCol] = 'HUB';
       hubStartRow[assignedToCol] = assignedToVal !== '-' ? assignedToVal : '-';
       hubStartRow[etdCol] = routeInfo?.startHub?.etd ? routeInfo.startHub.etd : '-';
+      hubStartRow[statusCol] = null;
 
       if (timeData && timeData._rawStart) {
         const date = formatDateUniversal(timeData._rawStart, 'DD/MM/YYYY');
-        hubStartRow[statusCol] = 'DONE';
         hubStartRow[doneTimeCol] = `${date} ${timeData.jamBerangkat}`;
       } else {
-        hubStartRow[statusCol] = '-';
         hubStartRow[doneTimeCol] = '-';
       }
 
+      // --- Setting Baris HUB Akhir ---
       hubEndRow[hubCol] = 'HUB';
       hubEndRow[assignedToCol] = assignedToVal !== '-' ? assignedToVal : '-';
       hubEndRow[etaCol] = routeInfo?.endHub?.eta ? routeInfo.endHub.eta : '-';
+      hubEndRow[distanceCol] = routeInfo?.endHub?.distance ?? '-';
+      hubEndRow[travelDistanceCol] = returnHubDistanceMeters;
+      hubEndRow[statusCol] = null;
 
       if (timeData && timeData._rawFinish) {
         const date = formatDateUniversal(timeData._rawFinish, 'DD/MM/YYYY');
-        hubEndRow[statusCol] = 'DONE';
         hubEndRow[doneTimeCol] = `${date} ${timeData.jamKembali}`;
       } else {
-        hubEndRow[statusCol] = '-';
         hubEndRow[doneTimeCol] = '-';
       }
 
-      const sheetData = [taskDetailHeaders];
       sheetData.push(hubStartRow);
 
-      sheetTasks.forEach((task) => {
+      driverTasks.forEach((task) => {
         const row = taskDetailHeaders.map((header) => getVal(task, header));
         sheetData.push(row);
       });
 
       sheetData.push(hubEndRow);
+    });
 
-      const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      const range = XLSX.utils.decode_range(ws['!ref']);
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  const range = XLSX.utils.decode_range(ws['!ref']);
 
-      for (let R = 0; R <= range.e.r; ++R) {
-        const isHubRow = R > 0 && sheetData[R][hubCol] === 'HUB';
+  for (let R = 0; R <= range.e.r; ++R) {
+    const isHubRow = R > 0 && sheetData[R][hubCol] === 'HUB';
 
-        for (let C = 0; C <= range.e.c; ++C) {
-          const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cell_address]) continue;
+    for (let C = 0; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[cell_address]) continue;
 
-          if (R === 0) {
-            ws[cell_address].s = headerStyle;
-          } else {
-            const val = ws[cell_address].v;
-            let style = {};
+      if (R === 0) {
+        ws[cell_address].s = headerStyle;
+      } else {
+        const val = ws[cell_address].v;
+        let style = {};
 
-            if (val === '-') {
-              style.alignment = { horizontal: 'center', vertical: 'center' };
-            }
+        if (val === '-') {
+          style.alignment = { horizontal: 'center', vertical: 'center' };
+        }
 
-            if (isHubRow && val !== null && val !== undefined) {
-              style.font = { bold: true, color: { rgb: 'FF0000' } };
-            }
+        if (isHubRow && val !== null && val !== undefined) {
+          style.font = { bold: true, color: { rgb: 'FF0000' } };
+        }
 
-            if (Object.keys(style).length > 0) {
-              ws[cell_address].s = style;
-            }
-          }
+        if (Object.keys(style).length > 0) {
+          ws[cell_address].s = style;
         }
       }
+    }
+  }
 
-      ws['!cols'] = taskDetailHeaders.map(() => ({ wch: 18 }));
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    });
+  ws['!cols'] = taskDetailHeaders.map(() => ({ wch: 18 }));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Task Detail');
 
   return wb;
 };
@@ -267,6 +286,11 @@ export default function TaskDetailReport() {
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
 
+      const hubsList = getCachedHubs() || [];
+      const activeHub = hubsList.find((h) => h._id === storedLocation);
+      const hubCoordsStr =
+        activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
+
       const datesToProcess = getDatesInRange(startDate, endDate || startDate);
       const generatedFiles = [];
 
@@ -277,7 +301,7 @@ export default function TaskDetailReport() {
         const [tasks, locHistories] = await Promise.all([
           getTasks({
             hubId: storedLocation,
-            status: 'DONE,UNASSIGNED,ONGOING',
+            status: 'DONE,ONGOING',
             timeFrom: timeFromUtc,
             timeTo: timeToUtc,
             timeBy: 'startTime',
@@ -303,9 +327,10 @@ export default function TaskDetailReport() {
         const routingResults = await Promise.all(uniqueRoutingIds.map((id) => getResult(id)));
         const routingMap = buildRoutingMap(routingResults);
         const timeMap = driverTimeStamps(locHistories, selectedDateString);
-        const groupedData = groupTasksBySheet(tasksData);
 
-        const wb = generateWorkbook(groupedData, timeMap, routingMap);
+        const groupedData = groupTasksByDriver(tasksData);
+
+        const wb = generateWorkbook(groupedData, timeMap, routingMap, hubCoordsStr);
 
         const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
         const locationName = storedLocationAcronym || storedLocationName;
@@ -361,7 +386,6 @@ export default function TaskDetailReport() {
 
     const validEndDate = endDate || startDate;
 
-    // Menghitung selisih hari
     const diffTime = Math.abs(validEndDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
