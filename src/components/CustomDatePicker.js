@@ -29,7 +29,7 @@ export default function CustomDatePicker({
   startDate = null,
   endDate = null,
   useCustomRangeFormat = false,
-  showDropdowns = true, // Prop baru untuk mengontrol tampilan dropdown
+  showDropdowns = true,
   ...props
 }) {
   const isDisabled = isLoading || disabled;
@@ -112,10 +112,11 @@ export default function CustomDatePicker({
       wrapperClassName={wrapperClassName}
       shouldCloseOnSelect={!showApplyButton}
       value={customValue}
-      /* --- Tambahan Fitur Dropdown --- */
       showMonthDropdown={showDropdowns}
       showYearDropdown={showDropdowns}
       dropdownMode="select"
+      popperPlacement="bottom"
+      fixedHeight
       {...props}
     >
       {showApplyButton && (

@@ -445,7 +445,7 @@ export default function Navbar() {
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
           {isLoggedIn && (
             <>
-              <MobileNavLink href="/settings">{t('setting.title')}</MobileNavLink>
+              <MobileNavLink href="/setting">{t('setting.title')}</MobileNavLink>
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-3 py-3 text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
