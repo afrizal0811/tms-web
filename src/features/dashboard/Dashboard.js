@@ -3,7 +3,6 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import RoutingInfo from '@/components/RoutingInfo';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
@@ -16,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
 
-export default function DashboardSummary({ driverData }) {
+export default function Dashboard({ driverData }) {
   const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -348,7 +347,7 @@ export default function DashboardSummary({ driverData }) {
   let isCardEmpty = false;
   let emptyMessage = t('common.no_data');
 
-  if (isEmpty(driverData)) {
+  if (isEmpty(driverData) && !loading) {
     isCardEmpty = true;
     emptyMessage = t('common.no_driver');
   } else if (activeTab === 'Diagram') {
@@ -424,6 +423,7 @@ export default function DashboardSummary({ driverData }) {
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
         emptyMessage={emptyMessage}
+        routingData={rawData.results}
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (
@@ -452,7 +452,6 @@ export default function DashboardSummary({ driverData }) {
           )}
         </div>
       </BodyCard>
-      <RoutingInfo resultsData={rawData.results} />
     </div>
   );
 }

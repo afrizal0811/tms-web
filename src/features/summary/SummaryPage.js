@@ -5,7 +5,6 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import RoutingInfo from '@/components/RoutingInfo';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
@@ -362,6 +361,12 @@ export default function SummaryPage() {
     { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
     { id: 'Average KM', label: t('summary.tabs.average_km.title') },
   ];
+  const longLoading = pendingEndpoints.length > 0 && (
+    <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
+      <p>{t('summary.long_message')}</p>
+      <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
+    </div>
+  );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
@@ -386,23 +391,11 @@ export default function SummaryPage() {
           label: tab.label,
           extraContent: getPingDot(tab.id),
         }))}
-        longLoadingContent={
-          pendingEndpoints.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
-              <p>{t('summary.long_message')}</p>
-              <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
-            </div>
-          )
-        }
+        longLoadingContent={longLoading}
+        routingData={rawData.results}
       >
         {!isLoading && renderContent()}
       </BodyCard>
-      <div className="flex items-start justify-between -mt-5">
-        <RoutingInfo resultsData={rawData.results} />
-        <span className="text-xs text-amber-600 italic text-right mt-2">
-          {t('summary.caution')}
-        </span>
-      </div>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
