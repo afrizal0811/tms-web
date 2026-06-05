@@ -2,7 +2,7 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { createReason, deleteReason, updateReason } from '@/lib/api';
-import { PIC_OPTIONS } from '@/lib/constants';
+import { PIC_OPTIONS } from '../helper/constants';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { useState } from 'react';
 import Card from './Card';

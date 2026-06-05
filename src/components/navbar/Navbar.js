@@ -2,7 +2,6 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
-import { avatarColorStyles } from '@/lib/constants';
 import {
   getLocalStorage,
   getSuperadminRoleId,
@@ -41,17 +40,6 @@ export default function Navbar() {
     removeLocalStorage('data');
     window.location.href = '/';
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const availableColors = Object.keys(avatarColorStyles);
-      const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-
-      setAvatarColor(randomColor);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const checkUserAndRole = async () => {
@@ -399,11 +387,6 @@ export default function Navbar() {
             <>
               <div className=" px-4 py-5 flex items-center justify-between text-slate-800 dark:text-slate-200 gap-3">
                 <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                  <div
-                    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-inner ${avatarColorStyles[avatarColor] || avatarColorStyles.sky}`}
-                  >
-                    {userInitial(userName)}
-                  </div>
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-sm font-bold truncate tracking-wide">{userName}</span>
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
