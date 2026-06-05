@@ -5,13 +5,15 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResult, getTasks } from '@/lib/api';
-import { driverTimeStamps } from '@/lib/driverDataHelper';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateHaversineDistance,
   calculateStartFinishDates,
   formatDateUniversal,
+  formatTimestampToDDMMYYYY_UTC7,
+  formatTimestampToQuotedHHMM_UTC7,
   formatToApiUtc,
   isEmpty,
   normalizeEmail,
@@ -139,6 +141,127 @@ const groupTasksByDriver = (tasksData) => {
   return groupedData;
 };
 
+function checkShiftMidpoint(rawStart, rawFinish, shift) {
+  if (!shift || !shift.startTime || !shift.endTime) return true;
+  if (!rawStart || !rawFinish) return false;
+
+  try {
+    const safeStart = rawStart.replace(' ', 'T') + 'Z';
+    const safeFinish = rawFinish.replace(' ', 'T') + 'Z';
+
+    const startMs = new Date(safeStart).getTime();
+    const finishMs = new Date(safeFinish).getTime();
+
+    if (isNaN(startMs) || isNaN(finishMs)) return false;
+
+    const durationHours = (finishMs - startMs) / (1000 * 60 * 60);
+    if (durationHours >= 14) {
+      return true;
+    }
+
+    const midpointMs = startMs + (finishMs - startMs) / 2;
+    const midpointDate = new Date(midpointMs);
+
+    const [sH, sM] = shift.startTime.split(':').map(Number);
+    const [eH, eM] = shift.endTime.split(':').map(Number);
+
+    const shiftStart = new Date(midpointDate);
+    shiftStart.setUTCHours((sH || 0) - 7, sM || 0, 0, 0);
+
+    const shiftEnd = new Date(midpointDate);
+    shiftEnd.setUTCHours((eH || 0) - 7, eM || 0, 0, 0);
+
+    if (shift.multiday >= 1 || shiftEnd <= shiftStart) {
+      shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+    }
+
+    return midpointMs >= shiftStart.getTime() && midpointMs <= shiftEnd.getTime();
+  } catch (e) {
+    return true;
+  }
+}
+
+const buildSyncTimeMap = (locHistories, driverData, selectedDateStr) => {
+  const apiDataMap = new Map();
+  const allApiData = locHistories?.tasks?.data || locHistories?.data || [];
+  if (!Array.isArray(allApiData) || allApiData.length === 0) return apiDataMap;
+
+  const [y, m, d] = selectedDateStr.split('-');
+  const targetDateFormatted = `${d}-${m}-${y}`;
+
+  const emailToDriverMap = (driverData || []).reduce((acc, driver) => {
+    const normalizedEmail = normalizeEmail(driver.email);
+    if (normalizedEmail) {
+      acc[normalizedEmail] = { workingTime: driver.workingTime };
+    }
+    return acc;
+  }, {});
+
+  const processed = allApiData.map((item) => {
+    const email = normalizeEmail(item.email);
+    const startTime = item.startTime;
+    const finishTime = item.finish?.finishTime;
+    const startDate = formatTimestampToDDMMYYYY_UTC7(startTime);
+
+    return {
+      email,
+      trackedTime: Math.abs(item.trackedTime || 0),
+      totalDistance: item.finish?.totalDistance || 0,
+      startDate,
+      workingTime: emailToDriverMap[email]?.workingTime || null,
+      rawStartTime: startTime,
+      rawFinishTime: finishTime,
+    };
+  });
+
+  const filtered = processed.filter(
+    (item) =>
+      item.trackedTime >= 10 && item.totalDistance > 5 && item.startDate === targetDateFormatted
+  );
+
+  const grouped = {};
+  filtered.forEach((item) => {
+    if (!grouped[item.email]) grouped[item.email] = [];
+    grouped[item.email].push(item);
+  });
+
+  for (const [email, records] of Object.entries(grouped)) {
+    const uniqueRecords = records.filter(
+      (value, index, self) =>
+        index ===
+        self.findIndex(
+          (t) =>
+            t.rawStartTime === value.rawStartTime &&
+            t.rawFinishTime === value.rawFinishTime &&
+            t.totalDistance === value.totalDistance
+        )
+    );
+
+    let finalRecord = uniqueRecords[0];
+
+    if (uniqueRecords.length > 1) {
+      const filteredByShift = uniqueRecords.filter((r) =>
+        checkShiftMidpoint(r.rawStartTime, r.rawFinishTime, r.workingTime)
+      );
+
+      if (filteredByShift.length > 0) {
+        filteredByShift.sort((a, b) => {
+          const safeA = a.rawStartTime.replace(' ', 'T');
+          const safeB = b.rawStartTime.replace(' ', 'T');
+          return new Date(safeA) - new Date(safeB);
+        });
+        finalRecord = filteredByShift[0];
+      }
+    }
+
+    if (finalRecord) {
+      apiDataMap.set(email, finalRecord);
+    }
+  }
+
+  return apiDataMap;
+};
+
 const generateWorkbook = (groupedData, timeMap, routingMap, hubCoordsStr) => {
   const wb = XLSX.utils.book_new();
   const headerStyle = {
@@ -189,7 +312,7 @@ const generateWorkbook = (groupedData, timeMap, routingMap, hubCoordsStr) => {
       if (doneCoord && hubCoordsStr) {
         const rawDistance = calculateHaversineDistance(doneCoord, hubCoordsStr);
         if (rawDistance !== null) {
-          returnHubDistanceMeters = Math.round(rawDistance * 1.3); // Faktor jalan raya (1.3x)
+          returnHubDistanceMeters = Math.round(rawDistance * 1.3);
         }
       }
 
@@ -197,20 +320,25 @@ const generateWorkbook = (groupedData, timeMap, routingMap, hubCoordsStr) => {
       const hubEndRow = taskDetailHeaders.map(() => null);
       const assignedToVal = getVal(firstTask, 'assignedTo');
 
-      // --- Setting Baris HUB Awal ---
       hubStartRow[hubCol] = 'HUB';
       hubStartRow[assignedToCol] = assignedToVal !== '-' ? assignedToVal : '-';
       hubStartRow[etdCol] = routeInfo?.startHub?.etd ? routeInfo.startHub.etd : '-';
       hubStartRow[statusCol] = null;
 
-      if (timeData && timeData._rawStart) {
-        const date = formatDateUniversal(timeData._rawStart, 'DD/MM/YYYY');
-        hubStartRow[doneTimeCol] = `${date} ${timeData.jamBerangkat}`;
+      if (timeData && timeData.rawStartTime) {
+        const dateFormatted = formatTimestampToDDMMYYYY_UTC7(timeData.rawStartTime).replace(
+          /-/g,
+          '/'
+        );
+        const timeFormatted = formatTimestampToQuotedHHMM_UTC7(timeData.rawStartTime).replace(
+          "'",
+          ''
+        );
+        hubStartRow[doneTimeCol] = `${dateFormatted} ${timeFormatted}`;
       } else {
         hubStartRow[doneTimeCol] = '-';
       }
 
-      // --- Setting Baris HUB Akhir ---
       hubEndRow[hubCol] = 'HUB';
       hubEndRow[assignedToCol] = assignedToVal !== '-' ? assignedToVal : '-';
       hubEndRow[etaCol] = routeInfo?.endHub?.eta ? routeInfo.endHub.eta : '-';
@@ -218,9 +346,36 @@ const generateWorkbook = (groupedData, timeMap, routingMap, hubCoordsStr) => {
       hubEndRow[travelDistanceCol] = returnHubDistanceMeters;
       hubEndRow[statusCol] = null;
 
-      if (timeData && timeData._rawFinish) {
-        const date = formatDateUniversal(timeData._rawFinish, 'DD/MM/YYYY');
-        hubEndRow[doneTimeCol] = `${date} ${timeData.jamKembali}`;
+      if (timeData && timeData.rawFinishTime) {
+        const dateFormatted = formatTimestampToDDMMYYYY_UTC7(timeData.rawFinishTime).replace(
+          /-/g,
+          '/'
+        );
+        const timeFormatted = formatTimestampToQuotedHHMM_UTC7(timeData.rawFinishTime).replace(
+          "'",
+          ''
+        );
+
+        let diffDisplay = '';
+        const sDateStr = formatTimestampToDDMMYYYY_UTC7(timeData.rawStartTime);
+        const fDateStr = formatTimestampToDDMMYYYY_UTC7(timeData.rawFinishTime);
+
+        if (sDateStr !== fDateStr) {
+          const sDate = new Date(timeData.rawStartTime.replace(' ', 'T') + 'Z');
+          const fDate = new Date(timeData.rawFinishTime.replace(' ', 'T') + 'Z');
+          sDate.setTime(sDate.getTime() + 7 * 60 * 60 * 1000);
+          fDate.setTime(fDate.getTime() + 7 * 60 * 60 * 1000);
+
+          const d1 = new Date(sDate.getUTCFullYear(), sDate.getUTCMonth(), sDate.getUTCDate());
+          const d2 = new Date(fDate.getUTCFullYear(), fDate.getUTCMonth(), fDate.getUTCDate());
+          const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+
+          if (diffDays > 0) {
+            diffDisplay = ` (+${diffDays})`;
+          }
+        }
+
+        hubEndRow[doneTimeCol] = `${dateFormatted} ${timeFormatted}${diffDisplay}`;
       } else {
         hubEndRow[doneTimeCol] = '-';
       }
@@ -285,6 +440,7 @@ export default function TaskDetailReport() {
     setShowWarningModal(false);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
+      const driverData = await getOrFetchDriverData(storedLocation);
 
       const hubsList = getCachedHubs() || [];
       const activeHub = hubsList.find((h) => h._id === storedLocation);
@@ -326,8 +482,8 @@ export default function TaskDetailReport() {
 
         const routingResults = await Promise.all(uniqueRoutingIds.map((id) => getResult(id)));
         const routingMap = buildRoutingMap(routingResults);
-        const timeMap = driverTimeStamps(locHistories, selectedDateString);
 
+        const timeMap = buildSyncTimeMap(locHistories, driverData, selectedDateString);
         const groupedData = groupTasksByDriver(tasksData);
 
         const wb = generateWorkbook(groupedData, timeMap, routingMap, hubCoordsStr);
