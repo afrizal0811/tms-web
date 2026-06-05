@@ -15,9 +15,8 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
-import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
 import { isEmpty } from '@/lib/utils';
-import { seqAccuracyData } from '../../help';
+import { processSequenceAccuracyData, seqAccuracyData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {

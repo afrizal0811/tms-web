@@ -5,6 +5,7 @@ import {
   formatTimestampToHHMM,
   isEmpty,
   normalizeEmail,
+  parseAndShiftToUTC7,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -100,6 +101,314 @@ export const loadCapacityData = [
     light_color: '#e7000b',
   },
 ];
+
+export const processLoadCapacityData = (tasks, driverData, year) => {
+  const driverMap = {};
+  if (Array.isArray(driverData)) {
+    driverData.forEach((d) => {
+      if (d.email) {
+        driverMap[d.email] = {
+          maxWeight: Math.abs(Number(d.maxWeight) || 0),
+          maxVolume: Math.abs(Number(d.maxVolume) || 0),
+          name: d.name,
+          plat: d.plat,
+        };
+      }
+    });
+  }
+
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+    monthIndex: i,
+    key: `${year}-${String(i + 1).padStart(2, '0')}`,
+    veryLow: 0,
+    low: 0,
+    normal: 0,
+    full: 0,
+    overload: 0,
+    details: {},
+  }));
+
+  const taskList = Array.isArray(tasks) ? tasks : tasks?.data || [];
+  if (!taskList || taskList.length === 0) return monthlyData;
+  const trips = {};
+
+  taskList.forEach((task) => {
+    if (!task || !task.startTime) return;
+    const rawDate = new Date(task.startTime);
+    if (isNaN(rawDate)) return;
+
+    const wibOffset = 7 * 60 * 60 * 1000;
+    const wibDate = new Date(rawDate.getTime() + wibOffset);
+    if (wibDate.getUTCFullYear() !== year) return;
+
+    let driverEmail = task.assignedTo?.email;
+    if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
+      driverEmail = task.assignee[0];
+    }
+
+    if (!driverEmail) return;
+
+    const mapData = driverMap[driverEmail];
+    const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
+
+    if (vehiclePlat === 'Unknown') return;
+
+    const dateStr = wibDate.toISOString().split('T')[0];
+    const key = `${dateStr}_${driverEmail}`;
+
+    if (!trips[key]) {
+      const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
+
+      trips[key] = {
+        date: dateStr,
+        monthIndex: wibDate.getUTCMonth(),
+        email: driverEmail,
+        driverName: driverName,
+        vehicleName: vehiclePlat,
+        totalWeight: 0,
+        totalVolume: 0,
+        tasksCount: 0,
+      };
+    }
+
+    if (task.flow !== 'Pickup') {
+      trips[key].totalWeight += Math.abs(Number(task.weightKg || 0));
+      trips[key].totalVolume += Math.abs(Number(task.volumeCbm || 0));
+    }
+
+    trips[key].tasksCount += 1;
+  });
+
+  Object.values(trips).forEach((trip) => {
+    const specs = driverMap[trip.email];
+
+    const maxWeight = specs?.maxWeight && specs.maxWeight > 0 ? specs.maxWeight : 1;
+    const maxVolume = specs?.maxVolume && specs.maxVolume > 0 ? specs.maxVolume : 1;
+
+    const weightPct = (trip.totalWeight / maxWeight) * 100;
+    const volPct = (trip.totalVolume / maxVolume) * 100;
+
+    const maxPct = Math.max(weightPct, volPct);
+    const boundBy = weightPct >= volPct ? 'Weight' : 'Volume';
+
+    trip.maxPct = maxPct;
+    trip.weightPct = weightPct;
+    trip.volPct = volPct;
+    trip.maxWeight = maxWeight;
+    trip.maxVolume = maxVolume;
+    trip.boundBy = boundBy;
+    trip.isOverload = maxPct > 100;
+
+    const monthIdx = trip.monthIndex;
+
+    if (monthlyData[monthIdx]) {
+      if (maxPct > 100) {
+        monthlyData[monthIdx].overload += 1;
+      } else if (maxPct >= 85) {
+        monthlyData[monthIdx].full += 1;
+      } else if (maxPct >= 60) {
+        monthlyData[monthIdx].normal += 1;
+      } else if (maxPct >= 40) {
+        monthlyData[monthIdx].low += 1;
+      } else {
+        monthlyData[monthIdx].veryLow += 1;
+      }
+
+      const day = parseInt(trip.date.split('-')[2], 10);
+      if (!monthlyData[monthIdx].details[day]) {
+        monthlyData[monthIdx].details[day] = [];
+      }
+      monthlyData[monthIdx].details[day].push(trip);
+    }
+  });
+
+  return monthlyData;
+};
+
+export function processServiceLevelData(
+  allTasks,
+  view = 'monthly',
+  selectedMonthKey = null,
+  hubId = null
+) {
+  if (!allTasks || isEmpty(allTasks)) return [];
+
+  const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
+  const isSpecialHub = hubId && SPECIAL_HUBS.includes(hubId);
+
+  const grouped = {};
+
+  allTasks.forEach((task) => {
+    // 1. Cek Assignee
+    if (!task.assignee || isEmpty(task.assignee)) return;
+
+    // 2. FILTER: Hapus Flow Pickup dari perhitungan Total Task
+    if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
+      return;
+    }
+
+    // 3. Filter Hub
+    if (hubId) {
+      const taskHub =
+        task.hubId ||
+        (task.hub && (task.hub._id || task.hub.id)) ||
+        task.branchId ||
+        (task.branch && (task.branch._id || task.branch.id)) ||
+        task.originHubId ||
+        task.sourceHubId ||
+        null;
+      if (taskHub && String(taskHub) !== String(hubId)) {
+        return;
+      }
+    }
+
+    // 4. Cek Tanggal
+    const dateStr = task.doneTime || task.createdTime;
+    const wibTime = parseAndShiftToUTC7(dateStr);
+    if (!wibTime) return;
+
+    const year = wibTime.getFullYear();
+    const month = String(wibTime.getMonth() + 1).padStart(2, '0');
+    const day = String(wibTime.getDate()).padStart(2, '0');
+
+    const monthKey = `${year}-${month}`;
+    const dayKey = `${year}-${month}-${day}`;
+
+    let key, label;
+    if (view === 'monthly') {
+      key = monthKey;
+      label = wibTime.toLocaleDateString('id-ID', { month: 'short' });
+    } else if (view === 'daily') {
+      if (monthKey !== selectedMonthKey) return;
+      if (wibTime.getDay() === 0) return;
+      key = dayKey;
+      label = day;
+    } else {
+      return;
+    }
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        key,
+        label,
+        total: 0,
+        SUKSES: 0,
+        PENDING: 0,
+        BATAL: 0,
+        PARTIAL: 0,
+        PENDING_GR: 0,
+      };
+    }
+
+    // Hitung Total (Task Pickup sudah dikecualikan di atas)
+    grouped[key].total += 1;
+
+    // Cek Status Delivery (Menggunakan statusDelivery)
+    if (task.statusDelivery) {
+      const rawStatus = String(task.statusDelivery).toUpperCase();
+      const status = rawStatus.replace('_', ' ').trim();
+
+      if (status.startsWith('SUKSES')) {
+        grouped[key].SUKSES += 1;
+      } else if (
+        status.startsWith('PENDING GR') ||
+        status === 'PENDING GR' ||
+        status === 'PENDING_GR'
+      ) {
+        grouped[key].PENDING_GR += 1;
+      } else if (status.startsWith('PENDING')) {
+        grouped[key].PENDING += 1;
+      } else if (status.startsWith('BATAL')) {
+        grouped[key].BATAL += 1;
+      } else if (status.startsWith('TERIMA SEBAGIAN') || status.startsWith('PARTIAL')) {
+        grouped[key].PARTIAL += 1;
+      }
+    }
+  });
+
+  return Object.values(grouped)
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((item) => ({
+      ...item,
+      rate: item.total > 0 ? parseFloat(((item.SUKSES / item.total) * 100).toFixed(1)) : 0,
+    }));
+}
+
+export function processSequenceAccuracyData(allTasks, view = 'monthly', selectedMonthKey = null) {
+  if (!allTasks || isEmpty(allTasks)) return [];
+  const driverDateMap = {};
+  allTasks.forEach((task) => {
+    // 1. FILTER: Hapus Flow Pickup (UPDATE BARU)
+    if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
+      return;
+    }
+
+    const email = task.assignee && task.assignee[0] ? task.assignee[0].toLowerCase() : null;
+    if (!email) return;
+    const dateStr = task.doneTime || task.createdTime;
+    const wibTime = parseAndShiftToUTC7(dateStr);
+    if (!wibTime) return;
+    const year = wibTime.getFullYear();
+    const month = String(wibTime.getMonth() + 1).padStart(2, '0');
+    const day = String(wibTime.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
+    const groupingKey = `${email}_${dateKey}`;
+    const flow = task.flow || '';
+    const isGR = flow.toUpperCase().includes('GR');
+    const arrivalSource = isGR
+      ? task.page1DoneTime
+      : task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
+    const arrDate = parseAndShiftToUTC7(arrivalSource);
+    const arrivalTimestamp = arrDate ? arrDate.getTime() : 9999999999999;
+    if (!driverDateMap[groupingKey]) driverDateMap[groupingKey] = [];
+    driverDateMap[groupingKey].push({
+      roSequence: task.routePlannedOrder,
+      arrivalTimestamp,
+      monthKey: `${year}-${month}`,
+      dayKey: dateKey,
+      dayLabel: day,
+      monthLabel: wibTime.toLocaleDateString('id-ID', { month: 'short' }),
+    });
+  });
+  const processedResults = [];
+  Object.values(driverDateMap).forEach((group) => {
+    group.sort((a, b) => a.arrivalTimestamp - b.arrivalTimestamp);
+    group.forEach((item, index) => {
+      const realSeq = index + 1;
+      let status = 'manual';
+      if (item.roSequence !== null && item.roSequence !== undefined) {
+        status = parseInt(item.roSequence) === realSeq ? 'match' : 'mismatch';
+      } else {
+        status = 'manual';
+      }
+      processedResults.push({ ...item, status });
+    });
+  });
+  const groupedChart = {};
+  processedResults.forEach((item) => {
+    if (view === 'daily') {
+      if (selectedMonthKey && item.monthKey !== selectedMonthKey) return;
+    }
+    const key = view === 'monthly' ? item.monthKey : item.dayKey;
+    const label = view === 'monthly' ? item.monthLabel : item.dayLabel;
+    if (!groupedChart[key]) {
+      groupedChart[key] = { key, label, match: 0, mismatch: 0, manual: 0, total: 0 };
+    }
+    groupedChart[key].total += 1;
+    groupedChart[key][item.status] += 1;
+  });
+  return Object.values(groupedChart)
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((item) => ({
+      name: item.label,
+      key: item.key,
+      match: item.match,
+      mismatch: item.mismatch,
+      manual: item.manual,
+      total: item.total,
+      rate: item.total > 0 ? parseFloat(((item.match / item.total) * 100).toFixed(1)) : 0,
+    }));
+}
 
 export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery }) => {
   if (!tasks || !drivers) return [];
@@ -757,129 +1066,6 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
   const safeHubLabel = hubLabel ? ` - ${hubLabel}` : '';
 
   XLSX.writeFile(wb, `${t('dashboard.tabs.routing_vs_actual')} - ${dateStr}${safeHubLabel}.xlsx`);
-};
-
-export const processLoadCapacityData = (tasks, driverData, year) => {
-  const driverMap = {};
-  if (Array.isArray(driverData)) {
-    driverData.forEach((d) => {
-      if (d.email) {
-        driverMap[d.email] = {
-          maxWeight: Math.abs(Number(d.maxWeight) || 0),
-          maxVolume: Math.abs(Number(d.maxVolume) || 0),
-          name: d.name,
-          plat: d.plat,
-        };
-      }
-    });
-  }
-
-  const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-    monthIndex: i,
-    key: `${year}-${String(i + 1).padStart(2, '0')}`,
-    veryLow: 0,
-    low: 0,
-    normal: 0,
-    full: 0,
-    overload: 0,
-    details: {},
-  }));
-
-  const taskList = Array.isArray(tasks) ? tasks : tasks?.data || [];
-  if (!taskList || taskList.length === 0) return monthlyData;
-  const trips = {};
-
-  taskList.forEach((task) => {
-    if (!task || !task.startTime) return;
-    const rawDate = new Date(task.startTime);
-    if (isNaN(rawDate)) return;
-
-    const wibOffset = 7 * 60 * 60 * 1000;
-    const wibDate = new Date(rawDate.getTime() + wibOffset);
-    if (wibDate.getUTCFullYear() !== year) return;
-
-    let driverEmail = task.assignedTo?.email;
-    if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
-      driverEmail = task.assignee[0];
-    }
-
-    if (!driverEmail) return;
-
-    const mapData = driverMap[driverEmail];
-    const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
-
-    if (vehiclePlat === 'Unknown') return;
-
-    const dateStr = wibDate.toISOString().split('T')[0];
-    const key = `${dateStr}_${driverEmail}`;
-
-    if (!trips[key]) {
-      const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
-
-      trips[key] = {
-        date: dateStr,
-        monthIndex: wibDate.getUTCMonth(),
-        email: driverEmail,
-        driverName: driverName,
-        vehicleName: vehiclePlat,
-        totalWeight: 0,
-        totalVolume: 0,
-        tasksCount: 0,
-      };
-    }
-
-    if (task.flow !== 'Pickup') {
-      trips[key].totalWeight += Math.abs(Number(task.weightKg || 0));
-      trips[key].totalVolume += Math.abs(Number(task.volumeCbm || 0));
-    }
-
-    trips[key].tasksCount += 1;
-  });
-
-  Object.values(trips).forEach((trip) => {
-    const specs = driverMap[trip.email];
-
-    const maxWeight = specs?.maxWeight && specs.maxWeight > 0 ? specs.maxWeight : 1;
-    const maxVolume = specs?.maxVolume && specs.maxVolume > 0 ? specs.maxVolume : 1;
-
-    const weightPct = (trip.totalWeight / maxWeight) * 100;
-    const volPct = (trip.totalVolume / maxVolume) * 100;
-
-    const maxPct = Math.max(weightPct, volPct);
-    const boundBy = weightPct >= volPct ? 'Weight' : 'Volume';
-
-    trip.maxPct = maxPct;
-    trip.weightPct = weightPct;
-    trip.volPct = volPct;
-    trip.maxWeight = maxWeight;
-    trip.maxVolume = maxVolume;
-    trip.boundBy = boundBy;
-    trip.isOverload = maxPct > 100;
-
-    const monthIdx = trip.monthIndex;
-
-    if (monthlyData[monthIdx]) {
-      if (maxPct > 100) {
-        monthlyData[monthIdx].overload += 1;
-      } else if (maxPct >= 85) {
-        monthlyData[monthIdx].full += 1;
-      } else if (maxPct >= 60) {
-        monthlyData[monthIdx].normal += 1;
-      } else if (maxPct >= 40) {
-        monthlyData[monthIdx].low += 1;
-      } else {
-        monthlyData[monthIdx].veryLow += 1;
-      }
-
-      const day = parseInt(trip.date.split('-')[2], 10);
-      if (!monthlyData[monthIdx].details[day]) {
-        monthlyData[monthIdx].details[day] = [];
-      }
-      monthlyData[monthIdx].details[day].push(trip);
-    }
-  });
-
-  return monthlyData;
 };
 
 export const getStatusBadge = (pct, t) => {

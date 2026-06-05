@@ -3,7 +3,6 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
-import { processServiceLevelData } from '@/lib/dashboardHelper';
 import { isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
@@ -16,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { serviceLevelData } from '../../help';
+import { processServiceLevelData, serviceLevelData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
