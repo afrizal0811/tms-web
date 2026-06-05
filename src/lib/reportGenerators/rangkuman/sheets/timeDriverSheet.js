@@ -1,50 +1,7 @@
-// File: src/lib/reportGenerators/rangkumanSheets/timeDriverSheet.js
+import { isTripInShift } from '@/lib/reportGenerators/isTripInShift';
 import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
-
-function checkShiftMidpoint(rawStart, rawFinish, shift) {
-  if (!shift || !shift.startTime || !shift.endTime) return true;
-  if (!rawStart || !rawFinish) return false;
-
-  try {
-    // Pastikan tidak ada double 'Z' jika formatnya sudah ISO
-    const safeStart = rawStart.replace(' ', 'T') + (rawStart.includes('Z') ? '' : 'Z');
-    const safeFinish = rawFinish.replace(' ', 'T') + (rawFinish.includes('Z') ? '' : 'Z');
-
-    const startMs = new Date(safeStart).getTime();
-    const finishMs = new Date(safeFinish).getTime();
-
-    if (isNaN(startMs) || isNaN(finishMs)) return false;
-
-    // --- BYPASS UNTUK TRIP PANJANG (LONG HAUL) ---
-    // Jika durasi trip lebih dari 14 jam, otomatis loloskan (valid lintas hari)
-    const durationHours = (finishMs - startMs) / (1000 * 60 * 60);
-    if (durationHours >= 14) {
-      return true;
-    }
-
-    const midpointMs = startMs + (finishMs - startMs) / 2;
-    const midpointDate = new Date(midpointMs);
-
-    const [sH, sM] = shift.startTime.split(':').map(Number);
-    const [eH, eM] = shift.endTime.split(':').map(Number);
-
-    const shiftStart = new Date(midpointDate);
-    shiftStart.setUTCHours((sH || 0) - 7, sM || 0, 0, 0);
-
-    const shiftEnd = new Date(midpointDate);
-    shiftEnd.setUTCHours((eH || 0) - 7, eM || 0, 0, 0);
-
-    if (shift.multiday === 1 || shiftEnd <= shiftStart) {
-      shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
-    }
-
-    return midpointMs >= shiftStart.getTime() && midpointMs <= shiftEnd.getTime();
-  } catch (e) {
-    return true;
-  }
-}
 
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
@@ -187,7 +144,7 @@ export function calculateTimeDriverData(
       }
 
       const driverInfo = driverMap.get(email);
-      if (!checkShiftMidpoint(item.startTime, item.finish?.finishTime, driverInfo.workingTime)) {
+      if (!isTripInShift(item.startTime, item.finish?.finishTime, driverInfo.workingTime)) {
         return;
       }
 
