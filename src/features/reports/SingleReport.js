@@ -35,7 +35,7 @@ import {
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { tutorialData } from './helper/constants';
+import { getTutorialData } from './helper/constants';
 import { validateRoutingFile, validateTaskFile } from './helper/help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
@@ -522,9 +522,11 @@ export default function SingleReport({
             onUpdateFiles={setSelectedFiles}
             validator={reportType === 'routing' ? validateRoutingFile : validateTaskFile}
           />
-          <Accordion title="Tutorial" className="mt-2">
-            <Carousel items={tutorialData[reportType] || []} />
-          </Accordion>
+          {reportType && getTutorialData(t)[reportType] && (
+            <Accordion title="Tutorial" className="mt-2">
+              <Carousel items={getTutorialData(t)[reportType]} />
+            </Accordion>
+          )}
         </div>
       </BaseModal>
     </div>

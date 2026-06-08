@@ -1,6 +1,6 @@
 'use client';
+import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toastHelper';
-
 export default function FileUploader({
   files = [],
   onUpdateFiles,
@@ -8,6 +8,7 @@ export default function FileUploader({
   multiple = true,
   validator,
 }) {
+  const { t } = useLanguage();
   const handleFileChange = async (e) => {
     const file = e.target.files;
     if (validator) {
@@ -72,13 +73,12 @@ export default function FileUploader({
               />
             </svg>
             <p className="font-semibold text-slate-900 dark:text-slate-100 flex flex-wrap justify-center gap-x-1">
-              <span className="text-sky-700 dark:text-sky-400">Klik untuk upload</span>
-              <span className="text-slate-600 dark:text-slate-400 font-normal">
-                atau drag and drop file di sini
+              <span className="text-sky-700 dark:text-sky-400">
+                {t('report.manual.upload_title')}
               </span>
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-500">
-              Hanya file Excel (.xlsx, .xls) yang diperbolehkan.
+              {t('report.manual.upload_subtitle')}
             </p>
           </label>
           <input
