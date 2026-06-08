@@ -234,9 +234,6 @@ export function processServiceLevelData(
 ) {
   if (!allTasks || isEmpty(allTasks)) return [];
 
-  const SPECIAL_HUBS = ['6895a281bc530d4a4908f5ef', '68b8038b1aa98343380e3ab2'];
-  const isSpecialHub = hubId && SPECIAL_HUBS.includes(hubId);
-
   const grouped = {};
 
   allTasks.forEach((task) => {

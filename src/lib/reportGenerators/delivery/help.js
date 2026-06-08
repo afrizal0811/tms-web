@@ -54,7 +54,7 @@ export const reportStyles = {
   },
 };
 
-export const getDeliveryHeaders = (translate, isSpecialHub) => {
+export const getDeliveryHeaders = (translate, hasPendingGR) => {
   const pendingHeaders = [
     translate('common.flow'),
     translate('common.so_number'),
@@ -66,7 +66,7 @@ export const getDeliveryHeaders = (translate, isSpecialHub) => {
     translate('common.status.pending'),
   ];
 
-  if (isSpecialHub) pendingHeaders.push(translate('common.status.pending_gr'));
+  if (hasPendingGR) pendingHeaders.push(translate('common.status.pending_gr'));
 
   pendingHeaders.push(
     translate('excel.delivery.headers.reason'),

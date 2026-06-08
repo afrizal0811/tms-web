@@ -34,12 +34,11 @@ export function generateDeliveryWorkbook(
   t
 ) {
   const translate = t || ((key) => key);
-  const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
-  if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
+  if (hasPendingGR) PENDING_SHEET_STATUSES.push('PENDING GR');
 
-  const headers = getDeliveryHeaders(translate, isSpecialHub);
+  const headers = getDeliveryHeaders(translate, hasPendingGR);
   const sheetNames = getDeliverySheetNames(translate);
 
   const emailToDriverMap = driverData.reduce((acc, driver) => {
@@ -160,7 +159,7 @@ export function generateDeliveryWorkbook(
     else if (statusLabel === 'TERIMA SEBAGIAN') terkirimSebagian = customerName;
     else if (statusLabel === 'PENDING') pending = customerName;
     else if (statusLabel === 'PENDING GR') {
-      if (isSpecialHub) pendingGR = customerName;
+      if (hasPendingGR) pendingGR = customerName;
       else {
         pending = customerName;
         isMigrated = true;
@@ -458,7 +457,7 @@ export function generateDeliveryWorkbook(
         row.terkirimSebagian,
         row.pending,
       ];
-      if (isSpecialHub) dataRow.push(row.pendingGR);
+      if (hasPendingGR) dataRow.push(row.pendingGR);
       dataRow.push(
         row.reason,
         null,
@@ -480,7 +479,7 @@ export function generateDeliveryWorkbook(
   ];
   const wsPendingSO = XLSX.utils.aoa_to_sheet(finalSheetData2);
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
-  const separatorColIndex = isSpecialHub ? 10 : 9;
+  const separatorColIndex = hasPendingGR ? 10 : 9;
   const centerAlignedIndices = [
     translate('common.open_time'),
     translate('common.close_time'),
