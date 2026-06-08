@@ -106,8 +106,8 @@ export default function UserDropdown({ isDarkMode }) {
         </button>
 
         {isOpen && (
-          <div className="mt-2 rounded-md ring-1 ring-black dark:ring-slate-700 ring-opacity-5 dark:ring-opacity-100 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 lg:absolute lg:right-0 lg:w-56 lg:shadow-lg lg:border-none lg:bg-white lg:dark:bg-slate-800">
-            <div className="py-1">
+          <div className="mt-2 rounded-md ring-1 ring-black dark:ring-slate-700 ring-opacity-5 dark:ring-opacity-100 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border overflow-hidden border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 lg:absolute lg:right-0 lg:w-56 lg:shadow-lg lg:border-none lg:bg-white lg:dark:bg-slate-800">
+            <div>
               <ThemeToggle
                 isActive={isDarkMode}
                 onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
@@ -122,14 +122,14 @@ export default function UserDropdown({ isDarkMode }) {
               <Link
                 href="/setting"
                 onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
               >
                 {t('navbar.setting')}
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700/50 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
               >
                 {t('navbar.logout')}
               </button>

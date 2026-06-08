@@ -17,14 +17,16 @@ export default function LanguageToggle({ className = '', showLabel = false, isLa
   };
 
   return (
-    <div
-      className={`flex items-center justify-between text-slate-700 dark:text-slate-300 ${className}`}
+    // Wrapper diubah jadi button, ditambahkan padding, efek hover, dan cursor-pointer
+    <button
+      onClick={handleToggle}
+      className={`flex w-full cursor-pointer items-center justify-between px-3 py-2.5 transition-colors text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400 ${className}`}
     >
       {showLabel && <span className="font-medium">{t('common.language')}</span>}
 
-      <button
-        onClick={handleToggle}
-        className={`relative inline-flex ${toggleBgSize} shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+      {/* Tag button diubah jadi div agar tidak ada button di dalam button */}
+      <div
+        className={`relative inline-flex ${toggleBgSize} shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
           isIndo ? 'bg-amber-600' : 'bg-sky-600'
         }`}
       >
@@ -35,7 +37,7 @@ export default function LanguageToggle({ className = '', showLabel = false, isLa
         >
           <span className={`${textSize} font-bold text-slate-700`}>{isIndo ? 'ID' : 'EN'}</span>
         </span>
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
