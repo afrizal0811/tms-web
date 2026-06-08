@@ -601,6 +601,7 @@ export const dictionary = {
       title: 'Pengaturan',
       tab: {
         general: {
+          acronym_title: 'Akronim',
           add_placeholder: 'Tambah tipe baru...',
           branch_subtitle: 'Menentukan pengaturan untuk masing-masing cabang',
           branch_title: 'Manajemen Cabang',
@@ -1244,6 +1245,7 @@ export const dictionary = {
       title: 'Setting',
       tab: {
         general: {
+          acronym_title: 'Acronym',
           add_placeholder: 'Add new data...',
           branch_subtitle: 'Determine settings for each branch',
           branch_title: 'Branch Management',

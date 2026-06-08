@@ -111,8 +111,12 @@ export async function PATCH(req) {
     }
 
     const updateData = {};
-    if (acronym !== undefined) updateData.acronym = acronym || null;
-    if (hasPendingGR !== undefined) updateData.hasPendingGR = hasPendingGR;
+    if (acronym !== undefined) {
+      updateData.acronym = acronym && String(acronym).trim() !== '' ? String(acronym).trim() : null;
+    }
+    if (hasPendingGR !== undefined && hasPendingGR !== null) {
+      updateData.hasPendingGR = hasPendingGR === true || hasPendingGR === 'true';
+    }
 
     const updatedHub = await prisma.hub.update({
       where: { id: String(id) },
