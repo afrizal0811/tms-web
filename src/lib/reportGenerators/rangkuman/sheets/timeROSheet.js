@@ -58,11 +58,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   while (current <= end) {
     const key = formatDateWIB(current, 'YYYY-MM-DD');
     dataMap[key] = {
-      dateDisplay: current.toLocaleDateString(localeCode, {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }),
+      dateDisplay: formatLongDate(current, localeCode),
       firstCreatedTime: null,
       lastAssignedTime: null,
       isSunday: current.getDay() === 0,
