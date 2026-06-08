@@ -23,7 +23,6 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [avatarColor, setAvatarColor] = useState('sky');
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -84,6 +83,18 @@ export default function Navbar() {
     }, 0);
     return () => clearTimeout(timer);
   }, [pathname]);
+
+  // Efek baru: Mengunci scroll body saat menu mobile terbuka
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -326,15 +337,6 @@ export default function Navbar() {
     </div>
   );
 
-  const userInitial = (userName) => {
-    return userName
-      ? userName
-          .replace(/[^a-zA-Z]/g, '')
-          .charAt(0)
-          .toUpperCase()
-      : 'U';
-  };
-
   return (
     <nav
       ref={navRef}
@@ -378,8 +380,10 @@ export default function Navbar() {
       </div>
 
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 overflow-hidden transition-all duration-200 ease-in-out ${
-          isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 transition-all duration-200 ease-in-out ${
+          isMobileMenuOpen
+            ? 'max-h-[80vh] opacity-100 overflow-y-auto'
+            : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
         <div className="flex flex-col pb-4 ">
