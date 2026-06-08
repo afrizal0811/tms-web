@@ -22,7 +22,7 @@ import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function SummaryPage() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const {
     selectedLocation,
     selectedLocationName,
@@ -155,7 +155,7 @@ export default function SummaryPage() {
         taskSummaryMetrics,
         masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
         t,
-        lang,
+        localeCode,
         hasPendingGR,
         pendingDetails
       );
@@ -251,7 +251,7 @@ export default function SummaryPage() {
           startDateStr: startStr,
           endDateStr: endStr,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Task Summary':
         return renderTab(TaskSummaryTab, {
@@ -277,13 +277,13 @@ export default function SummaryPage() {
         return renderTab(TimeDriverTab, {
           data: reportPreview.timeDriverData,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Truck Detail':
         return renderTab(TruckDetailTab, {
           data: reportPreview.truckDetailData,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Truck Usage':
         return renderTab(TruckUsageTab, {
@@ -292,14 +292,14 @@ export default function SummaryPage() {
           hubId: selectedLocation,
           onRefresh: fetchData,
           driverData: driverData,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Average KM':
         return renderTab(AverageKmTab, {
           data: reportPreview.averageKmData,
           monthTotals: reportPreview.monthTotals,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
     }
   };

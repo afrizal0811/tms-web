@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import BaseModal from '../BaseModal';
 
 export default function TokenExpirationModal() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [targetDateObj, setTargetDateObj] = useState(null);
@@ -46,7 +46,7 @@ export default function TokenExpirationModal() {
 
   // Konten pesan berdasarkan status hari
   const getMessage = () => {
-    const formattedDate = targetDateObj ? formatLongDate(targetDateObj, lang) : '-';
+    const formattedDate = targetDateObj ? formatLongDate(targetDateObj, localeCode) : '-';
     const contact = <span className="font-bold text-red-600">{t('home.contact_edp')}</span>;
     const absDaysRemaining = Math.abs(daysRemaining);
 

@@ -3,14 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import { getBasePlate } from '@/lib/utils';
 
-export default function AverageKmDetailModal({
-  isOpen,
-  onClose,
-  data,
-  title,
-  translate,
-  language,
-}) {
+export default function AverageKmDetailModal({ isOpen, onClose, data, title, translate, localeCode }) {
   if (!isOpen || !data) return null;
 
   const columns = [
@@ -34,7 +27,7 @@ export default function AverageKmDetailModal({
       label: translate('summary.tabs.average_km.modal.distance'),
       render: (item) =>
         item.distance
-          ? item.distance.toLocaleString(language, {
+          ? item.distance.toLocaleString(localeCode, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })

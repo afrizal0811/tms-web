@@ -44,7 +44,7 @@ const createSafeDate = (dateStr) => {
   return new Date(y, m - 1, d, 12, 0, 0);
 };
 
-export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, isIndo) {
+export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, localeCode) {
   const dataMap = {};
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
@@ -58,7 +58,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   while (current <= end) {
     const key = formatDateWIB(current, 'YYYY-MM-DD');
     dataMap[key] = {
-      dateDisplay: current.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+      dateDisplay: current.toLocaleDateString(localeCode, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',

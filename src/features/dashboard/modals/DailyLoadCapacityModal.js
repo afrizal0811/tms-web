@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { getStatusBadge, loadCapacityData } from '../help';
 
-const DailyTooltip = ({ active, payload, label, t, lang, monthData, isDarkMode }) => {
+const DailyTooltip = ({ active, payload, label, t, localeCode, monthData, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     let dayName = '';
@@ -28,7 +28,7 @@ const DailyTooltip = ({ active, payload, label, t, lang, monthData, isDarkMode }
         const month = parseInt(monthStr, 10) - 1;
         const day = parseInt(label, 10);
         const dateObj = new Date(year, month, day);
-        dayName = dateObj.toLocaleDateString(lang, { weekday: 'long' });
+        dayName = dateObj.toLocaleDateString(localeCode, { weekday: 'long' });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }));
       }
@@ -60,7 +60,15 @@ const DailyTooltip = ({ active, payload, label, t, lang, monthData, isDarkMode }
   return null;
 };
 
-const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData, isDarkMode, t, lang }) => {
+const DailyLoadCapacityModal = ({
+  isOpen,
+  onClose,
+  title,
+  monthData,
+  isDarkMode,
+  t,
+  localeCode,
+}) => {
   const [selectedDay, setSelectedDay] = useState(null);
 
   // Logic 1: Chart Data Agregasi 5 Kategori
@@ -177,7 +185,12 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData, isDarkMode,
                 <RechartsTooltip
                   cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
                   content={
-                    <DailyTooltip t={t} lang={lang} monthData={monthData} isDarkMode={isDarkMode} />
+                    <DailyTooltip
+                      t={t}
+                      localeCode={localeCode}
+                      monthData={monthData}
+                      isDarkMode={isDarkMode}
+                    />
                   }
                 />
                 {loadCapacityData.map((item, index) => {
@@ -192,7 +205,7 @@ const DailyLoadCapacityModal = ({ isOpen, onClose, title, monthData, isDarkMode,
                       radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                       maxBarSize={40}
                       onClick={handleBarClick}
-                      cursor='pointer'
+                      cursor="pointer"
                     />
                   );
                 })}

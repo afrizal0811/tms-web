@@ -16,7 +16,7 @@ import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
 
 export default function Dashboard({ driverData }) {
-  const { t, lang } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
@@ -147,8 +147,7 @@ export default function Dashboard({ driverData }) {
 
     try {
       if (typeof window === 'undefined') return;
-      if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
-
+      
       const localStart = new Date(selectedDate);
       localStart.setHours(0, 0, 0, 0);
       const localEnd = new Date(localStart);
@@ -335,8 +334,8 @@ export default function Dashboard({ driverData }) {
   }, [yearlyTasks, storageFilter]);
 
   const summaryData = useMemo(() => {
-    return calculateDashboard(filteredDailyTasks, driverMap, lang, hasPendingGR);
-  }, [filteredDailyTasks, driverMap, lang, hasPendingGR]);
+    return calculateDashboard(filteredDailyTasks, driverMap, isIndonesian, hasPendingGR);
+  }, [filteredDailyTasks, driverMap, isIndonesian, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';
 

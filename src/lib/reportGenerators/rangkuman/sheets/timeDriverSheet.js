@@ -53,7 +53,7 @@ export function calculateTimeDriverData(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  isIndo,
+  localeCode,
   tasks = [],
   results = []
 ) {
@@ -82,10 +82,10 @@ export function calculateTimeDriverData(
   while (currentIterDate <= endDateObj) {
     const dateStr = formatDateWIB(currentIterDate, 'YYYY-MM-DD');
     const dayNum = currentIterDate.getDate();
-    const monthName = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+    const monthName = currentIterDate.toLocaleDateString(localeCode, {
       month: 'long',
     });
-    const yearShort = currentIterDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+    const yearShort = currentIterDate.toLocaleDateString(localeCode, {
       year: '2-digit',
     });
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
@@ -230,7 +230,7 @@ export function generateTimeDriverSheet(
   startDateStr,
   endDateStr,
   translate,
-  isIndo,
+  localeCode,
   tasks = [],
   results = []
 ) {
@@ -239,7 +239,7 @@ export function generateTimeDriverSheet(
     locationHistoryData,
     startDateStr,
     endDateStr,
-    isIndo,
+    localeCode,
     tasks,
     results
   );

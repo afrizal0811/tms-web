@@ -38,11 +38,10 @@ const StatCard = forwardRef(function StatCard(
 StatCard.displayName = 'StatCard';
 
 const TableData = ({ title, data, headers, renderRow, loading }) => {
-  const { t, lang } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
 
   const handleCopy = (task) => {
-    const isIndo = lang === 'id';
-    const copyText = isIndo
+    const copyText = isIndonesian
       ? `${t('dashboard.copy')} ${t('common.so_number')}`
       : `${t('common.so_number')} ${t('dashboard.copy')}`;
 

@@ -259,12 +259,11 @@ export async function generateTruckUsageSheet(
   endDateStr,
   hubId,
   translate,
-  isIndo
+  localeCode
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
     await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
-  const indoLang = isIndo ? 'id-ID' : 'en-GB';
-  const monthName = formatLongDate(startDateStr, indoLang).split(' ').slice(1).join(' ');
+  const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];
   const merges = [];
   const getPctFill = (val) => {

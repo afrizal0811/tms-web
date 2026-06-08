@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
 
 export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
-  const { lang } = useLanguage();
+  const { localeCode } = useLanguage();
 
   if (!isOpen || !data) return null;
 
@@ -39,7 +39,9 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       title={
         <div>
           <h3 className="text-lg font-bold">{title}</h3>
-          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateObj, lang)}</p>
+          <p className="text-slate-300 text-sm font-normal">
+            {formatLongDate(dateObj, localeCode)}
+          </p>
         </div>
       }
       bodyClassName="p-0 bg-gray-50 overflow-y-auto"

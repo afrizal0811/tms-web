@@ -33,7 +33,7 @@ export default function CustomDatePicker({
   ...props
 }) {
   const isDisabled = isLoading || disabled;
-  const { lang } = useLanguage();
+  const { localeCode, isIndonesian } = useLanguage();
   const datePickerRef = useRef(null);
 
   const baseClasses =
@@ -66,12 +66,9 @@ export default function CustomDatePicker({
   const getCustomRangeValue = () => {
     if (!useCustomRangeFormat || !selectsRange || !startDate) return undefined;
 
-    const isId = lang === 'id';
-    const locale = isId ? 'id-ID' : 'en-GB';
-
     const sDay = startDate.getDate();
-    const sMonthShort = startDate.toLocaleDateString(locale, { month: 'short' });
-    const sMonthLong = startDate.toLocaleDateString(locale, { month: 'long' });
+    const sMonthShort = startDate.toLocaleDateString(localeCode, { month: 'short' });
+    const sMonthLong = startDate.toLocaleDateString(localeCode, { month: 'long' });
     const sYear = startDate.getFullYear();
 
     if (!endDate) {
@@ -79,7 +76,7 @@ export default function CustomDatePicker({
     }
 
     const eDay = endDate.getDate();
-    const eMonthShort = endDate.toLocaleDateString(locale, { month: 'short' });
+    const eMonthShort = endDate.toLocaleDateString(localeCode, { month: 'short' });
     const eYear = endDate.getFullYear();
 
     if (sYear !== eYear) {
@@ -96,7 +93,7 @@ export default function CustomDatePicker({
   return (
     <DatePicker
       ref={datePickerRef}
-      locale={lang === 'id' ? 'id' : 'en'}
+      locale={isIndonesian ? 'id' : 'en'}
       className={`${baseClasses} ${stateClasses} ${className}`}
       dateFormat={dateFormat}
       disabled={isDisabled}

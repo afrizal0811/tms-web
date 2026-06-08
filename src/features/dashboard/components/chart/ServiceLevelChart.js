@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
 };
 
 function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -73,9 +73,9 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
       setSelectedMonth(null);
       return;
     }
-    const result = processServiceLevelData(allTasks, 'monthly', null, hubId);
+    const result = processServiceLevelData(allTasks, 'monthly', null, hubId, localeCode);
     setMonthlyData(result);
-  }, [allTasks, hubId]);
+  }, [allTasks, hubId, localeCode]);
 
   const localizedData = useMemo(() => {
     if (!monthlyData) return null;
@@ -85,12 +85,12 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          label: date.toLocaleDateString(lang, { month: 'short' }),
+          label: date.toLocaleDateString(localeCode, { month: 'short' }),
         };
       }
       return item;
     });
-  }, [monthlyData, lang]);
+  }, [monthlyData, localeCode]);
 
   // === Hitung data harian ===
   useEffect(() => {
@@ -108,11 +108,11 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
     }
     setIsModalLoading(true);
     setTimeout(() => {
-      const result = processServiceLevelData(allTasks, 'daily', key, hubId);
+      const result = processServiceLevelData(allTasks, 'daily', key, hubId, localeCode);
       setDailyData(result);
       setIsModalLoading(false);
     }, 150);
-  }, [selectedMonth, allTasks, hubId]);
+  }, [selectedMonth, allTasks, hubId, localeCode]);
 
   const handleBarClick = (data, index) => {
     const payload = data && data.payload ? data.payload : data;
@@ -134,7 +134,7 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
   const getModalTitle = () => {
     if (!selectedDateObj) return '';
     try {
-      const fullMonth = selectedDateObj.toLocaleDateString(lang, {
+      const fullMonth = selectedDateObj.toLocaleDateString(localeCode, {
         month: 'long',
         year: 'numeric',
       });
@@ -247,7 +247,7 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
         selectedDate={selectedDateObj}
         isDarkMode={isDarkMode}
         t={t}
-        lang={lang}
+        localeCode={localeCode}
       />
     </div>
   );

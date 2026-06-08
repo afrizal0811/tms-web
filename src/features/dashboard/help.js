@@ -229,7 +229,8 @@ export function processServiceLevelData(
   allTasks,
   view = 'monthly',
   selectedMonthKey = null,
-  hubId = null
+  hubId = null,
+  localeCode = 'id-ID'
 ) {
   if (!allTasks || isEmpty(allTasks)) return [];
 
@@ -277,7 +278,7 @@ export function processServiceLevelData(
     let key, label;
     if (view === 'monthly') {
       key = monthKey;
-      label = wibTime.toLocaleDateString('id-ID', { month: 'short' });
+      label = wibTime.toLocaleDateString(localeCode, { month: 'short' });
     } else if (view === 'daily') {
       if (monthKey !== selectedMonthKey) return;
       if (wibTime.getDay() === 0) return;
@@ -334,7 +335,12 @@ export function processServiceLevelData(
     }));
 }
 
-export function processSequenceAccuracyData(allTasks, view = 'monthly', selectedMonthKey = null) {
+export function processSequenceAccuracyData(
+  allTasks,
+  view = 'monthly',
+  selectedMonthKey = null,
+  localeCode = 'id-ID'
+) {
   if (!allTasks || isEmpty(allTasks)) return [];
   const driverDateMap = {};
   allTasks.forEach((task) => {
@@ -367,7 +373,7 @@ export function processSequenceAccuracyData(allTasks, view = 'monthly', selected
       monthKey: `${year}-${month}`,
       dayKey: dateKey,
       dayLabel: day,
-      monthLabel: wibTime.toLocaleDateString('id-ID', { month: 'short' }),
+      monthLabel: wibTime.toLocaleDateString(localeCode, { month: 'short' }),
     });
   });
   const processedResults = [];
@@ -671,7 +677,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   return finalRows;
 };
 
-export const calculateDashboard = (tasksArray, driverMap, lang) => {
+export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
   if (isEmpty(tasksArray)) {
     return {
       totalTasks: 0,
@@ -773,7 +779,7 @@ export const calculateDashboard = (tasksArray, driverMap, lang) => {
         const doneDate = new Date(task.doneTime);
         const diffInMs = doneDate.getTime() - startDate.getTime();
         const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-        const datePlusText = lang === 'id' ? 'H+' : 'D+';
+        const datePlusText = isIndonesian ? 'H+' : 'D+';
         const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
         const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
         crossDayTasks.push({

@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 export default function TaskCountReport() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const [hubs, setHubs] = useState([]);
   const [selectedHubs, setSelectedHubs] = useState([]);
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -160,8 +160,8 @@ export default function TaskCountReport() {
 
       let fileName = '';
       if (!isCustomMode) {
-        const startLabel = formatLongDate(calcStart, lang);
-        const endLabel = formatLongDate(calcEnd, lang);
+        const startLabel = formatLongDate(calcStart, localeCode);
+        const endLabel = formatLongDate(calcEnd, localeCode);
         fileName = `Task Counter (Periode ${startLabel} - ${endLabel}).xlsx`;
       } else {
         const fStart = formatDateUniversal(calcStart, 'DD.MM.YYYY');
@@ -246,11 +246,11 @@ export default function TaskCountReport() {
             />
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-2 italic leading-relaxed flex flex-col gap-1 md:flex-row">
               <strong className="text-slate-700 dark:text-slate-300">
-                {formatLongDate(startHelp, lang)} 08:34 WIB
+                {formatLongDate(startHelp, localeCode)} 08:34 WIB
               </strong>
               {t('common.to')}
               <strong className="text-slate-700 dark:text-slate-300">
-                {formatLongDate(endHelp, lang)} 08:34 WIB
+                {formatLongDate(endHelp, localeCode)} 08:34 WIB
               </strong>
               {informationComp(t('report.tooltip.cut_off'))}
             </p>

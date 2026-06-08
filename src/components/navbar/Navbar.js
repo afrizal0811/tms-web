@@ -18,7 +18,7 @@ import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
 
 export default function Navbar() {
-  const { t, lang } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
@@ -27,7 +27,6 @@ export default function Navbar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-  const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
@@ -115,10 +114,10 @@ export default function Navbar() {
   }, [isMobileMenuOpen, isLaporanOpen]);
 
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
-  const primaryEstimate = isIndo ? t('navbar.estimate') : t('navbar.deliveries');
-  const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
-  const primaryDeliveries = isIndo ? 'Data' : t('common.vehicle');
-  const secondaryDeliveries = isIndo ? t('common.vehicle') : 'Data';
+  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.deliveries');
+  const secondaryEstimate = isIndonesian ? t('navbar.deliveries') : t('navbar.estimate');
+  const primaryDeliveries = isIndonesian ? 'Data' : t('common.vehicle');
+  const secondaryDeliveries = isIndonesian ? t('common.vehicle') : 'Data';
 
   function NavLink({ href, children, className }) {
     const pathname = usePathname();
@@ -184,15 +183,15 @@ export default function Navbar() {
 
   const navLinkEstimate = (
     <NavLink href="/estimate">
-      <span className={!isIndo ? hiddenTextClassName : ''}> {primaryEstimate} </span>
-      <span className={isIndo ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
+      <span className={!isIndonesian ? hiddenTextClassName : ''}> {primaryEstimate} </span>
+      <span className={isIndonesian ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
     </NavLink>
   );
 
   const navLinkDelivery = (
     <NavLink href="/vehicles">
-      <span className={isIndo ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
-      <span className={!isIndo ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
+      <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
+      <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
     </NavLink>
   );
 

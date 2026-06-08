@@ -85,7 +85,7 @@ export function calculateTruckDetailData(
   allTasks,
   startDateStr,
   endDateStr,
-  isIndo
+  localeCode
 ) {
   const driverMap = new Map();
   const driverEmails = [];
@@ -121,8 +121,8 @@ export function calculateTruckDetailData(
 
     const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
     const dayNum = safeDate.getDate();
-    const monthName = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { month: 'long' });
-    const yearShort = safeDate.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', { year: '2-digit' });
+    const monthName = safeDate.toLocaleDateString(localeCode, { month: 'long' });
+    const yearShort = safeDate.toLocaleDateString(localeCode, { year: '2-digit' });
 
     dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
     dataMatrix[dateStr] = {};
@@ -440,7 +440,7 @@ export function generateTruckDetailSheet(
   startDateStr,
   endDateStr,
   translate,
-  isIndo
+  localeCode
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTruckDetailData(
     driverData,
@@ -448,7 +448,7 @@ export function generateTruckDetailSheet(
     allTasks,
     startDateStr,
     endDateStr,
-    isIndo
+    localeCode
   );
 
   const headerStyle = {
