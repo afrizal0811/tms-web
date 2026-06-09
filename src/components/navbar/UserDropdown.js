@@ -22,8 +22,7 @@ export default function UserDropdown({ isDarkMode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false); // State untuk mencegah hydration error
 
-  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
-    useVehicleTagCheck();
+  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
   const [userName, setUserName] = useState(() => {
     if (typeof window !== 'undefined') {

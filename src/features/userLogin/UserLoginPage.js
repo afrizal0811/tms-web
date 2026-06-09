@@ -1,7 +1,7 @@
 'use client';
 
-import ConfirmModal from '@/components/modal/ConfirmModal';
 import LocationDropdown from '@/components/LocationDropdown';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
 import { getRoles, getUsersByEmail } from '@/lib/api';
@@ -9,7 +9,7 @@ import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { capitalizeText, isEmpty } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function UserLoginPage({ t, allHubsList, currentHubListView, handleUserSelect }) {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -25,8 +25,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
   const [titleClicks, setTitleClicks] = useState(0);
   const [isSecretMode, setIsSecretMode] = useState(false);
 
-  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
-    useVehicleTagCheck();
+  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
   useEffect(() => {
     const { storedLocation, storedLocationName } = getLocalStorage();
@@ -236,17 +235,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
 
   return (
     <div className="w-full max-w-md mx-auto relative">
-      {isChecking && (
-        <div className="absolute inset-0 z-50 bg-white/40 dark:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center rounded-lg">
-          <div className="flex flex-col items-center">
-            <Spinner />
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-              {t('home.vehicle_check')}
-            </p>
-          </div>
-        </div>
-      )}
-
       <ConfirmModal
         isOpen={isConfirmOpen}
         message={modalMessage}

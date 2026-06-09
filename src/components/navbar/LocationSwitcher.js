@@ -22,8 +22,7 @@ export default function LocationSwitcher() {
   const [allowedHubs, setAllowedHubs] = useState([]);
   const { t } = useLanguage();
 
-  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
-    useVehicleTagCheck();
+  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
@@ -31,24 +30,20 @@ export default function LocationSwitcher() {
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
-        let hubsSimple = getCachedHubs();
-        if (hubsSimple && !isEmpty(hubsSimple)) {
-          const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
-          const allowed =
-            userHubIds.length > 0
-              ? hubsSimple.filter((h) => userHubIds.includes(h._id))
-              : hubsSimple;
-          setAllowedHubs(allowed);
+        let cached = getCachedHubs();
+
+        if (!cached || isEmpty(cached)) {
+          cached = await getHubs();
+          if (!isEmpty(cached)) setCachedHubs(cached);
         }
 
-        const freshHubs = await getHubs();
-        if (!isEmpty(freshHubs)) {
-          setCachedHubs(freshHubs);
-          const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
-          const allowed =
-            userHubIds.length > 0 ? freshHubs.filter((h) => userHubIds.includes(h._id)) : freshHubs;
-          setAllowedHubs(allowed);
-        }
+        const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
+        const allowed =
+          userHubIds.length > 0
+            ? (cached || []).filter((h) => userHubIds.includes(h._id))
+            : cached || [];
+
+        setAllowedHubs(allowed);
       } catch (e) {
         setAllowedHubs([]);
         toastError(t('common.toast.error', { err: e.message }));

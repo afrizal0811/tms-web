@@ -4,11 +4,11 @@ import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getTasks, getTrash } from '@/lib/api';
-import { getCachedHubs, setCachedHubs } from '@/lib/localStorageHandler';
+import { getTasks, getTrash } from '@/lib/api';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateTaskCountWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
-import { formatDateUniversal, formatLongDate, formatToApiUtc, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate, formatToApiUtc } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
@@ -26,10 +26,6 @@ export default function TaskCountReport() {
     const loadHubs = async () => {
       try {
         let cached = getCachedHubs();
-        if (!cached || isEmpty(cached)) {
-          cached = await getHubs();
-          if (!isEmpty(cached)) setCachedHubs(cached);
-        }
         setHubs(cached || []);
         setSelectedHubs((cached || []).map((h) => h._id));
       } catch (err) {

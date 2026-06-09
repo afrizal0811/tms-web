@@ -1,5 +1,5 @@
-import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api';
-import { calculateMasterTruckStorage } from '@/lib/driverDataHelper';
+import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
+import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError } from '@/lib/toastHelper';
 import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import { formatDateUniversal, formatLongDate } from '@/lib/utils';
@@ -156,7 +156,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
   const [vehicleTypesObj, mappingsDB, driversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
-    getDrivers(hubId),
+    getOrFetchDriverData(hubId),
     getTruckUsageData(hubId, startDateStr, endDateStr),
   ]);
 

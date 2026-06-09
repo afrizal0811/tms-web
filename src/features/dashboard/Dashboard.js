@@ -7,8 +7,8 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
-import { getHubs, getResultsSummary, getTasks } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getResultsSummary, getTasks } from '@/lib/api';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -45,7 +45,7 @@ export default function Dashboard({ driverData }) {
     const fetchHubSettings = async () => {
       if (!hubId || isEmpty(driverData)) return;
       try {
-        const hubs = await getHubs();
+        const hubs = getCachedHubs();
         const activeHub = hubs.find(
           (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
         );

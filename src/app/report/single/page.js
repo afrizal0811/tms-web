@@ -5,7 +5,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import SingleReport from '@/features/reports/SingleReport';
-import { getDrivers } from '@/lib/api';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
@@ -24,7 +24,7 @@ export default function LaporanPage() {
       try {
         const { storedLocation, storedLocationName } = getLocalStorage();
 
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getOrFetchDriverData(storedLocation);
 
         setData({
           selectedLocation: storedLocation,

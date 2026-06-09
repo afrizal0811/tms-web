@@ -7,7 +7,6 @@ import { useCallback, useState } from 'react';
 import { toastError } from '../toastHelper';
 
 export function useVehicleTagCheck() {
-  const [isChecking, setIsChecking] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [unmappedData, setUnmappedData] = useState([]);
   const [onSuccessCallback, setOnSuccessCallback] = useState(null);
@@ -17,7 +16,6 @@ export function useVehicleTagCheck() {
     async (hubId, onSuccess) => {
       if (!hubId) return;
 
-      setIsChecking(true);
       try {
         const issues = await checkUnmappedVehicles(hubId);
         if (issues && issues.length > 0) {
@@ -30,8 +28,6 @@ export function useVehicleTagCheck() {
       } catch (error) {
         toastError(t('common.toast.error', { err: error.message }));
         onSuccess();
-      } finally {
-        setIsChecking(false);
       }
     },
     [t]
@@ -47,7 +43,6 @@ export function useVehicleTagCheck() {
   }, [onSuccessCallback]);
 
   return {
-    isChecking,
     showModal,
     unmappedData,
     triggerCheck,

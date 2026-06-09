@@ -5,7 +5,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import BulkReport from '@/features/reports/BulkReport';
-import { getDrivers } from '@/lib/api';
+import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { useRouter } from 'next/navigation';
@@ -20,7 +20,7 @@ export default function LaporanBulkPage() {
     async function loadBulkData() {
       try {
         const { storedLocation } = getLocalStorage();
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getOrFetchDriverData(storedLocation);
 
         setData({
           driverData: drivers || [],
