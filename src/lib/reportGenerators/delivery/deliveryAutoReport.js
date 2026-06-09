@@ -15,9 +15,13 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
-const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
-const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+import {
+  FAILED_STATUSES,
+  PENDING_SHEET_STATUSES_BASE,
+  getDeliveryHeaders,
+  getDeliverySheetNames,
+  reportStyles,
+} from './help';
 
 export function generateDeliveryWorkbook(
   driverData,
@@ -30,10 +34,12 @@ export function generateDeliveryWorkbook(
   t
 ) {
   const translate = t || ((key) => key);
-  const isSpecialHub = hasPendingGR;
   let migrationOccurred = false;
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
-  if (isSpecialHub) PENDING_SHEET_STATUSES.push('PENDING GR');
+  if (hasPendingGR) PENDING_SHEET_STATUSES.push('PENDING GR');
+
+  const headers = getDeliveryHeaders(translate, hasPendingGR);
+  const sheetNames = getDeliverySheetNames(translate);
 
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
@@ -153,7 +159,7 @@ export function generateDeliveryWorkbook(
     else if (statusLabel === 'TERIMA SEBAGIAN') terkirimSebagian = customerName;
     else if (statusLabel === 'PENDING') pending = customerName;
     else if (statusLabel === 'PENDING GR') {
-      if (isSpecialHub) pendingGR = customerName;
+      if (hasPendingGR) pendingGR = customerName;
       else {
         pending = customerName;
         isMigrated = true;
@@ -237,7 +243,7 @@ export function generateDeliveryWorkbook(
   );
   pendingSOData.sort((a, b) => {
     const platA = a.plat || '';
-    const platB = a.plat || '';
+    const platB = b.plat || '';
     const groupA = getSortGroup(platA);
     const groupB = getSortGroup(platB);
     if (groupA !== groupB) return groupA - groupB;
@@ -247,49 +253,21 @@ export function generateDeliveryWorkbook(
   });
 
   const wb = XLSX.utils.book_new();
-  const headerStyle = {
-    font: { bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  const centerStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
-  const wrapTextStyle = { alignment: { wrapText: true, vertical: 'center', horizontal: 'left' } };
-  const blueFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } };
-  const yellowFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } };
-  const greenFillStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } };
-  const greenHeaderStyle = {
-    ...centerStyle,
-    font: { bold: true },
-    fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
-  };
 
   const routingDate = formatDateUniversal(apiDate, 'DD.MM.YYYY');
   const wsRoutingDate = XLSX.utils.aoa_to_sheet([
     [translate('excel.delivery.headers.routing_date_title')],
     [routingDate, null, null, null, null, null, null],
   ]);
-  wsRoutingDate['A1'].s = {
-    font: { bold: true, sz: 24, color: { rgb: 'FF0000' } },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
-  wsRoutingDate['A2'].s = {
-    font: { bold: true, sz: 60 },
-    alignment: { horizontal: 'center', vertical: 'center' },
-  };
+  wsRoutingDate['A1'].s = reportStyles.routingDateTitle;
+  wsRoutingDate['A2'].s = reportStyles.routingDateValue;
   wsRoutingDate['!merges'] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
   ];
   wsRoutingDate['!cols'] = Array(7).fill({ wch: 15 });
-  XLSX.utils.book_append_sheet(wb, wsRoutingDate, translate('excel.delivery.sheets.routing_date'));
+  XLSX.utils.book_append_sheet(wb, wsRoutingDate, sheetNames.routingDate);
 
-  const headers1 = [
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('excel.delivery.headers.total_outlet'),
-    translate('excel.delivery.headers.total_delivery'),
-    translate('excel.delivery.headers.info_manual'),
-    translate('excel.delivery.headers.info_diff_day'),
-  ];
   const validDriverData = driverData.filter((driver) => {
     const plat = driver.plat || '';
     if (isEmpty(plat)) return false;
@@ -411,7 +389,7 @@ export function generateDeliveryWorkbook(
   });
 
   const finalSheetData1 = [
-    headers1,
+    headers.totalDelivered,
     ...sheetData1Objects.map((row) => [
       row.plat,
       row.driver,
@@ -431,7 +409,7 @@ export function generateDeliveryWorkbook(
     { wch: 50 },
   ];
   ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach((cell) => {
-    if (wsDelivered[cell]) wsDelivered[cell].s = headerStyle;
+    if (wsDelivered[cell]) wsDelivered[cell].s = reportStyles.headerStyle;
   });
   finalSheetData1.forEach((row, R) => {
     if (R === 0) return;
@@ -442,59 +420,32 @@ export function generateDeliveryWorkbook(
       const cellRef = `${col}${R + 1}`;
       if (wsDelivered[cellRef]) {
         if (col === 'A' || col === 'C' || col === 'D') {
-          wsDelivered[cellRef].s = centerStyle;
+          wsDelivered[cellRef].s = reportStyles.centerStyle;
         } else if (col === 'B') {
-          wsDelivered[cellRef].s = { alignment: { horizontal: 'left', vertical: 'center' } };
+          wsDelivered[cellRef].s = reportStyles.leftAlignStyle;
         } else if (col === 'E' || col === 'F') {
-          wsDelivered[cellRef].s = wrapTextStyle;
+          wsDelivered[cellRef].s = reportStyles.wrapTextStyle;
         }
       }
     });
     if (rowData.highlightType === 'green') {
-      const style = { ...centerStyle, fill: greenFillStyle.fill };
+      const style = { ...reportStyles.centerStyle, fill: reportStyles.greenFillStyle.fill };
       if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
       if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
     } else if (rowData.highlightType === 'blue') {
-      const style = { ...centerStyle, fill: blueFillStyle.fill };
+      const style = { ...reportStyles.centerStyle, fill: reportStyles.blueFillStyle.fill };
       if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
       if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
     } else if (rowData.highlightType === 'yellow') {
-      const style = { ...centerStyle, fill: yellowFillStyle.fill };
+      const style = { ...reportStyles.centerStyle, fill: reportStyles.yellowFillStyle.fill };
       if (wsDelivered[cellRefC]) wsDelivered[cellRefC].s = style;
       if (wsDelivered[cellRefD]) wsDelivered[cellRefD].s = style;
     }
   });
-  XLSX.utils.book_append_sheet(wb, wsDelivered, translate('excel.delivery.sheets.total_delivered'));
+  XLSX.utils.book_append_sheet(wb, wsDelivered, sheetNames.totalDelivered);
 
-  const headers2 = [
-    translate('common.flow'),
-    translate('common.so_number'),
-    translate('common.date'),
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('common.status.cancel'),
-    translate('common.status.partial'),
-    translate('common.status.pending'),
-  ];
-  if (isSpecialHub) headers2.push(translate('common.status.pending_gr'));
-  headers2.push(
-    translate('excel.delivery.headers.reason'),
-    '',
-    translate('common.open_time'),
-    translate('common.close_time'),
-    translate('common.eta'),
-    translate('common.etd'),
-    translate('common.actual_arrival'),
-    translate('common.actual_departure'),
-    translate('common.visit_plan'),
-    translate('common.visit_actual'),
-    translate('common.customer_id'),
-    translate('common.ro_seq'),
-    translate('common.actual_seq'),
-    translate('common.storage_type')
-  );
   const finalSheetData2 = [
-    headers2,
+    headers.pendingSO,
     ...pendingSOData.map((row) => {
       const dataRow = [
         row.flow,
@@ -506,7 +457,7 @@ export function generateDeliveryWorkbook(
         row.terkirimSebagian,
         row.pending,
       ];
-      if (isSpecialHub) dataRow.push(row.pendingGR);
+      if (hasPendingGR) dataRow.push(row.pendingGR);
       dataRow.push(
         row.reason,
         null,
@@ -528,7 +479,7 @@ export function generateDeliveryWorkbook(
   ];
   const wsPendingSO = XLSX.utils.aoa_to_sheet(finalSheetData2);
   wsPendingSO['!view'] = { state: 'frozen', ySplit: 1 };
-  const separatorColIndex = isSpecialHub ? 10 : 9;
+  const separatorColIndex = hasPendingGR ? 10 : 9;
   const centerAlignedIndices = [
     translate('common.open_time'),
     translate('common.close_time'),
@@ -543,8 +494,10 @@ export function generateDeliveryWorkbook(
     translate('common.actual_seq'),
     translate('common.storage_type'),
   ];
-  const centerAlignedSOColumns = centerAlignedIndices.map((header) => headers2.indexOf(header));
-  const colWidthsSO = headers2.map((header, i) => {
+  const centerAlignedSOColumns = centerAlignedIndices.map((header) =>
+    headers.pendingSO.indexOf(header)
+  );
+  const colWidthsSO = headers.pendingSO.map((header, i) => {
     if (i === separatorColIndex) return { wch: 3 };
     const maxLength = finalSheetData2.reduce(
       (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
@@ -553,7 +506,6 @@ export function generateDeliveryWorkbook(
     return { wch: Math.min(maxLength + 2, 50) };
   });
   wsPendingSO['!cols'] = colWidthsSO;
-  const separatorStyle = { fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } } };
   const pendingColIndex = 6;
   const rangeSO = XLSX.utils.decode_range(wsPendingSO['!ref']);
   for (let R = rangeSO.s.r; R <= rangeSO.e.r; ++R) {
@@ -563,21 +515,21 @@ export function generateDeliveryWorkbook(
       const cell = wsPendingSO[cellRef];
       if (R === 0) {
         if (C === separatorColIndex) {
-          cell.s = { ...headerStyle, ...separatorStyle };
+          cell.s = { ...reportStyles.headerStyle, ...reportStyles.separatorStyle };
         } else if (C <= 1) {
-          cell.s = headerStyle;
+          cell.s = reportStyles.headerStyle;
         } else {
-          cell.s = greenHeaderStyle;
+          cell.s = reportStyles.greenHeaderStyle;
         }
         if (migrationOccurred && C === pendingColIndex) {
           cell.c = [{ a: 'Info', t: translate('excel.delivery.info_wrong_status'), h: true }];
         }
       } else {
         if (C === separatorColIndex) {
-          cell.s = separatorStyle;
+          cell.s = reportStyles.separatorStyle;
         } else if (centerAlignedSOColumns.includes(C)) {
           if (!cell.s) cell.s = {};
-          cell.s.alignment = centerStyle.alignment;
+          cell.s.alignment = reportStyles.centerStyle.alignment;
           if (typeof cell.v === 'number') cell.t = 'n';
         }
         const rowData = pendingSOData[R - 1];
@@ -588,22 +540,15 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsPendingSO, translate('excel.delivery.sheets.pending_so'));
+  XLSX.utils.book_append_sheet(wb, wsPendingSO, sheetNames.pendingSO);
 
-  const headers4 = [
-    translate('common.customer_name'),
-    translate('common.customer_id'),
-    translate('common.location_id'),
-    translate('excel.delivery.headers.new_longlat'),
-    translate('excel.delivery.headers.dist_diff'),
-  ];
   updateLonglatData.sort((a, b) => {
     const distA = a.bedaJarak !== null ? a.bedaJarak : Infinity;
     const distB = b.bedaJarak !== null ? b.bedaJarak : Infinity;
     return distA - distB;
   });
   const finalSheetData4 = [
-    headers4,
+    headers.updateLonglat,
     ...updateLonglatData.map((row) => [
       row.customerName,
       row.customerId,
@@ -614,7 +559,7 @@ export function generateDeliveryWorkbook(
   ];
   const wsUpdateLonglat = XLSX.utils.aoa_to_sheet(finalSheetData4);
   wsUpdateLonglat['!view'] = { state: 'frozen', ySplit: 1 };
-  const colWidths4 = headers4.map((header, i) => {
+  const colWidths4 = headers.updateLonglat.map((header, i) => {
     const maxLength = finalSheetData4.reduce(
       (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
       0
@@ -629,46 +574,23 @@ export function generateDeliveryWorkbook(
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsUpdateLonglat[cellRef]) continue;
       if (R === 0) {
-        wsUpdateLonglat[cellRef].s = headerStyle;
+        wsUpdateLonglat[cellRef].s = reportStyles.headerStyle;
         if (C === 4) {
           wsUpdateLonglat[cellRef].c = [
             { a: 'Info', t: translate('excel.delivery.info_longlat'), h: true },
           ];
         }
       } else if (centerAlignedLonglat.includes(C)) {
-        wsUpdateLonglat[cellRef].s = centerStyle;
+        wsUpdateLonglat[cellRef].s = reportStyles.centerStyle;
         if (typeof wsUpdateLonglat[cellRef].v === 'number') {
           wsUpdateLonglat[cellRef].t = 'n';
         }
       }
     }
   }
-  XLSX.utils.book_append_sheet(
-    wb,
-    wsUpdateLonglat,
-    translate('excel.delivery.sheets.update_longlat')
-  );
+  XLSX.utils.book_append_sheet(wb, wsUpdateLonglat, sheetNames.updateLonglat);
 
-  const headers3 = [
-    translate('common.flow'),
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('common.customer_name'),
-    translate('excel.delivery.headers.status_del'),
-    translate('common.open_time'),
-    translate('common.close_time'),
-    translate('common.eta'),
-    translate('common.actual_arrival'),
-    translate('common.etd'),
-    translate('common.actual_departure'),
-    translate('common.visit_plan'),
-    translate('common.visit_actual'),
-    translate('common.ro_seq'),
-    translate('common.actual_seq'),
-    translate('excel.delivery.headers.is_match'),
-    translate('dashboard.tab.routingreal.is_within_hours'),
-  ];
-  let finalSheetData3 = [headers3];
+  let finalSheetData3 = [headers.roVsReal];
   const manualAssignRows3 = new Set();
   const tasksByNameMap = new Map();
   for (const task of allTaskDataForSequence) {
@@ -799,11 +721,11 @@ export function generateDeliveryWorkbook(
       null,
       null,
     ]);
-    finalSheetData3.push(Array(headers3.length).fill(null));
+    finalSheetData3.push(Array(headers.roVsReal.length).fill(null));
   }
   const wsRoVsReal = XLSX.utils.aoa_to_sheet(finalSheetData3);
   wsRoVsReal['!view'] = { state: 'frozen', ySplit: 1 };
-  const colWidths3 = headers3.map((header, i) => {
+  const colWidths3 = headers.roVsReal.map((header, i) => {
     const maxLength = finalSheetData3.reduce(
       (max, row) => Math.max(max, row[i] ? String(row[i]).length : 0),
       0
@@ -816,21 +738,6 @@ export function generateDeliveryWorkbook(
   colWidths3[14] = { wch: 10 };
   wsRoVsReal['!cols'] = colWidths3;
 
-  const colFillMap3 = {
-    5: { header: 'A7F3D0', data: 'D1FAE5' },
-    6: { header: 'A7F3D0', data: 'D1FAE5' },
-    7: { header: 'FED7AA', data: 'FFEDD5' },
-    8: { header: 'FED7AA', data: 'FFEDD5' },
-    9: { header: 'FDE68A', data: 'FEF9C3' },
-    10: { header: 'FDE68A', data: 'FEF9C3' },
-    11: { header: 'FBCFE8', data: 'FCE7F3' },
-    12: { header: 'FBCFE8', data: 'FCE7F3' },
-    13: { header: 'BFDBFE', data: 'DBEAFE' },
-    14: { header: 'BFDBFE', data: 'DBEAFE' },
-  };
-  const leftAlign3 = { alignment: { horizontal: 'left', vertical: 'center' } };
-  const hubRedStyle3 = { ...centerStyle, font: { bold: true, color: { rgb: 'FF0000' } } };
-
   const range3 = XLSX.utils.decode_range(wsRoVsReal['!ref']);
   for (let R = range3.s.r; R <= range3.e.r; ++R) {
     const customerCellRef = XLSX.utils.encode_cell({ r: R, c: 3 });
@@ -842,7 +749,7 @@ export function generateDeliveryWorkbook(
       const cell = wsRoVsReal[cellRef];
 
       if (R === 0) {
-        const colFill = colFillMap3[C];
+        const colFill = reportStyles.colFillMapRoVsReal[C];
         const isNarrow = C >= 11 && C <= 14;
         cell.s = {
           font: { bold: true },
@@ -858,9 +765,9 @@ export function generateDeliveryWorkbook(
         }
       } else if (isHubRow) {
         if ([7, 9].includes(C)) {
-          cell.s = { ...hubRedStyle3 };
+          cell.s = { ...reportStyles.hubRedStyle };
         } else if (C === 3) {
-          cell.s = { ...hubRedStyle3 };
+          cell.s = { ...reportStyles.hubRedStyle };
         } else {
           cell.s = { font: { color: { rgb: 'FF0000' } } };
         }
@@ -872,13 +779,16 @@ export function generateDeliveryWorkbook(
 
         const isManual = manualAssignRows3.has(R);
         if (isManual) {
-          cell.s = { ...(C <= 3 ? leftAlign3 : centerStyle), fill: { fgColor: { rgb: 'FECACA' } } };
-        } else if (C <= 3) {
-          cell.s = { ...leftAlign3 };
-        } else {
-          const colFill = colFillMap3[C];
           cell.s = {
-            ...centerStyle,
+            ...(C <= 3 ? reportStyles.leftAlignStyle : reportStyles.centerStyle),
+            fill: { fgColor: { rgb: 'FECACA' } },
+          };
+        } else if (C <= 3) {
+          cell.s = { ...reportStyles.leftAlignStyle };
+        } else {
+          const colFill = reportStyles.colFillMapRoVsReal[C];
+          cell.s = {
+            ...reportStyles.centerStyle,
             ...(colFill ? { fill: { fgColor: { rgb: colFill.data } } } : {}),
           };
         }
@@ -905,7 +815,7 @@ export function generateDeliveryWorkbook(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, wsRoVsReal, t('excel.delivery.sheets.ro_vs_real'));
+  XLSX.utils.book_append_sheet(wb, wsRoVsReal, sheetNames.roVsReal);
 
   const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
   const excelFileName = `${translate('excel.delivery.filename')} - ${date} - ${selectedLocationName}.xlsx`;

@@ -6,10 +6,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getHubs } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import {
-  getLocalStorage,
-  updateActiveHub,
   getCachedHubs,
+  getLocalStorage,
   setCachedHubs,
+  updateActiveHub,
 } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
 import { isEmpty } from '@/lib/utils';
@@ -22,28 +22,26 @@ export default function LocationSwitcher() {
   const [allowedHubs, setAllowedHubs] = useState([]);
   const { t } = useLanguage();
 
-  const { isChecking, showModal, unmappedData, triggerCheck, handleMappingCompleted } =
-    useVehicleTagCheck();
+  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
       try {
-        let hubsSimple = getCachedHubs();
-
-        if (!hubsSimple || isEmpty(hubsSimple)) {
-          hubsSimple = await getHubs();
-          if (isEmpty(hubsSimple)) {
-            throw new Error(t('common.no_data'));
-          }
-          setCachedHubs(hubsSimple);
-        }
-
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
+        let cached = getCachedHubs();
+
+        if (!cached || isEmpty(cached)) {
+          cached = await getHubs();
+          if (!isEmpty(cached)) setCachedHubs(cached);
+        }
+
         const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
         const allowed =
-          userHubIds.length > 0 ? hubsSimple.filter((h) => userHubIds.includes(h._id)) : hubsSimple;
+          userHubIds.length > 0
+            ? (cached || []).filter((h) => userHubIds.includes(h._id))
+            : cached || [];
 
         setAllowedHubs(allowed);
       } catch (e) {

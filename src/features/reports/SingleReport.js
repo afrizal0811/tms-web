@@ -1,7 +1,11 @@
 'use client';
 
+import Accordion from '@/components/Accordion';
+import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Carousel from '@/components/Carousel';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import FileUploader from '@/components/FileUploader';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -14,9 +18,13 @@ import {
 } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import {
+  generateDeliveryWorkbook,
+  generateManualDeliveryWorkbook,
+  generateManualRoutingWorkbook,
+  generateRoutingWorkbook,
+  generateTimeSummaryWorkbook,
+} from '@/lib/reportGenerators';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
@@ -27,6 +35,8 @@ import {
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import { getTutorialData } from './helper/constants';
+import { validateRoutingFile, validateTaskFile } from './helper/help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -40,7 +50,10 @@ export default function SingleReport({
   setIsMapping,
 }) {
   const { t } = useLanguage();
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManualProcessing, setIsManualProcessing] = useState(false);
+  const [reportType, setReportType] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [isCustomRouting, setIsCustomRouting] = useState(false);
@@ -167,7 +180,6 @@ export default function SingleReport({
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
       const { storedLocationAcronym } = getLocalStorage();
 
-      // Penentuan payload secara dinamis untuk dikirim ke getResultsSummary
       const summaryPayload = isCustomRouting
         ? {
             dateFrom: `${targetRoutingStr} 00:00:00`,
@@ -279,12 +291,99 @@ export default function SingleReport({
     }
   };
 
+  const handleManualDownload = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) {
+      toastError(t('common.toast.error', { err: 'Pilih file excel terlebih dahulu' }));
+      return;
+    }
+
+    try {
+      await driversCheck();
+      setIsManualProcessing(true);
+
+      const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
+
+      const { storedLocationAcronym } = getLocalStorage();
+      const hubLabel = storedLocationAcronym || selectedLocationName;
+
+      let targetRoutingDateObj;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(routingDate);
+      } else {
+        if (!selectedDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(selectedDate);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0)
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+      }
+      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+
+      if (reportType === 'routing') {
+        const vehicleTypesObj = await getVehicleTypes();
+        const mappingsDB = await getVehicleMappings();
+        const mappingsObj = mappingsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
+        const { wb, excelFileName } = await generateManualRoutingWorkbook(
+          fileBuffers,
+          driverData,
+          mappingsObj,
+          targetRoutingStr,
+          hubLabel,
+          t,
+          vehicleTypesObj
+        );
+
+        XLSX.writeFile(wb, excelFileName);
+        toastSuccess(t('common.toast.success'));
+
+        setIsModalOpen(false);
+        setSelectedFiles([]);
+      } else if (reportType === 'delivery') {
+        const [hubsData] = await Promise.all([getHubs()]);
+
+        const activeHub = (hubsData || []).find(
+          (h) => String(h._id || h.id) === String(selectedLocation)
+        );
+        const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
+
+        const { wb, excelFileName } = await generateManualDeliveryWorkbook(
+          fileBuffers,
+          driverData,
+          selectedDateString,
+          targetRoutingStr,
+          hubLabel,
+          hasPendingGR,
+          t
+        );
+
+        XLSX.writeFile(wb, excelFileName);
+        toastSuccess(t('common.toast.success'));
+
+        setIsModalOpen(false);
+        setSelectedFiles([]);
+      }
+    } catch (err) {
+      toastError(err.message || String(err));
+    } finally {
+      setIsManualProcessing(false);
+    }
+  };
+
   const handleDateChange = (date) => {
     if (!date) {
       toastError(t('report.toast.select_date'));
       return;
     }
     setSelectedDate(date);
+  };
+
+  const handleModal = (type) => {
+    setReportType(type);
+    setIsModalOpen(true);
   };
 
   const informationComp = (tooltipContent) => (
@@ -309,9 +408,14 @@ export default function SingleReport({
   );
 
   const actionButtons = [
-    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting },
-    { id: 'delivery', label: t('report.delivery_summary'), onClick: handleDelivery },
-    { id: 'time', label: t('report.time_summary'), onClick: handleTime },
+    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting, hasOption: true },
+    {
+      id: 'delivery',
+      label: t('report.delivery_summary'),
+      onClick: handleDelivery,
+      hasOption: true,
+    },
+    { id: 'time', label: t('report.time_summary'), onClick: handleTime, hasOption: false },
   ];
 
   return (
@@ -378,16 +482,53 @@ export default function SingleReport({
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
-        {actionButtons.map(({ id, label, onClick }) => (
+        {actionButtons.map(({ id, label, onClick, hasOption }) => (
           <Button
             key={id}
             onClick={onClick}
             disabled={disabledCommon || isDateInvalid}
             isLoading={currentRunning === id}
             text={label}
+            hasOptions={hasOption}
+            options={[
+              {
+                label: 'Manual',
+                onClick: () => handleModal(id),
+              },
+            ]}
           />
         ))}
       </div>
+      <BaseModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedFiles([]);
+        }}
+        title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : t('report.delivery_summary')}`}
+        maxWidth="max-w-2xl w-[95%] sm:w-full"
+        footer={
+          <Button
+            text={t('common.download')}
+            onClick={handleManualDownload}
+            isLoading={isManualProcessing}
+            disabled={selectedFiles.length === 0 || isManualProcessing}
+          />
+        }
+      >
+        <div className="p-4 flex flex-col gap-5">
+          <FileUploader
+            files={selectedFiles}
+            onUpdateFiles={setSelectedFiles}
+            validator={reportType === 'routing' ? validateRoutingFile : validateTaskFile}
+          />
+          {reportType && getTutorialData(t)[reportType] && (
+            <Accordion title="Tutorial" className="mt-2">
+              <Carousel items={getTutorialData(t)[reportType]} />
+            </Accordion>
+          )}
+        </div>
+      </BaseModal>
     </div>
   );
 }

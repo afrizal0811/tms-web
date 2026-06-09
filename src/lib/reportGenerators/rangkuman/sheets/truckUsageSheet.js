@@ -1,14 +1,10 @@
-import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api';
-import { calculateMasterTruckStorage } from '@/lib/driverDataHelper';
+import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
+import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError } from '@/lib/toastHelper';
 import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
-import { formatDateUniversal } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
-
-function formatMonthName(dateObj) {
-  return dateObj.toLocaleDateString('en-GB', { month: 'long' });
-}
 
 function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
   if (vehiclePlate && mappingsObj[vehiclePlate]) {
@@ -160,7 +156,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
   const [vehicleTypesObj, mappingsDB, driversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
-    getDrivers(hubId),
+    getOrFetchDriverData(hubId),
     getTruckUsageData(hubId, startDateStr, endDateStr),
   ]);
 
@@ -262,12 +258,12 @@ export async function generateTruckUsageSheet(
   startDateStr,
   endDateStr,
   hubId,
-  translate
+  translate,
+  localeCode
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
     await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
-
-  const monthName = formatMonthName(new Date(startDateStr));
+  const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];
   const merges = [];
   const getPctFill = (val) => {

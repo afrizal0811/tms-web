@@ -12,9 +12,11 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { generateDeliveryWorkbook } from '@/lib/reportGenerators/deliveryReport';
-import { generateRoutingWorkbook } from '@/lib/reportGenerators/routingReport';
-import { generateTimeSummaryWorkbook } from '@/lib/reportGenerators/timeReport';
+import {
+  generateDeliveryWorkbook,
+  generateRoutingWorkbook,
+  generateTimeSummaryWorkbook,
+} from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
@@ -24,7 +26,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useState } from 'react';
-import { bulkDownloader } from './help';
+import { bulkDownloader } from './helper/help';
 
 const parseDate = (dateStr) => {
   return new Date(dateStr.replace(/-/g, '/'));

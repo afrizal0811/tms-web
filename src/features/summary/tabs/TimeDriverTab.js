@@ -4,9 +4,8 @@ import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
-export default function TimeDriverTab({ data, translate, language }) {
+export default function TimeDriverTab({ data, translate, localeCode }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
-  const indoLang = language === 'id' ? 'id-ID' : 'en-GB';
 
   const [modalData, setModalData] = useState(null);
 
@@ -14,7 +13,7 @@ export default function TimeDriverTab({ data, translate, language }) {
     if (metrics && metrics.entries && metrics.entries.length > 1) {
       setModalData({
         driverName,
-        dateStr: formatLongDate(dateStr, indoLang),
+        dateStr: formatLongDate(dateStr, localeCode),
         entries: metrics.entries,
       });
     }
@@ -71,7 +70,7 @@ export default function TimeDriverTab({ data, translate, language }) {
 
             {dateKeys.map((d, i) => {
               const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
-              const date = formatLongDate(d.str, indoLang);
+              const date = formatLongDate(d.str, localeCode);
               return (
                 <th
                   key={i}

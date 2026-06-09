@@ -2,10 +2,9 @@ import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TruckDetailModal from './modals/TruckDetailModal';
 
-export default function TruckDetailTab({ data, translate, language }) {
+export default function TruckDetailTab({ data, translate, localeCode }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const [modalData, setModalData] = useState(null);
-  const indoLang = language === 'id' ? 'id-ID' : 'en-GB';
 
   const handleCellClick = (metrics, driverName, dateStr) => {
     if (metrics && metrics.taskList && metrics.taskList.length > 0) {
@@ -86,7 +85,7 @@ export default function TruckDetailTab({ data, translate, language }) {
       <TruckDetailModal
         data={modalData}
         isOpen={!!modalData}
-        language={indoLang}
+        localeCode={localeCode}
         onClose={closeModal}
         translate={translate}
       />
@@ -114,7 +113,7 @@ export default function TruckDetailTab({ data, translate, language }) {
               </th>
               {dateKeys.map((d, i) => {
                 const headerColor = isSunday(d.str) ? holidayColor : dateColor;
-                const date = formatLongDate(d.str, indoLang);
+                const date = formatLongDate(d.str, localeCode);
                 return (
                   <th
                     key={i}

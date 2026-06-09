@@ -4,7 +4,7 @@ import { isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
-export default function TableData({ data, historyMap, selectedDate, t, lang }) {
+export default function TableData({ data, historyMap, selectedDate, t, localeCode }) {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -71,7 +71,7 @@ export default function TableData({ data, historyMap, selectedDate, t, lang }) {
                         {row.newLonglat}
                       </td>
                       <td className="px-4 py-2 text-center dark:text-slate-300">
-                        {row.bedaJarak?.toLocaleString(lang)}
+                        {row.bedaJarak?.toLocaleString(localeCode)}
                       </td>
                       <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
                         {row.driverName}

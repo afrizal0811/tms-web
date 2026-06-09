@@ -230,7 +230,7 @@ export function calculateStartFinishDates(selectedDateStr) {
 }
 
 // Mengonversi timestamp UTC string menjadi objek Date yang digeser manual ke UTC+7
-function parseAndShiftToUTC7(timestampStr) {
+export function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
   try {
     let utcTimestamp = timestampStr.replace(' ', 'T');

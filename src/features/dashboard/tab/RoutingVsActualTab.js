@@ -224,7 +224,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               const hubEnd = row.type === 'HUB_END';
               if (row.type === 'SPACER') {
                 return (
-                  <tr key={rowIndex} className="bg-gray-50 dark:bg-slate-800">
+                  <tr key={rowIndex} className="bg-gray-50 dark:bg-slate-700/40">
                     <td colSpan={17} className="h-4 sm:h-6"></td>
                   </tr>
                 );

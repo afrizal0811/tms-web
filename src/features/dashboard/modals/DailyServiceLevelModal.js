@@ -7,7 +7,7 @@ import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { serviceLevelData } from '../help';
 
-const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMode }) => {
+const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     let dayName = '';
@@ -18,7 +18,7 @@ const DailyTooltip = ({ active, payload, label, t, lang, selectedDate, isDarkMod
         const month = selectedDate.getMonth();
         const day = parseInt(label, 10);
         const dateObj = new Date(year, month, day);
-        dayName = dateObj.toLocaleDateString(lang, { weekday: 'long' });
+        dayName = dateObj.toLocaleDateString(localeCode, { weekday: 'long' });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }));
       }
@@ -64,7 +64,7 @@ function DailyServiceLevelModal({
   selectedDate,
   isDarkMode,
   t,
-  lang,
+  localeCode,
 }) {
   if (!isOpen) return null;
 
@@ -122,7 +122,7 @@ function DailyServiceLevelModal({
                 content={
                   <DailyTooltip
                     t={t}
-                    lang={lang}
+                    localeCode={localeCode}
                     selectedDate={selectedDate}
                     isDarkMode={isDarkMode}
                   />

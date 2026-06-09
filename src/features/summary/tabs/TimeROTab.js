@@ -46,7 +46,7 @@ const isValidRoutingTimeWIB = (utcString) => {
   }
 };
 
-export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, language }) {
+export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
 
@@ -65,7 +65,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
 
     while (current <= end) {
       const dateKey = formatDateWIB(current, 'YYYY-MM-DD');
-      const displayDate = formatLongDate(current, language);
+      const displayDate = formatLongDate(current, localeCode);
 
       dataMap[dateKey] = {
         dateKey: dateKey,
@@ -119,7 +119,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
     return Object.keys(dataMap)
       .sort()
       .map((key) => dataMap[key]);
-  }, [tasks, startDateStr, endDateStr, language]);
+  }, [tasks, startDateStr, endDateStr, localeCode]);
 
   const headerTitle = [
     {

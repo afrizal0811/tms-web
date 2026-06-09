@@ -15,9 +15,8 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
-import { processSequenceAccuracyData } from '@/lib/dashboardHelper';
 import { isEmpty } from '@/lib/utils';
-import { seqAccuracyData } from '../../help';
+import { processSequenceAccuracyData, seqAccuracyData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
@@ -58,7 +57,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
 };
 
 function SequenceAccuracyChart({ allTasks, isDarkMode }) {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
@@ -73,9 +72,9 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
       setSelectedMonth(null);
       return;
     }
-    const result = processSequenceAccuracyData(allTasks, 'monthly');
+    const result = processSequenceAccuracyData(allTasks, 'monthly', null, localeCode);
     setMonthlyData(result);
-  }, [allTasks]);
+  }, [allTasks, localeCode]);
 
   const localizedData = useMemo(() => {
     if (!monthlyData) return null;
@@ -85,12 +84,12 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          name: date.toLocaleDateString(lang, { month: 'short' }),
+          name: date.toLocaleDateString(localeCode, { month: 'short' }),
         };
       }
       return item;
     });
-  }, [monthlyData, lang]);
+  }, [monthlyData, localeCode]);
 
   useEffect(() => {
     if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
@@ -107,11 +106,11 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
     }
     setIsModalLoading(true);
     setTimeout(() => {
-      const result = processSequenceAccuracyData(allTasks, 'daily', key);
+      const result = processSequenceAccuracyData(allTasks, 'daily', key, localeCode);
       setDailyData(result);
       setIsModalLoading(false);
     }, 150);
-  }, [selectedMonth, allTasks]);
+  }, [selectedMonth, allTasks, localeCode]);
 
   const handleBarClick = (data) => {
     const payload = data && data.payload ? data.payload : data;
@@ -132,7 +131,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
   const getModalTitle = () => {
     if (!selectedDateObj) return '';
     try {
-      const fullMonth = selectedDateObj.toLocaleDateString(lang, {
+      const fullMonth = selectedDateObj.toLocaleDateString(localeCode, {
         month: 'long',
         year: 'numeric',
       });
@@ -245,7 +244,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
         selectedDate={selectedDateObj}
         isDarkMode={isDarkMode}
         t={t}
-        lang={lang}
+        localeCode={localeCode}
       />
     </div>
   );

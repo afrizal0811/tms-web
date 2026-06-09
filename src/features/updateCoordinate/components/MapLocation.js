@@ -70,7 +70,7 @@ function InitialFitBounds({ points }) {
   return null;
 }
 
-export default function MapLocation({ data, activeCoords, highlightTrigger, t, lang }) {
+export default function MapLocation({ data, activeCoords, highlightTrigger, t, localeCode }) {
   const markerRefs = useRef({});
 
   const latestOldPoint = useMemo(() => {
@@ -114,7 +114,7 @@ export default function MapLocation({ data, activeCoords, highlightTrigger, t, l
                 </span>
                 {latestOldPoint.distanceDiff !== undefined && (
                   <span className="text-slate-500 dark:text-slate-400 italic border-t border-slate-200 dark:border-slate-600 pt-1 mt-0.5 leading-none">
-                    {latestOldPoint.distanceDiff.toLocaleString(lang)} m {distanceText}
+                    {latestOldPoint.distanceDiff.toLocaleString(localeCode)} m {distanceText}
                   </span>
                 )}
               </div>
@@ -172,7 +172,7 @@ export default function MapLocation({ data, activeCoords, highlightTrigger, t, l
     });
 
     return { mapElements: elements, allPoints: points };
-  }, [data, latestOldPoint, t, lang]);
+  }, [data, latestOldPoint, t, localeCode]);
 
   if (isEmpty(allPoints)) {
     return (

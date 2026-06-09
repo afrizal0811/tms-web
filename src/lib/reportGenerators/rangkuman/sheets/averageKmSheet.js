@@ -1,27 +1,26 @@
 // File: src/lib/reportGenerators/rangkumanSheets/averageKmSheet.js
 import { getUnifiedVehicleMap } from '@/lib/unifiedRouting';
+import { formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
-function formatLongDate(dateObj, isIndo) {
-  return dateObj.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function formatMonthRange(startDateStr, endDateStr, isIndo) {
+function formatMonthRange(startDateStr, endDateStr, localeCode) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
-  const monthYear = start.toLocaleDateString(isIndo ? 'id-ID' : 'en-GB', {
+  const monthYear = start.toLocaleDateString(localeCode, {
     month: 'long',
     year: 'numeric',
   });
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-export function calculateAverageKmData(resultsData, startDateStr, endDateStr, isIndo, driverData) {
+export function calculateAverageKmData(
+  resultsData,
+  startDateStr,
+  endDateStr,
+  localeCode,
+  driverData
+) {
   const unifiedMap = getUnifiedVehicleMap(resultsData, driverData);
   const summaryData = [];
 
@@ -32,7 +31,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
   const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
   let monthTotals = {
-    range: formatMonthRange(startDateStr, endDateStr, isIndo),
+    range: formatMonthRange(startDateStr, endDateStr, localeCode),
     dryKm: 0,
     frozenKm: 0,
     totalKm: 0,
@@ -47,7 +46,7 @@ export function calculateAverageKmData(resultsData, startDateStr, endDateStr, is
     const currentDateString = `${y}-${m}-${d}`;
 
     const safeDate = new Date(y, currentIterDate.getUTCMonth(), currentIterDate.getUTCDate());
-    const displayDate = formatLongDate(safeDate, isIndo);
+    const displayDate = formatLongDate(safeDate, localeCode);
     const isSunday = currentIterDate.getUTCDay() === 0;
 
     let rowData = {
@@ -115,13 +114,13 @@ export function generateAverageKmSheet(
   startDateStr,
   endDateStr,
   translate,
-  isIndo
+  localeCode
 ) {
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr,
-    isIndo,
+    localeCode,
     []
   );
 

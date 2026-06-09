@@ -13,15 +13,29 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
 
   const handleSaveSettings = async (id, editValues) => {
     try {
+      const currentHub = hubs.find((h) => h.id === id || h._id === id) || {};
+
+      const safeAcronym =
+        editValues.acronym !== undefined
+          ? editValues.acronym
+            ? String(editValues.acronym).toUpperCase()
+            : ''
+          : currentHub.acronym || '';
+
+      const safePendingGR =
+        editValues.hasPendingGR !== undefined
+          ? Boolean(editValues.hasPendingGR)
+          : Boolean(currentHub.hasPendingGR);
+
       await updateHubSettings(id, {
-        acronym: editValues.acronym.toUpperCase(),
-        hasPendingGR: editValues.hasPendingGR,
+        acronym: safeAcronym,
+        hasPendingGR: safePendingGR,
       });
+
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (err) {
       toastError(translate('common.toast.error', { err: err.message }));
-      throw err;
     }
   };
 
@@ -46,10 +60,10 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           {item.acronym || '-'}
         </span>
       ),
-      renderEdit: (value, onChange, onSave) => (
+      renderEdit: (value, onChange) => (
         <input
           type="text"
-          value={value}
+          value={value || ''} // Mencegah error input uncontrolled karena null
           onChange={(e) => onChange(e.target.value)}
           className="w-full min-w-0 px-2 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none uppercase"
           autoFocus
@@ -85,7 +99,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       ),
     },
   ];
-
+  const confirmModalText = translate('setting.tab.general.branch_title');
   return (
     <Card>
       <ConfirmModal
@@ -95,8 +109,10 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           await handleSaveSettings(deleteConfig.id, { acronym: '', hasPendingGR: false });
           setDeleteConfig({ isOpen: false, id: null });
         }}
-        title={translate('setting.tab.general.acronym_title')}
-        message={translate('setting.tab.modal.confirm_message', { text: 'akronim' })}
+        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
+        message={translate('setting.tab.modal.confirm_message', {
+          text: confirmModalText.toLowerCase(),
+        })}
       />
 
       <div className="mb-4 border-b border-gray-100 dark:border-slate-800 pb-3">
@@ -115,7 +131,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         containerHeight="h-[408px]"
         translate={translate}
         onSave={handleSaveSettings}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id })}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id || item._id })}
       />
     </Card>
   );

@@ -16,6 +16,8 @@ export async function GET() {
         name: hub.name.replace('Hub ', ''),
         acronym: hub.acronym,
         hasPendingGR: hub.hasPendingGR || false,
+        lat: hub.lat,
+        lng: hub.lng,
         updatedAt: hub.updatedAt,
       }));
 
@@ -48,22 +50,46 @@ export async function POST() {
       cache: 'no-store',
     });
 
-    if (!externalResponse.ok) throw new Error('API Vendor Error');
+    if (!externalResponse.ok) {
+      throw new Error(`API Vendor Error: Status ${externalResponse.status}`);
+    }
 
     const responseData = await externalResponse.json();
+
+    // Pastikan kita mendapatkan array dari respons API Vendor
     const hubsArray = Array.isArray(responseData) ? responseData : responseData.data;
 
-    if (Array.isArray(hubsArray)) {
-      const upsertPromises = hubsArray.map((hub) => {
-        return prisma.hub.upsert({
-          where: { id: String(hub._id) },
-          update: { name: hub.name },
-          create: { id: String(hub._id), name: hub.name },
-        });
-      });
-      await prisma.$transaction(upsertPromises);
-      return NextResponse.json({ message: 'Sync Berhasil' }, { status: 200 });
+    if (!Array.isArray(hubsArray)) {
+      throw new Error('Format data dari API Vendor tidak sesuai (bukan Array)');
     }
+
+    const upsertPromises = hubsArray.map((hub) => {
+      // Antisipasi letak data koordinat dari API Vendor
+      const lat = hub.lat ?? hub.latitude ?? hub.location?.lat ?? null;
+      const lng = hub.lng ?? hub.longitude ?? hub.location?.lng ?? hub.location?.lon ?? null;
+
+      // Gunakan pengecekan eksplisit agar nilai truthy float terbaca sempurna
+      const parsedLat = lat !== null && lat !== undefined ? parseFloat(lat) : null;
+      const parsedLng = lng !== null && lng !== undefined ? parseFloat(lng) : null;
+
+      return prisma.hub.upsert({
+        where: { id: String(hub._id) },
+        update: {
+          name: hub.name,
+          lat: parsedLat,
+          lng: parsedLng,
+        },
+        create: {
+          id: String(hub._id),
+          name: hub.name,
+          lat: parsedLat,
+          lng: parsedLng,
+        },
+      });
+    });
+
+    await prisma.$transaction(upsertPromises);
+    return NextResponse.json({ message: 'Sync Berhasil' }, { status: 200 });
   } catch (error) {
     console.error('Error Sync Hubs:', error);
     const errorMessage =
@@ -85,8 +111,12 @@ export async function PATCH(req) {
     }
 
     const updateData = {};
-    if (acronym !== undefined) updateData.acronym = acronym || null;
-    if (hasPendingGR !== undefined) updateData.hasPendingGR = hasPendingGR;
+    if (acronym !== undefined) {
+      updateData.acronym = acronym && String(acronym).trim() !== '' ? String(acronym).trim() : null;
+    }
+    if (hasPendingGR !== undefined && hasPendingGR !== null) {
+      updateData.hasPendingGR = hasPendingGR === true || hasPendingGR === 'true';
+    }
 
     const updatedHub = await prisma.hub.update({
       where: { id: String(id) },

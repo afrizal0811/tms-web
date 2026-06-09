@@ -2,7 +2,7 @@ import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
 import { formatLongDate, isEmpty, parseCustomerString } from '@/lib/utils';
 
-export default function TruckDetailModal({ isOpen, onClose, data, translate, language }) {
+export default function TruckDetailModal({ isOpen, onClose, data, translate, localeCode }) {
   if (!isOpen || !data) return null;
 
   const { driverName, dateStr, tasks } = data;
@@ -57,7 +57,9 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, lan
       title={
         <div>
           <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, language)}</p>
+          <p className="text-slate-300 text-sm font-normal">
+            {formatLongDate(dateStr, localeCode)}
+          </p>
         </div>
       }
       bodyClassName="p-0 bg-gray-50 dark:bg-slate-900 overflow-y-auto"

@@ -10,7 +10,7 @@ import {
 } from '@/lib/api';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateRangkumanDataPreview } from '@/lib/reportGenerators/rangkumanReport';
+import { generateRangkumanDataPreview } from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toastHelper';
 import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import {
@@ -51,7 +51,7 @@ const getRoutingDateKeyFromDateStr = (dateStr) => {
 const cleanPlat = (str) => (str || '').replace(/\s+/g, '').toLowerCase();
 
 export default function useRangkumanData() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
 
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedLocationName, setSelectedLocationName] = useState('');
@@ -649,7 +649,7 @@ export default function useRangkumanData() {
         startStr,
         endStr,
         selectedLocation,
-        lang
+        localeCode
       );
       setReportPreview(preview);
 
@@ -671,7 +671,7 @@ export default function useRangkumanData() {
     fetchWithRetry,
     fetchWithTracker,
     processTaskSummaryMetrics,
-    lang,
+    localeCode,
     t,
   ]);
 

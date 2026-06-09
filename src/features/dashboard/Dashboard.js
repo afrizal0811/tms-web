@@ -3,21 +3,20 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import RoutingInfo from '@/components/RoutingInfo';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
-import { getHubs, getResultsSummary, getTasks } from '@/lib/api';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getResultsSummary, getTasks } from '@/lib/api';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toastHelper';
 import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
 
-export default function DashboardSummary({ driverData }) {
-  const { t, lang } = useLanguage();
+export default function Dashboard({ driverData }) {
+  const { t, isIndonesian } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
@@ -46,7 +45,7 @@ export default function DashboardSummary({ driverData }) {
     const fetchHubSettings = async () => {
       if (!hubId || isEmpty(driverData)) return;
       try {
-        const hubs = await getHubs();
+        const hubs = getCachedHubs();
         const activeHub = hubs.find(
           (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
         );
@@ -148,8 +147,7 @@ export default function DashboardSummary({ driverData }) {
 
     try {
       if (typeof window === 'undefined') return;
-      if (!hubId) throw new Error('Lokasi Hub tidak ditemukan. Harap login ulang.');
-
+      
       const localStart = new Date(selectedDate);
       localStart.setHours(0, 0, 0, 0);
       const localEnd = new Date(localStart);
@@ -336,8 +334,8 @@ export default function DashboardSummary({ driverData }) {
   }, [yearlyTasks, storageFilter]);
 
   const summaryData = useMemo(() => {
-    return calculateDashboard(filteredDailyTasks, driverMap, lang, hasPendingGR);
-  }, [filteredDailyTasks, driverMap, lang, hasPendingGR]);
+    return calculateDashboard(filteredDailyTasks, driverMap, isIndonesian, hasPendingGR);
+  }, [filteredDailyTasks, driverMap, isIndonesian, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';
 
@@ -348,7 +346,7 @@ export default function DashboardSummary({ driverData }) {
   let isCardEmpty = false;
   let emptyMessage = t('common.no_data');
 
-  if (isEmpty(driverData)) {
+  if (isEmpty(driverData) && !loading) {
     isCardEmpty = true;
     emptyMessage = t('common.no_driver');
   } else if (activeTab === 'Diagram') {
@@ -424,6 +422,7 @@ export default function DashboardSummary({ driverData }) {
         timerStartTime={fetchStartTimeRef.current}
         isEmpty={isCardEmpty}
         emptyMessage={emptyMessage}
+        routingData={rawData.results}
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (
@@ -452,7 +451,6 @@ export default function DashboardSummary({ driverData }) {
           )}
         </div>
       </BodyCard>
-      <RoutingInfo resultsData={rawData.results} />
     </div>
   );
 }

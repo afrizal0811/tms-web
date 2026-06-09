@@ -2,7 +2,6 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getRoles } from '@/lib/api';
-import { avatarColorStyles } from '@/lib/constants';
 import {
   getLocalStorage,
   getSuperadminRoleId,
@@ -19,17 +18,15 @@ import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
 
 export default function Navbar() {
-  const { t, lang } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [avatarColor, setAvatarColor] = useState('sky');
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-  const isIndo = lang === 'id';
   const pathname = usePathname();
   const navRef = useRef(null);
   const laporanRef = useRef(null);
@@ -41,17 +38,6 @@ export default function Navbar() {
     removeLocalStorage('data');
     window.location.href = '/';
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const availableColors = Object.keys(avatarColorStyles);
-      const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-
-      setAvatarColor(randomColor);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const checkUserAndRole = async () => {
@@ -97,6 +83,18 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
+  // Efek baru: Mengunci scroll body saat menu mobile terbuka
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (navRef.current && !navRef.current.contains(event.target)) {
@@ -116,10 +114,10 @@ export default function Navbar() {
   }, [isMobileMenuOpen, isLaporanOpen]);
 
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
-  const primaryEstimate = isIndo ? t('navbar.estimate') : t('navbar.deliveries');
-  const secondaryEstimate = isIndo ? t('navbar.deliveries') : t('navbar.estimate');
-  const primaryDeliveries = isIndo ? 'Data' : t('common.vehicle');
-  const secondaryDeliveries = isIndo ? t('common.vehicle') : 'Data';
+  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.deliveries');
+  const secondaryEstimate = isIndonesian ? t('navbar.deliveries') : t('navbar.estimate');
+  const primaryDeliveries = isIndonesian ? 'Data' : t('common.vehicle');
+  const secondaryDeliveries = isIndonesian ? t('common.vehicle') : 'Data';
 
   function NavLink({ href, children, className }) {
     const pathname = usePathname();
@@ -185,15 +183,15 @@ export default function Navbar() {
 
   const navLinkEstimate = (
     <NavLink href="/estimate">
-      <span className={!isIndo ? hiddenTextClassName : ''}> {primaryEstimate} </span>
-      <span className={isIndo ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
+      <span className={!isIndonesian ? hiddenTextClassName : ''}> {primaryEstimate} </span>
+      <span className={isIndonesian ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
     </NavLink>
   );
 
   const navLinkDelivery = (
     <NavLink href="/vehicles">
-      <span className={isIndo ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
-      <span className={!isIndo ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
+      <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
+      <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
     </NavLink>
   );
 
@@ -237,7 +235,7 @@ export default function Navbar() {
           isLaporanOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'
         }`}
       >
-        <div className="py-1">
+        <div>
           <Link
             href="/report/single"
             className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
@@ -252,21 +250,23 @@ export default function Navbar() {
           >
             {t('navbar.period_report')}
           </Link>
-          <Link
-            href="/report/detail"
-            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-            onClick={() => setIsLaporanOpen(false)}
-          >
-            {t('navbar.task_detail_report')}
-          </Link>
           {isSuperadmin && (
-            <Link
-              href="/report/counter"
-              className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-              onClick={() => setIsLaporanOpen(false)}
-            >
-              {t('navbar.task_counter_report')}
-            </Link>
+            <>
+              <Link
+                href="/report/detail"
+                className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
+                onClick={() => setIsLaporanOpen(false)}
+              >
+                {t('navbar.task_detail_report')}
+              </Link>
+              <Link
+                href="/report/counter"
+                className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
+                onClick={() => setIsLaporanOpen(false)}
+              >
+                {t('navbar.task_counter_report')}
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -336,15 +336,6 @@ export default function Navbar() {
     </div>
   );
 
-  const userInitial = (userName) => {
-    return userName
-      ? userName
-          .replace(/[^a-zA-Z]/g, '')
-          .charAt(0)
-          .toUpperCase()
-      : 'U';
-  };
-
   return (
     <nav
       ref={navRef}
@@ -388,8 +379,10 @@ export default function Navbar() {
       </div>
 
       <div
-        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 overflow-hidden transition-all duration-200 ease-in-out ${
-          isMobileMenuOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
+        className={`lg:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 shadow-lg border-t border-gray-200 dark:border-slate-800 transition-all duration-200 ease-in-out ${
+          isMobileMenuOpen
+            ? 'max-h-[80vh] opacity-100 overflow-y-auto'
+            : 'max-h-0 opacity-0 overflow-hidden'
         }`}
       >
         <div className="flex flex-col pb-4 ">
@@ -397,11 +390,6 @@ export default function Navbar() {
             <>
               <div className=" px-4 py-5 flex items-center justify-between text-slate-800 dark:text-slate-200 gap-3">
                 <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                  <div
-                    className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-inner ${avatarColorStyles[avatarColor] || avatarColorStyles.sky}`}
-                  >
-                    {userInitial(userName)}
-                  </div>
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-sm font-bold truncate tracking-wide">{userName}</span>
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
@@ -445,7 +433,7 @@ export default function Navbar() {
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
           {isLoggedIn && (
             <>
-              <MobileNavLink href="/settings">{t('setting.title')}</MobileNavLink>
+              <MobileNavLink href="/setting">{t('setting.title')}</MobileNavLink>
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-3 py-3 text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"

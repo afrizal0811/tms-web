@@ -5,11 +5,10 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import RoutingInfo from '@/components/RoutingInfo';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useRangkumanData from '@/lib/hooks/useRangkumanData';
-import { generateRangkumanWorkbook } from '@/lib/reportGenerators/rangkumanReport';
+import { generateRangkumanWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -23,7 +22,7 @@ import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function SummaryPage() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const {
     selectedLocation,
     selectedLocationName,
@@ -156,7 +155,7 @@ export default function SummaryPage() {
         taskSummaryMetrics,
         masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
         t,
-        lang,
+        localeCode,
         hasPendingGR,
         pendingDetails
       );
@@ -252,7 +251,7 @@ export default function SummaryPage() {
           startDateStr: startStr,
           endDateStr: endStr,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Task Summary':
         return renderTab(TaskSummaryTab, {
@@ -278,13 +277,13 @@ export default function SummaryPage() {
         return renderTab(TimeDriverTab, {
           data: reportPreview.timeDriverData,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Truck Detail':
         return renderTab(TruckDetailTab, {
           data: reportPreview.truckDetailData,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Truck Usage':
         return renderTab(TruckUsageTab, {
@@ -293,14 +292,14 @@ export default function SummaryPage() {
           hubId: selectedLocation,
           onRefresh: fetchData,
           driverData: driverData,
-          language: lang,
+          localeCode: localeCode,
         });
       case 'Average KM':
         return renderTab(AverageKmTab, {
           data: reportPreview.averageKmData,
           monthTotals: reportPreview.monthTotals,
           translate: t,
-          language: lang,
+          localeCode: localeCode,
         });
     }
   };
@@ -362,6 +361,12 @@ export default function SummaryPage() {
     { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
     { id: 'Average KM', label: t('summary.tabs.average_km.title') },
   ];
+  const longLoading = pendingEndpoints.length > 0 && (
+    <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
+      <p>{t('summary.long_message')}</p>
+      <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
+    </div>
+  );
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
@@ -386,23 +391,11 @@ export default function SummaryPage() {
           label: tab.label,
           extraContent: getPingDot(tab.id),
         }))}
-        longLoadingContent={
-          pendingEndpoints.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
-              <p>{t('summary.long_message')}</p>
-              <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
-            </div>
-          )
-        }
+        longLoadingContent={longLoading}
+        routingData={rawData.results}
       >
         {!isLoading && renderContent()}
       </BodyCard>
-      <div className="flex items-start justify-between -mt-5">
-        <RoutingInfo resultsData={rawData.results} />
-        <span className="text-xs text-amber-600 italic text-right mt-2">
-          {t('summary.caution')}
-        </span>
-      </div>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}

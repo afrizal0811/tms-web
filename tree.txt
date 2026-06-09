@@ -10,6 +10,8 @@
 │   │   │   └── route.js
 │   │   ├── get-location-histories
 │   │   │   └── route.js
+│   │   ├── get-result
+│   │   │   └── route.js
 │   │   ├── get-results-summary
 │   │   │   └── route.js
 │   │   ├── get-roles
@@ -49,6 +51,8 @@
 │   │   │   └── page.js
 │   │   ├── counter
 │   │   │   └── page.js
+│   │   ├── detail
+│   │   │   └── page.js
 │   │   └── single
 │   │       └── page.js
 │   ├── setting
@@ -58,14 +62,17 @@
 │   └── vehicles
 │       └── page.js
 ├── components
+│   ├── Accordion.js
 │   ├── AppLayout.js
 │   ├── BaseModal.js
 │   ├── Button.js
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
+│   ├── Carousel.js
 │   ├── CustomDatePicker.js
 │   ├── ErrorPage.js
+│   ├── FileUploader.js
 │   ├── Footer.js
 │   ├── HighlightText.js
 │   ├── LanguageToggle.js
@@ -79,6 +86,7 @@
 │   │   ├── LocationSwitcher.js
 │   │   ├── Navbar.js
 │   │   └── UserDropdown.js
+│   ├── RoutingInfo.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
 │   ├── SessionGuard.js
@@ -115,7 +123,7 @@
 │   │       └── RoutingVsActualTab.js
 │   ├── deliveryEstimate
 │   │   ├── components
-│   │   │   ├── FormPengiriman.js
+│   │   │   ├── DeliveryForm.js
 │   │   │   └── TableData.js
 │   │   ├── DeliveryEstimatePage.js
 │   │   └── help.js
@@ -141,9 +149,12 @@
 │   │   └── HelpPage.js
 │   ├── reports
 │   │   ├── BulkReport.js
-│   │   ├── help.js
+│   │   ├── helper
+│   │   │   ├── constants.js
+│   │   │   └── help.js
 │   │   ├── SingleReport.js
-│   │   └── TaskCountReport.js
+│   │   ├── TaskCountReport.js
+│   │   └── TaskDetailReport.js
 │   ├── setting
 │   │   ├── components
 │   │   │   ├── BranchManager.js
@@ -219,20 +230,31 @@
     ├── localStorageHandler.js
     ├── prisma.js
     ├── reportGenerators
-    │   ├── deliveryReport.js
-    │   ├── rangkumanReport.js
-    │   ├── rangkumanSheets
-    │   │   ├── averageKmSheet.js
-    │   │   ├── pendingReasonSheet.js
-    │   │   ├── reportStyles.js
-    │   │   ├── taskSummarySheet.js
-    │   │   ├── timeDriverSheet.js
-    │   │   ├── timeROSheet.js
-    │   │   ├── truckDetailSheet.js
-    │   │   └── truckUsageSheet.js
-    │   ├── routingReport.js
-    │   ├── taskCountReport.js
-    │   └── timeReport.js
+    │   ├── delivery
+    │   │   ├── deliveryAutoReport.js
+    │   │   ├── deliveryManualReport.js
+    │   │   └── help.js
+    │   ├── index.js
+    │   ├── rangkuman
+    │   │   ├── rangkumanReport.js
+    │   │   └── sheets
+    │   │       ├── averageKmSheet.js
+    │   │       ├── index.js
+    │   │       ├── pendingReasonSheet.js
+    │   │       ├── reportStyles.js
+    │   │       ├── taskSummarySheet.js
+    │   │       ├── timeDriverSheet.js
+    │   │       ├── timeROSheet.js
+    │   │       ├── truckDetailSheet.js
+    │   │       └── truckUsageSheet.js
+    │   ├── routing
+    │   │   ├── help.js
+    │   │   ├── routingAutoReport.js
+    │   │   └── routingManualReport.js
+    │   ├── taskCounter
+    │   │   └── taskCountReport.js
+    │   └── time
+    │       └── timeReport.js
     ├── toastHelper.js
     ├── unifiedRouting.js
     └── utils.js

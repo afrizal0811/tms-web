@@ -14,7 +14,7 @@ export default function TruckUsageModal({
   driverData,
   vehicleTypes,
   translate,
-  language,
+  localeCode,
 }) {
   const [count, setCount] = useState('');
   const [desc, setDesc] = useState('');
@@ -85,7 +85,7 @@ export default function TruckUsageModal({
           <div className="flex flex-col gap-0.5">
             <span>{modalTitle}</span>
             <span className="text-sm font-normal opacity-70">
-              {formatLongDate(data.date, language)}
+              {formatLongDate(data.date, localeCode)}
             </span>
           </div>
         }
@@ -207,7 +207,7 @@ export default function TruckUsageModal({
               Non TMS - {data.storage} ({data.type})
             </span>
             <span className="text-sm font-normal opacity-70">
-              {formatLongDate(data.date, language)}
+              {formatLongDate(data.date, localeCode)}
             </span>
           </div>
         }

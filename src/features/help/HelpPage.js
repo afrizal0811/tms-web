@@ -12,8 +12,7 @@ import { PdfDocument } from './components/PdfDocument';
 import { helpTopics } from './data';
 
 export default function HelpPage() {
-  const { t, lang } = useLanguage();
-  const isIndo = lang === 'id';
+  const { t, localeCode, isIndonesian } = useLanguage();
 
   const [activeCategory, setActiveCategory] = useState('planner');
   const [manualSelection, setManualSelection] = useState(null);
@@ -262,9 +261,9 @@ export default function HelpPage() {
               {t('help.subtitle')}
             </p>
             <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
-              {t('help.last_update', { date: formatLongDate(LAST_UPDATE, lang) })}
+              {t('help.last_update', { date: formatLongDate(LAST_UPDATE, localeCode) })}
             </p>
-            {!isIndo && (
+            {!isIndonesian && (
               <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
                 <span className="text-red-600 dark:text-red-300">*{t('help.notice')}</span>
               </p>

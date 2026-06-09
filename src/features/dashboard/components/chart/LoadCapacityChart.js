@@ -48,7 +48,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
 };
 
 const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
 
   const chartData = useMemo(() => {
@@ -56,7 +56,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
     const rawData = processLoadCapacityData(tasks, driverData, year);
     const localizedData = rawData.map((item) => {
       const dateObj = new Date(year, item.monthIndex, 1);
-      const monthShortName = dateObj.toLocaleDateString(lang, {
+      const monthShortName = dateObj.toLocaleDateString(localeCode, {
         month: 'short',
       });
       return {
@@ -66,7 +66,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
     });
 
     return localizedData.filter((m) => m.veryLow + m.low + m.normal + m.full + m.overload > 0);
-  }, [tasks, driverData, selectedYear, lang]);
+  }, [tasks, driverData, selectedYear, localeCode]);
 
   const handleBarClick = (data, index) => {
     setSelectedMonthIndex(index);
@@ -79,7 +79,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
 
     const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
     const dateObj = new Date(year, monthItem.monthIndex, 1);
-    const fullMonth = dateObj.toLocaleDateString(lang, {
+    const fullMonth = dateObj.toLocaleDateString(localeCode, {
       month: 'long',
       year: 'numeric',
     });
@@ -170,7 +170,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
           monthData={selectedMonthIndex !== null ? chartData[selectedMonthIndex] : null}
           isDarkMode={isDarkMode}
           t={t}
-          lang={lang}
+          localeCode={localeCode}
         />
       </div>
     </div>

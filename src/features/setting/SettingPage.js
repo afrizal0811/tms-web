@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toastHelper';
+import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
 import SyncDataTab from './tabs/SyncDataTab';
@@ -42,17 +43,19 @@ export default function SettingPage() {
             }
           }
         });
-        const latestDriverSync = maxDriverDate ? maxDriverDate.toLocaleString('id-ID') : '-';
+        const latestDriverSync = maxDriverDate
+          ? formatDateUniversal(maxDriverDate, 'DD/MM/YYYY HH:mm:ss')
+          : '-';
 
         setHubs(hubsDb);
         setLastUpdated({
           hubs:
             hubsDb.length > 0 && hubsDb[0].updatedAt
-              ? new Date(hubsDb[0].updatedAt).toLocaleString('id-ID')
+              ? formatDateUniversal(new Date(hubsDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
               : '-',
           roles:
             rolesDb.length > 0 && rolesDb[0].updatedAt
-              ? new Date(rolesDb[0].updatedAt).toLocaleString('id-ID')
+              ? formatDateUniversal(new Date(rolesDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
               : '-',
           drivers: latestDriverSync,
         });
@@ -68,7 +71,7 @@ export default function SettingPage() {
           setIsReadOnly(true);
         }
       } catch (error) {
-        toastError(t('common.error', { err: error.message }));
+        toastError(t('common.toast.error', { err: error.message }));
       }
     },
     [t]

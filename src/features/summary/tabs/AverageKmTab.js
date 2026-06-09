@@ -4,8 +4,7 @@ import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
 import AverageKmDetailModal from './modals/AverageKmDetailModal';
 
-export default function AverageKmTab({ data, monthTotals, translate, language }) {
-  const indoCode = language === 'id' ? 'id-ID' : 'en-GB';
+export default function AverageKmTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
     'border border-gray-400 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
   const defaultVioletClass = `${defaultClass} bg-[#d9d2e9] dark:bg-[#34205c]`;
@@ -22,7 +21,9 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
           <h3 className="text-lg font-bold">
             {translate('summary.tabs.average_km.modal.title')} - {type}
           </h3>
-          <p className="text-slate-300 text-sm font-normal">{formatLongDate(dateStr, indoCode)}</p>
+          <p className="text-slate-300 text-sm font-normal">
+            {formatLongDate(dateStr, localeCode)}
+          </p>
         </div>
       );
       setModalOpen(true);
@@ -35,7 +36,7 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
   };
 
   const distanceConverter = (data) => {
-    const distance = data.toLocaleString(indoCode, {
+    const distance = data.toLocaleString(localeCode, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -78,7 +79,7 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
         data={modalData}
         title={modalTitle}
         translate={translate}
-        language={language}
+        localeCode={localeCode}
       />
 
       <div className="w-full flex-1 overflow-auto bg-white dark:bg-slate-800">
@@ -154,7 +155,7 @@ export default function AverageKmTab({ data, monthTotals, translate, language })
                     className={` ${row.isSunday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
                   >
                     <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium">
-                      {formatLongDate(row.date, indoCode)}
+                      {formatLongDate(row.date, localeCode)}
                     </td>
                     {row.isSunday ? (
                       <>

@@ -145,6 +145,10 @@ body > div[style*='z-index: 9999'],
 }
 
 /* 5. States (Hover, Selected, Disabled) */
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
 .react-datepicker__month-text:hover,
 .react-datepicker__year-text:hover {
   background-color: #e0f2fe !important;
@@ -194,7 +198,7 @@ body > div[style*='z-index: 9999'],
 /* Fix: Spesifisitas outside-month untuk timpa warna hari (Light) */
 .react-datepicker .react-datepicker__day--outside-month,
 .react-datepicker .react-datepicker__day--outside-month.react-datepicker__day--weekend,
-.react-datepicker .react-datepicker__day--outside-month[class*="text-"] {
+.react-datepicker .react-datepicker__day--outside-month[class*='text-'] {
   color: #d1d5db !important;
   opacity: 0.5 !important;
 }
@@ -282,8 +286,14 @@ body > div[style*='z-index: 9999'],
 }
 
 .dark .react-datepicker__day:hover:not(.react-datepicker__day--selected),
-.dark .react-datepicker__year-text:hover:not(.react-datepicker__year-text--disabled):not(.react-datepicker__year-text--selected),
-.dark .react-datepicker__month-text:hover:not(.react-datepicker__month-text--disabled):not(.react-datepicker__month-text--selected) {
+.dark
+  .react-datepicker__year-text:hover:not(.react-datepicker__year-text--disabled):not(
+    .react-datepicker__year-text--selected
+  ),
+.dark
+  .react-datepicker__month-text:hover:not(.react-datepicker__month-text--disabled):not(
+    .react-datepicker__month-text--selected
+  ) {
   background-color: #334155 !important;
   color: #38bdf8 !important;
 }
@@ -306,7 +316,7 @@ body > div[style*='z-index: 9999'],
 /* Spesifisitas outside-month (Dark) */
 .dark .react-datepicker .react-datepicker__day--outside-month,
 .dark .react-datepicker .react-datepicker__day--outside-month.react-datepicker__day--weekend,
-.dark .react-datepicker .react-datepicker__day--outside-month[class*="text-"] {
+.dark .react-datepicker .react-datepicker__day--outside-month[class*='text-'] {
   color: #475569 !important;
   opacity: 0.5 !important;
 }

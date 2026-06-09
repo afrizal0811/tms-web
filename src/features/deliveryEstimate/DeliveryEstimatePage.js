@@ -2,7 +2,6 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import RoutingInfo from '@/components/RoutingInfo';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
@@ -762,6 +761,7 @@ export default function DeliveryEstimatePage() {
         onTabClick={setActiveVehicleId}
         tabs={vehicleTabs}
         emptyMessage={emptyMessage}
+        routingData={routingResults}
       >
         <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors ">
           <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
@@ -777,7 +777,6 @@ export default function DeliveryEstimatePage() {
           </div>
         </div>
       </BodyCard>
-      <RoutingInfo resultsData={routingResults} />
     </div>
   );
 }

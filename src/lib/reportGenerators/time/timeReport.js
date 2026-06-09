@@ -1,5 +1,6 @@
 'use client';
 
+import { isTripInShift } from '../isTripInShift';
 import {
   calculateDurationAsQuotedHHMM,
   formatDateUniversal,
@@ -11,46 +12,6 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
-function checkShiftMidpoint(rawStart, rawFinish, shift) {
-  if (!shift || !shift.startTime || !shift.endTime) return true;
-  if (!rawStart || !rawFinish) return false;
-
-  try {
-    const safeStart = rawStart.replace(' ', 'T') + 'Z';
-    const safeFinish = rawFinish.replace(' ', 'T') + 'Z';
-
-    const startMs = new Date(safeStart).getTime();
-    const finishMs = new Date(safeFinish).getTime();
-
-    if (isNaN(startMs) || isNaN(finishMs)) return false;
-
-    const durationHours = (finishMs - startMs) / (1000 * 60 * 60);
-    if (durationHours >= 14) {
-      return true;
-    }
-
-    const midpointMs = startMs + (finishMs - startMs) / 2;
-    const midpointDate = new Date(midpointMs);
-
-    const [sH, sM] = shift.startTime.split(':').map(Number);
-    const [eH, eM] = shift.endTime.split(':').map(Number);
-
-    const shiftStart = new Date(midpointDate);
-    shiftStart.setUTCHours((sH || 0) - 7, sM || 0, 0, 0);
-
-    const shiftEnd = new Date(midpointDate);
-    shiftEnd.setUTCHours((eH || 0) - 7, eM || 0, 0, 0);
-
-    if (shift.multiday === 1 || shiftEnd <= shiftStart) {
-      shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
-    }
-
-    return midpointMs >= shiftStart.getTime() && midpointMs <= shiftEnd.getTime();
-  } catch (e) {
-    return true;
-  }
-}
 
 export function generateTimeSummaryWorkbook(
   driverData,
@@ -142,7 +103,7 @@ export function generateTimeSummaryWorkbook(
     }
 
     const filteredByShift = uniqueRecords.filter((r) =>
-      checkShiftMidpoint(r.rawStartTime, r.rawFinishTime, r.workingTime)
+      isTripInShift(r.rawStartTime, r.rawFinishTime, r.workingTime)
     );
 
     if (filteredByShift.length === 0) continue;
@@ -175,7 +136,7 @@ export function generateTimeSummaryWorkbook(
   let excelDataObjects = masterDriverList.flatMap((driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
     const apiDataArray = apiDataMap.get(normalizedEmail);
-    const cleanPlat = getBasePlate(driver.plat); // set clean plat
+    const cleanPlat = getBasePlate(driver.plat);
 
     if (apiDataArray && apiDataArray.length > 0) {
       return apiDataArray.map((apiData) => ({

@@ -39,14 +39,17 @@ export default function Home() {
 
       try {
         if (!processedHubs || isEmpty(processedHubs)) {
-          const hubs = await getHubs();
-          processedHubs = hubs
-            .filter((hub) => hub.name !== 'Hub Demo')
-            .map((hub) => ({
-              ...hub,
-              name: hub.name.replace('Hub ', ''),
-            }));
+          processedHubs = await getHubs();
           setCachedHubs(processedHubs);
+        } else {
+          getHubs()
+            .then((freshHubs) => {
+              if (!isEmpty(freshHubs)) {
+                setCachedHubs(freshHubs);
+                setAllHubsList(freshHubs);
+              }
+            })
+            .catch(() => {});
         }
         setAllHubsList(processedHubs);
       } catch (e) {

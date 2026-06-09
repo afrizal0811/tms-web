@@ -40,8 +40,11 @@ export function LanguageProvider({ children }) {
     return text;
   };
 
+  const isIndonesian = lang === 'id' ? true : false;
+  const localeCode = isIndonesian ? 'id-ID' : 'en-GB';
+
   return (
-    <LanguageContext.Provider value={{ lang, switchLanguage, t }}>
+    <LanguageContext.Provider value={{ lang, switchLanguage, t, localeCode, isIndonesian }}>
       {children}
     </LanguageContext.Provider>
   );

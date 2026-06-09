@@ -24,7 +24,7 @@ import TableData from './components/TableData';
 import { handleDownloadExcel } from './help';
 
 export default function UpdateCoordinatePage() {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [tasksData, setTasksData] = useState([]);
@@ -232,7 +232,7 @@ export default function UpdateCoordinatePage() {
             historyMap={historyMap}
             selectedDate={selectedDate}
             t={t}
-            lang={lang}
+            localeCode={localeCode}
           />
         </div>
       </BodyCard>

@@ -3,26 +3,21 @@
 
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { getLocalStorage } from '../localStorageHandler';
-import { calculateAverageKmData, generateAverageKmSheet } from './rangkumanSheets/averageKmSheet';
+import { getLocalStorage } from '../../localStorageHandler';
 import {
+  calculateAverageKmData,
   calculatePendingReasonData,
-  generatePendingReasonSheet,
-} from './rangkumanSheets/pendingReasonSheet';
-import { generateTaskSummarySheet } from './rangkumanSheets/taskSummarySheet';
-import {
   calculateTimeDriverData,
-  generateTimeDriverSheet,
-} from './rangkumanSheets/timeDriverSheet';
-import { generateTimeROSheet } from './rangkumanSheets/timeROSheet';
-import {
   calculateTruckDetailData,
-  generateTruckDetailSheet,
-} from './rangkumanSheets/truckDetailSheet';
-import {
   calculateTruckUsageData,
+  generateAverageKmSheet,
+  generatePendingReasonSheet,
+  generateTaskSummarySheet,
+  generateTimeDriverSheet,
+  generateTimeROSheet,
+  generateTruckDetailSheet,
   generateTruckUsageSheet,
-} from './rangkumanSheets/truckUsageSheet';
+} from './sheets';
 
 export async function generateRangkumanDataPreview(
   driverData,
@@ -32,14 +27,13 @@ export async function generateRangkumanDataPreview(
   startDateStr,
   endDateStr,
   hubId,
-  language
+  localeCode
 ) {
-  const isIndo = language === 'id';
   const { summaryData, monthTotals } = calculateAverageKmData(
     resultsData,
     startDateStr,
     endDateStr,
-    isIndo,
+    localeCode,
     driverData
   );
 
@@ -63,7 +57,7 @@ export async function generateRangkumanDataPreview(
     locationHistoryData,
     startDateStr,
     endDateStr,
-    isIndo,
+    localeCode,
     taskData,
     resultsData
   );
@@ -97,14 +91,12 @@ export async function generateRangkumanWorkbook(
   taskSummaryMetrics,
   masterTruckData,
   translate,
-  language,
+  localeCode,
   hasPendingGR,
   pendingDetails // <-- Parameter Baru
 ) {
   const wb = XLSX.utils.book_new();
-  const isIndo = language === 'id';
-
-  generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, isIndo);
+  generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
   generateTaskSummarySheet(
     wb,
     taskSummaryMetrics,
@@ -132,7 +124,7 @@ export async function generateRangkumanWorkbook(
     startDateStr,
     endDateStr,
     translate,
-    isIndo,
+    localeCode,
     taskData,
     resultsData
   );
@@ -145,11 +137,19 @@ export async function generateRangkumanWorkbook(
     startDateStr,
     endDateStr,
     translate,
-    isIndo
+    localeCode
   );
 
-  await generateTruckUsageSheet(wb, resultsData, startDateStr, endDateStr, hubId, translate);
-  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, isIndo);
+  await generateTruckUsageSheet(
+    wb,
+    resultsData,
+    startDateStr,
+    endDateStr,
+    hubId,
+    translate,
+    localeCode
+  );
+  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
 
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');

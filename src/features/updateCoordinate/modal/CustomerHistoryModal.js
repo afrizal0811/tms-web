@@ -27,7 +27,7 @@ export default function CustomerHistoryModal({
   customerData,
   selectedDate,
 }) {
-  const { t, lang } = useLanguage();
+  const { t, localeCode } = useLanguage();
 
   const mapData = useMemo(() => {
     if (!data) return [];
@@ -39,7 +39,7 @@ export default function CustomerHistoryModal({
   const headerContent = (
     <div>
       <h3 className="text-lg font-bold">
-        {t('longlat.modal.title')} ({formatLongDate(selectedDate, lang)})
+        {t('longlat.modal.title')} ({formatLongDate(selectedDate, localeCode)})
       </h3>
       <div className="flex mt-1 font-normal">
         <p className="text-sm text-slate-500 dark:text-slate-300 font-small break-all">
@@ -61,7 +61,7 @@ export default function CustomerHistoryModal({
       <div className="w-full h-full bg-slate-50 dark:bg-slate-900 relative shrink-0">
         {mapData.length > 0 ? (
           <div className="absolute inset-0 p-4">
-            <MapLocation data={mapData} t={t} lang={lang} />
+            <MapLocation data={mapData} t={t} localeCode={localeCode} />
             <div
               className="absolute bottom-6 left-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 rounded shadow text-[10px] border border-gray-200 dark:border-slate-700 dark:text-slate-200"
               style={{ zIndex: 1000 }}
