@@ -25,6 +25,7 @@ import {
   generateRoutingWorkbook,
   generateTimeSummaryWorkbook,
 } from '@/lib/reportGenerators';
+import { generateAllInOneWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
 import { toastError, toastSuccess } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
@@ -291,6 +292,124 @@ export default function SingleReport({
     }
   };
 
+  // --- FUNGSI BARU: ALL IN ONE REPORT ---
+  const handleCombined = async () => {
+    try {
+      await driversCheck();
+      if (setIsAnyLoading) setIsAnyLoading(true);
+      setCurrentRunning('combined');
+      if (setIsMapping) setIsMapping(false);
+
+      if (!selectedDateString) throw new Error(t('common.invalid_date'));
+
+      const timeFromTasks = new Date(`${selectedDateString}T00:00:00`).toISOString();
+      const timeToTasks = new Date(`${selectedDateString}T23:59:59`).toISOString();
+
+      const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
+        calculateStartFinishDates(selectedDateString);
+
+      let targetRoutingDateObj;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingDateObj = new Date(routingDate);
+      } else {
+        targetRoutingDateObj = new Date(selectedDate);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0)
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+      }
+
+      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+      const { storedLocationAcronym } = getLocalStorage();
+
+      const summaryPayload = isCustomRouting
+        ? {
+            dateFrom: `${targetRoutingStr} 00:00:00`,
+            dateTo: `${targetRoutingStr} 23:59:59`,
+            limit: 1000,
+            hubId: selectedLocation,
+          }
+        : {
+            routingDateObj: targetRoutingDateObj,
+            deliveryDateObj: selectedDate,
+            limit: 1000,
+            hubId: selectedLocation,
+          };
+
+      // Tembak semua API secara paralel!
+      const [
+        allTasks,
+        filteredResults,
+        hubsData,
+        locationHistoriesRes,
+        vehicleTypesObj,
+        mappingsDB,
+      ] = await Promise.all([
+        getTasks({
+          hubId: selectedLocation,
+          status: 'DONE,ONGOING',
+          timeFrom: timeFromTasks,
+          timeTo: timeToTasks,
+          timeBy: 'startTime',
+          limit: 5000,
+        }),
+        getResultsSummary(summaryPayload),
+        getHubs(),
+        getLocationHistories({
+          timeFrom: timeFromHistories,
+          timeTo: timeToHistories,
+          limit: 5000,
+          startFinish: 'true',
+          fields: 'finish,startTime,email,trackedTime,totalDistance',
+          timeBy: 'createdTime',
+        }),
+        getVehicleTypes(),
+        getVehicleMappings(),
+      ]);
+
+      const allApiData = locationHistoriesRes?.tasks?.data || [];
+
+      if (isEmpty(filteredResults) && isEmpty(allTasks) && isEmpty(allApiData)) {
+        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
+      }
+
+      const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+      const mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mappedType;
+        return acc;
+      }, {});
+
+      const activeHub = (hubsData || []).find(
+        (h) => String(h._id || h.id) === String(selectedLocation)
+      );
+      const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
+      const hubLabel = storedLocationAcronym || selectedLocationName;
+
+      const { wb, excelFileName } = await generateAllInOneWorkbook({
+        driverData,
+        filteredResults,
+        allTasks,
+        allApiData,
+        mappingsObj,
+        vehicleTypes,
+        targetRoutingStr,
+        selectedDateString,
+        hubLabel,
+        hasPendingGR,
+        t,
+      });
+
+      XLSX.writeFile(wb, excelFileName);
+      toastSuccess(t('common.toast.success'));
+    } catch (err) {
+      toastError(err.message || String(err));
+    } finally {
+      setCurrentRunning(null);
+      if (setIsAnyLoading) setIsAnyLoading(false);
+      if (setIsMapping) setIsMapping(false);
+    }
+  };
+
   const handleManualDownload = async () => {
     if (!selectedFiles || selectedFiles.length === 0) {
       toastError(t('common.toast.error', { err: 'Pilih file excel terlebih dahulu' }));
@@ -300,8 +419,6 @@ export default function SingleReport({
     try {
       await driversCheck();
       setIsManualProcessing(true);
-
-      const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
 
       const { storedLocationAcronym } = getLocalStorage();
       const hubLabel = storedLocationAcronym || selectedLocationName;
@@ -318,6 +435,93 @@ export default function SingleReport({
           targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
       }
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+
+      // --- LOGIC MANUAL COMBINED REPORT ---
+      if (reportType === 'combined') {
+        const routingBuffers = [];
+        const deliveryBuffers = [];
+
+        for (const file of selectedFiles) {
+          const buffer = await file.arrayBuffer();
+          const tempWb = XLSX.read(buffer, { type: 'array' });
+          const firstSheet = tempWb.Sheets[tempWb.SheetNames[0]];
+          if (!firstSheet) continue;
+
+          const headerA1 = firstSheet['A1'] ? String(firstSheet['A1'].v).toLowerCase() : '';
+          const headerB1 = firstSheet['B1'] ? String(firstSheet['B1'].v).toLowerCase() : '';
+
+          if (headerA1 === '_id' || headerA1 === 'flow' || headerB1 === 'flow')
+            deliveryBuffers.push(buffer);
+          else routingBuffers.push(buffer);
+        }
+
+        const vehicleTypesObj = await getVehicleTypes();
+        const mappingsDB = await getVehicleMappings();
+        const mappingsObj = mappingsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
+        const [hubsData] = await Promise.all([getHubs()]);
+        const activeHub = (hubsData || []).find(
+          (h) => String(h._id || h.id) === String(selectedLocation)
+        );
+        const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
+
+        const combinedWb = XLSX.utils.book_new();
+        const appendSheets = (sourceWb) => {
+          if (!sourceWb || !sourceWb.SheetNames) return;
+          sourceWb.SheetNames.forEach((sheetName) => {
+            let finalName = sheetName;
+            let counter = 1;
+            while (combinedWb.SheetNames.includes(finalName)) {
+              finalName = `${sheetName} (${counter})`;
+              counter++;
+            }
+            XLSX.utils.book_append_sheet(combinedWb, sourceWb.Sheets[sheetName], finalName);
+          });
+        };
+
+        if (routingBuffers.length > 0) {
+          const { wb: rWb } = await generateManualRoutingWorkbook(
+            routingBuffers,
+            driverData,
+            mappingsObj,
+            targetRoutingStr,
+            hubLabel,
+            t,
+            vehicleTypesObj
+          );
+          appendSheets(rWb);
+        }
+        if (deliveryBuffers.length > 0) {
+          const { wb: dWb } = await generateManualDeliveryWorkbook(
+            deliveryBuffers,
+            driverData,
+            selectedDateString,
+            targetRoutingStr,
+            hubLabel,
+            hasPendingGR,
+            t
+          );
+          appendSheets(dWb);
+        }
+
+        if (combinedWb.SheetNames.length === 0) throw new Error(t('common.no_data'));
+
+        const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
+        XLSX.writeFile(
+          combinedWb,
+          `All in One Report Manual - ${formattedDate} - ${hubLabel}.xlsx`
+        );
+        toastSuccess(t('common.toast.success'));
+        setIsModalOpen(false);
+        setSelectedFiles([]);
+        return;
+      }
+
+      // Fallback Manual biasa
+      const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
 
       if (reportType === 'routing') {
         const vehicleTypesObj = await getVehicleTypes();
@@ -339,7 +543,6 @@ export default function SingleReport({
 
         XLSX.writeFile(wb, excelFileName);
         toastSuccess(t('common.toast.success'));
-
         setIsModalOpen(false);
         setSelectedFiles([]);
       } else if (reportType === 'delivery') {
@@ -362,7 +565,6 @@ export default function SingleReport({
 
         XLSX.writeFile(wb, excelFileName);
         toastSuccess(t('common.toast.success'));
-
         setIsModalOpen(false);
         setSelectedFiles([]);
       }
@@ -416,6 +618,12 @@ export default function SingleReport({
       hasOption: true,
     },
     { id: 'time', label: t('report.time_summary'), onClick: handleTime, hasOption: false },
+    {
+      id: 'combined',
+      label: 'All in One Report',
+      onClick: handleCombined,
+      hasOption: true,
+    },
   ];
 
   return (
@@ -481,7 +689,7 @@ export default function SingleReport({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
+      <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
         {actionButtons.map(({ id, label, onClick, hasOption }) => (
           <Button
             key={id}
@@ -490,6 +698,7 @@ export default function SingleReport({
             isLoading={currentRunning === id}
             text={label}
             hasOptions={hasOption}
+            width="w-full sm:w-auto min-w-[200px]"
             options={[
               {
                 label: 'Manual',
@@ -505,7 +714,13 @@ export default function SingleReport({
           setIsModalOpen(false);
           setSelectedFiles([]);
         }}
-        title={`Upload Manual Data - ${reportType === 'routing' ? t('report.routing_summary') : t('report.delivery_summary')}`}
+        title={`Upload Manual Data - ${
+          reportType === 'combined'
+            ? 'All in One Report'
+            : reportType === 'routing'
+              ? t('report.routing_summary')
+              : t('report.delivery_summary')
+        }`}
         maxWidth="max-w-2xl w-[95%] sm:w-full"
         footer={
           <Button
@@ -517,10 +732,23 @@ export default function SingleReport({
         }
       >
         <div className="p-4 flex flex-col gap-5">
+          {reportType === 'combined' && (
+            <div className="bg-sky-50 dark:bg-sky-900/30 p-3 rounded text-sm text-sky-800 dark:text-sky-300">
+              ℹ️ Anda dapat mengupload banyak file sekaligus (Campurkan file Task dan file Routing).
+              Sistem akan memilahnya secara otomatis.
+            </div>
+          )}
+
           <FileUploader
             files={selectedFiles}
             onUpdateFiles={setSelectedFiles}
-            validator={reportType === 'routing' ? validateRoutingFile : validateTaskFile}
+            validator={
+              reportType === 'combined'
+                ? () => true
+                : reportType === 'routing'
+                  ? validateRoutingFile
+                  : validateTaskFile
+            }
           />
           {reportType && getTutorialData(t)[reportType] && (
             <Accordion title="Tutorial" className="mt-2">

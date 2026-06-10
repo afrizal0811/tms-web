@@ -17,6 +17,7 @@ import {
   generateRoutingWorkbook,
   generateTimeSummaryWorkbook,
 } from '@/lib/reportGenerators';
+import { generateAllInOneWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
 import { toastError } from '@/lib/toastHelper';
 import {
   calculateStartFinishDates,
@@ -245,6 +246,112 @@ export default function BulkReport({ driverData }) {
     });
   };
 
+  // --- FUNGSI BARU: ALL IN ONE BULK REPORT ---
+  const handleBulkCombinedSummary = async (t) => {
+    let mappingsObj = {};
+    let vehicleTypes = [];
+    let hubsMap = {};
+    try {
+      setIsLoading(true);
+      const [vehicleTypesObj, mappingsDB, hubsDB] = await Promise.all([
+        getVehicleTypes(),
+        getVehicleMappings(),
+        getHubs(),
+      ]);
+      vehicleTypes = vehicleTypesObj.map((v) => v.name);
+      mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mappedType;
+        return acc;
+      }, {});
+      hubsMap = hubsDB.reduce((acc, curr) => {
+        acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
+        return acc;
+      }, {});
+    } catch (e) {
+      toastError(t('common.toast.error', { err: e.message }));
+      setIsLoading(false);
+      return;
+    } finally {
+      setIsLoading(false);
+    }
+
+    bulkDownloader({
+      startDate,
+      endDate,
+      driverData,
+      reportType: 'combined',
+      zipPrefix: `${t('report.bulk')} All in One`,
+      setIsLoading,
+      setCurrentReport,
+      processDateCallback: async ({ dateForFile, hubId, hubName }) => {
+        const deliveryDateObj = parseDate(dateForFile);
+        const targetRoutingDateObj = new Date(deliveryDateObj);
+        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        if (targetRoutingDateObj.getDay() === 0) {
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+        }
+
+        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+
+        const startD = new Date(deliveryDateObj);
+        startD.setHours(0, 0, 0, 0);
+        const endD = new Date(deliveryDateObj);
+        endD.setHours(23, 59, 59, 999);
+
+        const timeFromTasks = formatToApiUtc(startD);
+        const timeToTasks = formatToApiUtc(endD);
+
+        const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
+          calculateStartFinishDates(dateForFile);
+
+        const [allTasks, filteredResults, locationHistoriesRes] = await Promise.all([
+          getTasks({
+            hubId,
+            status: 'DONE,ONGOING',
+            timeFrom: timeFromTasks,
+            timeTo: timeToTasks,
+            timeBy: 'startTime',
+            limit: 1000,
+          }),
+          getResultsSummary({
+            routingDateObj: targetRoutingDateObj,
+            deliveryDateObj: deliveryDateObj,
+            hubId,
+          }),
+          getLocationHistories({
+            timeFrom: timeFromHistories,
+            timeTo: timeToHistories,
+            limit: 1000,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
+          }),
+        ]);
+
+        const allApiData = locationHistoriesRes?.tasks?.data || [];
+        const hasPendingGR = hubsMap[String(hubId)] || false;
+
+        if (allTasks.length > 0 || filteredResults.length > 0 || allApiData.length > 0) {
+          return await generateAllInOneWorkbook({
+            driverData,
+            filteredResults,
+            allTasks,
+            allApiData,
+            mappingsObj,
+            vehicleTypes,
+            targetRoutingStr,
+            selectedDateString: dateForFile,
+            hubLabel: hubName,
+            hasPendingGR,
+            t,
+          });
+        }
+        return null;
+      },
+      t,
+    });
+  };
+
   const isRangeInvalid =
     !startDate || !endDate || startDate > endDate || startDate.getTime() === endDate.getTime();
 
@@ -263,6 +370,11 @@ export default function BulkReport({ driverData }) {
       id: 'time',
       label: t('report.time_summary'),
       onClick: () => executeWithCheck(() => handleBulkTimeSummary(t)),
+    },
+    {
+      id: 'combined',
+      label: 'All in One Report',
+      onClick: () => executeWithCheck(() => handleBulkCombinedSummary(t)),
     },
   ];
 
@@ -291,7 +403,7 @@ export default function BulkReport({ driverData }) {
           />
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
+      <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
         {actionButtons.map(({ id, label, onClick }) => (
           <Button
             key={id}
@@ -299,7 +411,7 @@ export default function BulkReport({ driverData }) {
             disabled={isLoading || isRangeInvalid}
             isLoading={isLoading && currentReport === id}
             text={label}
-            width="w-full sm:w-64"
+            width="w-full sm:w-auto min-w-[200px]"
           />
         ))}
       </div>
