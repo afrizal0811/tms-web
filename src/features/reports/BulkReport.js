@@ -18,7 +18,7 @@ import {
   generateTimeSummaryWorkbook,
 } from '@/lib/reportGenerators';
 import { generateAllInOneWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
   formatDateUniversal,

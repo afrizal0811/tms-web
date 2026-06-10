@@ -2,7 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { getVehicleTypes, saveVehicleMappings } from '@/lib/api';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 
 export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {

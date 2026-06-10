@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getTasks, getTrash } from '@/lib/api';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateTaskCountWorkbook } from '@/lib/reportGenerators';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal, formatLongDate, formatToApiUtc } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';

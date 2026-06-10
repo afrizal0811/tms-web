@@ -4,7 +4,7 @@ import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import ContentBlockRenderer from '@/features/help/components/ContentBlockRenderer';
 import ImageLightbox from '@/features/help/components/ImageLightbox';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { useEffect, useMemo, useState } from 'react';

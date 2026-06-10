@@ -1,7 +1,7 @@
 // File: src/components/LocationDropdown.js
 'use client';
 
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 

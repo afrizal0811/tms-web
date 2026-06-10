@@ -3,7 +3,7 @@
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
 import Card from './Card';
 import Table from './Table';

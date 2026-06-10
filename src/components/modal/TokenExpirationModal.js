@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import BaseModal from '../BaseModal';

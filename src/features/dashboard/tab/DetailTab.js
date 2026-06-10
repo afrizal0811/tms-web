@@ -5,7 +5,7 @@ import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { forwardRef } from 'react';
 
 const StatCard = forwardRef(function StatCard(

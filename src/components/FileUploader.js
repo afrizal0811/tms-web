@@ -1,6 +1,6 @@
 'use client';
 import { useLanguage } from '@/context/LanguageContext';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 export default function FileUploader({
   files = [],
   onUpdateFiles,

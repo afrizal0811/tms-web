@@ -3,7 +3,7 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { updateHubSettings } from '@/lib/api';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
 import Table from './Table';

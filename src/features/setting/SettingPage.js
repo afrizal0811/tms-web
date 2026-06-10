@@ -5,7 +5,7 @@ import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';

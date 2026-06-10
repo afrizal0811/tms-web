@@ -11,7 +11,7 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getVehicleMappings } from '../../lib/api';
-import { toastError } from '../../lib/toastHelper';
+import { toastError } from '../../lib/toast';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';

@@ -11,7 +11,7 @@ import {
   setCachedHubs,
   updateActiveHub,
 } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 

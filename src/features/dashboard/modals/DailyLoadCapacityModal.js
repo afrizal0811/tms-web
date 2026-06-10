@@ -2,7 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {

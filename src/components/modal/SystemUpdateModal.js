@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 

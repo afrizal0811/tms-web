@@ -1,7 +1,7 @@
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteTruckUsage, upsertTruckUsage } from '@/lib/api';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 

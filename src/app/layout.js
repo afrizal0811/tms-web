@@ -35,9 +35,6 @@ export default function RootLayout({ children }) {
                 bottom: 20,
                 right: 20,
               }}
-              toastOptions={{
-                duration: 4000,
-              }}
             />
             <TokenExpirationModal />
             <SessionGuard>
