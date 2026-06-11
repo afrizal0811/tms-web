@@ -108,18 +108,23 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
         const firstStore = route.trips.find((t) => !t.isHub);
         if (firstStore?.eta) etaFirstStoreVal = formatSimpleTime(firstStore.eta);
 
+        const hubTrips = route.trips.filter((t) => t.isHub);
+        const maxHubWaitTime = hubTrips.length
+          ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
+          : 0;
+        manualWaitTime += maxHubWaitTime;
+
         route.trips.forEach((t) => {
           if (!t.isHub) {
             manualWeight += t.weight || 0;
             manualVolume += t.volume || 0;
-            manualDistance += t.distance || 0;
-            manualTravelTime += t.travelTime || 0;
             manualVisitTime += t.visitTime || 0;
             manualWaitTime += t.waitingTime || 0;
           }
+          manualDistance += t.distance || 0;
+          manualTravelTime += t.travelTime || 0;
         });
       }
-
       const fWeight = manualWeight || route.totalWeight || 0;
       const fVolume = manualVolume || route.totalVolume || 0;
       const fDist = manualDistance || route.totalDistance || 0;
@@ -140,8 +145,9 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
         etdHub: etdHubVal,
       };
 
-      if (!routingMap.has(driverName)) routingMap.set(driverName, row);
-      else {
+      if (!routingMap.has(driverName)) {
+        routingMap.set(driverName, row);
+      } else {
         const ext = routingMap.get(driverName);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
         ext.weightPercentage = Math.max(ext.weightPercentage, row.weightPercentage);
@@ -404,8 +410,6 @@ export function parseTimeData(allApiData, driverData, selectedDateString) {
   });
 
   const timeDataObjects = [];
-
-  // Membuang duplikat di driverData sebelum di proses menjadi baris-baris table
   const seenEmails = new Set();
   const uniqueDrivers = driverData.filter((d) => {
     if (d.plat?.toUpperCase().includes('DEMO')) return false;

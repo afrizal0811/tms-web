@@ -129,9 +129,11 @@ export async function validateRoutingFile(file) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
 
-    const firstSheetName = workbook.SheetNames[0];
-    const isSheetNameMatch = firstSheetName.toLowerCase() === 'summary';
+    const isSheetNameMatch = workbook.SheetNames.some(
+      (name) => name.toLowerCase().includes('summary') || name.toLowerCase().includes('ringkasan')
+    );
 
+    const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
@@ -223,3 +225,56 @@ export async function validateTaskFile(file) {
     return false;
   }
 }
+
+// helper/extractDateFromDeliveryBuffers.js
+export const getDeliveryDate = (deliveryBuffers, fallbackDate) => {
+  try {
+    const dates = [];
+
+    for (const buf of deliveryBuffers) {
+      const wbInput = XLSX.read(buf, { type: 'array' });
+      const sheetName =
+        wbInput.SheetNames.find((s) => s.toLowerCase() === 'main') || wbInput.SheetNames[0];
+      const rawRows = XLSX.utils.sheet_to_json(wbInput.Sheets[sheetName], { header: 1 });
+
+      const headIdx = rawRows.findIndex((row) => {
+        if (!Array.isArray(row)) return false;
+        const rStr = row.map((c) => String(c).toLowerCase().trim());
+        return rStr.includes('_id') && rStr.includes('flow');
+      });
+
+      if (headIdx === -1) continue;
+
+      const headers = rawRows[headIdx].map((h) => String(h).toLowerCase().trim());
+      const idxStart = headers.indexOf('starttime');
+
+      if (idxStart === -1) continue;
+
+      for (let i = headIdx + 1; i < rawRows.length; i++) {
+        const dPart = rawRows[i]?.[idxStart]
+          ? String(rawRows[i][idxStart]).split(/[T\s]/)[0]
+          : null;
+        if (dPart) dates.push(dPart);
+      }
+    }
+
+    if (dates.length === 0) return fallbackDate;
+
+    const majorityDate = Object.entries(
+      dates.reduce((acc, d) => ({ ...acc, [d]: (acc[d] || 0) + 1 }), {})
+    ).sort(([, a], [, b]) => b - a)[0][0];
+
+    const parts = majorityDate.split(/[-/]/);
+    if (parts.length !== 3) return majorityDate;
+
+    if (parts[0].length === 4)
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    if (parts[2].length === 4)
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+
+    return majorityDate;
+  } catch (e) {
+    console.error('Gagal mengekstrak tanggal dari file excel task:', e);
+    return fallbackDate;
+  }
+};

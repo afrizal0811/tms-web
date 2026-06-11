@@ -24,6 +24,7 @@ import {
   generateTimeSummaryWorkbook,
 } from '@/lib/reportGenerators';
 import { generateAutoReportWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
+import { generateManualReportWorkbook } from '@/lib/reportGenerators/reports/ManualReport';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -35,7 +36,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getTutorialData } from './helper/constants';
-import { validateRoutingFile, validateTaskFile } from './helper/help';
+import { getDeliveryDate, validateRoutingFile, validateTaskFile } from './helper/help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -151,7 +152,6 @@ export default function SingleReport({
     }
   };
 
-  // --- FUNGSI BARU: ALL IN ONE REPORT ---
   const handleCombined = async () => {
     try {
       await driversCheck();
@@ -195,7 +195,6 @@ export default function SingleReport({
             hubId: selectedLocation,
           };
 
-      // Tembak semua API secara paralel!
       const [
         allTasks,
         filteredResults,
@@ -270,7 +269,7 @@ export default function SingleReport({
   };
 
   const handleManualDownload = async () => {
-    if (isEmptyUploadedFile) {
+    if (isEmptyUploadedFile && reportType === 'combined') {
       toastError(t('common.toast.error', { err: 'Pilih file excel terlebih dahulu' }));
       return;
     }
@@ -295,12 +294,7 @@ export default function SingleReport({
       }
       const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
 
-      // --- LOGIC MANUAL COMBINED REPORT ---
       if (reportType === 'combined') {
-        if (isEmptyUploadedFile) {
-          throw new Error('Silakan masukkan setidaknya salah satu file excel.');
-        }
-
         const routingBuffers = await Promise.all(
           selectedRoutingFiles.map((file) => file.arrayBuffer())
         );
@@ -308,78 +302,58 @@ export default function SingleReport({
           selectedDeliveryFiles.map((file) => file.arrayBuffer())
         );
 
+        const extractedDateStr = getDeliveryDate(deliveryBuffers, selectedDateString);
+        const { timeFrom, timeTo } = calculateStartFinishDates(extractedDateStr);
+
         const vehicleTypesObj = await getVehicleTypes();
+        const vehicleTypes = vehicleTypesObj.map((v) => v.name);
         const mappingsDB = await getVehicleMappings();
         const mappingsObj = mappingsDB.reduce((acc, curr) => {
           acc[curr.plat] = curr.mappedType;
           return acc;
         }, {});
 
-        const [hubsData] = await Promise.all([getHubs()]);
+        const [hubsData, locationHistoriesRes] = await Promise.all([
+          getHubs(),
+          getLocationHistories({
+            timeFrom,
+            timeTo,
+            limit: 5000,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
+          }),
+        ]);
+
+        const allApiData = locationHistoriesRes?.tasks?.data || [];
         const activeHub = (hubsData || []).find(
           (h) => String(h._id || h.id) === String(selectedLocation)
         );
         const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
 
-        const combinedWb = XLSX.utils.book_new();
+        // 3. Gabungkan melalui ManualReport
+        const { wb, excelFileName } = await generateManualReportWorkbook({
+          routingBuffers,
+          deliveryBuffers,
+          driverData,
+          allApiData,
+          mappingsObj,
+          vehicleTypes,
+          targetRoutingStr,
+          selectedDateString: extractedDateStr,
+          hubLabel,
+          hasPendingGR,
+          t,
+        });
 
-        const appendSheets = (sourceWb) => {
-          if (!sourceWb || !sourceWb.SheetNames) return;
-          sourceWb.SheetNames.forEach((sheetName) => {
-            let finalName = sheetName;
-            let counter = 1;
-            while (combinedWb.SheetNames.includes(finalName)) {
-              finalName = `${sheetName} (${counter})`;
-              counter++;
-            }
-            XLSX.utils.book_append_sheet(combinedWb, sourceWb.Sheets[sheetName], finalName);
-          });
-        };
-
-        // 1. Eksekusi Manual Routing jika ada file
-        if (routingBuffers.length > 0) {
-          const { wb: rWb } = await generateManualRoutingWorkbook(
-            routingBuffers,
-            driverData,
-            mappingsObj,
-            targetRoutingStr,
-            hubLabel,
-            t,
-            vehicleTypesObj
-          );
-          appendSheets(rWb);
-        }
-
-        // 2. Eksekusi Manual Delivery jika ada file
-        if (deliveryBuffers.length > 0) {
-          const { wb: dWb } = await generateManualDeliveryWorkbook(
-            deliveryBuffers,
-            driverData,
-            selectedDateString,
-            targetRoutingStr,
-            hubLabel,
-            hasPendingGR,
-            t
-          );
-          appendSheets(dWb);
-        }
-
-        if (combinedWb.SheetNames.length === 0) {
-          throw new Error(t('common.no_data'));
-        }
-
-        const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-        XLSX.writeFile(
-          combinedWb,
-          `All in One Report Manual - ${formattedDate} - ${hubLabel}.xlsx`
-        );
+        XLSX.writeFile(wb, excelFileName);
         toastSuccess(t('common.toast.success'));
         setIsModalOpen(false);
         setSelectedRoutingFiles([]);
         setSelectedDeliveryFiles([]);
         return;
       }
-      // Fallback Manual biasa
+
       const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
 
       if (reportType === 'routing') {
@@ -634,9 +608,7 @@ export default function SingleReport({
       >
         <div className="p-4">
           {
-            /* Layout Split Besar untuk All in One Manual */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
-              {/* Sisi Kiri: Routing File */}
               <div className="flex flex-col gap-4">
                 <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
                   Upload File Routing Summary
@@ -654,10 +626,8 @@ export default function SingleReport({
                 )}
               </div>
 
-              {/* Garis Pembatas Putus-putus Tengah */}
               <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2"></div>
 
-              {/* Sisi Kanan: Delivery File */}
               <div className="flex flex-col gap-4">
                 <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
                   Upload File Delivery Summary

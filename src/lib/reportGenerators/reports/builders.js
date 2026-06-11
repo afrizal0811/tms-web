@@ -96,7 +96,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
         i.totalDistance ? Number(i.totalDistance.toFixed(2)) : null,
       ];
     }),
-    [], // Spacer
+    [],
     ['Note'],
     [' ', t('report.note_diff_date')],
     [' ', t('report.note_double_click')],
@@ -128,7 +128,6 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
           ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.yellowFill };
         }
 
-        // Membandingkan tanggal dengan format fmt
         if (
           rowData?.startDate !== rowData?.finishDateFmt &&
           rowData?.startDate &&
@@ -138,7 +137,6 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
           ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.redFill };
         }
       } else {
-        // Tampilan Keterangan Note di paling bawah
         if (R === dataCount + 2 && C === 0) {
           ws[cellRef].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
         } else if (R === dataCount + 3) {
@@ -171,8 +169,14 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap) 
   ];
 
   const excelDataRows = [];
+  const seenDrivers = new Set();
+
   driverData.forEach((driver) => {
     if (driver.plat?.toUpperCase().includes('DEMO')) return;
+
+    if (seenDrivers.has(driver.name)) return;
+    seenDrivers.add(driver.name);
+
     const rData = routingMap.get(driver.name);
     const dData = deliveryMap.get(driver.name);
     const hasRouting = rData?.hasTrips;
@@ -337,8 +341,14 @@ export function buildRoVsRealSheet(
     tasksByNameMap.get(task.driver).push(task);
   });
 
+  const seenDriversRo = new Set();
   const driversSorted = driverData
-    .filter((d) => tasksByNameMap.has(d.name))
+    .filter((d) => {
+      if (!tasksByNameMap.has(d.name)) return false;
+      if (seenDriversRo.has(d.name)) return false;
+      seenDriversRo.add(d.name);
+      return true;
+    })
     .sort((a, b) => {
       if (getSortGroup(a.plat) !== getSortGroup(b.plat))
         return getSortGroup(a.plat) - getSortGroup(b.plat);
@@ -389,10 +399,20 @@ export function buildRoVsRealSheet(
           wHours = t('dashboard.tab.routingreal.early');
         else if (task.isWithinHoursStatus === 'no') wHours = t('dashboard.tab.routingreal.no');
 
-        if (task.roSequence === 0) manualAssignRows.add(sheetData.length);
+        const isManualAssign =
+          isEmpty(task.eta) ||
+          task.eta === '-' ||
+          isEmpty(task.etd) ||
+          task.etd === '-' ||
+          isEmpty(task.roSequence) ||
+          task.roSequence === '-' ||
+          task.roSequence === 0;
+
+        if (isManualAssign) manualAssignRows.add(sheetData.length);
+
         sheetData.push([
           task.flow || '-',
-          task.plat || '-',
+          getBasePlate(task.plat) || '-',
           task.driver || '-',
           cData,
           task.statusLabel || '-',
@@ -436,7 +456,6 @@ export function buildRoVsRealSheet(
   ws['!view'] = { state: 'frozen', ySplit: 1 };
 
   ws['!cols'] = headers.map((h, i) => {
-    // Mengecilkan ukuran lebar visit plan & actual
     if (i === 11 || i === 12) return { wch: 12 };
     return {
       wch: Math.min(
@@ -448,15 +467,15 @@ export function buildRoVsRealSheet(
 
   const headerFillMap = {
     5: 'A7F3D0',
-    6: 'A7F3D0', // Waktu buka & tutup
+    6: 'A7F3D0',
     7: 'FED7AA',
-    8: 'FED7AA', // ETA & Waktu datang
+    8: 'FED7AA',
     9: 'FDE68A',
-    10: 'FDE68A', // ETD & Waktu berangkat
+    10: 'FDE68A',
     11: 'FBCFE8',
-    12: 'FBCFE8', // Perkiraan & Aktual Kunjungan
+    12: 'FBCFE8',
     13: 'BFDBFE',
-    14: 'BFDBFE', // Perkiraan & Aktual Urutan
+    14: 'BFDBFE',
   };
 
   const dataFillMap = {
@@ -588,29 +607,35 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
     actFrzT = 0,
     actFrzD = 0;
 
-  // Hitung Estimasi (Sama persis dengan angka di kolom Detail Truck)
+  const seenDriversEst = new Set();
   driverData.forEach((driver) => {
     if (driver.plat?.toUpperCase().includes('DEMO')) return;
+
+    if (seenDriversEst.has(driver.name)) return;
+    seenDriversEst.add(driver.name);
+
     const rData = routingMap.get(driver.name);
     if (rData?.hasTrips) {
-      const dist = rData.totalDistance || 0; // Asli dalam meter
-      const dur = rData.shipDurationRaw || 0; // Asli dalam menit
+      const dist = rData.totalDistance || 0;
+      const dur = rData.shipDurationRaw || 0;
 
+      let storageType = 'DRY';
       if (driver.name.toUpperCase().includes('DRY')) {
         estDryT += dur;
         estDryD += dist;
+        storageType = 'DRY';
       } else if (driver.name.toUpperCase().includes('FRZ')) {
         estFrzT += dur;
         estFrzD += dist;
+        storageType = 'FROZEN';
       }
     }
   });
 
-  // Hitung Aktual (Dari timeDataObjects)
   timeDataObjects.forEach((i) => {
     if (i.driver.toUpperCase().includes('DRY')) {
       actDryT += i.travelTimeVal || 0;
-      actDryD += i.totalDistance || 0; // Asli sudah dalam KM
+      actDryD += i.totalDistance || 0;
     } else if (i.driver.toUpperCase().includes('FRZ')) {
       actFrzT += i.travelTimeVal || 0;
       actFrzD += i.totalDistance || 0;
@@ -660,15 +685,15 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // Merge Estimasi
-    { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } }, // Merge Aktual
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
   ];
 
   ws['!cols'] = [
     { wch: 15 },
     { wch: 20 },
     { wch: 25 },
-    { wch: 3 }, // Kolom pemisah (Spacer)
+    { wch: 3 },
     { wch: 15 },
     { wch: 20 },
     { wch: 25 },
@@ -686,7 +711,7 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
 
-      if (C === 3) continue; // Abaikan styling untuk kolom kosong/pemisah
+      if (C === 3) continue;
 
       let baseStyle = STYLES.center;
       if (R === 0) {
@@ -734,11 +759,22 @@ export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
   const sheetData = [
     headers,
     ...pendingSOData.map((r) => {
+      let fDate = r.deliveryDate;
+      if (
+        fDate &&
+        typeof fDate === 'string' &&
+        fDate.includes('-') &&
+        fDate.split('-')[0].length === 4
+      ) {
+        const [y, m, d] = fDate.split('-');
+        fDate = `${d}-${m}-${y}`;
+      }
+
       const row = [
         r.flow,
         r.orderId,
-        r.deliveryDate,
-        r.plat,
+        fDate,
+        getBasePlate(r.plat),
         r.driver,
         r.fakturBatal,
         r.terkirimSebagian,
