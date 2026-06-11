@@ -13,7 +13,7 @@ import {
 } from './builders';
 import { parseDeliveryData, parseRoutingData, parseTimeData } from './parsers';
 
-export async function generateAllInOneWorkbook({
+export async function generateAutoReportWorkbook({
   driverData,
   filteredResults,
   allTasks,
@@ -46,7 +46,7 @@ export async function generateAllInOneWorkbook({
     );
 
   const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
-  
+
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
   buildStartFinishSheet(wb, timeDataObjects, t);
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap);

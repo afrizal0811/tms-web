@@ -21,10 +21,8 @@ export const bulkDownloader = async ({
   startDate,
   endDate,
   driverData,
-  reportType,
   zipPrefix,
   setIsLoading,
-  setCurrentReport,
   processDateCallback,
   t,
 }) => {
@@ -34,7 +32,6 @@ export const bulkDownloader = async ({
   }
 
   setIsLoading(true);
-  setCurrentReport(reportType);
   toastInfo(t('report.toast.processing'));
 
   try {
@@ -124,7 +121,6 @@ export const bulkDownloader = async ({
     toastError(t('common.toast.error', { err: e.message }));
   } finally {
     setIsLoading(false);
-    setCurrentReport(null);
   }
 };
 

@@ -163,6 +163,8 @@
 │   │   │   ├── StandardType.js
 │   │   │   ├── Table.js
 │   │   │   └── VehicleMappingManager.js
+│   │   ├── helper
+│   │   │   └── constants.js
 │   │   ├── SettingPage.js
 │   │   └── tabs
 │   │       ├── GeneralTab.js
@@ -220,8 +222,6 @@
     │   ├── vehicleMappings.js
     │   ├── vehicles.js
     │   └── vehicleTypes.js
-    ├── constants.js
-    ├── dashboardHelper.js
     ├── dictionary.js
     ├── driverDataHelper.js
     ├── hooks
@@ -235,6 +235,7 @@
     │   │   ├── deliveryManualReport.js
     │   │   └── help.js
     │   ├── index.js
+    │   ├── isTripInShift.js
     │   ├── rangkuman
     │   │   ├── rangkumanReport.js
     │   │   └── sheets
@@ -247,14 +248,20 @@
     │   │       ├── timeROSheet.js
     │   │       ├── truckDetailSheet.js
     │   │       └── truckUsageSheet.js
+    │   ├── reports
+    │   │   ├── AutoReport.js
+    │   │   ├── builders.js
+    │   │   └── parsers.js
     │   ├── routing
     │   │   ├── help.js
     │   │   ├── routingAutoReport.js
     │   │   └── routingManualReport.js
     │   ├── taskCounter
     │   │   └── taskCountReport.js
+    │   ├── taskDetail
+    │   │   └── taskDetailReport.js
     │   └── time
     │       └── timeReport.js
-    ├── toastHelper.js
+    ├── toast.js
     ├── unifiedRouting.js
     └── utils.js

@@ -19,13 +19,11 @@ import {
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
-  generateDeliveryWorkbook,
   generateManualDeliveryWorkbook,
   generateManualRoutingWorkbook,
-  generateRoutingWorkbook,
   generateTimeSummaryWorkbook,
 } from '@/lib/reportGenerators';
-import { generateAllInOneWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
+import { generateAutoReportWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -34,7 +32,7 @@ import {
   isEmpty,
   tomorrowDate,
 } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getTutorialData } from './helper/constants';
 import { validateRoutingFile, validateTaskFile } from './helper/help';
@@ -54,7 +52,11 @@ export default function SingleReport({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isManualProcessing, setIsManualProcessing] = useState(false);
   const [reportType, setReportType] = useState('');
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedRoutingFiles, setSelectedRoutingFiles] = useState([]);
+  const [selectedDeliveryFiles, setSelectedDeliveryFiles] = useState([]);
   const initialDate = parseDate(formatDateUniversal(new Date()));
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [isCustomRouting, setIsCustomRouting] = useState(false);
@@ -64,6 +66,18 @@ export default function SingleReport({
     if (d.getDay() === 0) d.setDate(d.getDate() - 1);
     return d;
   });
+  const settingsRef = useRef(null);
+  const isEmptyUploadedFile = isEmpty(selectedRoutingFiles) || isEmpty(selectedDeliveryFiles);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setIsSettingsOpen(false);
+      }
+    }
+    if (isSettingsOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSettingsOpen]);
 
   useEffect(() => {
     const d = new Date(selectedDate);
@@ -82,161 +96,6 @@ export default function SingleReport({
     const drivers = await getOrFetchDriverData(selectedLocation);
     if (isEmpty(drivers)) {
       throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
-    }
-  };
-
-  const handleRouting = async () => {
-    try {
-      await driversCheck();
-      if (setIsAnyLoading) setIsAnyLoading(true);
-      setCurrentRunning('routing');
-      if (setIsMapping) setIsMapping(false);
-
-      let targetRoutingDateObj;
-      if (isCustomRouting) {
-        if (!routingDate) throw new Error(t('common.invalid_date'));
-        targetRoutingDateObj = new Date(routingDate);
-      } else {
-        if (!selectedDate) throw new Error(t('common.invalid_date'));
-        targetRoutingDateObj = new Date(selectedDate);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0)
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-      }
-
-      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-      const { storedLocationAcronym } = getLocalStorage();
-
-      const summaryPayload = isCustomRouting
-        ? {
-            dateFrom: `${targetRoutingStr} 00:00:00`,
-            dateTo: `${targetRoutingStr} 23:59:59`,
-            hubId: selectedLocation,
-          }
-        : {
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: selectedDate,
-            hubId: selectedLocation,
-          };
-
-      const [filteredResults] = await Promise.all([getResultsSummary(summaryPayload)]);
-
-      if (isEmpty(filteredResults)) {
-        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
-      }
-
-      const vehicleTypesObj = await getVehicleTypes();
-      const vehicleTypes = vehicleTypesObj.map((v) => v.name);
-      const mappingsDB = await getVehicleMappings();
-      const mappingsObj = mappingsDB.reduce((acc, curr) => {
-        acc[curr.plat] = curr.mappedType;
-        return acc;
-      }, {});
-
-      const hubLabel = storedLocationAcronym || selectedLocationName;
-
-      const { wb, excelFileName } = await generateRoutingWorkbook(
-        driverData,
-        filteredResults,
-        mappingsObj,
-        targetRoutingStr,
-        hubLabel,
-        t,
-        vehicleTypes
-      );
-
-      XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('common.toast.success'));
-    } catch (err) {
-      toastError(err.message || String(err));
-    } finally {
-      setCurrentRunning(null);
-      if (setIsAnyLoading) setIsAnyLoading(false);
-      if (setIsMapping) setIsMapping(false);
-    }
-  };
-
-  const handleDelivery = async () => {
-    try {
-      await driversCheck();
-      if (setIsAnyLoading) setIsAnyLoading(true);
-      setCurrentRunning('delivery');
-
-      if (!selectedDateString) throw new Error(t('common.invalid_date'));
-
-      const timeFrom = new Date(`${selectedDateString}T00:00:00`).toISOString();
-      const timeTo = new Date(`${selectedDateString}T23:59:59`).toISOString();
-
-      let targetRoutingDateObj;
-      if (isCustomRouting) {
-        if (!routingDate) throw new Error(t('common.invalid_date'));
-        targetRoutingDateObj = new Date(routingDate);
-      } else {
-        targetRoutingDateObj = new Date(selectedDate);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0)
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-      }
-
-      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-      const { storedLocationAcronym } = getLocalStorage();
-
-      const summaryPayload = isCustomRouting
-        ? {
-            dateFrom: `${targetRoutingStr} 00:00:00`,
-            dateTo: `${targetRoutingStr} 23:59:59`,
-            limit: 1000,
-            hubId: selectedLocation,
-          }
-        : {
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: selectedDate,
-            limit: 1000,
-            hubId: selectedLocation,
-          };
-
-      const [allTasks, resultsData, hubsData] = await Promise.all([
-        getTasks({
-          hubId: selectedLocation,
-          status: 'DONE,ONGOING',
-          timeFrom,
-          timeTo,
-          timeBy: 'startTime',
-          limit: 5000,
-        }),
-        getResultsSummary(summaryPayload),
-        getHubs(),
-      ]);
-
-      if (!Array.isArray(allTasks) || isEmpty(allTasks)) {
-        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
-      }
-
-      const activeHub = (hubsData || []).find(
-        (h) => String(h._id || h.id) === String(selectedLocation)
-      );
-      const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
-
-      const hubLabel = storedLocationAcronym || selectedLocationName;
-
-      const { wb, excelFileName } = generateDeliveryWorkbook(
-        driverData,
-        allTasks,
-        resultsData || [],
-        selectedDateString,
-        targetRoutingStr,
-        hubLabel,
-        hasPendingGR,
-        t
-      );
-
-      XLSX.writeFile(wb, excelFileName);
-      toastSuccess(t('common.toast.success'));
-    } catch (err) {
-      toastError(err.message || String(err));
-    } finally {
-      setCurrentRunning(null);
-      if (setIsAnyLoading) setIsAnyLoading(false);
     }
   };
 
@@ -385,7 +244,7 @@ export default function SingleReport({
       const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
       const hubLabel = storedLocationAcronym || selectedLocationName;
 
-      const { wb, excelFileName } = await generateAllInOneWorkbook({
+      const { wb, excelFileName } = await generateAutoReportWorkbook({
         driverData,
         filteredResults,
         allTasks,
@@ -411,7 +270,7 @@ export default function SingleReport({
   };
 
   const handleManualDownload = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) {
+    if (isEmptyUploadedFile) {
       toastError(t('common.toast.error', { err: 'Pilih file excel terlebih dahulu' }));
       return;
     }
@@ -438,22 +297,16 @@ export default function SingleReport({
 
       // --- LOGIC MANUAL COMBINED REPORT ---
       if (reportType === 'combined') {
-        const routingBuffers = [];
-        const deliveryBuffers = [];
-
-        for (const file of selectedFiles) {
-          const buffer = await file.arrayBuffer();
-          const tempWb = XLSX.read(buffer, { type: 'array' });
-          const firstSheet = tempWb.Sheets[tempWb.SheetNames[0]];
-          if (!firstSheet) continue;
-
-          const headerA1 = firstSheet['A1'] ? String(firstSheet['A1'].v).toLowerCase() : '';
-          const headerB1 = firstSheet['B1'] ? String(firstSheet['B1'].v).toLowerCase() : '';
-
-          if (headerA1 === '_id' || headerA1 === 'flow' || headerB1 === 'flow')
-            deliveryBuffers.push(buffer);
-          else routingBuffers.push(buffer);
+        if (isEmptyUploadedFile) {
+          throw new Error('Silakan masukkan setidaknya salah satu file excel.');
         }
+
+        const routingBuffers = await Promise.all(
+          selectedRoutingFiles.map((file) => file.arrayBuffer())
+        );
+        const deliveryBuffers = await Promise.all(
+          selectedDeliveryFiles.map((file) => file.arrayBuffer())
+        );
 
         const vehicleTypesObj = await getVehicleTypes();
         const mappingsDB = await getVehicleMappings();
@@ -469,6 +322,7 @@ export default function SingleReport({
         const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
 
         const combinedWb = XLSX.utils.book_new();
+
         const appendSheets = (sourceWb) => {
           if (!sourceWb || !sourceWb.SheetNames) return;
           sourceWb.SheetNames.forEach((sheetName) => {
@@ -482,6 +336,7 @@ export default function SingleReport({
           });
         };
 
+        // 1. Eksekusi Manual Routing jika ada file
         if (routingBuffers.length > 0) {
           const { wb: rWb } = await generateManualRoutingWorkbook(
             routingBuffers,
@@ -494,6 +349,8 @@ export default function SingleReport({
           );
           appendSheets(rWb);
         }
+
+        // 2. Eksekusi Manual Delivery jika ada file
         if (deliveryBuffers.length > 0) {
           const { wb: dWb } = await generateManualDeliveryWorkbook(
             deliveryBuffers,
@@ -507,7 +364,9 @@ export default function SingleReport({
           appendSheets(dWb);
         }
 
-        if (combinedWb.SheetNames.length === 0) throw new Error(t('common.no_data'));
+        if (combinedWb.SheetNames.length === 0) {
+          throw new Error(t('common.no_data'));
+        }
 
         const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
         XLSX.writeFile(
@@ -516,10 +375,10 @@ export default function SingleReport({
         );
         toastSuccess(t('common.toast.success'));
         setIsModalOpen(false);
-        setSelectedFiles([]);
+        setSelectedRoutingFiles([]);
+        setSelectedDeliveryFiles([]);
         return;
       }
-
       // Fallback Manual biasa
       const fileBuffers = await Promise.all(selectedFiles.map((file) => file.arrayBuffer()));
 
@@ -609,22 +468,115 @@ export default function SingleReport({
     </Tooltip>
   );
 
-  const actionButtons = [
-    { id: 'routing', label: t('report.routing_summary'), onClick: handleRouting, hasOption: true },
-    {
-      id: 'delivery',
-      label: t('report.delivery_summary'),
-      onClick: handleDelivery,
-      hasOption: true,
-    },
-    { id: 'time', label: t('report.time_summary'), onClick: handleTime, hasOption: false },
-    {
-      id: 'combined',
-      label: 'All in One Report',
-      onClick: handleCombined,
-      hasOption: true,
-    },
-  ];
+  let actionButtons = [];
+  if (isManualMode) {
+    actionButtons = [
+      {
+        id: 'combined',
+        label: 'Manual Daily Report',
+        onClick: () => handleModal('combined'),
+        hasOption: false,
+      },
+      { id: 'time', label: t('report.time_summary'), onClick: handleTime, hasOption: false },
+    ];
+  } else {
+    actionButtons = [
+      { id: 'combined', label: 'Daily Report', onClick: handleCombined, hasOption: false },
+    ];
+  }
+  const MainDatePicker = (
+    <div className="flex flex-col items-center w-full max-w-xs">
+      <label
+        htmlFor="shippingDate"
+        className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center gap-1"
+      >
+        {t('common.delivery_date')} {informationComp(t('report.tooltip.info_delivery'))}
+      </label>
+      <CustomDatePicker
+        className="max-w-xs cursor-pointer"
+        disabled={disabledCommon}
+        id="shippingDate"
+        maxDate={tomorrowDate()}
+        onChange={handleDateChange}
+        selected={selectedDate}
+      />
+    </div>
+  );
+
+  const SecondaryDatePicker = (
+    <div className="flex flex-col items-center w-full max-w-xs transition-opacity duration-300">
+      <label
+        htmlFor="routingDate"
+        className="block text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center"
+      >
+        {t('report.routing_date')}
+      </label>
+      <CustomDatePicker
+        className="max-w-xs cursor-pointer"
+        disabled={disabledCommon}
+        id="routingDate"
+        maxDate={selectedDate}
+        onChange={(date) => {
+          if (date) setRoutingDate(date);
+        }}
+        selected={routingDate}
+      />
+    </div>
+  );
+
+  const SettingButton = (
+    <div className="relative mt-2 mb-4" ref={settingsRef}>
+      <button
+        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+        className="text-sm text-sky-600 dark:text-sky-400 font-medium hover:underline focus:outline-none cursor-pointer"
+      >
+        Pengaturan
+      </button>
+      {isSettingsOpen && (
+        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md shadow-lg z-50 p-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="customRouting"
+                disabled={disabledCommon || isManualMode}
+                checked={isCustomRouting}
+                onChange={(e) => setIsCustomRouting(e.target.checked)}
+                className="w-4 h-4 text-sky-600 rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              />
+              <label
+                htmlFor="customRouting"
+                className={`text-sm select-none ${disabledCommon || isManualMode ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed' : 'text-gray-600 dark:text-slate-300 cursor-pointer'}`}
+              >
+                {t('report.change_date')}
+              </label>
+            </div>
+            {informationComp(t('report.tooltip.info_change_time'))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="manualMode"
+              disabled={disabledCommon}
+              checked={isManualMode}
+              onChange={(e) => {
+                setIsManualMode(e.target.checked);
+                if (e.target.checked) setIsCustomRouting(false);
+              }}
+              className="w-4 h-4 text-sky-600 rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 cursor-pointer"
+            />
+            <label
+              htmlFor="manualMode"
+              className="text-sm text-gray-600 dark:text-slate-300 cursor-pointer select-none"
+            >
+              Manual
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
@@ -632,62 +584,11 @@ export default function SingleReport({
         {t('report.daily_title')}
       </h1>
 
-      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 mb-10 w-full">
-        <div className="flex flex-col items-center w-full max-w-xs">
-          <label
-            htmlFor="shippingDate"
-            className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center gap-1"
-          >
-            {t('common.delivery_date')} {informationComp(t('report.tooltip.info_delivery'))}
-          </label>
-          <CustomDatePicker
-            className="max-w-xs cursor-pointer"
-            disabled={disabledCommon}
-            id="shippingDate"
-            maxDate={tomorrowDate()}
-            onChange={handleDateChange}
-            selected={selectedDate}
-          />
-
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="customRouting"
-              disabled={disabledCommon}
-              checked={isCustomRouting}
-              onChange={(e) => setIsCustomRouting(e.target.checked)}
-              className="w-4 h-4 text-sky-600 rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 dark:focus:ring-sky-400 cursor-pointer"
-            />
-            <label
-              htmlFor="customRouting"
-              className="text-sm text-gray-600 dark:text-slate-400 cursor-pointer select-none flex items-center gap-1"
-            >
-              {t('report.change_date')} {informationComp(t('report.tooltip.info_change_time'))}
-            </label>
-          </div>
-        </div>
-
-        {isCustomRouting && (
-          <div className="flex flex-col items-center w-full max-w-xs transition-opacity duration-300">
-            <label
-              htmlFor="routingDate"
-              className="block text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center"
-            >
-              {t('report.routing_date')}
-            </label>
-            <CustomDatePicker
-              className="max-w-xs cursor-pointer"
-              disabled={disabledCommon}
-              id="routingDate"
-              maxDate={selectedDate}
-              onChange={(date) => {
-                if (date) setRoutingDate(date);
-              }}
-              selected={routingDate}
-            />
-          </div>
-        )}
+      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 w-full">
+        {!isManualMode && MainDatePicker}
+        {isCustomRouting && !isManualMode && SecondaryDatePicker}
       </div>
+      {SettingButton}
 
       <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
         {actionButtons.map(({ id, label, onClick, hasOption }) => (
@@ -713,48 +614,68 @@ export default function SingleReport({
         onClose={() => {
           setIsModalOpen(false);
           setSelectedFiles([]);
+          setSelectedRoutingFiles([]);
+          setSelectedDeliveryFiles([]);
         }}
-        title={`Upload Manual Data - ${
-          reportType === 'combined'
-            ? 'All in One Report'
-            : reportType === 'routing'
-              ? t('report.routing_summary')
-              : t('report.delivery_summary')
-        }`}
-        maxWidth="max-w-2xl w-[95%] sm:w-full"
+        title={'Upload Manual Data'}
+        maxWidth="max-w-7xl w-[95%]"
         footer={
           <Button
             text={t('common.download')}
             onClick={handleManualDownload}
             isLoading={isManualProcessing}
-            disabled={selectedFiles.length === 0 || isManualProcessing}
+            disabled={
+              selectedRoutingFiles.length === 0 ||
+              selectedDeliveryFiles.length === 0 ||
+              isManualProcessing
+            }
           />
         }
       >
-        <div className="p-4 flex flex-col gap-5">
-          {reportType === 'combined' && (
-            <div className="bg-sky-50 dark:bg-sky-900/30 p-3 rounded text-sm text-sky-800 dark:text-sky-300">
-              ℹ️ Anda dapat mengupload banyak file sekaligus (Campurkan file Task dan file Routing).
-              Sistem akan memilahnya secara otomatis.
-            </div>
-          )}
+        <div className="p-4">
+          {
+            /* Layout Split Besar untuk All in One Manual */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
+              {/* Sisi Kiri: Routing File */}
+              <div className="flex flex-col gap-4">
+                <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
+                  Upload File Routing Summary
+                </span>
+                <FileUploader
+                  files={selectedRoutingFiles}
+                  onUpdateFiles={setSelectedRoutingFiles}
+                  validator={validateRoutingFile}
+                  id="routing-file-input"
+                />
+                {getTutorialData(t)['routing'] && (
+                  <Accordion title="Tutorial Routing" className="mt-2">
+                    <Carousel items={getTutorialData(t)['routing']} />
+                  </Accordion>
+                )}
+              </div>
 
-          <FileUploader
-            files={selectedFiles}
-            onUpdateFiles={setSelectedFiles}
-            validator={
-              reportType === 'combined'
-                ? () => true
-                : reportType === 'routing'
-                  ? validateRoutingFile
-                  : validateTaskFile
-            }
-          />
-          {reportType && getTutorialData(t)[reportType] && (
-            <Accordion title="Tutorial" className="mt-2">
-              <Carousel items={getTutorialData(t)[reportType]} />
-            </Accordion>
-          )}
+              {/* Garis Pembatas Putus-putus Tengah */}
+              <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2"></div>
+
+              {/* Sisi Kanan: Delivery File */}
+              <div className="flex flex-col gap-4">
+                <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
+                  Upload File Delivery Summary
+                </span>
+                <FileUploader
+                  files={selectedDeliveryFiles}
+                  onUpdateFiles={setSelectedDeliveryFiles}
+                  validator={validateTaskFile}
+                  id="delivery-file-input"
+                />
+                {getTutorialData(t)['delivery'] && (
+                  <Accordion title="Tutorial Delivery" className="mt-2">
+                    <Carousel items={getTutorialData(t)['delivery']} />
+                  </Accordion>
+                )}
+              </div>
+            </div>
+          }
         </div>
       </BaseModal>
     </div>

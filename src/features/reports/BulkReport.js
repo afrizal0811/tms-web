@@ -12,12 +12,7 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import {
-  generateDeliveryWorkbook,
-  generateRoutingWorkbook,
-  generateTimeSummaryWorkbook,
-} from '@/lib/reportGenerators';
-import { generateAllInOneWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
+import { generateAutoReportWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
 import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -38,7 +33,6 @@ export default function BulkReport({ driverData }) {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentReport, setCurrentReport] = useState(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const { t } = useLanguage();
@@ -79,175 +73,8 @@ export default function BulkReport({ driverData }) {
     setPendingAction(null);
   };
 
-  const handleBulkRoutingSummary = async (t) => {
-    let mappingsObj = {};
-    let vehicleTypes = [];
-    try {
-      setIsLoading(true);
-      const vehicleTypesObj = await getVehicleTypes();
-      vehicleTypes = vehicleTypesObj.map((v) => v.name);
-      const mappingsDB = await getVehicleMappings();
-      mappingsObj = mappingsDB.reduce((acc, curr) => {
-        acc[curr.plat] = curr.mappedType;
-        return acc;
-      }, {});
-    } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
-    } finally {
-      setIsLoading(false);
-    }
-
-    bulkDownloader({
-      startDate,
-      endDate,
-      driverData,
-      reportType: 'routing',
-      zipPrefix: `${t('report.bulk')} ${t('excel.routing.filename')}`,
-      setIsLoading,
-      setCurrentReport,
-      processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-        const deliveryDateObj = parseDate(dateForFile);
-        const targetRoutingDateObj = new Date(deliveryDateObj);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0) {
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        }
-
-        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-        const filteredResults = await getResultsSummary({
-          routingDateObj: targetRoutingDateObj,
-          deliveryDateObj: deliveryDateObj,
-          hubId: hubId,
-        });
-
-        if (filteredResults.length > 0) {
-          return await generateRoutingWorkbook(
-            driverData,
-            filteredResults,
-            mappingsObj,
-            targetRoutingStr,
-            hubName,
-            t,
-            vehicleTypes
-          );
-        }
-        return null;
-      },
-      t,
-    });
-  };
-
-  const handleBulkDeliverySummary = async (t) => {
-    let hubsMap = {};
-    try {
-      setIsLoading(true);
-      const hubsDB = await getHubs();
-      hubsMap = hubsDB.reduce((acc, curr) => {
-        acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
-        return acc;
-      }, {});
-    } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
-    } finally {
-      setIsLoading(false);
-    }
-
-    bulkDownloader({
-      startDate,
-      endDate,
-      driverData,
-      reportType: 'delivery',
-      zipPrefix: `${t('report.bulk')} ${t('excel.delivery.filename')}`,
-      setIsLoading,
-      setCurrentReport,
-      processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-        const deliveryDateObj = parseDate(dateForFile);
-        const targetRoutingDateObj = new Date(deliveryDateObj);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0) {
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        }
-
-        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-
-        const startD = new Date(deliveryDateObj);
-        startD.setHours(0, 0, 0, 0);
-        const endD = new Date(deliveryDateObj);
-        endD.setHours(23, 59, 59, 999);
-
-        const timeFrom = formatToApiUtc(startD);
-        const timeTo = formatToApiUtc(endD);
-
-        const [allTasks, resultsData] = await Promise.all([
-          getTasks({
-            hubId: hubId,
-            status: 'DONE,ONGOING',
-            timeFrom: timeFrom,
-            timeTo: timeTo,
-            timeBy: 'startTime',
-            limit: 1000,
-          }),
-          getResultsSummary({
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: deliveryDateObj,
-            hubId: hubId,
-          }),
-        ]);
-
-        if (allTasks.length > 0) {
-          const hasPendingGR = hubsMap[String(hubId)] || false;
-
-          return generateDeliveryWorkbook(
-            driverData,
-            allTasks,
-            resultsData || [],
-            dateForFile,
-            targetRoutingStr,
-            hubName,
-            hasPendingGR,
-            t
-          );
-        }
-        return null;
-      },
-      t,
-    });
-  };
-
-  const handleBulkTimeSummary = (t) => {
-    bulkDownloader({
-      startDate,
-      endDate,
-      driverData,
-      reportType: 'time',
-      zipPrefix: `${t('report.bulk')} ${t('excel.time.filename')}`,
-      setIsLoading,
-      setCurrentReport,
-      processDateCallback: async ({ dateForFile, hubName }) => {
-        const { timeFrom, timeTo } = calculateStartFinishDates(dateForFile);
-
-        const response = await getLocationHistories({
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-          limit: 1000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        });
-
-        const allApiData = response?.tasks?.data || [];
-
-        if (allApiData.length > 0) {
-          return generateTimeSummaryWorkbook(driverData, allApiData, dateForFile, hubName, t);
-        }
-        return null;
-      },
-      t,
-    });
-  };
-
   // --- FUNGSI BARU: ALL IN ONE BULK REPORT ---
-  const handleBulkCombinedSummary = async (t) => {
+  const handleBulkSummary = async (t) => {
     let mappingsObj = {};
     let vehicleTypes = [];
     let hubsMap = {};
@@ -279,10 +106,8 @@ export default function BulkReport({ driverData }) {
       startDate,
       endDate,
       driverData,
-      reportType: 'combined',
       zipPrefix: `${t('report.bulk')} All in One`,
       setIsLoading,
-      setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const deliveryDateObj = parseDate(dateForFile);
         const targetRoutingDateObj = new Date(deliveryDateObj);
@@ -332,7 +157,7 @@ export default function BulkReport({ driverData }) {
         const hasPendingGR = hubsMap[String(hubId)] || false;
 
         if (allTasks.length > 0 || filteredResults.length > 0 || allApiData.length > 0) {
-          return await generateAllInOneWorkbook({
+          return await generateAutoReportWorkbook({
             driverData,
             filteredResults,
             allTasks,
@@ -357,24 +182,9 @@ export default function BulkReport({ driverData }) {
 
   const actionButtons = [
     {
-      id: 'routing',
-      label: t('report.routing_summary'),
-      onClick: () => executeWithCheck(() => handleBulkRoutingSummary(t)),
-    },
-    {
-      id: 'delivery',
-      label: t('report.delivery_summary'),
-      onClick: () => executeWithCheck(() => handleBulkDeliverySummary(t)),
-    },
-    {
-      id: 'time',
-      label: t('report.time_summary'),
-      onClick: () => executeWithCheck(() => handleBulkTimeSummary(t)),
-    },
-    {
-      id: 'combined',
-      label: 'All in One Report',
-      onClick: () => executeWithCheck(() => handleBulkCombinedSummary(t)),
+      id: 'bulk',
+      label: t('common.download'),
+      onClick: () => executeWithCheck(() => handleBulkSummary(t)),
     },
   ];
 
@@ -409,7 +219,7 @@ export default function BulkReport({ driverData }) {
             key={id}
             onClick={onClick}
             disabled={isLoading || isRangeInvalid}
-            isLoading={isLoading && currentReport === id}
+            isLoading={isLoading}
             text={label}
             width="w-full sm:w-auto min-w-[200px]"
           />
