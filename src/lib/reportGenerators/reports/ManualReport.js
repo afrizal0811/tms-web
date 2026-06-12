@@ -5,14 +5,11 @@ import {
   formatCoordinates,
   formatSimpleTime,
   formatTimestampToHHMM,
-  getBasePlate,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from '../delivery/help';
-import { buildDriverMaps, buildNormalizedMappings } from '../routing/help';
 import {
   buildMergedDetailSheet,
   buildPendingSOSheet,
@@ -23,6 +20,12 @@ import {
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
 } from './builders';
+import {
+  buildDriverMaps,
+  buildNormalizedMappings,
+  FAILED_STATUSES,
+  PENDING_SHEET_STATUSES_BASE,
+} from './help';
 import { parseTimeData } from './parsers';
 
 function parseToNum(val) {
@@ -490,9 +493,8 @@ export async function generateManualReportWorkbook({
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
 
-  const [y, m, d] = selectedDateString.split('-');
-  const formattedDate = `${d}.${m}.${y}`;
-  const excelFileName = `All in One Report Manual - ${formattedDate} - ${hubLabel}.xlsx`;
+  const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
+  const excelFileName = `${t('common.report')} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }

@@ -13,6 +13,12 @@ export default function FileUploader({
   const { t } = useLanguage();
 
   const handleFileChange = async (e) => {
+    const truncateFileName = (fileName) => {
+      const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+
+      return nameWithoutExt.length > 15 ? `${nameWithoutExt.slice(0, 15)}...` : nameWithoutExt;
+    };
+
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length === 0) return;
 
@@ -20,11 +26,17 @@ export default function FileUploader({
     for (const f of selectedFiles) {
       if (validator) {
         const isContentValid = await validator(f);
+
         if (!isContentValid) {
-          toastError(`File '${f.name}' ditolak. \n Gunakan file yang benar!`);
+          toastError(
+            t('report.toast.invalid_file', {
+              fileName: truncateFileName(f.name),
+            })
+          );
           continue;
         }
       }
+
       validFiles.push(f);
     }
 

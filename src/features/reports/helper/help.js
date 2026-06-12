@@ -1,5 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastInfo, toastSuccess, toastWarning } from '@/lib/toast';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal, isDateSunday, isEmpty } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
@@ -32,7 +32,6 @@ export const bulkDownloader = async ({
   }
 
   setIsLoading(true);
-  toastInfo(t('report.toast.processing'));
 
   try {
     const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');

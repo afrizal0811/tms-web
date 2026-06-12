@@ -73,7 +73,6 @@ export default function BulkReport({ driverData }) {
     setPendingAction(null);
   };
 
-  // --- FUNGSI BARU: ALL IN ONE BULK REPORT ---
   const handleBulkSummary = async (t) => {
     let mappingsObj = {};
     let vehicleTypes = [];
@@ -106,7 +105,7 @@ export default function BulkReport({ driverData }) {
       startDate,
       endDate,
       driverData,
-      zipPrefix: `${t('report.bulk')} All in One`,
+      zipPrefix: `${t('report.bulk')}`,
       setIsLoading,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const deliveryDateObj = parseDate(dateForFile);
@@ -180,14 +179,6 @@ export default function BulkReport({ driverData }) {
   const isRangeInvalid =
     !startDate || !endDate || startDate > endDate || startDate.getTime() === endDate.getTime();
 
-  const actionButtons = [
-    {
-      id: 'bulk',
-      label: t('common.download'),
-      onClick: () => executeWithCheck(() => handleBulkSummary(t)),
-    },
-  ];
-
   return (
     <div className="w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-center text-slate-900 dark:text-slate-100">
@@ -214,16 +205,14 @@ export default function BulkReport({ driverData }) {
         </div>
       </div>
       <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
-        {actionButtons.map(({ id, label, onClick }) => (
-          <Button
-            key={id}
-            onClick={onClick}
-            disabled={isLoading || isRangeInvalid}
-            isLoading={isLoading}
-            text={label}
-            width="w-full sm:w-auto min-w-[200px]"
-          />
-        ))}
+        <Button
+          key="download"
+          onClick={() => executeWithCheck(() => handleBulkSummary(t))}
+          disabled={isLoading || isRangeInvalid}
+          isLoading={isLoading}
+          text={t('common.download')}
+          width="w-full sm:w-auto min-w-[200px]"
+        />
       </div>
 
       <ConfirmModal

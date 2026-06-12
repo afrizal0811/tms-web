@@ -13,8 +13,12 @@ import {
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
-import { FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from '../delivery/help';
-import { buildDriverMaps, buildNormalizedMappings } from '../routing/help';
+import {
+  buildDriverMaps,
+  buildNormalizedMappings,
+  FAILED_STATUSES,
+  PENDING_SHEET_STATUSES_BASE,
+} from './help';
 
 export function parseRoutingData(filteredResults, driverData, mappingsObj, vehicleTypes) {
   const { emailMap, platMap } = buildDriverMaps(driverData);
