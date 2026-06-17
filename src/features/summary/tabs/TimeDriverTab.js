@@ -201,7 +201,10 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
       </div>
       <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *{translate('summary.click_time')}
+          *
+          {translate('common.click_for_detail_param', {
+            parameter: translate('summary.row'),
+          })}
         </div>
       </div>
     </Fragment>

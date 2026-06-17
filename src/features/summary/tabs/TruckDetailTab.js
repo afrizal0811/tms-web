@@ -220,7 +220,10 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         <div>
           <div className="flex flex-col justify-between gap-2 pb-1">
             <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-              *{translate('summary.tabs.truck_detail.click_row_hint')}
+              *
+              {translate('common.click_for_detail_param', {
+                parameter: translate('summary.tabs.truck_detail.row'),
+              })}
             </div>
             <h4 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-200">
               {translate('summary.tabs.truck_detail.color_exp')}
