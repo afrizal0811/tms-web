@@ -59,6 +59,7 @@ export const dictionary = {
       warning: '⚠️ Peringatan!',
       upload: 'Unggah Berkas',
       button: {
+        btn_add: 'Tambah',
         btn_cancel: 'Batal',
         btn_delete: 'Hapus',
         btn_no: 'Tidak',
@@ -727,6 +728,7 @@ export const dictionary = {
       warning: '⚠️ Warning!',
       upload: 'Upload File',
       button: {
+        btn_add: 'Add',
         btn_cancel: 'Cancel',
         btn_delete: 'Delete',
         btn_no: 'No',

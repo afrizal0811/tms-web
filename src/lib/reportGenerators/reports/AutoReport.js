@@ -11,13 +11,13 @@ import {
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
 } from './builders';
-import { parseDeliveryData, parseRoutingData, parseTimeData } from './parsers';
+import { parseDeliveryData, parseRoutingData } from './parsers';
 
 export async function generateAutoReportWorkbook({
   driverData,
   filteredResults,
   allTasks,
-  allApiData,
+  timeData,
   mappingsObj,
   vehicleTypes,
   targetRoutingStr,
@@ -45,14 +45,12 @@ export async function generateAutoReportWorkbook({
       selectedDateString
     );
 
-  const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
-
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeDataObjects, t);
+  buildStartFinishSheet(wb, timeData, t);
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
-  buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects);
+  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   buildHelpSheet(wb, filteredResults || [], t);

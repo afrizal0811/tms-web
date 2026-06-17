@@ -225,8 +225,7 @@ export async function validateTaskFile(file) {
   }
 }
 
-// helper/extractDateFromDeliveryBuffers.js
-export const getDeliveryDate = (deliveryBuffers, fallbackDate) => {
+export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
   try {
     const dates = [];
 
@@ -245,7 +244,7 @@ export const getDeliveryDate = (deliveryBuffers, fallbackDate) => {
       if (headIdx === -1) continue;
 
       const headers = rawRows[headIdx].map((h) => String(h).toLowerCase().trim());
-      const idxStart = headers.indexOf('starttime');
+      const idxStart = headers.indexOf(headerName);
 
       if (idxStart === -1) continue;
 

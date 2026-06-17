@@ -9,7 +9,6 @@ import FileUploader from '@/components/FileUploader';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import {
-  getHubs,
   getLocationHistories,
   getResultsSummary,
   getTasks,
@@ -18,8 +17,8 @@ import {
 } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateAutoReportWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
-import { generateManualReportWorkbook } from '@/lib/reportGenerators/reports/ManualReport';
+import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
+import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -31,7 +30,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getTutorialData } from './helper/constants';
-import { getDeliveryDate, validateRoutingFile, validateTaskFile } from './helper/help';
+import { getManualDate, validateRoutingFile, validateTaskFile } from './helper/help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -151,7 +150,7 @@ export default function SingleReport({
           limit: 5000,
         }),
         getResultsSummary(summaryPayload),
-        getHubs(),
+        getOrFetchDriverData(selectedLocation),
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
@@ -165,8 +164,12 @@ export default function SingleReport({
       ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
+      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
+      const filteredTimeData = timeDataObjects.filter(
+        (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
+      );
 
-      if (isEmpty(filteredResults) && isEmpty(allTasks) && isEmpty(allApiData)) {
+      if (isEmpty(filteredResults) && isEmpty(allTasks) && isEmpty(filteredTimeData)) {
         throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
 
@@ -186,7 +189,7 @@ export default function SingleReport({
         driverData,
         filteredResults,
         allTasks,
-        allApiData,
+        timeData: timeDataObjects,
         mappingsObj,
         vehicleTypes,
         targetRoutingStr,
@@ -235,9 +238,9 @@ export default function SingleReport({
         selectedDeliveryFiles.map((file) => file.arrayBuffer())
       );
 
-      const extractedDateStr = getDeliveryDate(deliveryBuffers, selectedDateString);
-      const { timeFrom, timeTo } = calculateStartFinishDates(extractedDateStr);
-
+      const extractedStartDate = getManualDate('starttime', deliveryBuffers, selectedDateString);
+      const { timeFrom, timeTo } = calculateStartFinishDates(extractedStartDate);
+      const extractedRoutingDate = getManualDate('assignedtime', deliveryBuffers, targetRoutingStr);
       const vehicleTypesObj = await getVehicleTypes();
       const vehicleTypes = vehicleTypesObj.map((v) => v.name);
       const mappingsDB = await getVehicleMappings();
@@ -247,7 +250,7 @@ export default function SingleReport({
       }, {});
 
       const [hubsData, locationHistoriesRes] = await Promise.all([
-        getHubs(),
+        getOrFetchDriverData(selectedLocation),
         getLocationHistories({
           timeFrom,
           timeTo,
@@ -259,6 +262,7 @@ export default function SingleReport({
       ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
+      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, extractedStartDate);
       const activeHub = (hubsData || []).find(
         (h) => String(h._id || h.id) === String(selectedLocation)
       );
@@ -269,14 +273,15 @@ export default function SingleReport({
         routingBuffers,
         deliveryBuffers,
         driverData,
-        allApiData,
+        timeData: timeDataObjects,
         mappingsObj,
         vehicleTypes,
-        targetRoutingStr,
-        selectedDateString: extractedDateStr,
+        targetRoutingStr: extractedRoutingDate,
+        selectedDateString: extractedStartDate,
         hubLabel,
         hasPendingGR,
         t,
+        isIndonesian,
       });
 
       XLSX.writeFile(wb, excelFileName);
@@ -419,6 +424,25 @@ export default function SingleReport({
     ? ` ${t('report.daily_title')} ${manualText}`
     : `${manualText} ${t('report.daily_title')}`;
 
+  const UploadSection = ({ labelKey, files, onUpdateFiles, validator, inputId, tutorialKey }) => (
+    <div className="flex flex-col gap-4">
+      <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
+        {t('common.upload')} {` `} {t(`common.${labelKey}`)}
+      </span>
+      <FileUploader
+        files={files}
+        onUpdateFiles={onUpdateFiles}
+        validator={validator}
+        id={inputId}
+      />
+      {getTutorialData(t)[tutorialKey] && (
+        <Accordion title={`Tutorial ${t(`common.${labelKey}`)}`} className="mt-2">
+          <Carousel items={getTutorialData(t)[tutorialKey]} />
+        </Accordion>
+      )}
+    </div>
+  );
+  
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
@@ -456,46 +480,31 @@ export default function SingleReport({
             onClick={handleManualDownload}
             isLoading={isLoading}
             disabled={isEmptyUploadedFile || isLoading}
+            width="w-full sm:w-auto min-w-[150px] ml-auto"
           />
         }
       >
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
-                {t('common.upload')} {` `} {t('common.routing')}
-              </span>
-              <FileUploader
-                files={selectedRoutingFiles}
-                onUpdateFiles={setSelectedRoutingFiles}
-                validator={validateRoutingFile}
-                id="routing-file-input"
-              />
-              {getTutorialData(t)['routing'] && (
-                <Accordion title={`Tutorial ${t('common.routing')}`} className="mt-2">
-                  <Carousel items={getTutorialData(t)['routing']} />
-                </Accordion>
-              )}
-            </div>
+            <UploadSection
+              labelKey="routing"
+              files={selectedRoutingFiles}
+              onUpdateFiles={setSelectedRoutingFiles}
+              validator={validateRoutingFile}
+              inputId="routing-file-input"
+              tutorialKey="routing"
+            />
 
-            <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2"></div>
+            <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2" />
 
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
-                {t('common.upload')} {` `} {t('common.delivery')}
-              </span>
-              <FileUploader
-                files={selectedDeliveryFiles}
-                onUpdateFiles={setSelectedDeliveryFiles}
-                validator={validateTaskFile}
-                id="delivery-file-input"
-              />
-              {getTutorialData(t)['delivery'] && (
-                <Accordion title={`Tutorial ${t('common.delivery')}`} className="mt-2">
-                  <Carousel items={getTutorialData(t)['delivery']} />
-                </Accordion>
-              )}
-            </div>
+            <UploadSection
+              labelKey="delivery"
+              files={selectedDeliveryFiles}
+              onUpdateFiles={setSelectedDeliveryFiles}
+              validator={validateTaskFile}
+              inputId="delivery-file-input"
+              tutorialKey="delivery"
+            />
           </div>
         </div>
       </BaseModal>

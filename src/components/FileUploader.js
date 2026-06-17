@@ -144,7 +144,7 @@ export default function FileUploader({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 <span className="text-[11px] font-medium text-sky-700 dark:text-sky-400 mt-1">
-                  Tambah
+                  {t('common.button.btn_add')}
                 </span>
               </label>
 

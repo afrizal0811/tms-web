@@ -3,6 +3,7 @@ import {
   calculateMinuteDifference,
   extractTempFromDriverName,
   formatCoordinates,
+  formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
   isEmpty,
@@ -26,7 +27,6 @@ import {
   FAILED_STATUSES,
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
-import { parseTimeData } from './parsers';
 
 function parseToNum(val) {
   if (typeof val === 'number') return val;
@@ -461,7 +461,7 @@ export async function generateManualReportWorkbook({
   routingBuffers,
   deliveryBuffers,
   driverData,
-  allApiData,
+  timeData,
   mappingsObj,
   vehicleTypes,
   targetRoutingStr,
@@ -469,6 +469,7 @@ export async function generateManualReportWorkbook({
   hubLabel,
   hasPendingGR,
   t,
+  isIndonesian,
 }) {
   const wb = XLSX.utils.book_new();
 
@@ -482,19 +483,17 @@ export async function generateManualReportWorkbook({
   const { deliveryMap, hubTimesMap, allTaskDataForSequence, updateLonglatData, pendingSOData } =
     await parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, selectedDateString);
 
-  const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
-
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeDataObjects, t);
+  buildStartFinishSheet(wb, timeData, t);
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
-  buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects);
+  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
-
+  const title = isIndonesian ? `${t('common.report')} Manual` : `Manual ${t('common.report')}`;
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-  const excelFileName = `${t('common.report')} - ${formattedDate} - ${hubLabel}.xlsx`;
+  const excelFileName = `${title} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }

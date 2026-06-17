@@ -12,7 +12,8 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { generateAutoReportWorkbook } from '@/lib/reportGenerators/reports/AutoReport';
+import { generateAutoReportWorkbook } from '@/lib/reportGenerators';
+import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
 import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -153,14 +154,17 @@ export default function BulkReport({ driverData }) {
         ]);
 
         const allApiData = locationHistoriesRes?.tasks?.data || [];
+        const { timeDataObjects } = parseTimeData(allApiData || [], driverData, dateForFile);
+        const filteredTimeData = timeDataObjects.filter(
+          (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
+        );
         const hasPendingGR = hubsMap[String(hubId)] || false;
-
-        if (allTasks.length > 0 || filteredResults.length > 0 || allApiData.length > 0) {
+        if (!isEmpty(filteredResults) && !isEmpty(allTasks) && !isEmpty(filteredTimeData)) {
           return await generateAutoReportWorkbook({
             driverData,
             filteredResults,
             allTasks,
-            allApiData,
+            timeData: timeDataObjects,
             mappingsObj,
             vehicleTypes,
             targetRoutingStr,
