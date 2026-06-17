@@ -1,4 +1,4 @@
-import { isTripInShift } from '@/lib/reportGenerators/isTripInShift';
+import { isTripInShift } from '@/lib/isTripInShift';
 import {
   calculateHaversineDistance,
   calculateMinuteDifference,

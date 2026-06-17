@@ -1,4 +1,3 @@
-import { isTripInShift } from '../isTripInShift';
 import {
   calculateHaversineDistance,
   formatDateUniversal,
@@ -7,6 +6,7 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import { isTripInShift } from '../../isTripInShift';
 
 const getNameValue = (val) => {
   if (!val) return '';

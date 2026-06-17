@@ -1,4 +1,4 @@
-import { isTripInShift } from '@/lib/reportGenerators/isTripInShift';
+import { isTripInShift } from '@/lib/isTripInShift';
 import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
