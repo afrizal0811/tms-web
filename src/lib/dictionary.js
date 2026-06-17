@@ -1156,11 +1156,11 @@ export const dictionary = {
           holiday: 'Holiday (Sunday)',
           title: 'Routing Time',
           tooltip: {
-            date_ro: 'D-1 Delivery',
+            date_ro: 'Date of routing process',
             end_ro: 'Last task assignment time',
-            start_ro_error: 'End RO is available, but Start RO is empty',
-            start_ro: 'First task creation time',
             end_ro_error: 'Start RO is available, but End RO is empty',
+            start_ro: 'First task creation time',
+            start_ro_error: 'End RO is available, but Start RO is empty',
           },
         },
         task_summary: {

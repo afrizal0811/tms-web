@@ -123,7 +123,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
 
   const headerTitle = [
     {
-      tooltip: 'summary.tabs.time_ro.date_ro',
+      tooltip: 'summary.tabs.time_ro.tooltip.date_ro',
       name: 'summary.tabs.time_ro.date_ro',
     },
     {
