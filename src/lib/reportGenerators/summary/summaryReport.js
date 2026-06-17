@@ -19,7 +19,7 @@ import {
   generateTruckUsageSheet,
 } from './sheets';
 
-export async function generateRangkumanDataPreview(
+export async function generateSummaryDataPreview(
   driverData,
   taskData,
   resultsData,
@@ -79,7 +79,7 @@ export async function generateRangkumanDataPreview(
   };
 }
 
-export async function generateRangkumanWorkbook(
+export async function generateSummaryWorkbook(
   driverData,
   taskData,
   resultsData,

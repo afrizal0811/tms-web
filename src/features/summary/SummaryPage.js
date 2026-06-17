@@ -7,8 +7,8 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
-import useRangkumanData from '@/lib/hooks/useRangkumanData';
-import { generateRangkumanWorkbook } from '@/lib/reportGenerators';
+import useSummaryData from '@/lib/hooks/useSummaryData';
+import { generateSummaryWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -40,7 +40,7 @@ export default function SummaryPage() {
     fetchData,
     dismissedDots,
     setDismissedDots,
-  } = useRangkumanData();
+  } = useSummaryData();
 
   const [activeTab, setActiveTab] = useState('Time RO');
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -143,7 +143,7 @@ export default function SummaryPage() {
       setIsDownload(true);
       const startDate = new Date(dateRange[0]);
       const endDate = new Date(dateRange[1]);
-      const { wb, excelFileName } = await generateRangkumanWorkbook(
+      const { wb, excelFileName } = await generateSummaryWorkbook(
         driverData,
         rawData.tasks,
         rawData.results,

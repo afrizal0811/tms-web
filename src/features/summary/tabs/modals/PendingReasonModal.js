@@ -1,4 +1,4 @@
-// File: src/features/rangkuman/tabs/modals/PendingReasonModal.js
+// File: src/features/summary/tabs/modals/PendingReasonModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
