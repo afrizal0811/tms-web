@@ -1,30 +1,222 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
+import { calculateHaversineDistance } from '@/lib/utils';
+import { useEffect, useRef } from 'react';
+
+const getDist = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  return calculateHaversineDistance(`${lat1},${lon1}`, `${lat2},${lon2}`);
+};
 
 export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const hasMultipleData = data && data.entries.length > 1;
+
+  useEffect(() => {
+    if (!isOpen || !data || !mapContainerRef.current) return;
+
+    let isMounted = true;
+
+    (async () => {
+      const L = (await import('leaflet')).default;
+      await import('leaflet/dist/leaflet.css');
+
+      if (!isMounted) return;
+
+      if (!mapInstanceRef.current) {
+        mapInstanceRef.current = L.map(mapContainerRef.current);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(
+          mapInstanceRef.current
+        );
+      }
+
+      const map = mapInstanceRef.current;
+
+      // Bersihkan marker/layer sebelumnya
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker || layer instanceof L.Circle || layer instanceof L.Tooltip) {
+          map.removeLayer(layer);
+        }
+      });
+
+      const bounds = [];
+      const activeHubLocation = data.activeHubLocation;
+
+      // Render Hub & Radius
+      if (activeHubLocation) {
+        bounds.push([activeHubLocation.lat, activeHubLocation.lng]);
+        L.circle([activeHubLocation.lat, activeHubLocation.lng], {
+          radius: 500,
+          color: '#22c55e',
+          fillColor: '#22c55e',
+          fillOpacity: 0.2,
+          weight: 1,
+        }).addTo(map);
+
+        const hubIcon = L.divIcon({
+          className: 'bg-transparent border-none',
+          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 bg-green-500 border-2 border-white shadow-md">HUB</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+        L.marker([activeHubLocation.lat, activeHubLocation.lng], { icon: hubIcon }).addTo(map);
+      }
+
+      // Render Start / Finish markers
+      data.entries.forEach((entry, idx) => {
+        const sText = data.entries.length > 1 ? `S${idx + 1}` : 'S';
+        const fText = data.entries.length > 1 ? `F${idx + 1}` : 'F';
+
+        if (entry.startLat && entry.startLon) {
+          bounds.push([entry.startLat, entry.startLon]);
+          const isOut = activeHubLocation
+            ? getDist(
+                entry.startLat,
+                entry.startLon,
+                activeHubLocation.lat,
+                activeHubLocation.lng
+              ) > 500
+            : false;
+          const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
+          const icon = L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${sText}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          });
+          L.marker([entry.startLat, entry.startLon], { icon })
+            .bindTooltip(`Waktu Start: ${entry.startDisplay}`, {
+              direction: 'top',
+              offset: [0, -10],
+            })
+            .addTo(map);
+        }
+
+        if (entry.finishLat && entry.finishLon) {
+          bounds.push([entry.finishLat, entry.finishLon]);
+          const isOut = activeHubLocation
+            ? getDist(
+                entry.finishLat,
+                entry.finishLon,
+                activeHubLocation.lat,
+                activeHubLocation.lng
+              ) > 500
+            : false;
+          const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
+          const icon = L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${fText}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          });
+          L.marker([entry.finishLat, entry.finishLon], { icon })
+            .bindTooltip(`Waktu Finish: ${entry.finishDisplay}`, {
+              direction: 'top',
+              offset: [0, -10],
+            })
+            .addTo(map);
+        }
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 16 });
+      }
+
+      // Hack minor layout untuk memperbaiki size map
+      setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      }, 100);
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, data]);
+
+  // Hapus map instance untuk mencegah konflik rendering ketika modal ditutup
+  useEffect(() => {
+    if (!isOpen && mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+  }, [isOpen]);
+
   if (!data) return null;
 
   const { driverName, dateStr, entries } = data;
-  // Helper untuk mengubah string "HH:mm" atau "H:m" menjadi total menit
   const parseDurationToMinutes = (str) => {
     if (!str) return 0;
     const [hours, minutes] = str.split(':').map(Number);
     return hours * 60 + (minutes || 0);
   };
 
-  // Hitung akumulasi
   const totalMinutes = entries.reduce((acc, curr) => {
     return acc + parseDurationToMinutes(curr.durationDisplay);
   }, 0);
 
-  const totalDistance = entries.reduce((acc, curr) => acc + (curr.distance || 0), 0);
-
-  // Format kembali ke HH:mm
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
   const totalDurationFormatted = `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
-
+  const tableData = (
+    <>
+      <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
+        <table className="min-w-full text-sm text-left">
+          <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
+            <tr>
+              <th className="px-4 py-3 text-center">#</th>
+              <th className="px-4 py-3 text-center">
+                {translate('summary.tabs.time_driver.modal.start_time')}
+              </th>
+              <th className="px-4 py-3 text-center">
+                {translate('summary.tabs.time_driver.modal.finish_time')}
+              </th>
+              <th className="px-4 py-3 text-center">
+                {translate('summary.tabs.time_driver.modal.duration')}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
+            {entries.map((entry, idx) => (
+              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
+                  {idx + 1}
+                </td>
+                <td className="px-4 py-2 text-center dark:text-slate-300">{entry.startDisplay}</td>
+                <td className="px-4 py-2 text-center dark:text-slate-300">
+                  {entry.finishDisplay}
+                  {entry.dayDiff > 0 && (
+                    <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
+                      (+{entry.dayDiff})
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
+                  {entry.durationDisplay}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
+            <tr>
+              <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
+                Total
+              </td>
+              <td></td>
+              <td></td>
+              <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
+                {totalDurationFormatted}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400 italic">
+        {translate('summary.tabs.time_driver.modal.footer_note')}
+      </div>
+    </>
+  );
   return (
     <BaseModal
       isOpen={isOpen}
@@ -36,75 +228,11 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
         </div>
       }
     >
-      <div>
-        <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
-          <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
-              <tr>
-                <th className="px-4 py-3 text-center">#</th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.time_driver.modal.start_time')}
-                </th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.time_driver.modal.finish_time')}
-                </th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.time_driver.modal.duration')}
-                </th>
-                <th className="px-4 py-3 text-center">
-                  {translate('summary.tabs.time_driver.modal.distance')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
-              {entries.map((entry, idx) => (
-                <tr
-                  key={idx}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
-                    {idx + 1}
-                  </td>
-                  <td className="px-4 py-2 text-center dark:text-slate-300">
-                    {entry.startDisplay}
-                  </td>
-                  <td className="px-4 py-2 text-center dark:text-slate-300">
-                    {entry.finishDisplay}
-                    {entry.dayDiff > 0 && (
-                      <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
-                        (+{entry.dayDiff})
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
-                    {entry.durationDisplay}
-                  </td>
-                  <td className="px-4 py-2 text-center text-slate-600 dark:text-slate-300">
-                    {entry.distance ? entry.distance.toFixed(2) : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
-              <tr>
-                <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
-                  Total
-                </td>
-                <td></td>
-                <td></td>
-                <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
-                  {totalDurationFormatted}
-                </td>
-                <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
-                  {totalDistance.toFixed(2)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+      <div className="flex flex-col gap-4">
+        <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0 [&_.leaflet-layer]:dark:invert [&_.leaflet-layer]:dark:hue-rotate-180 [&_.leaflet-layer]:dark:brightness-95 [&_.leaflet-layer]:dark:contrast-90">
+          <div ref={mapContainerRef} className="w-full h-full" />
         </div>
-        <div className="mt-3 text-xs text-slate-500 dark:text-slate-400 italic">
-          {translate('summary.tabs.time_driver.modal.footer_note')}
-        </div>
+        {hasMultipleData && tableData}
       </div>
     </BaseModal>
   );

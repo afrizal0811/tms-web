@@ -176,6 +176,10 @@ export function calculateTimeDriverData(
           hasData: true,
           distance: totalDistance,
           trackedTime: trackedTime,
+          startLat: item.lat,
+          startLon: item.lon,
+          finishLat: item.finish?.lat,
+          finishLon: item.finish?.lon,
         };
 
         if (!dataMatrix[dateKey][email]) {

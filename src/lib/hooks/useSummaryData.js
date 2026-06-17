@@ -66,6 +66,7 @@ export default function useSummaryData() {
   const [taskSummaryMetrics, setTaskSummaryMetrics] = useState({});
   const [isCalculatingMetrics, setIsCalculatingMetrics] = useState(false);
   const [historyProgress, setHistoryProgress] = useState(0);
+  const [activeHubLocation, setActiveHubLocation] = useState(null);
 
   const [dismissedDots, setDismissedDots] = useState({});
   const fetchStartTimeRef = useRef(null);
@@ -573,7 +574,7 @@ export default function useSummaryData() {
             getLocationHistories({
               limit: 10000,
               startFinish: 'true',
-              fields: 'finish,startTime,email,trackedTime,totalDistance',
+              fields: 'finish,startTime,lat,lon,email,trackedTime,totalDistance',
               timeBy: 'createdTime',
               timeFrom: range.from,
               timeTo: range.to,
@@ -629,6 +630,16 @@ export default function useSummaryData() {
             String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
         );
         hasPendingGRValue = activeHub?.hasPendingGR || false;
+
+        if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {
+          setActiveHubLocation({
+            lat: parseFloat(activeHub.lat),
+            lng: parseFloat(activeHub.lng || activeHub.lon),
+            name: activeHub.name || selectedLocationName,
+          });
+        } else {
+          setActiveHubLocation(null);
+        }
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }));
         setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
@@ -673,6 +684,7 @@ export default function useSummaryData() {
     processTaskSummaryMetrics,
     localeCode,
     t,
+    selectedLocationName,
   ]);
 
   return {
@@ -693,5 +705,6 @@ export default function useSummaryData() {
     fetchData,
     dismissedDots,
     setDismissedDots,
+    activeHubLocation,
   };
 }

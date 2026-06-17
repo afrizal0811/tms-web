@@ -471,6 +471,7 @@ export const dictionary = {
     summary: {
       caution: '*Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
       click_box_hint: 'Klik teks dengan garis bawah merah untuk melihat detail',
+      click_time: 'Klik waktu untuk melihat detail',
       label: 'Tanggal Performa',
       long_message: 'Memproses banyak data, silakan tunggu sebentar...',
       subtitle_1: 'Rekapitulasi',
@@ -1141,6 +1142,7 @@ export const dictionary = {
     summary: {
       caution: '*Displayed data may be inaccurate. Verify before use',
       click_box_hint: 'Click text with red underline to view details',
+      click_time: 'Click time to view details',
       label: 'Performance Date',
       long_message: 'Processing a lot of data, please wait a moment...',
       subtitle_1: 'Recap of',

@@ -2,7 +2,7 @@
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import TaskSummaryModal from './modals/TaskSummaryModal';
 
 const TableHeader = ({ tooltip, colorClass, text }) => (
@@ -315,9 +315,9 @@ export default function TaskSummaryTab({
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg shadow-sm shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *{translate('summary.click_box_hint')}
+          *{translate('summary.click_red_underline')}
         </div>
       </div>
 

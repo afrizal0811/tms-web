@@ -4,17 +4,19 @@ import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
-export default function TimeDriverTab({ data, translate, localeCode }) {
+export default function TimeDriverTab({ data, translate, localeCode, activeHubLocation }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
 
   const [modalData, setModalData] = useState(null);
 
   const handleCellClick = (metrics, driverName, dateStr) => {
-    if (metrics && metrics.entries && metrics.entries.length > 1) {
+    const hasCoords = metrics?.entries?.some((e) => e.startLat || e.finishLat);
+    if (hasCoords) {
       setModalData({
         driverName,
         dateStr: formatLongDate(dateStr, localeCode),
         entries: metrics.entries,
+        activeHubLocation,
       });
     }
   };
@@ -44,141 +46,164 @@ export default function TimeDriverTab({ data, translate, localeCode }) {
     'md:sticky md:left-[180px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
 
   return (
-    <div className="rounded-b-xl overflow-auto border border-gray-300 dark:border-slate-700 m-0 h-full relative">
-      <TimeDriverModal
-        isOpen={!!modalData}
-        onClose={closeModal}
-        data={modalData}
-        translate={translate}
-      />
+    <Fragment>
+      <div className="overflow-auto h-full relative">
+        <TimeDriverModal
+          isOpen={!!modalData}
+          onClose={closeModal}
+          data={modalData}
+          translate={translate}
+        />
 
-      <table className="border-collapse w-full text-sm">
-        <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-slate-800">
-          <tr>
-            <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
-              {translate('common.storage_type')}
-            </th>
-            <th rowSpan="2" className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}>
-              {translate('common.license_number')}
-            </th>
-            <th
-              rowSpan="2"
-              className={`${thClass} min-w-[200px] ${stickyHeaderDriver} ${COLOR_A} border-r-2 border-slate-400 dark:border-slate-600`}
-            >
-              {translate('common.driver')}
-            </th>
+        <table className="border-collapse w-full text-sm">
+          <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-slate-800">
+            <tr>
+              <th rowSpan="2" className={`${thClass} min-w-20 ${stickyHeaderType} ${COLOR_A}`}>
+                {translate('common.storage_type')}
+              </th>
+              <th
+                rowSpan="2"
+                className={`${thClass} min-w-[100px] ${stickyHeaderPlate} ${COLOR_A}`}
+              >
+                {translate('common.license_number')}
+              </th>
+              <th
+                rowSpan="2"
+                className={`${thClass} min-w-[200px] ${stickyHeaderDriver} ${COLOR_A} border-r-2 border-slate-400 dark:border-slate-600`}
+              >
+                {translate('common.driver')}
+              </th>
 
-            {dateKeys.map((d, i) => {
-              const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
-              const date = formatLongDate(d.str, localeCode);
-              return (
-                <th
-                  key={i}
-                  colSpan="3"
-                  className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
-                >
-                  {date}
-                </th>
-              );
-            })}
-          </tr>
-          <tr>
-            {dateKeys.map((d, i) => {
-              const metricColor = isSunday(d.str) ? COLOR_C : COLOR_A;
-              return (
-                <Fragment key={i}>
+              {dateKeys.map((d, i) => {
+                const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
+                const date = formatLongDate(d.str, localeCode);
+                return (
                   <th
-                    className={`${thClass} ${metricColor} border-l-2 border-l-gray-400 dark:border-l-slate-600`}
+                    key={i}
+                    colSpan="3"
+                    className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
                   >
-                    {translate('common.start_time')}
+                    {date}
                   </th>
-                  <th className={`${thClass} ${metricColor}`}>{translate('common.finish_time')}</th>
-                  <th className={`${thClass} ${metricColor}`}>
-                    {translate('summary.tabs.time_driver.duration')}
-                  </th>
-                </Fragment>
-              );
-            })}
-          </tr>
-        </thead>
+                );
+              })}
+            </tr>
+            <tr>
+              {dateKeys.map((d, i) => {
+                const metricColor = isSunday(d.str) ? COLOR_C : COLOR_A;
+                return (
+                  <Fragment key={i}>
+                    <th
+                      className={`${thClass} ${metricColor} border-l-2 border-l-gray-400 dark:border-l-slate-600`}
+                    >
+                      {translate('common.start_time')}
+                    </th>
+                    <th className={`${thClass} ${metricColor}`}>
+                      {translate('common.finish_time')}
+                    </th>
+                    <th className={`${thClass} ${metricColor}`}>
+                      {translate('summary.tabs.time_driver.duration')}
+                    </th>
+                  </Fragment>
+                );
+              })}
+            </tr>
+          </thead>
 
-        <tbody className="bg-white dark:bg-slate-800">
-          {driverEmails.map((email) => {
-            const driver = driverMap[email];
-            return (
-              <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
-                <td className={`${tdClass} ${stickyBodyType} bg-white dark:bg-slate-800`}>
-                  {driver.type}
-                </td>
-                <td className={`${tdClass} ${stickyBodyPlate} bg-white dark:bg-slate-800`}>
-                  {getBasePlate(driver.plat)}
-                </td>
-                <td
-                  className={`${tdClass} ${stickyBodyDriver} text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600 bg-white dark:bg-slate-800`}
-                >
-                  {driver.name}
-                </td>
+          <tbody className="bg-white dark:bg-slate-800">
+            {driverEmails.map((email) => {
+              const driver = driverMap[email];
+              return (
+                <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
+                  <td className={`${tdClass} ${stickyBodyType} bg-white dark:bg-slate-800`}>
+                    {driver.type}
+                  </td>
+                  <td className={`${tdClass} ${stickyBodyPlate} bg-white dark:bg-slate-800`}>
+                    {getBasePlate(driver.plat)}
+                  </td>
+                  <td
+                    className={`${tdClass} ${stickyBodyDriver} text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600 bg-white dark:bg-slate-800`}
+                  >
+                    {driver.name}
+                  </td>
 
-                {dateKeys.map((d, i) => {
-                  const metrics = dataMatrix[d.str][email];
-                  const isSun = isSunday(d.str);
+                  {dateKeys.map((d, i) => {
+                    const metrics = dataMatrix[d.str][email];
+                    const isSun = isSunday(d.str);
 
-                  let cellBg = isSun ? COLOR_C : '';
-                  const emptyBg = isSun ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
+                    let cellBg = isSun ? COLOR_C : '';
+                    const emptyBg = isSun ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
 
-                  const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
+                    const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
+                    const hasCoords = metrics?.entries?.some((e) => e.startLat || e.finishLat);
+                    const cellCursor = hasCoords
+                      ? 'cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors'
+                      : '';
 
-                  if (!metrics || !metrics.hasData) {
+                    if (!metrics || !metrics.hasData) {
+                      return (
+                        <Fragment key={i}>
+                          <td
+                            className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${emptyBg}`}
+                          ></td>
+                          <td className={`${tdClass} ${emptyBg}`}></td>
+                          <td className={`${tdClass} ${emptyBg}`}></td>
+                        </Fragment>
+                      );
+                    }
+
+                    if (hasMultiple) {
+                      return (
+                        <td
+                          key={i}
+                          colSpan={3}
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 bg-red-500 dark:bg-red-700 text-white font-bold transition-opacity ${hasCoords ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        >
+                          {translate('common.click_for_detail')}
+                        </td>
+                      );
+                    }
+
                     return (
                       <Fragment key={i}>
                         <td
-                          className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${emptyBg}`}
-                        ></td>
-                        <td className={`${tdClass} ${emptyBg}`}></td>
-                        <td className={`${tdClass} ${emptyBg}`}></td>
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${cellBg} ${cellCursor}`}
+                        >
+                          {metrics.startDisplay}
+                        </td>
+                        <td
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} ${cellBg} ${cellCursor}`}
+                        >
+                          {metrics.finishDisplay}
+                          {metrics.dayDiff > 0 && (
+                            <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
+                              (+{metrics.dayDiff})
+                            </span>
+                          )}
+                        </td>
+                        <td
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} ${cellBg} font-medium ${cellCursor}`}
+                        >
+                          {metrics.durationDisplay}
+                        </td>
                       </Fragment>
                     );
-                  }
-
-                  if (hasMultiple) {
-                    return (
-                      <td
-                        key={i}
-                        colSpan={3}
-                        onClick={() => handleCellClick(metrics, driver.name, d.str)}
-                        className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 bg-red-500 dark:bg-red-700 text-white font-bold cursor-pointer hover:opacity-80 transition-opacity`}
-                      >
-                        {translate('common.click_for_detail')}
-                      </td>
-                    );
-                  }
-
-                  return (
-                    <Fragment key={i}>
-                      <td
-                        className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${cellBg}`}
-                      >
-                        {metrics.startDisplay}
-                      </td>
-                      <td className={`${tdClass} ${cellBg}`}>
-                        {metrics.finishDisplay}
-                        {metrics.dayDiff > 0 && (
-                          <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
-                            (+{metrics.dayDiff})
-                          </span>
-                        )}
-                      </td>
-                      <td className={`${tdClass} ${cellBg} font-medium`}>
-                        {metrics.durationDisplay}
-                      </td>
-                    </Fragment>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
+        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
+          *{translate('summary.click_time')}
+        </div>
+      </div>
+    </Fragment>
   );
 }

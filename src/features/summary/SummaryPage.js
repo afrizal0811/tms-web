@@ -40,6 +40,7 @@ export default function SummaryPage() {
     fetchData,
     dismissedDots,
     setDismissedDots,
+    activeHubLocation,
   } = useSummaryData();
 
   const [activeTab, setActiveTab] = useState('Time RO');
@@ -51,6 +52,7 @@ export default function SummaryPage() {
   const [pendingDetails, setPendingDetails] = useState([]);
   const [isDownload, setIsDownload] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
+
   useEffect(() => {
     if (isEmpty(driverData)) {
       setEmptyMessage(t('common.no_driver'));
@@ -278,6 +280,7 @@ export default function SummaryPage() {
           data: reportPreview.timeDriverData,
           translate: t,
           localeCode: localeCode,
+          activeHubLocation: activeHubLocation,
         });
       case 'Truck Detail':
         return renderTab(TruckDetailTab, {
