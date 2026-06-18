@@ -4,6 +4,8 @@
 import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
+import Tooltip from '@/components/Tooltip';
+import { Fragment } from 'react';
 
 export default function VehicleTab({ paginatedData, searchQuery, t }) {
   return (
@@ -11,6 +13,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
       <table className="w-full border-collapse min-w-4xl">
         <thead className="sticky top-0 z-10">
           <tr>
+            <Th>#</Th>
             <Th>{t('common.license_number')}</Th>
             <Th>{t('vehicle.tabs.type')}</Th>
             <Th>{t('vehicle.tabs.name')}</Th>
@@ -18,22 +21,43 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
           </tr>
         </thead>
         <tbody>
-          {paginatedData.map((v) => (
-            <tr key={`${v.id}-${v.plat}`} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
-              <Td>
-                <HighlightText text={v.plat} highlight={searchQuery} />
-              </Td>
-              <Td>
-                <HighlightText text={v.type || null} highlight={searchQuery} />
-              </Td>
-              <Td>
-                <HighlightText text={v.name || null} highlight={searchQuery} />
-              </Td>
-              <Td>
-                <HighlightText text={v.email} highlight={searchQuery} />
-              </Td>
-            </tr>
-          ))}
+          {paginatedData.map((v, index) => {
+            const isDuplicateDriver = v.isDuplicateDriver;
+            const isDuplicateDriverClass = isDuplicateDriver
+              ? 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15'
+              : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
+            const data = (
+              <tr className={isDuplicateDriverClass} key={`${v.id}-${v.plat}`}>
+                <Td>{index + 1}</Td>
+                <Td>
+                  <HighlightText text={v.plat} highlight={searchQuery} />
+                </Td>
+                <Td>
+                  <HighlightText text={v.type || null} highlight={searchQuery} />
+                </Td>
+                <Td>
+                  <HighlightText text={v.name || null} highlight={searchQuery} />
+                </Td>
+                <Td>
+                  <HighlightText text={v.email} highlight={searchQuery} />
+                </Td>
+              </tr>
+            );
+
+            return (
+              <Fragment key={`${v.id}-${v.plat}`}>
+                {isDuplicateDriver ? (
+                  <Tooltip
+                    tooltipContent={isDuplicateDriver ? t('vehicle.tabs.duplicate_driver') : ''}
+                  >
+                    {data}
+                  </Tooltip>
+                ) : (
+                  data
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

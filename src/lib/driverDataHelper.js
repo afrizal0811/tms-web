@@ -92,6 +92,7 @@ export async function getOrFetchDriverData(selectedLocation) {
           name: d.name,
           plat: d.plat,
           type: d.type,
+          tags: d.tags,
           maxWeight: d.maxWeight,
           maxVolume: d.maxVolume,
           storage: d.storage,

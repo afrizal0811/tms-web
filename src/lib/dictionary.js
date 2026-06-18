@@ -422,6 +422,7 @@ export const dictionary = {
       title: 'Data Kendaraan',
       tabs: {
         conditional_title: 'Kendaraan Khusus',
+        duplicate_driver: 'Kendaraan dengan sopir yang sama',
         email: 'Surel',
         master_title: 'Master Kendaraan',
         name: 'Nama',
@@ -1093,6 +1094,7 @@ export const dictionary = {
       title: 'Vehicle Data',
       tabs: {
         conditional_title: 'Conditional Vehicles',
+        duplicate_driver: 'Vehicles with the same driver',
         email: 'Email',
         master_title: 'Master Vehicles',
         name: 'Name',

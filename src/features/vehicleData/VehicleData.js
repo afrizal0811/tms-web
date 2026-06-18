@@ -64,7 +64,6 @@ export default function VehicleData() {
         });
 
         if (!isMounted) return;
-        setTemplateData([...processedData].sort(sortByEmail));
 
         const mappingsObj = mappingsDB.reduce((acc, curr) => {
           acc[curr.plat] = curr.mappedType;
@@ -92,19 +91,38 @@ export default function VehicleData() {
           emailToVehiclesMap.get(v.email).push(v);
         });
 
+        const processedTemplateData = processedData.map((item) => {
+          const email = (item.email || '').toLowerCase();
+          const vehicles = emailToVehiclesMap.get(email) || [];
+          return {
+            ...item,
+            isDuplicateDriver: vehicles.length > 1,
+          };
+        });
+        setTemplateData(processedTemplateData.sort(sortByEmail));
+
         const masterList = [];
         const conditionalList = [];
         const countSpaces = (str) => (str ? (str.match(/ /g) || []).length : 0);
 
         for (const [_, vehicles] of emailToVehiclesMap.entries()) {
           if (vehicles.length === 1) {
-            masterList.push(vehicles[0]);
+            masterList.push({ ...vehicles[0], isDuplicateDriver: false });
           } else {
             const sorted = [...vehicles].sort((a, b) => countSpaces(a.plat) - countSpaces(b.plat));
-            masterList.push(sorted[0]);
+
+            const tempMaster = [sorted[0]];
             for (let i = 1; i < sorted.length; i++) {
-              if (countSpaces(sorted[i].plat) > 2) conditionalList.push(sorted[i]);
+              if (countSpaces(sorted[i].plat) > 2) {
+                conditionalList.push(sorted[i]);
+              } else {
+                tempMaster.push(sorted[i]);
+              }
             }
+            const isDuplicate = tempMaster.length > 1;
+            tempMaster.forEach((v) => {
+              masterList.push({ ...v, isDuplicateDriver: isDuplicate });
+            });
           }
         }
 
