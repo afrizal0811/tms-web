@@ -71,13 +71,17 @@ export function formatTimestampToHHMM(timestamp) {
 // Menghitung selisih waktu dalam satuan menit antara dua timestamp
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
+
   try {
     const date1 = new Date(time1);
     const date2 = new Date(time2);
+
     if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
 
-    const diffMs = Math.abs(date1.getTime() - date2.getTime());
-    return Math.round(diffMs / 60000);
+    const minutes1 = date1.getHours() * 60 + date1.getMinutes();
+    const minutes2 = date2.getHours() * 60 + date2.getMinutes();
+
+    return Math.abs(minutes1 - minutes2);
   } catch (e) {
     return null;
   }
