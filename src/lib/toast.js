@@ -65,9 +65,6 @@ const ToastContent = ({ message, toastId, type }) => {
       {/* Message + Close Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ flex: 1 }}>{message}</span>
-        <button className="toast-close-btn" onClick={() => toast.dismiss(toastId)}>
-          ✕
-        </button>
       </div>
 
       {/* Progress Bar */}
