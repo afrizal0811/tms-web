@@ -161,19 +161,19 @@ export default function DetailTab({ loading, summaryData }) {
             title={t('common.status.ongoing')}
             value={summaryData?.ongoing}
             isLoading={loading}
-            tooltipContent={t('common.status.ongoing')}
+            tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
           />
           <StatCard
             title={t('common.status.done')}
             value={summaryData?.done}
             isLoading={loading}
-            tooltipContent={t('common.status.done')}
+            tooltipContent={t('dashboard.tab.detail.tooltip.done')}
           />
           <StatCard
             title={t('common.status.manual_assign')}
             value={summaryData?.manualAssignList?.length}
             isLoading={loading}
-            tooltipContent={t('common.status.manual_assign')}
+            tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
           />
           <StatCard
             title={t('dashboard.tab.detail.diff_day')}
@@ -201,7 +201,6 @@ export default function DetailTab({ loading, summaryData }) {
           />
         </div>
 
-        {/* List Data - Menggunakan TableData yang sudah diperbaiki */}
         <div className="lg:col-span-2 lg:order-3 flex flex-col gap-6">
           <TableData
             title={t('dashboard.tab.detail.unassigned_list')}
