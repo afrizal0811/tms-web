@@ -3,16 +3,10 @@ import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
 // --- HELPERS (Sama dengan UI) ---
-function getRoutingDateKey(deliveryDateObj) {
-  const d = new Date(deliveryDateObj);
-  const day = d.getDay();
-  let offset = 1;
-  if (day === 1) offset = 2; // Senin -> Sabtu
-  d.setDate(d.getDate() - offset);
-
-  const y = d.getFullYear();
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const da = d.getDate().toString().padStart(2, '0');
+function getRoutingDateKey(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const da = dateObj.getDate().toString().padStart(2, '0');
   return `${y}-${m}-${da}`;
 }
 

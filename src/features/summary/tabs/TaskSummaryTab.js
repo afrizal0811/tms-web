@@ -177,9 +177,15 @@ export default function TaskSummaryTab({
     );
   };
 
-  const renderArmadaRow = (data, mtTotal, dateObj, isFrozen, isFirstRow, rowSpanProps) => {
-    const isPastOrToday = dateObj <= new Date().setHours(0, 0, 0, 0);
-    const isZeroDP = (data.dp || 0) === 0 && isPastOrToday;
+  const renderArmadaRow = (
+    data,
+    mtTotal,
+    dateObj,
+    isFrozen,
+    isFirstRow,
+    rowSpanProps,
+    isZeroDP
+  ) => {
     const dateCellClass = isZeroDP
       ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
       : 'bg-white dark:bg-slate-800 font-medium';
@@ -273,7 +279,7 @@ export default function TaskSummaryTab({
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.yellow}`}
               >
-                {translate('common.date')}
+                {translate('common.routing_date')}
               </th>
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.yellow}`}
@@ -306,9 +312,20 @@ export default function TaskSummaryTab({
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
+              const isPastOrToday = item.dateObj <= new Date().setHours(0, 0, 0, 0);
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
+
               return [
-                renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
+                renderArmadaRow(
+                  d,
+                  mtDry,
+                  item.dateObj,
+                  false,
+                  true,
+                  { display: item.display },
+                  isZeroDP
+                ),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP),
               ];
             })}
           </tbody>

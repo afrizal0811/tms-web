@@ -12,7 +12,6 @@ import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverD
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toast';
-import { getDeliveryDateFromRouting, getUnifiedVehicleMap } from '@/lib/unifiedRouting';
 import {
   formatDateUniversal,
   formatToApiUtc,
@@ -33,19 +32,6 @@ export const getInitialDateRange = () => {
   end.setHours(23, 59, 59, 999);
 
   return [start, end];
-};
-
-const getRoutingDateKeyFromDateStr = (dateStr) => {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  let offset = 1;
-  if (d.getDay() === 1) offset = 2;
-  d.setDate(d.getDate() - offset);
-  if (d.getDay() === 0) d.setDate(d.getDate() - 1);
-  const y = d.getFullYear();
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const da = d.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${da}`;
 };
 
 const cleanPlat = (str) => (str || '').replace(/\s+/g, '').toLowerCase();
@@ -126,6 +112,33 @@ export default function useSummaryData() {
     async (allTasks, allResults, fetchedDrivers, hasPendingGR) => {
       setIsCalculatingMetrics(true);
       setHistoryProgress(0);
+
+      // --- LOGIKA DINAMIS ROUTING DATE ---
+      const getRoutingDateWIB = (dateStr) => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return null;
+        const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+        return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+      };
+
+      const taskToRoutingDate = new Map();
+      (allResults || []).forEach((res) => {
+        const rDate = getRoutingDateWIB(res.createdTime);
+        if (!rDate) return;
+        const mapTrips = (trips) => {
+          (trips || []).forEach((trip) => {
+            if (trip.visitId && trip.visitId.includes('-')) {
+              taskToRoutingDate.set(trip.visitId.substring(trip.visitId.indexOf('-') + 1), rDate);
+            } else if (trip.visitName) {
+              taskToRoutingDate.set(trip.visitName, rDate);
+            }
+          });
+        };
+        if (res.result?.routing) res.result.routing.forEach((r) => mapTrips(r.trips));
+        if (res.result?.dropped) mapTrips(res.result.dropped);
+      });
+
       const tempMetrics = {};
       const uniqueVehicles = {};
 
@@ -231,10 +244,15 @@ export default function useSummaryData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
-          if (!task.doneTime) return;
-          const dObj = new Date(task.doneTime);
-          const wibDate = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-          const dateKey = `${wibDate.getUTCFullYear()}-${String(wibDate.getUTCMonth() + 1).padStart(2, '0')}-${String(wibDate.getUTCDate()).padStart(2, '0')}`;
+          // --- PENGGUNAAN MAP DINAMIS TANGGAL ---
+          const taskIdStr = String(task._id || task.id || task.taskId);
+          let dateKey =
+            taskToRoutingDate.get(taskIdStr) || taskToRoutingDate.get(task.customerName);
+
+          if (!dateKey) {
+            if (!task.doneTime && !task.createdTime) return;
+            dateKey = getRoutingDateWIB(task.createdTime || task.doneTime);
+          }
 
           initDate(dateKey);
 
@@ -270,13 +288,12 @@ export default function useSummaryData() {
       const doneResults = (allResults || []).filter(
         (item) => item.dispatchStatus?.toLowerCase() === 'done'
       );
-      const unifiedMap = getUnifiedVehicleMap(doneResults, fetchedDrivers);
 
       const resultIdsToFetch = [];
       const resultMap = new Map();
 
       doneResults.forEach((res) => {
-        const dateKey = getDeliveryDateFromRouting(res.createdTime);
+        const dateKey = getRoutingDateWIB(res.createdTime);
         if (!dateKey || !res._id) return;
 
         initDate(dateKey);
@@ -312,35 +329,8 @@ export default function useSummaryData() {
           (batchData || []).forEach((item) => {
             const originalRes = resultMap.get(item.resultId);
             if (!originalRes) return;
-            let dateKey = getDeliveryDateFromRouting(originalRes.createdTime);
+            const dateKey = getRoutingDateWIB(originalRes.createdTime);
             if (!dateKey) return;
-
-            let histDeliveryDateWib = null;
-            let histAttempts = 0;
-            const originalRoutingArray = originalRes.result?.routing || [];
-
-            for (const vehicle of originalRoutingArray) {
-              if (histAttempts >= 5 || histDeliveryDateWib) break;
-              const trips = vehicle.trips?.filter((t) => !t.isHub) || [];
-              for (const trip of trips) {
-                if (histAttempts >= 5 || histDeliveryDateWib) break;
-                const foundTask = getTaskDetails(trip);
-                if (foundTask && foundTask.startTime) {
-                  const stObj = new Date(foundTask.startTime);
-                  const wibSt = new Date(stObj.getTime() + 7 * 60 * 60 * 1000);
-                  histDeliveryDateWib = `${wibSt.getUTCFullYear()}-${(wibSt.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibSt.getUTCDate().toString().padStart(2, '0')}`;
-                }
-                if (trip.visitId && trip.visitId.includes('-')) histAttempts++;
-              }
-            }
-
-            if (histDeliveryDateWib) {
-              dateKey = getRoutingDateKeyFromDateStr(histDeliveryDateWib);
-            } else {
-              const dObj = new Date(originalRes.createdTime);
-              const wibObj = new Date(dObj.getTime() + 7 * 60 * 60 * 1000);
-              dateKey = `${wibObj.getUTCFullYear()}-${(wibObj.getUTCMonth() + 1).toString().padStart(2, '0')}-${wibObj.getUTCDate().toString().padStart(2, '0')}`;
-            }
 
             let histDry = 0;
             let histFrozen = 0;
@@ -394,8 +384,46 @@ export default function useSummaryData() {
         toastError(t('common.toast.error', { err: err.message }));
       }
 
+      // --- LOGIKA MAPPING KENDARAAN (TV) ---
+      const routingDateVehicles = {};
+      doneResults.forEach((res) => {
+        const dateKey = getRoutingDateWIB(res.createdTime);
+        if (!dateKey) return;
+        if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
+
+        (res.result?.routing || []).forEach((route) => {
+          const validTrips = (route.trips || []).filter((t) => !t.isHub);
+          if (validTrips.length === 0) return;
+
+          const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
+          const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
+          const canonicalPlate =
+            rawPlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+
+          const foundDriver =
+            fetchedDrivers.find((d) => (d.email || '').toLowerCase() === rawEmail) ||
+            fetchedDrivers.find((d) => cleanPlat(d.plat) === canonicalPlate);
+
+          const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
+          const driverName = foundDriver ? foundDriver.name : route.assignee || '-';
+          const finalPlate = foundDriver ? foundDriver.plat || rawPlate : rawPlate;
+          const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
+
+          if (!routingDateVehicles[dateKey].has(canonicalPlate)) {
+            routingDateVehicles[dateKey].set(canonicalPlate, {
+              plate: finalPlate,
+              driverName,
+              storageType: type,
+              visits: validTrips.length,
+            });
+          } else {
+            routingDateVehicles[dateKey].get(canonicalPlate).visits += validTrips.length;
+          }
+        });
+      });
+
       Object.keys(tempMetrics).forEach((dateKey) => {
-        const dailyVehicles = unifiedMap[dateKey];
+        const dailyVehicles = routingDateVehicles[dateKey];
         if (dailyVehicles) {
           tempMetrics[dateKey].dry.tv = 0;
           tempMetrics[dateKey].frozen.tv = 0;
