@@ -135,6 +135,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
       tooltip: 'summary.tabs.time_ro.tooltip.end_ro',
     },
   ];
+
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-b-xl shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
@@ -154,9 +155,28 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
             {processedData.map((row, idx) => {
+              const hasStart = !!row.firstCreatedTime;
+              const hasEnd = !!row.lastAssignedTime;
               const isSunday = isDateSunday(row.dateKey);
 
-              if (isSunday) {
+              const [y, m, d] = row.dateKey.split('-').map(Number);
+              const currentMidnight = new Date(y, m - 1, d);
+              currentMidnight.setHours(0, 0, 0, 0);
+              const isPast = currentMidnight < new Date().setHours(0, 0, 0, 0);
+
+              const isDynamicHoliday = isPast && !hasStart && !hasEnd && !isSunday;
+
+              if (isSunday || isDynamicHoliday) {
+                const content = isSunday ? (
+                  translate('common.holiday_sunday')
+                ) : (
+                  <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+                    <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                      {translate('common.holiday')}
+                    </span>
+                  </Tooltip>
+                );
+
                 return (
                   <tr
                     key={idx}
@@ -169,14 +189,11 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                       colSpan={2}
                       className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
                     >
-                      {translate('common.holiday_sunday')}
+                      {content}
                     </td>
                   </tr>
                 );
               }
-
-              const hasStart = !!row.firstCreatedTime;
-              const hasEnd = !!row.lastAssignedTime;
 
               const isStartMissing = !hasStart && hasEnd;
               const isEndMissing = hasStart && !hasEnd;
