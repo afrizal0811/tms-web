@@ -113,7 +113,6 @@ export default function useSummaryData() {
       setIsCalculatingMetrics(true);
       setHistoryProgress(0);
 
-      // --- LOGIKA DINAMIS ROUTING DATE ---
       const getRoutingDateWIB = (dateStr) => {
         if (!dateStr) return null;
         const d = new Date(dateStr);
@@ -145,6 +144,7 @@ export default function useSummaryData() {
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
+            routingName: '', // Menyimpan nama dokumen routing dinamis
             dry: {
               dp: 0,
               dt_total: 0,
@@ -155,6 +155,7 @@ export default function useSummaryData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dp_tasks: [], // Penampung task Drop Point Dry
               dt_tasks: [],
               ma_tasks: [],
               rt_tasks: [],
@@ -172,6 +173,7 @@ export default function useSummaryData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dp_tasks: [], // Penampung task Drop Point Frozen
               dt_tasks: [],
               ma_tasks: [],
               rt_tasks: [],
@@ -189,6 +191,7 @@ export default function useSummaryData() {
               co: 0,
               pr: 0,
               tv: 0,
+              dp_tasks: [],
               dt_tasks: [],
               ma_tasks: [],
               rt_tasks: [],
@@ -244,7 +247,6 @@ export default function useSummaryData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
-          // --- PENGGUNAAN MAP DINAMIS TANGGAL ---
           const taskIdStr = String(task._id || task.id || task.taskId);
           let dateKey =
             taskToRoutingDate.get(taskIdStr) || taskToRoutingDate.get(task.customerName);
@@ -384,12 +386,15 @@ export default function useSummaryData() {
         toastError(t('common.toast.error', { err: err.message }));
       }
 
-      // --- LOGIKA MAPPING KENDARAAN (TV) ---
       const routingDateVehicles = {};
       doneResults.forEach((res) => {
         const dateKey = getRoutingDateWIB(res.createdTime);
         if (!dateKey) return;
         if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
+
+        if (tempMetrics[dateKey]) {
+          tempMetrics[dateKey].routingName = res.name || '';
+        }
 
         (res.result?.routing || []).forEach((route) => {
           const validTrips = (route.trips || []).filter((t) => !t.isHub);
@@ -408,6 +413,14 @@ export default function useSummaryData() {
           const driverName = foundDriver ? foundDriver.name : route.assignee || '-';
           const finalPlate = foundDriver ? foundDriver.plat || rawPlate : rawPlate;
           const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
+
+          // Ekstraksi data task DP aktual aktual berdasarkan trip
+          if (tempMetrics[dateKey] && tempMetrics[dateKey][type]) {
+            validTrips.forEach((trip) => {
+              const taskDetail = getTaskDetails(trip);
+              tempMetrics[dateKey][type].dp_tasks.push(taskDetail);
+            });
+          }
 
           if (!routingDateVehicles[dateKey].has(canonicalPlate)) {
             routingDateVehicles[dateKey].set(canonicalPlate, {
@@ -455,7 +468,9 @@ export default function useSummaryData() {
             m.unknown[arrProp] = [];
           }
         };
-        ['dt_tasks', 'ma_tasks', 'rt_tasks', 'co_tasks', 'pr_tasks'].forEach(distributeTasks);
+        ['dp_tasks', 'dt_tasks', 'ma_tasks', 'rt_tasks', 'co_tasks', 'pr_tasks'].forEach(
+          distributeTasks
+        );
 
         const distribute = (prop) => {
           if (m.unknown[prop] > 0) {

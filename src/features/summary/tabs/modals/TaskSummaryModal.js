@@ -1,16 +1,28 @@
-// File: src/features/summary/tabs/modals/TaskSummaryModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
+import { useState } from 'react';
 
 export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
-  const { localeCode } = useLanguage();
+  const { localeCode, t } = useLanguage();
+  const [copied, setCopied] = useState(false);
 
   if (!isOpen || !data) return null;
 
-  const { title, dateObj, tasks, vehicles } = data;
+  const { title, dateObj, tasks, vehicles, routingName } = data;
+
+  const handleCopyRoutingName = async () => {
+    if (!routingName) return;
+    try {
+      await navigator.clipboard.writeText(routingName);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Gagal menyalin teks: ', err);
+    }
+  };
 
   const emptyDataContent = (
     <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
@@ -37,8 +49,51 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       onClose={onClose}
       maxWidth="max-w-lg"
       title={
-        <div>
-          <h3 className="text-lg font-bold">{title}</h3>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white">{title}</h3>
+
+            {routingName && (
+              <div className="relative flex items-center">
+                <button
+                  onClick={handleCopyRoutingName}
+                  title={translate('common.routing_name') + ': ' + routingName}
+                  className="p-1 rounded bg-slate-800/60 hover:bg-slate-700/80 text-slate-400 hover:text-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 dark:hover:text-white transition-all focus:outline-none shadow-sm border border-slate-700 cursor-pointer"
+                  aria-label="Copy Routing Name"
+                >
+                  {copied ? (
+                    <svg
+                      className="w-3.5 h-3.5 text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
           <p className="text-slate-300 text-sm font-normal">
             {formatLongDate(dateObj, localeCode)}
           </p>

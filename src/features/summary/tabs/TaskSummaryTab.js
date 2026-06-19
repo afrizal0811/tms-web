@@ -106,7 +106,15 @@ export default function TaskSummaryTab({
 
   const renderValue = (val) => (isLoading && val === undefined ? <LoadingSpinner /> : val || 0);
 
-  const renderClickableCell = (val, tasksArray, typeKey, category, dateObj, isFrozen = false) => {
+  const renderClickableCell = (
+    val,
+    tasksArray,
+    typeKey,
+    category,
+    dateObj,
+    isFrozen = false,
+    routingName = ''
+  ) => {
     if (isLoading && val === undefined)
       return (
         <TableCell>
@@ -133,6 +141,7 @@ export default function TaskSummaryTab({
               dateObj,
               type: category,
               tasks: tasksArray || [],
+              routingName: routingName,
             },
           })
         }
@@ -184,7 +193,8 @@ export default function TaskSummaryTab({
     isFrozen,
     isFirstRow,
     rowSpanProps,
-    isZeroDP
+    isZeroDP,
+    routingName
   ) => {
     const dateCellClass = isZeroDP
       ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
@@ -208,12 +218,28 @@ export default function TaskSummaryTab({
           {isFrozen ? 'Frozen' : 'Dry'}
         </TableCell>
 
-        <TableCell>{renderValue(data.dp)}</TableCell>
+        {renderClickableCell(data.dp, data.dp_tasks, 'dp', 'DP', dateObj, isFrozen, routingName)}
 
-        {renderClickableCell(data.dt_total, data.dt_tasks, 'dt', 'DT', dateObj, isFrozen)}
+        {renderClickableCell(
+          data.dt_total,
+          data.dt_tasks,
+          'dt',
+          'DT',
+          dateObj,
+          isFrozen,
+          routingName
+        )}
         <TableCell colorClass={COLORS.green}>{calculatePct(data.dt_total, data.dp)}</TableCell>
 
-        {renderClickableCell(data.ma_total, data.ma_tasks, 'ma', 'MA', dateObj, isFrozen)}
+        {renderClickableCell(
+          data.ma_total,
+          data.ma_tasks,
+          'ma',
+          'MA',
+          dateObj,
+          isFrozen,
+          routingName
+        )}
         <TableCell colorClass={COLORS.red}>{calculatePct(data.ma_total, data.dp)}</TableCell>
 
         {renderClickableCell(data.rt, data.rt_tasks, 'rt', 'RT', dateObj, isFrozen)}
@@ -274,7 +300,7 @@ export default function TaskSummaryTab({
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden p-0">
+    <div className="w-full h-full flex flex-col p-0">
       {isLoading && (
         <div className="w-full h-1 bg-gray-100 dark:bg-slate-700">
           <div
@@ -321,8 +347,8 @@ export default function TaskSummaryTab({
               const f = data?.frozen || {};
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
+              const rName = data?.routingName || '';
 
-              // Pengecekan absolut past dan zero values
               const isPast =
                 new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
@@ -342,7 +368,6 @@ export default function TaskSummaryTab({
               if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
               if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
 
-              // isZeroDP untuk mewarnai merah khusus kolom tanggal jika hanya DP yg 0 tapi ada status lain (misal RT)
               const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast;
 
               return [
@@ -353,9 +378,10 @@ export default function TaskSummaryTab({
                   false,
                   true,
                   { display: item.display },
-                  isZeroDP
+                  isZeroDP,
+                  rName
                 ),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP, rName),
               ];
             })}
           </tbody>
