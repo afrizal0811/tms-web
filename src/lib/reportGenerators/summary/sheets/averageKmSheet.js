@@ -204,7 +204,7 @@ export function generateAverageKmSheet(
       const mergedCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 1 });
       ws[mergedCellRef] = {
         t: 's',
-        v: translate('summary.tabs.average_km.holiday'),
+        v: translate('common.holiday_sunday'),
         s: {
           ...BASE_STYLES.cellCenter,
           fill: FILL_STYLES.red,

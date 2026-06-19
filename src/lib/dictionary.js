@@ -483,7 +483,6 @@ export const dictionary = {
         time_ro: {
           end_ro: 'Selesai RO',
           date_ro: 'Tanggal Ruting',
-          holiday: 'Libur (Minggu)',
           title: 'Waktu Ruting',
           tooltip: {
             date_ro: 'H-1 Pengiriman',
@@ -501,7 +500,6 @@ export const dictionary = {
           dt: 'Tugas Tidak Terbawa',
           dt_persentage: 'Tugas Tidak Terbawa (%)',
           explanation: 'Keterangan',
-          holiday: 'Libur (Minggu)',
           ma_persentage: 'Penugasan Manual (%)',
           mt: 'Truk Master',
           no_routing: 'Tanpa Ruting',
@@ -588,7 +586,6 @@ export const dictionary = {
         },
         average_km: {
           avg_km_routing: 'Rerata Jarak Ruting',
-          holiday: 'Libur (Minggu)',
           km_routing: 'Jarak Ruting',
           month: 'Bulan',
           title: 'Rerata Jarak Ruting',
@@ -1156,7 +1153,6 @@ export const dictionary = {
       tabs: {
         time_ro: {
           date_ro: 'Routing Date',
-          holiday: 'Holiday (Sunday)',
           title: 'Routing Time',
           tooltip: {
             date_ro: 'Date of routing process',
@@ -1174,7 +1170,6 @@ export const dictionary = {
           dt: 'Dropped Tasks',
           dt_persentage: 'Dropped Tasks (%)',
           explanation: 'Explanation',
-          holiday: 'Holiday (Sunday)',
           ma_persentage: 'Manual Assign (%)',
           mt: 'Master Truck',
           no_routing: 'No Routing',
@@ -1261,7 +1256,6 @@ export const dictionary = {
         },
         average_km: {
           avg_km_routing: 'Average Routing Distance',
-          holiday: 'Holiday (Sunday)',
           km_routing: 'Routing Distance',
           month: 'Month',
           title: 'Average Routing Distance',

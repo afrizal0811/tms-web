@@ -163,7 +163,7 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
                           colSpan="6"
                           className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle whitespace-nowrap"
                         >
-                          {translate('summary.tabs.average_km.holiday')}
+                          {translate('common.holiday_sunday')}
                         </td>
                       </>
                     ) : (

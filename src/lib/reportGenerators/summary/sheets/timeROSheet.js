@@ -122,7 +122,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
       if (row.isSunday) {
         const rowIndex = excelData.length;
-        excelData.push([row.dateDisplay, translate('summary.tabs.time_ro.holiday'), '']);
+        excelData.push([row.dateDisplay, translate('common.holiday_sunday'), '']);
 
         merges.push({
           s: { r: rowIndex, c: 1 },

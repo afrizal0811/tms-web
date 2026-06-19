@@ -169,7 +169,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                       colSpan={2}
                       className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
                     >
-                      {translate('summary.tabs.time_ro.holiday')}
+                      {translate('common.holiday_sunday')}
                     </td>
                   </tr>
                 );
