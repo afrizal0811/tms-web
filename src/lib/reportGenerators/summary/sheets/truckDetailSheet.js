@@ -534,6 +534,23 @@ export function generateTruckDetailSheet(
   const range = XLSX.utils.decode_range(ws['!ref']);
   const dataEndRow = 2 + driverEmails.length;
 
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return currentMidnight < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || (metrics.outlets || 0) === 0;
+    });
+  };
+
   for (let R = range.s.r; R <= range.e.r; ++R) {
     let driverEmail = null;
     if (R >= 2 && R < dataEndRow) driverEmail = driverEmails[R - 2];
@@ -560,9 +577,16 @@ export function generateTruckDetailSheet(
           } else {
             const dateIdx = Math.floor((C - 3) / 7);
             if (dateKeys[dateIdx]) {
-              const dObj = new Date(dateKeys[dateIdx].str);
-              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
-              else {
+              const dateStr = dateKeys[dateIdx].str;
+              const [y, m, day] = dateStr.split('-').map(Number);
+              const safeDate = new Date(y, m - 1, day);
+
+              const isSun = safeDate.getDay() === 0;
+              const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+
+              if (isSun || isDynamic) {
+                cellFill = FILL_STYLES.red;
+              } else {
                 if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
                 if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
               }
@@ -588,10 +612,14 @@ export function generateTruckDetailSheet(
 
             if (dateKeys[dateIdx]) {
               const dateStr = dateKeys[dateIdx].str;
-              const dObj = new Date(dateStr);
+              const [y, m, day] = dateStr.split('-').map(Number);
+              const safeDate = new Date(y, m - 1, day);
               const metrics = dataMatrix[dateStr][driverEmail];
 
-              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
+              const isSun = safeDate.getDay() === 0;
+              const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+
+              if (isSun || isDynamic) cellFill = FILL_STYLES.red;
 
               if (metrics && metrics.outlets > 0) {
                 let errStyle = null;

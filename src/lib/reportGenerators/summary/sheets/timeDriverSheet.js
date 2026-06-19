@@ -315,6 +315,24 @@ export function generateTimeDriverSheet(
   ws['!merges'] = merges;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
+
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return currentMidnight < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || !metrics.hasData;
+    });
+  };
+
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
@@ -329,22 +347,27 @@ export function generateTimeDriverSheet(
         const dateIdx = Math.floor((C - 3) / 3);
 
         if (dateKeys[dateIdx]) {
-          const dObj = new Date(dateKeys[dateIdx].str);
+          const dateStr = dateKeys[dateIdx].str;
+          const [y, m, day] = dateStr.split('-').map(Number);
+          const safeDate = new Date(y, m - 1, day);
 
-          if (dObj.getUTCDay() === 0) {
+          const isSun = safeDate.getDay() === 0;
+          const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+
+          if (isSun || isDynamic) {
             cellFill = FILL_STYLES.red;
           } else {
             if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
             if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
           }
+
           if (R >= 2) {
             const driverIdx = R - 2;
             const driverEmail = driverEmails[driverIdx];
-            const dateStr = dateKeys[dateIdx].str;
 
             if (driverEmail && dateStr) {
-              const m = dataMatrix[dateStr][driverEmail];
-              if (m && m.entries && m.entries.length > 1) {
+              const mData = dataMatrix[dateStr][driverEmail];
+              if (mData && mData.entries && mData.entries.length > 1) {
                 cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
                 fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
               }

@@ -1,3 +1,4 @@
+import Tooltip from '@/components/Tooltip';
 import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -13,10 +14,34 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
   };
   const closeModal = () => setModalData(null);
   const percentage = (data, maxData) => ((data / maxData) * 100).toFixed(1) + '%';
-  const isSunday = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    return date.getUTCDay() === 0;
+
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    return currentMidnight < new Date().setHours(0, 0, 0, 0);
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || (metrics.outlets || 0) === 0;
+    });
+  };
+
+  const checkHolidayStatus = (dateStr) => {
+    if (!dateStr) return { isHoliday: false, isDynamic: false, isSunday: false };
+    const [y, m, day] = dateStr.split('-').map(Number);
+    const safeDate = new Date(y, m - 1, day);
+    const isSunday = safeDate.getDay() === 0;
+
+    const isDynamic = !isSunday && isPastDate(dateStr) && isDayEmpty(dateStr);
+    return {
+      isHoliday: isSunday || isDynamic,
+      isDynamic,
+      isSunday,
+    };
   };
 
   const errorColor = [
@@ -112,22 +137,35 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                 {translate('common.driver')}
               </th>
               {dateKeys.map((d, i) => {
-                const headerColor = isSunday(d.str) ? holidayColor : dateColor;
-                const date = formatLongDate(d.str, localeCode);
+                const { isHoliday, isDynamic } = checkHolidayStatus(d.str);
+                const headerColor = isHoliday ? holidayColor : dateColor;
+                const dateText = formatLongDate(d.str, localeCode);
+
+                const headerContent = isDynamic ? (
+                  <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+                    <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                      {dateText}
+                    </span>
+                  </Tooltip>
+                ) : (
+                  dateText
+                );
+
                 return (
                   <th
                     key={i}
                     colSpan="7"
                     className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
                   >
-                    {date}
+                    {headerContent}
                   </th>
                 );
               })}
             </tr>
             <tr>
               {dateKeys.map((d, i) => {
-                const metricColor = isSunday(d.str) ? holidayColor : titleColor;
+                const { isHoliday } = checkHolidayStatus(d.str);
+                const metricColor = isHoliday ? holidayColor : titleColor;
                 return (
                   <Fragment key={`${d.day}-${i}-header`}>
                     {displayData.map(({ key, border }) => (
@@ -167,9 +205,9 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                     const outletData = metrics?.outlets;
                     const onClick = () => handleCellClick(metrics, driver.name, d.display);
 
-                    const isSun = isSunday(d.str);
-                    let cellBg = isSun ? holidayColor : '';
-                    const emptyBg = isSun ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
+                    const { isHoliday } = checkHolidayStatus(d.str);
+                    let cellBg = isHoliday ? holidayColor : '';
+                    const emptyBg = isHoliday ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
 
                     if (metrics && outletData > 0) {
                       if (metrics.hasManualError && metrics.hasBedaHariError)

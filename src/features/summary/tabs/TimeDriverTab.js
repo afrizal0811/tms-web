@@ -1,5 +1,6 @@
 'use client';
 
+import Tooltip from '@/components/Tooltip';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
@@ -23,9 +24,32 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
 
   const closeModal = () => setModalData(null);
 
-  const isSunday = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.getUTCDay() === 0;
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    return currentMidnight < new Date().setHours(0, 0, 0, 0);
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || !metrics.hasData;
+    });
+  };
+
+  const checkHolidayStatus = (dateStr) => {
+    const [y, m, day] = dateStr.split('-').map(Number);
+    const safeDate = new Date(y, m - 1, day);
+    const isSunday = safeDate.getDay() === 0;
+
+    const isDynamic = !isSunday && isPastDate(dateStr) && isDayEmpty(dateStr);
+    return {
+      isHoliday: isSunday || isDynamic,
+      isDynamic,
+      isSunday,
+    };
   };
 
   const COLOR_A = 'bg-[#fae2d5] dark:bg-[#3f2113]';
@@ -75,22 +99,35 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
               </th>
 
               {dateKeys.map((d, i) => {
-                const headerColor = isSunday(d.str) ? COLOR_C : COLOR_B;
-                const date = formatLongDate(d.str, localeCode);
+                const { isHoliday, isDynamic } = checkHolidayStatus(d.str);
+                const headerColor = isHoliday ? COLOR_C : COLOR_B;
+                const dateText = formatLongDate(d.str, localeCode);
+
+                const headerContent = isDynamic ? (
+                  <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+                    <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                      {dateText}
+                    </span>
+                  </Tooltip>
+                ) : (
+                  dateText
+                );
+
                 return (
                   <th
                     key={i}
                     colSpan="3"
                     className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
                   >
-                    {date}
+                    {headerContent}
                   </th>
                 );
               })}
             </tr>
             <tr>
               {dateKeys.map((d, i) => {
-                const metricColor = isSunday(d.str) ? COLOR_C : COLOR_A;
+                const { isHoliday } = checkHolidayStatus(d.str);
+                const metricColor = isHoliday ? COLOR_C : COLOR_A;
                 return (
                   <Fragment key={i}>
                     <th
@@ -129,10 +166,10 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
 
                   {dateKeys.map((d, i) => {
                     const metrics = dataMatrix[d.str][email];
-                    const isSun = isSunday(d.str);
+                    const { isHoliday } = checkHolidayStatus(d.str);
 
-                    let cellBg = isSun ? COLOR_C : '';
-                    const emptyBg = isSun ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
+                    let cellBg = isHoliday ? COLOR_C : '';
+                    const emptyBg = isHoliday ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
 
                     const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
                     const hasCoords = metrics?.entries?.some((e) => e.startLat || e.finishLat);
