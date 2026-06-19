@@ -27,6 +27,8 @@ export const dictionary = {
       etd: 'ETD',
       finish_time: 'Waktu Selesai',
       flow: 'Alur',
+      holiday: 'Libur',
+      holiday_sunday: 'Libur (Minggu)',
       invalid_date: 'Tanggal tidak valid',
       language: 'Bahasa',
       license_number: 'Pelat Nomor',
@@ -492,6 +494,7 @@ export const dictionary = {
           },
         },
         task_summary: {
+          caution: 'Harap verifikasi data',
           co: 'Pembatalan Order',
           co_persentage: 'Pembatalan Order (%)',
           dp: 'Titik Pengiriman',
@@ -697,6 +700,8 @@ export const dictionary = {
       etd: 'ETD',
       finish_time: 'Finish Time',
       flow: 'Flow',
+      holiday: 'Holiday',
+      holiday_sunday: 'Holiday (Sunday)',
       invalid_date: 'Invalid date',
       language: 'Language',
       license_number: 'License Plate',
@@ -1162,6 +1167,7 @@ export const dictionary = {
           },
         },
         task_summary: {
+          caution: 'Please verify the data.',
           co: 'Cancel Order',
           co_persentage: 'Cancel Order (%)',
           dp: 'Delivery Points',

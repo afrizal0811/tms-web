@@ -236,30 +236,42 @@ export default function TaskSummaryTab({
     );
   };
 
-  const renderSundayRows = (key, display) => [
-    <tr
-      key={`${key}-sun-1`}
-      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700"
-    >
-      <td
-        rowSpan={2}
-        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-medium align-middle bg-red-200 dark:bg-[#4a1c1c] text-center"
+  const renderHolidayRows = (key, display, isSunday) => {
+    const content = isSunday ? (
+      translate('common.holiday_sunday')
+    ) : (
+      <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+        <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+          {translate('common.holiday')}
+        </span>
+      </Tooltip>
+    );
+
+    return [
+      <tr
+        key={`${key}-hol-1`}
+        className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700"
       >
-        {display}
-      </td>
-      <td
-        rowSpan={2}
-        colSpan={17}
-        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle dark:bg-[#4a1c1c]"
-      >
-        {translate('summary.tabs.task_summary.holiday')}
-      </td>
-    </tr>,
-    <tr
-      key={`${key}-sun-2`}
-      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300"
-    ></tr>,
-  ];
+        <td
+          rowSpan={2}
+          className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-medium align-middle bg-red-200 dark:bg-[#4a1c1c] text-center"
+        >
+          {display}
+        </td>
+        <td
+          rowSpan={2}
+          colSpan={17}
+          className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle dark:bg-[#4a1c1c]"
+        >
+          {content}
+        </td>
+      </tr>,
+      <tr
+        key={`${key}-hol-2`}
+        className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300"
+      ></tr>,
+    ];
+  };
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden p-0">
@@ -304,16 +316,34 @@ export default function TaskSummaryTab({
           </thead>
           <tbody>
             {allDates.map((item) => {
-              if (item.isSunday) return renderSundayRows(item.key, item.display);
-
               const data = metrics ? metrics[item.key] : null;
               const d = data?.dry || {};
               const f = data?.frozen || {};
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
-              const isPastOrToday = item.dateObj < new Date().setHours(0, 0, 0, 0);
-              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
+              // Pengecekan absolut past dan zero values
+              const isPast =
+                new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+
+              const checkZero = (obj) =>
+                (obj.dp || 0) === 0 &&
+                (obj.dt_total || 0) === 0 &&
+                (obj.ma_total || 0) === 0 &&
+                (obj.rt || 0) === 0 &&
+                (obj.co || 0) === 0 &&
+                (obj.pr || 0) === 0 &&
+                (obj.tv || 0) === 0 &&
+                (obj.va || 0) === 0 &&
+                (obj.tvu || 0) === 0;
+
+              const isDynamicHoliday = isPast && checkZero(d) && checkZero(f);
+
+              if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
+              if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
+
+              // isZeroDP untuk mewarnai merah khusus kolom tanggal jika hanya DP yg 0 tapi ada status lain (misal RT)
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast;
 
               return [
                 renderArmadaRow(
