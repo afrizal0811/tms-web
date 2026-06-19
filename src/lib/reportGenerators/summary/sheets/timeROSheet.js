@@ -1,4 +1,4 @@
-import { formatDateWIB } from '@/lib/utils';
+import { formatDateWIB, formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 

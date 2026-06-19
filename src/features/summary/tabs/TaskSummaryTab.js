@@ -312,7 +312,7 @@ export default function TaskSummaryTab({
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
-              const isPastOrToday = item.dateObj <= new Date().setHours(0, 0, 0, 0);
+              const isPastOrToday = item.dateObj < new Date().setHours(0, 0, 0, 0);
               const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday;
 
               return [

@@ -98,7 +98,7 @@ export function generateTaskSummarySheet(
 
       const currentMidnight = new Date(current);
       currentMidnight.setHours(0, 0, 0, 0);
-      const isPastOrToday = currentMidnight <= today;
+      const isPastOrToday = currentMidnight < today;
 
       // PERBAIKAN: Gunakan (d.dp || 0) agar undefined diubah jadi 0
       if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday) {
