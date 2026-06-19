@@ -52,7 +52,7 @@ export default function RoutingInfo({ resultsData }) {
             <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 text-center">#</th>
-                <th className="px-4 py-3">{t('routing_info.routing_name')}</th>
+                <th className="px-4 py-3">{t('common.routing_name')}</th>
                 <th className="px-4 py-3">{t('routing_info.created_by')}</th>
                 <th className="px-4 py-3 text-center">{t('routing_info.created_time')}</th>
               </tr>

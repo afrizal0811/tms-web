@@ -164,7 +164,7 @@ export const getRoutingHeaders = (translate) => ({
   ],
   help: [
     translate('excel.routing.headers.routing_id'),
-    translate('excel.routing.headers.routing_name'),
+    translate('common.routing_name'),
     translate('excel.routing.headers.created_by'),
     translate('excel.routing.headers.created_at'),
     translate('excel.routing.headers.routing_result'),

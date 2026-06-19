@@ -333,7 +333,6 @@ export const dictionary = {
           etd_hub: 'ETD Hub',
           frozen_km: 'FROZEN (km)',
           routing_id: 'ID Ruting',
-          routing_name: 'Nama Ruting',
           routing_result: 'Hasil Ruting',
           ship_dur: 'Durasi Pengiriman',
           total_delivery: 'Total Pengiriman',
@@ -668,7 +667,6 @@ export const dictionary = {
     routing_info: {
       created_by: 'Dibuat oleh',
       created_time: 'Dibuat pada',
-      routing_name: 'Nama Ruting',
       title: 'Informasi Ruting',
     },
   },
@@ -1006,7 +1004,6 @@ export const dictionary = {
           etd_hub: 'ETD Hub',
           frozen_km: 'FROZEN (km)',
           routing_id: 'Routing ID',
-          routing_name: 'Routing Name',
           routing_result: 'Routing Result',
           ship_dur: 'Ship Duration',
           total_delivery: 'Total Delivery',
@@ -1338,7 +1335,6 @@ export const dictionary = {
     routing_info: {
       created_by: 'Created By',
       created_time: 'Created At',
-      routing_name: 'Routing Name',
       title: 'Routing Information',
     },
   },
