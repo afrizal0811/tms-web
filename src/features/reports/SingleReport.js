@@ -351,7 +351,7 @@ export default function SingleReport({
         htmlFor="routingDate"
         className="block text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center"
       >
-        {t('report.routing_date')}
+        {t('common.routing_date')}
       </label>
       <CustomDatePicker
         className="max-w-xs cursor-pointer"

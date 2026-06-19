@@ -125,7 +125,7 @@ export const getDeliveryHeaders = (translate, hasPendingGR) => {
 };
 
 export const getDeliverySheetNames = (translate) => ({
-  routingDate: translate('excel.delivery.sheets.routing_date'),
+  routingDate: translate('common.routing_date'),
   totalDelivered: translate('excel.delivery.sheets.total_delivered'),
   pendingSO: translate('excel.delivery.sheets.pending_so'),
   updateLonglat: translate('excel.delivery.sheets.update_longlat'),

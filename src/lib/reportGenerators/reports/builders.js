@@ -42,7 +42,7 @@ function getSortGroup(platStr) {
 export function buildTanggalRoutingSheet(wb, dateStr, t) {
   const formattedDate = formatDateUniversal(dateStr, 'DD-MM-YYYY');
   const ws = XLSX.utils.aoa_to_sheet([
-    [t('excel.delivery.headers.routing_date_title')],
+    [t('common.routing_date').toUpperCase()],
     [formattedDate, null, null, null, null, null, null],
   ]);
   ws['A1'].s = {
