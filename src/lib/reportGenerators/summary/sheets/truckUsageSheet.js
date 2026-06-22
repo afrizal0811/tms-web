@@ -5,8 +5,35 @@ import { formatDateUniversal, formatLongDate, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
+const normalizePlate = (plate) => (plate || '').replace(/\s+/g, '').toLowerCase();
+
+const extractFirstStorageTag = (sourceTags) => {
+  let rawTags = sourceTags || [];
+  if (typeof rawTags === 'string') rawTags = rawTags.split(',');
+  if (Array.isArray(rawTags) && rawTags.length > 0) {
+    return (
+      rawTags.find(
+        (t) =>
+          typeof t === 'string' &&
+          (t.toUpperCase().includes('DRY') ||
+            t.toUpperCase().includes('FROZEN') ||
+            t.toUpperCase().includes('FRZ'))
+      ) || rawTags[0]
+    );
+  }
+  return '';
+};
+
+const isStorageFrozen = (storage, firstTag) => {
+  return (
+    (storage || '').toUpperCase().includes('FROZEN') ||
+    (firstTag || '').toUpperCase().includes('FROZEN') ||
+    (firstTag || '').toUpperCase().includes('FRZ')
+  );
+};
+
 function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
-  const cleanPlate = (vehiclePlate || '').replace(/\s+/g, '').toLowerCase();
+  const cleanPlate = normalizePlate(vehiclePlate);
 
   if (cleanPlate && mappingsObj[cleanPlate]) {
     return mappingsObj[cleanPlate];
@@ -15,6 +42,7 @@ function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
   if (!firstTag) return 'Lainnya';
   const parts = firstTag.split('-');
   if (parts.length < 2) return 'Lainnya';
+
   let specificType = parts[1].toUpperCase();
   if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
     if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
@@ -46,6 +74,7 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
         totalTMS += dateMap[d.str][cat][type] || 0;
         totalManual += dateMap[d.str][`${cat}Manual`][type]?.count || 0;
       });
+
       const TVU = totalTMS + totalManual;
       const V_Type = hubMasterData?.[cat]?.[type] || 0;
       const TV = V_Type * workingDays;
@@ -53,6 +82,7 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
       const VU = Math.ceil(PctTVU * V_Type);
       const IV = Math.max(0, V_Type - VU);
       const PctIV = V_Type > 0 ? IV / V_Type : 0;
+
       summary[cat].types[type] = {
         TMS: totalTMS,
         Manual: totalManual,
@@ -79,11 +109,9 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
 
     const netTMS = grpTMS - interbranchTMS;
     const netManual = grpManual - interbranchManual;
-
     const V_Total = hubMasterData?.[cat]?.Total || 0;
     const TV_Total = V_Total * workingDays;
     const TVU_Total = netTMS + netManual;
-
     const PctTVU_Total = TV_Total > 0 ? TVU_Total / TV_Total : 0;
     const PctTMS_Total = TV_Total > 0 ? netTMS / TV_Total : 0;
     const PctManual_Total = TV_Total > 0 ? netManual / TV_Total : 0;
@@ -129,13 +157,14 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
     TVU: TVU_OTV,
     TV: TV_OTV,
     PctTVU: PctTVU_OTV,
-    PctTMS: TV_OTV > 0 ? otvTMS / TV_OTV : 0,
-    PctManual: TV_OTV > 0 ? otvManual / TV_OTV : 0,
+    PctTMS: PctTMS_OTV,
+    PctManual: PctManual_OTV,
     PctIV: PctIV_OTV,
     V: V_OTV,
     VU: VU_OTV,
     IV: IV_OTV,
   };
+
   return summary;
 }
 
@@ -164,7 +193,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
 
   const mappingsObj = mappingsDB.reduce((acc, curr) => {
     acc[curr.plat] = curr.mappedType;
-    if (curr.plat) acc[curr.plat.replace(/\s+/g, '').toLowerCase()] = curr.mappedType;
+    if (curr.plat) acc[normalizePlate(curr.plat)] = curr.mappedType;
     return acc;
   }, {});
 
@@ -199,7 +228,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     }
 
     if (isConditional) {
-      if (d.plat) conditionalPlates.add(d.plat.replace(/\s+/g, '').toLowerCase());
+      if (d.plat) conditionalPlates.add(normalizePlate(d.plat));
     } else {
       masterDriversDB.push(d);
     }
@@ -228,27 +257,9 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
   });
 
   activeDrivers.forEach((d) => {
-    let rawTags = d.tags || d.vehicleTags || d.userTags || [];
-    if (typeof rawTags === 'string') rawTags = rawTags.split(',');
-
-    let firstTag = '';
-    if (Array.isArray(rawTags) && rawTags.length > 0) {
-      firstTag =
-        rawTags.find(
-          (t) =>
-            typeof t === 'string' &&
-            (t.toUpperCase().includes('DRY') ||
-              t.toUpperCase().includes('FROZEN') ||
-              t.toUpperCase().includes('FRZ'))
-        ) || rawTags[0];
-    }
-
+    const firstTag = extractFirstStorageTag(d.tags || d.vehicleTags || d.userTags);
     const type = getVehicleType(firstTag, d.plat, mappingsObj, vehicleTypes);
-
-    const isFrozen =
-      (d.storage || '').toUpperCase().includes('FROZEN') ||
-      (firstTag || '').toUpperCase().includes('FROZEN') ||
-      (firstTag || '').toUpperCase().includes('FRZ');
+    const isFrozen = isStorageFrozen(d.storage, firstTag);
     const storage = isFrozen ? 'Frozen' : 'Dry';
     const vInfo = { plate: d.plat, driver: d.name, type: type };
 
@@ -334,20 +345,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     const driverMapHash = new Map();
     masterDriversDB.forEach((d) => {
       if (d.email) {
-        let rawTags = d.tags || d.vehicleTags || d.userTags || [];
-        if (typeof rawTags === 'string') rawTags = rawTags.split(',');
-        let mTag = '';
-        if (Array.isArray(rawTags) && rawTags.length > 0) {
-          mTag =
-            rawTags.find(
-              (t) =>
-                typeof t === 'string' &&
-                (t.toUpperCase().includes('DRY') ||
-                  t.toUpperCase().includes('FROZEN') ||
-                  t.toUpperCase().includes('FRZ'))
-            ) || rawTags[0];
-        }
-
+        const mTag = extractFirstStorageTag(d.tags || d.vehicleTags || d.userTags);
         driverMapHash.set(d.email.toLowerCase().trim(), {
           name: d.name,
           storage: (d.storage || 'DRY').toUpperCase(),
@@ -382,33 +380,21 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
         const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
         const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
 
-        const rawCanonical = rawPlate.replace(/\s+/g, '').toLowerCase();
+        const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 
         const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        const canonicalPlate =
-          strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+        const canonicalPlate = normalizePlate(strictBasePlate) || `unknown-${Math.random()}`;
 
         let driverInfo = driverMapHash.get(rawEmail);
         if (!driverInfo && rawPlate) {
           const platMatch = masterDriversDB.find(
-            (d) => d.plat && d.plat.replace(/\s+/g, '').toLowerCase() === canonicalPlate
+            (d) => d.plat && normalizePlate(d.plat) === canonicalPlate
           );
           if (platMatch) {
-            let rawTags = platMatch.tags || platMatch.vehicleTags || platMatch.userTags || [];
-            if (typeof rawTags === 'string') rawTags = rawTags.split(',');
-            let mTag = '';
-            if (Array.isArray(rawTags) && rawTags.length > 0) {
-              mTag =
-                rawTags.find(
-                  (t) =>
-                    typeof t === 'string' &&
-                    (t.toUpperCase().includes('DRY') ||
-                      t.toUpperCase().includes('FROZEN') ||
-                      t.toUpperCase().includes('FRZ'))
-                ) || rawTags[0];
-            }
-
+            const mTag = extractFirstStorageTag(
+              platMatch.tags || platMatch.vehicleTags || platMatch.userTags
+            );
             driverInfo = {
               name: platMatch.name,
               storage: (platMatch.storage || 'DRY').toUpperCase(),
@@ -418,16 +404,10 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
         }
 
         const storage = driverInfo ? driverInfo.storage : 'DRY';
-
         const routingTag =
           route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
-
         const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
-
-        const isFrozen =
-          storage.includes('FROZEN') ||
-          firstTag.toUpperCase().includes('FROZEN') ||
-          firstTag.toUpperCase().includes('FRZ');
+        const isFrozen = isStorageFrozen(storage, firstTag);
         const type = isFrozen ? 'Frozen' : 'Dry';
 
         if (!dailyVehicles.has(canonicalPlate)) {
@@ -489,9 +469,11 @@ export async function generateTruckUsageSheet(
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
     await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
+
   const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];
   const merges = [];
+
   const getPctFill = (val) => {
     if (val > 1) return FILL_STYLES.alertRed;
     if (val >= 0.75) return { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };
@@ -541,6 +523,7 @@ export async function generateTruckUsageSheet(
         ]);
       }
     });
+
     const t = summaryData[cat].total;
     if (isPercentage) {
       excelData.push([
@@ -572,7 +555,6 @@ export async function generateTruckUsageSheet(
 
   const summaryCountEndRow = excelData.length;
   excelData.push([]);
-
   const summaryPctStartRow = excelData.length;
 
   excelData.push([
@@ -597,10 +579,13 @@ export async function generateTruckUsageSheet(
     const row1 = [isPercentage ? `${monthName} (%)` : monthName, 'Date', 'Total'];
     dateKeys.forEach((d) => row1.push(d.day, '', ''));
     tableRows.push(row1);
+
     const row2 = [translate('common.storage_type'), translate('common.vehicle_type'), ''];
     dateKeys.forEach(() => row2.push('TMS', 'Non TMS', 'TVU'));
     tableRows.push(row2);
+
     const rowMasterTotals = {};
+
     const createRow = (label1, label2, category, relativeRowIdx) => {
       const row = [label1, label2];
       let totalVal = null;
@@ -610,6 +595,7 @@ export async function generateTruckUsageSheet(
       else if (category === 'FrozenTotal') totalVal = hubMasterData?.Frozen?.Total;
       else if (category === 'OTV')
         totalVal = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
+
       rowMasterTotals[relativeRowIdx] = totalVal || 0;
       row.push(totalVal || null);
 
@@ -636,10 +622,11 @@ export async function generateTruckUsageSheet(
 
         if (isPercentage) {
           if (totalVal > 0) {
-            const tmsPct = tmsDisp !== null ? tmsDisp / totalVal : null;
-            const manualPct = manualDisp !== null ? manualDisp / totalVal : null;
-            const tvuPct = tvuDisp !== null ? tvuDisp / totalVal : null;
-            row.push(tmsPct, manualPct, tvuPct);
+            row.push(
+              tmsDisp !== null ? tmsDisp / totalVal : null,
+              manualDisp !== null ? manualDisp / totalVal : null,
+              tvuDisp !== null ? tvuDisp / totalVal : null
+            );
           } else {
             row.push(null, null, null);
           }
@@ -649,6 +636,7 @@ export async function generateTruckUsageSheet(
       });
       return row;
     };
+
     let rIdx = 2;
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
@@ -659,6 +647,7 @@ export async function generateTruckUsageSheet(
     tableRows.push(
       createRow(translate('summary.tabs.truck_usage.total_used'), '', 'DryTotal', rIdx++)
     );
+
     vehicleTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', rIdx++))
     );
@@ -669,6 +658,7 @@ export async function generateTruckUsageSheet(
       createRow(translate('summary.tabs.truck_usage.total_used'), '', 'FrozenTotal', rIdx++)
     );
     tableRows.push(createRow('OTV', '', 'OTV', rIdx++));
+
     const H1 = startRowIndex;
     const H2 = startRowIndex + 1;
     let colIdx = 3;
@@ -677,6 +667,7 @@ export async function generateTruckUsageSheet(
       colIdx += 3;
     });
     merges.push({ s: { r: H1, c: 2 }, e: { r: H2, c: 2 } });
+
     const dryStart = startRowIndex + 2;
     const dryInter = dryStart + vehicleTypes.length;
     const dryTot = dryInter + 1;
@@ -684,6 +675,7 @@ export async function generateTruckUsageSheet(
     const frzInter = frzStart + vehicleTypes.length;
     const frzTot = frzInter + 1;
     const otvRow = frzTot + 1;
+
     merges.push({ s: { r: dryStart, c: 0 }, e: { r: dryInter - 1, c: 0 } });
     merges.push({ s: { r: frzStart, c: 0 }, e: { r: frzInter - 1, c: 0 } });
     merges.push({ s: { r: dryInter, c: 0 }, e: { r: dryInter, c: 1 } });
@@ -691,20 +683,21 @@ export async function generateTruckUsageSheet(
     merges.push({ s: { r: frzInter, c: 0 }, e: { r: frzInter, c: 1 } });
     merges.push({ s: { r: frzTot, c: 0 }, e: { r: frzTot, c: 1 } });
     merges.push({ s: { r: otvRow, c: 0 }, e: { r: otvRow, c: 1 } });
+
     return { tableRows, rowMasterTotals };
   };
 
   const table1 = buildTableData(false, table1StartRow);
   excelData.push(...table1.tableRows);
   excelData.push([]);
+
   const table2StartRow = excelData.length;
   const table2 = buildTableData(true, table2StartRow);
   excelData.push(...table2.tableRows);
-
   excelData.push([]);
   excelData.push([translate('summary.tabs.truck_usage.explanation')]);
-  const legendTitleRow = excelData.length - 1;
 
+  const legendTitleRow = excelData.length - 1;
   merges.push({ s: { r: legendTitleRow, c: 0 }, e: { r: legendTitleRow, c: 2 } });
 
   const legendItems = [
@@ -719,10 +712,8 @@ export async function generateTruckUsageSheet(
   ];
 
   const legendItemStartRow = excelData.length;
-
   legendItems.forEach((item, idx) => {
-    const keyText = item.key;
-    excelData.push([keyText, item.desc]);
+    excelData.push([item.key, item.desc]);
     const currentRow = legendItemStartRow + idx;
     merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow, c: 4 } });
   });
@@ -754,14 +745,9 @@ export async function generateTruckUsageSheet(
 
       if (R >= legendTitleRow) {
         if (R === legendTitleRow && C === 0) {
-          cell.s = {
-            font: { bold: true, underline: true },
-            alignment: { horizontal: 'left' },
-          };
+          cell.s = { font: { bold: true, underline: true }, alignment: { horizontal: 'left' } };
         } else if (R >= legendItemStartRow && C === 0) {
-          cell.s = {
-            alignment: { horizontal: 'left', wrapText: true, vertical: 'center' },
-          };
+          cell.s = { alignment: { horizontal: 'left', wrapText: true, vertical: 'center' } };
         }
         continue;
       }
@@ -818,6 +804,7 @@ export async function generateTruckUsageSheet(
       let isTable1 = false,
         isTable2 = false,
         relR = -1;
+
       if (R >= table1StartRow && R < table1StartRow + tableHeight) {
         isTable1 = true;
         relR = R - table1StartRow;
@@ -837,6 +824,7 @@ export async function generateTruckUsageSheet(
         const otvRow = frzTot + 1;
 
         cell.s = { ...BASE_STYLES.center };
+
         if (relR === 0 || relR === 1) {
           cell.s = { ...HEADER_STYLES.main };
           if (C === 3) cell.s.border.left = BORDERS.medium;
@@ -863,6 +851,7 @@ export async function generateTruckUsageSheet(
               if (isMerged && C === 0) cell.s.alignment = { ...BASE_STYLES.left.alignment };
               else if (C === 0) cell.s.alignment = { ...BASE_STYLES.center.alignment };
               else cell.s.alignment = { ...BASE_STYLES.left.alignment };
+
               if (rowFill) cell.s.fill = rowFill;
               cell.s.border = undefined;
             } else {
@@ -879,6 +868,7 @@ export async function generateTruckUsageSheet(
             let isDynamicCol = false;
             let isTMSCol = false;
             let isTVUCol = false;
+
             if (C > 2) {
               const relativeIdx = (C - 3) % 3;
               if (relativeIdx === 0) isTMSCol = true;
@@ -919,6 +909,7 @@ export async function generateTruckUsageSheet(
                 else finalFill = { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
               }
             }
+
             if (finalFill) cell.s.fill = finalFill;
             if (
               (isTable2 || finalFill === FILL_STYLES.alertRed) &&
