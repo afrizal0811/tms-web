@@ -1,5 +1,7 @@
 'use client';
 
+import Tooltip from '@/components/Tooltip';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
 import AverageDistanceModal from './modals/AverageDistanceModal';
@@ -12,6 +14,8 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
   const [modalTitle, setModalTitle] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
     if (details && details.length > 0) {
@@ -33,6 +37,16 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
   const closeModal = () => {
     setModalOpen(false);
     setModalData([]);
+  };
+
+  const handleCopyRoutingName = async (routingName) => {
+    if (!routingName) return;
+    try {
+      await navigator.clipboard.writeText(routingName);
+      toastSuccess(`${translate('common.copied')}: ${routingName}`);
+    } catch (err) {
+      toastError(`${translate('common.toast.error')}: ${err.message}`);
+    }
   };
 
   const distanceConverter = (data) => {
@@ -152,18 +166,92 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
                 {data.map((row, idx) => (
                   <tr
                     key={idx}
-                    className={` ${row.isSunday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
+                    className={` ${row.isSunday || row.isDynamicHoliday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
                   >
-                    <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium">
-                      {formatLongDate(row.date, localeCode)}
+                    <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium relative">
+                      {(() => {
+                        if (row.isDynamicHoliday) {
+                          return (
+                            <Tooltip
+                              tooltipContent={translate('summary.tabs.task_summary.caution')}
+                            >
+                              <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                                {formatLongDate(row.dateStr || row.date, localeCode)}
+                              </span>
+                            </Tooltip>
+                          );
+                        } else if (
+                          row.routingNames &&
+                          row.routingNames.length > 0 &&
+                          !row.isSunday
+                        ) {
+                          const dateVal = row.dateStr || row.date;
+                          return (
+                            <div className="relative inline-flex items-center justify-center">
+                              <span
+                                onClick={() =>
+                                  setOpenDropdown(openDropdown === dateVal ? null : dateVal)
+                                }
+                                className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
+                              >
+                                {formatLongDate(dateVal, localeCode)}
+                                <svg
+                                  className={`w-3 h-3 transition-transform ${openDropdown === dateVal ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M19 9l-7 7-7-7"
+                                  />
+                                </svg>
+                              </span>
+
+                              {openDropdown === dateVal && (
+                                <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-xl rounded-md py-1 z-50 min-w-[200px] flex flex-col font-normal">
+                                  <div className="p-2 font-bold text-slate-700 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700/50 ">
+                                    {translate('common.routing_name')}
+                                  </div>
+                                  {row.routingNames.map((rName, rIdx) => {
+                                    const uniqueKey = `${dateVal}-${rIdx}`;
+                                    return (
+                                      <div
+                                        key={rIdx}
+                                        onClick={() => {
+                                          handleCopyRoutingName(rName, uniqueKey);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
+                                        title={rName}
+                                      >
+                                        <span className="block w-full truncate text-center">
+                                          {rName}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } else {
+                          return <span>{formatLongDate(row.dateStr || row.date, localeCode)}</span>;
+                        }
+                      })()}
                     </td>
-                    {row.isSunday ? (
+
+                    {row.isSunday || row.isDynamicHoliday ? (
                       <>
                         <td
                           colSpan="6"
                           className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle whitespace-nowrap"
                         >
-                          {translate('common.holiday_sunday')}
+                          {row.isSunday
+                            ? translate('common.holiday_sunday')
+                            : translate('common.holiday')}
                         </td>
                       </>
                     ) : (
@@ -204,4 +292,3 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
     </div>
   );
 }
-  
