@@ -334,10 +334,25 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     const driverMapHash = new Map();
     masterDriversDB.forEach((d) => {
       if (d.email) {
+        let rawTags = d.tags || d.vehicleTags || d.userTags || [];
+        if (typeof rawTags === 'string') rawTags = rawTags.split(',');
+        let mTag = '';
+        if (Array.isArray(rawTags) && rawTags.length > 0) {
+          mTag =
+            rawTags.find(
+              (t) =>
+                typeof t === 'string' &&
+                (t.toUpperCase().includes('DRY') ||
+                  t.toUpperCase().includes('FROZEN') ||
+                  t.toUpperCase().includes('FRZ'))
+            ) || rawTags[0];
+        }
+
         driverMapHash.set(d.email.toLowerCase().trim(), {
           name: d.name,
           storage: (d.storage || 'DRY').toUpperCase(),
           plat: d.plat,
+          masterTag: mTag,
         });
       }
     });
@@ -375,25 +390,39 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
           strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
 
         let driverInfo = driverMapHash.get(rawEmail);
-        if (!driverInfo && strictBasePlate) {
-          const platMatch = masterDriversDB.find((d) => {
-            const cleanDPlat = (d.plat || '')
-              .replace(/\s*\([^)]*\)/g, '')
-              .replace(/\s+/g, '')
-              .toLowerCase();
-            return cleanDPlat === canonicalPlate;
-          });
+        if (!driverInfo && rawPlate) {
+          const platMatch = masterDriversDB.find(
+            (d) => d.plat && d.plat.replace(/\s+/g, '').toLowerCase() === canonicalPlate
+          );
           if (platMatch) {
+            let rawTags = platMatch.tags || platMatch.vehicleTags || platMatch.userTags || [];
+            if (typeof rawTags === 'string') rawTags = rawTags.split(',');
+            let mTag = '';
+            if (Array.isArray(rawTags) && rawTags.length > 0) {
+              mTag =
+                rawTags.find(
+                  (t) =>
+                    typeof t === 'string' &&
+                    (t.toUpperCase().includes('DRY') ||
+                      t.toUpperCase().includes('FROZEN') ||
+                      t.toUpperCase().includes('FRZ'))
+                ) || rawTags[0];
+            }
+
             driverInfo = {
               name: platMatch.name,
               storage: (platMatch.storage || 'DRY').toUpperCase(),
+              masterTag: mTag,
             };
           }
         }
 
         const storage = driverInfo ? driverInfo.storage : 'DRY';
-        const firstTag =
+
+        const routingTag =
           route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
+
+        const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
 
         const isFrozen =
           storage.includes('FROZEN') ||
