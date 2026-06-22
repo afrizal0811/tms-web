@@ -144,7 +144,7 @@ export default function useSummaryData() {
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
-            routingName: '', // Menyimpan nama dokumen routing dinamis
+            routingName: '',
             dry: {
               dp: 0,
               dt_total: 0,
@@ -155,7 +155,7 @@ export default function useSummaryData() {
               co: 0,
               pr: 0,
               tv: 0,
-              dp_tasks: [], // Penampung task Drop Point Dry
+              dp_tasks: [],
               dt_tasks: [],
               ma_tasks: [],
               rt_tasks: [],
@@ -173,7 +173,7 @@ export default function useSummaryData() {
               co: 0,
               pr: 0,
               tv: 0,
-              dp_tasks: [], // Penampung task Drop Point Frozen
+              dp_tasks: [],
               dt_tasks: [],
               ma_tasks: [],
               rt_tasks: [],
@@ -238,10 +238,44 @@ export default function useSummaryData() {
         return f;
       };
 
+      const groupedByEmail = {};
+      (fetchedDrivers || []).forEach((d) => {
+        const email = (d.email || '').toLowerCase().trim();
+        if (email) {
+          if (!groupedByEmail[email]) groupedByEmail[email] = [];
+          groupedByEmail[email].push(d);
+        }
+      });
+
       const driverMapStorage = {};
+      const conditionalPlates = new Set();
+
       if (Array.isArray(fetchedDrivers)) {
         fetchedDrivers.forEach((d) => {
           if (d.email) driverMapStorage[d.email.toLowerCase()] = (d.storage || '').toUpperCase();
+
+          const email = (d.email || '').toLowerCase().trim();
+          let isConditional = false;
+
+          if (email && groupedByEmail[email]) {
+            const group = groupedByEmail[email];
+            if (group.length > 1) {
+              const spaceCount = (d.plat || '').trim().split(' ').length - 1;
+              const minSpaces = Math.min(
+                ...group.map((v) => (v.plat || '').trim().split(' ').length - 1)
+              );
+
+              if (spaceCount > minSpaces && spaceCount > 2) {
+                isConditional = true;
+              }
+            }
+          }
+
+          if (isConditional) {
+            if (d.plat) {
+              conditionalPlates.add(cleanPlat(d.plat));
+            }
+          }
         });
       }
 
@@ -402,19 +436,30 @@ export default function useSummaryData() {
 
           const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
           const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
-          const canonicalPlate =
-            rawPlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+
+          const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+          const baseCanonical =
+            strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
 
           const foundDriver =
             fetchedDrivers.find((d) => (d.email || '').toLowerCase() === rawEmail) ||
-            fetchedDrivers.find((d) => cleanPlat(d.plat) === canonicalPlate);
+            fetchedDrivers.find((d) => {
+              const driverClean = (d.plat || '')
+                .replace(/\s*\([^)]*\)/g, '')
+                .replace(/\s+/g, '')
+                .toLowerCase();
+              return driverClean === baseCanonical;
+            }) ||
+            fetchedDrivers.find((d) => cleanPlat(d.plat) === cleanPlat(rawPlate));
 
           const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
           const driverName = foundDriver ? foundDriver.name : route.assignee || '-';
-          const finalPlate = foundDriver ? foundDriver.plat || rawPlate : rawPlate;
+
+          const finalPlate = foundDriver
+            ? (foundDriver.plat || '').replace(/\s*\([^)]*\)/g, '').trim()
+            : strictBasePlate;
           const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
 
-          // Ekstraksi data task DP aktual aktual berdasarkan trip
           if (tempMetrics[dateKey] && tempMetrics[dateKey][type]) {
             validTrips.forEach((trip) => {
               const taskDetail = getTaskDetails(trip);
@@ -422,15 +467,15 @@ export default function useSummaryData() {
             });
           }
 
-          if (!routingDateVehicles[dateKey].has(canonicalPlate)) {
-            routingDateVehicles[dateKey].set(canonicalPlate, {
+          if (!routingDateVehicles[dateKey].has(baseCanonical)) {
+            routingDateVehicles[dateKey].set(baseCanonical, {
               plate: finalPlate,
               driverName,
               storageType: type,
               visits: validTrips.length,
             });
           } else {
-            routingDateVehicles[dateKey].get(canonicalPlate).visits += validTrips.length;
+            routingDateVehicles[dateKey].get(baseCanonical).visits += validTrips.length;
           }
         });
       });
@@ -654,6 +699,8 @@ export default function useSummaryData() {
         const uniqueDriversForMT = [];
         const seenBasePlates = new Set();
         (driversRes || []).forEach((d) => {
+          if (d.additionalData && d.additionalData.trim() !== '') return;
+
           const bp = getBasePlate(d.plat).toLowerCase();
           if (bp && !seenBasePlates.has(bp)) {
             seenBasePlates.add(bp);

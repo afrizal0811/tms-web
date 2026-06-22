@@ -1,6 +1,6 @@
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal } from '@/lib/utils';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 
 export default function TruckUsageTable({
   dateMap,
@@ -10,14 +10,17 @@ export default function TruckUsageTable({
   isPercentage = false,
   translate,
   onCellClick,
+  onCopy,
 }) {
+  const [openDropdown, setOpenDropdown] = useState(null);
+
   const bgHeader = 'bg-[#d9d2e9] dark:bg-violet-900/30';
   const bgDry = 'bg-[#fae2d5] dark:bg-orange-900/30';
   const bgDryTotal = 'bg-[#f9cb9c] dark:bg-orange-900/50';
   const bgFrozen = 'bg-[#dbe9f7] dark:bg-blue-900/30';
   const bgFrozenTotal = 'bg-[#c9daf8] dark:bg-blue-900/50';
   const bgOTV = 'bg-[#d9f2d0] dark:bg-green-900/30';
-  const bgSunday = 'bg-[#ffc7ce] dark:bg-red-900/40';
+  const bgHoliday = 'bg-[#ffc7ce] dark:bg-red-900/40';
 
   const bgAlert = 'bg-[#FF0000] dark:bg-red-700 text-white font-bold';
   const bgPctLow = 'bg-[#f4cccc] dark:bg-red-900/40';
@@ -63,7 +66,7 @@ export default function TruckUsageTable({
 
   const getDataClass = (
     baseBgClass,
-    isSunday,
+    isHoliday,
     value,
     masterTotal,
     isDetailRow = false,
@@ -74,7 +77,7 @@ export default function TruckUsageTable({
     const maxNum = parseInt(masterTotal || 0);
 
     if (isPercentage) {
-      if (isSunday) return bgSunday;
+      if (isHoliday) return bgHoliday;
       if (maxNum > 0 && valNum > 0) {
         const pct = (valNum / maxNum) * 100;
         if (pct > 100) return bgPctOver;
@@ -93,7 +96,7 @@ export default function TruckUsageTable({
     }
 
     if (isOverLimit) return bgAlert;
-    if (isSunday) return bgSunday;
+    if (isHoliday) return bgHoliday;
 
     return baseBgClass;
   };
@@ -147,6 +150,8 @@ export default function TruckUsageTable({
   const renderSectionRows = (cat, bgClass, types) => {
     return types.map((type, idx) => {
       const masterTotal = getMasterVal(cat, type);
+      const isClickableMaster = !isPercentage && masterTotal > 0;
+
       return (
         <tr key={`${cat}-${type}`}>
           {idx === 0 && (
@@ -163,9 +168,20 @@ export default function TruckUsageTable({
             {type}
           </td>
           <td
-            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass} ${bgClass}`}
+            onClick={() => {
+              if (isClickableMaster && onCellClick) {
+                onCellClick({ isMaster: true, storage: cat, type: type, masterTotal });
+              }
+            }}
+            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''}`}
           >
-            {masterTotal}
+            {isClickableMaster ? (
+              <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
+                {masterTotal}
+              </span>
+            ) : (
+              masterTotal
+            )}
           </td>
           {dateKeys.map((d, i) => {
             const {
@@ -179,15 +195,16 @@ export default function TruckUsageTable({
               tmsDetails,
             } = getRowValues(d, cat, type);
             const isFuture = d.str > todayStr;
+            const isHoliday = d.isSunday || d.isDynamicHoliday;
 
-            const isClickableManual = !isPercentage && !isFuture && !d.isSunday;
+            const isClickableManual = !isPercentage && !isFuture && !isHoliday;
             const isClickableTMS = !isPercentage && tmsRaw > 0;
             const hasDataManual = manualDisp !== null;
 
             return (
               <Fragment key={i}>
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, d.isSunday, tmsDisp, masterTotal, true, 'TMS')}`}
+                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, true, 'TMS')}`}
                   onClick={() => {
                     if (isClickableTMS && onCellClick) {
                       onCellClick({
@@ -197,6 +214,7 @@ export default function TruckUsageTable({
                         type,
                         tmsCount: tmsRaw,
                         tmsDetails: tmsDetails,
+                        routingName: d.routingName || '',
                       });
                     }
                   }}
@@ -217,7 +235,7 @@ export default function TruckUsageTable({
                 <td
                   className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(
                     bgClass,
-                    d.isSunday,
+                    isHoliday,
                     manualDisp,
                     masterTotal,
                     true,
@@ -265,7 +283,7 @@ export default function TruckUsageTable({
                 </td>
 
                 <td
-                  className={`${getCellClass(true)} ${getDataClass(bgClass, d.isSunday, tvuDisp, masterTotal, true, 'TVU')}`}
+                  className={`${getCellClass(true)} ${getDataClass(bgClass, isHoliday, tvuDisp, masterTotal, true, 'TVU')}`}
                 >
                   {formatValue(tvuDisp, masterTotal)}
                 </td>
@@ -280,6 +298,22 @@ export default function TruckUsageTable({
   const renderSpecialRow = (label, cat, bgClass, isBold = false, tooltip, type = '') => {
     const masterTotal = getMasterVal(cat);
     const isInterbranch = type === 'Interbranch';
+    const isClickableMaster = !isPercentage && masterTotal > 0 && !isInterbranch;
+
+    let clickStorage = cat;
+    let clickType = type || 'Gabungan';
+    if (cat === 'DryTotal') {
+      clickStorage = 'Dry';
+      clickType = 'Gabungan';
+    }
+    if (cat === 'FrozenTotal') {
+      clickStorage = 'Frozen';
+      clickType = 'Gabungan';
+    }
+    if (cat === 'OTV') {
+      clickStorage = 'OTV';
+      clickType = 'Gabungan';
+    }
 
     const labelTable = (
       <td
@@ -303,9 +337,20 @@ export default function TruckUsageTable({
       <tr className={isBold ? 'font-bold' : ''}>
         {hasTooltip}
         <td
-          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass} ${bgClass}`}
+          onClick={() => {
+            if (isClickableMaster && onCellClick) {
+              onCellClick({ isMaster: true, storage: clickStorage, type: clickType, masterTotal });
+            }
+          }}
+          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''}`}
         >
-          {masterTotal}
+          {isClickableMaster ? (
+            <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
+              {masterTotal}
+            </span>
+          ) : (
+            masterTotal
+          )}
         </td>
         {dateKeys.map((d, i) => {
           const {
@@ -319,24 +364,26 @@ export default function TruckUsageTable({
             tmsDetails,
           } = getRowValues(d, cat, type);
           const isFuture = d.str > todayStr;
+          const isHoliday = d.isSunday || d.isDynamicHoliday;
 
-          const isClickableManual = !isPercentage && !isFuture && isInterbranch && !d.isSunday;
+          const isClickableManual = !isPercentage && !isFuture && isInterbranch && !isHoliday;
           const isClickableTMS = !isPercentage && tmsRaw > 0;
           const hasDataManual = manualDisp !== null;
 
           return (
             <Fragment key={i}>
               <td
-                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, d.isSunday, tmsDisp, masterTotal, false)}`}
+                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, false)}`}
                 onClick={() => {
                   if (isClickableTMS && onCellClick) {
                     onCellClick({
                       isTms: true,
                       date: d.str,
-                      storage: cat,
+                      storage: clickStorage,
                       type: type || 'Gabungan',
                       tmsCount: tmsRaw,
                       tmsDetails: tmsDetails,
+                      routingName: d.routingName || '',
                     });
                   }
                 }}
@@ -356,13 +403,13 @@ export default function TruckUsageTable({
 
               {isInterbranch ? (
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(bgClass, d.isSunday, manualDisp, 0, false, 'MANUAL', tmsDisp)}`}
+                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(bgClass, isHoliday, manualDisp, 0, false, 'MANUAL', tmsDisp)}`}
                   onClick={() => {
                     if (isClickableManual && onCellClick) {
                       onCellClick({
                         isTms: false,
                         date: d.str,
-                        storage: cat,
+                        storage: clickStorage,
                         type: 'Interbranch',
                         tmsCount: tmsRaw,
                         manualCount: manualRaw,
@@ -398,14 +445,14 @@ export default function TruckUsageTable({
                 </td>
               ) : (
                 <td
-                  className={`${getCellClass(false)} ${getDataClass(bgClass, d.isSunday, manualDisp, 0, false)}`}
+                  className={`${getCellClass(false)} ${getDataClass(bgClass, isHoliday, manualDisp, 0, false)}`}
                 >
                   {formatValue(manualDisp, masterTotal)}
                 </td>
               )}
 
               <td
-                className={`${getCellClass(true)} ${getDataClass(bgClass, d.isSunday, tvuDisp, masterTotal, false)}`}
+                className={`${getCellClass(true)} ${getDataClass(bgClass, isHoliday, tvuDisp, masterTotal, false)}`}
               >
                 {formatValue(tvuDisp, masterTotal)}
               </td>
@@ -417,10 +464,11 @@ export default function TruckUsageTable({
   };
 
   const renderHeader = (data, tooltip, text, isLast = false) => {
+    const isHoliday = data.isSunday || data.isDynamicHoliday;
     return (
       <Tooltip tooltipContent={tooltip}>
         <th
-          className={`${thClass} ${isLast ? thickBorderClass : ''} cursor-help ${data.isSunday ? bgSunday : bgHeader}`}
+          className={`${thClass} ${isLast ? thickBorderClass : ''} cursor-help ${isHoliday ? bgHoliday : bgHeader}`}
         >
           {text}
         </th>
@@ -451,15 +499,79 @@ export default function TruckUsageTable({
             >
               Total
             </th>
-            {dateKeys.map((d, i) => (
-              <th
-                key={i}
-                colSpan="3"
-                className={`${thClass} ${thickBorderClass} min-w-[90px] ${d.isSunday ? bgSunday : bgHeader}`}
-              >
-                {formatDateUniversal(d.str, 'DD-MM-YYYY')}
-              </th>
-            ))}
+            {dateKeys.map((d, i) => {
+              const isHoliday = d.isSunday || d.isDynamicHoliday;
+              const headerColor = isHoliday ? bgHoliday : bgHeader;
+
+              let headerContent;
+              if (d.isDynamicHoliday) {
+                headerContent = (
+                  <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+                    <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                      {formatDateUniversal(d.str, 'DD-MM-YYYY')}
+                    </span>
+                  </Tooltip>
+                );
+              } else if (d.routingNames && d.routingNames.length > 0 && !isHoliday) {
+                headerContent = (
+                  <div className="relative inline-block">
+                    <span
+                      onClick={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
+                      className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
+                    >
+                      {formatDateUniversal(d.str, 'DD-MM-YYYY')}
+                      <svg
+                        className={`w-3 h-3 transition-transform ${openDropdown === d.str ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </span>
+
+                    {openDropdown === d.str && (
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-lg rounded-md py-1 z-50 w-[180px] flex flex-col font-normal">
+                        <div className="p-2 font-bold">{translate('common.routing_name')}</div>
+
+                        {d.routingNames.map((rName, idx) => {
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                onCopy && onCopy(rName);
+                                setOpenDropdown(null);
+                              }}
+                              className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
+                              title={rName}
+                            >
+                              <span className="block w-full truncate text-center">{rName}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              } else {
+                headerContent = <span>{formatDateUniversal(d.str, 'DD-MM-YYYY')}</span>;
+              }
+
+              return (
+                <th
+                  key={i}
+                  colSpan="3"
+                  className={`${thClass} ${thickBorderClass} min-w-[90px] ${headerColor}`}
+                >
+                  {headerContent}
+                </th>
+              );
+            })}
           </tr>
           <tr>
             {dateKeys.map((d, i) => (

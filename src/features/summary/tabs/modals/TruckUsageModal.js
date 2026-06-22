@@ -15,6 +15,7 @@ export default function TruckUsageModal({
   vehicleTypes,
   translate,
   localeCode,
+  masterVehicleList,
 }) {
   const [count, setCount] = useState('');
   const [desc, setDesc] = useState('');
@@ -25,8 +26,17 @@ export default function TruckUsageModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
   useEffect(() => {
-    if (data && !data.isTms) {
+    if (isOpen) {
+      setShowAll(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (data && !data.isTms && !data.isMaster) {
       const initC = data.manualCount > 0 ? String(data.manualCount) : '';
       const initD = data.description || '';
 
@@ -39,6 +49,86 @@ export default function TruckUsageModal({
 
   if (!data) return null;
 
+  const handleCopyRoutingName = async () => {
+    if (!data.routingName) return;
+    try {
+      await navigator.clipboard.writeText(data.routingName);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  // --- RENDER MODAL MASTER VEHICLE ---
+  if (data.isMaster) {
+    const actualStorage = data.storage;
+    const actualType = data.type;
+    const vehicles = masterVehicleList?.[actualStorage]?.[actualType] || [];
+    const sortedVehicles = [...vehicles].sort((a, b) =>
+      (a.driver || '').localeCompare(b.driver || '')
+    );
+
+    const modalTitle = `Master Vehicle - ${actualStorage} (${actualType === 'Gabungan' ? 'Total' : actualType})`;
+
+    return (
+      <BaseModal
+        isOpen={isOpen}
+        onClose={onClose}
+        maxWidth="max-w-md"
+        title={
+          <div className="flex flex-col gap-0.5">
+            <span>{modalTitle}</span>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-3 pt-2 pb-2">
+          <div className="bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-sm px-3 py-2.5 rounded-md border border-sky-100 dark:border-sky-800 flex justify-between items-center">
+            <span>Total Kendaraan</span>
+            <span className="font-bold text-lg">{data.masterTotal}</span>
+          </div>
+
+          <div className="mt-1">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              {translate('summary.tabs.truck_usage.modal.vehicle_list')}
+            </h4>
+            {sortedVehicles.length > 0 ? (
+              <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                {sortedVehicles.map((vh, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col p-3 border border-gray-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700/50 transition-colors shadow-sm"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-base">
+                        {getBasePlate(vh.plate)}
+                      </div>
+                      {vh.type && (
+                        <div className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded">
+                          {vh.type}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 border-t border-gray-100 dark:border-slate-700/50 pt-1">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {vh.driver}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-6 italic border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                {translate('common.no_data')}
+              </div>
+            )}
+          </div>
+        </div>
+      </BaseModal>
+    );
+  }
+
+  // --- RENDER MODAL TMS VEHICLE ---
   if (data.isTms) {
     let sortedDetails = [];
     if (data.tmsDetails && data.tmsDetails.length > 0) {
@@ -69,10 +159,38 @@ export default function TruckUsageModal({
       }
     }
 
+    if (showAll && masterVehicleList) {
+      const masterCat = masterVehicleList[data.storage]?.[data.type] || [];
+      const usedPlates = new Set(
+        sortedDetails.map((v) => (v.plate || '').toLowerCase().replace(/\s+/g, ''))
+      );
+
+      const unusedVehicles = masterCat
+        .filter((v) => !usedPlates.has((v.plate || '').toLowerCase().replace(/\s+/g, '')))
+        .map((v) => ({ ...v, isUnused: true, driverName: v.driver }));
+
+      sortedDetails = [...sortedDetails, ...unusedVehicles];
+
+      if (data.type === 'Gabungan') {
+        const typeOrder = vehicleTypes || [];
+        sortedDetails.sort((a, b) => {
+          const indexA = typeOrder.indexOf(a.type);
+          const indexB = typeOrder.indexOf(b.type);
+          const orderA = indexA === -1 ? 999 : indexA;
+          const orderB = indexB === -1 ? 999 : indexB;
+
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.driverName || '').localeCompare(b.driverName || '');
+        });
+      } else {
+        sortedDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
+      }
+    }
+
     let modalTitle = `TMS - ${data.storage} (${data.type})`;
     if (data.type === 'Gabungan') {
-      if (data.storage === 'DryTotal') modalTitle = 'TMS - Total (Dry)';
-      else if (data.storage === 'FrozenTotal') modalTitle = 'TMS - Total (Frozen)';
+      if (data.storage === 'Dry') modalTitle = 'TMS - Total (Dry)';
+      else if (data.storage === 'Frozen') modalTitle = 'TMS - Total (Frozen)';
       else if (data.storage === 'OTV') modalTitle = 'TMS - Total (OTV)';
     }
 
@@ -83,7 +201,9 @@ export default function TruckUsageModal({
         maxWidth="max-w-md"
         title={
           <div className="flex flex-col gap-0.5">
-            <span>{modalTitle}</span>
+            <div className="flex items-center gap-2">
+              <span>{modalTitle}</span>
+            </div>
             <span className="text-sm font-normal opacity-70">
               {formatLongDate(data.date, localeCode)}
             </span>
@@ -97,31 +217,55 @@ export default function TruckUsageModal({
           </div>
 
           <div className="mt-1">
-            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-              {translate('summary.tabs.truck_usage.modal.vehicle_list')}
-            </h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                {translate('summary.tabs.truck_usage.modal.vehicle_list')}
+              </h4>
+              <label className="flex items-center gap-2 text-xs cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-sky-600 focus:ring-sky-500"
+                  checked={showAll}
+                  onChange={(e) => setShowAll(e.target.checked)}
+                />
+                Show All Vehicle
+              </label>
+            </div>
             {sortedDetails.length > 0 ? (
               <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-1">
                 {sortedDetails.map((vh, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col p-3 border border-gray-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700/50 transition-colors shadow-sm"
+                    className={`flex flex-col p-3 border rounded-lg transition-colors shadow-sm ${
+                      vh.isUnused
+                        ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                        : 'border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700/50'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <div className="font-bold text-slate-800 dark:text-slate-200 text-base">
+                      <div
+                        className={`font-bold text-base ${vh.isUnused ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}
+                      >
                         {getBasePlate(vh.plate)}
                       </div>
                       {vh.type && (
-                        <div className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded">
+                        <div
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${vh.isUnused ? 'bg-red-200 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                        >
                           {vh.type}
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 border-t border-gray-100 dark:border-slate-700/50 pt-1">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {vh.driverName}
-                      </span>
+                    <div
+                      className={`text-xs mt-1 border-t pt-1 ${vh.isUnused ? 'text-red-500 dark:text-red-400 border-red-100 dark:border-red-800/50' : 'text-slate-500 dark:text-slate-400 border-gray-100 dark:border-slate-700/50'}`}
+                    >
+                      <span className="font-medium">{vh.driverName}</span>
                     </div>
+                    {vh.isUnused && (
+                      <div className="mt-1 text-[10px] text-red-500 font-semibold uppercase tracking-wider block">
+                        Tidak Digunakan
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -136,6 +280,7 @@ export default function TruckUsageModal({
     );
   }
 
+  // --- RENDER MANUAL FORM ---
   const totalInput = (parseInt(count) || 0) + (data?.tmsCount || 0);
   const masterCapacity = data?.masterTotal || 0;
   const isOverLimit = data?.type !== 'Interbranch' && totalInput > masterCapacity;

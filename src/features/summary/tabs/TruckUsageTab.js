@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageModal from './modals/TruckUsageModal';
-
+import { toastSuccess, toastError } from '@/lib/toast';
 export default function TruckUsageTab({ data, translate, hubId, driverData, localeCode }) {
   const [localData, setLocalData] = useState(data);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
@@ -12,10 +12,21 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
     setLocalData(data);
   }, [data]);
 
-  const { summaryData, vehicleTypes, dateMap, dateKeys, hubMasterData } = localData || {};
+  const { summaryData, vehicleTypes, dateMap, dateKeys, hubMasterData, masterVehicleList } =
+    localData || {};
 
   const handleCellClick = (cellData) => {
     setModalConfig({ isOpen: true, data: cellData });
+  };
+
+  const handleCopyRoutingName = async (routingName) => {
+    if (!routingName) return;
+    try {
+      await navigator.clipboard.writeText(routingName);
+      toastSuccess(`${translate('common.copied')}: ${routingName}`);
+    } catch (err) {
+      toastError(`${translate('common.toast.error')}: ${err.message}`);
+    }
   };
 
   const handleModalSuccess = (resData) => {
@@ -70,12 +81,21 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
     {
       title: 'summary.tabs.truck_usage.subtitle_3',
       Component: TruckUsageTable,
-      props: { ...localData, isPercentage: false, onCellClick: handleCellClick },
+      props: {
+        ...localData,
+        isPercentage: false,
+        onCellClick: handleCellClick,
+        onCopy: handleCopyRoutingName,
+      },
     },
     {
       title: 'summary.tabs.truck_usage.subtitle_4',
       Component: TruckUsageTable,
-      props: { ...localData, isPercentage: true },
+      props: {
+        ...localData,
+        isPercentage: true,
+        onCopy: handleCopyRoutingName,
+      },
     },
   ];
 
@@ -91,6 +111,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
         vehicleTypes={vehicleTypes}
         translate={translate}
         localeCode={localeCode}
+        masterVehicleList={masterVehicleList}
       />
 
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
