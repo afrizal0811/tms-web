@@ -170,14 +170,12 @@ export default function VehicleData() {
       const name = (v.name || '').toLowerCase();
       const email = (v.email || '').toLowerCase();
       const type = (v.type || '').toLowerCase();
-      const tags = (v.parsedTags || []).join(' ').toLowerCase();
 
       return (
         plat.includes(lowerQuery) ||
         name.includes(lowerQuery) ||
         email.includes(lowerQuery) ||
-        type.includes(lowerQuery) ||
-        tags.includes(lowerQuery)
+        type.includes(lowerQuery)
       );
     });
   }, [activeTab, masterData, conditionalData, templateData, searchQuery, applyStorageFilter]);
