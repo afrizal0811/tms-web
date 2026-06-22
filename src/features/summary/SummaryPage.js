@@ -10,8 +10,8 @@ import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { formatDateUniversal, getUTC7DateString, isEmpty } from '@/lib/utils';
+import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageKmTab from './tabs/AverageKmTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
@@ -51,23 +51,29 @@ export default function SummaryPage() {
   const [reasons, setReasons] = useState([]);
   const [pendingDetails, setPendingDetails] = useState([]);
   const [isDownload, setIsDownload] = useState(false);
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
+  const [emptyMessage, setEmptyMessage] = useState('');
+
+  const driverChecker = useCallback(
+    (data) => {
+      if (isEmpty(data)) {
+        setEmptyMessage(t('common.no_driver'));
+        return;
+      }
+
+      setEmptyMessage('');
+    },
+    [t]
+  );
 
   useEffect(() => {
-    if (isEmpty(driverData)) {
-      setEmptyMessage(t('common.no_driver'));
-      return;
-    }
+    driverChecker(driverData);
     getReasons()
       .then(setReasons)
       .catch(() => {});
-  }, [driverData, t]);
+  }, [driverData, driverChecker, t]);
 
   useEffect(() => {
-    if (isEmpty(driverData)) {
-      setEmptyMessage(t('common.no_driver'));
-      return;
-    }
+    driverChecker(driverData);
     if (dateRange && dateRange[0] && dateRange[1]) {
       const start = formatDateUniversal(new Date(dateRange[0]), 'YYYY-MM-DD');
       const end = formatDateUniversal(new Date(dateRange[1]), 'YYYY-MM-DD');
@@ -75,7 +81,7 @@ export default function SummaryPage() {
         .then(setPendingDetails)
         .catch(() => {});
     }
-  }, [dateRange, driverData, t]);
+  }, [dateRange, driverChecker, driverData, t]);
 
   const handleUpdatePendingDetail = (updatedDetail) => {
     setPendingDetails((prev) => {
@@ -93,10 +99,7 @@ export default function SummaryPage() {
   useEffect(() => {
     const fetchHubSettings = async () => {
       if (!selectedLocation) return;
-      if (isEmpty(driverData)) {
-        setEmptyMessage(t('common.no_driver'));
-        return;
-      }
+      driverChecker(driverData);
       try {
         const hubs = await getHubs();
         const activeHub = hubs.find(
@@ -109,7 +112,7 @@ export default function SummaryPage() {
       } catch (error) {}
     };
     fetchHubSettings();
-  }, [selectedLocation, driverData, t]);
+  }, [selectedLocation, driverData, driverChecker, t]);
 
   const handleTempDateChange = (update) => {
     setTempDateRange(update);
@@ -139,9 +142,7 @@ export default function SummaryPage() {
   const handleDownloadExcel = async () => {
     try {
       if (!dateRange || !dateRange[0] || !dateRange[1]) return;
-      if (isEmpty(driverData)) {
-        throw new Error(t('common.no_driver'));
-      }
+      driverChecker(driverData);
       setIsDownload(true);
       const startDate = new Date(dateRange[0]);
       const endDate = new Date(dateRange[1]);
@@ -195,47 +196,69 @@ export default function SummaryPage() {
   const isTabEmpty = () => {
     if (isLoading) return false;
     if (isEmpty(driverData)) return true;
+    const parseDateRange = (dateRange) => {
+      const [start, end] = dateRange || [];
+      return {
+        startStr: start ? formatDateUniversal(new Date(start), 'YYYY-MM-DD') : null,
+        endStr: end ? formatDateUniversal(new Date(end), 'YYYY-MM-DD') : null,
+      };
+    };
+    const isInDateRange = (dateKey, startStr, endStr) => dateKey >= startStr && dateKey <= endStr;
+
     switch (activeTab) {
-      case 'Task Summary':
-        return isEmpty(Object.keys(taskSummaryMetrics));
-      case 'Truck Usage':
+      case 'Time RO': {
+        const { startStr, endStr } = parseDateRange(dateRange);
+        return !rawData.tasks?.some((t) => {
+          if (t.createdFrom !== 'API') return false;
+          if (!startStr || !endStr) return true;
+          const assignedDate = t.createdTime ? getUTC7DateString(t.createdTime) : null;
+          return assignedDate && isInDateRange(assignedDate, startStr, endStr);
+        });
+      }
+      case 'Task Summary': {
+        const metricKeys = Object.keys(taskSummaryMetrics);
+        if (isEmpty(metricKeys)) return true;
+        const { startStr, endStr } = parseDateRange(dateRange);
+        if (!startStr || !endStr) return false;
+        return !metricKeys.some((dateKey) => isInDateRange(dateKey, startStr, endStr));
+      }
+      case 'Pending Reasons':
+        return isEmpty(reportPreview?.pendingReasonsData || []);
+      case 'Time Driver': {
+        const { dataMatrix, driverEmails } = reportPreview?.timeDriverData || {};
         return !(
-          reportPreview?.truckUsageData?.dateMap &&
-          Object.values(reportPreview.truckUsageData.dateMap).some(
+          dataMatrix &&
+          Object.values(dataMatrix).some((d) => Object.keys(d).length > 0) &&
+          driverEmails?.length > 0
+        );
+      }
+      case 'Truck Detail': {
+        const dataMatrix = reportPreview?.truckDetailData?.dataMatrix;
+        if (!dataMatrix || isEmpty(Object.keys(dataMatrix))) return true;
+        const { startStr, endStr } = parseDateRange(dateRange);
+        if (!startStr || !endStr) return false;
+        return !Object.entries(dataMatrix).some(
+          ([dateKey, val]) =>
+            isInDateRange(dateKey, startStr, endStr) && Object.keys(val).length > 0
+        );
+      }
+      case 'Truck Usage': {
+        const dateMap = reportPreview?.truckUsageData?.dateMap;
+        return !(
+          dateMap &&
+          Object.values(dateMap).some(
             (d) => (d.DryTotal || 0) > 0 || (d.FrozenTotal || 0) > 0 || (d.OTV || 0) > 0
           )
         );
-      case 'Average KM':
-        return (
-          !reportPreview?.averageKmData ||
-          isEmpty(reportPreview.averageKmData) ||
-          !reportPreview.averageKmData.some((row) => (row.totalKm || 0) > 0)
-        );
-      case 'Truck Detail':
-        return !(
-          reportPreview?.truckDetailData?.dataMatrix &&
-          Object.values(reportPreview.truckDetailData.dataMatrix).some(
-            (d) => Object.keys(d).length > 0
-          ) &&
-          reportPreview.truckDetailData.driverEmails?.length > 0
-        );
-      case 'Time Driver':
-        return !(
-          reportPreview?.timeDriverData?.dataMatrix &&
-          Object.values(reportPreview.timeDriverData.dataMatrix).some(
-            (d) => Object.keys(d).length > 0
-          ) &&
-          reportPreview.timeDriverData.driverEmails?.length > 0
-        );
-      case 'Pending Reasons':
-        return isEmpty(reportPreview?.pendingReasonsData || []);
-      case 'Time RO':
-        return !(rawData.tasks && rawData.tasks.some((task) => task.createdFrom === 'API'));
+      }
+      case 'Average KM': {
+        const data = reportPreview?.averageKmData;
+        return !data || isEmpty(data) || !data.some((row) => (row.totalKm || 0) > 0);
+      }
       default:
         return false;
     }
   };
-
   const renderContent = () => {
     const renderTab = (Component, props) => (
       <div className="w-full h-full flex flex-col">
@@ -335,7 +358,7 @@ export default function SummaryPage() {
           showApplyButton={true}
           onApply={handleApplyDate}
           applyText={t('common.apply')}
-          maxDate={maxDateConfig}
+          // maxDate={maxDateConfig}
           useCustomRangeFormat={true}
         />
       ),
