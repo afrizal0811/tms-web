@@ -172,12 +172,12 @@
 │   ├── summary
 │   │   ├── SummaryPage.js
 │   │   └── tabs
-│   │       ├── AverageKmTab.js
+│   │       ├── AverageDistanceTab.js
 │   │       ├── components
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
-│   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── AverageDistanceModal.js
 │   │       │   ├── PendingReasonModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
@@ -240,7 +240,7 @@
     │   │   └── parsers.js
     │   ├── summary
     │   │   ├── sheets
-    │   │   │   ├── averageKmSheet.js
+    │   │   │   ├── averageDistanceSheet.js
     │   │   │   ├── index.js
     │   │   │   ├── pendingReasonSheet.js
     │   │   │   ├── reportStyles.js

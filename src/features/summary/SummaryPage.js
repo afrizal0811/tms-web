@@ -13,7 +13,7 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, getUTC7DateString, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import AverageKmTab from './tabs/AverageKmTab';
+import AverageDistanceTab from './tabs/AverageDistanceTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
@@ -252,7 +252,7 @@ export default function SummaryPage() {
         );
       }
       case 'Average KM': {
-        const data = reportPreview?.averageKmData;
+        const data = reportPreview?.averageDistanceData;
         return !data || isEmpty(data) || !data.some((row) => (row.totalKm || 0) > 0);
       }
       default:
@@ -321,8 +321,8 @@ export default function SummaryPage() {
           localeCode: localeCode,
         });
       case 'Average KM':
-        return renderTab(AverageKmTab, {
-          data: reportPreview.averageKmData,
+        return renderTab(AverageDistanceTab, {
+          data: reportPreview.averageDistanceData,
           monthTotals: reportPreview.monthTotals,
           translate: t,
           localeCode: localeCode,

@@ -2,9 +2,9 @@
 
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
-import AverageKmDetailModal from './modals/AverageKmDetailModal';
+import AverageDistanceModal from './modals/AverageDistanceModal';
 
-export default function AverageKmTab({ data, monthTotals, translate, localeCode }) {
+export default function AverageDistanceTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
     'border border-gray-400 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
   const defaultVioletClass = `${defaultClass} bg-[#d9d2e9] dark:bg-[#34205c]`;
@@ -73,7 +73,7 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
-      <AverageKmDetailModal
+      <AverageDistanceModal
         isOpen={modalOpen}
         onClose={closeModal}
         data={modalData}

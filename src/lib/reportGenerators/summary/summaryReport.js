@@ -5,12 +5,12 @@ import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getLocalStorage } from '../../localStorageHandler';
 import {
-  calculateAverageKmData,
+  calculateAverageDistanceData,
   calculatePendingReasonData,
   calculateTimeDriverData,
   calculateTruckDetailData,
   calculateTruckUsageData,
-  generateAverageKmSheet,
+  generateAverageDistanceSheet,
   generatePendingReasonSheet,
   generateTaskSummarySheet,
   generateTimeDriverSheet,
@@ -29,7 +29,7 @@ export async function generateSummaryDataPreview(
   hubId,
   localeCode
 ) {
-  const { summaryData, monthTotals } = calculateAverageKmData(
+  const { summaryData, monthTotals } = calculateAverageDistanceData(
     resultsData,
     startDateStr,
     endDateStr,
@@ -70,7 +70,7 @@ export async function generateSummaryDataPreview(
   );
 
   return {
-    averageKmData: summaryData,
+    averageDistanceData: summaryData,
     monthTotals: monthTotals,
     truckUsageData: truckUsageData,
     truckDetailData: { ...truckDetailRaw, driverMap: Object.fromEntries(truckDetailRaw.driverMap) },
@@ -149,7 +149,7 @@ export async function generateSummaryWorkbook(
     translate,
     localeCode
   );
-  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
+  generateAverageDistanceSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
 
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');

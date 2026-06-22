@@ -14,7 +14,7 @@ function formatMonthRange(startDateStr, endDateStr, localeCode) {
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-export function calculateAverageKmData(
+export function calculateAverageDistanceData(
   resultsData,
   startDateStr,
   endDateStr,
@@ -108,7 +108,7 @@ export function calculateAverageKmData(
   return { summaryData, monthTotals };
 }
 
-export function generateAverageKmSheet(
+export function generateAverageDistanceSheet(
   wb,
   resultsData,
   startDateStr,
@@ -116,7 +116,7 @@ export function generateAverageKmSheet(
   translate,
   localeCode
 ) {
-  const { summaryData, monthTotals } = calculateAverageKmData(
+  const { summaryData, monthTotals } = calculateAverageDistanceData(
     resultsData,
     startDateStr,
     endDateStr,

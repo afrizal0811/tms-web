@@ -3,7 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import { getBasePlate } from '@/lib/utils';
 
-export default function AverageKmDetailModal({ isOpen, onClose, data, title, translate, localeCode }) {
+export default function AverageDistanceModal({ isOpen, onClose, data, title, translate, localeCode }) {
   if (!isOpen || !data) return null;
 
   const columns = [
