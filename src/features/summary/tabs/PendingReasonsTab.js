@@ -158,7 +158,7 @@ export default function PendingReasonsTab({
 
   const tableHeaders = [
     translate('common.flow'),
-    translate('common.date'),
+    translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),

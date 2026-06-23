@@ -1,9 +1,9 @@
 import { calculateUsageSummary } from '@/lib/reportGenerators/summary/sheets/truckUsageSheet';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageModal from './modals/TruckUsageModal';
-import { toastSuccess, toastError } from '@/lib/toast';
 export default function TruckUsageTab({ data, translate, hubId, driverData, localeCode }) {
   const [localData, setLocalData] = useState(data);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
@@ -120,7 +120,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
             <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
               {translate(title)}
             </h3>
-            <div className={`border border-gray-300 dark:border-slate-700 overflow-hidden`}>
+            <div className={`overflow-hidden`}>
               <Component translate={translate} {...props} />
             </div>
           </div>

@@ -97,7 +97,7 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
   const thMetricClass =
     'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
   const tdClass =
-    'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
+    'border border-gray-300 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
   const tdClickable = `${tdClass} cursor-pointer hover:opacity-80 transition-opacity`;
 
   const stickyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r-slate-700';
@@ -114,7 +114,7 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         onClose={closeModal}
         translate={translate}
       />
-      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200 dark:border-slate-700">
+      <div className="overflow-auto flex-1">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-slate-800">
             <tr>
@@ -254,7 +254,7 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
         <div>
           <div className="flex flex-col justify-between gap-2 pb-1">
             <div className="text-xs text-slate-500 dark:text-slate-400 italic">

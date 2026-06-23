@@ -1,12 +1,9 @@
 // File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
-import { formatDateWIB, isEmpty, parseCustomerString } from '@/lib/utils';
+import { formatDateWIB, isEmpty, parseCustomerString, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
-function normalizeEmail(email) {
-  return email ? email.toLowerCase().trim() : '';
-}
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -19,12 +16,6 @@ function parseApiDateString(dateStr) {
 function formatSimpleTimeString(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return null;
   return timeStr.substring(0, 5);
-}
-
-function getCustomerID(customerName) {
-  if (!customerName) return '-';
-  const match = customerName.match(/C0\d+/);
-  return match ? match[0] : '-';
 }
 
 function getDriverStorageType(driver) {
@@ -174,7 +165,7 @@ export function generatePendingReasonSheet(
 
   let headers = [
     translate('common.flow'),
-    translate('common.date'),
+    translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),

@@ -48,8 +48,8 @@ const RoutingDropdown = ({ dateVal, routingNames, isOpen, onToggle, onCopy, tran
 
 export default function AverageDistanceTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
-    'border border-gray-400 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
-  const defaultVioletClass = `${defaultClass} bg-[#d9d2e9] dark:bg-[#34205c]`;
+    'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
+  const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-violet-900/30`;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
@@ -163,7 +163,7 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
 
       <div className="w-full flex-1 overflow-auto bg-white dark:bg-slate-800">
         <div className="min-w-max flex flex-col p-0">
-          <div className="border border-gray-300 dark:border-slate-700 mb-4">
+          <div className="mb-4">
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="bg-gray-50 dark:bg-slate-900">
                 <tr>
@@ -200,7 +200,7 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
               </tbody>
             </table>
           </div>
-          <div className="border border-gray-300 dark:border-slate-700">
+          <div>
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="sticky top-0 z-10 shadow-sm bg-gray-50 dark:bg-slate-900">
                 <tr>

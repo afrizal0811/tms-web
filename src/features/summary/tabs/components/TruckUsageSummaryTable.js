@@ -8,18 +8,18 @@ export default function TruckUsageSummaryTable({
   vehicleTypes,
 }) {
   if (!summaryData) return null;
-
+  
   const thClass =
-    'border border-gray-400 dark:border-slate-600 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-[#d9d2e9] dark:bg-violet-900/30';
+  'border border-gray-300 dark:border-slate-600 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-violet-300 dark:bg-violet-900/30';
   const thClassTooltip = `${thClass} cursor-help`;
   const tdClass =
-    'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300';
-
+  'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300';
+  
   const dryBg = 'bg-[#fae2d5] dark:bg-orange-900/30';
   const frzBg = 'bg-[#dbe9f7] dark:bg-blue-900/30';
   const dryTotBg = 'bg-[#f9cb9c] dark:bg-orange-900/50';
   const frzTotBg = 'bg-[#c9daf8] dark:bg-blue-900/50';
-  const otvBg = 'bg-[#d9f2d0] dark:bg-green-900/30';
+  const otvBg = 'bg-[#d9f2d0]! dark:bg-green-900/30!';
 
   const headerTooltip = (tootltip, text, className = '', addClass = '') => {
     return (

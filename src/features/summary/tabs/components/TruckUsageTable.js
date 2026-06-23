@@ -29,7 +29,7 @@ export default function TruckUsageTable({
   const bgPctOver = 'bg-[#ff0000] dark:bg-red-700 text-white font-bold';
 
   const thClass =
-    'border border-gray-400 dark:border-slate-600 px-2 py-2 text-center min-w-[60px] text-xs font-bold text-slate-700 dark:text-slate-200';
+    'border border-l-0 border-gray-300 dark:border-slate-600 px-2 py-2 text-center min-w-[60px] text-xs font-bold text-slate-700 dark:text-slate-200';
   const tdClass =
     'border-b border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300';
   const thickBorderClass = 'border-r-[3px] border-r-slate-400 dark:border-r-slate-500';
@@ -173,7 +173,7 @@ export default function TruckUsageTable({
                 onCellClick({ isMaster: true, storage: cat, type: type, masterTotal });
               }
             }}
-            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''}`}
+            className={`${tdClass} w-[60px] min-w-[60px] font-bold sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:brightness-90 dark:hover:hover:brightness-120 transition-colors' : ''}`}
           >
             {isClickableMaster ? (
               <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
@@ -204,7 +204,7 @@ export default function TruckUsageTable({
             return (
               <Fragment key={i}>
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, true, 'TMS')}`}
+                  className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:brightness-90 dark:hover:hover:brightness-120  transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, true, 'TMS')}`}
                   onClick={() => {
                     if (isClickableTMS && onCellClick) {
                       onCellClick({
@@ -233,7 +233,7 @@ export default function TruckUsageTable({
                 </td>
 
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(
+                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:brightness-90 dark:hover:hover:brightness-120' : ''} ${getDataClass(
                     bgClass,
                     isHoliday,
                     manualDisp,
@@ -342,7 +342,7 @@ export default function TruckUsageTable({
               onCellClick({ isMaster: true, storage: clickStorage, type: clickType, masterTotal });
             }
           }}
-          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''}`}
+          className={`${tdClass} w-[60px] min-w-[60px] sticky left-[250px] z-30 ${thickBorderClass} ${bgClass} ${isClickableMaster ? 'cursor-pointer hover:brightness-90 dark:hover:hover:brightness-120 transition-colors' : ''}`}
         >
           {isClickableMaster ? (
             <span className="inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1 pb-0.5">
@@ -373,7 +373,7 @@ export default function TruckUsageTable({
           return (
             <Fragment key={i}>
               <td
-                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:bg-white/40 dark:hover:bg-slate-700/50 transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, false)}`}
+                className={`${getCellClass(false)} relative ${isClickableTMS ? 'cursor-pointer hover:brightness-90 dark:hover:hover:brightness-120 transition-colors' : ''} ${getDataClass(bgClass, isHoliday, tmsDisp, masterTotal, false)}`}
                 onClick={() => {
                   if (isClickableTMS && onCellClick) {
                     onCellClick({
@@ -403,7 +403,7 @@ export default function TruckUsageTable({
 
               {isInterbranch ? (
                 <td
-                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:bg-white/5 dark:hover:bg-slate-700/20' : ''} ${getDataClass(bgClass, isHoliday, manualDisp, 0, false, 'MANUAL', tmsDisp)}`}
+                  className={`${getCellClass(false)} relative ${isClickableManual ? 'cursor-pointer group/cell hover:brightness-90 dark:hover:hover:brightness-120' : ''} ${getDataClass(bgClass, isHoliday, manualDisp, 0, false, 'MANUAL', tmsDisp)}`}
                   onClick={() => {
                     if (isClickableManual && onCellClick) {
                       onCellClick({
