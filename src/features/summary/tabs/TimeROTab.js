@@ -1,7 +1,8 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip';
-import { formatDateWIB, formatLongDate, isDateSunday } from '@/lib/utils';
+import { toastError, toastSuccess } from '@/lib/toast';
+import { formatDateWIB, formatLongDate, isDateSunday, parseCustomerString } from '@/lib/utils';
 import { useMemo } from 'react';
 
 const headerClass =
@@ -46,6 +47,17 @@ const isValidRoutingTimeWIB = (utcString) => {
   }
 };
 
+function formatInvoice(invoiceString) {
+  if (!invoiceString) return '';
+
+  const invoices = invoiceString
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  return invoices.length > 1 ? `${invoices[0]} (+${invoices.length - 1})` : invoices[0];
+}
+
 export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
@@ -70,8 +82,16 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
       dataMap[dateKey] = {
         dateKey: dateKey,
         dateDisplay: displayDate,
-        firstCreatedTime: null,
-        lastAssignedTime: null,
+        startData: {
+          time: null,
+          name: null,
+          soNumber: null,
+        },
+        endData: {
+          time: null,
+          name: null,
+          soNumber: null,
+        },
       };
       current.setDate(current.getDate() + 1);
     }
@@ -93,11 +113,18 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
           taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
 
         if (dataMap[targetKey]) {
+          const { name: taskName, invoiceNumber: rawSoNumber } =
+            parseCustomerString(task.customerOrder) ||
+            parseCustomerString(task.customerName) ||
+            '-';
+          const soNumber = formatInvoice(rawSoNumber);
           if (
-            !dataMap[targetKey].firstCreatedTime ||
-            new Date(task.createdTime) < new Date(dataMap[targetKey].firstCreatedTime)
+            !dataMap[targetKey].startData.time ||
+            new Date(task.createdTime) < new Date(dataMap[targetKey].startData.time)
           ) {
-            dataMap[targetKey].firstCreatedTime = task.createdTime;
+            dataMap[targetKey].startData.time = task.createdTime;
+            dataMap[targetKey].startData.name = taskName;
+            dataMap[targetKey].startData.soNumber = soNumber;
           }
 
           if (
@@ -106,10 +133,12 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
             isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
           ) {
             if (
-              !dataMap[targetKey].lastAssignedTime ||
-              new Date(task.assignedTime) > new Date(dataMap[targetKey].lastAssignedTime)
+              !dataMap[targetKey].endData.time ||
+              new Date(task.assignedTime) > new Date(dataMap[targetKey].endData.time)
             ) {
-              dataMap[targetKey].lastAssignedTime = task.assignedTime;
+              dataMap[targetKey].endData.time = task.assignedTime;
+              dataMap[targetKey].endData.name = taskName;
+              dataMap[targetKey].endData.soNumber = soNumber;
             }
           }
         }
@@ -121,6 +150,15 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr, localeCode]);
 
+  const copySoNumber = async (soNumber) => {
+    if (!soNumber) return;
+    try {
+      await navigator.clipboard.writeText(soNumber);
+      toastSuccess(`${translate('common.copied')}: ${soNumber}`);
+    } catch (err) {
+      toastError(`${translate('common.toast.error')}: ${err.message}`);
+    }
+  };
   const headerTitle = [
     {
       tooltip: 'summary.tabs.time_ro.tooltip.date_ro',
@@ -155,8 +193,8 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
             {processedData.map((row, idx) => {
-              const hasStart = !!row.firstCreatedTime;
-              const hasEnd = !!row.lastAssignedTime;
+              const hasStart = !!row.startData.time;
+              const hasEnd = !!row.endData.time;
               const isSunday = isDateSunday(row.dateKey);
 
               const [y, m, d] = row.dateKey.split('-').map(Number);
@@ -198,8 +236,8 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
               const isStartMissing = !hasStart && hasEnd;
               const isEndMissing = hasStart && !hasEnd;
 
-              const startDisplay = hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-';
-              const endDisplay = hasEnd ? formatDateWIB(row.lastAssignedTime, 'HH:mm') : '-';
+              const startDisplay = hasStart ? formatDateWIB(row.startData.time, 'HH:mm') : '-';
+              const endDisplay = hasEnd ? formatDateWIB(row.endData.time, 'HH:mm') : '-';
 
               const errorClass =
                 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
@@ -210,7 +248,6 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                   className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
-
                   {/* CELL START RO */}
                   <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
                     {isStartMissing ? (
@@ -218,6 +255,15 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                         tooltipContent={translate('summary.tabs.time_ro.tooltip.start_ro_error')}
                       >
                         <span className="cursor-help w-full inline-block">{startDisplay}</span>
+                      </Tooltip>
+                    ) : hasStart ? (
+                      <Tooltip tooltipContent={`${row.startData.name}\n${row.startData.soNumber}`}>
+                        <span
+                          className="cursor-help border-b-2 border-dotted border-slate-400 dark:border-slate-500 pb-0.5"
+                          onClick={() => copySoNumber(row.startData.soNumber)}
+                        >
+                          {startDisplay}
+                        </span>
                       </Tooltip>
                     ) : (
                       startDisplay
@@ -231,6 +277,15 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                         tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro_error')}
                       >
                         <span className="cursor-help w-full inline-block">{endDisplay}</span>
+                      </Tooltip>
+                    ) : hasEnd ? (
+                      <Tooltip tooltipContent={`${row.endData.name}\n${row.endData.soNumber}`}>
+                        <span
+                          className="cursor-help border-b-2 border-dotted border-slate-400 dark:border-slate-500 pb-0.5"
+                          onClick={() => copySoNumber(row.endData.soNumber)}
+                        >
+                          {endDisplay}
+                        </span>
                       </Tooltip>
                     ) : (
                       endDisplay
