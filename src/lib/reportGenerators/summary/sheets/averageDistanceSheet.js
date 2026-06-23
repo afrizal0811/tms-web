@@ -1,4 +1,3 @@
-// File: src/lib/reportGenerators/rangkumanSheets/averageDistanceSheet.js
 import { formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
@@ -13,13 +12,7 @@ function formatMonthRange(startDateStr, endDateStr, localeCode) {
   return `${start.getDate()}-${end.getDate()} ${monthYear}`;
 }
 
-export function calculateAverageDistanceData(
-  resultsData,
-  startDateStr,
-  endDateStr,
-  localeCode,
-  driverData
-) {
+function createDriverMap(driverData) {
   const driverMapHash = new Map();
   (driverData || []).forEach((d) => {
     if (d.email) {
@@ -44,26 +37,28 @@ export function calculateAverageDistanceData(
       });
     }
   });
+  return driverMapHash;
+}
 
-  const getRoutingDateWIB = (dateStr) => {
-    if (!dateStr) return null;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
-    const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-    return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
-  };
+function getRoutingDateWIB(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+}
 
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    return currentMidnight < new Date().setHours(0, 0, 0, 0);
-  };
+function isPastDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const currentMidnight = new Date(y, m - 1, d);
+  currentMidnight.setHours(0, 0, 0, 0);
+  return currentMidnight < new Date().setHours(0, 0, 0, 0);
+}
 
+function initializeDateMap(startDateStr, endDateStr) {
   const dateMap = {};
   const [sY, sM, sD] = startDateStr.split('-').map(Number);
   const [eY, eM, eD] = endDateStr.split('-').map(Number);
-
   const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
   const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
@@ -72,13 +67,21 @@ export function calculateAverageDistanceData(
     const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
     const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
-
-    dateMap[dateStr] = {
-      routingNames: new Set(),
-      vehicles: new Map(),
-    };
+    dateMap[dateStr] = { routingNames: new Set(), vehicles: new Map() };
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
+  return dateMap;
+}
+
+export function calculateAverageDistanceData(
+  resultsData,
+  startDateStr,
+  endDateStr,
+  localeCode,
+  driverData
+) {
+  const driverMapHash = createDriverMap(driverData);
+  const dateMap = initializeDateMap(startDateStr, endDateStr);
 
   if (resultsData && Array.isArray(resultsData)) {
     const usedVehiclesPerDay = new Map();
@@ -90,13 +93,9 @@ export function calculateAverageDistanceData(
       const dateKey = getRoutingDateWIB(res.createdTime);
       if (!dateKey || !dateMap[dateKey]) return;
 
-      if (res.name) {
-        dateMap[dateKey].routingNames.add(res.name);
-      }
+      if (res.name) dateMap[dateKey].routingNames.add(res.name);
 
-      if (!usedVehiclesPerDay.has(dateKey)) {
-        usedVehiclesPerDay.set(dateKey, new Map());
-      }
+      if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
       const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
       res.result.routing.forEach((route) => {
@@ -127,9 +126,8 @@ export function calculateAverageDistanceData(
         const driverName = driverInfo ? driverInfo.name : route.assignee || '-';
 
         let distMeters = route.totalDistance || 0;
-        if (distMeters === 0) {
+        if (distMeters === 0)
           distMeters = validTrips.reduce((acc, t) => acc + (t.distance || 0), 0);
-        }
         const distKm = distMeters / 1000;
 
         if (!dailyVehicles.has(canonicalPlate)) {
@@ -175,10 +173,10 @@ export function calculateAverageDistanceData(
       const routingNames = Array.from(dateMap[currentDateString].routingNames);
 
       let rowData = {
-        date: currentDateString, // Simpan ISO format untuk menghindari offset ganda pada UI
-        isSunday: isSunday,
+        date: currentDateString,
+        isSunday,
         isDynamicHoliday: false,
-        routingNames: routingNames,
+        routingNames,
         dryCount: 0,
         frozenCount: 0,
         dryKm: 0,
@@ -198,7 +196,6 @@ export function calculateAverageDistanceData(
               distance: vh.distanceKm,
               visit: vh.visits,
             };
-
             if (vh.storageType === 'Frozen') {
               rowData.frozenCount++;
               rowData.frozenKm += vh.distanceKm;
@@ -209,26 +206,20 @@ export function calculateAverageDistanceData(
               rowData.dryDetails.push(detailItem);
             }
           });
-
           rowData.dryDetails.sort((a, b) => (a.driverName || '').localeCompare(b.driverName || ''));
           rowData.frozenDetails.sort((a, b) =>
             (a.driverName || '').localeCompare(b.driverName || '')
           );
-
           rowData.totalKm = rowData.dryKm + rowData.frozenKm;
           const dailyTotalVehicle = rowData.dryCount + rowData.frozenCount;
           rowData.avgKm = dailyTotalVehicle > 0 ? rowData.totalKm / dailyTotalVehicle : 0;
-
           monthTotals.dryKm += rowData.dryKm;
           monthTotals.frozenKm += rowData.frozenKm;
           monthTotals.totalVehicle += dailyTotalVehicle;
-        } else {
-          if (isPastDate(currentDateString)) {
-            rowData.isDynamicHoliday = true;
-          }
+        } else if (isPastDate(currentDateString)) {
+          rowData.isDynamicHoliday = true;
         }
       }
-
       summaryData.push(rowData);
     });
 
@@ -271,7 +262,6 @@ export function generateAverageDistanceSheet(
     monthTotals.totalKm,
     monthTotals.avgKm,
   ];
-
   const dailyHeader1 = [
     translate('common.date') || 'Routing Date',
     translate('summary.tabs.average_km.total_vehicle'),
@@ -283,14 +273,11 @@ export function generateAverageDistanceSheet(
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
-  const excelData = [monthHeader1, monthHeader2, monthDataRow, [''], dailyHeader1, dailyHeader2];
+  const excelRows = [monthHeader1, monthHeader2, monthDataRow, [''], dailyHeader1, dailyHeader2];
 
-  const excelRows = excelData;
   summaryData.forEach((row) => {
     const [y, m, d] = row.date.split('-').map(Number);
-    const sDate = new Date(y, m - 1, d);
-    const displayDate = formatLongDate(sDate, localeCode);
-
+    const displayDate = formatLongDate(new Date(y, m - 1, d), localeCode);
     if (row.isSunday || row.isDynamicHoliday) {
       excelRows.push([displayDate, null, null, null, null, null, null]);
     } else {
@@ -307,7 +294,6 @@ export function generateAverageDistanceSheet(
   });
 
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
-
   const staticMerges = [
     { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
     { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
@@ -321,15 +307,10 @@ export function generateAverageDistanceSheet(
   ];
 
   ws['!merges'] = staticMerges.slice();
-  if (!ws['!merges']) ws['!merges'] = [];
-
   summaryData.forEach((row, idx) => {
     if (row.isSunday || row.isDynamicHoliday) {
       const rowIndex = 6 + idx;
-      ws['!merges'].push({
-        s: { r: rowIndex, c: 1 },
-        e: { r: rowIndex, c: 6 },
-      });
+      ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 6 } });
       const dateCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
       ws[dateCellRef].s = {
         ...BASE_STYLES.cellCenter,
@@ -350,11 +331,7 @@ export function generateAverageDistanceSheet(
       };
       for (let c = 2; c <= 6; c++) {
         const emptyRef = XLSX.utils.encode_cell({ r: rowIndex, c });
-        ws[emptyRef] = {
-          t: 's',
-          v: '',
-          s: { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red },
-        };
+        ws[emptyRef] = { t: 's', v: '', s: { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red } };
       }
     }
   });
@@ -365,7 +342,6 @@ export function generateAverageDistanceSheet(
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
-
       if (R < 3) {
         if (C > 4) continue;
         cell.s = { ...BASE_STYLES.cellCenter };
@@ -377,55 +353,32 @@ export function generateAverageDistanceSheet(
           if (C === 2) cell.s.fill = FILL_STYLES.frozen;
         }
       } else if (R >= 4) {
-        if (R === 4 || R === 5) {
-          cell.s = { ...HEADER_STYLES.main };
-        } else {
-          const dataIndex = R - 6;
-          const rowData = summaryData[dataIndex];
+        if (R === 4 || R === 5) cell.s = { ...HEADER_STYLES.main };
+        else {
+          const rowData = summaryData[R - 6];
           if (rowData && (rowData.isSunday || rowData.isDynamicHoliday)) {
-            if (C === 0) {
-              cell.s = {
-                ...((ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter),
-                fill: FILL_STYLES.red,
-                font: { bold: true },
-                alignment: { horizontal: 'center', vertical: 'center' },
-              };
-              cell.t = 's';
-            } else if (C === 1) {
-              const existing = (ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter;
-              cell.s = {
-                ...existing,
-                fill: FILL_STYLES.red,
-                font: { bold: true },
-                alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-              };
-              cell.t = 's';
-            } else {
-              cell.s = { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red };
-              cell.t = 's';
-            }
+            cell.s = {
+              ...((ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter),
+              fill: FILL_STYLES.red,
+              font: { bold: true },
+              alignment: { horizontal: 'center', vertical: 'center' },
+            };
+            if (C === 0) cell.t = 's';
+            else if (C === 1) cell.s.alignment = { ...cell.s.alignment, wrapText: true };
+            else cell.s = { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red };
             continue;
           }
           cell.s = { ...BASE_STYLES.cellCenter };
-          if (rowData) {
-            if (C >= 1) {
-              cell.t = 'n';
-              if (C === 1 || C === 2) {
-                cell.s.numFmt = '0';
-              } else {
-                cell.s.numFmt = '#,##0.000';
-              }
-              if (C === 3) cell.s.fill = FILL_STYLES.dry;
-              if (C === 4) cell.s.fill = FILL_STYLES.frozen;
-            } else {
-              cell.t = 's';
-            }
-          }
+          if (rowData && C >= 1) {
+            cell.t = 'n';
+            cell.s.numFmt = C === 1 || C === 2 ? '0' : '#,##0.000';
+            if (C === 3) cell.s.fill = FILL_STYLES.dry;
+            if (C === 4) cell.s.fill = FILL_STYLES.frozen;
+          } else cell.t = 's';
         }
       }
     }
   }
-
   ws['!cols'] = [
     { wch: 20 },
     { wch: 10 },
@@ -435,6 +388,5 @@ export function generateAverageDistanceSheet(
     { wch: 18 },
     { wch: 15 },
   ];
-
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.average_km.title'));
 }
