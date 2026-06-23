@@ -49,17 +49,6 @@ export default function TruckUsageModal({
 
   if (!data) return null;
 
-  const handleCopyRoutingName = async () => {
-    if (!data.routingName) return;
-    try {
-      await navigator.clipboard.writeText(data.routingName);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-    }
-  };
-
   // --- RENDER MODAL MASTER VEHICLE ---
   if (data.isMaster) {
     const actualStorage = data.storage;

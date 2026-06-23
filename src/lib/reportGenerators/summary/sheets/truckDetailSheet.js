@@ -124,7 +124,11 @@ export function calculateTruckDetailData(
     const monthName = safeDate.toLocaleDateString(localeCode, { month: 'long' });
     const yearShort = safeDate.toLocaleDateString(localeCode, { year: '2-digit' });
 
-    dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
+    dateKeys.push({
+      str: dateStr,
+      display: `${dayNum}-${monthName} ${yearShort}`,
+      routingNames: new Set(),
+    });
     dataMatrix[dateStr] = {};
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
@@ -138,6 +142,11 @@ export function calculateTruckDetailData(
 
         if (dateKey) {
           if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
+
+          const dkObj = dateKeys.find((dk) => dk.str === dateKey);
+          if (dkObj && dispatch.name) {
+            dkObj.routingNames.add(dispatch.name);
+          }
 
           dispatch.result.routing.forEach((route) => {
             const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
@@ -348,6 +357,7 @@ export function calculateTruckDetailData(
             const prevHasTasks = (prevData.outlets || 0) > 0;
 
             if (prevHasRouting && !prevHasTasks) {
+              // Salin Metrik Kendaraan
               currData.weight = prevData.weight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
@@ -361,6 +371,13 @@ export function calculateTruckDetailData(
               prevData.maxVolume = 0;
               prevData.dist = 0;
               prevData.duration = 0;
+
+              // TRANSFER NAMA ROUTING DARI H-2/H-1 KE TANGGAL PENGIRIMAN
+              const prevDkObj = dateKeys.find((dk) => dk.str === prevDateKey);
+              const currDkObj = dateKeys.find((dk) => dk.str === currDateKey);
+              if (prevDkObj && currDkObj && prevDkObj.routingNames) {
+                prevDkObj.routingNames.forEach((name) => currDkObj.routingNames.add(name));
+              }
 
               foundRouting = true;
               break;
@@ -388,10 +405,9 @@ export function calculateTruckDetailData(
           return a.arrivalTimestamp - b.arrivalTimestamp;
         });
         const realRankMap = new Map();
-        let rankCounter = 1; // Tambahkan counter manual
+        let rankCounter = 1;
 
         sortedByTime.forEach((item) => {
-          // Jika belum sampai (masih bawa nilai dummy), set null
           if (item.arrivalTimestamp === 9999999999999) {
             realRankMap.set(item._tempId, null);
           } else {
@@ -429,6 +445,11 @@ export function calculateTruckDetailData(
     const nameB = (driverB.name || '').toLowerCase();
     return nameA.localeCompare(nameB);
   });
+
+  dateKeys.forEach((dk) => {
+    dk.routingNames = Array.from(dk.routingNames || []);
+  });
+
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
@@ -450,6 +471,23 @@ export function generateTruckDetailSheet(
     endDateStr,
     localeCode
   );
+
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return currentMidnight < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || (metrics.outlets || 0) === 0;
+    });
+  };
 
   const headerStyle = {
     ...BASE_STYLES.cellCenter,
@@ -480,12 +518,26 @@ export function generateTruckDetailSheet(
     );
   });
   const excelData = [row1, row2];
-  driverEmails.forEach((email) => {
+  driverEmails.forEach((email, rowIndex) => {
     const driver = driverMap.get(email);
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
-      if (metrics && metrics.outlets > 0) {
+      const isSun = new Date(d.str).getDay() === 0;
+      const dayIsEmpty = isDayEmpty(d.str);
+      const isPast = isPastDate(d.str);
+      const isDynamic = !isSun && isPast && dayIsEmpty;
+      const isHoliday = isSun || isDynamic;
+      const shouldMergeHoliday = isHoliday && dayIsEmpty;
+
+      if (shouldMergeHoliday) {
+        if (rowIndex === 0) {
+          const text = isSun ? translate('common.holiday_sunday') : translate('common.holiday');
+          row.push(text, null, null, null, null, null, null); // Masukkan teks di cell pojok kiri atas merge block
+        } else {
+          row.push(null, null, null, null, null, null, null);
+        }
+      } else if (metrics && metrics.outlets > 0) {
         const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : 0;
         const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : 0;
         const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : 0;
@@ -519,11 +571,22 @@ export function generateTruckDetailSheet(
   merges.push({ s: { r: 0, c: 1 }, e: { r: 1, c: 1 } });
   merges.push({ s: { r: 0, c: 2 }, e: { r: 1, c: 2 } });
   let colIdx = 3;
-  dateKeys.forEach(() => {
+  dateKeys.forEach((d) => {
     merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 6 } });
+    const isSun = new Date(d.str).getDay() === 0;
+    const dayIsEmpty = isDayEmpty(d.str);
+    const isPast = isPastDate(d.str);
+    const isDynamic = !isSun && isPast && dayIsEmpty;
+    const isHoliday = isSun || isDynamic;
+    if (isHoliday && dayIsEmpty && driverEmails.length > 0) {
+      merges.push({
+        s: { r: 2, c: colIdx },
+        e: { r: 2 + driverEmails.length - 1, c: colIdx + 6 },
+      });
+    }
+
     colIdx += 7;
   });
-
   merges.push({ s: { r: legendStartRow, c: 0 }, e: { r: legendStartRow, c: 5 } });
   merges.push({ s: { r: legendStartRow + 1, c: 1 }, e: { r: legendStartRow + 1, c: 6 } });
   merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
@@ -533,23 +596,6 @@ export function generateTruckDetailSheet(
   ws['!merges'] = merges;
   const range = XLSX.utils.decode_range(ws['!ref']);
   const dataEndRow = 2 + driverEmails.length;
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return currentMidnight < today;
-  };
-
-  const isDayEmpty = (dateStr) => {
-    if (!dataMatrix || !dataMatrix[dateStr]) return true;
-    return driverEmails.every((email) => {
-      const metrics = dataMatrix[dateStr][email];
-      return !metrics || (metrics.outlets || 0) === 0;
-    });
-  };
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
     let driverEmail = null;
@@ -610,16 +656,20 @@ export function generateTruckDetailSheet(
             if (relativeIdx === 0) borderLeft = BORDERS.medium;
             if (relativeIdx === 6) borderRight = BORDERS.medium;
 
+            let shouldMergeHoliday = false;
+
             if (dateKeys[dateIdx]) {
               const dateStr = dateKeys[dateIdx].str;
               const [y, m, day] = dateStr.split('-').map(Number);
               const safeDate = new Date(y, m - 1, day);
               const metrics = dataMatrix[dateStr][driverEmail];
-
               const isSun = safeDate.getDay() === 0;
-              const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+              const dayIsEmpty = isDayEmpty(dateStr);
+              const isDynamic = !isSun && isPastDate(dateStr) && dayIsEmpty;
+              const isHoliday = isSun || isDynamic;
+              shouldMergeHoliday = isHoliday && dayIsEmpty;
 
-              if (isSun || isDynamic) cellFill = FILL_STYLES.red;
+              if (isHoliday) cellFill = FILL_STYLES.red;
 
               if (metrics && metrics.outlets > 0) {
                 let errStyle = null;
@@ -635,7 +685,11 @@ export function generateTruckDetailSheet(
               }
             }
 
-            if ([0, 1, 6].includes(relativeIdx)) {
+            if (shouldMergeHoliday && R === 2 && relativeIdx === 0) {
+              cell.t = 's'; // Tipe string
+              cell.s = { ...dataStyle, alignment: { horizontal: 'center', vertical: 'center' } };
+              currentFontStyle = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+            } else if ([0, 1, 6].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '0.0%' };
             } else if ([2, 3, 4].includes(relativeIdx)) {
