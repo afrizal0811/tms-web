@@ -358,7 +358,7 @@ export default function SummaryPage() {
           showApplyButton={true}
           onApply={handleApplyDate}
           applyText={t('common.apply')}
-          // maxDate={maxDateConfig}
+          maxDate={maxDateConfig}
           useCustomRangeFormat={true}
         />
       ),

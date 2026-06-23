@@ -24,11 +24,12 @@ export const getInitialDateRange = () => {
   const now = new Date();
   const day = now.getDay();
   const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
-  const start = new Date(now.setDate(diffToMonday));
+
+  const start = new Date(now.setDate(diffToMonday - 7));
   start.setHours(0, 0, 0, 0);
 
   const end = new Date(start);
-  end.setDate(end.getDate() + 6);
+  end.setDate(end.getDate() + 13);
   end.setHours(23, 59, 59, 999);
 
   return [start, end];
