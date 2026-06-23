@@ -148,10 +148,11 @@ export default function TruckUsageTable({
   };
 
   const renderSectionRows = (cat, bgClass, types) => {
+    const totalRows = vehicleTypes.length * 2 + 5;
     return types.map((type, idx) => {
       const masterTotal = getMasterVal(cat, type);
       const isClickableMaster = !isPercentage && masterTotal > 0;
-
+      const isAbsoluteFirstRow = cat === 'Dry' && idx === 0;
       return (
         <tr key={`${cat}-${type}`}>
           {idx === 0 && (
@@ -196,6 +197,22 @@ export default function TruckUsageTable({
             } = getRowValues(d, cat, type);
             const isFuture = d.str > todayStr;
             const isHoliday = d.isSunday || d.isDynamicHoliday;
+
+            if (isHoliday) {
+              if (isAbsoluteFirstRow) {
+                return (
+                  <td
+                    key={i}
+                    colSpan={3}
+                    rowSpan={totalRows}
+                    className={`border border-gray-300 dark:border-slate-700 px-2 py-1 text-center font-bold align-middle ${bgHoliday} text-red-900 dark:text-red-300 border-l-2 border-l-gray-400 dark:border-l-slate-600 ${thickBorderClass}`}
+                  >
+                    {d.isSunday ? translate('common.holiday_sunday') : translate('common.holiday')}
+                  </td>
+                );
+              }
+              return null; // Skip render karena sudah di-rowspan oleh baris pertama
+            }
 
             const isClickableManual = !isPercentage && !isFuture && !isHoliday;
             const isClickableTMS = !isPercentage && tmsRaw > 0;
@@ -365,7 +382,7 @@ export default function TruckUsageTable({
           } = getRowValues(d, cat, type);
           const isFuture = d.str > todayStr;
           const isHoliday = d.isSunday || d.isDynamicHoliday;
-
+          if (isHoliday) return null;
           const isClickableManual = !isPercentage && !isFuture && isInterbranch && !isHoliday;
           const isClickableTMS = !isPercentage && tmsRaw > 0;
           const hasDataManual = manualDisp !== null;

@@ -602,7 +602,18 @@ export async function generateTruckUsageSheet(
       dateKeys.forEach((d) => {
         let valRaw = 0;
         let manualRaw = 0;
-
+        const isHoliday = d.isSunday || d.isDynamicHoliday;
+        if (isHoliday) {
+          if (relativeRowIdx === 2) {
+            const text = d.isSunday
+              ? translate('common.holiday_sunday')
+              : translate('common.holiday');
+            row.push(text, null, null);
+          } else {
+            row.push(null, null, null);
+          }
+          return;
+        }
         if (category === 'Dry' || category === 'Frozen') {
           valRaw = dateMap[d.str][category][label2] || 0;
           manualRaw = dateMap[d.str][`${category}Manual`][label2]?.count || 0;
@@ -662,8 +673,16 @@ export async function generateTruckUsageSheet(
     const H1 = startRowIndex;
     const H2 = startRowIndex + 1;
     let colIdx = 3;
-    dateKeys.forEach(() => {
+    const totalRows = vehicleTypes.length * 2 + 5;
+    dateKeys.forEach((d) => {
       merges.push({ s: { r: H1, c: colIdx }, e: { r: H1, c: colIdx + 2 } });
+      const isHoliday = d.isSunday || d.isDynamicHoliday;
+      if (isHoliday) {
+        merges.push({
+          s: { r: H1 + 2, c: colIdx },
+          e: { r: H1 + 2 + totalRows - 1, c: colIdx + 2 },
+        });
+      }
       colIdx += 3;
     });
     merges.push({ s: { r: H1, c: 2 }, e: { r: H2, c: 2 } });
@@ -899,8 +918,14 @@ export async function generateTruckUsageSheet(
               if ((isSundayCol || isDynamicCol) && finalFill !== FILL_STYLES.alertRed)
                 finalFill = FILL_STYLES.red;
             } else {
-              if (isSundayCol || isDynamicCol) finalFill = FILL_STYLES.red;
-              else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
+              if (isSundayCol || isDynamicCol) {
+                finalFill = FILL_STYLES.red;
+                if (relR === 2 && isTMSCol) {
+                  cell.t = 's';
+                  cell.s.alignment = { horizontal: 'center', vertical: 'center' };
+                  cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+                }
+              } else if ((isTMSCol || isTVUCol) && typeof val === 'number' && val > 0) {
                 if (val > 1) finalFill = FILL_STYLES.alertRed;
                 else if (val >= 0.75)
                   finalFill = { patternType: 'solid', fgColor: { rgb: 'B7E1CD' } };

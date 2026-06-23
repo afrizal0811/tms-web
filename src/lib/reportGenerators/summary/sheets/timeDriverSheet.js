@@ -248,6 +248,23 @@ export function generateTimeDriverSheet(
     results
   );
 
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return currentMidnight < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || !metrics.hasData;
+    });
+  };
+
   const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };
   const dataStyle = {
     ...BASE_STYLES.center,
@@ -271,13 +288,25 @@ export function generateTimeDriverSheet(
   });
   const excelData = [row1, row2];
 
-  driverEmails.forEach((email) => {
+  driverEmails.forEach((email, rowIndex) => {
     const driver = driverMap.get(email);
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
+      const isSun = new Date(d.str).getDay() === 0;
+      const dayIsEmpty = isDayEmpty(d.str);
+      const isPast = isPastDate(d.str);
+      const isDynamic = !isSun && isPast && dayIsEmpty;
+      const isHoliday = isSun || isDynamic;
 
-      if (metrics && metrics.hasData) {
+      if (isHoliday) {
+        if (rowIndex === 0) {
+          const text = isSun ? translate('common.holiday_sunday') : translate('common.holiday');
+          row.push(text, null, null);
+        } else {
+          row.push(null, null, null);
+        }
+      } else if (metrics && metrics.hasData) {
         if (metrics.entries && metrics.entries.length > 1) {
           const startText = metrics.entries.map((e) => e.startDisplay).join('\n');
           const finishText = metrics.entries
@@ -308,30 +337,25 @@ export function generateTimeDriverSheet(
   merges.push({ s: { r: 0, c: 1 }, e: { r: 1, c: 1 } });
   merges.push({ s: { r: 0, c: 2 }, e: { r: 1, c: 2 } });
   let colIdx = 3;
-  dateKeys.forEach(() => {
+  dateKeys.forEach((d) => {
     merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 2 } });
+    const isSun = new Date(d.str).getDay() === 0;
+    const dayIsEmpty = isDayEmpty(d.str);
+    const isPast = isPastDate(d.str);
+    const isDynamic = !isSun && isPast && dayIsEmpty;
+    const isHoliday = isSun || isDynamic;
+
+    if (isHoliday && driverEmails.length > 0) {
+      merges.push({
+        s: { r: 2, c: colIdx },
+        e: { r: 2 + driverEmails.length - 1, c: colIdx + 2 },
+      });
+    }
     colIdx += 3;
   });
   ws['!merges'] = merges;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return currentMidnight < today;
-  };
-
-  const isDayEmpty = (dateStr) => {
-    if (!dataMatrix || !dataMatrix[dateStr]) return true;
-    return driverEmails.every((email) => {
-      const metrics = dataMatrix[dateStr][email];
-      return !metrics || !metrics.hasData;
-    });
-  };
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -340,6 +364,7 @@ export function generateTimeDriverSheet(
       const cell = ws[cellRef];
       let cellFill = null;
       let fontStyle = dataStyle.font;
+      let customAlignment = null;
 
       if (C <= 2) {
         if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
@@ -356,6 +381,11 @@ export function generateTimeDriverSheet(
 
           if (isSun || isDynamic) {
             cellFill = FILL_STYLES.red;
+            if (R === 2 && (C - 3) % 3 === 0) {
+              cell.t = 's';
+              customAlignment = { horizontal: 'center', vertical: 'center' };
+              fontStyle = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+            }
           } else {
             if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
             if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
@@ -385,8 +415,11 @@ export function generateTimeDriverSheet(
       } else {
         cell.s = { ...dataStyle, font: fontStyle };
         if (cellFill) cell.s.fill = cellFill;
-
-        if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+        if (customAlignment) {
+          cell.s.alignment = customAlignment;
+        } else if (C <= 2) {
+          cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+        } else if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
 
         let borderLeft = { style: 'none' };
         let borderRight = { style: 'none' };

@@ -148,7 +148,7 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
           </thead>
 
           <tbody className="bg-white dark:bg-slate-800">
-            {driverEmails.map((email) => {
+            {driverEmails.map((email, rowIndex) => {
               const driver = driverMap[email];
               return (
                 <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-700/10">
@@ -166,10 +166,27 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
 
                   {dateKeys.map((d, i) => {
                     const metrics = dataMatrix[d.str][email];
-                    const { isHoliday } = checkHolidayStatus(d.str);
+                    const { isHoliday, isSunday } = checkHolidayStatus(d.str);
 
                     let cellBg = isHoliday ? COLOR_C : '';
                     const emptyBg = isHoliday ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
+                    if (isHoliday) {
+                      if (rowIndex === 0) {
+                        return (
+                          <td
+                            key={i}
+                            colSpan={3}
+                            rowSpan={driverEmails.length}
+                            className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 bg-red-200 dark:bg-[#4a1c1c] text-red-900! dark:text-red-300 text-center font-bold align-middle`}
+                          >
+                            {isSunday
+                              ? translate('common.holiday_sunday')
+                              : translate('common.holiday')}
+                          </td>
+                        );
+                      }
+                      return null;
+                    }
 
                     const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
                     const hasCoords = metrics?.entries?.some((e) => e.startLat || e.finishLat);
