@@ -1,8 +1,8 @@
 import Tooltip from '@/components/Tooltip';
 import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
+import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
-import { toastError, toastSuccess } from '@/lib/toast';
 
 export default function TruckDetailTab({ data, translate, localeCode }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
@@ -44,16 +44,6 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
       isDynamic,
       isSunday,
     };
-  };
-
-  const handleCopyRoutingName = async (routingName) => {
-    if (!routingName) return;
-    try {
-      await navigator.clipboard.writeText(routingName);
-      toastSuccess(`${translate('common.copied')}: ${routingName}`);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
   };
 
   const errorColor = [
@@ -164,48 +154,14 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                   );
                 } else if (d.routingNames && d.routingNames.length > 0 && !isHoliday) {
                   headerContent = (
-                    <div className="relative inline-flex items-center justify-center">
-                      <span
-                        onClick={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
-                        className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
-                      >
-                        {dateText}
-                        <svg
-                          className={`w-3 h-3 transition-transform ${openDropdown === d.str ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </span>
-
-                      {openDropdown === d.str && (
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-lg rounded-md py-1 z-50 w-[180px] flex flex-col font-normal">
-                          <div className="p-2 font-bold">{translate('common.routing_name')}</div>
-                          {d.routingNames.map((rName, rIdx) => {
-                            return (
-                              <div
-                                key={rIdx}
-                                onClick={() => {
-                                  handleCopyRoutingName(rName);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
-                                title={rName}
-                              >
-                                <span className="block w-full truncate text-center">{rName}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                    <RoutingDropdown
+                      displayText={dateText}
+                      routingNames={d.routingNames}
+                      translate={translate}
+                      position="bottom"
+                      isOpen={openDropdown === d.str}
+                      onToggle={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
+                    />
                   );
                 } else {
                   headerContent = <span>{dateText}</span>;

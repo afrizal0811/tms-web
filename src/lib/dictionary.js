@@ -473,7 +473,7 @@ export const dictionary = {
     },
     summary: {
       caution: '*Data yang ditampilkan mungkin tidak akurat. Periksa sebelum digunakan',
-      red_underline: 'garis bawah merah',
+      underline: 'garis bawah',
       row: 'baris',
       label: 'Tanggal Performa',
       long_message: 'Memproses banyak data, silakan tunggu sebentar...',
@@ -1144,7 +1144,7 @@ export const dictionary = {
     },
     summary: {
       caution: '*Displayed data may be inaccurate. Verify before use',
-      red_underline: 'red underline',
+      underline: 'underline',
       row: 'row',
       label: 'Performance Date',
       long_message: 'Processing a lot of data, please wait a moment...',

@@ -1,6 +1,7 @@
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal } from '@/lib/utils';
 import { Fragment, useState } from 'react';
+import RoutingDropdown from './RoutingDropdown';
 
 export default function TruckUsageTable({
   dateMap,
@@ -10,7 +11,6 @@ export default function TruckUsageTable({
   isPercentage = false,
   translate,
   onCellClick,
-  onCopy,
 }) {
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -531,49 +531,14 @@ export default function TruckUsageTable({
                 );
               } else if (d.routingNames && d.routingNames.length > 0 && !isHoliday) {
                 headerContent = (
-                  <div className="relative inline-block">
-                    <span
-                      onClick={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
-                      className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
-                    >
-                      {formatDateUniversal(d.str, 'DD-MM-YYYY')}
-                      <svg
-                        className={`w-3 h-3 transition-transform ${openDropdown === d.str ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </span>
-
-                    {openDropdown === d.str && (
-                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-lg rounded-md py-1 z-50 w-[180px] flex flex-col font-normal">
-                        <div className="p-2 font-bold">{translate('common.routing_name')}</div>
-
-                        {d.routingNames.map((rName, idx) => {
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() => {
-                                onCopy && onCopy(rName);
-                                setOpenDropdown(null);
-                              }}
-                              className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
-                              title={rName}
-                            >
-                              <span className="block w-full truncate text-center">{rName}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  <RoutingDropdown
+                    displayText={formatDateUniversal(d.str, 'DD-MM-YYYY')}
+                    routingNames={d.routingNames}
+                    translate={translate}
+                    position="bottom"
+                    isOpen={openDropdown === d.str}
+                    onToggle={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
+                  />
                 );
               } else {
                 headerContent = <span>{formatDateUniversal(d.str, 'DD-MM-YYYY')}</span>;

@@ -5,6 +5,7 @@ import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useMemo, useState } from 'react';
 import TaskSummaryModal from './modals/TaskSummaryModal';
+import RoutingDropdown from './components/RoutingDropdown';
 
 const TableHeader = ({ tooltip, colorClass, text }) => (
   <Tooltip tooltipContent={tooltip}>
@@ -75,7 +76,6 @@ export default function TaskSummaryTab({
 }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [copiedKey, setCopiedKey] = useState(null);
 
   const allDates = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -99,16 +99,6 @@ export default function TaskSummaryTab({
     }
     return dates;
   }, [startDateStr, endDateStr]);
-
-  const handleCopyRoutingName = async (routingName) => {
-    if (!routingName) return;
-    try {
-      await navigator.clipboard.writeText(routingName);
-      toastSuccess(`${translate('common.copied')}: ${routingName}`);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
-  };
 
   const calculatePct = (num, den) => {
     if (isLoading && (num === undefined || den === undefined)) return <LoadingSpinner />;
@@ -215,52 +205,18 @@ export default function TaskSummaryTab({
             className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center relative ${dateCellClass}`}
           >
             {routingNames && routingNames.length > 0 && !isZeroDP ? (
-              <div className="relative inline-flex items-center justify-center">
-                <span
-                  onClick={() =>
-                    setOpenDropdown(
-                      openDropdown === rowSpanProps.display ? null : rowSpanProps.display
-                    )
-                  }
-                  className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
-                >
-                  {rowSpanProps.display}
-                  <svg
-                    className={`w-3 h-3 transition-transform ${openDropdown === rowSpanProps.display ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </span>
-
-                {openDropdown === rowSpanProps.display && (
-                  <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-xl rounded-md py-1 z-50 min-w-[200px] flex flex-col font-normal">
-                    <div className="p-2 font-bold text-slate-700 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700/50 ">
-                      {translate('common.routing_name')}
-                    </div>
-                    {routingNames.map((rName, rIdx) => (
-                      <div
-                        key={rIdx}
-                        onClick={() => {
-                          handleCopyRoutingName(rName);
-                          setOpenDropdown(null);
-                        }}
-                        className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
-                        title={rName}
-                      >
-                        <span className="block w-full truncate text-center">{rName}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <RoutingDropdown
+                displayText={rowSpanProps.display}
+                routingNames={routingNames}
+                translate={translate}
+                position="right"
+                isOpen={openDropdown === rowSpanProps.display}
+                onToggle={() =>
+                  setOpenDropdown(
+                    openDropdown === rowSpanProps.display ? null : rowSpanProps.display
+                  )
+                }
+              />
             ) : (
               <span>{rowSpanProps.display}</span>
             )}
@@ -430,7 +386,7 @@ export default function TaskSummaryTab({
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
           *
           {translate('common.click_for_detail_param', {
-            parameter: translate('summary.red_underline'),
+            parameter: translate('summary.underline'),
           })}
         </div>
       </div>

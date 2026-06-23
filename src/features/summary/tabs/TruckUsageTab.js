@@ -85,7 +85,6 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
         ...localData,
         isPercentage: false,
         onCellClick: handleCellClick,
-        onCopy: handleCopyRoutingName,
       },
     },
     {
@@ -94,7 +93,6 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
       props: {
         ...localData,
         isPercentage: true,
-        onCopy: handleCopyRoutingName,
       },
     },
   ];
@@ -131,7 +129,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
           *
           {translate('common.click_for_detail_param', {
-            parameter: translate('summary.red_underline'),
+            parameter: translate('summary.underline'),
           })}
         </div>
       </div>

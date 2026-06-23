@@ -1,50 +1,10 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip';
-import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
+import RoutingDropdown from './components/RoutingDropdown';
 import AverageDistanceModal from './modals/AverageDistanceModal';
-
-const RoutingDropdown = ({ dateVal, routingNames, isOpen, onToggle, onCopy, translate }) => (
-  <div className="relative inline-flex items-center justify-center">
-    <span
-      onClick={onToggle}
-      className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
-    >
-      {dateVal}
-      <svg
-        className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-      </svg>
-    </span>
-
-    {isOpen && (
-      <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-xl rounded-md py-1 z-50 min-w-[200px] flex flex-col font-normal">
-        <div className="p-2 font-bold text-slate-700 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700/50 ">
-          {translate('common.routing_name')}
-        </div>
-        {routingNames.map((rName, rIdx) => (
-          <div
-            key={rIdx}
-            onClick={() => {
-              onCopy(rName);
-              onToggle();
-            }}
-            className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
-            title={rName}
-          >
-            <span className="block w-full truncate text-center">{rName}</span>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
 
 export default function AverageDistanceTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
@@ -76,16 +36,6 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
   const closeModal = () => {
     setModalOpen(false);
     setModalData([]);
-  };
-
-  const handleCopyRoutingName = async (routingName) => {
-    if (!routingName) return;
-    try {
-      await navigator.clipboard.writeText(routingName);
-      toastSuccess(`${translate('common.copied')}: ${routingName}`);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
   };
 
   const distanceConverter = (data) => {
@@ -137,12 +87,12 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
       const dateVal = row.dateStr || row.date;
       return (
         <RoutingDropdown
-          dateVal={formatLongDate(dateVal, localeCode)}
+          displayText={formatLongDate(dateVal, localeCode)}
           routingNames={row.routingNames}
+          translate={translate}
+          position="right"
           isOpen={openDropdown === dateVal}
           onToggle={() => setOpenDropdown(openDropdown === dateVal ? null : dateVal)}
-          onCopy={handleCopyRoutingName}
-          translate={translate}
         />
       );
     } else {
@@ -279,7 +229,7 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
           *
           {translate('common.click_for_detail_param', {
-            parameter: translate('summary.red_underline'),
+            parameter: translate('summary.underline'),
           })}
         </div>
       </div>

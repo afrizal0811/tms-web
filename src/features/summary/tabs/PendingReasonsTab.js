@@ -1,7 +1,7 @@
 import Tooltip from '@/components/Tooltip';
 import { toastSuccess } from '@/lib/toast';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
 
 const ReasonCell = ({ text, className }) => {
@@ -105,14 +105,17 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
 
   const textStyle = isError
     ? 'text-[#FF0000] dark:text-red-400 font-bold border-b border-dotted border-red-500'
-    : 'inline-block border-b-2 border-dotted border-red-700 dark:border-red-400 px-1';
+    : 'inline-block border-b-2 border-dotted pb-0.5';
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!firstRef) return;
-    const parts = firstRef.split('-');
-    const copyText = parts.length > 1 ? parts[1] : firstRef;
-    navigator.clipboard.writeText(copyText);
-    toastSuccess(`Copied: ${firstRef}`);
+    try {
+      const copyText = String(firstRef).replace(/\s*\(\+\d+\)$/, '');
+      await navigator.clipboard.writeText(copyText);
+      toastSuccess(`Copied: ${copyText}`);
+    } catch (err) {
+      toastError(`Error: ${err.message}`);
+    }
   };
 
   return (
@@ -185,147 +188,166 @@ export default function PendingReasonsTab({
   ];
 
   return (
-    <div className="rounded-b-xl overflow-auto m-0 relative">
-      <PendingReasonModal
-        isOpen={!!modalData}
-        onClose={() => setModalData(null)}
-        data={modalData}
-        reasons={reasons || []}
-        onSuccess={onUpdatePendingDetail}
-        translate={translate}
-      />
+    <Fragment>
+      <div className="rounded-b-xl overflow-auto m-0 relative">
+        <PendingReasonModal
+          isOpen={!!modalData}
+          onClose={() => setModalData(null)}
+          data={modalData}
+          reasons={reasons || []}
+          onSuccess={onUpdatePendingDetail}
+          translate={translate}
+        />
 
-      <table className="border-collapse w-full text-sm">
-        <thead className="sticky top-0 z-20">
-          <tr>
-            {tableHeaders.map((header, idx) => (
-              <th key={idx} className={thClass}>
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-slate-800">
-          {data.map((item, idx) => {
-            const { name: customerName } = parseCustomerString(
-              item.customerName || item.customerOrder
-            );
-            const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
-            const borderBottomClass = isLastInDate
-              ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
-              : 'border-b border-b-gray-200 dark:border-b-slate-700';
-            const tdClass = `${baseTdClass} ${borderBottomClass}`;
+        <table className="border-collapse w-full text-sm">
+          <thead className="sticky top-0 z-20">
+            <tr>
+              {tableHeaders.map((header, idx) => (
+                <th key={idx} className={thClass}>
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-slate-800">
+            {data.map((item, idx) => {
+              const { name: customerName } = parseCustomerString(
+                item.customerName || item.customerOrder
+              );
+              const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
+              const borderBottomClass = isLastInDate
+                ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
+                : 'border-b border-b-gray-200 dark:border-b-slate-700';
+              const tdClass = `${baseTdClass} ${borderBottomClass}`;
 
-            const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
-            const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
+              const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+              const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
 
-            const textBatal = item.status === 'BATAL' ? customerName : '';
-            const textParsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
-            let textPending = item.status === 'PENDING' ? customerName : '';
+              const textBatal = item.status === 'BATAL' ? customerName : '';
+              const textParsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
+              let textPending = item.status === 'PENDING' ? customerName : '';
 
-            if (isWrongGR) {
-              textPending = item.customerName;
-            }
+              if (isWrongGR) {
+                textPending = item.customerName;
+              }
 
-            const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
+              const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
 
-            // Cari data detail dari props
-            const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
-            const isAllEmpty =
-              !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
-            const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
-            const actionCellClass = isAllEmpty
-              ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
-              : `${actionCellBase} hover:bg-sky-50 dark:hover:bg-slate-700/80`;
+              // Cari data detail dari props
+              const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+              const isAllEmpty =
+                !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
+              const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
+              const actionCellClass = isAllEmpty
+                ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
+                : `${actionCellBase} hover:bg-sky-50 dark:hover:bg-slate-700/80`;
 
-            const openModal = () =>
-              setModalData({ ...item, pendingDetail: pd, customer: customerName });
+              const openModal = () =>
+                setModalData({ ...item, pendingDetail: pd, customer: customerName });
 
-            const rowCells = [
-              { type: 'text', val: item.flow || '-' },
-              { type: 'text', val: item.dateStr },
-              { type: 'text', val: getBasePlate(item.licensePlate) },
-              { type: 'text', val: item.driverName, cls: 'text-left' },
-              { type: 'so', val: textBatal, content: item.content },
-              { type: 'so', val: textParsial, content: item.content },
-              { type: 'so', val: textPending, content: item.content, isError: isWrongGR, errorMsg },
-              ...(shouldShowPendingGR
-                ? [{ type: 'so', val: textPendingGR, content: item.content }]
-                : []),
-              { type: 'reason', val: item.alasan },
-              { type: 'action', val: pd.internalExternal, cls: actionCellClass },
-              { type: 'action', val: pd.detailReason, cls: actionCellClass },
-              { type: 'action', val: pd.groupReason, cls: actionCellClass },
-              { type: 'action', val: pd.pic, cls: actionCellClass },
-              { type: 'text', val: item.openStr || '-' },
-              { type: 'text', val: item.closeStr || '-' },
-              { type: 'redEmpty', val: item.etaStr },
-              { type: 'redEmpty', val: item.etdStr },
-              { type: 'text', val: item.arrStr || '-' },
-              { type: 'text', val: item.depStr || '-' },
-              { type: 'text', val: item.visitTime || '-' },
-              {
-                type: 'text',
-                val: item.actualVisitMins,
-                cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
-              },
-              { type: 'text', val: getCustId(item.customerName) },
-              { type: 'redEmpty', val: item.routePlannedOrder },
-              { type: 'text', val: item.realSequence },
-              { type: 'text', val: item.temp },
-            ];
+              const rowCells = [
+                { type: 'text', val: item.flow || '-' },
+                { type: 'text', val: item.dateStr },
+                { type: 'text', val: getBasePlate(item.licensePlate) },
+                { type: 'text', val: item.driverName, cls: 'text-left' },
+                { type: 'so', val: textBatal, content: item.content },
+                { type: 'so', val: textParsial, content: item.content },
+                {
+                  type: 'so',
+                  val: textPending,
+                  content: item.content,
+                  isError: isWrongGR,
+                  errorMsg,
+                },
+                ...(shouldShowPendingGR
+                  ? [{ type: 'so', val: textPendingGR, content: item.content }]
+                  : []),
+                { type: 'reason', val: item.alasan },
+                { type: 'action', val: pd.internalExternal, cls: actionCellClass },
+                { type: 'action', val: pd.detailReason, cls: actionCellClass },
+                { type: 'action', val: pd.groupReason, cls: actionCellClass },
+                { type: 'action', val: pd.pic, cls: actionCellClass },
+                { type: 'text', val: item.openStr || '-' },
+                { type: 'text', val: item.closeStr || '-' },
+                { type: 'redEmpty', val: item.etaStr },
+                { type: 'redEmpty', val: item.etdStr },
+                { type: 'text', val: item.arrStr || '-' },
+                { type: 'text', val: item.depStr || '-' },
+                { type: 'text', val: item.visitTime || '-' },
+                {
+                  type: 'text',
+                  val: item.actualVisitMins,
+                  cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
+                },
+                { type: 'text', val: getCustId(item.customerName) },
+                { type: 'redEmpty', val: item.routePlannedOrder },
+                { type: 'text', val: item.realSequence },
+                { type: 'text', val: item.temp },
+              ];
 
-            return (
-              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                {rowCells.map((cell, cIdx) => {
-                  const cellClass = `${tdClass} ${cell.cls || ''}`;
+              return (
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {rowCells.map((cell, cIdx) => {
+                    const cellClass = `${tdClass} ${cell.cls || ''}`;
 
-                  if (cell.type === 'so') {
+                    if (cell.type === 'so') {
+                      return (
+                        <SOCell
+                          key={cIdx}
+                          text={cell.val}
+                          content={cell.content}
+                          className={cellClass}
+                          isError={cell.isError}
+                          errorMessage={cell.errorMsg}
+                        />
+                      );
+                    }
+                    if (cell.type === 'reason') {
+                      return <ReasonCell key={cIdx} text={cell.val} className={cellClass} />;
+                    }
+                    if (cell.type === 'action') {
+                      return (
+                        <ActionCell
+                          key={cIdx}
+                          text={cell.val}
+                          className={cell.cls}
+                          onClick={openModal}
+                        />
+                      );
+                    }
+                    if (cell.type === 'redEmpty') {
+                      return (
+                        <td
+                          key={cIdx}
+                          className={isEmpty(cell.val) ? `${cellClass} ${redCellStyle}` : cellClass}
+                        >
+                          {isEmpty(cell.val) ? '-' : cell.val}
+                        </td>
+                      );
+                    }
                     return (
-                      <SOCell
-                        key={cIdx}
-                        text={cell.val}
-                        content={cell.content}
-                        className={cellClass}
-                        isError={cell.isError}
-                        errorMessage={cell.errorMsg}
-                      />
-                    );
-                  }
-                  if (cell.type === 'reason') {
-                    return <ReasonCell key={cIdx} text={cell.val} className={cellClass} />;
-                  }
-                  if (cell.type === 'action') {
-                    return (
-                      <ActionCell
-                        key={cIdx}
-                        text={cell.val}
-                        className={cell.cls}
-                        onClick={openModal}
-                      />
-                    );
-                  }
-                  if (cell.type === 'redEmpty') {
-                    return (
-                      <td
-                        key={cIdx}
-                        className={isEmpty(cell.val) ? `${cellClass} ${redCellStyle}` : cellClass}
-                      >
-                        {isEmpty(cell.val) ? '-' : cell.val}
+                      <td key={cIdx} className={cellClass}>
+                        {cell.val}
                       </td>
                     );
-                  }
-                  return (
-                    <td key={cIdx} className={cellClass}>
-                      {cell.val}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
+        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
+          *
+          {translate('common.click_for_detail_param', {
+            parameter: translate('summary.underline'),
           })}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
+    </Fragment>
   );
 }

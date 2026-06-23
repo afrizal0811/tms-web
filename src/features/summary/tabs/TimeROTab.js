@@ -153,12 +153,14 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
   const copySoNumber = async (soNumber) => {
     if (!soNumber) return;
     try {
-      await navigator.clipboard.writeText(soNumber);
-      toastSuccess(`${translate('common.copied')}: ${soNumber}`);
+      const copyText = String(soNumber).replace(/\s*\(\+\d+\)$/, '');
+      await navigator.clipboard.writeText(copyText);
+      toastSuccess(`${translate('common.copied')}: ${copyText}`);
     } catch (err) {
       toastError(`${translate('common.toast.error')}: ${err.message}`);
     }
   };
+
   const headerTitle = [
     {
       tooltip: 'summary.tabs.time_ro.tooltip.date_ro',
@@ -259,7 +261,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                     ) : hasStart ? (
                       <Tooltip tooltipContent={`${row.startData.name}\n${row.startData.soNumber}`}>
                         <span
-                          className="cursor-help border-b-2 border-dotted border-slate-400 dark:border-slate-500 pb-0.5"
+                          className="cursor-help border-b-2 border-dotted pb-0.5"
                           onClick={() => copySoNumber(row.startData.soNumber)}
                         >
                           {startDisplay}
@@ -281,7 +283,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                     ) : hasEnd ? (
                       <Tooltip tooltipContent={`${row.endData.name}\n${row.endData.soNumber}`}>
                         <span
-                          className="cursor-help border-b-2 border-dotted border-slate-400 dark:border-slate-500 pb-0.5"
+                          className="cursor-help border-b-2 border-dotted pb-0.5"
                           onClick={() => copySoNumber(row.endData.soNumber)}
                         >
                           {endDisplay}
@@ -296,6 +298,14 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
             })}
           </tbody>
         </table>
+      </div>
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
+        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
+          *
+          {translate('common.click_for_detail_param', {
+            parameter: translate('summary.underline'),
+          })}
+        </div>
       </div>
     </div>
   );
