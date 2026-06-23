@@ -145,7 +145,7 @@ export default function useSummaryData() {
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
-            routingName: '',
+            routingNames: new Set(), 
             dry: {
               dp: 0,
               dt_total: 0,
@@ -427,8 +427,9 @@ export default function useSummaryData() {
         if (!dateKey) return;
         if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
 
-        if (tempMetrics[dateKey]) {
-          tempMetrics[dateKey].routingName = res.name || '';
+        // Kumpulkan multi-routing name di Set
+        if (tempMetrics[dateKey] && res.name) {
+          tempMetrics[dateKey].routingNames.add(res.name);
         }
 
         (res.result?.routing || []).forEach((route) => {
@@ -507,6 +508,7 @@ export default function useSummaryData() {
         }
 
         const m = tempMetrics[dateKey];
+        m.routingNames = Array.from(m.routingNames || []);
 
         const distributeTasks = (arrProp) => {
           if (m.unknown[arrProp] && m.unknown[arrProp].length > 0) {

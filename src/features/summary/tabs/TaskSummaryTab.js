@@ -2,6 +2,7 @@
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useMemo, useState } from 'react';
 import TaskSummaryModal from './modals/TaskSummaryModal';
 
@@ -73,6 +74,8 @@ export default function TaskSummaryTab({
   masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } },
 }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
 
   const allDates = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -97,6 +100,16 @@ export default function TaskSummaryTab({
     return dates;
   }, [startDateStr, endDateStr]);
 
+  const handleCopyRoutingName = async (routingName) => {
+    if (!routingName) return;
+    try {
+      await navigator.clipboard.writeText(routingName);
+      toastSuccess(`${translate('common.copied')}: ${routingName}`);
+    } catch (err) {
+      toastError(`${translate('common.toast.error')}: ${err.message}`);
+    }
+  };
+
   const calculatePct = (num, den) => {
     if (isLoading && (num === undefined || den === undefined)) return <LoadingSpinner />;
     const n = num || 0;
@@ -106,15 +119,7 @@ export default function TaskSummaryTab({
 
   const renderValue = (val) => (isLoading && val === undefined ? <LoadingSpinner /> : val || 0);
 
-  const renderClickableCell = (
-    val,
-    tasksArray,
-    typeKey,
-    category,
-    dateObj,
-    isFrozen = false,
-    routingName = ''
-  ) => {
+  const renderClickableCell = (val, tasksArray, typeKey, category, dateObj, isFrozen = false) => {
     if (isLoading && val === undefined)
       return (
         <TableCell>
@@ -141,7 +146,6 @@ export default function TaskSummaryTab({
               dateObj,
               type: category,
               tasks: tasksArray || [],
-              routingName: routingName,
             },
           })
         }
@@ -194,7 +198,7 @@ export default function TaskSummaryTab({
     isFirstRow,
     rowSpanProps,
     isZeroDP,
-    routingName
+    routingNames
   ) => {
     const dateCellClass = isZeroDP
       ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
@@ -208,9 +212,58 @@ export default function TaskSummaryTab({
         {isFirstRow && (
           <td
             rowSpan={2}
-            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center ${dateCellClass}`}
+            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center relative ${dateCellClass}`}
           >
-            {rowSpanProps.display}
+            {routingNames && routingNames.length > 0 && !isZeroDP ? (
+              <div className="relative inline-flex items-center justify-center">
+                <span
+                  onClick={() =>
+                    setOpenDropdown(
+                      openDropdown === rowSpanProps.display ? null : rowSpanProps.display
+                    )
+                  }
+                  className="cursor-pointer border-b-2 border-dotted border-blue-600 dark:border-blue-400 pb-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
+                >
+                  {rowSpanProps.display}
+                  <svg
+                    className={`w-3 h-3 transition-transform ${openDropdown === rowSpanProps.display ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </span>
+
+                {openDropdown === rowSpanProps.display && (
+                  <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-xl rounded-md py-1 z-50 min-w-[200px] flex flex-col font-normal">
+                    <div className="p-2 font-bold text-slate-700 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700/50 ">
+                      {translate('common.routing_name')}
+                    </div>
+                    {routingNames.map((rName, rIdx) => (
+                      <div
+                        key={rIdx}
+                        onClick={() => {
+                          handleCopyRoutingName(rName);
+                          setOpenDropdown(null);
+                        }}
+                        className="w-full p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50"
+                        title={rName}
+                      >
+                        <span className="block w-full truncate text-center">{rName}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span>{rowSpanProps.display}</span>
+            )}
           </td>
         )}
 
@@ -218,28 +271,12 @@ export default function TaskSummaryTab({
           {isFrozen ? 'Frozen' : 'Dry'}
         </TableCell>
 
-        {renderClickableCell(data.dp, data.dp_tasks, 'dp', 'DP', dateObj, isFrozen, routingName)}
+        {renderClickableCell(data.dp, data.dp_tasks, 'dp', 'DP', dateObj, isFrozen)}
 
-        {renderClickableCell(
-          data.dt_total,
-          data.dt_tasks,
-          'dt',
-          'DT',
-          dateObj,
-          isFrozen,
-          routingName
-        )}
+        {renderClickableCell(data.dt_total, data.dt_tasks, 'dt', 'DT', dateObj, isFrozen)}
         <TableCell colorClass={COLORS.green}>{calculatePct(data.dt_total, data.dp)}</TableCell>
 
-        {renderClickableCell(
-          data.ma_total,
-          data.ma_tasks,
-          'ma',
-          'MA',
-          dateObj,
-          isFrozen,
-          routingName
-        )}
+        {renderClickableCell(data.ma_total, data.ma_tasks, 'ma', 'MA', dateObj, isFrozen)}
         <TableCell colorClass={COLORS.red}>{calculatePct(data.ma_total, data.dp)}</TableCell>
 
         {renderClickableCell(data.rt, data.rt_tasks, 'rt', 'RT', dateObj, isFrozen)}
@@ -347,7 +384,8 @@ export default function TaskSummaryTab({
               const f = data?.frozen || {};
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
-              const rName = data?.routingName || '';
+
+              const rNames = data?.routingNames || [];
 
               const isPast =
                 new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
@@ -379,9 +417,9 @@ export default function TaskSummaryTab({
                   true,
                   { display: item.display },
                   isZeroDP,
-                  rName
+                  rNames
                 ),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP, rName),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP, rNames),
               ];
             })}
           </tbody>
