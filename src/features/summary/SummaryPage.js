@@ -15,9 +15,9 @@ import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import AverageDistanceTab from './tabs/AverageDistanceTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
+import RoutingTimeTab from './tabs/RoutingTimeTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
-import TimeROTab from './tabs/TimeROTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
@@ -43,7 +43,7 @@ export default function SummaryPage() {
     activeHubLocation,
   } = useSummaryData();
 
-  const [activeTab, setActiveTab] = useState('Time RO');
+  const [activeTab, setActiveTab] = useState('Routing Time');
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
@@ -206,7 +206,7 @@ export default function SummaryPage() {
     const isInDateRange = (dateKey, startStr, endStr) => dateKey >= startStr && dateKey <= endStr;
 
     switch (activeTab) {
-      case 'Time RO': {
+      case 'Routing Time': {
         const { startStr, endStr } = parseDateRange(dateRange);
         return !rawData.tasks?.some((t) => {
           if (t.createdFrom !== 'API') return false;
@@ -270,8 +270,8 @@ export default function SummaryPage() {
     const endStr = dateRange && dateRange[1] ? formatDateUniversal(new Date(dateRange[1])) : '';
 
     switch (activeTab) {
-      case 'Time RO':
-        return renderTab(TimeROTab, {
+      case 'Routing Time':
+        return renderTab(RoutingTimeTab, {
           tasks: rawData.tasks,
           startDateStr: startStr,
           endDateStr: endStr,
@@ -379,7 +379,7 @@ export default function SummaryPage() {
   ];
 
   const tabConfig = [
-    { id: 'Time RO', label: t('summary.tabs.time_ro.title') },
+    { id: 'Routing Time', label: t('summary.tabs.routing_time.title') },
     { id: 'Task Summary', label: t('summary.tabs.task_summary.title') },
     { id: 'Pending Reasons', label: t('summary.tabs.pending_reasons.title') },
     { id: 'Time Driver', label: t('summary.tabs.time_driver.title') },

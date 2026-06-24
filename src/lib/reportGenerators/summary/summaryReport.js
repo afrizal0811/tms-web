@@ -14,7 +14,7 @@ import {
   generatePendingReasonSheet,
   generateTaskSummarySheet,
   generateTimeDriverSheet,
-  generateTimeROSheet,
+  generateRoutingTimeSheet,
   generateTruckDetailSheet,
   generateTruckUsageSheet,
 } from './sheets';
@@ -98,7 +98,7 @@ export async function generateSummaryWorkbook(
   pendingDetails // <-- Parameter Baru
 ) {
   const wb = XLSX.utils.book_new();
-  generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
+  generateRoutingTimeSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
   generateTaskSummarySheet(
     wb,
     taskSummaryMetrics,

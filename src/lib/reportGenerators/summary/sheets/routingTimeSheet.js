@@ -44,7 +44,14 @@ const createSafeDate = (dateStr) => {
   return new Date(y, m - 1, d, 12, 0, 0);
 };
 
-export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, localeCode) {
+export function generateRoutingTimeSheet(
+  wb,
+  tasks,
+  startDateStr,
+  endDateStr,
+  translate,
+  localeCode
+) {
   const dataMap = {};
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
@@ -108,7 +115,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
   const excelData = [
     [
-      translate('summary.tabs.time_ro.date_ro'),
+      translate('summary.tabs.routing_time.date_ro'),
       translate('common.start_time'),
       translate('common.finish_time'),
     ],
@@ -204,5 +211,5 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
   ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }];
 
-  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.time_ro.title'));
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.routing_time.title'));
 }

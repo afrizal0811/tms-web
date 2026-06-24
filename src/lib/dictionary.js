@@ -490,7 +490,7 @@ export const dictionary = {
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
       tabs: {
-        time_ro: {
+        routing_time: {
           end_ro: 'Selesai RO',
           date_ro: 'Tanggal Ruting',
           title: 'Waktu Ruting',
@@ -1170,7 +1170,7 @@ export const dictionary = {
       subtitle_highlight: 'task performance',
       title: 'Summary',
       tabs: {
-        time_ro: {
+        routing_time: {
           date_ro: 'Routing Date',
           title: 'Routing Time',
           tooltip: {

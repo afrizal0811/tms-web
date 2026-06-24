@@ -58,7 +58,7 @@ function formatInvoice(invoiceString) {
   return invoices.length > 1 ? `${invoices[0]} (+${invoices.length - 1})` : invoices[0];
 }
 
-export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
+export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
 
@@ -163,16 +163,16 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
 
   const headerTitle = [
     {
-      tooltip: 'summary.tabs.time_ro.tooltip.date_ro',
-      name: 'summary.tabs.time_ro.date_ro',
+      tooltip: 'summary.tabs.routing_time.tooltip.date_ro',
+      name: 'summary.tabs.routing_time.date_ro',
     },
     {
       name: 'common.start_time',
-      tooltip: 'summary.tabs.time_ro.tooltip.start_ro',
+      tooltip: 'summary.tabs.routing_time.tooltip.start_ro',
     },
     {
       name: 'common.finish_time',
-      tooltip: 'summary.tabs.time_ro.tooltip.end_ro',
+      tooltip: 'summary.tabs.routing_time.tooltip.end_ro',
     },
   ];
 
@@ -254,7 +254,9 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                   <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
                     {isStartMissing ? (
                       <Tooltip
-                        tooltipContent={translate('summary.tabs.time_ro.tooltip.start_ro_error')}
+                        tooltipContent={translate(
+                          'summary.tabs.routing_time.tooltip.start_ro_error'
+                        )}
                       >
                         <span className="cursor-help w-full inline-block">{startDisplay}</span>
                       </Tooltip>
@@ -276,7 +278,7 @@ export default function TimeROTab({ tasks, startDateStr, endDateStr, translate, 
                   <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
                     {isEndMissing ? (
                       <Tooltip
-                        tooltipContent={translate('summary.tabs.time_ro.tooltip.end_ro_error')}
+                        tooltipContent={translate('summary.tabs.routing_time.tooltip.end_ro_error')}
                       >
                         <span className="cursor-help w-full inline-block">{endDisplay}</span>
                       </Tooltip>
