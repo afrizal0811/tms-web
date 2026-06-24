@@ -8,7 +8,7 @@ import Card from '../components/Card';
 
 export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, translate }) {
   const [syncLoading, setSyncLoading] = useState({});
-  const { storedLocation: activeHubId } = getLocalStorage();
+  const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
 
   const executeSync = async (type) => {
     if (isReadOnly) return;
@@ -39,7 +39,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     },
     {
       type: `drivers`,
-      label: translate('setting.tab.sync_data.driver_vehicles'),
+      label: `${translate('setting.tab.sync_data.driver_vehicles')} (${storedLocationName})`,
     },
   ];
 
