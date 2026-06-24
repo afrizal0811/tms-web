@@ -625,7 +625,6 @@ export const dictionary = {
       notice: 'Semua informasi dalam Bahasa Indonesia',
       placeholder: 'Cari',
       planner_guide: 'Panduan Perencana',
-      processing: 'Memulai proses...',
       subtitle:
         'Dokumentasi teknis terpadu untuk membantu Perencana dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
       title: 'Tutorial untuk TMS',
@@ -659,9 +658,6 @@ export const dictionary = {
           title: 'Sinkronisasi',
         },
         button: {
-          btn_add: 'Tambah',
-          btn_cancel: 'Batal',
-          btn_edit: 'Ubah',
           btn_sync: 'Sinkronkan',
         },
         modal: {
@@ -1305,7 +1301,6 @@ export const dictionary = {
       notice: 'All information in Indonesian',
       placeholder: 'Search',
       planner_guide: 'Planner Guide',
-      processing: 'Processing...',
       subtitle:
         'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
       title: 'Tutorial for TMS',
@@ -1339,8 +1334,6 @@ export const dictionary = {
           title: 'Synchronize',
         },
         button: {
-          btn_add: 'Add',
-          btn_edit: 'Edit',
           btn_sync: 'Synchronize',
         },
         modal: {

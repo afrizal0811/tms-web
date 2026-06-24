@@ -198,7 +198,7 @@ export default function EditableTable({
                               <button
                                 onClick={() => handleEditClick(item)}
                                 className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
-                                title={translate('setting.tab.button.btn_edit')}
+                                title={translate('common.button.btn_edit')}
                               >
                                 <EditIcon />
                               </button>

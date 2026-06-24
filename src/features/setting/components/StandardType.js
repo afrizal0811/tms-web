@@ -107,7 +107,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
             disabled={!newTypeName.trim()}
             className="shrink-0 px-2.5 sm:px-3 py-2 text-[12px] sm:text-sm font-bold text-white bg-sky-600 rounded-md hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
           >
-            <span className="hidden sm:inline">{translate('setting.tab.button.btn_add')}</span>
+            <span className="hidden sm:inline">{translate('common.button.btn_add')}</span>
             <span className="sm:hidden text-sm leading-none">+</span>
           </button>
         </div>
