@@ -16,6 +16,8 @@ import {
   formatDateUniversal,
   formatToApiUtc,
   getBasePlate,
+  getDeliveryDateFromRouting,
+  getUTC7DateString,
   parseCustomerString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -124,7 +126,7 @@ export default function useSummaryData() {
 
       const taskToRoutingDate = new Map();
       (allResults || []).forEach((res) => {
-        const rDate = getRoutingDateWIB(res.createdTime);
+        const rDate = getDeliveryDateFromRouting(res.createdTime);
         if (!rDate) return;
         const mapTrips = (trips) => {
           (trips || []).forEach((trip) => {
@@ -145,7 +147,8 @@ export default function useSummaryData() {
       const initDate = (dateKey) => {
         if (!tempMetrics[dateKey]) {
           tempMetrics[dateKey] = {
-            routingNames: new Set(), 
+            actual_tasks_count: 0,
+            routingNames: new Set(),
             dry: {
               dp: 0,
               dt_total: 0,
@@ -282,16 +285,13 @@ export default function useSummaryData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
-          const taskIdStr = String(task._id || task.id || task.taskId);
-          let dateKey =
-            taskToRoutingDate.get(taskIdStr) || taskToRoutingDate.get(task.customerName);
-
-          if (!dateKey) {
-            if (!task.doneTime && !task.createdTime) return;
-            dateKey = getRoutingDateWIB(task.createdTime || task.doneTime);
-          }
+          const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+          if (!dateKey) return;
 
           initDate(dateKey);
+
+          tempMetrics[dateKey].actual_tasks_count =
+            (tempMetrics[dateKey].actual_tasks_count || 0) + 1;
 
           const typeRaw = (task.typeStorage || '').toUpperCase();
           let type = typeRaw.includes('FROZEN')
@@ -330,7 +330,7 @@ export default function useSummaryData() {
       const resultMap = new Map();
 
       doneResults.forEach((res) => {
-        const dateKey = getRoutingDateWIB(res.createdTime);
+        const dateKey = getDeliveryDateFromRouting(res.createdTime);
         if (!dateKey || !res._id) return;
 
         initDate(dateKey);
@@ -366,7 +366,7 @@ export default function useSummaryData() {
           (batchData || []).forEach((item) => {
             const originalRes = resultMap.get(item.resultId);
             if (!originalRes) return;
-            const dateKey = getRoutingDateWIB(originalRes.createdTime);
+            const dateKey = getDeliveryDateFromRouting(originalRes.createdTime);
             if (!dateKey) return;
 
             let histDry = 0;
@@ -423,7 +423,7 @@ export default function useSummaryData() {
 
       const routingDateVehicles = {};
       doneResults.forEach((res) => {
-        const dateKey = getRoutingDateWIB(res.createdTime);
+        const dateKey = getDeliveryDateFromRouting(res.createdTime);
         if (!dateKey) return;
         if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
 
@@ -542,6 +542,96 @@ export default function useSummaryData() {
           m[type].va = 0;
           m[type].tvu = m[type].tv + 0;
         });
+      });
+
+      // Algoritma Lookback (H-3) untuk memindahkan rute dari hari libur nasional/Minggu ke hari aktif kerja
+      const dateKeysSorted = Object.keys(tempMetrics).sort();
+      const LOOKBACK_LIMIT = 3;
+
+      dateKeysSorted.forEach((currDateKey) => {
+        const currM = tempMetrics[currDateKey];
+
+        // 1. Deteksi Hari Eksekusi Nyata (Berdasarkan Task Aktual)
+        const currHasExecutedTasks = (currM.actual_tasks_count || 0) > 0;
+
+        // 2. Deteksi Hari Pembuatan Routing (Ada DP/TV/Routing Name)
+        const currHasRouting =
+          currM.dry.tv > 0 ||
+          currM.frozen.tv > 0 ||
+          currM.routingNames.length > 0 ||
+          currM.dry.dp > 0 ||
+          currM.frozen.dp > 0;
+
+        if (currHasExecutedTasks && !currHasRouting) {
+          for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
+            const d = new Date(currDateKey);
+            d.setUTCDate(d.getUTCDate() - back);
+            const prevDateKey = d.toISOString().split('T')[0];
+
+            const prevM = tempMetrics[prevDateKey];
+            if (prevM) {
+              const prevHasExecutedTasks = (prevM.actual_tasks_count || 0) > 0;
+              const prevHasRouting =
+                prevM.dry.tv > 0 ||
+                prevM.frozen.tv > 0 ||
+                prevM.routingNames.length > 0 ||
+                prevM.dry.dp > 0 ||
+                prevM.frozen.dp > 0;
+
+              // Jika H-x ada Routing tapi TIDAK ADA eksekusi Task (Libur Nasional)
+              if (prevHasRouting && !prevHasExecutedTasks) {
+                ['dry', 'frozen'].forEach((type) => {
+                  // Pindahkan SEMUA metrik bawaan Routing (DP, DT, MA, TV) ke hari eksekusi
+                  currM[type].dp = prevM[type].dp;
+                  currM[type].dp_tasks = [...prevM[type].dp_tasks];
+
+                  currM[type].dt_total = prevM[type].dt_total;
+                  currM[type].dt_sum = prevM[type].dt_sum;
+                  currM[type].dt_hist = prevM[type].dt_hist;
+                  currM[type].dt_tasks = [...prevM[type].dt_tasks];
+
+                  currM[type].ma_total = prevM[type].ma_total;
+                  currM[type].ma_hist = prevM[type].ma_hist;
+                  currM[type].ma_tasks = [...prevM[type].ma_tasks];
+
+                  currM[type].tv = prevM[type].tv;
+                  currM[type].va = prevM[type].va;
+                  currM[type].tvu = prevM[type].tvu;
+                  currM[type].tv_details = [...prevM[type].tv_details];
+
+                  // Kosongkan total metrik di hari libur agar memicu UI Full Red Row
+                  prevM[type].dp = 0;
+                  prevM[type].dp_tasks = [];
+
+                  prevM[type].dt_total = 0;
+                  prevM[type].dt_sum = 0;
+                  prevM[type].dt_hist = 0;
+                  prevM[type].dt_tasks = [];
+
+                  prevM[type].ma_total = 0;
+                  prevM[type].ma_hist = 0;
+                  prevM[type].ma_tasks = [];
+
+                  prevM[type].tv = 0;
+                  prevM[type].va = 0;
+                  prevM[type].tvu = 0;
+                  prevM[type].tv_details = [];
+                });
+
+                prevM.routingNames.forEach((name) => {
+                  if (!currM.routingNames.includes(name)) currM.routingNames.push(name);
+                });
+                prevM.routingNames = [];
+                break;
+              }
+            }
+          }
+        }
+      });
+
+      // Konversi Set menjadi Array setelah seluruh proses Lookback selesai agar data kosong terdeteksi dengan benar
+      Object.keys(tempMetrics).forEach((dateKey) => {
+        tempMetrics[dateKey].routingNames = Array.from(tempMetrics[dateKey].routingNames || []);
       });
 
       setTaskSummaryMetrics(tempMetrics);

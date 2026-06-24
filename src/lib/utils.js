@@ -407,3 +407,21 @@ export function getBasePlate(plat) {
   const parts = plat.trim().split(/\s+/);
   return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
 }
+
+export function getDeliveryDateFromRouting(isoString) {
+  if (!isoString) return null;
+  try {
+    const date = new Date(isoString);
+    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
+    const routingDay = wibDate.getUTCDay();
+
+    let offsetDays = 1;
+    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
+
+    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
+    return new Date(deliveryMs).toISOString().split('T')[0];
+  } catch (e) {
+    return null;
+  }
+}

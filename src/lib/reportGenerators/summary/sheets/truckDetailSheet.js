@@ -3,6 +3,7 @@ import {
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
+  getDeliveryDateFromRouting,
   getUTC7DateString,
   isEmpty,
   parseCustomerString,
@@ -29,23 +30,6 @@ const ERROR_STYLES = {
 };
 
 // --- HELPER DATE ---
-function getDeliveryDateFromRouting(isoString) {
-  if (!isoString) return null;
-  try {
-    const date = new Date(isoString);
-    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const routingDay = wibDate.getUTCDay();
-
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
-
-    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryMs).toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
-}
 
 function getDriverStorageType(driver) {
   const typeStr = driver.type || '';

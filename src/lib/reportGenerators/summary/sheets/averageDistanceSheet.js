@@ -1,4 +1,9 @@
-import { formatLongDate } from '@/lib/utils';
+import {
+  formatLongDate,
+  getDeliveryDateFromRouting,
+  getUTC7DateString,
+  formatDateUniversal,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -40,14 +45,6 @@ function createDriverMap(driverData) {
   return driverMapHash;
 }
 
-function getRoutingDateWIB(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-  return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
-}
-
 function isPastDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const currentMidnight = new Date(y, m - 1, d);
@@ -78,8 +75,16 @@ export function calculateAverageDistanceData(
   startDateStr,
   endDateStr,
   localeCode,
-  driverData
+  driverData,
+  taskData
 ) {
+  const taskPresence = {};
+  if (taskData && Array.isArray(taskData)) {
+    taskData.forEach((t) => {
+      const d = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+      if (d) taskPresence[d] = true;
+    });
+  }
   const driverMapHash = createDriverMap(driverData);
   const dateMap = initializeDateMap(startDateStr, endDateStr);
 
@@ -90,7 +95,7 @@ export function calculateAverageDistanceData(
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
       if (!res.result?.routing) return;
 
-      const dateKey = getRoutingDateWIB(res.createdTime);
+      const dateKey = getDeliveryDateFromRouting(res.createdTime);
       if (!dateKey || !dateMap[dateKey]) return;
 
       if (res.name) dateMap[dateKey].routingNames.add(res.name);
@@ -151,6 +156,36 @@ export function calculateAverageDistanceData(
         dateMap[dateKey].vehicles.set(canonicalPlate, vh);
       });
     });
+
+    // Algoritma Lookback (H-3) Tersinkronisasi dengan Task Aktual
+    const LOOKBACK_LIMIT = 3;
+    Object.keys(dateMap)
+      .sort()
+      .forEach((currDateKey) => {
+        const currDm = dateMap[currDateKey];
+        const currHasTasks = taskPresence[currDateKey];
+
+        if (currHasTasks && currDm.vehicles.size === 0) {
+          for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
+            const d = new Date(currDateKey);
+            d.setDate(d.getDate() - back);
+            const prevDateKey = formatDateUniversal(d);
+            const prevDm = dateMap[prevDateKey];
+            const prevHasTasks = taskPresence[prevDateKey];
+
+            if (prevDm && prevDm.vehicles.size > 0 && !prevHasTasks) {
+              prevDm.vehicles.forEach((vh, canonicalPlate) => {
+                currDm.vehicles.set(canonicalPlate, vh);
+              });
+              prevDm.vehicles.clear();
+
+              prevDm.routingNames.forEach((name) => currDm.routingNames.add(name));
+              prevDm.routingNames.clear();
+              break;
+            }
+          }
+        }
+      });
   }
 
   const summaryData = [];

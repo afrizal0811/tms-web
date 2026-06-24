@@ -34,14 +34,16 @@ export async function generateSummaryDataPreview(
     startDateStr,
     endDateStr,
     localeCode,
-    driverData
+    driverData,
+    taskData
   );
 
   const truckUsageData = await calculateTruckUsageData(
     resultsData,
     startDateStr,
     endDateStr,
-    hubId
+    hubId,
+    taskData
   );
 
   const truckDetailRaw = calculateTruckDetailData(
@@ -147,7 +149,8 @@ export async function generateSummaryWorkbook(
     endDateStr,
     hubId,
     translate,
-    localeCode
+    localeCode,
+    taskData
   );
   generateAverageDistanceSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
 

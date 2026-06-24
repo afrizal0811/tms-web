@@ -1,7 +1,13 @@
 import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError } from '@/lib/toast';
-import { formatDateUniversal, formatLongDate, isEmpty } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  formatLongDate,
+  getDeliveryDateFromRouting,
+  getUTC7DateString,
+  isEmpty,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -181,7 +187,20 @@ async function getTruckUsageData(hubId, startDate, endDate) {
   }
 }
 
-export async function calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId) {
+export async function calculateTruckUsageData(
+  resultsData,
+  startDateStr,
+  endDateStr,
+  hubId,
+  taskData
+) {
+  const taskPresence = {};
+  if (taskData && Array.isArray(taskData)) {
+    taskData.forEach((t) => {
+      const d = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+      if (d) taskPresence[d] = true;
+    });
+  }
   const [vehicleTypesObj, mappingsDB, allDriversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
@@ -326,14 +345,6 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
     });
   }
 
-  const getRoutingDateWIB = (dateStr) => {
-    if (!dateStr) return null;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
-    const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-    return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
-  };
-
   const isPastDate = (dateStr) => {
     const [y, m, d] = dateStr.split('-').map(Number);
     const currentMidnight = new Date(y, m - 1, d);
@@ -361,7 +372,7 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
       if (!res.result?.routing) return;
 
-      const dateKey = getRoutingDateWIB(res.createdTime);
+      const dateKey = getDeliveryDateFromRouting(res.createdTime);
       if (!dateKey || !dateMap[dateKey]) return;
 
       if (res.name) {
@@ -437,6 +448,58 @@ export async function calculateTruckUsageData(resultsData, startDateStr, endDate
         }
       });
     });
+    const LOOKBACK_LIMIT = 3;
+    dateKeys.forEach((dk) => {
+      const currDateKey = dk.str;
+      const currDm = dateMap[currDateKey];
+      const currHasTasks = taskPresence[currDateKey];
+
+      if (currHasTasks && currDm.OTV === 0) {
+        for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
+          const d = new Date(currDateKey);
+          d.setDate(d.getDate() - back);
+          const prevDateKey = formatDateUniversal(d);
+          const prevDm = dateMap[prevDateKey];
+          const prevHasTasks = taskPresence[prevDateKey];
+
+          if (prevDm && prevDm.OTV > 0 && !prevHasTasks) {
+            vehicleTypes.forEach((type) => {
+              currDm.Dry[type] = prevDm.Dry[type];
+              currDm.Frozen[type] = prevDm.Frozen[type];
+              currDm.Dry[`${type}_details`] = [...prevDm.Dry[`${type}_details`]];
+              currDm.Frozen[`${type}_details`] = [...prevDm.Frozen[`${type}_details`]];
+
+              prevDm.Dry[type] = 0;
+              prevDm.Frozen[type] = 0;
+              prevDm.Dry[`${type}_details`] = [];
+              prevDm.Frozen[`${type}_details`] = [];
+            });
+
+            currDm.Dry[`Interbranch`] = prevDm.Dry[`Interbranch`];
+            currDm.Frozen[`Interbranch`] = prevDm.Frozen[`Interbranch`];
+            currDm.Dry[`Interbranch_details`] = [...prevDm.Dry[`Interbranch_details`]];
+            currDm.Frozen[`Interbranch_details`] = [...prevDm.Frozen[`Interbranch_details`]];
+
+            prevDm.Dry[`Interbranch`] = 0;
+            prevDm.Frozen[`Interbranch`] = 0;
+            prevDm.Dry[`Interbranch_details`] = [];
+            prevDm.Frozen[`Interbranch_details`] = [];
+
+            currDm.DryTotal = prevDm.DryTotal;
+            currDm.FrozenTotal = prevDm.FrozenTotal;
+            currDm.OTV = prevDm.OTV;
+
+            prevDm.DryTotal = 0;
+            prevDm.FrozenTotal = 0;
+            prevDm.OTV = 0;
+
+            prevDm.routingNames.forEach((name) => currDm.routingNames.add(name));
+            prevDm.routingNames.clear();
+            break;
+          }
+        }
+      }
+    });
   }
 
   dateKeys.forEach((dk) => {
@@ -465,10 +528,11 @@ export async function generateTruckUsageSheet(
   endDateStr,
   hubId,
   translate,
-  localeCode
+  localeCode,
+  taskData
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
-    await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId);
+    await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId, taskData);
 
   const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];
