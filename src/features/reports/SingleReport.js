@@ -105,63 +105,78 @@ export default function SingleReport({
       const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
         calculateStartFinishDates(selectedDateString);
 
-      let targetRoutingDateObj;
-      if (isCustomRouting) {
-        if (!routingDate) throw new Error(t('common.invalid_date'));
-        targetRoutingDateObj = new Date(routingDate);
-      } else {
-        targetRoutingDateObj = new Date(selectedDate);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0)
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+      const allTasks = await getTasks({
+        hubId: selectedLocation,
+        status: 'DONE,ONGOING',
+        timeFrom: timeFromTasks,
+        timeTo: timeToTasks,
+        timeBy: 'startTime',
+        limit: 5000,
+      });
+
+      if (isEmpty(allTasks)) {
+        throw new Error(t('common.toast.error', { err: t('common.no_data') }));
       }
 
-      const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+      let targetRoutingStr;
+      if (isCustomRouting) {
+        if (!routingDate) throw new Error(t('common.invalid_date'));
+        targetRoutingStr = formatDateUniversal(new Date(routingDate));
+      } else {
+        const dates = [];
+        allTasks.forEach((task) => {
+          if (task.createdFrom === 'API' && task.createdTime) {
+            const d = new Date(task.createdTime);
+            d.setHours(d.getHours() + 7); 
+            dates.push(d.toISOString().split('T')[0]);
+          }
+        });
+
+        if (dates.length > 0) {
+          const modeMap = {};
+          let maxEl = dates[0],
+            maxCount = 1;
+          for (const d of dates) {
+            modeMap[d] = (modeMap[d] || 0) + 1;
+            if (modeMap[d] > maxCount) {
+              maxEl = d;
+              maxCount = modeMap[d];
+            }
+          }
+          targetRoutingStr = maxEl;
+        } else {
+          const targetRoutingDateObj = new Date(selectedDate);
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          if (targetRoutingDateObj.getDay() === 0)
+            targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+        }
+      }
+
+      const summaryPayload = {
+        dateFrom: `${targetRoutingStr} 00:00:00`,
+        dateTo: `${targetRoutingStr} 23:59:59`,
+        limit: 1000,
+        hubId: selectedLocation,
+      };
+
       const { storedLocationAcronym } = getLocalStorage();
 
-      const summaryPayload = isCustomRouting
-        ? {
-            dateFrom: `${targetRoutingStr} 00:00:00`,
-            dateTo: `${targetRoutingStr} 23:59:59`,
-            limit: 1000,
-            hubId: selectedLocation,
-          }
-        : {
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: selectedDate,
-            limit: 1000,
-            hubId: selectedLocation,
-          };
-
-      const [
-        allTasks,
-        filteredResults,
-        hubsData,
-        locationHistoriesRes,
-        vehicleTypesObj,
-        mappingsDB,
-      ] = await Promise.all([
-        getTasks({
-          hubId: selectedLocation,
-          status: 'DONE,ONGOING',
-          timeFrom: timeFromTasks,
-          timeTo: timeToTasks,
-          timeBy: 'startTime',
-          limit: 5000,
-        }),
-        getResultsSummary(summaryPayload),
-        getOrFetchDriverData(selectedLocation),
-        getLocationHistories({
-          timeFrom: timeFromHistories,
-          timeTo: timeToHistories,
-          limit: 5000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        }),
-        getVehicleTypes(),
-        getVehicleMappings(),
-      ]);
+      const [filteredResults, hubsData, locationHistoriesRes, vehicleTypesObj, mappingsDB] =
+        await Promise.all([
+          getResultsSummary(summaryPayload),
+          getOrFetchDriverData(selectedLocation),
+          getLocationHistories({
+            timeFrom: timeFromHistories,
+            timeTo: timeToHistories,
+            limit: 5000,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
+          }),
+          getVehicleTypes(),
+          getVehicleMappings(),
+        ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
       const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
@@ -267,8 +282,6 @@ export default function SingleReport({
         (h) => String(h._id || h.id) === String(selectedLocation)
       );
       const hasPendingGR = activeHub ? activeHub.hasPendingGR : false;
-
-      // 3. Gabungkan melalui ManualReport
       const { wb, excelFileName } = await generateManualReportWorkbook({
         routingBuffers,
         deliveryBuffers,

@@ -110,13 +110,6 @@ export default function BulkReport({ driverData }) {
       setIsLoading,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const deliveryDateObj = parseDate(dateForFile);
-        const targetRoutingDateObj = new Date(deliveryDateObj);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0) {
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        }
-
-        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
 
         const startD = new Date(deliveryDateObj);
         startD.setHours(0, 0, 0, 0);
@@ -126,23 +119,61 @@ export default function BulkReport({ driverData }) {
         const timeFromTasks = formatToApiUtc(startD);
         const timeToTasks = formatToApiUtc(endD);
 
+        const allTasks = await getTasks({
+          hubId,
+          status: 'DONE,ONGOING',
+          timeFrom: timeFromTasks,
+          timeTo: timeToTasks,
+          timeBy: 'startTime',
+          limit: 1000,
+        });
+
+        if (isEmpty(allTasks)) {
+          return null;
+        }
+        const dates = [];
+        allTasks.forEach((task) => {
+          if (task.createdFrom === 'API' && task.createdTime) {
+            const d = new Date(task.createdTime);
+            d.setHours(d.getHours() + 7);
+            dates.push(d.toISOString().split('T')[0]);
+          }
+        });
+
+        let targetRoutingStr;
+        if (dates.length > 0) {
+          const modeMap = {};
+          let maxEl = dates[0],
+            maxCount = 1;
+          for (const d of dates) {
+            modeMap[d] = (modeMap[d] || 0) + 1;
+            if (modeMap[d] > maxCount) {
+              maxEl = d;
+              maxCount = modeMap[d];
+            }
+          }
+          targetRoutingStr = maxEl;
+        } else {
+          const targetRoutingDateObj = new Date(deliveryDateObj);
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          if (targetRoutingDateObj.getDay() === 0) {
+            targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          }
+          targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+        }
+
+        const summaryPayload = {
+          dateFrom: `${targetRoutingStr} 00:00:00`,
+          dateTo: `${targetRoutingStr} 23:59:59`,
+          limit: 1000,
+          hubId,
+        };
+
         const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
           calculateStartFinishDates(dateForFile);
 
-        const [allTasks, filteredResults, locationHistoriesRes] = await Promise.all([
-          getTasks({
-            hubId,
-            status: 'DONE,ONGOING',
-            timeFrom: timeFromTasks,
-            timeTo: timeToTasks,
-            timeBy: 'startTime',
-            limit: 1000,
-          }),
-          getResultsSummary({
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: deliveryDateObj,
-            hubId,
-          }),
+        const [filteredResults, locationHistoriesRes] = await Promise.all([
+          getResultsSummary(summaryPayload),
           getLocationHistories({
             timeFrom: timeFromHistories,
             timeTo: timeToHistories,
