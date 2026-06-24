@@ -134,6 +134,7 @@ export const dictionary = {
       title: 'Peringatan',
     },
     navbar: {
+      bread_report: 'Laporan Barang Roti',
       coordinate: 'Longlat',
       daily_report: 'Laporan Harian',
       deliveries: 'Pengiriman',
@@ -264,6 +265,7 @@ export const dictionary = {
       },
     },
     report: {
+      bread_summary: 'Ringkasan Barang Roti',
       bulk: 'Laporan Massal',
       change_date: 'Ubah Tanggal Ruting',
       daily_title: 'Laporan Harian',
@@ -392,6 +394,13 @@ export const dictionary = {
           frozen: 'Frozen',
           total: 'Total',
         },
+      },
+      bread: {
+        item: 'Barang',
+        qty: 'Kuantitas',
+        uom: 'UOM',
+        volume: 'Volume (cbm)',
+        weight: 'Berat (kg)',
       },
     },
     longlat: {
@@ -804,6 +813,7 @@ export const dictionary = {
       title: 'Warning',
     },
     navbar: {
+      bread_report: 'Bread Item Report',
       coordinate: 'Coordinates',
       daily_report: 'Daily Report',
       deliveries: 'Deliveries',
@@ -935,6 +945,7 @@ export const dictionary = {
       },
     },
     report: {
+      bread_summary: 'Bread Item Summary',
       bulk: 'Bulk Report',
       change_date: 'Change Routing Date',
       daily_title: 'Daily Report',
@@ -1063,6 +1074,13 @@ export const dictionary = {
           frozen: 'Frozen',
           total: 'Total',
         },
+      },
+      bread: {
+        item: 'Item',
+        qty: 'Quantity',
+        uom: 'UOM',
+        volume: 'Volume (cbm)',
+        weight: 'Weight (kg)',
       },
     },
     longlat: {

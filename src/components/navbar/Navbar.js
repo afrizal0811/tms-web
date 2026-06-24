@@ -83,7 +83,6 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Efek baru: Mengunci scroll body saat menu mobile terbuka
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -250,6 +249,13 @@ export default function Navbar() {
           >
             {t('navbar.period_report')}
           </Link>
+          <Link
+            href="/report/bread"
+            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
+            onClick={() => setIsLaporanOpen(false)}
+          >
+            {t('navbar.bread_report')}
+          </Link>
           {isSuperadmin && (
             <>
               <Link
@@ -407,6 +413,7 @@ export default function Navbar() {
               </div>
               <MobileNavLink href="/report/single">{t('navbar.daily_report')}</MobileNavLink>
               <MobileNavLink href="/report/bulk">{t('navbar.period_report')}</MobileNavLink>
+              <MobileNavLink href="/report/bread"> {t('navbar.bread_report')}</MobileNavLink>
               <MobileNavLink href="/report/detail">{t('navbar.task_detail_report')}</MobileNavLink>
               <MobileNavLink href="/report/counter">
                 {t('navbar.task_counter_report')}
