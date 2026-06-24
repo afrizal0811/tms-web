@@ -262,7 +262,9 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
         </div>
 
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-1">
+          <label
+            className={`block text-sm font-medium text-gray-500 dark:text-slate-400 mb-1 ${!!selectedLocation ? 'opacity-35 pointer-events-none' : 'opacity-100 cursor-auto'}`}
+          >
             {t('home.select_branch')}
           </label>
           <div className="flex gap-2">
@@ -270,7 +272,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
               value={tempSelectedLocation}
               onChange={handleLocationChange}
               hubsToShow={currentHubListView || allHubsList}
-              className="flex-1 p-2 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm"
+              className="flex-1 p-2 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm disabled:opacity-35 disabled:pointer-events-none"
               placeholder={`-- ${t('home.placeholder')} --`}
               translate={t}
               disabled={!!selectedLocation}
@@ -288,7 +290,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
                 onClick={handleResetLocation}
                 className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded font-medium text-sm cursor-pointer transition-colors shrink-0"
               >
-                Ubah
+                {t('common.button.btn_edit')}
               </button>
             )}
           </div>
