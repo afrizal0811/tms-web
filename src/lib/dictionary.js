@@ -583,7 +583,6 @@ export const dictionary = {
           tvu_percentage: 'Total Kendaraan Digunakan (%)',
           vu: 'Kendaraan Digunakan',
           modal: {
-            btn_cancel: 'Batal',
             comment: 'Komentar',
             comment_placeholder: 'Masukkan komentar',
             confirm_message: 'Apakah Anda yakin ingin menghapus data ini?',
@@ -592,6 +591,7 @@ export const dictionary = {
             manual_total: 'Total Kendaraan',
             manual_total_placeholder: 'Masukkan total kendaraan',
             over_limit: 'Total kendaraan melebihi kendaraan yang tersedia',
+            unused: 'Tidak Digunakan',
             vehicle_list: 'Daftar Kendaraan',
           },
         },
@@ -1259,7 +1259,6 @@ export const dictionary = {
           tvu_percentage: 'Total Vehicles Used (%)',
           vu: 'Vehicles Used',
           modal: {
-            btn_cancel: 'Cancel',
             comment: 'Comment',
             comment_placeholder: 'Input comments here',
             confirm_message: 'Are you sure you want to delete this data?',
@@ -1268,6 +1267,7 @@ export const dictionary = {
             manual_total: 'Total Vehicles',
             manual_total_placeholder: 'Input the total number of vehicles',
             over_limit: 'Total vehicles exceed available vehicles',
+            unused: 'Unused',
             vehicle_list: 'Vehicle List',
           },
         },

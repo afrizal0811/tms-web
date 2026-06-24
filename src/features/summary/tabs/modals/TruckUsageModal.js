@@ -252,7 +252,7 @@ export default function TruckUsageModal({
                     </div>
                     {vh.isUnused && (
                       <div className="mt-1 text-[10px] text-red-500 font-semibold uppercase tracking-wider block">
-                        Tidak Digunakan
+                        {translate('summary.tabs.truck_usage.modal.unused')}
                       </div>
                     )}
                   </div>
@@ -364,7 +364,7 @@ export default function TruckUsageModal({
                 onClick={onClose}
                 className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 font-medium text-sm cursor-pointer transition-colors"
               >
-                {translate('summary.tabs.truck_usage.modal.btn_cancel')}
+                {translate('common.button.btn_cancel')}
               </button>
               <button
                 disabled={isSaveDisabled}
