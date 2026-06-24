@@ -258,8 +258,8 @@ export function calculateTruckDetailData(
       } else {
         status = task.status && task.status.toUpperCase();
       }
-      status = task.status !== 'ONGOING' ? status : '-';
-      if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
+      status = task.status !== 'ONGOING' ? status : 'ONGOING';
+      if (!FAILED_STATUSES.includes(status) && task.status !== 'ONGOING') entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
 
@@ -435,6 +435,24 @@ export function calculateTruckDetailData(
   });
 
   return { driverMap, driverEmails, dateKeys, dataMatrix };
+}
+
+function getHeatmapColor(pct) {
+  const p = Math.min(Math.max(pct, 0), 1);
+  let r, g, b;
+  if (p < 0.5) {
+    const ratio = p / 0.5; // 0 sampai 1
+    r = Math.round(248 + ratio * (255 - 248));
+    g = Math.round(105 + ratio * (235 - 105));
+    b = Math.round(107 + ratio * (132 - 107));
+  } else {
+    const ratio = (p - 0.5) / 0.5; // 0 sampai 1
+    r = Math.round(255 + ratio * (99 - 255));
+    g = Math.round(235 + ratio * (190 - 235));
+    b = Math.round(132 + ratio * (123 - 132));
+  }
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 export function generateTruckDetailSheet(
@@ -641,12 +659,13 @@ export function generateTruckDetailSheet(
             if (relativeIdx === 6) borderRight = BORDERS.medium;
 
             let shouldMergeHoliday = false;
+            let metrics = null;
 
             if (dateKeys[dateIdx]) {
               const dateStr = dateKeys[dateIdx].str;
               const [y, m, day] = dateStr.split('-').map(Number);
               const safeDate = new Date(y, m - 1, day);
-              const metrics = dataMatrix[dateStr][driverEmail];
+              metrics = dataMatrix[dateStr][driverEmail];
               const isSun = safeDate.getDay() === 0;
               const dayIsEmpty = isDayEmpty(dateStr);
               const isDynamic = !isSun && isPastDate(dateStr) && dayIsEmpty;
@@ -676,6 +695,12 @@ export function generateTruckDetailSheet(
             } else if ([0, 1, 6].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '0.0%' };
+              if (relativeIdx === 6 && metrics && metrics.outlets > 0) {
+                const pct = Math.min(Math.max(metrics.delivered / metrics.outlets, 0), 1);
+                const hexColor = getHeatmapColor(pct);
+                cellFill = { patternType: 'solid', fgColor: { rgb: hexColor } };
+                currentFontStyle = dataStyle.font;
+              }
             } else if ([2, 3, 4].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '#,##0' };

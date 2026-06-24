@@ -12,10 +12,10 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, loc
     PENDING: 'bg-[#ca8a04] text-white',
     'TERIMA SEBAGIAN': 'bg-[#ea580c] text-white',
     BATAL: 'bg-[#dc2626] text-white',
-    'PENDING GR': 'bg-[#d97706] text-white',
+    'PENDING GR': 'bg-[#b45309] text-white',
     DEFAULT: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
     DONE: 'bg-[#16a34a] text-white',
-    ONGOING: 'bg-[#ca8a04] text-white',
+    ONGOING: 'bg-[#7C3AED] text-white',
   };
 
   const STATUS_LANGUAGE = {

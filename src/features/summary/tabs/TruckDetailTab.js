@@ -89,6 +89,13 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
     {
       key: 'delivered',
       getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
+      getStyle: (m) => {
+        if (!m || m.outlets <= 0) return {};
+
+        const pct = Math.min(Math.max(m.delivered / m.outlets, 0), 1);
+        const hue = pct * 120;
+        return { backgroundColor: `hsla(${hue}, 100%, 50%, 0.45)` };
+      },
     },
   ];
   const titleColor = 'bg-[#fae2d5] dark:bg-[#3f2113]';
@@ -272,15 +279,22 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
 
                     return (
                       <Fragment key={`${d.day}-${i}-data`}>
-                        {displayData.map(({ key, border, getValue }) => (
-                          <td
-                            key={key}
-                            onClick={onClick}
-                            className={`${tdClickable} ${cellBg} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''}`}
-                          >
-                            {getValue(metrics)}
-                          </td>
-                        ))}
+                        {displayData.map(({ key, border, getValue, getStyle }) => {
+                          const hasHeatmap = getStyle && metrics.outlets > 0;
+                          const heatmapStyle = hasHeatmap ? getStyle(metrics) : {};
+                          const appliedBgClass = hasHeatmap ? '' : cellBg;
+
+                          return (
+                            <td
+                              key={key}
+                              onClick={onClick}
+                              className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''}`}
+                              style={heatmapStyle}
+                            >
+                              {getValue(metrics)}
+                            </td>
+                          );
+                        })}
                       </Fragment>
                     );
                   })}
