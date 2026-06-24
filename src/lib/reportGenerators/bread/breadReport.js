@@ -13,7 +13,6 @@ const headerStyle = {
   alignment: { horizontal: 'center', vertical: 'center' },
 };
 
-
 export const buildDriverMap = (driverData) => {
   return (driverData || []).reduce((acc, d) => {
     const email = normalizeEmail(d.email);
@@ -22,6 +21,12 @@ export const buildDriverMap = (driverData) => {
     }
     return acc;
   }, {});
+};
+
+const toNumOrDash = (val) => {
+  if (val == null) return '-';
+  const n = Number(val);
+  return isNaN(n) ? '-' : n;
 };
 
 export const extractBreadRows = (tasksData, driverMap, dateStr) => {
@@ -35,21 +40,21 @@ export const extractBreadRows = (tasksData, driverMap, dateStr) => {
     const driverName = driverInfo?.name || rawAssignee || '-';
     const platNomor = driverInfo?.plat || '-';
 
-     const breadProducts = (task.listProduct || []).filter(
-       (p) =>
-         typeof p.title === 'string' &&
-         BREAD_KEYWORDS.some((kw) => p.title.toUpperCase().includes(kw))
-     );
+    const breadProducts = (task.listProduct || []).filter(
+      (p) =>
+        typeof p.title === 'string' &&
+        BREAD_KEYWORDS.some((kw) => p.title.toUpperCase().includes(kw))
+    );
     breadProducts.forEach((p) => {
       rows.push([
         dateStr,
         platNomor,
         driverName,
         p.title ?? '-',
-        p.qtyProcessed ?? '-',
+        toNumOrDash(p.qtyProcessed),
         p.content ?? '-',
-        p.volume ?? '-',
-        p.weight ?? '-',
+        toNumOrDash(p.volume),
+        toNumOrDash(p.weight),
         p.caption ?? '-',
       ]);
     });
