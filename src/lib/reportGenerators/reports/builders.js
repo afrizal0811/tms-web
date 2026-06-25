@@ -197,7 +197,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     if (hasRouting && !hasDelivery) {
       wPct = rData.weightPercentage > 0 ? `${rData.weightPercentage}%` : null;
       vPct = rData.volumePercentage > 0 ? `${rData.volumePercentage}%` : null;
-      dist = rData.totalDistance > 0 ? rData.totalDistance : null;
+      dist = rData.totalDistance > 0 ? (rData.totalDistance / 1000).toFixed(2) : null;
       dur = formatMinutesToHHMM(rData.shipDurationRaw);
       eta = rData.etaFirstStore;
       etd = rData.etdHub;
@@ -210,7 +210,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     } else if (hasRouting && hasDelivery) {
       wPct = rData.weightPercentage > 0 ? `${rData.weightPercentage}%` : null;
       vPct = rData.volumePercentage > 0 ? `${rData.volumePercentage}%` : null;
-      dist = rData.totalDistance > 0 ? rData.totalDistance : null;
+      dist = rData.totalDistance > 0 ? (rData.totalDistance / 1000).toFixed(2) : null;
       dur = formatMinutesToHHMM(rData.shipDurationRaw);
       eta = rData.etaFirstStore;
       etd = rData.etdHub;

@@ -1,8 +1,8 @@
 import {
+  formatDateUniversal,
   formatLongDate,
   getDeliveryDateFromRouting,
   getUTC7DateString,
-  formatDateUniversal,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
@@ -130,9 +130,8 @@ export function calculateAverageDistanceData(
           : strictBasePlate;
         const driverName = driverInfo ? driverInfo.name : route.assignee || '-';
 
-        let distMeters = route.totalDistance || 0;
-        if (distMeters === 0)
-          distMeters = validTrips.reduce((acc, t) => acc + (t.distance || 0), 0);
+        const manualDistMeters = (route.trips || []).reduce((acc, t) => acc + (t.distance || 0), 0);
+        const distMeters = manualDistMeters || route.totalDistance || 0;
         const distKm = distMeters / 1000;
 
         if (!dailyVehicles.has(canonicalPlate)) {

@@ -485,10 +485,10 @@ export async function generateManualReportWorkbook({
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
   buildStartFinishSheet(wb, timeData, t);
-  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap);
+  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
-  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData);
+  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   const title = isIndonesian ? `${t('common.report')} Manual` : `Manual ${t('common.report')}`;
