@@ -9,7 +9,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full text-center text-slate-500 dark:text-slate-400 text-xs mt-auto py-2 transition-colors">
-      <span suppressHydrationWarning>{t('common.copyright')}</span>: Afi - EDP © {startYear} -{' '}
+      <span suppressHydrationWarning>{t('common.created_by')}</span>: Afi - EDP © {startYear} -{' '}
       {endYear}
     </footer>
   );

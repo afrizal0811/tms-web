@@ -58,19 +58,19 @@ export function buildTanggalRoutingSheet(wb, dateStr, t) {
     { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
   ];
   ws['!cols'] = Array(7).fill({ wch: 15 });
-  XLSX.utils.book_append_sheet(wb, ws, 'Tanggal Routing');
+  XLSX.utils.book_append_sheet(wb, ws, t('common.routing_date'));
 }
 
 export function buildStartFinishSheet(wb, timeDataObjects, t) {
   const headers = [
     t('common.license_number'),
     t('common.driver'),
-    t('excel.time.headers.start_date'),
+    t('excel.reports.time_driver.start_date'),
     t('common.start_time'),
-    t('excel.time.headers.finish_date'),
+    t('excel.reports.time_driver.finish_date'),
     t('common.finish_time'),
-    t('excel.time.headers.duration'),
-    t('excel.time.headers.travel_dist'),
+    t('excel.reports.time_driver.duration'),
+    t('excel.reports.time_driver.travel_dist'),
   ];
 
   timeDataObjects.sort((a, b) => {
@@ -149,23 +149,23 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan Mulai-Akhir');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.time_driver.sheet_name'));
 }
 
-export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap) {
+export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t) {
   const headers = [
-    'Pelat Nomor',
-    'Sopir',
-    'Persentase Berat',
-    'Persentase Volume',
-    'Total Jarak (m)',
-    'Total Kunjungan',
-    'Total Pengiriman',
-    'Durasi Pengiriman',
-    'ETA Toko Pertama',
-    'ETD Hub',
-    'Info Penugasan Manual',
-    'Info Beda Hari',
+    t('common.license_number'),
+    t('common.driver'),
+    t('excel.reports.truck_detail.weight_pct'),
+    t('excel.reports.truck_detail.volume_pct'),
+    t('excel.reports.truck_detail.total_dist'),
+    t('excel.reports.truck_detail.total_visit'),
+    t('excel.reports.truck_detail.total_delivery'),
+    t('excel.reports.truck_detail.ship_dur'),
+    t('excel.reports.truck_detail.eta_first'),
+    t('excel.reports.truck_detail.etd_hub'),
+    t('excel.reports.truck_detail.info_manual'),
+    t('excel.reports.truck_detail.info_diff_day'),
   ];
 
   const excelDataRows = [];
@@ -304,7 +304,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap) 
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Detail Truck');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_detail.sheet_name'));
 }
 
 export function buildRoVsRealSheet(
@@ -320,7 +320,7 @@ export function buildRoVsRealSheet(
     t('common.license_number'),
     t('common.driver'),
     t('common.customer_name'),
-    t('excel.delivery.headers.status_del'),
+    t('excel.reports.ro_real.delivery_status'),
     t('common.open_time'),
     t('common.close_time'),
     t('common.eta'),
@@ -331,8 +331,8 @@ export function buildRoVsRealSheet(
     t('common.visit_actual'),
     t('common.ro_seq'),
     t('common.actual_seq'),
-    t('excel.delivery.headers.is_match'),
-    t('dashboard.tab.routingreal.is_within_hours'),
+    t('excel.reports.ro_real.is_match'),
+    t('excel.reports.ro_real.is_within_hours'),
   ];
 
   const tasksByNameMap = new Map();
@@ -555,12 +555,16 @@ export function buildRoVsRealSheet(
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Hasil RO vs Aktual');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.ro_real.sheet_name'));
 }
 
 export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t) {
   const masterNames = vehicleTypes.map((v) => (typeof v === 'string' ? v : v.name));
-  const headers = ['Tipe Kendaraan', 'Jumlah (Dry)', 'Jumlah (Frozen)'];
+  const headers = [
+    t('excel.reports.truck_usage.vehicle_type'),
+    t('excel.reports.truck_usage.count_dry'),
+    t('excel.reports.truck_usage.count_frozen'),
+  ];
   const finalUsageData = [headers];
 
   masterNames.forEach((type) => {
@@ -594,10 +598,10 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t) {
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Penggunaan Truk');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_usage.sheet_name'));
 }
 
-export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects) {
+export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects, t) {
   let estDryT = 0,
     estDryD = 0,
     estFrzT = 0,
@@ -643,15 +647,23 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
   });
 
   const sheetData = [
-    ['Estimasi', null, null, '', 'Aktual', null, null],
     [
-      'Kategori',
-      'Waktu Perjalanan',
-      'Jarak Perjalanan (KM)',
+      t('excel.reports.dist_summary.estimation'),
+      null,
+      null,
       '',
-      'Kategori',
-      'Waktu Perjalanan',
-      'Jarak Perjalanan (KM)',
+      t('excel.reports.dist_summary.actual'),
+      null,
+      null,
+    ],
+    [
+      t('excel.reports.dist_summary.category'),
+      t('excel.reports.dist_summary.time_travel'),
+      t('excel.reports.dist_summary.total_dist'),
+      '',
+      t('excel.reports.dist_summary.category'),
+      t('excel.reports.dist_summary.time_travel'),
+      t('excel.reports.dist_summary.total_dist'),
     ],
     [
       'Dry',
@@ -723,7 +735,7 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
       ws[cellRef].s = { ...baseStyle, border: borderAll };
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Rekap Perjalanan');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.dist_summary.sheet_name'));
 }
 
 export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
@@ -739,7 +751,7 @@ export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
   ];
   if (hasPendingGR) headers.push(t('common.status.pending_gr'));
   headers.push(
-    t('excel.delivery.headers.reason'),
+    t('excel.reports.pending_so.reason'),
     '',
     t('common.open_time'),
     t('common.close_time'),
@@ -831,7 +843,7 @@ export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
       }
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Hasil Pending SO');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.pending_so.sheet_name'));
 }
 
 export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
@@ -839,8 +851,8 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
     t('common.customer_name'),
     t('common.customer_id'),
     t('common.location_id'),
-    t('excel.delivery.headers.new_longlat'),
-    t('excel.delivery.headers.dist_diff'),
+    t('excel.reports.update_coord.new_longlat'),
+    t('excel.reports.update_coord.dist_diff'),
   ];
   updateLonglatData.sort((a, b) => (a.bedaJarak || Infinity) - (b.bedaJarak || Infinity));
   const sheetData = [
@@ -861,48 +873,46 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
       if (ws[cell]) ws[cell].s = r === 0 ? STYLES.header : STYLES.center;
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Perbarui Longlat');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.update_coord.sheet_name'));
 }
 
 export function buildHelpSheet(wb, filteredResults, t) {
   const headers = [
-    t('common.routing_id'),
+    t('excel.reports.help.routing_id'),
     t('common.routing_name'),
     t('common.created_by'),
-    t('common.routing_time'),
-    t('common.routing_result'),
+    t('common.created_at'),
+    t('excel.reports.help.routing_result'),
   ];
   const rows = [];
-  filteredResults
-    .filter((r) => String(r.dispatchStatus).toLowerCase() === 'done')
-    .forEach((i) => {
-      const success =
-        i.summary?.routedVisits || i.summary?.totalVisits - i.summary?.droppedVisits || 0;
-      const res = i.summary
-        ? t('excel.routing.data.dispatch_message', { success, total: i.summary.totalVisits })
-        : '-';
+  filteredResults.forEach((i) => {
+    const success =
+      i.summary?.routedVisits || i.summary?.totalVisits - i.summary?.droppedVisits || 0;
+    const res = i.summary
+      ? t('excel.reports.help.dispatch_msg', { success, total: i.summary.totalVisits })
+      : '-';
 
-      let routingTime = '-';
-      if (i.createdTime) {
-        const utcDate = new Date(i.createdTime);
-        if (!isNaN(utcDate.getTime())) {
-          utcDate.setTime(utcDate.getTime() + 7 * 60 * 60 * 1000);
-          const map = {
-            DD: String(utcDate.getUTCDate()).padStart(2, '0'),
-            MM: String(utcDate.getUTCMonth() + 1).padStart(2, '0'),
-            YYYY: utcDate.getUTCFullYear(),
-            HH: String(utcDate.getUTCHours()).padStart(2, '0'),
-            mm: String(utcDate.getUTCMinutes()).padStart(2, '0'),
-            ss: String(utcDate.getUTCSeconds()).padStart(2, '0'),
-          };
-          routingTime = `${map.DD}-${map.MM}-${map.YYYY} ${map.HH}:${map.mm}:${map.ss}`;
-        } else {
-          routingTime = i.createdTime;
-        }
+    let routingTime = '-';
+    if (i.createdTime) {
+      const utcDate = new Date(i.createdTime);
+      if (!isNaN(utcDate.getTime())) {
+        utcDate.setTime(utcDate.getTime() + 7 * 60 * 60 * 1000);
+        const map = {
+          DD: String(utcDate.getUTCDate()).padStart(2, '0'),
+          MM: String(utcDate.getUTCMonth() + 1).padStart(2, '0'),
+          YYYY: utcDate.getUTCFullYear(),
+          HH: String(utcDate.getUTCHours()).padStart(2, '0'),
+          mm: String(utcDate.getUTCMinutes()).padStart(2, '0'),
+          ss: String(utcDate.getUTCSeconds()).padStart(2, '0'),
+        };
+        routingTime = `${map.DD}-${map.MM}-${map.YYYY} ${map.HH}:${map.mm}:${map.ss}`;
+      } else {
+        routingTime = i.createdTime;
       }
+    }
 
-      rows.push([i._id, i.name, i.user?.name, routingTime, res]);
-    });
+    rows.push([i._id, i.name, i.user?.name, routingTime, res]);
+  });
   const sheetData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
   ws['!cols'] = headers.map(() => ({ wch: 25 }));
@@ -912,5 +922,5 @@ export function buildHelpSheet(wb, filteredResults, t) {
       if (ws[cell]) ws[cell].s = r === 0 ? STYLES.header : STYLES.left;
     }
   }
-  XLSX.utils.book_append_sheet(wb, ws, 'Bantuan');
+  XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.help.sheet_name'));
 }

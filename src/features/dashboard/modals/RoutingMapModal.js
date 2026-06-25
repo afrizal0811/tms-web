@@ -191,7 +191,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
           <label className="text-[10px] font-bold tracking-wide">
-            {t('dashboard.map.dropdown_driver')}
+            {t('common.driver')}
           </label>
           <select
             value={selectedDriver}
@@ -209,7 +209,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
 
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
           <label className="text-[10px] font-bold tracking-wide">
-            {`${t('dashboard.map.dropdown_task')}  (${t('dashboard.map.real')})`}
+            {`${t('common.task')}  (${t('dashboard.map.real')})`}
           </label>
           <select
             value={selectedCustomer}
