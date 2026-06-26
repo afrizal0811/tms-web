@@ -70,7 +70,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
     },
   ];
 
-  const confirmModalText = translate('setting.tab.general.standard_title');
+  const title = translate('setting.tab.general.standard_title');
 
   return (
     <Card>
@@ -78,9 +78,9 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteType}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 

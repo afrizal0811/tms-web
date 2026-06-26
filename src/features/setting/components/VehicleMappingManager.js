@@ -101,7 +101,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
           className="w-full min-w-0 px-1 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none cursor-pointer"
         >
           <option value="" disabled>
-            Pilih Tipe
+            {translate('common.select')}
           </option>
           {vehicleTypes.map((v) => (
             <option key={v.id} value={v.name}>
@@ -113,7 +113,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     },
   ];
 
-  const confirmModalText = translate('setting.tab.general.mapping_title');
+  const title = translate('setting.tab.general.mapping_title');
 
   return (
     <Card>
@@ -121,9 +121,9 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 

@@ -10,25 +10,24 @@ const ReasonCell = ({ text, className }) => {
 
   const checkOverflow = () => {
     if (textRef.current) {
-      const isOverflow = textRef.current.scrollWidth > textRef.current.clientWidth;
-      setIsTruncated(isOverflow);
+      setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth);
     }
   };
 
   const innerContent = (
-    <div ref={textRef} className="truncate w-full cursor-default" onMouseEnter={checkOverflow}>
+    <div ref={textRef} className="truncate w-full " onMouseEnter={checkOverflow}>
       {text}
     </div>
   );
 
   return (
-    <td className={`${className} text-left max-w-[200px]`}>
-      {text && !isEmpty(text) ? (
-        <Tooltip tooltipContent={isTruncated ? text : ''}>{innerContent}</Tooltip>
-      ) : (
-        '-'
-      )}
-    </td>
+    <Tooltip tooltipContent={isTruncated ? text : ''}>
+      <td
+        className={`${className} text-left max-w-[200px] p-0 ${isTruncated ? 'cursor-help' : 'cursor-default'}`}
+      >
+        {innerContent}
+      </td>
+    </Tooltip>
   );
 };
 
@@ -157,9 +156,9 @@ export default function PendingReasonsTab({
     translate('common.status.pending'),
     ...(shouldShowPendingGR ? [translate('common.status.pending_gr')] : []),
     translate('summary.tabs.pending_reasons.reason'),
-    'Internal/External',
-    'Detail Reason',
-    'Group Reason',
+    translate('summary.tabs.pending_reasons.category'),
+    translate('summary.tabs.pending_reasons.detail_reason'),
+    translate('summary.tabs.pending_reasons.group_reason'),
     'PIC',
     translate('common.open_time'),
     translate('common.close_time'),

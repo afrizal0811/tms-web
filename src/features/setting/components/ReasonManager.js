@@ -95,16 +95,16 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       ),
     },
   ];
-  const confirmModalText = translate('setting.tab.general.reasons_title');
+  const title = translate('setting.tab.general.reasons_title');
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteReason}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 

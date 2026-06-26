@@ -327,8 +327,10 @@ export default function TruckUsageModal({
         isOpen={isConfirmOpen}
         onCancel={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
-        title={translate('summary.tabs.truck_usage.modal.confirm_title')}
-        message={translate('summary.tabs.truck_usage.modal.confirm_message')}
+        title={translate('common.modal.confirm_title', { text: 'data' })}
+        message={translate('common.modal.confirm_message', {
+          text: 'data',
+        })}
       />
 
       <BaseModal

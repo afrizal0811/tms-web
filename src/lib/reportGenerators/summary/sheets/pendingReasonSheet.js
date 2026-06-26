@@ -1,5 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
-import { formatDateWIB, isEmpty, parseCustomerString, normalizeEmail } from '@/lib/utils';
+import { formatDateWIB, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -175,10 +175,10 @@ export function generatePendingReasonSheet(
   if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
   headers.push(
     translate('summary.tabs.pending_reasons.reason'),
-    'Internal/External', // Kolom Tambahan 1
-    'Detail Reason', // Kolom Tambahan 2
-    'Group Reason', // Kolom Tambahan 3
-    'PIC', // Kolom Tambahan 4
+    translate('summary.tabs.pending_reasons.category'),
+    translate('summary.tabs.pending_reasons.detail_reason'),
+    translate('summary.tabs.pending_reasons.group_reason'),
+    'PIC',
     translate('common.open_time'),
     translate('common.close_time'),
     translate('common.eta'),

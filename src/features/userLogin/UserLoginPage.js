@@ -273,7 +273,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
               onChange={handleLocationChange}
               hubsToShow={currentHubListView || allHubsList}
               className="flex-1 p-2 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm disabled:opacity-35 disabled:pointer-events-none"
-              placeholder={`-- ${t('home.placeholder')} --`}
+              placeholder={`-- ${t('common.select')} ${t('common.branch')}--`}
               translate={t}
               disabled={!!selectedLocation}
             />
@@ -283,7 +283,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
                 disabled={!tempSelectedLocation}
                 className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 disabled:bg-gray-400 font-medium text-sm cursor-pointer transition-colors shrink-0"
               >
-                {t('home.select_btn')}
+                {t('common.select')}
               </button>
             ) : (
               <button

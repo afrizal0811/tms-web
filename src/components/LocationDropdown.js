@@ -133,7 +133,7 @@ export default function LocationDropdown({
 
       {!loading && !error && (
         <>
-          {!compact && placeholder && <option value="">{placeholder}</option>}
+          {!compact && placeholder && <option value="" disabled>{placeholder}</option>}
           {isEmpty(data) && <option value="">{'-- Tidak ada lokasi --'}</option>}
 
           {data.map((hub) => {
