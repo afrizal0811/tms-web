@@ -3,7 +3,22 @@
 // Mengubah format input tanggal (Date atau string) menjadi pola string tertentu (default: YYYY-MM-DD)
 export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
   if (!dateInput) return '-';
-  const date = new Date(dateInput);
+
+  let date;
+  if (typeof dateInput === 'string') {
+    const dmyMatch = dateInput.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    );
+    if (dmyMatch) {
+      const [, dd, mm, yyyy, HH = '00', min = '00', ss = '00'] = dmyMatch;
+      date = new Date(`${yyyy}-${mm}-${dd}T${HH}:${min}:${ss}`);
+    } else {
+      date = new Date(dateInput);
+    }
+  } else {
+    date = new Date(dateInput);
+  }
+
   if (isNaN(date.getTime())) return '-';
 
   const map = {

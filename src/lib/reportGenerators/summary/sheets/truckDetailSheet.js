@@ -246,20 +246,21 @@ export function calculateTruckDetailData(
       const entry = dataMatrix[dateKey][email];
       entry.outlets += 1;
       const flow = task.flow || '-';
-      let status = '';
+      let statusDelivery = '';
       if (flow !== 'Pickup') {
         if (task.statusDelivery && task.statusDelivery.length > 0) {
-          status = task.statusDelivery[0].toUpperCase();
+          statusDelivery = task.statusDelivery[0].toUpperCase();
         } else if (flow.includes('GR')) {
           if (task.statusGr && task.statusGr.length > 0) {
-            status = task.statusGr[0].toUpperCase();
+            statusDelivery = task.statusGr[0].toUpperCase();
           }
         }
       } else {
-        status = task.status && task.status.toUpperCase();
+        statusDelivery = task.status && task.status.toUpperCase();
       }
-      status = task.status !== 'ONGOING' ? status : 'ONGOING';
-      if (!FAILED_STATUSES.includes(status) && task.status !== 'ONGOING') entry.delivered += 1;
+      statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
+      if (!FAILED_STATUSES.includes(statusDelivery) && task.status !== 'ONGOING')
+        entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
 
@@ -304,13 +305,15 @@ export function calculateTruckDetailData(
         customerName: flow === 'Pickup' ? pickupCustomerName : finalCustomerName,
         soNumber: finalSO,
         flow: flow,
-        status: status,
+        status: statusDelivery,
         isManual: isManual,
         isDateDiff: isDateDiff,
         dayDiff: dayDiffCount,
         startTimeStr: realStartTimeStr,
         roSequence: task.routePlannedOrder,
         arrivalTimestamp: arrivalTimestamp,
+        doneCoord: task.doneCoordinate || null,
+        expectedCoord: task.expectedCoordinate || null,
       });
     }
   });

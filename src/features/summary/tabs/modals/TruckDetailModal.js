@@ -1,6 +1,6 @@
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, isEmpty, parseCustomerString } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate, isEmpty, parseCustomerString } from '@/lib/utils';
 
 export default function TruckDetailModal({ isOpen, onClose, data, translate, localeCode }) {
   if (!isOpen || !data) return null;
@@ -21,7 +21,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, loc
   const STATUS_LANGUAGE = {
     SUKSES: translate('common.status.success'),
     PENDING: translate('common.status.pending'),
-    'TERIMA SEBAGIAN': translate('common.status.pending_gr'),
+    'TERIMA SEBAGIAN': translate('common.status.partial'),
     BATAL: translate('common.status.cancel'),
     'PENDING GR': translate('common.status.pending_gr'),
     DONE: translate('common.status.done'),
@@ -119,11 +119,13 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, loc
                     </span>
                   )}
                   {task.isDateDiff && (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.DATE_DIFF}`}
-                    >
-                      {translate('summary.tabs.truck_detail.modal.diff_day').toUpperCase()}
-                    </span>
+                    <Tooltip tooltipContent={formatDateUniversal(task.startTimeStr, 'DD/MM/YYYY')}>
+                      <span
+                        className={`cursor-help text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.DATE_DIFF}`}
+                      >
+                        {`${translate('summary.tabs.truck_detail.modal.diff_day').toUpperCase()} (+${task.dayDiff})`}
+                      </span>
+                    </Tooltip>
                   )}
                 </div>
               </div>
