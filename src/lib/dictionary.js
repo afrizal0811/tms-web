@@ -548,6 +548,8 @@ export const dictionary = {
           weight: 'Berat',
           modal: {
             diff_day: 'Beda Hari',
+            done_point: 'Titik Selesai',
+            customer_point: 'Titik Pelanggan',
           },
         },
         truck_usage: {
@@ -1208,6 +1210,8 @@ export const dictionary = {
           weight: 'Weight',
           modal: {
             diff_day: 'Different Day',
+            done_point: 'Done Point',
+            customer_point: 'Customer Point',
           },
         },
         truck_usage: {

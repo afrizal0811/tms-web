@@ -4,7 +4,7 @@ import { Fragment, useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
 
-export default function TruckDetailTab({ data, translate, localeCode }) {
+export default function TruckDetailTab({ data, translate, localeCode, isIndonesian }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const [modalData, setModalData] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -122,6 +122,7 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         localeCode={localeCode}
         onClose={closeModal}
         translate={translate}
+        isIndonesian={isIndonesian}
       />
       <div className="overflow-auto flex-1">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">

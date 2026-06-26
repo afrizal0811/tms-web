@@ -22,7 +22,7 @@ import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
 export default function SummaryPage() {
-  const { t, localeCode } = useLanguage();
+  const { t, localeCode, isIndonesian } = useLanguage();
   const {
     selectedLocation,
     selectedLocationName,
@@ -310,6 +310,7 @@ export default function SummaryPage() {
           data: reportPreview.truckDetailData,
           translate: t,
           localeCode: localeCode,
+          isIndonesian: isIndonesian,
         });
       case 'Truck Usage':
         return renderTab(TruckUsageTab, {

@@ -230,7 +230,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0 [&_.leaflet-layer]:dark:invert [&_.leaflet-layer]:dark:hue-rotate-180 [&_.leaflet-layer]:dark:brightness-95 [&_.leaflet-layer]:dark:contrast-90">
+        <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0">
           <div ref={mapContainerRef} className="w-full h-full" />
         </div>
         {hasMultipleData && tableData}
