@@ -46,15 +46,11 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
 
             return (
               <Fragment key={`${v.id}-${v.plat}`}>
-                {isDuplicateDriver ? (
-                  <Tooltip
-                    tooltipContent={isDuplicateDriver ? t('vehicle.tabs.duplicate_driver') : ''}
-                  >
-                    {data}
-                  </Tooltip>
-                ) : (
-                  data
-                )}
+                <Tooltip
+                  tooltipContent={isDuplicateDriver ? t('vehicle.tabs.duplicate_driver') : ''}
+                >
+                  {data}
+                </Tooltip>
               </Fragment>
             );
           })}

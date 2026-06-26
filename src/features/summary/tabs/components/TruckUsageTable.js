@@ -344,15 +344,10 @@ export default function TruckUsageTable({
         </span>
       </td>
     );
-    const hasTooltip = tooltip ? (
-      <Tooltip tooltipContent={tooltip}>{labelTable}</Tooltip>
-    ) : (
-      labelTable
-    );
 
     return (
       <tr className={isBold ? 'font-bold' : ''}>
-        {hasTooltip}
+        <Tooltip tooltipContent={tooltip || ''}>{labelTable}</Tooltip>
         <td
           onClick={() => {
             if (isClickableMaster && onCellClick) {

@@ -203,13 +203,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                     key={index}
                     className={`${baseClass} ${col.tooltip ? 'cursor-help' : ''} ${col.className || ''}`}
                   >
-                    {col.tooltip ? (
-                      <Tooltip tooltipContent={col.tooltip} width={col.tooltipWidth}>
-                        <span>{col.header}</span>
-                      </Tooltip>
-                    ) : (
-                      col.header
-                    )}
+                    <Tooltip
+                      tooltipContent={col.tooltip ? col.tooltip : ''}
+                      width={col.tooltipWidth}
+                    >
+                      <span>{col.header}</span>
+                    </Tooltip>
                   </th>
                 );
               })}

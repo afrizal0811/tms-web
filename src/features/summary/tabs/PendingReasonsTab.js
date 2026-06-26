@@ -24,11 +24,7 @@ const ReasonCell = ({ text, className }) => {
   return (
     <td className={`${className} text-left max-w-[200px]`}>
       {text && !isEmpty(text) ? (
-        isTruncated ? (
-          <Tooltip tooltipContent={text}>{innerContent}</Tooltip>
-        ) : (
-          innerContent
-        )
+        <Tooltip tooltipContent={isTruncated ? text : ''}>{innerContent}</Tooltip>
       ) : (
         '-'
       )}
@@ -65,11 +61,7 @@ const ActionCell = ({ text, className, onClick }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {hasData ? (
-        isTruncated ? (
-          <Tooltip tooltipContent={text}>{innerContent}</Tooltip>
-        ) : (
-          innerContent
-        )
+        <Tooltip tooltipContent={isTruncated ? text : ''}>{innerContent}</Tooltip>
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
           {isHovered ? (
@@ -123,13 +115,9 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
       className={`${className} cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative group`}
       onClick={handleCopy}
     >
-      {refs.length > 0 || isError ? (
-        <Tooltip tooltipContent={tooltipText}>
-          <span className={textStyle}>{text}</span>
-        </Tooltip>
-      ) : (
-        text
-      )}
+      <Tooltip tooltipContent={refs.length > 0 || isError ? tooltipText : ''}>
+        <span className={textStyle}>{text}</span>
+      </Tooltip>
     </td>
   );
 };
