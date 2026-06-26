@@ -512,8 +512,10 @@ export const dictionary = {
             'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
         },
         time_driver: {
+          color_exp: 'Keterangan Warna',
           duration: 'Durasi',
           title: 'Waktu Sopir',
+          out_radius: 'Sopir mulai/akhiri perjalanan di luar radius',
           modal: {
             distance: 'Jarak (KM)',
             duration: 'Durasi',
@@ -522,6 +524,11 @@ export const dictionary = {
               '* Data ini muncul karena sopir menekan tombol Mulai dan Akhiri Perjalanan lebih dari 1x dalam sehari.',
             start_time: 'Waktu Mulai',
             title: 'Rincian Waktu',
+          },
+          tooltip: {
+            out_finish: 'Sopir akhiri perjalanan di luar radius',
+            out_start: 'Sopir mulai perjalanan di luar radius',
+            diff_day: 'Sopir selesaikan perjalanan pada {days} hari setelah mulai perjalanan',
           },
         },
         truck_detail: {
@@ -1165,8 +1172,10 @@ export const dictionary = {
             'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },
         time_driver: {
+          color_exp: 'Color Legend',
           duration: 'Duration',
           title: 'Time Driver',
+          out_radius: 'Driver started/end trip outside radius',
           modal: {
             distance: 'Distance (KM)',
             duration: 'Duration',
@@ -1175,6 +1184,11 @@ export const dictionary = {
               '* This data appears because the driver pressed the Start and End Trip buttons more than once in a day.',
             start_time: 'Start Time',
             title: 'Time Detail',
+          },
+          tooltip: {
+            out_finish: 'Driver finished trip outside radius',
+            out_start: 'Driver started trip outside radius',
+            diff_day: 'Driver finished trip {days} day(s) after start trip.',
           },
         },
         truck_detail: {

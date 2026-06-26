@@ -220,24 +220,78 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                     }
 
                     return (
-                      <Fragment key={i}>
-                        <td
-                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
-                          className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${cellBg} ${cellCursor}`}
-                        >
-                          {metrics.startDisplay}
-                        </td>
-                        <td
-                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
-                          className={`${tdClass} ${cellBg} ${cellCursor}`}
-                        >
-                          {metrics.finishDisplay}
-                          {metrics.dayDiff > 0 && (
-                            <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
-                              (+{metrics.dayDiff})
-                            </span>
-                          )}
-                        </td>
+                      <Fragment key={d.str}>
+                        {(() => {
+                          const hasStartOut = !!metrics.entries?.some(
+                            (e) => e.isStartOutRadius === true
+                          );
+                          const hasFinishOut = !!metrics.entries?.some(
+                            (e) => e.isFinishOutRadius === true
+                          );
+
+                          const diffDay = metrics.dayDiff;
+                          const diffDayTooltip =
+                            diffDay > 0
+                              ? `${hasFinishOut ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                              : '';
+                          const outFinishTooltip = `${diffDay > 0 ? '- ' : ''}${translate(
+                            'summary.tabs.time_driver.tooltip.out_finish'
+                          )} ${diffDayTooltip}`;
+
+                          return (
+                            <>
+                              <td
+                                onClick={() =>
+                                  hasCoords && handleCellClick(metrics, driver.name, d.str)
+                                }
+                                className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${cellBg} ${hasStartOut ? 'bg-red-100! dark:bg-red-900/40!' : ''}  ${cellCursor}`}
+                              >
+                                {hasStartOut ? (
+                                  <Tooltip
+                                    tooltipContent={translate(
+                                      'summary.tabs.time_driver.tooltip.out_start'
+                                    )}
+                                  >
+                                    <span className="block w-full">{metrics.startDisplay}</span>
+                                  </Tooltip>
+                                ) : (
+                                  metrics.startDisplay
+                                )}
+                              </td>
+
+                              <td
+                                onClick={() =>
+                                  hasCoords && handleCellClick(metrics, driver.name, d.str)
+                                }
+                                className={`${tdClass} ${cellBg} ${hasFinishOut ? 'bg-red-100! dark:bg-red-900/40!' : ''} ${cellCursor}`}
+                              >
+                                {hasFinishOut ? (
+                                  <Tooltip tooltipContent={outFinishTooltip}>
+                                    <div className="flex items-center justify-center w-full">
+                                      {metrics.finishDisplay}
+                                      {diffDay > 0 && (
+                                        <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
+                                          (+{diffDay})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Tooltip>
+                                ) : (
+                                  <Tooltip tooltipContent={diffDayTooltip}>
+                                    <div className="flex items-center justify-center w-full">
+                                      {metrics.finishDisplay}
+                                      {diffDay > 0 && (
+                                        <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
+                                          (+{diffDay})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Tooltip>
+                                )}
+                              </td>
+                            </>
+                          );
+                        })()}
                         <td
                           onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
                           className={`${tdClass} ${cellBg} font-medium ${cellCursor}`}

@@ -1,8 +1,8 @@
 import { isTripInShift } from '@/lib/isTripInShift';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
-
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -46,6 +46,21 @@ function getDriverStorageType(driver) {
   if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
     return 'Dry';
   return '-';
+}
+
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 export function calculateTimeDriverData(
@@ -165,6 +180,12 @@ export function calculateTimeDriverData(
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
+        const storedHubs = getCachedHubs();
+        const { storedLocationName } = getLocalStorage();
+        const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
+        const hubLat = activeHubLocation?.lat || 0;
+        const hubLon = activeHubLocation?.lng || 0;
+        const RADIUS_THRESHOLD = 500;
 
         const entry = {
           startTimeISO: item.startTime,
@@ -180,8 +201,17 @@ export function calculateTimeDriverData(
           startLon: item.lon,
           finishLat: item.finish?.lat,
           finishLon: item.finish?.lon,
-        };
+          isStartOutRadius:
+            item.lat && item.lon
+              ? getDistanceInMeters(item.lat, item.lon, hubLat, hubLon) > RADIUS_THRESHOLD
+              : false,
 
+          isFinishOutRadius:
+            item.finish?.lat && item.finish?.lon
+              ? getDistanceInMeters(item.finish.lat, item.finish.lon, hubLat, hubLon) >
+                RADIUS_THRESHOLD
+              : false,
+        };
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
             ...entry,
@@ -204,9 +234,7 @@ export function calculateTimeDriverData(
     });
   }
 
-  const driverEmails = driverEmailsRaw.filter((email) => {
-    return dateKeys.some((d) => dataMatrix[d.str][email] && dataMatrix[d.str][email].hasData);
-  });
+  const driverEmails = [...driverEmailsRaw];
 
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
@@ -331,6 +359,10 @@ export function generateTimeDriverSheet(
     excelData.push(row);
   });
 
+  excelData.push([]);
+  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push(['', translate('summary.tabs.time_driver.out_radius')]);
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
   merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
@@ -353,6 +385,9 @@ export function generateTimeDriverSheet(
     }
     colIdx += 3;
   });
+
+  const legendRowIdx = excelData.length - 1;
+  merges.push({ s: { r: legendRowIdx, c: 1 }, e: { r: legendRowIdx, c: 5 } });
   ws['!merges'] = merges;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -362,6 +397,26 @@ export function generateTimeDriverSheet(
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
+      const totalRows = excelData.length;
+      if (R >= totalRows - 3) {
+        if (R === totalRows - 2 && C === 0) {
+          cell.s = { font: { bold: true, underline: true, name: 'Calibri', sz: 11 } };
+        } else if (R === totalRows - 1) {
+          if (C === 0) {
+            cell.s = {
+              fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } },
+              border: BORDERS.thin,
+            };
+          } else if (C === 1) {
+            cell.s = {
+              alignment: { horizontal: 'left', vertical: 'center' },
+              font: { name: 'Calibri', sz: 11 },
+            };
+          }
+        }
+        continue;
+      }
+
       let cellFill = null;
       let fontStyle = dataStyle.font;
       let customAlignment = null;
@@ -397,9 +452,24 @@ export function generateTimeDriverSheet(
 
             if (driverEmail && dateStr) {
               const mData = dataMatrix[dateStr][driverEmail];
-              if (mData && mData.entries && mData.entries.length > 1) {
-                cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
-                fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+              if (mData && mData.hasData) {
+                const relIdx = (C - 3) % 3;
+                if (relIdx === 0 && mData.entries.some((e) => e.isStartOutRadius)) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
+                  fontStyle = { ...fontStyle };
+                } else if (relIdx === 1 && mData.entries.some((e) => e.isFinishOutRadius)) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
+                  fontStyle = { ...fontStyle };
+                }
+
+                if (relIdx === 1 && mData.entries.some((e) => e.dayDiff > 0)) {
+                  fontStyle = { ...fontStyle, color: { rgb: 'FF0000' }, bold: true };
+                }
+
+                if (mData.entries && mData.entries.length > 1) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
+                  fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+                }
               }
             }
           }

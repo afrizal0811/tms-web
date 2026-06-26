@@ -1,13 +1,8 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
-import { calculateHaversineDistance } from '@/lib/utils';
+import Tooltip from '@/components/Tooltip';
 import { useEffect, useRef } from 'react';
-
-const getDist = (lat1, lon1, lat2, lon2) => {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
-  return calculateHaversineDistance(`${lat1},${lon1}`, `${lat2},${lon2}`);
-};
 
 export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   const mapContainerRef = useRef(null);
@@ -34,7 +29,6 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
 
       const map = mapInstanceRef.current;
 
-      // Bersihkan marker/layer sebelumnya
       map.eachLayer((layer) => {
         if (layer instanceof L.Marker || layer instanceof L.Circle || layer instanceof L.Tooltip) {
           map.removeLayer(layer);
@@ -71,14 +65,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
 
         if (entry.startLat && entry.startLon) {
           bounds.push([entry.startLat, entry.startLon]);
-          const isOut = activeHubLocation
-            ? getDist(
-                entry.startLat,
-                entry.startLon,
-                activeHubLocation.lat,
-                activeHubLocation.lng
-              ) > 500
-            : false;
+          const isOut = entry.isStartOutRadius;
           const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
           const icon = L.divIcon({
             className: 'bg-transparent border-none',
@@ -87,23 +74,19 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             iconAnchor: [16, 16],
           });
           L.marker([entry.startLat, entry.startLon], { icon })
-            .bindTooltip(`Waktu Start: ${entry.startDisplay}`, {
-              direction: 'top',
-              offset: [0, -10],
-            })
+            .bindTooltip(
+              `${translate('summary.tabs.time_driver.modal.start_time')}: ${entry.startDisplay}`,
+              {
+                direction: 'top',
+                offset: [0, -10],
+              }
+            )
             .addTo(map);
         }
 
         if (entry.finishLat && entry.finishLon) {
           bounds.push([entry.finishLat, entry.finishLon]);
-          const isOut = activeHubLocation
-            ? getDist(
-                entry.finishLat,
-                entry.finishLon,
-                activeHubLocation.lat,
-                activeHubLocation.lng
-              ) > 500
-            : false;
+          const isOut = entry.isFinishOutRadius;
           const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
           const icon = L.divIcon({
             className: 'bg-transparent border-none',
@@ -112,10 +95,13 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             iconAnchor: [16, 16],
           });
           L.marker([entry.finishLat, entry.finishLon], { icon })
-            .bindTooltip(`Waktu Finish: ${entry.finishDisplay}`, {
-              direction: 'top',
-              offset: [0, -10],
-            })
+            .bindTooltip(
+              `${translate('summary.tabs.time_driver.modal.finish_time')}: ${entry.finishDisplay}`,
+              {
+                direction: 'top',
+                offset: [0, -10],
+              }
+            )
             .addTo(map);
         }
       });
@@ -124,7 +110,6 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
         map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 16 });
       }
 
-      // Hack minor layout untuk memperbaiki size map
       setTimeout(() => {
         if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
       }, 100);
@@ -133,9 +118,8 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
     return () => {
       isMounted = false;
     };
-  }, [isOpen, data]);
+  }, [isOpen, data, translate]);
 
-  // Hapus map instance untuk mencegah konflik rendering ketika modal ditutup
   useEffect(() => {
     if (!isOpen && mapInstanceRef.current) {
       mapInstanceRef.current.remove();
@@ -178,25 +162,50 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
-            {entries.map((entry, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
-                  {idx + 1}
-                </td>
-                <td className="px-4 py-2 text-center dark:text-slate-300">{entry.startDisplay}</td>
-                <td className="px-4 py-2 text-center dark:text-slate-300">
-                  {entry.finishDisplay}
-                  {entry.dayDiff > 0 && (
-                    <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
-                      (+{entry.dayDiff})
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
-                  {entry.durationDisplay}
-                </td>
-              </tr>
-            ))}
+            {entries.map((entry, idx) => {
+              const hasOutStart = entry.isStartOutRadius;
+              const hasOutFinish = entry.isFinishOutRadius;
+              return (
+                <tr
+                  key={idx}
+                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
+                    {idx + 1}
+                  </td>
+                  <Tooltip
+                    tooltipContent={
+                      hasOutStart ? translate('summary.tabs.time_driver.tooltip.out_start') : ''
+                    }
+                  >
+                    <td
+                      className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutStart ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
+                    >
+                      {entry.startDisplay}
+                    </td>
+                  </Tooltip>
+                  <Tooltip
+                    tooltipContent={
+                      hasOutStart ? translate('summary.tabs.time_driver.tooltip.out_finish') : ''
+                    }
+                  >
+                    <td
+                      className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutFinish ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
+                    >
+                      {entry.finishDisplay}
+                      {entry.dayDiff > 0 && (
+                        <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
+                          (+{entry.dayDiff})
+                        </span>
+                      )}
+                    </td>
+                  </Tooltip>
+                  <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
+                    {entry.durationDisplay}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot className="bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
             <tr>
