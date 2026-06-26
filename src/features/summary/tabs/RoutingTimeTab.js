@@ -5,11 +5,28 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateWIB, formatLongDate, isDateSunday, parseCustomerString } from '@/lib/utils';
 import { useMemo } from 'react';
 
+// --- Static Constants ---
 const headerClass =
   'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold w-1/3 text-center min-w-[200px]';
 const dataClass =
   'px-6 py-4 font-medium text-slate-900 dark:text-slate-200 border-r border-b border-gray-200 dark:border-slate-700 text-center';
 
+const HEADER_TITLES = [
+  {
+    tooltip: 'summary.tabs.routing_time.tooltip.date_ro',
+    name: 'summary.tabs.routing_time.date_ro',
+  },
+  {
+    name: 'common.start_time',
+    tooltip: 'summary.tabs.routing_time.tooltip.start_ro',
+  },
+  {
+    name: 'common.finish_time',
+    tooltip: 'summary.tabs.routing_time.tooltip.end_ro',
+  },
+];
+
+// --- Pure Helper Functions ---
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
 
@@ -47,7 +64,7 @@ const isValidRoutingTimeWIB = (utcString) => {
   }
 };
 
-function formatInvoice(invoiceString) {
+const formatInvoice = (invoiceString) => {
   if (!invoiceString) return '';
 
   const invoices = invoiceString
@@ -56,7 +73,14 @@ function formatInvoice(invoiceString) {
     .filter(Boolean);
 
   return invoices.length > 1 ? `${invoices[0]} (+${invoices.length - 1})` : invoices[0];
-}
+};
+
+const isPastDate = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const currentMidnight = new Date(y, m - 1, d);
+  currentMidnight.setHours(0, 0, 0, 0);
+  return currentMidnight < new Date().setHours(0, 0, 0, 0);
+};
 
 export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
@@ -82,16 +106,8 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
       dataMap[dateKey] = {
         dateKey: dateKey,
         dateDisplay: displayDate,
-        startData: {
-          time: null,
-          name: null,
-          soNumber: null,
-        },
-        endData: {
-          time: null,
-          name: null,
-          soNumber: null,
-        },
+        startData: { time: null, name: null, soNumber: null },
+        endData: { time: null, name: null, soNumber: null },
       };
       current.setDate(current.getDate() + 1);
     }
@@ -111,20 +127,22 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
         const targetKey =
           taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
+        const targetRow = dataMap[targetKey];
 
-        if (dataMap[targetKey]) {
+        if (targetRow) {
           const { name: taskName, invoiceNumber: rawSoNumber } =
             parseCustomerString(task.customerOrder) ||
             parseCustomerString(task.customerName) ||
             '-';
           const soNumber = formatInvoice(rawSoNumber);
+
           if (
-            !dataMap[targetKey].startData.time ||
-            new Date(task.createdTime) < new Date(dataMap[targetKey].startData.time)
+            !targetRow.startData.time ||
+            new Date(task.createdTime) < new Date(targetRow.startData.time)
           ) {
-            dataMap[targetKey].startData.time = task.createdTime;
-            dataMap[targetKey].startData.name = taskName;
-            dataMap[targetKey].startData.soNumber = soNumber;
+            targetRow.startData.time = task.createdTime;
+            targetRow.startData.name = taskName;
+            targetRow.startData.soNumber = soNumber;
           }
 
           if (
@@ -133,12 +151,12 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
           ) {
             if (
-              !dataMap[targetKey].endData.time ||
-              new Date(task.assignedTime) > new Date(dataMap[targetKey].endData.time)
+              !targetRow.endData.time ||
+              new Date(task.assignedTime) > new Date(targetRow.endData.time)
             ) {
-              dataMap[targetKey].endData.time = task.assignedTime;
-              dataMap[targetKey].endData.name = taskName;
-              dataMap[targetKey].endData.soNumber = soNumber;
+              targetRow.endData.time = task.assignedTime;
+              targetRow.endData.name = taskName;
+              targetRow.endData.soNumber = soNumber;
             }
           }
         }
@@ -161,28 +179,13 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
     }
   };
 
-  const headerTitle = [
-    {
-      tooltip: 'summary.tabs.routing_time.tooltip.date_ro',
-      name: 'summary.tabs.routing_time.date_ro',
-    },
-    {
-      name: 'common.start_time',
-      tooltip: 'summary.tabs.routing_time.tooltip.start_ro',
-    },
-    {
-      name: 'common.finish_time',
-      tooltip: 'summary.tabs.routing_time.tooltip.end_ro',
-    },
-  ];
-
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-b-xl shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
         <table className="min-w-full text-sm text-left border-collapse">
           <thead className="text-xs text-slate-900 dark:text-slate-200 uppercase sticky top-0 z-10 bg-purple-200 dark:bg-[#34205c]">
             <tr>
-              {headerTitle.map((header, index) => (
+              {HEADER_TITLES.map((header, index) => (
                 <th key={index} className={headerClass}>
                   <Tooltip tooltipContent={translate(`${header.tooltip}`)}>
                     <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
@@ -198,11 +201,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
               const hasStart = !!row.startData.time;
               const hasEnd = !!row.endData.time;
               const isSunday = isDateSunday(row.dateKey);
-
-              const [y, m, d] = row.dateKey.split('-').map(Number);
-              const currentMidnight = new Date(y, m - 1, d);
-              currentMidnight.setHours(0, 0, 0, 0);
-              const isPast = currentMidnight < new Date().setHours(0, 0, 0, 0);
+              const isPast = isPastDate(row.dateKey);
 
               const isDynamicHoliday = isPast && !hasStart && !hasEnd && !isSunday;
 
@@ -250,50 +249,45 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
+
                   {/* CELL START RO */}
                   <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
-                    {isStartMissing ? (
-                      <Tooltip
-                        tooltipContent={translate(
-                          'summary.tabs.routing_time.tooltip.start_ro_error'
-                        )}
+                    <Tooltip
+                      tooltipContent={
+                        isStartMissing
+                          ? translate('summary.tabs.routing_time.tooltip.start_ro_error')
+                          : hasStart
+                            ? `${row.startData.name}\n${row.startData.soNumber}`
+                            : ''
+                      }
+                    >
+                      <span
+                        className={`${isStartMissing ? 'cursor-help w-full inline-block' : hasStart ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
+                        onClick={() => (hasStart ? copySoNumber(row.startData.soNumber) : {})}
                       >
-                        <span className="cursor-help w-full inline-block">{startDisplay}</span>
-                      </Tooltip>
-                    ) : hasStart ? (
-                      <Tooltip tooltipContent={`${row.startData.name}\n${row.startData.soNumber}`}>
-                        <span
-                          className="cursor-help border-b-2 border-dotted pb-0.5"
-                          onClick={() => copySoNumber(row.startData.soNumber)}
-                        >
-                          {startDisplay}
-                        </span>
-                      </Tooltip>
-                    ) : (
-                      startDisplay
-                    )}
+                        {startDisplay}
+                      </span>
+                    </Tooltip>
                   </td>
 
                   {/* CELL END RO */}
                   <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
-                    {isEndMissing ? (
-                      <Tooltip
-                        tooltipContent={translate('summary.tabs.routing_time.tooltip.end_ro_error')}
+                    <Tooltip
+                      tooltipContent={
+                        !isEndMissing
+                          ? translate('summary.tabs.routing_time.tooltip.end_ro_error')
+                          : hasEnd
+                            ? `${row.endData.name}\n${row.endData.soNumber}`
+                            : ''
+                      }
+                    >
+                      <span
+                        className={`${isEndMissing ? 'cursor-help w-full inline-block' : hasEnd ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
+                        onClick={() => (hasEnd ? copySoNumber(row.endData.soNumber) : {})}
                       >
-                        <span className="cursor-help w-full inline-block">{endDisplay}</span>
-                      </Tooltip>
-                    ) : hasEnd ? (
-                      <Tooltip tooltipContent={`${row.endData.name}\n${row.endData.soNumber}`}>
-                        <span
-                          className="cursor-help border-b-2 border-dotted pb-0.5"
-                          onClick={() => copySoNumber(row.endData.soNumber)}
-                        >
-                          {endDisplay}
-                        </span>
-                      </Tooltip>
-                    ) : (
-                      endDisplay
-                    )}
+                        {endDisplay}
+                      </span>
+                    </Tooltip>
                   </td>
                 </tr>
               );
