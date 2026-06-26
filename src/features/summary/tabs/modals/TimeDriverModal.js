@@ -4,6 +4,12 @@ import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
 import { useEffect, useRef } from 'react';
 
+const parseDurationToMinutes = (str) => {
+  if (!str) return 0;
+  const [hours, minutes] = str.split(':').map(Number);
+  return hours * 60 + (minutes || 0);
+};
+
 export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -58,51 +64,40 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
         L.marker([activeHubLocation.lat, activeHubLocation.lng], { icon: hubIcon }).addTo(map);
       }
 
+      // Helper for repetitive marker creation
+      const addMarker = (lat, lon, labelText, isOut, tooltipContent) => {
+        bounds.push([lat, lon]);
+        const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
+        const icon = L.divIcon({
+          className: 'bg-transparent border-none',
+          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${labelText}</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+        L.marker([lat, lon], { icon })
+          .bindTooltip(tooltipContent, { direction: 'top', offset: [0, -10] })
+          .addTo(map);
+      };
+
       // Render Start / Finish markers
       data.entries.forEach((entry, idx) => {
         const sText = data.entries.length > 1 ? `S${idx + 1}` : 'S';
         const fText = data.entries.length > 1 ? `F${idx + 1}` : 'F';
 
         if (entry.startLat && entry.startLon) {
-          bounds.push([entry.startLat, entry.startLon]);
-          const isOut = entry.isStartOutRadius;
-          const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
-          const icon = L.divIcon({
-            className: 'bg-transparent border-none',
-            html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${sText}</div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-          });
-          L.marker([entry.startLat, entry.startLon], { icon })
-            .bindTooltip(
-              `${translate('summary.tabs.time_driver.modal.start_time')}: ${entry.startDisplay}`,
-              {
-                direction: 'top',
-                offset: [0, -10],
-              }
-            )
-            .addTo(map);
+          const tooltipContent = `${translate('summary.tabs.time_driver.modal.start_time')}: ${entry.startDisplay}`;
+          addMarker(entry.startLat, entry.startLon, sText, entry.isStartOutRadius, tooltipContent);
         }
 
         if (entry.finishLat && entry.finishLon) {
-          bounds.push([entry.finishLat, entry.finishLon]);
-          const isOut = entry.isFinishOutRadius;
-          const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
-          const icon = L.divIcon({
-            className: 'bg-transparent border-none',
-            html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${fText}</div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-          });
-          L.marker([entry.finishLat, entry.finishLon], { icon })
-            .bindTooltip(
-              `${translate('summary.tabs.time_driver.modal.finish_time')}: ${entry.finishDisplay}`,
-              {
-                direction: 'top',
-                offset: [0, -10],
-              }
-            )
-            .addTo(map);
+          const tooltipContent = `${translate('summary.tabs.time_driver.modal.finish_time')}: ${entry.finishDisplay}`;
+          addMarker(
+            entry.finishLat,
+            entry.finishLon,
+            fText,
+            entry.isFinishOutRadius,
+            tooltipContent
+          );
         }
       });
 
@@ -130,19 +125,15 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   if (!data) return null;
 
   const { driverName, dateStr, entries } = data;
-  const parseDurationToMinutes = (str) => {
-    if (!str) return 0;
-    const [hours, minutes] = str.split(':').map(Number);
-    return hours * 60 + (minutes || 0);
-  };
 
-  const totalMinutes = entries.reduce((acc, curr) => {
-    return acc + parseDurationToMinutes(curr.durationDisplay);
-  }, 0);
-
+  const totalMinutes = entries.reduce(
+    (acc, curr) => acc + parseDurationToMinutes(curr.durationDisplay),
+    0
+  );
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
   const totalDurationFormatted = `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
+
   const tableData = (
     <>
       <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
@@ -186,7 +177,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
                   </Tooltip>
                   <Tooltip
                     tooltipContent={
-                      hasOutStart ? translate('summary.tabs.time_driver.tooltip.out_finish') : ''
+                      hasOutFinish ? translate('summary.tabs.time_driver.tooltip.out_finish') : ''
                     }
                   >
                     <td
@@ -226,6 +217,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       </div>
     </>
   );
+
   return (
     <BaseModal
       isOpen={isOpen}

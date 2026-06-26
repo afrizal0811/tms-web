@@ -1,13 +1,36 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, getBasePlate } from '@/lib/utils';
+import { formatLongDate, getBasePlate, isEmpty } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
+const COLOR_A = 'bg-[#fae2d5] dark:bg-[#3f2113]';
+const COLOR_B = 'bg-[#dbe9f7] dark:bg-[#15233b]';
+const COLOR_C = 'bg-[#f4cccc] dark:bg-[#451a1a]';
+
+const thClass =
+  'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
+const tdClass =
+  'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
+
+const stickyHeaderType = 'md:sticky md:left-0 md:z-40';
+const stickyHeaderPlate = 'md:sticky md:left-[80px] md:z-40';
+const stickyHeaderDriver = 'md:sticky md:left-[180px] md:z-40';
+const stickyBodyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r-slate-700';
+const stickyBodyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r dark:md:border-r-slate-700';
+const stickyBodyDriver =
+  'md:sticky md:left-[180px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
+
+const isPastDate = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const currentMidnight = new Date(y, m - 1, d);
+  currentMidnight.setHours(0, 0, 0, 0);
+  return currentMidnight < new Date().setHours(0, 0, 0, 0);
+};
+
 export default function TimeDriverTab({ data, translate, localeCode, activeHubLocation }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
-
   const [modalData, setModalData] = useState(null);
 
   const handleCellClick = (metrics, driverName, dateStr) => {
@@ -23,13 +46,6 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
   };
 
   const closeModal = () => setModalData(null);
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    return currentMidnight < new Date().setHours(0, 0, 0, 0);
-  };
 
   const isDayEmpty = (dateStr) => {
     if (!dataMatrix || !dataMatrix[dateStr]) return true;
@@ -51,23 +67,6 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
       isSunday,
     };
   };
-
-  const COLOR_A = 'bg-[#fae2d5] dark:bg-[#3f2113]';
-  const COLOR_B = 'bg-[#dbe9f7] dark:bg-[#15233b]';
-  const COLOR_C = 'bg-[#f4cccc] dark:bg-[#451a1a]';
-
-  const thClass =
-    'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
-  const tdClass =
-    'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
-
-  const stickyHeaderType = 'md:sticky md:left-0 md:z-40';
-  const stickyHeaderPlate = 'md:sticky md:left-[80px] md:z-40';
-  const stickyHeaderDriver = 'md:sticky md:left-[180px] md:z-40';
-  const stickyBodyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r-slate-700';
-  const stickyBodyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r dark:md:border-r-slate-700';
-  const stickyBodyDriver =
-    'md:sticky md:left-[180px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
 
   return (
     <Fragment>
@@ -167,9 +166,8 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                   {dateKeys.map((d, i) => {
                     const metrics = dataMatrix[d.str][email];
                     const { isHoliday, isSunday } = checkHolidayStatus(d.str);
+                    const baseBorder = 'border-l-2 border-l-gray-400 dark:border-l-slate-600';
 
-                    let cellBg = isHoliday ? COLOR_C : '';
-                    const emptyBg = isHoliday ? COLOR_C : 'bg-gray-50 dark:bg-slate-800/50';
                     if (isHoliday) {
                       if (rowIndex === 0) {
                         return (
@@ -177,7 +175,7 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                             key={i}
                             colSpan={3}
                             rowSpan={driverEmails.length}
-                            className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 bg-red-200 dark:bg-[#4a1c1c] text-red-900! dark:text-red-300 text-center font-bold align-middle`}
+                            className={`${tdClass} ${baseBorder} bg-red-200 dark:bg-[#4a1c1c] text-red-900! dark:text-red-300 text-center font-bold align-middle`}
                           >
                             {isSunday
                               ? translate('common.holiday_sunday')
@@ -188,23 +186,23 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                       return null;
                     }
 
-                    const hasMultiple = metrics && metrics.entries && metrics.entries.length > 1;
-                    const hasCoords = metrics?.entries?.some((e) => e.startLat || e.finishLat);
-                    const cellCursor = hasCoords
-                      ? 'cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors'
-                      : '';
+                    const emptyBg = 'bg-gray-50 dark:bg-slate-800/50';
 
                     if (!metrics || !metrics.hasData) {
                       return (
                         <Fragment key={i}>
-                          <td
-                            className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${emptyBg}`}
-                          ></td>
+                          <td className={`${tdClass} ${baseBorder} ${emptyBg}`}></td>
                           <td className={`${tdClass} ${emptyBg}`}></td>
                           <td className={`${tdClass} ${emptyBg}`}></td>
                         </Fragment>
                       );
                     }
+
+                    const hasMultiple = metrics.entries && metrics.entries.length > 1;
+                    const hasCoords = metrics.entries?.some((e) => e.startLat || e.finishLat);
+                    const cellCursor = hasCoords
+                      ? 'cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors'
+                      : '';
 
                     if (hasMultiple) {
                       return (
@@ -212,89 +210,69 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                           key={i}
                           colSpan={3}
                           onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
-                          className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 bg-red-500 dark:bg-red-700 text-white font-bold transition-opacity ${hasCoords ? 'cursor-pointer hover:opacity-80' : ''}`}
+                          className={`${tdClass} ${baseBorder} bg-red-500 dark:bg-red-700 text-white font-bold transition-opacity ${hasCoords ? 'cursor-pointer hover:opacity-80' : ''}`}
                         >
                           {translate('common.click_for_detail')}
                         </td>
                       );
                     }
 
+                    const hasStartOut = !!metrics.entries?.some((e) => e.isStartOutRadius === true);
+                    const hasFinishOut = !!metrics.entries?.some(
+                      (e) => e.isFinishOutRadius === true
+                    );
+
+                    const startWarningBg = hasStartOut ? 'bg-red-100! dark:bg-red-900/40!' : '';
+                    const finishWarningBg = hasFinishOut ? 'bg-red-100! dark:bg-red-900/40!' : '';
+
+                    const diffDay = metrics.dayDiff;
+                    const hasDiffDay = !isEmpty(diffDay);
+
+                    const diffDayTooltip = hasDiffDay
+                      ? `${hasFinishOut ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                      : '';
+                    const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
+
                     return (
                       <Fragment key={d.str}>
-                        {(() => {
-                          const hasStartOut = !!metrics.entries?.some(
-                            (e) => e.isStartOutRadius === true
-                          );
-                          const hasFinishOut = !!metrics.entries?.some(
-                            (e) => e.isFinishOutRadius === true
-                          );
-
-                          const diffDay = metrics.dayDiff;
-                          const diffDayTooltip =
-                            diffDay > 0
-                              ? `${hasFinishOut ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
-                              : '';
-                          const outFinishTooltip = `${diffDay > 0 ? '- ' : ''}${translate(
-                            'summary.tabs.time_driver.tooltip.out_finish'
-                          )} ${diffDayTooltip}`;
-
-                          return (
-                            <>
-                              <td
-                                onClick={() =>
-                                  hasCoords && handleCellClick(metrics, driver.name, d.str)
-                                }
-                                className={`${tdClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${cellBg} ${hasStartOut ? 'bg-red-100! dark:bg-red-900/40!' : ''}  ${cellCursor}`}
-                              >
-                                {hasStartOut ? (
-                                  <Tooltip
-                                    tooltipContent={translate(
-                                      'summary.tabs.time_driver.tooltip.out_start'
-                                    )}
-                                  >
-                                    <span className="block w-full">{metrics.startDisplay}</span>
-                                  </Tooltip>
-                                ) : (
-                                  metrics.startDisplay
-                                )}
-                              </td>
-
-                              <td
-                                onClick={() =>
-                                  hasCoords && handleCellClick(metrics, driver.name, d.str)
-                                }
-                                className={`${tdClass} ${cellBg} ${hasFinishOut ? 'bg-red-100! dark:bg-red-900/40!' : ''} ${cellCursor}`}
-                              >
-                                {hasFinishOut ? (
-                                  <Tooltip tooltipContent={outFinishTooltip}>
-                                    <div className="flex items-center justify-center w-full">
-                                      {metrics.finishDisplay}
-                                      {diffDay > 0 && (
-                                        <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
-                                          (+{diffDay})
-                                        </span>
-                                      )}
-                                    </div>
-                                  </Tooltip>
-                                ) : (
-                                  <Tooltip tooltipContent={diffDayTooltip}>
-                                    <div className="flex items-center justify-center w-full">
-                                      {metrics.finishDisplay}
-                                      {diffDay > 0 && (
-                                        <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
-                                          (+{diffDay})
-                                        </span>
-                                      )}
-                                    </div>
-                                  </Tooltip>
-                                )}
-                              </td>
-                            </>
-                          );
-                        })()}
                         <td
                           onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
-                          className={`${tdClass} ${cellBg} font-medium ${cellCursor}`}
+                          className={`${tdClass} ${baseBorder} ${startWarningBg} ${cellCursor}`}
+                        >
+                          {hasStartOut ? (
+                            <Tooltip
+                              tooltipContent={translate(
+                                'summary.tabs.time_driver.tooltip.out_start'
+                              )}
+                            >
+                              <span className="block w-full">{metrics.startDisplay}</span>
+                            </Tooltip>
+                          ) : (
+                            metrics.startDisplay
+                          )}
+                        </td>
+
+                        <td
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} ${finishWarningBg} ${cellCursor}`}
+                        >
+                          <Tooltip
+                            tooltipContent={hasFinishOut ? outFinishTooltip : diffDayTooltip}
+                          >
+                            <div className="flex items-center justify-center w-full">
+                              {metrics.finishDisplay}
+                              {hasDiffDay && (
+                                <span className="text-red-600 dark:text-red-400 text-[10px] ml-1 font-bold">
+                                  (+{diffDay})
+                                </span>
+                              )}
+                            </div>
+                          </Tooltip>
+                        </td>
+
+                        <td
+                          onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
+                          className={`${tdClass} font-medium ${cellCursor}`}
                         >
                           {metrics.durationDisplay}
                         </td>
@@ -309,10 +287,7 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
       </div>
       <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *
-          {translate('common.click_for_detail_param', {
-            parameter: translate('summary.row'),
-          })}
+          *{translate('common.click_for_detail_param', { parameter: translate('summary.row') })}
         </div>
       </div>
     </Fragment>
