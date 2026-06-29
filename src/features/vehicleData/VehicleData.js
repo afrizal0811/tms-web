@@ -16,6 +16,102 @@ import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';
 
+const countSpaces = (str) => (str ? (str.match(/ /g) || []).length : 0);
+const sortByEmail = (a, b) => (a.email || '').localeCompare(b.email || '');
+
+const processVehicleData = (rawDriversData, mappingsDB) => {
+  const mappingsObj = mappingsDB.reduce((acc, curr) => {
+    acc[curr.plat] = curr.mappedType;
+    return acc;
+  }, {});
+
+  const processedData = rawDriversData.map((v) => {
+    let parsedTags = [];
+    if (v.tags) {
+      try {
+        parsedTags = JSON.parse(v.tags);
+      } catch {
+        parsedTags = [v.tags];
+      }
+    } else if (v.type) {
+      parsedTags = [v.type];
+    }
+
+    let mappedTypeStr = v.type;
+    if (v.plat && mappingsObj[v.plat]) {
+      const mappedType = mappingsObj[v.plat];
+      mappedTypeStr = v.storage ? `${v.storage}-${mappedType}` : mappedType;
+    }
+
+    const isIncomplete = !v.email || !mappedTypeStr;
+
+    return {
+      ...v,
+      parsedTags,
+      type: mappedTypeStr,
+      isIncomplete,
+    };
+  });
+
+  const emailToVehiclesMap = new Map();
+  const noEmailVehicles = [];
+
+  processedData.forEach((v) => {
+    if (!v.email) {
+      noEmailVehicles.push(v);
+    } else {
+      const emailKey = v.email.toLowerCase();
+      if (!emailToVehiclesMap.has(emailKey)) emailToVehiclesMap.set(emailKey, []);
+      emailToVehiclesMap.get(emailKey).push(v);
+    }
+  });
+
+  const templateData = processedData
+    .map((item) => {
+      const emailKey = (item.email || '').toLowerCase();
+      const vehicles = emailToVehiclesMap.get(emailKey) || [];
+      return {
+        ...item,
+        isDuplicateDriver: vehicles.length > 1,
+      };
+    })
+    .sort(sortByEmail);
+
+  const masterList = [];
+  const conditionalList = [];
+
+  noEmailVehicles.forEach((v) => {
+    masterList.push({ ...v, isDuplicateDriver: false });
+  });
+
+  for (const vehicles of emailToVehiclesMap.values()) {
+    const isDuplicate = vehicles.length > 1;
+
+    if (!isDuplicate) {
+      masterList.push({ ...vehicles[0], isDuplicateDriver: false });
+    } else {
+      const sorted = [...vehicles].sort((a, b) => countSpaces(a.plat) - countSpaces(b.plat));
+
+      masterList.push({ ...sorted[0], isDuplicateDriver: true });
+
+      for (let i = 1; i < sorted.length; i++) {
+        const currentVehicle = { ...sorted[i], isDuplicateDriver: true };
+        if (countSpaces(currentVehicle.plat) > 2) {
+          conditionalList.push(currentVehicle);
+        } else {
+          masterList.push(currentVehicle);
+        }
+      }
+    }
+  }
+
+  return {
+    templateData,
+    masterData: masterList.sort(sortByEmail),
+    conditionalData: conditionalList.sort(sortByEmail),
+  };
+};
+
 export default function VehicleData() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('master');
@@ -30,7 +126,7 @@ export default function VehicleData() {
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchData() {
+    async function loadData() {
       setIsLoading(true);
       try {
         const { storedLocation } = getLocalStorage();
@@ -47,88 +143,17 @@ export default function VehicleData() {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
         }
 
-        const sortByEmail = (a, b) => (a.email || '').localeCompare(b.email || '');
-
-        let processedData = rawDriversData.map((v) => {
-          let parsedTags = [];
-          if (v.tags) {
-            try {
-              parsedTags = JSON.parse(v.tags);
-            } catch (e) {
-              parsedTags = [v.tags];
-            }
-          } else if (v.type) {
-            parsedTags = [v.type];
-          }
-          return { ...v, parsedTags };
-        });
+        const {
+          templateData: temp,
+          masterData: master,
+          conditionalData: cond,
+        } = processVehicleData(rawDriversData, mappingsDB);
 
         if (!isMounted) return;
 
-        const mappingsObj = mappingsDB.reduce((acc, curr) => {
-          acc[curr.plat] = curr.mappedType;
-          return acc;
-        }, {});
-
-        try {
-          processedData.forEach((vehicle) => {
-            const plate = vehicle.plat;
-            if (plate && mappingsObj[plate]) {
-              const mappedType = mappingsObj[plate];
-              const storagePrefix = vehicle.storage;
-              const newFullTag = storagePrefix ? `${storagePrefix}-${mappedType}` : mappedType;
-              vehicle.type = newFullTag;
-            }
-          });
-        } catch (error) {
-          if (isMounted) toastError(t('common.toast.error', { error: error.message }));
-        }
-
-        const emailToVehiclesMap = new Map();
-        processedData.forEach((v) => {
-          if (!v.email) return;
-          if (!emailToVehiclesMap.has(v.email)) emailToVehiclesMap.set(v.email, []);
-          emailToVehiclesMap.get(v.email).push(v);
-        });
-
-        const processedTemplateData = processedData.map((item) => {
-          const email = (item.email || '').toLowerCase();
-          const vehicles = emailToVehiclesMap.get(email) || [];
-          return {
-            ...item,
-            isDuplicateDriver: vehicles.length > 1,
-          };
-        });
-        setTemplateData(processedTemplateData.sort(sortByEmail));
-
-        const masterList = [];
-        const conditionalList = [];
-        const countSpaces = (str) => (str ? (str.match(/ /g) || []).length : 0);
-
-        for (const [_, vehicles] of emailToVehiclesMap.entries()) {
-          if (vehicles.length === 1) {
-            masterList.push({ ...vehicles[0], isDuplicateDriver: false });
-          } else {
-            const sorted = [...vehicles].sort((a, b) => countSpaces(a.plat) - countSpaces(b.plat));
-
-            const tempMaster = [sorted[0]];
-            for (let i = 1; i < sorted.length; i++) {
-              if (countSpaces(sorted[i].plat) > 2) {
-                conditionalList.push(sorted[i]);
-              } else {
-                tempMaster.push(sorted[i]);
-              }
-            }
-            const isDuplicate = tempMaster.length > 1;
-            tempMaster.forEach((v) => {
-              masterList.push({ ...v, isDuplicateDriver: isDuplicate });
-            });
-          }
-        }
-
-        if (!isMounted) return;
-        setMasterData(masterList.sort(sortByEmail));
-        setConditionalData(conditionalList.sort(sortByEmail));
+        setTemplateData(temp);
+        setMasterData(master);
+        setConditionalData(cond);
       } catch (err) {
         if (isMounted) toastError(err.message);
       } finally {
@@ -136,7 +161,7 @@ export default function VehicleData() {
       }
     }
 
-    fetchData();
+    loadData();
 
     return () => {
       isMounted = false;
@@ -200,45 +225,49 @@ export default function VehicleData() {
     });
   };
 
-  const searchBar = (
-    <SearchBar
-      value={searchQuery}
-      onChange={setSearchQuery}
-      placeholder={t('vehicle.search_placeholder')}
-      disabled={isLoading}
-    />
-  );
-
-  const downloadBtn = (
-    <Button
-      onClick={handleExcelDownload}
-      isLoading={isDownloading}
-      disabled={
-        isLoading ||
-        isDownloading ||
-        (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
-      }
-      text={t('common.download')}
-      width="w-full"
-    />
-  );
-
-  const storageFilterComponent = (
-    <StorageTypeFilter
-      selectedTypes={storageFilter}
-      onApply={setStorageFilter}
-      disabled={isLoading || isDownloading}
-    />
-  );
-
   const headerItems = [
-    { label: 'Filter', component: searchBar },
-    { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
-    { label: 'Export', component: downloadBtn, hideLabel: true },
+    {
+      label: 'Filter',
+      component: (
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t('vehicle.search_placeholder')}
+          disabled={isLoading}
+        />
+      ),
+    },
+    {
+      label: t('common.storage_type'),
+      hideLabel: false,
+      component: (
+        <StorageTypeFilter
+          selectedTypes={storageFilter}
+          onApply={setStorageFilter}
+          disabled={isLoading || isDownloading}
+        />
+      ),
+    },
+    {
+      label: 'Export',
+      hideLabel: true,
+      component: (
+        <Button
+          onClick={handleExcelDownload}
+          isLoading={isDownloading}
+          disabled={
+            isLoading ||
+            isDownloading ||
+            (isEmpty(masterData) && isEmpty(conditionalData) && isEmpty(templateData))
+          }
+          text={t('common.download')}
+          width="w-full"
+        />
+      ),
+    },
   ];
 
   const totalItems = filteredData.length;
-
   const tabs = [
     { id: 'master', label: t('vehicle.tabs.master_title') },
     ...(conditionalData.length > 0
@@ -247,16 +276,18 @@ export default function VehicleData() {
     { id: 'template', label: t('vehicle.tabs.template_title') },
   ];
 
-  const subtitle = (
-    <>
-      {t('vehicle.subtitle')}{' '}
-      <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
-    </>
-  );
-
   return (
     <div className="w-full max-w-none px-4 sm:px-6">
-      <HeaderCard title={t('vehicle.title')} subtitle={subtitle} items={headerItems} />
+      <HeaderCard
+        title={t('vehicle.title')}
+        subtitle={
+          <>
+            {t('vehicle.subtitle')}{' '}
+            <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
+          </>
+        }
+        items={headerItems}
+      />
       <BodyCard
         activeTabId={activeTab}
         isEmpty={!isLoading && totalItems === 0}

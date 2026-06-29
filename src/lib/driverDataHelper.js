@@ -93,13 +93,22 @@ export async function getOrFetchDriverData(selectedLocation) {
           plat: d.plat,
           type: d.type,
           tags: d.tags,
+          minWeight: d.minWeight,
           maxWeight: d.maxWeight,
+          minVolume: d.minVolume,
           maxVolume: d.maxVolume,
           storage: d.storage,
+          oddEven: d.oddEven,
+          speed: d.speed,
+          costFactor: d.costFactor,
           workingTime: {
             startTime: d.startTime,
             endTime: d.endTime,
             multiday: d.multiday,
+          },
+          breakTime: {
+            startTime: d.startBreakTime,
+            endTime: d.endBreakTime,
           },
         }));
       } catch (err) {

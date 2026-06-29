@@ -101,7 +101,6 @@ export const dictionary = {
     },
     home: {
       already_exp: 'Token API Anda telah kadaluarsa {remaining} hari yang lalu.',
-
       contact_edp: 'Harap segera hubungi tim EDP terkait!',
       email: 'Surel',
       exp_remaining: 'Masa aktif token API Anda akan berakhir dalam',
@@ -407,9 +406,11 @@ export const dictionary = {
       subtitle_highlight: 'kendaraan',
       title: 'Data Kendaraan',
       tabs: {
+        color_exp: 'Keterangan Warna',
         conditional_title: 'Kendaraan Khusus',
         duplicate_driver: 'Kendaraan dengan sopir yang sama',
         email: 'Surel',
+        incomplete_data: 'Data tidak lengkap',
         master_title: 'Master Kendaraan',
         name: 'Nama',
         template_title: 'Templat Kendaraan',
@@ -1064,9 +1065,11 @@ export const dictionary = {
       subtitle_highlight: 'vehicles',
       title: 'Vehicle Data',
       tabs: {
+        color_exp: 'Color Legend',
         conditional_title: 'Conditional Vehicles',
         duplicate_driver: 'Vehicles with the same driver',
         email: 'Email',
+        incomplete_data: 'Incomplete data',
         master_title: 'Master Vehicles',
         name: 'Name',
         template_title: 'Template Vehicles',

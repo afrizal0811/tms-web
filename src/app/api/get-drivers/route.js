@@ -97,13 +97,13 @@ export async function POST(request) {
         const assigneeEmail = (vehicle.assignee || '').toLowerCase();
         const driverInfo = driverMapByEmail.get(assigneeEmail);
         const plat = vehicle.name || vehicle.plateNumber;
-
-        if (driverInfo && plat && plat.trim() !== '') {
+        if (plat && plat.trim() !== '') {
           const type = vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null;
           const storage = type ? type.split('-')[0] : null;
 
           const cleanPlate = plat.replace(/\s+/g, '').toUpperCase();
-          const uniqueId = `${driverInfo._id}-${cleanPlate}`;
+          const driverId = driverInfo ? driverInfo._id : '-';
+          const uniqueId = `${driverId}-${cleanPlate}`;
 
           let wMax = vehicle.capacity?.weight?.max ? parseFloat(vehicle.capacity.weight.max) : null;
           if (isNaN(wMax)) wMax = null;
@@ -131,8 +131,8 @@ export async function POST(request) {
             vehicle.tags && vehicle.tags.length > 0 ? JSON.stringify(vehicle.tags) : null;
 
           const dataPayload = {
-            name: driverInfo.name || 'Unknown',
-            email: driverInfo.email,
+            name: driverInfo ? driverInfo.name : '-',
+            email: driverInfo ? driverInfo.email : '',
             plat: plat,
             type: type,
             startTime: vehicle.workingTime?.startTime || null,
@@ -154,7 +154,6 @@ export async function POST(request) {
           uniquePayloads.set(uniqueId, dataPayload);
         }
       }
-
       for (const [uniqueId, payload] of uniquePayloads.entries()) {
         allTransactions.push(
           prisma.driver.upsert({
