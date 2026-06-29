@@ -3,7 +3,7 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteTruckUsage, upsertTruckUsage } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // --- HELPER COMPONENTS & FUNCTIONS ---
 const EmptyState = ({ translate }) => (
@@ -152,7 +152,7 @@ export default function TruckUsageModal({
 
   // --- RENDER BLOCKS ---
   const renderMasterVehicle = () => {
-    const modalTitle = `Master Vehicle - ${data.storage} (${data.type === 'Gabungan' ? 'Total' : data.type})`;
+    const modalTitle = `Master - ${data.storage} (${data.type === 'Gabungan' ? 'Total' : data.type})`;
 
     return (
       <BaseModal

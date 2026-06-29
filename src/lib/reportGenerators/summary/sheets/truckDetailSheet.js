@@ -314,6 +314,7 @@ export function calculateTruckDetailData(
         arrivalTimestamp: arrivalTimestamp,
         doneCoord: task.doneCoordinate || null,
         expectedCoord: task.expectedCoordinate || null,
+        doneTime: task.doneTime || null,
       });
     }
   });

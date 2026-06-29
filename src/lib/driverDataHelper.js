@@ -1,3 +1,4 @@
+// File: src/lib/driverDataHelper.js
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api';
 import {
   formatTimestampToDDMMYYYY_UTC7,
@@ -17,8 +18,10 @@ const resolveVehicleType = (rawTag, plate, mappingsObj) => {
   }
 
   if (!rawTag) return null;
-  const parts = rawTag.split('-');
-  let typeCandidate = parts.length > 1 ? parts[1].toUpperCase() : rawTag.toUpperCase();
+  const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
+  const parts = cleanTag.split('-');
+
+  let typeCandidate = parts.length > 1 ? parts[1].toUpperCase() : cleanTag.toUpperCase();
 
   if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
     if (['CDE', 'CDD', 'FUSO'].includes(typeCandidate)) {
@@ -57,9 +60,9 @@ export async function checkUnmappedVehicles(hubId) {
 
       const plat = v.plat || '';
       if (isEmpty(plat) || processedPlates.has(plat)) return;
-
-      const parts = rawTag.split('-');
-      let specificType = parts.length > 1 ? parts[1] : rawTag;
+      const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
+      const parts = cleanTag.split('-');
+      let specificType = parts.length > 1 ? parts[1] : cleanTag;
 
       if (parts.length > 2 && parts[2] === 'LONG') {
         if (['CDE', 'CDD', 'FUSO'].includes(specificType)) specificType = `${specificType}-LONG`;
@@ -136,15 +139,23 @@ export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_
     const name = (d.name || '').toUpperCase();
     const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
+    const storageField = (d.storage || '').toUpperCase();
 
-    if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO') || platUpper.includes('SEWA'))
+    if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO')) {
       return;
+    }
 
-    let storageCategory = null;
-    if (name.includes('DRY')) storageCategory = 'Dry';
-    else if (name.includes('FRZ')) storageCategory = 'Frozen';
-
-    if (!storageCategory) return;
+    let isFrozen = false;
+    if (
+      storageField.includes('FROZEN') ||
+      rawTag.includes('FROZEN') ||
+      rawTag.includes('FRZ') ||
+      platUpper.includes('FRZ') ||
+      name.includes('FRZ')
+    ) {
+      isFrozen = true;
+    }
+    const storageCategory = isFrozen ? 'Frozen' : 'Dry';
 
     const resolvedType = resolveVehicleType(rawTag, plat, mappingsObj);
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);

@@ -96,7 +96,14 @@ const TaskMap = dynamic(
   }
 );
 
-export default function TruckDetailModal({ isOpen, onClose, data, translate, localeCode, isIndonesian }) {
+export default function TruckDetailModal({
+  isOpen,
+  onClose,
+  data,
+  translate,
+  localeCode,
+  isIndonesian,
+}) {
   const [selectedTask, setSelectedTask] = useState(null);
 
   if (!isOpen || !data) return null;
@@ -247,7 +254,7 @@ export default function TruckDetailModal({ isOpen, onClose, data, translate, loc
                     )}
                     {task.isDateDiff && (
                       <Tooltip
-                        tooltipContent={formatDateUniversal(task.startTimeStr, 'DD/MM/YYYY')}
+                        tooltipContent={formatDateUniversal(task.doneTime, 'DD-MM-YYYY HH:mm')}
                       >
                         <span
                           className={`cursor-help text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.DATE_DIFF}`}

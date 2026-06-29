@@ -1,3 +1,4 @@
+// File: src/lib/reportGenerators/summary/sheets/truckUsageSheet.js
 import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
 import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { toastError } from '@/lib/toast';
@@ -38,18 +39,20 @@ const isStorageFrozen = (storage, firstTag) => {
   );
 };
 
-function getVehicleType(firstTag, vehiclePlate, mappingsObj, vehicleTypes) {
+function getVehicleType(rawTag, vehiclePlate, mappingsObj, vehicleTypes) {
   const cleanPlate = normalizePlate(vehiclePlate);
 
   if (cleanPlate && mappingsObj[cleanPlate]) {
     return mappingsObj[cleanPlate];
   }
 
-  if (!firstTag) return 'Lainnya';
-  const parts = firstTag.split('-');
-  if (parts.length < 2) return 'Lainnya';
+  if (!rawTag) return 'Lainnya';
 
-  let specificType = parts[1].toUpperCase();
+  const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
+  const parts = cleanTag.split('-');
+
+  let specificType = parts.length > 1 ? parts[1].toUpperCase() : cleanTag.toUpperCase();
+
   if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
     if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
       specificType = `${specificType}-LONG`;
@@ -211,8 +214,9 @@ export async function calculateTruckUsageData(
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
 
   const mappingsObj = mappingsDB.reduce((acc, curr) => {
-    acc[curr.plat] = curr.mappedType;
-    if (curr.plat) acc[normalizePlate(curr.plat)] = curr.mappedType;
+    const cleanType = (curr.mappedType || '').replace(/["'\\]/g, '').trim();
+    acc[curr.plat] = cleanType;
+    if (curr.plat) acc[normalizePlate(curr.plat)] = cleanType;
     return acc;
   }, {});
 
@@ -232,7 +236,9 @@ export async function calculateTruckUsageData(
     const email = (d.email || '').toLowerCase().trim();
     let isConditional = false;
 
-    if (email && groupedByEmail[email]) {
+    const isSewa = (d.plat || '').toUpperCase().includes('SEWA');
+
+    if (!isSewa && email && email !== '-' && groupedByEmail[email]) {
       const group = groupedByEmail[email];
       if (group.length > 1) {
         const spaceCount = (d.plat || '').trim().split(' ').length - 1;
@@ -277,8 +283,21 @@ export async function calculateTruckUsageData(
 
   activeDrivers.forEach((d) => {
     const firstTag = extractFirstStorageTag(d.tags || d.vehicleTags || d.userTags);
-    const type = getVehicleType(firstTag, d.plat, mappingsObj, vehicleTypes);
-    const isFrozen = isStorageFrozen(d.storage, firstTag);
+
+    const rawTypeSource = d.type || firstTag;
+    const type = getVehicleType(rawTypeSource, d.plat, mappingsObj, vehicleTypes);
+
+    let isFrozen = isStorageFrozen(d.storage, firstTag);
+    const platUpper = (d.plat || '').toUpperCase();
+    const nameUpper = (d.name || '').toUpperCase();
+    if (
+      platUpper.includes('FRZ') ||
+      nameUpper.includes('FRZ') ||
+      (d.type || '').toUpperCase().includes('FRZ')
+    ) {
+      isFrozen = true;
+    }
+
     const storage = isFrozen ? 'Frozen' : 'Dry';
     const vInfo = { plate: d.plat, driver: d.name, type: type };
 
@@ -362,6 +381,7 @@ export async function calculateTruckUsageData(
           storage: (d.storage || 'DRY').toUpperCase(),
           plat: d.plat,
           masterTag: mTag,
+          rawType: d.type,
         });
       }
     });
@@ -410,6 +430,7 @@ export async function calculateTruckUsageData(
               name: platMatch.name,
               storage: (platMatch.storage || 'DRY').toUpperCase(),
               masterTag: mTag,
+              rawType: platMatch.type,
             };
           }
         }
@@ -418,13 +439,23 @@ export async function calculateTruckUsageData(
         const routingTag =
           route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
         const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
-        const isFrozen = isStorageFrozen(storage, firstTag);
+
+        let isFrozen = isStorageFrozen(storage, firstTag);
+        if (
+          driverInfo &&
+          ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
+            (driverInfo.plat || '').toUpperCase().includes('FRZ') ||
+            (driverInfo.rawType || '').toUpperCase().includes('FRZ'))
+        ) {
+          isFrozen = true;
+        }
+
         const type = isFrozen ? 'Frozen' : 'Dry';
 
         if (!dailyVehicles.has(canonicalPlate)) {
           dailyVehicles.set(canonicalPlate, {
             storageType: type,
-            firstTag,
+            firstTag: driverInfo?.rawType || firstTag,
             plate: strictBasePlate,
             driverName: route.assignee || driverInfo?.name || '-',
           });
