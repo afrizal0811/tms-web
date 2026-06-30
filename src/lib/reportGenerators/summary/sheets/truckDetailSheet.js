@@ -1,5 +1,6 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
+  calculateMinuteDifference,
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
@@ -153,36 +154,47 @@ export function calculateTruckDetailData(
             }
             const entry = dataMatrix[dateKey][email];
 
-            let durationVal = route.totalSpentTime || 0;
-            if (durationVal === 0 && Array.isArray(route.trips)) {
-              const manualSum = route.trips.reduce(
-                (acc, trip) =>
-                  !trip.isHub
-                    ? acc + (trip.travelTime || 0) + (trip.visitTime || 0) + (trip.waitingTime || 0)
-                    : acc,
-                0
-              );
-              if (manualSum > 0) durationVal = manualSum;
+            let manualTravel = 0,
+              manualVisit = 0,
+              manualWait = 0;
+            if (Array.isArray(route.trips)) {
+              const hubTrips = route.trips.filter((t) => t.isHub);
+              manualWait = hubTrips.length
+                ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
+                : 0;
+
+              route.trips.forEach((trip) => {
+                if (!trip.isHub) {
+                  manualVisit += trip.visitTime || 0;
+                  manualWait += trip.waitingTime || 0;
+                }
+                manualTravel += trip.travelTime || 0;
+              });
             }
-            let weightVal = route.totalWeight || 0;
-            let volumeVal = route.totalVolume || 0;
-            let distVal = route.totalDistance || 0;
-            if ((weightVal <= 0 || volumeVal <= 0 || distVal === 0) && Array.isArray(route.trips)) {
+            const manualSum = manualTravel + manualVisit + manualWait;
+            let durationVal = manualSum || Number(route.totalSpentTime) || 0;
+            let manualW = 0,
+              manualV = 0,
+              manualD = 0;
+            if (Array.isArray(route.trips)) {
               const manualMetrics = route.trips.reduce(
                 (acc, trip) => {
                   if (!trip.isHub) {
-                    acc.w += Math.abs(trip.weight || 0);
-                    acc.v += Math.abs(trip.volume || 0);
-                    acc.d += trip.distance || 0;
+                    acc.w += Math.abs(Number(trip.weight) || 0);
+                    acc.v += Math.abs(Number(trip.volume) || 0);
                   }
+                  acc.d += trip.distance || 0;
                   return acc;
                 },
                 { w: 0, v: 0, d: 0 }
               );
-              if (weightVal <= 0) weightVal = manualMetrics.w;
-              if (volumeVal <= 0) volumeVal = manualMetrics.v;
-              if (distVal === 0) distVal = manualMetrics.d;
+              manualW = manualMetrics.w;
+              manualV = manualMetrics.v;
+              manualD = manualMetrics.d;
             }
+            let weightVal = manualW || Number(route.totalWeight) || 0;
+            let volumeVal = manualV || Number(route.totalVolume) || 0;
+            let distVal = manualD || Number(route.totalDistance) || 0;
             entry.weight += weightVal;
             entry.maxWeight += route.vehicleMaxWeight || 0;
             entry.volume += volumeVal;
@@ -276,7 +288,15 @@ export function calculateTruckDetailData(
         const diffTime = Math.abs(d2 - d1);
         dayDiffCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
-      if (isManual) entry.hasManualError = true;
+      if (isManual) {
+        entry.hasManualError = true;
+
+        const manualWeight = Math.abs(Number(task.weightKg) || 0);
+        const manualVolume = Math.abs(Number(task.volumeCbm) || 0);
+
+        entry.weight += manualWeight;
+        entry.volume += manualVolume;
+      }
       if (isDateDiff) entry.hasBedaHariError = true;
 
       const isGR = flow.toUpperCase().includes('GR');
@@ -436,6 +456,15 @@ export function calculateTruckDetailData(
 
   dateKeys.forEach((dk) => {
     dk.routingNames = Array.from(dk.routingNames || []);
+
+    driverEmails.forEach((email) => {
+      const entry = dataMatrix[dk.str]?.[email];
+      if (entry && entry.outlets > 0) {
+        const driver = driverMap.get(email);
+        const wPct = entry.maxWeight > 0 ? ((entry.weight / entry.maxWeight) * 100).toFixed(1) : 0;
+        const vPct = entry.maxVolume > 0 ? ((entry.volume / entry.maxVolume) * 100).toFixed(1) : 0;
+      }
+    });
   });
 
   return { driverMap, driverEmails, dateKeys, dataMatrix };

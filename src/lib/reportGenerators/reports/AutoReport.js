@@ -29,11 +29,13 @@ export async function generateAutoReportWorkbook({
   const wb = XLSX.utils.book_new();
 
   // 1. Ekstraksi dan Pengolahan Data Paralel
-  const { routingMap, distanceTotals, truckUsageCount } = parseRoutingData(
+  const { routingMap, truckUsageCount } = parseRoutingData(
     filteredResults || [],
     driverData,
     mappingsObj,
-    vehicleTypes
+    vehicleTypes,
+    allTasks || [],
+    selectedDateString
   );
 
   const { deliveryMap, hubTimesMap, allTaskDataForSequence, updateLonglatData, pendingSOData } =

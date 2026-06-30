@@ -21,7 +21,14 @@ import {
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
 
-export function parseRoutingData(filteredResults, driverData, mappingsObj, vehicleTypes) {
+export function parseRoutingData(
+  filteredResults,
+  driverData,
+  mappingsObj,
+  vehicleTypes,
+  allTasks,
+  selectedDateString
+) {
   const { emailMap, platMap } = buildDriverMaps(driverData);
   const normalizedMappings = buildNormalizedMappings(mappingsObj);
   const routingMap = new Map();
@@ -121,8 +128,8 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
 
         route.trips.forEach((t) => {
           if (!t.isHub) {
-            manualWeight += t.weight || 0;
-            manualVolume += t.volume || 0;
+            manualWeight += Number(t.weight) || 0;
+            manualVolume += Number(t.volume) || 0;
             manualVisitTime += t.visitTime || 0;
             manualWaitTime += t.waitingTime || 0;
           }
@@ -130,8 +137,8 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
           manualTravelTime += t.travelTime || 0;
         });
       }
-      const fWeight = manualWeight || route.totalWeight || 0;
-      const fVolume = manualVolume || route.totalVolume || 0;
+      const fWeight = manualWeight || Number(route.totalWeight) || 0;
+      const fVolume = manualVolume || Number(route.totalVolume) || 0;
       const fDist = manualDistance || route.totalDistance || 0;
       const fSpent =
         manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
@@ -148,6 +155,10 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
         shipDurationRaw: fSpent,
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
+        rawWeight: fWeight,
+        maxWeight: maxWeight,
+        rawVolume: fVolume,
+        maxVolume: maxVolume,
       };
 
       if (!routingMap.has(driverName)) {
@@ -155,8 +166,17 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
       } else {
         const ext = routingMap.get(driverName);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
-        ext.weightPercentage = Math.max(ext.weightPercentage, row.weightPercentage);
-        ext.volumePercentage = Math.max(ext.volumePercentage, row.volumePercentage);
+
+        ext.rawWeight += row.rawWeight;
+        ext.maxWeight += row.maxWeight;
+        ext.rawVolume += row.rawVolume;
+        ext.maxVolume += row.maxVolume;
+
+        ext.weightPercentage =
+          ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
+        ext.volumePercentage =
+          ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
+
         ext.totalDistance = Math.max(ext.totalDistance, row.totalDistance);
         ext.shipDurationRaw = Math.max(ext.shipDurationRaw, row.shipDurationRaw);
         ext.etaFirstStore = ext.etaFirstStore !== '-' ? ext.etaFirstStore : row.etaFirstStore;
@@ -183,6 +203,54 @@ export function parseRoutingData(filteredResults, driverData, mappingsObj, vehic
         }
       }
     });
+  });
+
+  const uniqueTasksMap = new Map();
+  if (allTasks && Array.isArray(allTasks)) {
+    allTasks.forEach((task) => {
+      const id = task._id || task.id || task.taskId;
+      if (id) {
+        uniqueTasksMap.set(id, task);
+      } else {
+        const fallbackKey = `${task.customerOrder || task.content || ''}_${task.flow || ''}_${task.doneTime || task.startTime || ''}`;
+        uniqueTasksMap.set(fallbackKey, task);
+      }
+    });
+  }
+  const cleanTasks = Array.from(uniqueTasksMap.values());
+
+  cleanTasks.forEach((task) => {
+    const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+
+    if (selectedDateString && dateKey !== selectedDateString) return;
+    const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
+
+    let rawEmail = null;
+    if (Array.isArray(task.assignee) && task.assignee.length > 0) {
+      rawEmail = task.assignee[0];
+    } else if (typeof task.assignee === 'string') {
+      rawEmail = task.assignee;
+    } else if (task.assignedTo && task.assignedTo.email) {
+      rawEmail = task.assignedTo.email;
+    } else if (task.doneBy) {
+      rawEmail = task.doneBy;
+    }
+
+    const assigneeEmail = rawEmail ? String(rawEmail).trim().toLowerCase() : '';
+    const driverInfo = emailMap.get(assigneeEmail);
+    const driverName = driverInfo ? driverInfo.name : rawEmail || 'N/A';
+    const taskW = Math.abs(Number(task.weightKg) || 0);
+    const taskV = Math.abs(Number(task.volumeCbm) || 0);
+
+    if (isManual && driverName !== 'N/A' && routingMap.has(driverName)) {
+      const ext = routingMap.get(driverName);
+      ext.rawWeight += taskW;
+      ext.rawVolume += taskV;
+      ext.weightPercentage =
+        ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
+      ext.volumePercentage =
+        ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
+    }
   });
 
   return { routingMap, distanceTotals, truckUsageCount };
