@@ -71,8 +71,8 @@ export const generateBreadWorkbook = (allRows, translate) => {
     translate('excel.bread.item'),
     translate('excel.bread.qty'),
     translate('excel.bread.uom'),
-    translate('excel.bread.volume'),
-    translate('excel.bread.weight'),
+    translate('common.volume'),
+    translate('common.weight'),
     translate('common.so_number'),
   ];
 

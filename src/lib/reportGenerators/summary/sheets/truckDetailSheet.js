@@ -1,6 +1,5 @@
 // File: src/lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
-  calculateMinuteDifference,
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
@@ -543,8 +542,8 @@ export function generateTruckDetailSheet(
   dateKeys.forEach((d) => {
     row1.push(d.display, '', '', '', '', '', '');
     row2.push(
-      translate('summary.tabs.truck_detail.weight'),
-      translate('summary.tabs.truck_detail.volume'),
+      translate('common.weight'),
+      translate('common.volume'),
       translate('summary.tabs.truck_detail.distance'),
       translate('summary.tabs.truck_detail.total_outlet'),
       translate('summary.tabs.truck_detail.total_delivery'),
@@ -568,7 +567,7 @@ export function generateTruckDetailSheet(
       if (shouldMergeHoliday) {
         if (rowIndex === 0) {
           const text = isSun ? translate('common.holiday_sunday') : translate('common.holiday');
-          row.push(text, null, null, null, null, null, null); // Masukkan teks di cell pojok kiri atas merge block
+          row.push(text, null, null, null, null, null, null);
         } else {
           row.push(null, null, null, null, null, null, null);
         }
@@ -576,10 +575,11 @@ export function generateTruckDetailSheet(
         const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : 0;
         const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : 0;
         const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : 0;
+        const distKm = Number((metrics.dist / 1000).toFixed(2));
         row.push(
           weightPct,
           volPct,
-          metrics.dist,
+          distKm,
           metrics.outlets,
           metrics.delivered,
           formatMinutesToHHMM(metrics.duration),
@@ -734,7 +734,10 @@ export function generateTruckDetailSheet(
                 cellFill = { patternType: 'solid', fgColor: { rgb: hexColor } };
                 currentFontStyle = dataStyle.font;
               }
-            } else if ([2, 3, 4].includes(relativeIdx)) {
+            } else if (relativeIdx === 2) {
+              cell.t = 'n';
+              cell.s = { ...dataStyle, numFmt: '#,##0.00' };
+            } else if ([3, 4].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '#,##0' };
             } else {

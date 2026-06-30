@@ -65,26 +65,32 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       key: 'weight',
       border: true,
       getValue: (m) => (m?.maxWeight > 0 ? percentage(m.weight, m.maxWeight) : '-'),
+      text: translate('common.weight'),
     },
     {
       key: 'volume',
       getValue: (m) => (m?.maxVolume > 0 ? percentage(m.volume, m.maxVolume) : '-'),
+      text: translate('common.volume'),
     },
     {
       key: 'distance',
-      getValue: (m) => m?.dist?.toLocaleString(),
+      getValue: (m) => (m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-'),
+      text: translate('summary.tabs.truck_detail.distance'),
     },
     {
       key: 'total_outlet',
-      getValue: (m) => m?.outlets,
+      getValue: (m) => (m?.outlets ? m?.outlets : '-'),
+      text: translate('summary.tabs.truck_detail.total_outlet'),
     },
     {
       key: 'total_delivery',
-      getValue: (m) => m?.delivered,
+      getValue: (m) => (m?.delivered ? m?.delivered : '-'),
+      text: translate('summary.tabs.truck_detail.total_delivery'),
     },
     {
       key: 'ship_duration',
-      getValue: (m) => formatMinutesToHHMM(m?.duration),
+      getValue: (m) => (m?.duration ? formatMinutesToHHMM(m?.duration, false) : '-'),
+      text: translate('summary.tabs.truck_detail.ship_duration'),
     },
     {
       key: 'delivered',
@@ -94,6 +100,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
         const hex = heatMap(percentage(m.delivered, m.outlets));
         return hex ? { backgroundColor: `#${hex}` } : {};
       },
+      text: translate('summary.tabs.truck_detail.delivered'),
     },
   ];
   const titleColor = 'bg-[#fae2d5] dark:bg-[#3f2113]';
@@ -190,7 +197,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                 const metricColor = isHoliday ? holidayColor : titleColor;
                 return (
                   <Fragment key={`${d.day}-${i}-header`}>
-                    {displayData.map(({ key, border }) => {
+                    {displayData.map(({ key, border, text }) => {
                       const isTotalDelivery = key === 'total_delivery';
                       return (
                         <Tooltip
@@ -210,7 +217,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                             <span
                               className={`${isTotalDelivery ? 'cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5' : ''}`}
                             >
-                              {translate(`summary.tabs.truck_detail.${key}`)}
+                              {text}
                             </span>
                           </th>
                         </Tooltip>

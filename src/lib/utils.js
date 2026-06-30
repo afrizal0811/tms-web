@@ -57,7 +57,7 @@ export function calculateTargetDates(selectedDateStr) {
 }
 
 // Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
-export function formatMinutesToHHMM(totalMinutes) {
+export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
     return "'-'";
   }
@@ -65,7 +65,7 @@ export function formatMinutesToHHMM(totalMinutes) {
   const minutes = Math.round(totalMinutes % 60);
   const formattedHours = String(hours).padStart(2, '0');
   const formattedMinutes = String(minutes).padStart(2, '0');
-  return `'${formattedHours}:${formattedMinutes}`;
+  return `${needQuote ? "'" : ''}${formattedHours}:${formattedMinutes}`;
 }
 
 // Mengambil jam dan menit dari timestamp ISO dan mengembalikannya sebagai string HH:mm

@@ -272,7 +272,7 @@ const DailyLoadCapacityModal = ({
                         <div>
                           <div className="flex flex-row md:flex-col lg:flex-row justify-between text-xs mb-1">
                             <span className="text-slate-600 font-medium dark:text-slate-400">
-                              {t('dashboard.charts.load_capacity.weight')}
+                              {t('common.weight')}
                             </span>
                             <span
                               className={`${weightPct > 100 ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-400'}`}
@@ -290,7 +290,7 @@ const DailyLoadCapacityModal = ({
                         <div>
                           <div className="flex flex-row md:flex-col lg:flex-row justify-between text-xs mb-1">
                             <span className="text-slate-600 font-medium dark:text-slate-400">
-                              {t('dashboard.charts.load_capacity.volume')}
+                              {t('common.volume')}
                             </span>
                             <span
                               className={`${volPct > 100 ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-400'}`}

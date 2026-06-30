@@ -66,6 +66,8 @@ export const dictionary = {
       vehicle_type: 'Tipe Kendaraan',
       visit_actual: 'Aktual Waktu Kunjung (min)',
       visit_plan: 'Perkiraan Waktu Kunjung (min)',
+      volume: 'Volume',
+      weight: 'Berat',
       warning: '⚠️ Peringatan!',
       button: {
         btn_add: 'Tambah',
@@ -188,8 +190,6 @@ export const dictionary = {
           subtitle: 'Persentase pemakaian',
           title: 'Kapasitas Muatan',
           very_low: 'Sangat Rendah',
-          volume: 'Volume',
-          weight: 'Berat',
         },
       },
       tab: {
@@ -329,8 +329,6 @@ export const dictionary = {
           total_delivery: 'Total Pengiriman',
           total_dist: 'Total Jarak (km)',
           total_visit: 'Total Kunjungan',
-          volume_pct: 'Persentase Volume',
-          weight_pct: 'Persentase Berat',
           sheet_name: 'Detail Truk',
           delivered: 'Terkirim',
         },
@@ -375,8 +373,6 @@ export const dictionary = {
         item: 'Barang',
         qty: 'Kuantitas',
         uom: 'UOM',
-        volume: 'Volume (cbm)',
-        weight: 'Berat (kg)',
       },
     },
     longlat: {
@@ -547,8 +543,6 @@ export const dictionary = {
           title: 'Detail Truk',
           total_delivery: 'Total Terkirim',
           total_outlet: 'Jumlah Toko',
-          volume: 'Volume',
-          weight: 'Berat',
           tooltip: {
             pct_info: 'Hanya untuk tugas yang sukses terkirim',
           },
@@ -729,6 +723,8 @@ export const dictionary = {
       vehicle_type: 'Vehicle Type',
       visit_actual: 'Actual Visit Time (min)',
       visit_plan: 'Planned Visit Time (min)',
+      volume: 'Volume',
+      weight: 'Weight',
       warning: '⚠️ Warning!',
       button: {
         btn_add: 'Add',
@@ -852,8 +848,6 @@ export const dictionary = {
           subtitle: 'Usage percentage of',
           title: 'Load Capacity',
           very_low: 'Very Low',
-          volume: 'Volume',
-          weight: 'Weight',
         },
       },
       tab: {
@@ -994,8 +988,6 @@ export const dictionary = {
           total_delivery: 'Total Deliveries',
           total_dist: 'Total Distance (km)',
           total_visit: 'Total Visits',
-          volume_pct: 'Volume Percentage',
-          weight_pct: 'Weight Percentage',
           sheet_name: 'Truck Details',
           delivered: 'Delivered',
         },
@@ -1039,8 +1031,6 @@ export const dictionary = {
         item: 'Item',
         qty: 'Quantity',
         uom: 'UOM',
-        volume: 'Volume (cbm)',
-        weight: 'Weight (kg)',
       },
     },
     longlat: {
@@ -1210,8 +1200,6 @@ export const dictionary = {
           title: 'Truck Detail',
           total_delivery: 'Total Delivered',
           total_outlet: 'Total Outlets',
-          volume: 'Volume',
-          weight: 'Weight',
           tooltip: {
             pct_info: 'Only for successful deliveries',
           },

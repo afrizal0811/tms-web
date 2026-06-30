@@ -157,8 +157,8 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   const headers = [
     t('common.license_number'),
     t('common.driver'),
-    t('excel.reports.truck_detail.weight_pct'),
-    t('excel.reports.truck_detail.volume_pct'),
+    t('common.weight'),
+    t('common.volume'),
     t('excel.reports.truck_detail.total_dist'),
     t('excel.reports.truck_detail.total_visit'),
     t('excel.reports.truck_detail.total_delivery'),
@@ -280,18 +280,19 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   ws['!cols'] = [
     { wch: 15 },
     { wch: 25 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 15 },
-    { wch: 16 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 12 },
-    { wch: 45 },
-    { wch: 45 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 30 },
+    { wch: 30 },
   ];
+  ws['!rows'] = [{ hpt: 40 }];
 
   for (let R = 0; R < sheetData.length; ++R) {
     const rType = R > 0 ? excelDataRows[R - 1].hType : 'none';
@@ -305,7 +306,11 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
 
       if (R === 0) {
-        ws[cellRef].s = C >= 2 && C <= 7 ? STYLES.greenHeader : STYLES.header;
+        const baseHeaderStyle = C >= 2 && C <= 7 ? STYLES.greenHeader : STYLES.header;
+        ws[cellRef].s = {
+          ...baseHeaderStyle,
+          alignment: { ...baseHeaderStyle.alignment, wrapText: true, vertical: 'center' },
+        };
       } else {
         ws[cellRef].s = C <= 1 ? STYLES.left : [11, 12].includes(C) ? STYLES.wrap : STYLES.center;
         if (rowFill && (C === 5 || C === 6)) {
