@@ -1,5 +1,5 @@
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
+import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -91,10 +91,8 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
       getStyle: (m) => {
         if (!m || m.outlets <= 0) return {};
-
-        const pct = Math.min(Math.max(m.delivered / m.outlets, 0), 1);
-        const hue = pct * 120;
-        return { backgroundColor: `hsla(${hue}, 100%, 50%, 0.45)` };
+        const hex = heatMap(percentage(m.delivered, m.outlets));
+        return hex ? { backgroundColor: `#${hex}` } : {};
       },
     },
   ];
@@ -192,16 +190,32 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                 const metricColor = isHoliday ? holidayColor : titleColor;
                 return (
                   <Fragment key={`${d.day}-${i}-header`}>
-                    {displayData.map(({ key, border }) => (
-                      <th
-                        key={key}
-                        className={`${thMetricClass} ${metricColor} ${
-                          border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
-                        }`}
-                      >
-                        {translate(`summary.tabs.truck_detail.${key}`)}
-                      </th>
-                    ))}
+                    {displayData.map(({ key, border }) => {
+                      const isTotalDelivery = key === 'total_delivery';
+                      return (
+                        <Tooltip
+                          tooltipContent={
+                            isTotalDelivery
+                              ? translate('summary.tabs.truck_detail.tooltip.pct_info')
+                              : ''
+                          }
+                          key={key}
+                        >
+                          <th
+                            key={key}
+                            className={`${thMetricClass} ${metricColor} ${
+                              border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
+                            }`}
+                          >
+                            <span
+                              className={`${isTotalDelivery ? 'cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5' : ''}`}
+                            >
+                              {translate(`summary.tabs.truck_detail.${key}`)}
+                            </span>
+                          </th>
+                        </Tooltip>
+                      );
+                    })}
                   </Fragment>
                 );
               })}

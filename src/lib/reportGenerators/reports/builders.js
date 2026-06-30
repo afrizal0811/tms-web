@@ -3,6 +3,7 @@ import {
   formatDateUniversal,
   formatMinutesToHHMM,
   getBasePlate,
+  heatMap,
   isEmpty,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -25,9 +26,9 @@ const STYLES = {
     font: { bold: true, color: { rgb: 'FF0000' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   },
-  blueFill: { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } },
-  yellowFill: { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } },
-  greenFill: { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } },
+  blueFill: { fill: { patternType: 'solid', fgColor: { rgb: '4f76c7' } } },
+  magentaFill: { fill: { patternType: 'solid', fgColor: { rgb: 'c85d86' } } },
+  indigoFill: { fill: { patternType: 'solid', fgColor: { rgb: '5c5fb2' } } },
   redFill: { fill: { patternType: 'solid', fgColor: { rgb: 'FF9999' } } },
 };
 
@@ -125,7 +126,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
         const rowData = timeDataObjects[R - 1];
 
         if (C === 1 && rowData?.isMultiple) {
-          ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.yellowFill };
+          ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.magentaFill };
         }
 
         if (
@@ -143,7 +144,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
           if (C === 0) ws[cellRef].s = STYLES.redFill;
           if (C === 1) ws[cellRef].s = STYLES.left;
         } else if (R === dataCount + 4) {
-          if (C === 0) ws[cellRef].s = STYLES.yellowFill;
+          if (C === 0) ws[cellRef].s = STYLES.magentaFill;
           if (C === 1) ws[cellRef].s = STYLES.left;
         }
       }
@@ -162,6 +163,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     t('excel.reports.truck_detail.total_visit'),
     t('excel.reports.truck_detail.total_delivery'),
     t('excel.reports.truck_detail.ship_dur'),
+    t('excel.reports.truck_detail.delivered'),
     t('excel.reports.truck_detail.eta_first'),
     t('excel.reports.truck_detail.etd_hub'),
     t('excel.reports.truck_detail.info_manual'),
@@ -188,6 +190,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       vis = null,
       del = null,
       dur = null,
+      pct = null,
       eta = null,
       etd = null,
       man = null,
@@ -221,9 +224,13 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
 
       const hasMan = dData.missingDataCustomers.length > 0;
       const hasDif = dData.mismatchCustomers.length > 0;
-      if (hasMan && hasDif) hType = 'green';
+      if (hasMan && hasDif) hType = 'indigo';
       else if (hasMan) hType = 'blue';
-      else if (hasDif) hType = 'yellow';
+      else if (hasDif) hType = 'magenta';
+    }
+    if (!isEmpty(del) || !isEmpty(vis)) {
+      pct = (del / vis) * 100;
+      pct = isNaN(pct) ? '0%' : `${pct.toFixed(2)}%`;
     }
 
     excelDataRows.push({
@@ -235,6 +242,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       vis,
       del,
       dur,
+      pct,
       eta,
       etd,
       man,
@@ -260,6 +268,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       r.vis,
       r.del,
       r.dur,
+      r.pct,
       r.eta,
       r.etd,
       r.man,
@@ -278,6 +287,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     { wch: 18 },
     { wch: 18 },
     { wch: 18 },
+    { wch: 18 },
     { wch: 12 },
     { wch: 45 },
     { wch: 45 },
@@ -287,8 +297,8 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     const rType = R > 0 ? excelDataRows[R - 1].hType : 'none';
     let rowFill = null;
     if (rType === 'blue') rowFill = STYLES.blueFill.fill;
-    if (rType === 'yellow') rowFill = STYLES.yellowFill.fill;
-    if (rType === 'green') rowFill = STYLES.greenFill.fill;
+    if (rType === 'magenta') rowFill = STYLES.magentaFill.fill;
+    if (rType === 'indigo') rowFill = STYLES.indigoFill.fill;
 
     for (let C = 0; C < headers.length; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
@@ -297,9 +307,18 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       if (R === 0) {
         ws[cellRef].s = C >= 2 && C <= 7 ? STYLES.greenHeader : STYLES.header;
       } else {
-        ws[cellRef].s = C <= 1 ? STYLES.left : [10, 11].includes(C) ? STYLES.wrap : STYLES.center;
+        ws[cellRef].s = C <= 1 ? STYLES.left : [11, 12].includes(C) ? STYLES.wrap : STYLES.center;
         if (rowFill && (C === 5 || C === 6)) {
-          ws[cellRef].s = { ...ws[cellRef].s, fill: rowFill };
+          ws[cellRef].s = { ...ws[cellRef].s, fill: rowFill, font: { color: { rgb: 'FFFFFF' } } };
+        }
+        if (C === 8) {
+          const heatColor = heatMap(excelDataRows[R - 1]?.pct);
+          if (heatColor) {
+            ws[cellRef].s = {
+              ...ws[cellRef].s,
+              fill: { patternType: 'solid', fgColor: { rgb: heatColor } },
+            };
+          }
         }
       }
     }

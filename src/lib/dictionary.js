@@ -332,6 +332,7 @@ export const dictionary = {
           volume_pct: 'Persentase Volume',
           weight_pct: 'Persentase Berat',
           sheet_name: 'Detail Truk',
+          delivered: 'Terkirim',
         },
         ro_real: {
           delivery_status: 'Status Pengiriman',
@@ -548,6 +549,9 @@ export const dictionary = {
           total_outlet: 'Jumlah Toko',
           volume: 'Volume',
           weight: 'Berat',
+          tooltip: {
+            pct_info: 'Hanya untuk tugas yang sukses terkirim',
+          },
           modal: {
             diff_day: 'Beda Hari',
             done_point: 'Titik Selesai',
@@ -993,6 +997,7 @@ export const dictionary = {
           volume_pct: 'Volume Percentage',
           weight_pct: 'Weight Percentage',
           sheet_name: 'Truck Details',
+          delivered: 'Delivered',
         },
         ro_real: {
           delivery_status: 'Delivery Status',
@@ -1207,6 +1212,9 @@ export const dictionary = {
           total_outlet: 'Total Outlets',
           volume: 'Volume',
           weight: 'Weight',
+          tooltip: {
+            pct_info: 'Only for successful deliveries',
+          },
           modal: {
             diff_day: 'Different Day',
             done_point: 'Done Point',

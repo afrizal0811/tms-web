@@ -10,6 +10,7 @@ import {
   formatTimestampToQuotedHHMM_UTC7,
   getBasePlate,
   getUTC7DateString,
+  isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
@@ -255,7 +256,7 @@ export function parseDeliveryData(
         missingDataCustomers: [],
       };
       stats.totalOutlet += 1;
-      if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
+      if (FAILED_STATUSES.includes(statusLabel) || isEmpty(statusLabel)) stats.failedCount += 1;
 
       const startDate = getUTC7DateString(task.startTime);
       const doneDate = getUTC7DateString(task.doneTime);

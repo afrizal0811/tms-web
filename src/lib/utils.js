@@ -440,3 +440,30 @@ export function getDeliveryDateFromRouting(isoString) {
     return null;
   }
 }
+
+export function heatMap(pctStr) {
+  if (!pctStr) return null;
+  const val = parseFloat(pctStr);
+  if (isNaN(val)) return null;
+  const ratio = Math.max(0, Math.min(100, val)) / 100;
+  let r, g, b;
+  if (ratio <= 0.5) {
+    const t = ratio / 0.5;
+    r = 255;
+    g = Math.round(255 * t);
+    b = 0;
+  } else {
+    const t = (ratio - 0.5) / 0.5;
+    r = Math.round(255 * (1 - t));
+    g = Math.round(176 + (255 - 176) * (1 - t));
+    b = 0;
+  }
+  return [r, g, b]
+    .map((v) =>
+      Math.round(v * 0.45 + 255 * 0.55)
+        .toString(16)
+        .padStart(2, '0')
+    )
+    .join('')
+    .toUpperCase();
+}
