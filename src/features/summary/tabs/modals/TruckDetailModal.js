@@ -180,13 +180,11 @@ export default function TruckDetailModal({
         </span>
       }
     >
-      <div className={`flex ${selectedTask ? 'flex-row h-[70vh]' : 'flex-col'}`}>
+      <div className={`flex ${selectedTask ? 'flex-row' : 'flex-col'} h-[70vh]`}>
         <div
-          className={`${
-            selectedTask
-              ? 'w-1/2 overflow-y-auto border-r border-gray-200 dark:border-slate-700'
-              : 'w-full max-h-[80vh] overflow-y-auto'
-          } divide-y divide-gray-200 dark:divide-slate-700`}
+          className={`w-full ${
+            selectedTask ? 'md:w-1/2 border-r border-gray-200 dark:border-slate-700' : ''
+          } h-full overflow-y-auto divide-y divide-gray-200 dark:divide-slate-700`}
         >
           {tasks && tasks.length > 0 ? (
             tasks.map((task, idx) => {
@@ -276,16 +274,36 @@ export default function TruckDetailModal({
 
         {selectedTask && (
           <div className="w-1/2 h-full relative bg-gray-100 dark:bg-slate-800">
+            {/* PERBAIKAN 2: Container absolut (overlay) untuk menahan elemen di atas peta */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedTask(null);
               }}
-              className="cursor-pointer absolute top-4 right-4 z-999 bg-white text-slate-800 rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
+              className="absolute top-4 right-4 z-999 pointer-events-auto cursor-pointer bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-gray-200 dark:border-slate-700"
               aria-label="Tutup Map"
             >
               &times;
             </button>
+            <div className="absolute bottom-4 left-4 z-999 pointer-events-auto bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-lg rounded-lg p-3 border border-gray-200 dark:border-slate-700 min-w-[130px]">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                  {translate('common.weight')}
+                </span>
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  {Number(selectedTask.weight || 0).toFixed(2)} Kg
+                </span>
+              </div>
+              <div className="w-full h-px bg-gray-200 dark:bg-slate-700 my-2"></div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                  {translate('common.volume')}
+                </span>
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  {Number(selectedTask.volume || 0).toFixed(2)} Cbm
+                </span>
+              </div>
+            </div>
             <TaskMap
               doneCoord={selectedTask.doneCoord}
               expectedCoord={selectedTask.expectedCoord}

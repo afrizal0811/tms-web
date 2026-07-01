@@ -74,7 +74,6 @@ export function calculateTruckDetailData(
   const driverMap = new Map();
   const driverEmails = [];
 
-  // 1. Init Master Driver
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '-';
@@ -96,7 +95,6 @@ export function calculateTruckDetailData(
   const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
   const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
-  // Buat Keys HANYA untuk bulan yang dipilih (Untuk UI Display)
   while (currentIterDate <= endDateObj) {
     const y = currentIterDate.getUTCFullYear();
     const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
@@ -111,13 +109,12 @@ export function calculateTruckDetailData(
     dateKeys.push({
       str: dateStr,
       display: `${dayNum}-${monthName} ${yearShort}`,
-      routingNames: new Set(),
+      routingNames: [],
     });
     dataMatrix[dateStr] = {};
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
-  // 4. Process Routing (Results)
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
@@ -129,7 +126,7 @@ export function calculateTruckDetailData(
 
           const dkObj = dateKeys.find((dk) => dk.str === dateKey);
           if (dkObj && dispatch.name) {
-            dkObj.routingNames.add(dispatch.name);
+            dkObj.routingNames.push(dispatch.name);
           }
 
           dispatch.result.routing.forEach((route) => {
@@ -138,17 +135,20 @@ export function calculateTruckDetailData(
 
             if (!dataMatrix[dateKey][email]) {
               dataMatrix[dateKey][email] = {
-                weight: 0,
-                maxWeight: 0,
-                volume: 0,
-                maxVolume: 0,
+                delivered: 0,
                 dist: 0,
                 duration: 0,
-                outlets: 0,
-                delivered: 0,
-                hasManualError: false,
                 hasBedaHariError: false,
+                hasManualError: false,
+                maxVolume: 0,
+                maxWeight: 0,
+                outlets: 0,
+                realVolume: 0,
+                realWeight: 0,
                 taskList: [],
+                volume: 0,
+                weight: 0,
+                seenInvoices: new Set(),
               };
             }
             const entry = dataMatrix[dateKey][email];
@@ -172,31 +172,23 @@ export function calculateTruckDetailData(
             }
             const manualSum = manualTravel + manualVisit + manualWait;
             let durationVal = manualSum || Number(route.totalSpentTime) || 0;
-            let manualW = 0,
-              manualV = 0,
-              manualD = 0;
-            if (Array.isArray(route.trips)) {
-              const manualMetrics = route.trips.reduce(
-                (acc, trip) => {
-                  if (!trip.isHub) {
-                    acc.w += Math.abs(Number(trip.weight) || 0);
-                    acc.v += Math.abs(Number(trip.volume) || 0);
-                  }
-                  acc.d += trip.distance || 0;
-                  return acc;
-                },
-                { w: 0, v: 0, d: 0 }
-              );
-              manualW = manualMetrics.w;
-              manualV = manualMetrics.v;
-              manualD = manualMetrics.d;
+            let manualD = 0;
+
+            if (Array.isArray(route.trips) && route.trips.length > 0) {
+              if (!entry.unifiedTrips) entry.unifiedTrips = [];
+              entry.unifiedTrips.push(...route.trips);
+
+              route.trips.forEach((trip) => {
+                manualD += trip.distance || 0;
+              });
+            } else {
+              entry.weight += Number(route.totalWeight) || 0;
+              entry.volume += Number(route.totalVolume) || 0;
             }
-            let weightVal = manualW || Number(route.totalWeight) || 0;
-            let volumeVal = manualV || Number(route.totalVolume) || 0;
+
             let distVal = manualD || Number(route.totalDistance) || 0;
-            entry.weight += weightVal;
+
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
-            entry.volume += volumeVal;
             entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
             entry.dist = Math.max(entry.dist, distVal);
             entry.duration = Math.max(entry.duration, durationVal);
@@ -205,6 +197,38 @@ export function calculateTruckDetailData(
       }
     });
   }
+
+  Object.keys(dataMatrix).forEach((dateKey) => {
+    Object.keys(dataMatrix[dateKey]).forEach((email) => {
+      const entry = dataMatrix[dateKey][email];
+      if (entry.unifiedTrips && entry.unifiedTrips.length > 0) {
+        let finalW = 0,
+          finalV = 0;
+        const seenInvoices = new Set();
+
+        entry.unifiedTrips.forEach((trip) => {
+          if (!trip.isHub) {
+            const customerData = parseCustomerString(trip.visitName || '');
+            const uniqueKey =
+              customerData.invoiceNumber || trip.locationId || Math.random().toString();
+
+            if (!seenInvoices.has(uniqueKey)) {
+              seenInvoices.add(uniqueKey);
+              const w = Math.abs(Number(trip.weight) || 0);
+              const v = Math.abs(Number(trip.volume) || 0);
+              finalW += w;
+              finalV += v;
+            }
+          }
+        });
+
+        entry.weight = finalW;
+        entry.realWeight = finalW;
+        entry.volume = finalV;
+        entry.realVolume = finalV;
+      }
+    });
+  });
 
   const uniqueTasksMap = new Map();
   if (allTasks && Array.isArray(allTasks)) {
@@ -241,17 +265,20 @@ export function calculateTruckDetailData(
 
       if (!dataMatrix[dateKey][email]) {
         dataMatrix[dateKey][email] = {
-          weight: 0,
-          maxWeight: 0,
-          volume: 0,
-          maxVolume: 0,
+          delivered: 0,
           dist: 0,
           duration: 0,
-          outlets: 0,
-          delivered: 0,
-          hasManualError: false,
           hasBedaHariError: false,
+          hasManualError: false,
+          maxVolume: 0,
+          maxWeight: 0,
+          outlets: 0,
+          realVolume: 0,
+          realWeight: 0,
           taskList: [],
+          volume: 0,
+          weight: 0,
+          unifiedTrips: [],
         };
       }
       const entry = dataMatrix[dateKey][email];
@@ -333,11 +360,12 @@ export function calculateTruckDetailData(
         doneCoord: task.doneCoordinate || null,
         expectedCoord: task.expectedCoordinate || null,
         doneTime: task.doneTime || null,
+        weight: Math.abs(Number(task.weightKg || task.weight)) || 0,
+        volume: Math.abs(Number(task.volumeCbm || task.volume)) || 0,
       });
     }
   });
 
-  // --- 6. LOGIKA LOOKBACK (MENEMBUS BATAS BULAN) ---
   const LOOKBACK_LIMIT = 3;
 
   dateKeys.forEach(({ str: currDateKey }) => {
@@ -363,26 +391,28 @@ export function calculateTruckDetailData(
             const prevHasTasks = (prevData.outlets || 0) > 0;
 
             if (prevHasRouting && !prevHasTasks) {
-              // Salin Metrik Kendaraan
               currData.weight = prevData.weight;
+              currData.realWeight = prevData.realWeight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
+              currData.realVolume = prevData.realVolume;
               currData.maxVolume = prevData.maxVolume;
               currData.dist = prevData.dist;
               currData.duration = prevData.duration;
 
               prevData.weight = 0;
+              prevData.realWeight = 0;
               prevData.maxWeight = 0;
               prevData.volume = 0;
+              prevData.realVolume = 0;
               prevData.maxVolume = 0;
               prevData.dist = 0;
               prevData.duration = 0;
 
-              // TRANSFER NAMA ROUTING DARI H-2/H-1 KE TANGGAL PENGIRIMAN
               const prevDkObj = dateKeys.find((dk) => dk.str === prevDateKey);
               const currDkObj = dateKeys.find((dk) => dk.str === currDateKey);
               if (prevDkObj && currDkObj && prevDkObj.routingNames) {
-                prevDkObj.routingNames.forEach((name) => currDkObj.routingNames.add(name));
+                prevDkObj.routingNames.forEach((name) => currDkObj.routingNames.push(name));
               }
 
               foundRouting = true;
@@ -402,7 +432,6 @@ export function calculateTruckDetailData(
     });
   });
 
-  // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
   Object.keys(dataMatrix).forEach((dateKey) => {
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];
@@ -459,12 +488,12 @@ function getHeatmapColor(pct) {
   const p = Math.min(Math.max(pct, 0), 1);
   let r, g, b;
   if (p < 0.5) {
-    const ratio = p / 0.5; // 0 sampai 1
+    const ratio = p / 0.5;
     r = Math.round(248 + ratio * (255 - 248));
     g = Math.round(105 + ratio * (235 - 105));
     b = Math.round(107 + ratio * (132 - 107));
   } else {
-    const ratio = (p - 0.5) / 0.5; // 0 sampai 1
+    const ratio = (p - 0.5) / 0.5;
     r = Math.round(255 + ratio * (99 - 255));
     g = Math.round(235 + ratio * (190 - 235));
     b = Math.round(132 + ratio * (123 - 132));

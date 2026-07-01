@@ -105,9 +105,7 @@ export function parseRoutingData(
       const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
       let etdHubVal = '-';
       let etaFirstStoreVal = '-';
-      let manualWeight = 0,
-        manualVolume = 0,
-        manualDistance = 0,
+      let manualDistance = 0,
         manualTravelTime = 0,
         manualVisitTime = 0,
         manualWaitTime = 0;
@@ -128,8 +126,6 @@ export function parseRoutingData(
 
         route.trips.forEach((t) => {
           if (!t.isHub) {
-            manualWeight += Number(t.weight) || 0;
-            manualVolume += Number(t.volume) || 0;
             manualVisitTime += t.visitTime || 0;
             manualWaitTime += t.waitingTime || 0;
           }
@@ -137,28 +133,24 @@ export function parseRoutingData(
           manualTravelTime += Number(t.travelTime) || 0;
         });
       }
-      const fWeight = manualWeight || Number(route.totalWeight) || 0;
-      const fVolume = manualVolume || Number(route.totalVolume) || 0;
+
       const fDist = manualDistance || route.totalDistance || 0;
       const fSpent =
         manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
-      const maxWeight = route.vehicleMaxWeight || 0;
-      const maxVolume = route.vehicleMaxVolume || 0;
-      const weightPct = maxWeight > 0 ? ((fWeight / maxWeight) * 100).toFixed(1) : 0;
-      const volumePct = maxVolume > 0 ? ((fVolume / maxVolume) * 100).toFixed(1) : 0;
 
       const row = {
         hasTrips,
-        weightPercentage: weightPct,
-        volumePercentage: volumePct,
+        weightPercentage: 0,
+        volumePercentage: 0,
         totalDistance: fDist,
         shipDurationRaw: fSpent,
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
-        rawWeight: fWeight,
-        maxWeight: maxWeight,
-        rawVolume: fVolume,
-        maxVolume: maxVolume,
+        rawWeight: hasTrips ? 0 : Number(route.totalWeight) || 0,
+        maxWeight: route.vehicleMaxWeight || 0,
+        rawVolume: hasTrips ? 0 : Number(route.totalVolume) || 0,
+        maxVolume: route.vehicleMaxVolume || 0,
+        unifiedTrips: hasTrips ? [...route.trips] : [],
       };
 
       if (!routingMap.has(driverName)) {
@@ -167,16 +159,15 @@ export function parseRoutingData(
         const ext = routingMap.get(driverName);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
 
-        // Akumulasi hanya untuk muatan aktual
-        ext.rawWeight += row.rawWeight;
-        ext.rawVolume += row.rawVolume;
+        if (hasTrips) {
+          ext.unifiedTrips.push(...route.trips);
+        } else {
+          ext.rawWeight += row.rawWeight;
+          ext.rawVolume += row.rawVolume;
+        }
+
         ext.maxWeight = Math.max(ext.maxWeight, row.maxWeight);
         ext.maxVolume = Math.max(ext.maxVolume, row.maxVolume);
-        ext.weightPercentage =
-          ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
-        ext.volumePercentage =
-          ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
-
         ext.totalDistance = Math.max(ext.totalDistance, row.totalDistance);
         ext.shipDurationRaw = Math.max(ext.shipDurationRaw, row.shipDurationRaw);
         ext.etaFirstStore = ext.etaFirstStore !== '-' ? ext.etaFirstStore : row.etaFirstStore;
@@ -205,6 +196,37 @@ export function parseRoutingData(
     });
   });
 
+  routingMap.forEach((ext) => {
+    if (ext.unifiedTrips && ext.unifiedTrips.length > 0) {
+      let finalW = 0,
+        finalV = 0;
+      const seenInvoices = new Set();
+
+      ext.unifiedTrips.forEach((trip) => {
+        if (!trip.isHub) {
+          const customerData = parseCustomerString(trip.visitName || '');
+          const uniqueKey =
+            customerData.invoiceNumber || trip.locationId || Math.random().toString();
+
+          if (!seenInvoices.has(uniqueKey)) {
+            seenInvoices.add(uniqueKey);
+            const w = Math.abs(Number(trip.weight) || 0);
+            const v = Math.abs(Number(trip.volume) || 0);
+            finalW += w;
+            finalV += v;
+          }
+        }
+      });
+
+      ext.rawWeight = finalW;
+      ext.rawVolume = finalV;
+
+      ext.weightPercentage =
+        ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
+      ext.volumePercentage =
+        ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
+    }
+  });
   const uniqueTasksMap = new Map();
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {

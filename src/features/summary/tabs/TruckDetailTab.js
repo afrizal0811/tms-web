@@ -1,5 +1,5 @@
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap } from '@/lib/utils';
+import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap, isEmpty } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -64,57 +64,73 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
     {
       key: 'weight',
       border: true,
-      getValue: (m) => (m?.maxWeight > 0 ? percentage(m.weight, m.maxWeight) : '-'),
+      getValue: (m) => {
+        if (!m || m.maxWeight <= 0) return '-';
+        const hasManualError = m.hasManualError && !isEmpty(m.realWeight);
+        const val = percentage(m.weight, m.maxWeight);
+
+        return (
+          <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
       text: translate('common.weight'),
+      hasManualTooltip: true,
     },
     {
       key: 'volume',
-      getValue: (m) => (m?.maxVolume > 0 ? percentage(m.volume, m.maxVolume) : '-'),
+      getValue: (m) => {
+        if (!m || m.maxVolume <= 0) return '-';
+        const hasManualError = m.hasManualError && !isEmpty(m.realVolume);
+        const val = percentage(m.volume, m.maxVolume);
+
+        return (
+          <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
       text: translate('common.volume'),
+      hasManualTooltip: true,
     },
     {
       key: 'distance',
       getValue: (m) => {
         const val = m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-';
-        if (m?.hasManualError) {
-          return (
-            <Tooltip
-              tooltipContent={translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
-            >
-              <span className="text-red-300 dark:text-red-200 font-bold cursor-help">{val}</span>
-            </Tooltip>
-          );
-        }
-        return val;
+        return (
+          <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
       },
       text: translate('common.distance'),
+      hasManualTooltip: true,
     },
     {
       key: 'total_outlet',
       getValue: (m) => (m?.outlets ? m?.outlets : 0),
       text: translate('summary.tabs.truck_detail.total_outlet'),
+      hasManualTooltip: false,
     },
     {
       key: 'total_delivery',
       getValue: (m) => (m?.delivered ? m?.delivered : 0),
       text: translate('summary.tabs.truck_detail.total_delivery'),
+      hasManualTooltip: false,
     },
     {
       key: 'ship_duration',
       getValue: (m) => {
         const val = m?.duration ? formatMinutesToHHMM(m.duration, false) : '-';
-        if (m?.hasManualError) {
-          return (
-            <Tooltip
-              tooltipContent={translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
-            >
-              <span className="text-red-300 dark:text-red-200 font-bold cursor-help">{val}</span>
-            </Tooltip>
-          );
-        }
-        return val;
+        return (
+          <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
       },
       text: translate('summary.tabs.truck_detail.ship_duration'),
+      hasManualTooltip: true,
     },
     {
       key: 'delivered',
@@ -125,6 +141,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
         return hex ? { backgroundColor: `#${hex}` } : {};
       },
       text: translate('summary.tabs.truck_detail.delivered'),
+      hasManualTooltip: false,
     },
   ];
   const titleColor = 'bg-[#fae2d5] dark:bg-[#3f2113]';
@@ -179,7 +196,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                 const { isHoliday, isDynamic } = checkHolidayStatus(d.str);
                 const headerColor = isHoliday ? holidayColor : dateColor;
                 const dateText = formatLongDate(d.str, localeCode);
-
                 let headerContent;
                 if (isDynamic) {
                   headerContent = (
@@ -250,13 +266,38 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
           <tbody className="bg-white dark:bg-slate-800">
             {driverEmails.map((email, rowIndex) => {
               const driver = driverMap[email];
+              let driverMaxW = 0;
+              let driverMaxV = 0;
+              dateKeys.forEach((d) => {
+                const m = dataMatrix[d.str][email];
+                if (m) {
+                  if (m.maxWeight > driverMaxW) driverMaxW = m.maxWeight;
+                  if (m.maxVolume > driverMaxV) driverMaxV = m.maxVolume;
+                }
+              });
+
+              // Siapkan konten text untuk tooltip
+              const capacityTooltip =
+                driverMaxW > 0 || driverMaxV > 0 ? (
+                  <span>
+                    <div>- Max Weight: {driverMaxW} Kg</div>{' '}
+                    <div>- Max Volume: {driverMaxV} Cbm</div>
+                  </span>
+                ) : (
+                  translate('common.no_data')
+                );
+
               return (
                 <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                   <td className={`${tdClass} ${stickyType} bg-white dark:bg-slate-800`}>
                     {driver.type}
                   </td>
                   <td className={`${tdClass} ${stickyPlate} bg-white dark:bg-slate-800`}>
-                    {getBasePlate(driver.plat)}
+                    <Tooltip tooltipContent={capacityTooltip}>
+                      <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.4">
+                        {getBasePlate(driver.plat)}
+                      </span>
+                    </Tooltip>
                   </td>
                   <td
                     className={`${tdClass} ${stickyDriver} bg-white dark:bg-slate-800 text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600`}
@@ -320,22 +361,92 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
 
                     return (
                       <Fragment key={`${d.day}-${i}-data`}>
-                        {displayData.map(({ key, border, getValue, getStyle }) => {
-                          const hasHeatmap = getStyle && metrics.outlets > 0;
-                          const heatmapStyle = hasHeatmap ? getStyle(metrics) : {};
-                          const appliedBgClass = hasHeatmap ? '' : cellBg;
+                        {displayData.map(
+                          ({ key, border, getValue, getStyle, hasManualTooltip }) => {
+                            const hasHeatmap = getStyle && metrics.outlets > 0;
+                            const heatmapStyle = hasHeatmap ? getStyle(metrics) : {};
+                            const appliedBgClass = hasHeatmap ? '' : cellBg;
+                            const isWeightKey = key === 'weight';
+                            const isVolumeKey = key === 'volume';
+                            const hasManualError =
+                              metrics.hasManualError &&
+                              (!isEmpty(metrics.weight) || !isEmpty(metrics.volume)) &&
+                              hasManualTooltip;
 
-                          return (
-                            <td
-                              key={key}
-                              onClick={onClick}
-                              className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''} `}
-                              style={heatmapStyle}
-                            >
-                              {getValue(metrics)}
-                            </td>
-                          );
-                        })}
+                            let tooltipData = null;
+                            const metricUnit = isWeightKey ? 'Kg' : isVolumeKey ? 'Cbm' : '';
+                            if (hasManualError) {
+                              const metricLabel = translate(
+                                isWeightKey ? 'common.weight' : 'common.volume'
+                              );
+                              const routingText = isIndonesian
+                                ? `${metricLabel} ${translate('common.routing')} `
+                                : `${translate('common.routing')} ${metricLabel}`;
+                              const routingPctText = `${translate('common.percentage')} ${routingText}`;
+
+                              const totalVal = isWeightKey
+                                ? metrics.weight
+                                : isVolumeKey
+                                  ? metrics.volume
+                                  : 0;
+                              const realVal = isWeightKey
+                                ? metrics.realWeight
+                                : isVolumeKey
+                                  ? metrics.realVolume
+                                  : 0;
+                              const maxVal = isWeightKey
+                                ? metrics.maxWeight
+                                : isVolumeKey
+                                  ? metrics.maxVolume
+                                  : 0;
+
+                              const realPct = percentage(realVal, maxVal) || 0;
+                              tooltipData = (
+                                <span>
+                                  <div>
+                                    {translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
+                                  </div>
+                                  {(isWeightKey || isVolumeKey) && (
+                                    <div className="mt-1">
+                                      <div>
+                                        - Total: {totalVal.toFixed(2)} {metricUnit}
+                                      </div>
+                                      <div>
+                                        - Total {routingText}: {realVal.toFixed(2)} {metricUnit}
+                                      </div>
+                                      <div>
+                                        - {routingPctText}: {realPct}
+                                      </div>
+                                    </div>
+                                  )}
+                                </span>
+                              );
+                            } else {
+                              tooltipData = (
+                                <span>
+                                  {isWeightKey
+                                    ? metrics.weight.toFixed(2)
+                                    : isVolumeKey
+                                      ? metrics.volume.toFixed(2)
+                                      : 0}{' '}
+                                  {metricUnit}
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <Tooltip key={key} tooltipContent={tooltipData}>
+                                <td
+                                  onClick={onClick}
+                                  className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''} `}
+                                  style={heatmapStyle}
+                                >
+                                  {getValue(metrics)}
+                                </td>
+                              </Tooltip>
+                            );
+                          }
+                        )}
                       </Fragment>
                     );
                   })}
