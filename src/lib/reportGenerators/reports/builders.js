@@ -159,7 +159,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     t('common.driver'),
     t('common.weight'),
     t('common.volume'),
-    t('excel.reports.truck_detail.total_dist'),
+    t('common.distance'),
     t('excel.reports.truck_detail.total_visit'),
     t('excel.reports.truck_detail.total_delivery'),
     t('excel.reports.truck_detail.ship_dur'),
@@ -313,9 +313,14 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
         };
       } else {
         ws[cellRef].s = C <= 1 ? STYLES.left : [11, 12].includes(C) ? STYLES.wrap : STYLES.center;
-        if (rowFill && (C === 5 || C === 6)) {
+        if (rowFill && C >= 2 && C <= 7) {
           ws[cellRef].s = { ...ws[cellRef].s, fill: rowFill, font: { color: { rgb: 'FFFFFF' } } };
         }
+        const isManualAssign = rType === 'blue' || rType === 'indigo';
+        if (isManualAssign && (C === 4 || C === 7)) {
+          ws[cellRef].s = { ...ws[cellRef].s, font: { bold: true, color: { rgb: 'FFB3B3' } } };
+        }
+
         if (C === 8) {
           const heatColor = heatMap(excelDataRows[R - 1]?.pct);
           if (heatColor) {
@@ -328,6 +333,40 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       }
     }
   }
+  const dataCount = sheetData.length;
+  XLSX.utils.sheet_add_aoa(
+    ws,
+    [
+      [],
+      [t('summary.tabs.truck_detail.color_exp')],
+      ['', t('summary.tabs.truck_detail.blue')],
+      ['', t('summary.tabs.truck_detail.magenta')],
+      ['', t('summary.tabs.truck_detail.indigo')],
+    ],
+    { origin: -1 }
+  );
+
+  ws[XLSX.utils.encode_cell({ r: dataCount + 1, c: 0 })] = {
+    t: 's',
+    v: t('summary.tabs.truck_detail.color_exp'),
+    s: { font: { bold: true, underline: true } },
+  };
+  ws[XLSX.utils.encode_cell({ r: dataCount + 2, c: 0 })] = {
+    t: 's',
+    v: '',
+    s: { fill: STYLES.blueFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+  };
+  ws[XLSX.utils.encode_cell({ r: dataCount + 3, c: 0 })] = {
+    t: 's',
+    v: '',
+    s: { fill: STYLES.magentaFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+  };
+  ws[XLSX.utils.encode_cell({ r: dataCount + 4, c: 0 })] = {
+    t: 's',
+    v: '',
+    s: { fill: STYLES.indigoFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+  };
+
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_detail.sheet_name'));
 }
 
@@ -683,11 +722,11 @@ export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataOb
     [
       t('excel.reports.dist_summary.category'),
       t('excel.reports.dist_summary.time_travel'),
-      t('excel.reports.dist_summary.total_dist'),
+      t('common.distance'),
       '',
       t('excel.reports.dist_summary.category'),
       t('excel.reports.dist_summary.time_travel'),
-      t('excel.reports.dist_summary.total_dist'),
+      t('common.distance'),
     ],
     [
       'Dry',
@@ -876,7 +915,7 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
     t('common.customer_id'),
     t('common.location_id'),
     t('excel.reports.update_coord.new_longlat'),
-    t('excel.reports.update_coord.dist_diff'),
+    t('common.dist_diff'),
   ];
   updateLonglatData.sort((a, b) => (a.bedaJarak || Infinity) - (b.bedaJarak || Infinity));
   const sheetData = [

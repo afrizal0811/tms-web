@@ -133,8 +133,8 @@ export function parseRoutingData(
             manualVisitTime += t.visitTime || 0;
             manualWaitTime += t.waitingTime || 0;
           }
-          manualDistance += t.distance || 0;
-          manualTravelTime += t.travelTime || 0;
+          manualDistance += Number(t.distance) || 0;
+          manualTravelTime += Number(t.travelTime) || 0;
         });
       }
       const fWeight = manualWeight || Number(route.totalWeight) || 0;
@@ -167,11 +167,11 @@ export function parseRoutingData(
         const ext = routingMap.get(driverName);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
 
+        // Akumulasi hanya untuk muatan aktual
         ext.rawWeight += row.rawWeight;
-        ext.maxWeight += row.maxWeight;
         ext.rawVolume += row.rawVolume;
-        ext.maxVolume += row.maxVolume;
-
+        ext.maxWeight = Math.max(ext.maxWeight, row.maxWeight);
+        ext.maxVolume = Math.max(ext.maxVolume, row.maxVolume);
         ext.weightPercentage =
           ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
         ext.volumePercentage =

@@ -23,6 +23,8 @@ export const dictionary = {
       date: 'Tanggal',
       delivery: 'Pengiriman',
       delivery_date: 'Tanggal Pengiriman',
+      distance: 'Jarak (km)',
+      dist_diff: 'Selisih Jarak (m)',
       download: 'Unduh',
       downloading: 'Mengunduh...',
       driver: 'Sopir',
@@ -327,7 +329,6 @@ export const dictionary = {
           info_manual: 'Info Penugasan Manual',
           ship_dur: 'Durasi Pengiriman',
           total_delivery: 'Total Pengiriman',
-          total_dist: 'Total Jarak (km)',
           total_visit: 'Total Kunjungan',
           sheet_name: 'Detail Truk',
           delivered: 'Terkirim',
@@ -351,14 +352,12 @@ export const dictionary = {
           sheet_name: 'Ringkasan Perjalanan',
           sheet_name: 'Ringkasan Total Jarak',
           time_travel: 'Waktu Perjalanan',
-          total_dist: 'Jarak Perjalanan  (KM)',
         },
         pending_so: {
           reason: 'Alasan',
           sheet_name: 'Hasil Pending SO',
         },
         update_coord: {
-          dist_diff: 'Selisih Jarak (m)',
           new_longlat: 'Longlat Baru',
           sheet_name: 'Perbarui Longlat',
         },
@@ -381,12 +380,10 @@ export const dictionary = {
       table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
       table: {
-        diff_dist: 'Selisih Jarak (m)',
         new_longlat: 'Titik Lokasi Baru',
         update_time: 'Waktu Pembaruan',
       },
       modal: {
-        diff_dist: 'Selisih Jarak (m)',
         new_loc: 'Lokasi Baru',
         new_longlat: 'Titik Lokasi Baru',
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
@@ -516,7 +513,6 @@ export const dictionary = {
           title: 'Waktu Sopir',
           out_radius: 'Sopir mulai/akhiri perjalanan di luar radius',
           modal: {
-            distance: 'Jarak (KM)',
             duration: 'Durasi',
             finish_time: 'Waktu Selesai',
             footer_note:
@@ -534,7 +530,6 @@ export const dictionary = {
           blue: 'Ada task yang ditugaskan tanpa ruting (penugasan manual)',
           color_exp: 'Keterangan Warna',
           delivered: 'Terkirim',
-          distance: 'Jarak (m)',
           indigo: 'Ada penugasan manual dan beda tanggal Start-Done',
           magenta: 'Ada task yang tanggal Start dan Done berbeda',
           more_exp: 'Untuk lebih lengkap, buka Truck Detail di website',
@@ -545,6 +540,7 @@ export const dictionary = {
           total_outlet: 'Jumlah Toko',
           tooltip: {
             pct_info: 'Hanya untuk tugas yang sukses terkirim',
+            inaccurate_data: 'Ada penugasan manual, data tidak akurat',
           },
           modal: {
             diff_day: 'Beda Hari',
@@ -590,7 +586,6 @@ export const dictionary = {
           total_km_routing: 'Total Jarak Ruting',
           total_vehicle: 'Jumlah Kendaraan',
           modal: {
-            distance: 'Jarak (KM)',
             title: 'Rincian Jarak Ruting',
             total_visit: 'Total Kunjungan',
           },
@@ -680,6 +675,8 @@ export const dictionary = {
       date: 'Date',
       delivery: 'Delivery',
       delivery_date: 'Delivery Date',
+      distance: 'Distance (km)',
+      dist_diff: 'Distance Difference (m)',
       download: 'Download',
       downloading: 'Downloading...',
       driver: 'Driver',
@@ -986,7 +983,6 @@ export const dictionary = {
           info_manual: 'Manual Assignment Info',
           ship_dur: 'Delivery Duration',
           total_delivery: 'Total Deliveries',
-          total_dist: 'Total Distance (km)',
           total_visit: 'Total Visits',
           sheet_name: 'Truck Details',
           delivered: 'Delivered',
@@ -1009,14 +1005,12 @@ export const dictionary = {
           estimation: 'Estimated',
           sheet_name: 'Total Distance Summary',
           time_travel: 'Travel Time',
-          total_dist: 'Travel Distance (KM)',
         },
         pending_so: {
           reason: 'Reason',
           sheet_name: 'Pending SO Results',
         },
         update_coord: {
-          dist_diff: 'Distance Difference (m)',
           new_longlat: 'New Coordinates',
           sheet_name: 'Update Coordinates',
         },
@@ -1039,12 +1033,10 @@ export const dictionary = {
       table_detail: '*Click to view map location',
       title: 'Update Coordinates',
       table: {
-        diff_dist: 'Distance Difference (m)',
         new_longlat: 'New Location Point',
         update_time: 'Update Time',
       },
       modal: {
-        diff_dist: 'Distance Difference (m)',
         new_loc: 'New Location',
         new_longlat: 'New Location Point',
         old_loc: 'Old Location',
@@ -1173,7 +1165,6 @@ export const dictionary = {
           title: 'Time Driver',
           out_radius: 'Driver started/end trip outside radius',
           modal: {
-            distance: 'Distance (KM)',
             duration: 'Duration',
             finish_time: 'Finish Time',
             footer_note:
@@ -1191,7 +1182,6 @@ export const dictionary = {
           blue: 'Has manually assigned tasks (without routing)',
           color_exp: 'Color Legend',
           delivered: 'Delivered',
-          distance: 'Distance (m)',
           indigo: 'Has manual assign and different Start–Done dates',
           magenta: 'Start and Done dates are different',
           more_exp: 'For full details, open Truck Detail on the website',
@@ -1201,7 +1191,8 @@ export const dictionary = {
           total_delivery: 'Total Delivered',
           total_outlet: 'Total Outlets',
           tooltip: {
-            pct_info: 'Only for successful deliveries',
+            pct_info: 'Only for success deliveries',
+            inaccurate_data: 'Has manual assign, data is inaccurate',
           },
           modal: {
             diff_day: 'Different Day',
@@ -1247,7 +1238,6 @@ export const dictionary = {
           total_km_routing: 'Total Routing Distance',
           total_vehicle: 'Total Vehicles',
           modal: {
-            distance: 'Distance (KM)',
             title: 'Routing Distance Details',
             total_visit: 'Total Visits',
           },

@@ -74,27 +74,51 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
     },
     {
       key: 'distance',
-      getValue: (m) => (m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-'),
-      text: translate('summary.tabs.truck_detail.distance'),
+      getValue: (m) => {
+        const val = m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-';
+        if (m?.hasManualError) {
+          return (
+            <Tooltip
+              tooltipContent={translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
+            >
+              <span className="text-red-300 dark:text-red-200 font-bold cursor-help">{val}</span>
+            </Tooltip>
+          );
+        }
+        return val;
+      },
+      text: translate('common.distance'),
     },
     {
       key: 'total_outlet',
-      getValue: (m) => (m?.outlets ? m?.outlets : '-'),
+      getValue: (m) => (m?.outlets ? m?.outlets : 0),
       text: translate('summary.tabs.truck_detail.total_outlet'),
     },
     {
       key: 'total_delivery',
-      getValue: (m) => (m?.delivered ? m?.delivered : '-'),
+      getValue: (m) => (m?.delivered ? m?.delivered : 0),
       text: translate('summary.tabs.truck_detail.total_delivery'),
     },
     {
       key: 'ship_duration',
-      getValue: (m) => (m?.duration ? formatMinutesToHHMM(m?.duration, false) : '-'),
+      getValue: (m) => {
+        const val = m?.duration ? formatMinutesToHHMM(m.duration, false) : '-';
+        if (m?.hasManualError) {
+          return (
+            <Tooltip
+              tooltipContent={translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
+            >
+              <span className="text-red-300 dark:text-red-200 font-bold cursor-help">{val}</span>
+            </Tooltip>
+          );
+        }
+        return val;
+      },
       text: translate('summary.tabs.truck_detail.ship_duration'),
     },
     {
       key: 'delivered',
-      getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
+      getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : 0),
       getStyle: (m) => {
         if (!m || m.outlets <= 0) return {};
         const hex = heatMap(percentage(m.delivered, m.outlets));
@@ -199,26 +223,21 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                   <Fragment key={`${d.day}-${i}-header`}>
                     {displayData.map(({ key, border, text }) => {
                       const isTotalDelivery = key === 'total_delivery';
+                      const totalDeliveryTooltip = isTotalDelivery
+                        ? translate('summary.tabs.truck_detail.tooltip.pct_info')
+                        : '';
+                      const totalDeliveryClass = isTotalDelivery
+                        ? 'cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5'
+                        : '';
                       return (
-                        <Tooltip
-                          tooltipContent={
-                            isTotalDelivery
-                              ? translate('summary.tabs.truck_detail.tooltip.pct_info')
-                              : ''
-                          }
-                          key={key}
-                        >
+                        <Tooltip tooltipContent={totalDeliveryTooltip} key={key}>
                           <th
                             key={key}
                             className={`${thMetricClass} ${metricColor} ${
                               border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
                             }`}
                           >
-                            <span
-                              className={`${isTotalDelivery ? 'cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5' : ''}`}
-                            >
-                              {text}
-                            </span>
+                            <span className={totalDeliveryClass}>{text}</span>
                           </th>
                         </Tooltip>
                       );
@@ -281,7 +300,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                           </td>
                         );
                       }
-                      return null; // Skip sel untuk driver selanjutnya di kolom libur ini
+                      return null;
                     }
 
                     if (!metrics || outletData === 0) {
@@ -310,7 +329,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                             <td
                               key={key}
                               onClick={onClick}
-                              className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''}`}
+                              className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''} `}
                               style={heatmapStyle}
                             >
                               {getValue(metrics)}

@@ -37,7 +37,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
                   <th className="px-4 py-3 w-[10%]">{t('common.customer_id')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('common.location_id')}</th>
                   <th className="px-4 py-3 w-[20%]">{t('longlat.table.new_longlat')}</th>
-                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.diff_dist')}</th>
+                  <th className="px-4 py-3 w-[10%]">{t('common.dist_diff')}</th>
                   <th className="px-4 py-3 w-[15%]">{t('common.driver')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('longlat.table.update_time')}</th>
                 </tr>

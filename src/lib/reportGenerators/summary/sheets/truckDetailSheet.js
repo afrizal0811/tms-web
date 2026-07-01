@@ -11,8 +11,8 @@ import {
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// Status yang dianggap GAGAL / BELUM SELESAI
-const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+// Status yang dianggap GAGAL
+const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'TERIMA SEBAGIAN']);
 
 const ERROR_STYLES = {
   manual: {
@@ -195,11 +195,11 @@ export function calculateTruckDetailData(
             let volumeVal = manualV || Number(route.totalVolume) || 0;
             let distVal = manualD || Number(route.totalDistance) || 0;
             entry.weight += weightVal;
-            entry.maxWeight += route.vehicleMaxWeight || 0;
+            entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
             entry.volume += volumeVal;
-            entry.maxVolume += route.vehicleMaxVolume || 0;
-            entry.dist += distVal;
-            entry.duration += durationVal;
+            entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
+            entry.dist = Math.max(entry.dist, distVal);
+            entry.duration = Math.max(entry.duration, durationVal);
           });
         }
       }
@@ -270,8 +270,7 @@ export function calculateTruckDetailData(
         statusDelivery = task.status && task.status.toUpperCase();
       }
       statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
-      if (!FAILED_STATUSES.includes(statusDelivery) && task.status !== 'ONGOING')
-        entry.delivered += 1;
+      if (!FAILED_STATUSES.has(statusDelivery) && task.status !== 'ONGOING') entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
 
@@ -453,19 +452,6 @@ export function calculateTruckDetailData(
     return nameA.localeCompare(nameB);
   });
 
-  dateKeys.forEach((dk) => {
-    dk.routingNames = Array.from(dk.routingNames || []);
-
-    driverEmails.forEach((email) => {
-      const entry = dataMatrix[dk.str]?.[email];
-      if (entry && entry.outlets > 0) {
-        const driver = driverMap.get(email);
-        const wPct = entry.maxWeight > 0 ? ((entry.weight / entry.maxWeight) * 100).toFixed(1) : 0;
-        const vPct = entry.maxVolume > 0 ? ((entry.volume / entry.maxVolume) * 100).toFixed(1) : 0;
-      }
-    });
-  });
-
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
@@ -507,12 +493,10 @@ export function generateTruckDetailSheet(
   );
 
   const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return currentMidnight < today;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d) < today;
   };
 
   const isDayEmpty = (dateStr) => {
@@ -544,7 +528,7 @@ export function generateTruckDetailSheet(
     row2.push(
       translate('common.weight'),
       translate('common.volume'),
-      translate('summary.tabs.truck_detail.distance'),
+      translate('common.distance'),
       translate('summary.tabs.truck_detail.total_outlet'),
       translate('summary.tabs.truck_detail.total_delivery'),
       translate('summary.tabs.truck_detail.ship_duration'),
@@ -572,19 +556,12 @@ export function generateTruckDetailSheet(
           row.push(null, null, null, null, null, null, null);
         }
       } else if (metrics && metrics.outlets > 0) {
-        const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : 0;
-        const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : 0;
-        const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : 0;
-        const distKm = Number((metrics.dist / 1000).toFixed(2));
-        row.push(
-          weightPct,
-          volPct,
-          distKm,
-          metrics.outlets,
-          metrics.delivered,
-          formatMinutesToHHMM(metrics.duration),
-          delPct
-        );
+        const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : '-';
+        const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : '-';
+        const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : '-';
+        const distKm = metrics.dist > 0 ? Number((metrics.dist / 1000).toFixed(2)) : '-';
+        const duration = metrics.duration > 0 ? formatMinutesToHHMM(metrics.duration) : '-';
+        row.push(weightPct, volPct, distKm, metrics.outlets, metrics.delivered, duration, delPct);
       } else {
         row.push(null, null, null, null, null, null, null);
       }
@@ -718,17 +695,23 @@ export function generateTruckDetailSheet(
                   cellFill = errStyle.fill;
                   currentFontStyle = errStyle.font;
                 }
+                if (metrics.hasManualError && (relativeIdx === 2 || relativeIdx === 5)) {
+                  currentFontStyle = { ...currentFontStyle, bold: true, color: { rgb: 'FFB3B3' } };
+                }
               }
             }
 
             if (shouldMergeHoliday && R === 2 && relativeIdx === 0) {
-              cell.t = 's'; // Tipe string
+              cell.t = 's';
               cell.s = { ...dataStyle, alignment: { horizontal: 'center', vertical: 'center' } };
               currentFontStyle = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
-            } else if ([0, 1, 6].includes(relativeIdx)) {
+            } else if ([0, 1].includes(relativeIdx)) {
+              cell.t = 'n';
+              cell.s = { ...dataStyle, numFmt: '0.0%;;"-"' };
+            } else if (relativeIdx === 6) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '0.0%' };
-              if (relativeIdx === 6 && metrics && metrics.outlets > 0) {
+              if (metrics && metrics.outlets > 0) {
                 const pct = Math.min(Math.max(metrics.delivered / metrics.outlets, 0), 1);
                 const hexColor = getHeatmapColor(pct);
                 cellFill = { patternType: 'solid', fgColor: { rgb: hexColor } };
@@ -736,7 +719,7 @@ export function generateTruckDetailSheet(
               }
             } else if (relativeIdx === 2) {
               cell.t = 'n';
-              cell.s = { ...dataStyle, numFmt: '#,##0.00' };
+              cell.s = { ...dataStyle, numFmt: '#,##0.00;(#,##0.00);"-"' };
             } else if ([3, 4].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '#,##0' };
