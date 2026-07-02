@@ -35,6 +35,15 @@ export function parseRoutingData(
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
 
+  const splitInvoices = new Set();
+  (allTasks || []).forEach((task) => {
+    if (task.isSplitTask) {
+      const { invoiceNumber } = parseCustomerString(
+        task.customerOrder || task.content || task.customerName || ''
+      );
+      if (invoiceNumber) splitInvoices.add(invoiceNumber);
+    }
+  });
   vehicleTypes.forEach((v) => {
     const typeName = typeof v === 'string' ? v : v.name;
     truckUsageCount[String(typeName).toUpperCase()] = { Dry: 0, Frozen: 0 };
@@ -146,11 +155,10 @@ export function parseRoutingData(
         shipDurationRaw: fSpent,
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
-        rawWeight: hasTrips ? 0 : Number(route.totalWeight) || 0,
+        rawWeight: 0,
         maxWeight: route.vehicleMaxWeight || 0,
-        rawVolume: hasTrips ? 0 : Number(route.totalVolume) || 0,
+        rawVolume: 0,
         maxVolume: route.vehicleMaxVolume || 0,
-        unifiedTrips: hasTrips ? [...route.trips] : [],
       };
 
       if (!routingMap.has(driverName)) {
@@ -158,13 +166,8 @@ export function parseRoutingData(
       } else {
         const ext = routingMap.get(driverName);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
-
-        if (hasTrips) {
-          ext.unifiedTrips.push(...route.trips);
-        } else {
-          ext.rawWeight += row.rawWeight;
-          ext.rawVolume += row.rawVolume;
-        }
+        ext.rawWeight = 0;
+        ext.rawVolume = 0;
 
         ext.maxWeight = Math.max(ext.maxWeight, row.maxWeight);
         ext.maxVolume = Math.max(ext.maxVolume, row.maxVolume);
@@ -196,37 +199,6 @@ export function parseRoutingData(
     });
   });
 
-  routingMap.forEach((ext) => {
-    if (ext.unifiedTrips && ext.unifiedTrips.length > 0) {
-      let finalW = 0,
-        finalV = 0;
-      const seenInvoices = new Set();
-
-      ext.unifiedTrips.forEach((trip) => {
-        if (!trip.isHub) {
-          const customerData = parseCustomerString(trip.visitName || '');
-          const uniqueKey =
-            customerData.invoiceNumber || trip.locationId || Math.random().toString();
-
-          if (!seenInvoices.has(uniqueKey)) {
-            seenInvoices.add(uniqueKey);
-            const w = Math.abs(Number(trip.weight) || 0);
-            const v = Math.abs(Number(trip.volume) || 0);
-            finalW += w;
-            finalV += v;
-          }
-        }
-      });
-
-      ext.rawWeight = finalW;
-      ext.rawVolume = finalV;
-
-      ext.weightPercentage =
-        ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
-      ext.volumePercentage =
-        ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
-    }
-  });
   const uniqueTasksMap = new Map();
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
@@ -264,16 +236,22 @@ export function parseRoutingData(
     const taskW = Math.abs(Number(task.weightKg) || 0);
     const taskV = Math.abs(Number(task.volumeCbm) || 0);
 
-    if (isManual && driverName !== 'N/A' && routingMap.has(driverName)) {
+    if (driverName !== 'N/A' && routingMap.has(driverName)) {
       const ext = routingMap.get(driverName);
       ext.rawWeight += taskW;
       ext.rawVolume += taskV;
+
       ext.weightPercentage =
         ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
       ext.volumePercentage =
         ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
     }
   });
+  for (const [dName, ext] of routingMap.entries()) {
+    if (ext.rawWeight === 0 && ext.rawVolume === 0) {
+      routingMap.delete(dName);
+    }
+  }
 
   return { routingMap, distanceTotals, truckUsageCount };
 }

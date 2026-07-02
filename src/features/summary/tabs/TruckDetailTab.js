@@ -421,7 +421,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                                   )}
                                 </span>
                               );
-                            } else {
+                            } else if (isWeightKey || isVolumeKey) {
                               tooltipData = (
                                 <span>
                                   {isWeightKey

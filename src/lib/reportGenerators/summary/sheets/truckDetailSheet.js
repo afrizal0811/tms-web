@@ -74,6 +74,16 @@ export function calculateTruckDetailData(
   const driverMap = new Map();
   const driverEmails = [];
 
+  const splitInvoices = new Set();
+  (allTasks || []).forEach((task) => {
+    if (task.isSplitTask) {
+      const { invoiceNumber } = parseCustomerString(
+        task.customerOrder || task.content || task.customerName || ''
+      );
+      if (invoiceNumber) splitInvoices.add(invoiceNumber);
+    }
+  });
+
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '-';
@@ -174,18 +184,6 @@ export function calculateTruckDetailData(
             let durationVal = manualSum || Number(route.totalSpentTime) || 0;
             let manualD = 0;
 
-            if (Array.isArray(route.trips) && route.trips.length > 0) {
-              if (!entry.unifiedTrips) entry.unifiedTrips = [];
-              entry.unifiedTrips.push(...route.trips);
-
-              route.trips.forEach((trip) => {
-                manualD += trip.distance || 0;
-              });
-            } else {
-              entry.weight += Number(route.totalWeight) || 0;
-              entry.volume += Number(route.totalVolume) || 0;
-            }
-
             let distVal = manualD || Number(route.totalDistance) || 0;
 
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
@@ -197,38 +195,6 @@ export function calculateTruckDetailData(
       }
     });
   }
-
-  Object.keys(dataMatrix).forEach((dateKey) => {
-    Object.keys(dataMatrix[dateKey]).forEach((email) => {
-      const entry = dataMatrix[dateKey][email];
-      if (entry.unifiedTrips && entry.unifiedTrips.length > 0) {
-        let finalW = 0,
-          finalV = 0;
-        const seenInvoices = new Set();
-
-        entry.unifiedTrips.forEach((trip) => {
-          if (!trip.isHub) {
-            const customerData = parseCustomerString(trip.visitName || '');
-            const uniqueKey =
-              customerData.invoiceNumber || trip.locationId || Math.random().toString();
-
-            if (!seenInvoices.has(uniqueKey)) {
-              seenInvoices.add(uniqueKey);
-              const w = Math.abs(Number(trip.weight) || 0);
-              const v = Math.abs(Number(trip.volume) || 0);
-              finalW += w;
-              finalV += v;
-            }
-          }
-        });
-
-        entry.weight = finalW;
-        entry.realWeight = finalW;
-        entry.volume = finalV;
-        entry.realVolume = finalV;
-      }
-    });
-  });
 
   const uniqueTasksMap = new Map();
   if (allTasks && Array.isArray(allTasks)) {
@@ -315,12 +281,15 @@ export function calculateTruckDetailData(
       }
       if (isManual) {
         entry.hasManualError = true;
+      }
+      const taskWeight = Math.abs(Number(task.weightKg || task.weight)) || 0;
+      const taskVolume = Math.abs(Number(task.volumeCbm || task.volume)) || 0;
 
-        const manualWeight = Math.abs(Number(task.weightKg) || 0);
-        const manualVolume = Math.abs(Number(task.volumeCbm) || 0);
-
-        entry.weight += manualWeight;
-        entry.volume += manualVolume;
+      entry.weight += taskWeight;
+      entry.volume += taskVolume;
+      if (!isManual) {
+        entry.realWeight += taskWeight;
+        entry.realVolume += taskVolume;
       }
       if (isDateDiff) entry.hasBedaHariError = true;
 
