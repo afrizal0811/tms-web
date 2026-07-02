@@ -90,7 +90,13 @@ export function calculateTruckDetailData(
       if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return;
       const email = d.email ? d.email.toLowerCase().trim() : null;
       if (email && !driverMap.has(email)) {
-        driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
+        driverMap.set(email, {
+          name: d.name,
+          plat: plat,
+          type: getDriverStorageType(d),
+          maxWeight: Number(d.maxWeight) || 0,
+          maxVolume: Number(d.maxVolume) || 0,
+        });
         driverEmails.push(email);
       }
     });
@@ -142,16 +148,16 @@ export function calculateTruckDetailData(
           dispatch.result.routing.forEach((route) => {
             const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
             if (!email || !driverMap.has(email)) return;
-
             if (!dataMatrix[dateKey][email]) {
+              const driverMasterInfo = driverMap.get(email);
               dataMatrix[dateKey][email] = {
                 delivered: 0,
                 dist: 0,
                 duration: 0,
                 hasBedaHariError: false,
                 hasManualError: false,
-                maxVolume: 0,
-                maxWeight: 0,
+                maxWeight: driverMasterInfo?.maxWeight || route.vehicleMaxWeight || 0,
+                maxVolume: driverMasterInfo?.maxVolume || route.vehicleMaxVolume || 0,
                 outlets: 0,
                 realVolume: 0,
                 realWeight: 0,
@@ -230,14 +236,15 @@ export function calculateTruckDetailData(
       if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
 
       if (!dataMatrix[dateKey][email]) {
+        const masterDriver = driverMap.get(email);
         dataMatrix[dateKey][email] = {
           delivered: 0,
           dist: 0,
           duration: 0,
           hasBedaHariError: false,
           hasManualError: false,
-          maxVolume: 0,
-          maxWeight: 0,
+          maxVolume: masterDriver?.maxVolume || 0,
+          maxWeight: masterDriver?.maxWeight || 0,
           outlets: 0,
           realVolume: 0,
           realWeight: 0,

@@ -213,8 +213,8 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     } else if (hasRouting && hasDelivery) {
       wPct = rData.weightPercentage > 0 ? `${rData.weightPercentage}%` : null;
       vPct = rData.volumePercentage > 0 ? `${rData.volumePercentage}%` : null;
-      dist = rData.totalDistance > 0 ? (rData.totalDistance / 1000).toFixed(2) : null;
-      dur = formatMinutesToHHMM(rData.shipDurationRaw);
+      dist = rData.totalDistance > 0 ? (rData.totalDistance / 1000).toFixed(2) : '-';
+      dur = rData.shipDurationRaw > 0 ? formatMinutesToHHMM(rData.shipDurationRaw) : '-';
       eta = rData.etaFirstStore;
       etd = rData.etdHub;
       vis = dData.totalOutlet;
@@ -317,7 +317,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
           ws[cellRef].s = { ...ws[cellRef].s, fill: rowFill, font: { color: { rgb: 'FFFFFF' } } };
         }
         const isManualAssign = rType === 'blue' || rType === 'indigo';
-        if (isManualAssign && (C === 4 || C === 7)) {
+        if (isManualAssign && [2, 3, 4, 7].includes(C)) {
           ws[cellRef].s = { ...ws[cellRef].s, font: { bold: true, color: { rgb: 'FFB3B3' } } };
         }
 
@@ -338,17 +338,17 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     ws,
     [
       [],
-      [t('summary.tabs.truck_detail.color_exp')],
-      ['', t('summary.tabs.truck_detail.blue')],
-      ['', t('summary.tabs.truck_detail.magenta')],
-      ['', t('summary.tabs.truck_detail.indigo')],
+      [t('excel.reports.truck_detail.color_exp')],
+      ['', t('excel.reports.truck_detail.blue')],
+      ['', t('excel.reports.truck_detail.magenta')],
+      ['', t('excel.reports.truck_detail.indigo')],
     ],
     { origin: -1 }
   );
 
   ws[XLSX.utils.encode_cell({ r: dataCount + 1, c: 0 })] = {
     t: 's',
-    v: t('summary.tabs.truck_detail.color_exp'),
+    v: t('excel.reports.truck_detail.color_exp'),
     s: { font: { bold: true, underline: true } },
   };
   ws[XLSX.utils.encode_cell({ r: dataCount + 2, c: 0 })] = {

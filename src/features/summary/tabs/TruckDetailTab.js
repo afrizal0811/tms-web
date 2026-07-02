@@ -66,7 +66,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       border: true,
       getValue: (m) => {
         if (!m || m.maxWeight <= 0) return '-';
-        const hasManualError = m.hasManualError && !isEmpty(m.realWeight);
+        const hasManualError = m.hasManualError;
         const val = percentage(m.weight, m.maxWeight);
 
         return (
@@ -82,7 +82,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       key: 'volume',
       getValue: (m) => {
         if (!m || m.maxVolume <= 0) return '-';
-        const hasManualError = m.hasManualError && !isEmpty(m.realVolume);
+        const hasManualError = m.hasManualError;
         const val = percentage(m.volume, m.maxVolume);
 
         return (
@@ -243,7 +243,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                         ? translate('summary.tabs.truck_detail.tooltip.pct_info')
                         : '';
                       const totalDeliveryClass = isTotalDelivery
-                        ? 'cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5'
+                        ? 'cursor-help border-b-2 border-dotted pb-0.5'
                         : '';
                       return (
                         <Tooltip tooltipContent={totalDeliveryTooltip} key={key}>
@@ -294,7 +294,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                   </td>
                   <td className={`${tdClass} ${stickyPlate} bg-white dark:bg-slate-800`}>
                     <Tooltip tooltipContent={capacityTooltip}>
-                      <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.4">
+                      <span className="cursor-help border-b-2 border-dotted pb-0.4">
                         {getBasePlate(driver.plat)}
                       </span>
                     </Tooltip>
@@ -399,12 +399,18 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                                 : isVolumeKey
                                   ? metrics.maxVolume
                                   : 0;
-
+                              const anyHasRouting = metrics.taskList?.some(
+                                (t) => !isEmpty(t.roSequence)
+                              );
                               const realPct = percentage(realVal, maxVal) || 0;
                               tooltipData = (
                                 <span>
                                   <div>
-                                    {translate('summary.tabs.truck_detail.tooltip.inaccurate_data')}
+                                    {!anyHasRouting
+                                      ? translate('summary.tabs.truck_detail.tooltip.no_routing')
+                                      : translate(
+                                          'summary.tabs.truck_detail.tooltip.inaccurate_data'
+                                        )}
                                   </div>
                                   {(isWeightKey || isVolumeKey) && (
                                     <div className="mt-1">

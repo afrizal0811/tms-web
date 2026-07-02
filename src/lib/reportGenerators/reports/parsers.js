@@ -156,9 +156,9 @@ export function parseRoutingData(
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
         rawWeight: 0,
-        maxWeight: route.vehicleMaxWeight || 0,
+        maxWeight: driverInfo?.maxWeight || route.vehicleMaxWeight || 0,
         rawVolume: 0,
-        maxVolume: route.vehicleMaxVolume || 0,
+        maxVolume: driverInfo?.maxVolume || route.vehicleMaxVolume || 0,
       };
 
       if (!routingMap.has(driverName)) {
@@ -236,8 +236,27 @@ export function parseRoutingData(
     const taskW = Math.abs(Number(task.weightKg) || 0);
     const taskV = Math.abs(Number(task.volumeCbm) || 0);
 
-    if (driverName !== 'N/A' && routingMap.has(driverName)) {
+    if (driverName !== 'N/A') {
+      if (!routingMap.has(driverName)) {
+        const masterData = driverData.find((d) => normalizeEmail(d.email) === assigneeEmail);
+
+        routingMap.set(driverName, {
+          hasTrips: true,
+          weightPercentage: 0,
+          volumePercentage: 0,
+          totalDistance: 0,
+          shipDurationRaw: 0,
+          etaFirstStore: '-',
+          etdHub: '-',
+          rawWeight: 0,
+          maxWeight: masterData?.maxWeight || 0,
+          rawVolume: 0,
+          maxVolume: masterData?.maxVolume || 0,
+        });
+      }
+
       const ext = routingMap.get(driverName);
+      ext.hasTrips = true;
       ext.rawWeight += taskW;
       ext.rawVolume += taskV;
 
