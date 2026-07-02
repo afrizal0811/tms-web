@@ -888,6 +888,8 @@ export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
       if (r === 0) {
         if (c === sepIdx) {
           ws[cell].s = { ...STYLES.center, ...STYLES.separator };
+        } else if (c === 0 || c === 1) {
+          ws[cell].s = STYLES.header;
         } else if (c < sepIdx) {
           ws[cell].s = STYLES.greenHeader;
         } else {
