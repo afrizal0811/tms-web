@@ -29,6 +29,7 @@ const STYLES = {
   blueFill: { fill: { patternType: 'solid', fgColor: { rgb: '4f76c7' } } },
   magentaFill: { fill: { patternType: 'solid', fgColor: { rgb: 'c85d86' } } },
   indigoFill: { fill: { patternType: 'solid', fgColor: { rgb: '5c5fb2' } } },
+  orangeFill: { fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } } },
   redFill: { fill: { patternType: 'solid', fgColor: { rgb: 'FF9999' } } },
 };
 
@@ -224,6 +225,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
 
       const hasMan = dData.missingDataCustomers.length > 0;
       const hasDif = dData.mismatchCustomers.length > 0;
+
       if (hasMan && hasDif) hType = 'indigo';
       else if (hasMan) hType = 'blue';
       else if (hasDif) hType = 'magenta';
@@ -248,6 +250,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       man,
       diff,
       hType,
+      hasSplitTask: dData?.hasSplitTask || false,
     });
   });
 
@@ -297,6 +300,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   for (let R = 0; R < sheetData.length; ++R) {
     const rType = R > 0 ? excelDataRows[R - 1].hType : 'none';
     let rowFill = null;
+    if (rType === 'orange') rowFill = STYLES.orangeFill.fill;
     if (rType === 'blue') rowFill = STYLES.blueFill.fill;
     if (rType === 'magenta') rowFill = STYLES.magentaFill.fill;
     if (rType === 'indigo') rowFill = STYLES.indigoFill.fill;
@@ -330,6 +334,19 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
             };
           }
         }
+
+        if (C === 5 && excelDataRows[R - 1]?.hasSplitTask) {
+          const splitBorder = { style: 'medium', color: { rgb: 'fb923c' } };
+          ws[cellRef].s = {
+            ...ws[cellRef].s,
+            border: {
+              top: splitBorder,
+              bottom: splitBorder,
+              left: splitBorder,
+              right: splitBorder,
+            },
+          };
+        }
       }
     }
   }
@@ -339,6 +356,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     [
       [],
       [t('excel.reports.truck_detail.color_exp')],
+      ['', t('excel.reports.truck_detail.orange')],
       ['', t('excel.reports.truck_detail.blue')],
       ['', t('excel.reports.truck_detail.magenta')],
       ['', t('excel.reports.truck_detail.indigo')],
@@ -354,14 +372,19 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   ws[XLSX.utils.encode_cell({ r: dataCount + 2, c: 0 })] = {
     t: 's',
     v: '',
-    s: { fill: STYLES.blueFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+    s: { fill: STYLES.orangeFill.fill, font: { color: { rgb: 'FFFFFF' } } },
   };
   ws[XLSX.utils.encode_cell({ r: dataCount + 3, c: 0 })] = {
     t: 's',
     v: '',
-    s: { fill: STYLES.magentaFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+    s: { fill: STYLES.blueFill.fill, font: { color: { rgb: 'FFFFFF' } } },
   };
   ws[XLSX.utils.encode_cell({ r: dataCount + 4, c: 0 })] = {
+    t: 's',
+    v: '',
+    s: { fill: STYLES.magentaFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+  };
+  ws[XLSX.utils.encode_cell({ r: dataCount + 5, c: 0 })] = {
     t: 's',
     v: '',
     s: { fill: STYLES.indigoFill.fill, font: { color: { rgb: 'FFFFFF' } } },

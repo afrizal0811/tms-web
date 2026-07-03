@@ -35,15 +35,6 @@ export function parseRoutingData(
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
 
-  const splitInvoices = new Set();
-  (allTasks || []).forEach((task) => {
-    if (task.isSplitTask) {
-      const { invoiceNumber } = parseCustomerString(
-        task.customerOrder || task.content || task.customerName || ''
-      );
-      if (invoiceNumber) splitInvoices.add(invoiceNumber);
-    }
-  });
   vehicleTypes.forEach((v) => {
     const typeName = typeof v === 'string' ? v : v.name;
     truckUsageCount[String(typeName).toUpperCase()] = { Dry: 0, Frozen: 0 };
@@ -341,9 +332,11 @@ export function parseDeliveryData(
         failedCount: 0,
         mismatchCustomers: [],
         missingDataCustomers: [],
+        hasSplitTask: false,
       };
       stats.totalOutlet += 1;
       if (FAILED_STATUSES.includes(statusLabel) || isEmpty(statusLabel)) stats.failedCount += 1;
+      if (task.isSplitTask === 'true' || task.isSplitTask === true) stats.hasSplitTask = true;
 
       const startDate = getUTC7DateString(task.startTime);
       const doneDate = getUTC7DateString(task.doneTime);
