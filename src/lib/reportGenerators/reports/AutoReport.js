@@ -1,10 +1,10 @@
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import {
+  buildDistanceSummary,
   buildHelpSheet,
   buildMergedDetailSheet,
   buildPendingSOSheet,
-  buildRekapPerjalananSheet,
   buildRoVsRealSheet,
   buildStartFinishSheet,
   buildTanggalRoutingSheet,
@@ -52,7 +52,7 @@ export async function generateAutoReportWorkbook({
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
-  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData, t);
+  buildDistanceSummary(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   buildHelpSheet(wb, filteredResults || [], t);

@@ -4,9 +4,9 @@ import Tooltip from '@/components/Tooltip';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
-import AverageDistanceModal from './modals/AverageDistanceModal';
+import AverageDistanceModal from './modals/DistanceSummaryModal';
 
-export default function AverageDistanceTab({ data, monthTotals, translate, localeCode }) {
+export default function DistanceSummaryTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
     'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
   const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-violet-900/30`;
@@ -22,7 +22,7 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
       setModalTitle(
         <div>
           <h3 className="text-lg font-bold">
-            {translate('summary.tabs.average_km.modal.title')} - {type}
+            {translate('summary.tabs.dist_summary.modal.title')} - {type}
           </h3>
           <p className="text-slate-300 text-sm font-normal">
             {formatLongDate(dateStr, localeCode)}
@@ -118,16 +118,16 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
               <thead className="bg-gray-50 dark:bg-slate-900">
                 <tr>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('common.date')} ({translate('summary.tabs.average_km.month')})
+                    {translate('common.date')} ({translate('summary.tabs.dist_summary.month')})
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.km_routing')}
                   </th>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.total_km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.total_routing')}
                   </th>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.avg_km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                 </tr>
                 <tr>
@@ -158,16 +158,16 @@ export default function AverageDistanceTab({ data, monthTotals, translate, local
                     {translate('common.delivery_date')}
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.total_vehicle')}
+                    {translate('summary.tabs.dist_summary.total_vehicle')}
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.km_routing')}
                   </th>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.total_km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.total_routing')}
                   </th>
                   <th rowSpan="2" className={defaultVioletClass}>
-                    {translate('summary.tabs.average_km.avg_km_routing')} (KM)
+                    {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                 </tr>
                 <tr>

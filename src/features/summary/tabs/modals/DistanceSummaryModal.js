@@ -3,7 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import { getBasePlate } from '@/lib/utils';
 
-export default function AverageDistanceModal({
+export default function DistanceSummaryModal({
   isOpen,
   onClose,
   data,
@@ -26,7 +26,7 @@ export default function AverageDistanceModal({
     },
     {
       key: 'visit',
-      label: translate('summary.tabs.average_km.modal.total_visit'),
+      label: translate('summary.tabs.dist_summary.modal.total_visit'),
       render: (item) => item.visit || '-',
     },
     {

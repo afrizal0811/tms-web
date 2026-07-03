@@ -355,8 +355,7 @@ export const dictionary = {
           actual: 'Aktual',
           category: 'Kategori',
           estimation: 'Estimasi',
-          sheet_name: 'Ringkasan Perjalanan',
-          sheet_name: 'Ringkasan Total Jarak',
+          sheet_name: 'Ringkasan Jarak',
           time_travel: 'Waktu Perjalanan',
         },
         pending_so: {
@@ -588,12 +587,15 @@ export const dictionary = {
             vehicle_list: 'Daftar Kendaraan',
           },
         },
-        average_km: {
-          avg_km_routing: 'Rerata Jarak Ruting',
-          km_routing: 'Jarak Ruting',
+        dist_summary: {
+          average_actual: 'Rerata Jarak Aktual (km)',
+          average_routing: 'Rerata Jarak Ruting (km)',
+          km_actual: 'Jarak Aktual (km)',
+          km_routing: 'Jarak Ruting (km)',
           month: 'Bulan',
-          title: 'Rerata Jarak Ruting',
-          total_km_routing: 'Total Jarak Ruting',
+          title: 'Rangkuman Jarak',
+          total_actual: 'Total Jarak Aktual (km)',
+          total_routing: 'Total Jarak Ruting (km)',
           total_vehicle: 'Jumlah Kendaraan',
           modal: {
             title: 'Rincian Jarak Ruting',
@@ -1019,7 +1021,7 @@ export const dictionary = {
           actual: 'Actual',
           category: 'Category',
           estimation: 'Estimated',
-          sheet_name: 'Total Distance Summary',
+          sheet_name: 'Distance Summary',
           time_travel: 'Travel Time',
         },
         pending_so: {
@@ -1250,12 +1252,15 @@ export const dictionary = {
             vehicle_list: 'Vehicle List',
           },
         },
-        average_km: {
-          avg_km_routing: 'Average Routing Distance',
-          km_routing: 'Routing Distance',
+        dist_summary: {
+          average_actual: 'Average Actual Distance (km)',
+          average_routing: 'Average Routing Distance (km)',
+          km_actual: 'Actual Distance (km)',
+          km_routing: 'Routing Distance (km)',
           month: 'Month',
-          title: 'Average Routing Distance',
-          total_km_routing: 'Total Routing Distance',
+          title: 'Distance Summary',
+          total_actual: 'Total Actual Distance (km)',
+          total_routing: 'Total Routing Distance (km)',
           total_vehicle: 'Total Vehicles',
           modal: {
             title: 'Routing Distance Details',

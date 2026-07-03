@@ -687,7 +687,7 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t) {
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_usage.sheet_name'));
 }
 
-export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects, t) {
+export function buildDistanceSummary(wb, driverData, routingMap, timeDataObjects, t) {
   let estDryT = 0,
     estDryD = 0,
     estFrzT = 0,

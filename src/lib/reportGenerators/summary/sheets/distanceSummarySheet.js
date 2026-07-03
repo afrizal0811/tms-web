@@ -70,7 +70,7 @@ function initializeDateMap(startDateStr, endDateStr) {
   return dateMap;
 }
 
-export function calculateAverageDistanceData(
+export function calculateDistanceSummaryData(
   resultsData,
   startDateStr,
   endDateStr,
@@ -264,7 +264,7 @@ export function calculateAverageDistanceData(
   return { summaryData, monthTotals };
 }
 
-export function generateAverageDistanceSheet(
+export function generateDistanceSummarySheet(
   wb,
   resultsData,
   startDateStr,
@@ -273,7 +273,7 @@ export function generateAverageDistanceSheet(
   localeCode,
   driverData
 ) {
-  const { summaryData, monthTotals } = calculateAverageDistanceData(
+  const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
     startDateStr,
     endDateStr,
@@ -282,11 +282,11 @@ export function generateAverageDistanceSheet(
   );
 
   const monthHeader1 = [
-    `${translate('common.date') || 'Routing Date'} (${translate('summary.tabs.average_km.month')})`,
-    translate('summary.tabs.average_km.km_routing'),
+    `${translate('common.date') || 'Routing Date'} (${translate('summary.tabs.dist_summary.month')})`,
+    translate('summary.tabs.dist_summary.km_routing'),
     '',
-    translate('summary.tabs.average_km.total_km_routing'),
-    translate('summary.tabs.average_km.avg_km_routing'),
+    translate('summary.tabs.dist_summary.total_routing'),
+    translate('summary.tabs.dist_summary.average_routing'),
   ];
   const monthHeader2 = ['', 'Dry', 'Frozen', '', ''];
   const monthDataRow = [
@@ -298,12 +298,12 @@ export function generateAverageDistanceSheet(
   ];
   const dailyHeader1 = [
     translate('common.date') || 'Routing Date',
-    translate('summary.tabs.average_km.total_vehicle'),
+    translate('summary.tabs.dist_summary.total_vehicle'),
     '',
-    translate('summary.tabs.average_km.km_routing'),
+    translate('summary.tabs.dist_summary.km_routing'),
     '',
-    translate('summary.tabs.average_km.total_km_routing'),
-    translate('summary.tabs.average_km.avg_km_routing'),
+    translate('summary.tabs.dist_summary.total_routing'),
+    translate('summary.tabs.dist_summary.average_routing'),
   ];
   const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
 
@@ -422,5 +422,5 @@ export function generateAverageDistanceSheet(
     { wch: 18 },
     { wch: 15 },
   ];
-  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.average_km.title'));
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.dist_summary.title'));
 }

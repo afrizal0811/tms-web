@@ -13,7 +13,7 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, getUTC7DateString, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import AverageDistanceTab from './tabs/AverageDistanceTab';
+import DistanceSummaryTab from './tabs/DistanceSummaryTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import RoutingTimeTab from './tabs/RoutingTimeTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
@@ -251,8 +251,8 @@ export default function SummaryPage() {
           )
         );
       }
-      case 'Average KM': {
-        const data = reportPreview?.averageDistanceData;
+      case 'Distance Summary': {
+        const data = reportPreview?.distanceSummaryData;
         return !data || isEmpty(data) || !data.some((row) => (row.totalKm || 0) > 0);
       }
       default:
@@ -321,9 +321,9 @@ export default function SummaryPage() {
           driverData: driverData,
           localeCode: localeCode,
         });
-      case 'Average KM':
-        return renderTab(AverageDistanceTab, {
-          data: reportPreview.averageDistanceData,
+      case 'Distance Summary':
+        return renderTab(DistanceSummaryTab, {
+          data: reportPreview.distanceSummaryData,
           monthTotals: reportPreview.monthTotals,
           translate: t,
           localeCode: localeCode,
@@ -386,7 +386,7 @@ export default function SummaryPage() {
     { id: 'Time Driver', label: t('summary.tabs.time_driver.title') },
     { id: 'Truck Detail', label: t('summary.tabs.truck_detail.title') },
     { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
-    { id: 'Average KM', label: t('summary.tabs.average_km.title') },
+    { id: 'Distance Summary', label: t('summary.tabs.dist_summary.title') },
   ];
   const longLoading = pendingEndpoints.length > 0 && (
     <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
