@@ -134,6 +134,7 @@ export default function TruckDetailModal({
   const ERROR_COLORS = {
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
+    SPLIT: 'border border-orange-400 text-orange-400 dark:border-orange-400 dark:text-orange-400',
   };
 
   const getStatusClass = (status) => {
@@ -260,6 +261,13 @@ export default function TruckDetailModal({
                           {`${translate('summary.tabs.truck_detail.modal.diff_day').toUpperCase()} (+${task.dayDiff})`}
                         </span>
                       </Tooltip>
+                    )}
+                    {task.isSplitTask && (
+                      <span
+                        className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.SPLIT}`}
+                      >
+                        {translate('summary.tabs.truck_detail.split_task').toUpperCase()}
+                      </span>
                     )}
                   </div>
                 </div>

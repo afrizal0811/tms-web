@@ -48,6 +48,10 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
 
   const errorColor = [
     {
+      name: 'orange',
+      colors: 'bg-orange-400 text-white dark:bg-orange-600',
+    },
+    {
       name: 'blue',
       colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
     },
@@ -68,7 +72,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
         if (!m || m.maxWeight <= 0) return '-';
         const hasManualError = m.hasManualError;
         const val = percentage(m.weight, m.maxWeight);
-
         return (
           <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
             {val}
@@ -84,7 +87,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
         if (!m || m.maxVolume <= 0) return '-';
         const hasManualError = m.hasManualError;
         const val = percentage(m.volume, m.maxVolume);
-
         return (
           <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
             {val}
@@ -109,9 +111,24 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
     },
     {
       key: 'total_outlet',
-      getValue: (m) => (m?.outlets ? m?.outlets : 0),
+      getValue: (m) => {
+        if (!m.outlets) return 0;
+        const val = m?.outlets;
+        const hasSplitTask = m.taskList.some((item) => item.isSplitTask);
+        return (
+          <span className="inline-flex items-center justify-center gap-1 leading-none">
+            <span className="inline-block h-2.5 w-2.5 shrink-0" />
+            <span>{val}</span>
+            <span
+              className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-orange-400 dark:bg-orange-600 ${
+                hasSplitTask ? '' : 'opacity-0'
+              }`}
+            />
+          </span>
+        );
+      },
       text: translate('summary.tabs.truck_detail.total_outlet'),
-      hasManualTooltip: false,
+      hasManualTooltip: true,
     },
     {
       key: 'total_delivery',
@@ -316,7 +333,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
 
                     let cellBg = isHoliday ? holidayColor : '';
                     const emptyBg = isHoliday ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
-
                     if (metrics && outletData > 0) {
                       if (metrics.hasManualError && metrics.hasBedaHariError)
                         cellBg = errorColor.find((item) => item.name === 'indigo')?.colors;
@@ -368,6 +384,8 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                             const appliedBgClass = hasHeatmap ? '' : cellBg;
                             const isWeightKey = key === 'weight';
                             const isVolumeKey = key === 'volume';
+                            const isTotalOutlet = key === 'total_outlet';
+                            const hasSplitTask = metrics.taskList.some((item) => item.isSplitTask);
                             const hasManualError =
                               metrics.hasManualError &&
                               (!isEmpty(metrics.weight) || !isEmpty(metrics.volume)) &&
@@ -375,7 +393,11 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
 
                             let tooltipData = null;
                             const metricUnit = isWeightKey ? 'Kg' : isVolumeKey ? 'Cbm' : '';
-                            if (hasManualError) {
+                            if (hasSplitTask && isTotalOutlet) {
+                              tooltipData = translate(
+                                'summary.tabs.truck_detail.tooltip.split_task'
+                              );
+                            } else if (hasManualError) {
                               const metricLabel = translate(
                                 isWeightKey ? 'common.weight' : 'common.volume'
                               );
@@ -403,7 +425,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                                 (t) => !isEmpty(t.roSequence)
                               );
                               const realPct = percentage(realVal, maxVal) || 0;
-                              tooltipData = (
+                              tooltipData = !isTotalOutlet ? (
                                 <span>
                                   <div>
                                     {!anyHasRouting
@@ -426,7 +448,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                                     </div>
                                   )}
                                 </span>
-                              );
+                              ) : null;
                             } else if (isWeightKey || isVolumeKey) {
                               tooltipData = (
                                 <span>

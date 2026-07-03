@@ -15,6 +15,10 @@ import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './report
 const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'TERIMA SEBAGIAN']);
 
 const ERROR_STYLES = {
+  split: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
+  },
   manual: {
     fill: { patternType: 'solid', fgColor: { rgb: '4F76C7' } },
     font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
@@ -73,16 +77,6 @@ export function calculateTruckDetailData(
 ) {
   const driverMap = new Map();
   const driverEmails = [];
-
-  const splitInvoices = new Set();
-  (allTasks || []).forEach((task) => {
-    if (task.isSplitTask) {
-      const { invoiceNumber } = parseCustomerString(
-        task.customerOrder || task.content || task.customerName || ''
-      );
-      if (invoiceNumber) splitInvoices.add(invoiceNumber);
-    }
-  });
 
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
@@ -243,6 +237,7 @@ export function calculateTruckDetailData(
           duration: 0,
           hasBedaHariError: false,
           hasManualError: false,
+          hasSplitTask: false,
           maxVolume: masterDriver?.maxVolume || 0,
           maxWeight: masterDriver?.maxWeight || 0,
           outlets: 0,
@@ -251,7 +246,6 @@ export function calculateTruckDetailData(
           taskList: [],
           volume: 0,
           weight: 0,
-          unifiedTrips: [],
         };
       }
       const entry = dataMatrix[dateKey][email];
@@ -273,7 +267,7 @@ export function calculateTruckDetailData(
       if (!FAILED_STATUSES.has(statusDelivery) && task.status !== 'ONGOING') entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
-
+      const hasSplitTask = task.isSplitTask === 'true';
       const startD = getUTC7DateString(task.startTime);
       const doneD = getUTC7DateString(task.doneTime);
 
@@ -288,6 +282,9 @@ export function calculateTruckDetailData(
       }
       if (isManual) {
         entry.hasManualError = true;
+      }
+      if (hasSplitTask) {
+        entry.hasSplitTask = true;
       }
       const taskWeight = Math.abs(Number(task.weightKg || task.weight)) || 0;
       const taskVolume = Math.abs(Number(task.volumeCbm || task.volume)) || 0;
@@ -338,6 +335,7 @@ export function calculateTruckDetailData(
         doneTime: task.doneTime || null,
         weight: Math.abs(Number(task.weightKg || task.weight)) || 0,
         volume: Math.abs(Number(task.volumeCbm || task.volume)) || 0,
+        isSplitTask: task.isSplitTask === 'true' || false,
       });
     }
   });
@@ -403,6 +401,7 @@ export function calculateTruckDetailData(
           currData.taskList = [];
           currData.hasManualError = false;
           currData.hasBedaHariError = false;
+          currData.hasSplitTask = false;
         }
       }
     });
@@ -577,6 +576,7 @@ export function generateTruckDetailSheet(
   excelData.push([]);
   const legendStartRow = excelData.length;
   excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push(['', translate('summary.tabs.truck_detail.orange')]);
   excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
   excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
   excelData.push(['', translate('summary.tabs.truck_detail.indigo')]);
@@ -608,7 +608,8 @@ export function generateTruckDetailSheet(
   merges.push({ s: { r: legendStartRow + 1, c: 1 }, e: { r: legendStartRow + 1, c: 6 } });
   merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
   merges.push({ s: { r: legendStartRow + 3, c: 1 }, e: { r: legendStartRow + 3, c: 6 } });
-  merges.push({ s: { r: legendStartRow + 4, c: 0 }, e: { r: legendStartRow + 4, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 4, c: 1 }, e: { r: legendStartRow + 4, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 5, c: 0 }, e: { r: legendStartRow + 5, c: 6 } });
 
   ws['!merges'] = merges;
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -685,6 +686,7 @@ export function generateTruckDetailSheet(
               const dayIsEmpty = isDayEmpty(dateStr);
               const isDynamic = !isSun && isPastDate(dateStr) && dayIsEmpty;
               const isHoliday = isSun || isDynamic;
+
               shouldMergeHoliday = isHoliday && dayIsEmpty;
 
               if (isHoliday) cellFill = FILL_STYLES.red;
@@ -695,7 +697,6 @@ export function generateTruckDetailSheet(
                   errStyle = ERROR_STYLES.both;
                 else if (metrics.hasManualError) errStyle = ERROR_STYLES.manual;
                 else if (metrics.hasBedaHariError) errStyle = ERROR_STYLES.date;
-
                 if (errStyle) {
                   cellFill = errStyle.fill;
                   currentFontStyle = errStyle.font;
@@ -705,7 +706,6 @@ export function generateTruckDetailSheet(
                 }
               }
             }
-
             if (shouldMergeHoliday && R === 2 && relativeIdx === 0) {
               cell.t = 's';
               cell.s = { ...dataStyle, alignment: { horizontal: 'center', vertical: 'center' } };
@@ -731,7 +731,15 @@ export function generateTruckDetailSheet(
             } else {
               cell.s = { ...dataStyle };
             }
+            if (relativeIdx === 3 && metrics && metrics.hasSplitTask) {
+              const splitBorder = { style: 'medium', color: { rgb: 'ff8904' } };
+              borderTop = splitBorder;
+              borderBottom = splitBorder;
+              borderLeft = splitBorder;
+              borderRight = splitBorder;
+            }
           }
+
           cell.s.border = {
             top: borderTop,
             bottom: borderBottom,
@@ -745,12 +753,13 @@ export function generateTruckDetailSheet(
         const relR = R - legendStartRow;
         if (relR === 0 && C === 0) {
           cell.s = { font: { bold: true, underline: true } };
-        } else if (relR >= 1 && relR <= 3) {
+        } else if (relR >= 1 && relR <= 4) {
           if (C === 0) {
             cell.s = { border: BORDERS.thin };
-            if (relR === 1) cell.s.fill = ERROR_STYLES.manual.fill;
-            if (relR === 2) cell.s.fill = ERROR_STYLES.date.fill;
-            if (relR === 3) cell.s.fill = ERROR_STYLES.both.fill;
+            if (relR === 1) cell.s.fill = ERROR_STYLES.split.fill;
+            if (relR === 2) cell.s.fill = ERROR_STYLES.manual.fill;
+            if (relR === 3) cell.s.fill = ERROR_STYLES.date.fill;
+            if (relR === 4) cell.s.fill = ERROR_STYLES.both.fill;
           } else if (C === 1) {
             cell.s = { alignment: { horizontal: 'left', vertical: 'center' } };
           }
