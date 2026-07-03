@@ -3,8 +3,6 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty, parseCoordinates } from '@/lib/utils';
-// HAPUS: import L from 'leaflet';  <-- INI PENYEBAB ERROR
-import 'leaflet/dist/leaflet.css';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useMap } from 'react-leaflet';

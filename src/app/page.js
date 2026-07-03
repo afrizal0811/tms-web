@@ -17,7 +17,7 @@ import {
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getOrFetchDriverData } from '../lib/driverDataHelper';
-import { toastError, toastInfo } from '../lib/toastHelper';
+import { toastError, toastInfo } from '../lib/toast';
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);

@@ -5,21 +5,21 @@ import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getLocalStorage } from '../../localStorageHandler';
 import {
-  calculateAverageKmData,
+  calculateAverageDistanceData,
   calculatePendingReasonData,
   calculateTimeDriverData,
   calculateTruckDetailData,
   calculateTruckUsageData,
-  generateAverageKmSheet,
+  generateAverageDistanceSheet,
   generatePendingReasonSheet,
   generateTaskSummarySheet,
   generateTimeDriverSheet,
-  generateTimeROSheet,
+  generateRoutingTimeSheet,
   generateTruckDetailSheet,
   generateTruckUsageSheet,
 } from './sheets';
 
-export async function generateRangkumanDataPreview(
+export async function generateSummaryDataPreview(
   driverData,
   taskData,
   resultsData,
@@ -29,19 +29,21 @@ export async function generateRangkumanDataPreview(
   hubId,
   localeCode
 ) {
-  const { summaryData, monthTotals } = calculateAverageKmData(
+  const { summaryData, monthTotals } = calculateAverageDistanceData(
     resultsData,
     startDateStr,
     endDateStr,
     localeCode,
-    driverData
+    driverData,
+    taskData
   );
 
   const truckUsageData = await calculateTruckUsageData(
     resultsData,
     startDateStr,
     endDateStr,
-    hubId
+    hubId,
+    taskData
   );
 
   const truckDetailRaw = calculateTruckDetailData(
@@ -70,7 +72,7 @@ export async function generateRangkumanDataPreview(
   );
 
   return {
-    averageKmData: summaryData,
+    averageDistanceData: summaryData,
     monthTotals: monthTotals,
     truckUsageData: truckUsageData,
     truckDetailData: { ...truckDetailRaw, driverMap: Object.fromEntries(truckDetailRaw.driverMap) },
@@ -79,7 +81,7 @@ export async function generateRangkumanDataPreview(
   };
 }
 
-export async function generateRangkumanWorkbook(
+export async function generateSummaryWorkbook(
   driverData,
   taskData,
   resultsData,
@@ -96,7 +98,7 @@ export async function generateRangkumanWorkbook(
   pendingDetails // <-- Parameter Baru
 ) {
   const wb = XLSX.utils.book_new();
-  generateTimeROSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
+  generateRoutingTimeSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
   generateTaskSummarySheet(
     wb,
     taskSummaryMetrics,
@@ -147,9 +149,10 @@ export async function generateRangkumanWorkbook(
     endDateStr,
     hubId,
     translate,
-    localeCode
+    localeCode,
+    taskData
   );
-  generateAverageKmSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
+  generateAverageDistanceSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
 
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');

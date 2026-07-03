@@ -3,16 +3,10 @@ import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
 // --- HELPERS (Sama dengan UI) ---
-function getRoutingDateKey(deliveryDateObj) {
-  const d = new Date(deliveryDateObj);
-  const day = d.getDay();
-  let offset = 1;
-  if (day === 1) offset = 2; // Senin -> Sabtu
-  d.setDate(d.getDate() - offset);
-
-  const y = d.getFullYear();
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const da = d.getDate().toString().padStart(2, '0');
+function getRoutingDateKey(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const da = dateObj.getDate().toString().padStart(2, '0');
   return `${y}-${m}-${da}`;
 }
 
@@ -73,18 +67,41 @@ export function generateTaskSummarySheet(
     const displayDate = `${day}-${month}-${year}`;
     const isSunday = current.getDay() === 0;
 
-    // 1. MINGGU
-    if (isSunday) {
+    const routingKey = getRoutingDateKey(current);
+    const data = metrics ? metrics[routingKey] : null;
+    const d = data?.dry || {};
+    const f = data?.frozen || {};
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentMidnight = new Date(current);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const isPast = currentMidnight < today;
+
+    // Logika Libur Dinamis jika SEMUA nilai adalah 0
+    const checkZero = (obj) =>
+      (obj.dp || 0) === 0 &&
+      (obj.dt_total || 0) === 0 &&
+      (obj.ma_total || 0) === 0 &&
+      (obj.rt || 0) === 0 &&
+      (obj.co || 0) === 0 &&
+      (obj.pr || 0) === 0 &&
+      (obj.tv || 0) === 0 &&
+      (obj.va || 0) === 0 &&
+      (obj.tvu || 0) === 0;
+
+    const isDynamicHoliday = isPast && checkZero(d) && checkZero(f) && !isSunday;
+
+    // 1. MINGGU ATAU LIBUR DINAMIS
+    if (isSunday || isDynamicHoliday) {
       excelData.push([
         displayDate,
-        translate('summary.tabs.task_summary.holiday'),
+        isSunday ? translate('common.holiday_sunday') : translate('common.holiday'),
         ...Array(16).fill(''),
       ]);
       excelData.push(['', '', ...Array(16).fill('')]); // Dummy row for merge
 
-      // Merge Date Column
       merges.push({ s: { r: currentRow, c: 0 }, e: { r: currentRow + 1, c: 0 } });
-      // Merge Libur Text
       merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow + 1, c: 17 } });
 
       sundayRows.add(currentRow);
@@ -93,23 +110,10 @@ export function generateTaskSummarySheet(
     }
     // 2. HARI KERJA
     else {
-      const routingKey = getRoutingDateKey(current);
-      const data = metrics ? metrics[routingKey] : null;
-      const d = data?.dry || {};
-      const f = data?.frozen || {};
-
-      // --- LOGIKA MENYIMPAN BARIS JIKA TOTAL DP = 0 ---
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const currentMidnight = new Date(current);
-      currentMidnight.setHours(0, 0, 0, 0);
-      const isPastOrToday = currentMidnight <= today;
-
-      // PERBAIKAN: Gunakan (d.dp || 0) agar undefined diubah jadi 0
-      if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPastOrToday) {
+      // isZeroDP untuk mewarnai merah khusus kolom tanggal jika hanya DP yg 0 tapi ada status lain
+      if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast) {
         zeroDpRows.add(currentRow);
-        zeroDpRows.add(currentRow + 1); // Tambahkan baris Frozen agar merge di Excel terwarnai penuh
+        zeroDpRows.add(currentRow + 1);
       }
 
       // ROW DRY

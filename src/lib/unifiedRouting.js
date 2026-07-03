@@ -1,27 +1,7 @@
 // File: src/lib/unifiedRouting.js
 
 // Fungsi 1: Penentuan Tanggal Pengiriman berdasarkan waktu Routing (H-1 & H-2)
-export function getDeliveryDateFromRouting(createdTimeStr) {
-  if (!createdTimeStr) return null;
-  try {
-    const d = new Date(createdTimeStr);
-    const wibMs = d.getTime() + 7 * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const routingDay = wibDate.getUTCDay(); // 0=Minggu, 1=Senin.. 6=Sabtu
-
-    let offset = 1; // H-1 (Default)
-    if (routingDay === 6) offset = 2; // Khusus Sabtu (H-2) -> Kirim Senin
-
-    const deliveryMs = wibMs + offset * 24 * 60 * 60 * 1000;
-    const deliveryDate = new Date(deliveryMs);
-    const y = deliveryDate.getUTCFullYear();
-    const m = String(deliveryDate.getUTCMonth() + 1).padStart(2, '0');
-    const da = String(deliveryDate.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${da}`;
-  } catch (e) {
-    return null;
-  }
-}
+import { getDeliveryDateFromRouting } from './utils';
 
 // Fungsi 2: Otak Utama Algoritma (Pencarian Supir Cepat & Deduplikasi Kendaraan)
 export function getUnifiedVehicleMap(resultsData, driverData) {

@@ -3,7 +3,22 @@
 // Mengubah format input tanggal (Date atau string) menjadi pola string tertentu (default: YYYY-MM-DD)
 export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
   if (!dateInput) return '-';
-  const date = new Date(dateInput);
+
+  let date;
+  if (typeof dateInput === 'string') {
+    const dmyMatch = dateInput.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    );
+    if (dmyMatch) {
+      const [, dd, mm, yyyy, HH = '00', min = '00', ss = '00'] = dmyMatch;
+      date = new Date(`${yyyy}-${mm}-${dd}T${HH}:${min}:${ss}`);
+    } else {
+      date = new Date(dateInput);
+    }
+  } else {
+    date = new Date(dateInput);
+  }
+
   if (isNaN(date.getTime())) return '-';
 
   const map = {
@@ -42,7 +57,7 @@ export function calculateTargetDates(selectedDateStr) {
 }
 
 // Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
-export function formatMinutesToHHMM(totalMinutes) {
+export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
     return "'-'";
   }
@@ -50,7 +65,7 @@ export function formatMinutesToHHMM(totalMinutes) {
   const minutes = Math.round(totalMinutes % 60);
   const formattedHours = String(hours).padStart(2, '0');
   const formattedMinutes = String(minutes).padStart(2, '0');
-  return `'${formattedHours}:${formattedMinutes}`;
+  return `${needQuote ? "'" : ''}${formattedHours}:${formattedMinutes}`;
 }
 
 // Mengambil jam dan menit dari timestamp ISO dan mengembalikannya sebagai string HH:mm
@@ -71,13 +86,17 @@ export function formatTimestampToHHMM(timestamp) {
 // Menghitung selisih waktu dalam satuan menit antara dua timestamp
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
+
   try {
     const date1 = new Date(time1);
     const date2 = new Date(time2);
+
     if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
 
-    const diffMs = Math.abs(date1.getTime() - date2.getTime());
-    return Math.round(diffMs / 60000);
+    const minutes1 = date1.getHours() * 60 + date1.getMinutes();
+    const minutes2 = date2.getHours() * 60 + date2.getMinutes();
+
+    return Math.abs(minutes1 - minutes2);
   } catch (e) {
     return null;
   }
@@ -402,4 +421,49 @@ export function getBasePlate(plat) {
   if (!plat) return '';
   const parts = plat.trim().split(/\s+/);
   return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
+}
+
+export function getDeliveryDateFromRouting(isoString) {
+  if (!isoString) return null;
+  try {
+    const date = new Date(isoString);
+    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
+    const wibDate = new Date(wibMs);
+    const routingDay = wibDate.getUTCDay();
+
+    let offsetDays = 1;
+    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
+
+    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
+    return new Date(deliveryMs).toISOString().split('T')[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+export function heatMap(pctStr) {
+  if (!pctStr) return null;
+  const val = parseFloat(pctStr);
+  if (isNaN(val)) return null;
+  const ratio = Math.max(0, Math.min(100, val)) / 100;
+  let r, g, b;
+  if (ratio <= 0.5) {
+    const t = ratio / 0.5;
+    r = 255;
+    g = Math.round(255 * t);
+    b = 0;
+  } else {
+    const t = (ratio - 0.5) / 0.5;
+    r = Math.round(255 * (1 - t));
+    g = Math.round(176 + (255 - 176) * (1 - t));
+    b = 0;
+  }
+  return [r, g, b]
+    .map((v) =>
+      Math.round(v * 0.45 + 255 * 0.55)
+        .toString(16)
+        .padStart(2, '0')
+    )
+    .join('')
+    .toUpperCase();
 }

@@ -1,4 +1,4 @@
-import { formatDateWIB } from '@/lib/utils';
+import { formatDateWIB, formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 
@@ -44,7 +44,14 @@ const createSafeDate = (dateStr) => {
   return new Date(y, m - 1, d, 12, 0, 0);
 };
 
-export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, translate, localeCode) {
+export function generateRoutingTimeSheet(
+  wb,
+  tasks,
+  startDateStr,
+  endDateStr,
+  translate,
+  localeCode
+) {
   const dataMap = {};
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
@@ -108,7 +115,7 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
   const excelData = [
     [
-      translate('summary.tabs.time_ro.date_ro'),
+      translate('summary.tabs.routing_time.date_ro'),
       translate('common.start_time'),
       translate('common.finish_time'),
     ],
@@ -119,19 +126,30 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
     .sort()
     .forEach((key) => {
       const row = dataMap[key];
+      const hasStart = !!row.firstCreatedTime;
+      const hasEnd = !!row.lastAssignedTime;
 
-      if (row.isSunday) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const currentMidnight = createSafeDate(key);
+      currentMidnight.setHours(0, 0, 0, 0);
+      const isPast = currentMidnight < today;
+
+      const isDynamicHoliday = isPast && !hasStart && !hasEnd && !row.isSunday;
+
+      if (row.isSunday || isDynamicHoliday) {
         const rowIndex = excelData.length;
-        excelData.push([row.dateDisplay, translate('summary.tabs.time_ro.holiday'), '']);
+        const textLibur = row.isSunday
+          ? translate('common.holiday_sunday')
+          : translate('common.holiday');
+
+        excelData.push([row.dateDisplay, textLibur, '']);
 
         merges.push({
           s: { r: rowIndex, c: 1 },
           e: { r: rowIndex, c: 2 },
         });
       } else {
-        const hasStart = !!row.firstCreatedTime;
-        const hasEnd = !!row.lastAssignedTime;
-
         excelData.push([
           row.dateDisplay,
           hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-',
@@ -158,7 +176,10 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
   for (let R = 1; R <= range.e.r; R++) {
     const startVal = excelData[R][1];
     const endVal = excelData[R][2];
-    const isSunday = startVal === 'Libur (Minggu)' || startVal === 'Holiday (Sunday)';
+
+    const textLiburSunday = translate('common.holiday_sunday');
+    const textLiburDynamic = translate('common.holiday');
+    const isHolidayRow = startVal === textLiburSunday || startVal === textLiburDynamic;
 
     // Validasi missing pair
     const isStartMissing = startVal === '-' && endVal !== '-';
@@ -170,8 +191,11 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
       let currentStyle = { ...BASE_STYLES.center };
 
-      if (isSunday) {
+      if (isHolidayRow) {
         currentStyle.fill = { patternType: 'solid', fgColor: COLORS.sunday };
+        if (C === 1) {
+          currentStyle.font = { bold: true, color: { rgb: '990000' } };
+        }
       } else {
         // Berikan warna merah pada cell yang bolong
         if (C === 1 && isStartMissing) {
@@ -187,5 +211,5 @@ export function generateTimeROSheet(wb, tasks, startDateStr, endDateStr, transla
 
   ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }];
 
-  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.time_ro.title'));
+  XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.routing_time.title'));
 }

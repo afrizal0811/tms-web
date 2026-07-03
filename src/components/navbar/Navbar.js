@@ -17,6 +17,68 @@ import ThemeToggle from '../ThemeToggle';
 import LocationSwitcher from './LocationSwitcher';
 import UserDropdown from './UserDropdown';
 
+function NavLink({ href, children, className }) {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
+  return (
+    <Link
+      href={href}
+      className={`text-sm font-medium transition-colors ${className} ${
+        isActive
+          ? 'text-sky-600 dark:text-sky-400 font-semibold'
+          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MobileNavLink({ href, children, target = '', rel = '' }) {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+  const isExternal = target === '_blank';
+  const baseClassName = `block w-full p-3 text-base font-medium ${
+    isActive
+      ? 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30'
+      : 'text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+  }`;
+
+  if (isExternal) {
+    return (
+      <a href={href} target={target} rel={rel} className={baseClassName}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={baseClassName}>
+      {children}
+    </Link>
+  );
+}
+
+function Divider() {
+  return (
+    <div className="pt-2 pb-1 px-3">
+      <div className="border-t border-gray-200 dark:border-slate-800"></div>
+    </div>
+  );
+}
+
+const DROPDOWN_LINK_CLASS =
+  'block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400';
+
+const REPORT_LINKS = [
+  { href: '/report/single', labelKey: 'navbar.daily_report', superadminOnly: false },
+  { href: '/report/bulk', labelKey: 'navbar.period_report', superadminOnly: false },
+  { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
+  { href: '/report/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
+  { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
+];
+
 export default function Navbar() {
   const { t, isIndonesian } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -83,7 +145,6 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Efek baru: Mengunci scroll body saat menu mobile terbuka
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -118,49 +179,6 @@ export default function Navbar() {
   const secondaryEstimate = isIndonesian ? t('navbar.deliveries') : t('navbar.estimate');
   const primaryDeliveries = isIndonesian ? 'Data' : t('common.vehicle');
   const secondaryDeliveries = isIndonesian ? t('common.vehicle') : 'Data';
-
-  function NavLink({ href, children, className }) {
-    const pathname = usePathname();
-    const isActive = pathname === href;
-
-    return (
-      <Link
-        href={href}
-        className={`text-sm font-medium transition-colors ${className} ${
-          isActive
-            ? 'text-sky-600 dark:text-sky-400 font-semibold'
-            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
-        }`}
-      >
-        {children}
-      </Link>
-    );
-  }
-
-  function MobileNavLink({ href, children, target = '', rel = '' }) {
-    const pathname = usePathname();
-    const isActive = pathname === href;
-    const isExternal = target === '_blank';
-    const baseClassName = `block w-full p-3 text-base font-medium ${
-      isActive
-        ? 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30'
-        : 'text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-    }`;
-
-    if (isExternal) {
-      return (
-        <a href={href} target={target} rel={rel} className={baseClassName}>
-          {children}
-        </a>
-      );
-    }
-
-    return (
-      <Link href={href} className={baseClassName}>
-        {children}
-      </Link>
-    );
-  }
 
   if (!mounted) {
     return (
@@ -236,38 +254,16 @@ export default function Navbar() {
         }`}
       >
         <div>
-          <Link
-            href="/report/single"
-            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-            onClick={() => setIsLaporanOpen(false)}
-          >
-            {t('navbar.daily_report')}
-          </Link>
-          <Link
-            href="/report/bulk"
-            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-            onClick={() => setIsLaporanOpen(false)}
-          >
-            {t('navbar.period_report')}
-          </Link>
-          {isSuperadmin && (
-            <>
-              <Link
-                href="/report/detail"
-                className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-                onClick={() => setIsLaporanOpen(false)}
-              >
-                {t('navbar.task_detail_report')}
-              </Link>
-              <Link
-                href="/report/counter"
-                className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400"
-                onClick={() => setIsLaporanOpen(false)}
-              >
-                {t('navbar.task_counter_report')}
-              </Link>
-            </>
-          )}
+          {REPORT_LINKS.filter((link) => !link.superadminOnly || isSuperadmin).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={DROPDOWN_LINK_CLASS}
+              onClick={() => setIsLaporanOpen(false)}
+            >
+              {t(link.labelKey)}
+            </Link>
+          ))}
         </div>
       </div>
     </div>
@@ -304,33 +300,24 @@ export default function Navbar() {
         <div
           className={`transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-90' : 'rotate-0'}`}
         >
-          {isMobileMenuOpen ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            {isMobileMenuOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
+            ) : (
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
               />
-            </svg>
-          )}
+            )}
+          </svg>
         </div>
       </button>
     </div>
@@ -402,24 +389,19 @@ export default function Navbar() {
                   <LocationSwitcher />
                 </div>
               </div>
-              <div className="pt-1 pb-1 px-3">
-                <div className="border-t border-gray-200 dark:border-slate-800"></div>
-              </div>
-              <MobileNavLink href="/report/single">{t('navbar.daily_report')}</MobileNavLink>
-              <MobileNavLink href="/report/bulk">{t('navbar.period_report')}</MobileNavLink>
-              <MobileNavLink href="/report/detail">{t('navbar.task_detail_report')}</MobileNavLink>
-              <MobileNavLink href="/report/counter">
-                {t('navbar.task_counter_report')}
-              </MobileNavLink>
+              <Divider />
+              {REPORT_LINKS.filter((link) => !link.superadminOnly || isSuperadmin).map((link) => (
+                <MobileNavLink key={link.href} href={link.href}>
+                  {t(link.labelKey)}
+                </MobileNavLink>
+              ))}
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
               {mobileLinkEstimate}
               {mobileLinkDelivery}
-              <div className="pt-2 pb-1 px-3">
-                <div className="border-t border-gray-200 dark:border-slate-800"></div>
-              </div>
+              <Divider />
             </>
           ) : null}
           <ThemeToggle

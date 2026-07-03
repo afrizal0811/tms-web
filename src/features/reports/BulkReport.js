@@ -12,12 +12,9 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import {
-  generateDeliveryWorkbook,
-  generateRoutingWorkbook,
-  generateTimeSummaryWorkbook,
-} from '@/lib/reportGenerators';
-import { toastError } from '@/lib/toastHelper';
+import { generateAutoReportWorkbook } from '@/lib/reportGenerators';
+import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
+import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
@@ -37,7 +34,6 @@ export default function BulkReport({ driverData }) {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentReport, setCurrentReport] = useState(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const { t } = useLanguage();
@@ -78,75 +74,30 @@ export default function BulkReport({ driverData }) {
     setPendingAction(null);
   };
 
-  const handleBulkRoutingSummary = async (t) => {
+  const handleBulkSummary = async (t) => {
     let mappingsObj = {};
     let vehicleTypes = [];
+    let hubsMap = {};
     try {
       setIsLoading(true);
-      const vehicleTypesObj = await getVehicleTypes();
+      const [vehicleTypesObj, mappingsDB, hubsDB] = await Promise.all([
+        getVehicleTypes(),
+        getVehicleMappings(),
+        getHubs(),
+      ]);
       vehicleTypes = vehicleTypesObj.map((v) => v.name);
-      const mappingsDB = await getVehicleMappings();
       mappingsObj = mappingsDB.reduce((acc, curr) => {
         acc[curr.plat] = curr.mappedType;
         return acc;
       }, {});
-    } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
-    } finally {
-      setIsLoading(false);
-    }
-
-    bulkDownloader({
-      startDate,
-      endDate,
-      driverData,
-      reportType: 'routing',
-      zipPrefix: `${t('report.bulk')} ${t('excel.routing.filename')}`,
-      setIsLoading,
-      setCurrentReport,
-      processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-        const deliveryDateObj = parseDate(dateForFile);
-        const targetRoutingDateObj = new Date(deliveryDateObj);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0) {
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        }
-
-        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
-        const filteredResults = await getResultsSummary({
-          routingDateObj: targetRoutingDateObj,
-          deliveryDateObj: deliveryDateObj,
-          hubId: hubId,
-        });
-
-        if (filteredResults.length > 0) {
-          return await generateRoutingWorkbook(
-            driverData,
-            filteredResults,
-            mappingsObj,
-            targetRoutingStr,
-            hubName,
-            t,
-            vehicleTypes
-          );
-        }
-        return null;
-      },
-      t,
-    });
-  };
-
-  const handleBulkDeliverySummary = async (t) => {
-    let hubsMap = {};
-    try {
-      setIsLoading(true);
-      const hubsDB = await getHubs();
       hubsMap = hubsDB.reduce((acc, curr) => {
         acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
         return acc;
       }, {});
     } catch (e) {
       toastError(t('common.toast.error', { err: e.message }));
+      setIsLoading(false);
+      return;
     } finally {
       setIsLoading(false);
     }
@@ -155,89 +106,104 @@ export default function BulkReport({ driverData }) {
       startDate,
       endDate,
       driverData,
-      reportType: 'delivery',
-      zipPrefix: `${t('report.bulk')} ${t('excel.delivery.filename')}`,
+      zipPrefix: `${t('report.bulk')}`,
       setIsLoading,
-      setCurrentReport,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const deliveryDateObj = parseDate(dateForFile);
-        const targetRoutingDateObj = new Date(deliveryDateObj);
-        targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        if (targetRoutingDateObj.getDay() === 0) {
-          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
-        }
-
-        const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
 
         const startD = new Date(deliveryDateObj);
         startD.setHours(0, 0, 0, 0);
         const endD = new Date(deliveryDateObj);
         endD.setHours(23, 59, 59, 999);
 
-        const timeFrom = formatToApiUtc(startD);
-        const timeTo = formatToApiUtc(endD);
+        const timeFromTasks = formatToApiUtc(startD);
+        const timeToTasks = formatToApiUtc(endD);
 
-        const [allTasks, resultsData] = await Promise.all([
-          getTasks({
-            hubId: hubId,
-            status: 'DONE,ONGOING',
-            timeFrom: timeFrom,
-            timeTo: timeTo,
-            timeBy: 'startTime',
+        const allTasks = await getTasks({
+          hubId,
+          status: 'DONE,ONGOING',
+          timeFrom: timeFromTasks,
+          timeTo: timeToTasks,
+          timeBy: 'startTime',
+          limit: 1000,
+        });
+
+        if (isEmpty(allTasks)) {
+          return null;
+        }
+        const dates = [];
+        allTasks.forEach((task) => {
+          if (task.createdFrom === 'API' && task.createdTime) {
+            const d = new Date(task.createdTime);
+            d.setHours(d.getHours() + 7);
+            dates.push(d.toISOString().split('T')[0]);
+          }
+        });
+
+        let targetRoutingStr;
+        if (dates.length > 0) {
+          const modeMap = {};
+          let maxEl = dates[0],
+            maxCount = 1;
+          for (const d of dates) {
+            modeMap[d] = (modeMap[d] || 0) + 1;
+            if (modeMap[d] > maxCount) {
+              maxEl = d;
+              maxCount = modeMap[d];
+            }
+          }
+          targetRoutingStr = maxEl;
+        } else {
+          const targetRoutingDateObj = new Date(deliveryDateObj);
+          targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          if (targetRoutingDateObj.getDay() === 0) {
+            targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
+          }
+          targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
+        }
+
+        const summaryPayload = {
+          dateFrom: `${targetRoutingStr} 00:00:00`,
+          dateTo: `${targetRoutingStr} 23:59:59`,
+          limit: 1000,
+          hubId,
+        };
+
+        const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
+          calculateStartFinishDates(dateForFile);
+
+        const [filteredResults, locationHistoriesRes] = await Promise.all([
+          getResultsSummary(summaryPayload),
+          getLocationHistories({
+            timeFrom: timeFromHistories,
+            timeTo: timeToHistories,
             limit: 1000,
-          }),
-          getResultsSummary({
-            routingDateObj: targetRoutingDateObj,
-            deliveryDateObj: deliveryDateObj,
-            hubId: hubId,
+            startFinish: 'true',
+            fields: 'finish,startTime,email,trackedTime,totalDistance',
+            timeBy: 'createdTime',
           }),
         ]);
 
-        if (allTasks.length > 0) {
-          const hasPendingGR = hubsMap[String(hubId)] || false;
-
-          return generateDeliveryWorkbook(
+        const allApiData = locationHistoriesRes?.tasks?.data || [];
+        const { timeDataObjects } = parseTimeData(allApiData || [], driverData, dateForFile);
+        const filteredTimeData = timeDataObjects.filter(
+          (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
+        );
+        const hasPendingGR = hubsMap[String(hubId)] || false;
+        if (!isEmpty(filteredResults) && !isEmpty(allTasks) && !isEmpty(filteredTimeData)) {
+          return await generateAutoReportWorkbook({
             driverData,
+            filteredResults,
             allTasks,
-            resultsData || [],
-            dateForFile,
+            timeData: timeDataObjects,
+            mappingsObj,
+            vehicleTypes,
             targetRoutingStr,
-            hubName,
+            selectedDateString: dateForFile,
+            hubLabel: hubName,
             hasPendingGR,
-            t
-          );
-        }
-        return null;
-      },
-      t,
-    });
-  };
-
-  const handleBulkTimeSummary = (t) => {
-    bulkDownloader({
-      startDate,
-      endDate,
-      driverData,
-      reportType: 'time',
-      zipPrefix: `${t('report.bulk')} ${t('excel.time.filename')}`,
-      setIsLoading,
-      setCurrentReport,
-      processDateCallback: async ({ dateForFile, hubName }) => {
-        const { timeFrom, timeTo } = calculateStartFinishDates(dateForFile);
-
-        const response = await getLocationHistories({
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-          limit: 1000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        });
-
-        const allApiData = response?.tasks?.data || [];
-
-        if (allApiData.length > 0) {
-          return generateTimeSummaryWorkbook(driverData, allApiData, dateForFile, hubName, t);
+            t,
+          });
         }
         return null;
       },
@@ -247,24 +213,6 @@ export default function BulkReport({ driverData }) {
 
   const isRangeInvalid =
     !startDate || !endDate || startDate > endDate || startDate.getTime() === endDate.getTime();
-
-  const actionButtons = [
-    {
-      id: 'routing',
-      label: t('report.routing_summary'),
-      onClick: () => executeWithCheck(() => handleBulkRoutingSummary(t)),
-    },
-    {
-      id: 'delivery',
-      label: t('report.delivery_summary'),
-      onClick: () => executeWithCheck(() => handleBulkDeliverySummary(t)),
-    },
-    {
-      id: 'time',
-      label: t('report.time_summary'),
-      onClick: () => executeWithCheck(() => handleBulkTimeSummary(t)),
-    },
-  ];
 
   return (
     <div className="w-full max-w-6xl p-4">
@@ -291,17 +239,15 @@ export default function BulkReport({ driverData }) {
           />
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
-        {actionButtons.map(({ id, label, onClick }) => (
-          <Button
-            key={id}
-            onClick={onClick}
-            disabled={isLoading || isRangeInvalid}
-            isLoading={isLoading && currentReport === id}
-            text={label}
-            width="w-full sm:w-64"
-          />
-        ))}
+      <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
+        <Button
+          key="download"
+          onClick={() => executeWithCheck(() => handleBulkSummary(t))}
+          disabled={isLoading || isRangeInvalid}
+          isLoading={isLoading}
+          text={t('common.download')}
+          width="w-full sm:w-auto min-w-[200px]"
+        />
       </div>
 
       <ConfirmModal

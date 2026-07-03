@@ -1,5 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -18,7 +18,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       t('common.customer_id'),
       t('common.location_id'),
       t('longlat.table.new_longlat'),
-      t('longlat.table.diff_dist'),
+      t('common.dist_diff'),
       t('common.driver'),
       t('longlat.table.update_time'),
     ];

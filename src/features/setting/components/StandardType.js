@@ -2,7 +2,7 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
 import Table from './Table';
@@ -70,7 +70,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
     },
   ];
 
-  const confirmModalText = translate('setting.tab.general.standard_title');
+  const title = translate('setting.tab.general.standard_title');
 
   return (
     <Card>
@@ -78,9 +78,9 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteType}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 
@@ -107,7 +107,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
             disabled={!newTypeName.trim()}
             className="shrink-0 px-2.5 sm:px-3 py-2 text-[12px] sm:text-sm font-bold text-white bg-sky-600 rounded-md hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
           >
-            <span className="hidden sm:inline">{translate('setting.tab.button.btn_add')}</span>
+            <span className="hidden sm:inline">{translate('common.button.btn_add')}</span>
             <span className="sm:hidden text-sm leading-none">+</span>
           </button>
         </div>

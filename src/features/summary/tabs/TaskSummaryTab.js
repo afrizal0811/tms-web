@@ -2,7 +2,8 @@
 
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import RoutingDropdown from './components/RoutingDropdown';
 import TaskSummaryModal from './modals/TaskSummaryModal';
 
 const TableHeader = ({ tooltip, colorClass, text }) => (
@@ -73,6 +74,7 @@ export default function TaskSummaryTab({
   masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } },
 }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const allDates = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -177,9 +179,16 @@ export default function TaskSummaryTab({
     );
   };
 
-  const renderArmadaRow = (data, mtTotal, dateObj, isFrozen, isFirstRow, rowSpanProps) => {
-    const isPastOrToday = dateObj <= new Date().setHours(0, 0, 0, 0);
-    const isZeroDP = (data.dp || 0) === 0 && isPastOrToday;
+  const renderArmadaRow = (
+    data,
+    mtTotal,
+    dateObj,
+    isFrozen,
+    isFirstRow,
+    rowSpanProps,
+    isZeroDP,
+    routingNames
+  ) => {
     const dateCellClass = isZeroDP
       ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
       : 'bg-white dark:bg-slate-800 font-medium';
@@ -192,9 +201,24 @@ export default function TaskSummaryTab({
         {isFirstRow && (
           <td
             rowSpan={2}
-            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center ${dateCellClass}`}
+            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center relative ${dateCellClass}`}
           >
-            {rowSpanProps.display}
+            {routingNames && routingNames.length > 0 && !isZeroDP ? (
+              <RoutingDropdown
+                displayText={rowSpanProps.display}
+                routingNames={routingNames}
+                translate={translate}
+                position="right"
+                isOpen={openDropdown === rowSpanProps.display}
+                onToggle={() =>
+                  setOpenDropdown(
+                    openDropdown === rowSpanProps.display ? null : rowSpanProps.display
+                  )
+                }
+              />
+            ) : (
+              <span>{rowSpanProps.display}</span>
+            )}
           </td>
         )}
 
@@ -202,7 +226,7 @@ export default function TaskSummaryTab({
           {isFrozen ? 'Frozen' : 'Dry'}
         </TableCell>
 
-        <TableCell>{renderValue(data.dp)}</TableCell>
+        {renderClickableCell(data.dp, data.dp_tasks, 'dp', 'DP', dateObj, isFrozen)}
 
         {renderClickableCell(data.dt_total, data.dt_tasks, 'dt', 'DT', dateObj, isFrozen)}
         <TableCell colorClass={COLORS.green}>{calculatePct(data.dt_total, data.dp)}</TableCell>
@@ -230,33 +254,45 @@ export default function TaskSummaryTab({
     );
   };
 
-  const renderSundayRows = (key, display) => [
-    <tr
-      key={`${key}-sun-1`}
-      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700"
-    >
-      <td
-        rowSpan={2}
-        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-medium align-middle bg-red-200 dark:bg-[#4a1c1c] text-center"
+  const renderHolidayRows = (key, display, isSunday) => {
+    const content = isSunday ? (
+      translate('common.holiday_sunday')
+    ) : (
+      <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+        <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+          {translate('common.holiday')}
+        </span>
+      </Tooltip>
+    );
+
+    return [
+      <tr
+        key={`${key}-hol-1`}
+        className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700"
       >
-        {display}
-      </td>
-      <td
-        rowSpan={2}
-        colSpan={17}
-        className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle dark:bg-[#4a1c1c]"
-      >
-        {translate('summary.tabs.task_summary.holiday')}
-      </td>
-    </tr>,
-    <tr
-      key={`${key}-sun-2`}
-      className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300"
-    ></tr>,
-  ];
+        <td
+          rowSpan={2}
+          className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-medium align-middle bg-red-200 dark:bg-[#4a1c1c] text-center"
+        >
+          {display}
+        </td>
+        <td
+          rowSpan={2}
+          colSpan={17}
+          className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle dark:bg-[#4a1c1c]"
+        >
+          {content}
+        </td>
+      </tr>,
+      <tr
+        key={`${key}-hol-2`}
+        className="bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300"
+      ></tr>,
+    ];
+  };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden p-0">
+    <div className="w-full h-full flex flex-col p-0">
       {isLoading && (
         <div className="w-full h-1 bg-gray-100 dark:bg-slate-700">
           <div
@@ -273,7 +309,7 @@ export default function TaskSummaryTab({
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.yellow}`}
               >
-                {translate('common.date')}
+                {translate('common.routing_date')}
               </th>
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.yellow}`}
@@ -298,26 +334,59 @@ export default function TaskSummaryTab({
           </thead>
           <tbody>
             {allDates.map((item) => {
-              if (item.isSunday) return renderSundayRows(item.key, item.display);
-
               const data = metrics ? metrics[item.key] : null;
               const d = data?.dry || {};
               const f = data?.frozen || {};
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
+              const rNames = data?.routingNames || [];
+
+              const isPast =
+                new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+
+              const checkZero = (obj) =>
+                (obj.dp || 0) === 0 &&
+                (obj.dt_total || 0) === 0 &&
+                (obj.ma_total || 0) === 0 &&
+                (obj.rt || 0) === 0 &&
+                (obj.co || 0) === 0 &&
+                (obj.pr || 0) === 0 &&
+                (obj.tv || 0) === 0 &&
+                (obj.va || 0) === 0 &&
+                (obj.tvu || 0) === 0;
+
+              const isDynamicHoliday = isPast && checkZero(d) && checkZero(f);
+
+              if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
+              if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
+
+              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast;
+
               return [
-                renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
+                renderArmadaRow(
+                  d,
+                  mtDry,
+                  item.dateObj,
+                  false,
+                  true,
+                  { display: item.display },
+                  isZeroDP,
+                  rNames
+                ),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP, rNames),
               ];
             })}
           </tbody>
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg shadow-sm shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *{translate('summary.click_box_hint')}
+          *
+          {translate('common.click_for_detail_param', {
+            parameter: translate('summary.underline'),
+          })}
         </div>
       </div>
 

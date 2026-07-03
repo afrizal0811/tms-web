@@ -1,8 +1,10 @@
 import {
+  calculateMinuteDifference,
   formatDateUniversal,
   formatDateWIB,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getBasePlate,
   isEmpty,
   normalizeEmail,
   parseAndShiftToUTC7,
@@ -525,16 +527,10 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       }
     }
 
-    let actualVisitTimeVal = '-';
-    if (actualArrival && actualDeparture) {
-      const start = new Date(actualArrival).getTime();
-      const end = new Date(actualDeparture).getTime();
-      if (!isNaN(start) && !isNaN(end) && end >= start) {
-        const diffMs = end - start;
-        const diffMins = Math.ceil(diffMs / 60000);
-        actualVisitTimeVal = diffMins;
-      }
-    }
+    const actualVisitTimeVal =
+      actualArrival && actualDeparture
+        ? calculateMinuteDifference(actualArrival, actualDeparture)
+        : '-';
 
     allTaskData.push({
       driver: driverName,
@@ -875,7 +871,7 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
     }
 
     const flow = isHub ? null : row.flow;
-    const plat = isHub ? null : row.plat;
+    const plat = isHub ? null : getBasePlate(row.plat) || row.plat;
     const driver = isHub ? null : row.driver;
 
     let customer = row.customerName || '-';
@@ -887,9 +883,9 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
     const open = isHub ? null : row.openTime;
     const close = isHub ? null : row.closeTime;
 
-    const eta = isHubStart ? row.time : row.eta;
+    const eta = isHubEnd ? row.time : row.eta;
     const arrival = isHub ? null : row.actualArrival;
-    const etd = isHubEnd ? row.time : row.etd;
+    const etd = isHubStart ? row.time : row.etd;
     const departure = isHub ? null : row.actualDeparture;
 
     const visitTime = isHub ? null : row.visitTime;

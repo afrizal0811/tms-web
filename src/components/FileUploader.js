@@ -1,30 +1,50 @@
 'use client';
 import { useLanguage } from '@/context/LanguageContext';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
+
 export default function FileUploader({
   files = [],
   onUpdateFiles,
   accept = '.xlsx, .xls',
   multiple = true,
   validator,
+  id = 'file-input',
 }) {
   const { t } = useLanguage();
+
   const handleFileChange = async (e) => {
-    const file = e.target.files;
-    if (validator) {
-      const isContentValid = await validator(file[0]);
-      if (!isContentValid) {
-        toastError(`File '${file[0].name}' ditolak. \n Gunakan file yang benar!`);
-        return false;
+    const truncateFileName = (fileName) => {
+      const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+
+      return nameWithoutExt.length > 15 ? `${nameWithoutExt.slice(0, 15)}...` : nameWithoutExt;
+    };
+
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+
+    let validFiles = [];
+    for (const f of selectedFiles) {
+      if (validator) {
+        const isContentValid = await validator(f);
+
+        if (!isContentValid) {
+          toastError(
+            t('report.toast.invalid_file', {
+              fileName: truncateFileName(f.name),
+            })
+          );
+          continue;
+        }
       }
+
+      validFiles.push(f);
     }
 
-    if (file) {
-      const newFiles = Array.from(file);
+    if (validFiles.length > 0) {
       const existingNames = new Set(files.map((f) => f.name));
       let hasDuplicate = false;
 
-      const uniqueNewFiles = newFiles.filter((f) => {
+      const uniqueNewFiles = validFiles.filter((f) => {
         if (existingNames.has(f.name)) {
           hasDuplicate = true;
           return false;
@@ -37,7 +57,9 @@ export default function FileUploader({
         toastError('Tidak bisa upload file yang sama');
       }
 
-      onUpdateFiles([...files, ...uniqueNewFiles]);
+      if (uniqueNewFiles.length > 0) {
+        onUpdateFiles([...files, ...uniqueNewFiles]);
+      }
     }
     e.target.value = null;
   };
@@ -55,7 +77,7 @@ export default function FileUploader({
       {files.length === 0 ? (
         <div className="border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-xl bg-sky-50 dark:bg-sky-950/30 hover:bg-sky-100 dark:hover:bg-sky-950/50 transition-colors">
           <label
-            htmlFor="manual-file-input"
+            htmlFor={id}
             className="cursor-pointer w-full flex flex-col items-center justify-center py-8 px-6 text-center gap-2 outline-none"
           >
             <svg
@@ -82,7 +104,7 @@ export default function FileUploader({
             </p>
           </label>
           <input
-            id="manual-file-input"
+            id={id}
             type="file"
             accept={accept}
             multiple={multiple}
@@ -108,7 +130,7 @@ export default function FileUploader({
           <div className="border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50 max-h-[212px] overflow-y-auto">
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
               <label
-                htmlFor="manual-file-input"
+                htmlFor={id}
                 className="aspect-square flex flex-col items-center justify-center border border-dashed border-sky-400 bg-sky-50/50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/40 rounded-lg cursor-pointer transition-colors"
               >
                 <svg
@@ -122,7 +144,7 @@ export default function FileUploader({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 <span className="text-[11px] font-medium text-sky-700 dark:text-sky-400 mt-1">
-                  Tambah
+                  {t('common.button.btn_add')}
                 </span>
               </label>
 
@@ -169,7 +191,7 @@ export default function FileUploader({
             </div>
           </div>
           <input
-            id="manual-file-input"
+            id={id}
             type="file"
             accept={accept}
             multiple={multiple}

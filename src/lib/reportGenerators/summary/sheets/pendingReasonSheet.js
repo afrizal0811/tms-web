@@ -1,12 +1,9 @@
 // File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
-import { formatDateWIB, isEmpty, parseCustomerString } from '@/lib/utils';
+import { formatDateWIB, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
-function normalizeEmail(email) {
-  return email ? email.toLowerCase().trim() : '';
-}
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -19,12 +16,6 @@ function parseApiDateString(dateStr) {
 function formatSimpleTimeString(timeStr) {
   if (!timeStr || typeof timeStr !== 'string') return null;
   return timeStr.substring(0, 5);
-}
-
-function getCustomerID(customerName) {
-  if (!customerName) return '-';
-  const match = customerName.match(/C0\d+/);
-  return match ? match[0] : '-';
 }
 
 function getDriverStorageType(driver) {
@@ -174,7 +165,7 @@ export function generatePendingReasonSheet(
 
   let headers = [
     translate('common.flow'),
-    translate('common.date'),
+    translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
     translate('common.status.cancel'),
@@ -184,10 +175,10 @@ export function generatePendingReasonSheet(
   if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
   headers.push(
     translate('summary.tabs.pending_reasons.reason'),
-    'Internal/External', // Kolom Tambahan 1
-    'Detail Reason', // Kolom Tambahan 2
-    'Group Reason', // Kolom Tambahan 3
-    'PIC', // Kolom Tambahan 4
+    translate('summary.tabs.pending_reasons.category'),
+    translate('summary.tabs.pending_reasons.detail_reason'),
+    translate('summary.tabs.pending_reasons.group_reason'),
+    'PIC',
     translate('common.open_time'),
     translate('common.close_time'),
     translate('common.eta'),

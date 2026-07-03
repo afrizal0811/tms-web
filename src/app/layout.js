@@ -3,6 +3,7 @@ import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';
 import ThemeProvider from '@/context/ThemeProvider';
+import 'leaflet/dist/leaflet.css';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
@@ -34,9 +35,6 @@ export default function RootLayout({ children }) {
                 left: 20,
                 bottom: 20,
                 right: 20,
-              }}
-              toastOptions={{
-                duration: 4000,
               }}
             />
             <TokenExpirationModal />

@@ -5,7 +5,7 @@ import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

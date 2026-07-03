@@ -1,7 +1,7 @@
 // File: src/components/LocationDropdown.js
 'use client';
 
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -133,7 +133,7 @@ export default function LocationDropdown({
 
       {!loading && !error && (
         <>
-          {!compact && placeholder && <option value="">{placeholder}</option>}
+          {!compact && placeholder && <option value="" disabled>{placeholder}</option>}
           {isEmpty(data) && <option value="">{'-- Tidak ada lokasi --'}</option>}
 
           {data.map((hub) => {

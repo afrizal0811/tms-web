@@ -1,10 +1,10 @@
-// File: src/features/rangkuman/tabs/modals/PendingReasonModal.js
+// File: src/features/summary/tabs/modals/PendingReasonModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deletePendingDetail, upsertPendingDetail } from '@/lib/api'; // Pastikan deletePendingDetail diimport
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function PendingReasonModal({
@@ -119,15 +119,17 @@ export default function PendingReasonModal({
       data.pendingDetail.pic);
 
   const statusText = data.statusDelivery ? data.statusDelivery[0] : data.status;
-
+  const title = translate('summary.tabs.pending_reasons.modal_title');
   return (
     <>
       <ConfirmModal
         isOpen={isConfirmOpen}
         onCancel={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
-        title="Hapus Data"
-        message="Apakah Anda yakin ingin menghapus detail pending ini?"
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
+        })}
       />
       <BaseModal
         isOpen={isOpen}
@@ -135,7 +137,7 @@ export default function PendingReasonModal({
         maxWidth="max-w-lg"
         title={
           <div className="flex flex-col gap-0.5">
-            <span>Isi Detail Pending</span>
+            <span>{title}</span>
             <span className="text-sm font-normal opacity-70">
               {statusText} | {data.customer}
             </span>
@@ -178,7 +180,7 @@ export default function PendingReasonModal({
         <div className="flex flex-col gap-4 py-2">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Internal / External
+              {translate('summary.tabs.pending_reasons.category')}
             </label>
             <select
               value={intExt}
@@ -186,7 +188,7 @@ export default function PendingReasonModal({
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
             >
               <option value="" disabled>
-                Pilih Kategori
+                {translate('common.select')} {translate('summary.tabs.pending_reasons.category')}
               </option>
               <option value="Internal">Internal</option>
               <option value="External">External</option>
@@ -195,7 +197,7 @@ export default function PendingReasonModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Group Reason
+              {translate('summary.tabs.pending_reasons.group_reason')}
             </label>
             <select
               value={groupReason && pic ? `${groupReason}|${pic}` : ''}
@@ -203,7 +205,8 @@ export default function PendingReasonModal({
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
             >
               <option value="" disabled>
-                Pilih Group Reason
+                {translate('common.select')}{' '}
+                {translate('summary.tabs.pending_reasons.group_reason')}
               </option>
               {sortedReasons.map((r, i) => {
                 const isDuplicate = reasonCounts[r.reasons] > 1;
@@ -232,13 +235,13 @@ export default function PendingReasonModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Detail Reason
+              {translate('summary.tabs.pending_reasons.detail_reason')}
             </label>
             <textarea
               rows="3"
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
-              placeholder="Tulis detail reason..."
+              placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
             ></textarea>
           </div>

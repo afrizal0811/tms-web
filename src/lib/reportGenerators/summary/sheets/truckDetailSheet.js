@@ -3,6 +3,7 @@ import {
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
+  getDeliveryDateFromRouting,
   getUTC7DateString,
   isEmpty,
   parseCustomerString,
@@ -10,10 +11,14 @@ import {
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// Status yang dianggap GAGAL / BELUM SELESAI
-const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+// Status yang dianggap GAGAL
+const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'TERIMA SEBAGIAN']);
 
 const ERROR_STYLES = {
+  split: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
+  },
   manual: {
     fill: { patternType: 'solid', fgColor: { rgb: '4F76C7' } },
     font: { color: { rgb: 'FFFFFF' }, bold: true, name: 'Calibri', sz: 11 },
@@ -29,23 +34,6 @@ const ERROR_STYLES = {
 };
 
 // --- HELPER DATE ---
-function getDeliveryDateFromRouting(isoString) {
-  if (!isoString) return null;
-  try {
-    const date = new Date(isoString);
-    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const routingDay = wibDate.getUTCDay();
-
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
-
-    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryMs).toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
-}
 
 function getDriverStorageType(driver) {
   const typeStr = driver.type || '';
@@ -90,14 +78,19 @@ export function calculateTruckDetailData(
   const driverMap = new Map();
   const driverEmails = [];
 
-  // 1. Init Master Driver
   if (driverData && Array.isArray(driverData)) {
     driverData.forEach((d) => {
       const plat = d.plat || '-';
       if (isEmpty(plat) || plat.toUpperCase().includes('DEMO')) return;
       const email = d.email ? d.email.toLowerCase().trim() : null;
       if (email && !driverMap.has(email)) {
-        driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
+        driverMap.set(email, {
+          name: d.name,
+          plat: plat,
+          type: getDriverStorageType(d),
+          maxWeight: Number(d.maxWeight) || 0,
+          maxVolume: Number(d.maxVolume) || 0,
+        });
         driverEmails.push(email);
       }
     });
@@ -112,7 +105,6 @@ export function calculateTruckDetailData(
   const currentIterDate = new Date(Date.UTC(sY, sM - 1, sD));
   const endDateObj = new Date(Date.UTC(eY, eM - 1, eD));
 
-  // Buat Keys HANYA untuk bulan yang dipilih (Untuk UI Display)
   while (currentIterDate <= endDateObj) {
     const y = currentIterDate.getUTCFullYear();
     const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
@@ -124,12 +116,15 @@ export function calculateTruckDetailData(
     const monthName = safeDate.toLocaleDateString(localeCode, { month: 'long' });
     const yearShort = safeDate.toLocaleDateString(localeCode, { year: '2-digit' });
 
-    dateKeys.push({ str: dateStr, display: `${dayNum}-${monthName} ${yearShort}` });
+    dateKeys.push({
+      str: dateStr,
+      display: `${dayNum}-${monthName} ${yearShort}`,
+      routingNames: [],
+    });
     dataMatrix[dateStr] = {};
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
 
-  // 4. Process Routing (Results)
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
@@ -139,63 +134,62 @@ export function calculateTruckDetailData(
         if (dateKey) {
           if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
 
+          const dkObj = dateKeys.find((dk) => dk.str === dateKey);
+          if (dkObj && dispatch.name) {
+            dkObj.routingNames.push(dispatch.name);
+          }
+
           dispatch.result.routing.forEach((route) => {
             const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
             if (!email || !driverMap.has(email)) return;
-
             if (!dataMatrix[dateKey][email]) {
+              const driverMasterInfo = driverMap.get(email);
               dataMatrix[dateKey][email] = {
-                weight: 0,
-                maxWeight: 0,
-                volume: 0,
-                maxVolume: 0,
+                delivered: 0,
                 dist: 0,
                 duration: 0,
-                outlets: 0,
-                delivered: 0,
-                hasManualError: false,
                 hasBedaHariError: false,
+                hasManualError: false,
+                maxWeight: driverMasterInfo?.maxWeight || route.vehicleMaxWeight || 0,
+                maxVolume: driverMasterInfo?.maxVolume || route.vehicleMaxVolume || 0,
+                outlets: 0,
+                realVolume: 0,
+                realWeight: 0,
                 taskList: [],
+                volume: 0,
+                weight: 0,
+                seenInvoices: new Set(),
               };
             }
             const entry = dataMatrix[dateKey][email];
 
-            let durationVal = route.totalSpentTime || 0;
-            if (durationVal === 0 && Array.isArray(route.trips)) {
-              const manualSum = route.trips.reduce(
-                (acc, trip) =>
-                  !trip.isHub
-                    ? acc + (trip.travelTime || 0) + (trip.visitTime || 0) + (trip.waitingTime || 0)
-                    : acc,
-                0
-              );
-              if (manualSum > 0) durationVal = manualSum;
+            let manualTravel = 0,
+              manualVisit = 0,
+              manualWait = 0;
+            if (Array.isArray(route.trips)) {
+              const hubTrips = route.trips.filter((t) => t.isHub);
+              manualWait = hubTrips.length
+                ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
+                : 0;
+
+              route.trips.forEach((trip) => {
+                if (!trip.isHub) {
+                  manualVisit += trip.visitTime || 0;
+                  manualWait += trip.waitingTime || 0;
+                }
+                manualTravel += trip.travelTime || 0;
+              });
             }
-            let weightVal = route.totalWeight || 0;
-            let volumeVal = route.totalVolume || 0;
-            let distVal = route.totalDistance || 0;
-            if ((weightVal <= 0 || volumeVal <= 0 || distVal === 0) && Array.isArray(route.trips)) {
-              const manualMetrics = route.trips.reduce(
-                (acc, trip) => {
-                  if (!trip.isHub) {
-                    acc.w += Math.abs(trip.weight || 0);
-                    acc.v += Math.abs(trip.volume || 0);
-                    acc.d += trip.distance || 0;
-                  }
-                  return acc;
-                },
-                { w: 0, v: 0, d: 0 }
-              );
-              if (weightVal <= 0) weightVal = manualMetrics.w;
-              if (volumeVal <= 0) volumeVal = manualMetrics.v;
-              if (distVal === 0) distVal = manualMetrics.d;
-            }
-            entry.weight += weightVal;
-            entry.maxWeight += route.vehicleMaxWeight || 0;
-            entry.volume += volumeVal;
-            entry.maxVolume += route.vehicleMaxVolume || 0;
-            entry.dist += distVal;
-            entry.duration += durationVal;
+            const manualSum = manualTravel + manualVisit + manualWait;
+            let durationVal = manualSum || Number(route.totalSpentTime) || 0;
+            let manualD = 0;
+
+            let distVal = manualD || Number(route.totalDistance) || 0;
+
+            entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
+            entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
+            entry.dist = Math.max(entry.dist, distVal);
+            entry.duration = Math.max(entry.duration, durationVal);
           });
         }
       }
@@ -236,40 +230,44 @@ export function calculateTruckDetailData(
       if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};
 
       if (!dataMatrix[dateKey][email]) {
+        const masterDriver = driverMap.get(email);
         dataMatrix[dateKey][email] = {
-          weight: 0,
-          maxWeight: 0,
-          volume: 0,
-          maxVolume: 0,
+          delivered: 0,
           dist: 0,
           duration: 0,
-          outlets: 0,
-          delivered: 0,
-          hasManualError: false,
           hasBedaHariError: false,
+          hasManualError: false,
+          hasSplitTask: false,
+          maxVolume: masterDriver?.maxVolume || 0,
+          maxWeight: masterDriver?.maxWeight || 0,
+          outlets: 0,
+          realVolume: 0,
+          realWeight: 0,
           taskList: [],
+          volume: 0,
+          weight: 0,
         };
       }
       const entry = dataMatrix[dateKey][email];
       entry.outlets += 1;
       const flow = task.flow || '-';
-      let status = '';
+      let statusDelivery = '';
       if (flow !== 'Pickup') {
         if (task.statusDelivery && task.statusDelivery.length > 0) {
-          status = task.statusDelivery[0].toUpperCase();
+          statusDelivery = task.statusDelivery[0].toUpperCase();
         } else if (flow.includes('GR')) {
           if (task.statusGr && task.statusGr.length > 0) {
-            status = task.statusGr[0].toUpperCase();
+            statusDelivery = task.statusGr[0].toUpperCase();
           }
         }
       } else {
-        status = task.status && task.status.toUpperCase();
+        statusDelivery = task.status && task.status.toUpperCase();
       }
-      status = task.status !== 'ONGOING' ? status : '-';
-      if (!FAILED_STATUSES.includes(status)) entry.delivered += 1;
+      statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
+      if (!FAILED_STATUSES.has(statusDelivery) && task.status !== 'ONGOING') entry.delivered += 1;
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
-
+      const hasSplitTask = task.isSplitTask === 'true';
       const startD = getUTC7DateString(task.startTime);
       const doneD = getUTC7DateString(task.doneTime);
 
@@ -282,7 +280,21 @@ export function calculateTruckDetailData(
         const diffTime = Math.abs(d2 - d1);
         dayDiffCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
-      if (isManual) entry.hasManualError = true;
+      if (isManual) {
+        entry.hasManualError = true;
+      }
+      if (hasSplitTask) {
+        entry.hasSplitTask = true;
+      }
+      const taskWeight = Math.abs(Number(task.weightKg || task.weight)) || 0;
+      const taskVolume = Math.abs(Number(task.volumeCbm || task.volume)) || 0;
+
+      entry.weight += taskWeight;
+      entry.volume += taskVolume;
+      if (!isManual) {
+        entry.realWeight += taskWeight;
+        entry.realVolume += taskVolume;
+      }
       if (isDateDiff) entry.hasBedaHariError = true;
 
       const isGR = flow.toUpperCase().includes('GR');
@@ -311,18 +323,23 @@ export function calculateTruckDetailData(
         customerName: flow === 'Pickup' ? pickupCustomerName : finalCustomerName,
         soNumber: finalSO,
         flow: flow,
-        status: status,
+        status: statusDelivery,
         isManual: isManual,
         isDateDiff: isDateDiff,
         dayDiff: dayDiffCount,
         startTimeStr: realStartTimeStr,
         roSequence: task.routePlannedOrder,
         arrivalTimestamp: arrivalTimestamp,
+        doneCoord: task.doneCoordinate || null,
+        expectedCoord: task.expectedCoordinate || null,
+        doneTime: task.doneTime || null,
+        weight: Math.abs(Number(task.weightKg || task.weight)) || 0,
+        volume: Math.abs(Number(task.volumeCbm || task.volume)) || 0,
+        isSplitTask: task.isSplitTask === 'true' || false,
       });
     }
   });
 
-  // --- 6. LOGIKA LOOKBACK (MENEMBUS BATAS BULAN) ---
   const LOOKBACK_LIMIT = 3;
 
   dateKeys.forEach(({ str: currDateKey }) => {
@@ -349,18 +366,28 @@ export function calculateTruckDetailData(
 
             if (prevHasRouting && !prevHasTasks) {
               currData.weight = prevData.weight;
+              currData.realWeight = prevData.realWeight;
               currData.maxWeight = prevData.maxWeight;
               currData.volume = prevData.volume;
+              currData.realVolume = prevData.realVolume;
               currData.maxVolume = prevData.maxVolume;
               currData.dist = prevData.dist;
               currData.duration = prevData.duration;
 
               prevData.weight = 0;
+              prevData.realWeight = 0;
               prevData.maxWeight = 0;
               prevData.volume = 0;
+              prevData.realVolume = 0;
               prevData.maxVolume = 0;
               prevData.dist = 0;
               prevData.duration = 0;
+
+              const prevDkObj = dateKeys.find((dk) => dk.str === prevDateKey);
+              const currDkObj = dateKeys.find((dk) => dk.str === currDateKey);
+              if (prevDkObj && currDkObj && prevDkObj.routingNames) {
+                prevDkObj.routingNames.forEach((name) => currDkObj.routingNames.push(name));
+              }
 
               foundRouting = true;
               break;
@@ -374,12 +401,12 @@ export function calculateTruckDetailData(
           currData.taskList = [];
           currData.hasManualError = false;
           currData.hasBedaHariError = false;
+          currData.hasSplitTask = false;
         }
       }
     });
   });
 
-  // --- 7. POST-PROCESSING: SEQUENCE & SORTING ---
   Object.keys(dataMatrix).forEach((dateKey) => {
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];
@@ -388,10 +415,9 @@ export function calculateTruckDetailData(
           return a.arrivalTimestamp - b.arrivalTimestamp;
         });
         const realRankMap = new Map();
-        let rankCounter = 1; // Tambahkan counter manual
+        let rankCounter = 1;
 
         sortedByTime.forEach((item) => {
-          // Jika belum sampai (masih bawa nilai dummy), set null
           if (item.arrivalTimestamp === 9999999999999) {
             realRankMap.set(item._tempId, null);
           } else {
@@ -429,7 +455,26 @@ export function calculateTruckDetailData(
     const nameB = (driverB.name || '').toLowerCase();
     return nameA.localeCompare(nameB);
   });
+
   return { driverMap, driverEmails, dateKeys, dataMatrix };
+}
+
+function getHeatmapColor(pct) {
+  const p = Math.min(Math.max(pct, 0), 1);
+  let r, g, b;
+  if (p < 0.5) {
+    const ratio = p / 0.5;
+    r = Math.round(248 + ratio * (255 - 248));
+    g = Math.round(105 + ratio * (235 - 105));
+    b = Math.round(107 + ratio * (132 - 107));
+  } else {
+    const ratio = (p - 0.5) / 0.5;
+    r = Math.round(255 + ratio * (99 - 255));
+    g = Math.round(235 + ratio * (190 - 235));
+    b = Math.round(132 + ratio * (123 - 132));
+  }
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 export function generateTruckDetailSheet(
@@ -451,6 +496,21 @@ export function generateTruckDetailSheet(
     localeCode
   );
 
+  const isPastDate = (dateStr) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d) < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || (metrics.outlets || 0) === 0;
+    });
+  };
+
   const headerStyle = {
     ...BASE_STYLES.cellCenter,
     font: FONT_STYLES.bold,
@@ -470,9 +530,9 @@ export function generateTruckDetailSheet(
   dateKeys.forEach((d) => {
     row1.push(d.display, '', '', '', '', '', '');
     row2.push(
-      translate('summary.tabs.truck_detail.weight'),
-      translate('summary.tabs.truck_detail.volume'),
-      translate('summary.tabs.truck_detail.distance'),
+      translate('common.weight'),
+      translate('common.volume'),
+      translate('common.distance'),
       translate('summary.tabs.truck_detail.total_outlet'),
       translate('summary.tabs.truck_detail.total_delivery'),
       translate('summary.tabs.truck_detail.ship_duration'),
@@ -480,24 +540,32 @@ export function generateTruckDetailSheet(
     );
   });
   const excelData = [row1, row2];
-  driverEmails.forEach((email) => {
+  driverEmails.forEach((email, rowIndex) => {
     const driver = driverMap.get(email);
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
-      if (metrics && metrics.outlets > 0) {
-        const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : 0;
-        const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : 0;
-        const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : 0;
-        row.push(
-          weightPct,
-          volPct,
-          metrics.dist,
-          metrics.outlets,
-          metrics.delivered,
-          formatMinutesToHHMM(metrics.duration),
-          delPct
-        );
+      const isSun = new Date(d.str).getDay() === 0;
+      const dayIsEmpty = isDayEmpty(d.str);
+      const isPast = isPastDate(d.str);
+      const isDynamic = !isSun && isPast && dayIsEmpty;
+      const isHoliday = isSun || isDynamic;
+      const shouldMergeHoliday = isHoliday && dayIsEmpty;
+
+      if (shouldMergeHoliday) {
+        if (rowIndex === 0) {
+          const text = isSun ? translate('common.holiday_sunday') : translate('common.holiday');
+          row.push(text, null, null, null, null, null, null);
+        } else {
+          row.push(null, null, null, null, null, null, null);
+        }
+      } else if (metrics && metrics.outlets > 0) {
+        const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : '-';
+        const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : '-';
+        const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : '-';
+        const distKm = metrics.dist > 0 ? Number((metrics.dist / 1000).toFixed(2)) : '-';
+        const duration = metrics.duration > 0 ? formatMinutesToHHMM(metrics.duration) : '-';
+        row.push(weightPct, volPct, distKm, metrics.outlets, metrics.delivered, duration, delPct);
       } else {
         row.push(null, null, null, null, null, null, null);
       }
@@ -508,6 +576,7 @@ export function generateTruckDetailSheet(
   excelData.push([]);
   const legendStartRow = excelData.length;
   excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push(['', translate('summary.tabs.truck_detail.orange')]);
   excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
   excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
   excelData.push(['', translate('summary.tabs.truck_detail.indigo')]);
@@ -519,16 +588,28 @@ export function generateTruckDetailSheet(
   merges.push({ s: { r: 0, c: 1 }, e: { r: 1, c: 1 } });
   merges.push({ s: { r: 0, c: 2 }, e: { r: 1, c: 2 } });
   let colIdx = 3;
-  dateKeys.forEach(() => {
+  dateKeys.forEach((d) => {
     merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 6 } });
+    const isSun = new Date(d.str).getDay() === 0;
+    const dayIsEmpty = isDayEmpty(d.str);
+    const isPast = isPastDate(d.str);
+    const isDynamic = !isSun && isPast && dayIsEmpty;
+    const isHoliday = isSun || isDynamic;
+    if (isHoliday && dayIsEmpty && driverEmails.length > 0) {
+      merges.push({
+        s: { r: 2, c: colIdx },
+        e: { r: 2 + driverEmails.length - 1, c: colIdx + 6 },
+      });
+    }
+
     colIdx += 7;
   });
-
   merges.push({ s: { r: legendStartRow, c: 0 }, e: { r: legendStartRow, c: 5 } });
   merges.push({ s: { r: legendStartRow + 1, c: 1 }, e: { r: legendStartRow + 1, c: 6 } });
   merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
   merges.push({ s: { r: legendStartRow + 3, c: 1 }, e: { r: legendStartRow + 3, c: 6 } });
-  merges.push({ s: { r: legendStartRow + 4, c: 0 }, e: { r: legendStartRow + 4, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 4, c: 1 }, e: { r: legendStartRow + 4, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 5, c: 0 }, e: { r: legendStartRow + 5, c: 6 } });
 
   ws['!merges'] = merges;
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -560,9 +641,16 @@ export function generateTruckDetailSheet(
           } else {
             const dateIdx = Math.floor((C - 3) / 7);
             if (dateKeys[dateIdx]) {
-              const dObj = new Date(dateKeys[dateIdx].str);
-              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
-              else {
+              const dateStr = dateKeys[dateIdx].str;
+              const [y, m, day] = dateStr.split('-').map(Number);
+              const safeDate = new Date(y, m - 1, day);
+
+              const isSun = safeDate.getDay() === 0;
+              const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+
+              if (isSun || isDynamic) {
+                cellFill = FILL_STYLES.red;
+              } else {
                 if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
                 if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
               }
@@ -586,12 +674,22 @@ export function generateTruckDetailSheet(
             if (relativeIdx === 0) borderLeft = BORDERS.medium;
             if (relativeIdx === 6) borderRight = BORDERS.medium;
 
+            let shouldMergeHoliday = false;
+            let metrics = null;
+
             if (dateKeys[dateIdx]) {
               const dateStr = dateKeys[dateIdx].str;
-              const dObj = new Date(dateStr);
-              const metrics = dataMatrix[dateStr][driverEmail];
+              const [y, m, day] = dateStr.split('-').map(Number);
+              const safeDate = new Date(y, m - 1, day);
+              metrics = dataMatrix[dateStr][driverEmail];
+              const isSun = safeDate.getDay() === 0;
+              const dayIsEmpty = isDayEmpty(dateStr);
+              const isDynamic = !isSun && isPastDate(dateStr) && dayIsEmpty;
+              const isHoliday = isSun || isDynamic;
 
-              if (dObj.getUTCDay() === 0) cellFill = FILL_STYLES.red;
+              shouldMergeHoliday = isHoliday && dayIsEmpty;
+
+              if (isHoliday) cellFill = FILL_STYLES.red;
 
               if (metrics && metrics.outlets > 0) {
                 let errStyle = null;
@@ -599,24 +697,49 @@ export function generateTruckDetailSheet(
                   errStyle = ERROR_STYLES.both;
                 else if (metrics.hasManualError) errStyle = ERROR_STYLES.manual;
                 else if (metrics.hasBedaHariError) errStyle = ERROR_STYLES.date;
-
                 if (errStyle) {
                   cellFill = errStyle.fill;
                   currentFontStyle = errStyle.font;
                 }
+                if (metrics.hasManualError && (relativeIdx === 2 || relativeIdx === 5)) {
+                  currentFontStyle = { ...currentFontStyle, bold: true, color: { rgb: 'FFB3B3' } };
+                }
               }
             }
-
-            if ([0, 1, 6].includes(relativeIdx)) {
+            if (shouldMergeHoliday && R === 2 && relativeIdx === 0) {
+              cell.t = 's';
+              cell.s = { ...dataStyle, alignment: { horizontal: 'center', vertical: 'center' } };
+              currentFontStyle = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+            } else if ([0, 1].includes(relativeIdx)) {
+              cell.t = 'n';
+              cell.s = { ...dataStyle, numFmt: '0.0%;;"-"' };
+            } else if (relativeIdx === 6) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '0.0%' };
-            } else if ([2, 3, 4].includes(relativeIdx)) {
+              if (metrics && metrics.outlets > 0) {
+                const pct = Math.min(Math.max(metrics.delivered / metrics.outlets, 0), 1);
+                const hexColor = getHeatmapColor(pct);
+                cellFill = { patternType: 'solid', fgColor: { rgb: hexColor } };
+                currentFontStyle = dataStyle.font;
+              }
+            } else if (relativeIdx === 2) {
+              cell.t = 'n';
+              cell.s = { ...dataStyle, numFmt: '#,##0.00;(#,##0.00);"-"' };
+            } else if ([3, 4].includes(relativeIdx)) {
               cell.t = 'n';
               cell.s = { ...dataStyle, numFmt: '#,##0' };
             } else {
               cell.s = { ...dataStyle };
             }
+            if (relativeIdx === 3 && metrics && metrics.hasSplitTask) {
+              const splitBorder = { style: 'medium', color: { rgb: 'ff8904' } };
+              borderTop = splitBorder;
+              borderBottom = splitBorder;
+              borderLeft = splitBorder;
+              borderRight = splitBorder;
+            }
           }
+
           cell.s.border = {
             top: borderTop,
             bottom: borderBottom,
@@ -630,12 +753,13 @@ export function generateTruckDetailSheet(
         const relR = R - legendStartRow;
         if (relR === 0 && C === 0) {
           cell.s = { font: { bold: true, underline: true } };
-        } else if (relR >= 1 && relR <= 3) {
+        } else if (relR >= 1 && relR <= 4) {
           if (C === 0) {
             cell.s = { border: BORDERS.thin };
-            if (relR === 1) cell.s.fill = ERROR_STYLES.manual.fill;
-            if (relR === 2) cell.s.fill = ERROR_STYLES.date.fill;
-            if (relR === 3) cell.s.fill = ERROR_STYLES.both.fill;
+            if (relR === 1) cell.s.fill = ERROR_STYLES.split.fill;
+            if (relR === 2) cell.s.fill = ERROR_STYLES.manual.fill;
+            if (relR === 3) cell.s.fill = ERROR_STYLES.date.fill;
+            if (relR === 4) cell.s.fill = ERROR_STYLES.both.fill;
           } else if (C === 1) {
             cell.s = { alignment: { horizontal: 'left', vertical: 'center' } };
           }

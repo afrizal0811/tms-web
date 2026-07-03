@@ -5,7 +5,7 @@ import Navbar from '@/components/navbar/Navbar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { useEffect } from 'react';
 
 export default function AppLayout({ children, mainClassName }) {

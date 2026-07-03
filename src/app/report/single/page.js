@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import SingleReport from '@/features/reports/SingleReport';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

@@ -1,8 +1,8 @@
-import { isTripInShift } from '@/lib/reportGenerators/isTripInShift';
+import { isTripInShift } from '@/lib/isTripInShift';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
-
 function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -46,6 +46,21 @@ function getDriverStorageType(driver) {
   if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
     return 'Dry';
   return '-';
+}
+
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 export function calculateTimeDriverData(
@@ -165,6 +180,12 @@ export function calculateTimeDriverData(
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
+        const storedHubs = getCachedHubs();
+        const { storedLocationName } = getLocalStorage();
+        const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
+        const hubLat = activeHubLocation?.lat || 0;
+        const hubLon = activeHubLocation?.lng || 0;
+        const RADIUS_THRESHOLD = 500;
 
         const entry = {
           startTimeISO: item.startTime,
@@ -176,8 +197,21 @@ export function calculateTimeDriverData(
           hasData: true,
           distance: totalDistance,
           trackedTime: trackedTime,
-        };
+          startLat: item.lat,
+          startLon: item.lon,
+          finishLat: item.finish?.lat,
+          finishLon: item.finish?.lon,
+          isStartOutRadius:
+            item.lat && item.lon
+              ? getDistanceInMeters(item.lat, item.lon, hubLat, hubLon) > RADIUS_THRESHOLD
+              : false,
 
+          isFinishOutRadius:
+            item.finish?.lat && item.finish?.lon
+              ? getDistanceInMeters(item.finish.lat, item.finish.lon, hubLat, hubLon) >
+                RADIUS_THRESHOLD
+              : false,
+        };
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
             ...entry,
@@ -200,9 +234,7 @@ export function calculateTimeDriverData(
     });
   }
 
-  const driverEmails = driverEmailsRaw.filter((email) => {
-    return dateKeys.some((d) => dataMatrix[d.str][email] && dataMatrix[d.str][email].hasData);
-  });
+  const driverEmails = [...driverEmailsRaw];
 
   const getGroupPriority = (plat) => {
     const p = (plat || '').toUpperCase();
@@ -244,6 +276,23 @@ export function generateTimeDriverSheet(
     results
   );
 
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return currentMidnight < today;
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || !metrics.hasData;
+    });
+  };
+
   const headerStyle = { ...BASE_STYLES.center, font: FONT_STYLES.bold, border: BORDERS.thin };
   const dataStyle = {
     ...BASE_STYLES.center,
@@ -267,13 +316,25 @@ export function generateTimeDriverSheet(
   });
   const excelData = [row1, row2];
 
-  driverEmails.forEach((email) => {
+  driverEmails.forEach((email, rowIndex) => {
     const driver = driverMap.get(email);
     const row = [driver.type, driver.plat, driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
+      const isSun = new Date(d.str).getDay() === 0;
+      const dayIsEmpty = isDayEmpty(d.str);
+      const isPast = isPastDate(d.str);
+      const isDynamic = !isSun && isPast && dayIsEmpty;
+      const isHoliday = isSun || isDynamic;
 
-      if (metrics && metrics.hasData) {
+      if (isHoliday) {
+        if (rowIndex === 0) {
+          const text = isSun ? translate('common.holiday_sunday') : translate('common.holiday');
+          row.push(text, null, null);
+        } else {
+          row.push(null, null, null);
+        }
+      } else if (metrics && metrics.hasData) {
         if (metrics.entries && metrics.entries.length > 1) {
           const startText = metrics.entries.map((e) => e.startDisplay).join('\n');
           const finishText = metrics.entries
@@ -298,26 +359,67 @@ export function generateTimeDriverSheet(
     excelData.push(row);
   });
 
+  excelData.push([]);
+  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push(['', translate('summary.tabs.time_driver.out_radius')]);
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
   merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
   merges.push({ s: { r: 0, c: 1 }, e: { r: 1, c: 1 } });
   merges.push({ s: { r: 0, c: 2 }, e: { r: 1, c: 2 } });
   let colIdx = 3;
-  dateKeys.forEach(() => {
+  dateKeys.forEach((d) => {
     merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 2 } });
+    const isSun = new Date(d.str).getDay() === 0;
+    const dayIsEmpty = isDayEmpty(d.str);
+    const isPast = isPastDate(d.str);
+    const isDynamic = !isSun && isPast && dayIsEmpty;
+    const isHoliday = isSun || isDynamic;
+
+    if (isHoliday && driverEmails.length > 0) {
+      merges.push({
+        s: { r: 2, c: colIdx },
+        e: { r: 2 + driverEmails.length - 1, c: colIdx + 2 },
+      });
+    }
     colIdx += 3;
   });
+
+  const legendRowIdx = excelData.length - 1;
+  merges.push({ s: { r: legendRowIdx, c: 1 }, e: { r: legendRowIdx, c: 5 } });
   ws['!merges'] = merges;
 
   const range = XLSX.utils.decode_range(ws['!ref']);
+
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
+      const totalRows = excelData.length;
+      if (R >= totalRows - 3) {
+        if (R === totalRows - 2 && C === 0) {
+          cell.s = { font: { bold: true, underline: true, name: 'Calibri', sz: 11 } };
+        } else if (R === totalRows - 1) {
+          if (C === 0) {
+            cell.s = {
+              fill: { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } },
+              border: BORDERS.thin,
+            };
+          } else if (C === 1) {
+            cell.s = {
+              alignment: { horizontal: 'left', vertical: 'center' },
+              font: { name: 'Calibri', sz: 11 },
+            };
+          }
+        }
+        continue;
+      }
+
       let cellFill = null;
       let fontStyle = dataStyle.font;
+      let customAlignment = null;
 
       if (C <= 2) {
         if (R === 0 || R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
@@ -325,24 +427,49 @@ export function generateTimeDriverSheet(
         const dateIdx = Math.floor((C - 3) / 3);
 
         if (dateKeys[dateIdx]) {
-          const dObj = new Date(dateKeys[dateIdx].str);
+          const dateStr = dateKeys[dateIdx].str;
+          const [y, m, day] = dateStr.split('-').map(Number);
+          const safeDate = new Date(y, m - 1, day);
 
-          if (dObj.getUTCDay() === 0) {
+          const isSun = safeDate.getDay() === 0;
+          const isDynamic = !isSun && isPastDate(dateStr) && isDayEmpty(dateStr);
+
+          if (isSun || isDynamic) {
             cellFill = FILL_STYLES.red;
+            if (R === 2 && (C - 3) % 3 === 0) {
+              cell.t = 's';
+              customAlignment = { horizontal: 'center', vertical: 'center' };
+              fontStyle = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };
+            }
           } else {
             if (R === 0) cellFill = { patternType: 'solid', fgColor: COLORS.frozen };
             if (R === 1) cellFill = { patternType: 'solid', fgColor: COLORS.dry };
           }
+
           if (R >= 2) {
             const driverIdx = R - 2;
             const driverEmail = driverEmails[driverIdx];
-            const dateStr = dateKeys[dateIdx].str;
 
             if (driverEmail && dateStr) {
-              const m = dataMatrix[dateStr][driverEmail];
-              if (m && m.entries && m.entries.length > 1) {
-                cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
-                fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+              const mData = dataMatrix[dateStr][driverEmail];
+              if (mData && mData.hasData) {
+                const relIdx = (C - 3) % 3;
+                if (relIdx === 0 && mData.entries.some((e) => e.isStartOutRadius)) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
+                  fontStyle = { ...fontStyle };
+                } else if (relIdx === 1 && mData.entries.some((e) => e.isFinishOutRadius)) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
+                  fontStyle = { ...fontStyle };
+                }
+
+                if (relIdx === 1 && mData.entries.some((e) => e.dayDiff > 0)) {
+                  fontStyle = { ...fontStyle, color: { rgb: 'FF0000' }, bold: true };
+                }
+
+                if (mData.entries && mData.entries.length > 1) {
+                  cellFill = { patternType: 'solid', fgColor: { rgb: 'FF0000' } };
+                  fontStyle = { ...fontStyle, color: { rgb: 'FFFFFF' }, bold: true };
+                }
               }
             }
           }
@@ -358,8 +485,11 @@ export function generateTimeDriverSheet(
       } else {
         cell.s = { ...dataStyle, font: fontStyle };
         if (cellFill) cell.s.fill = cellFill;
-
-        if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+        if (customAlignment) {
+          cell.s.alignment = customAlignment;
+        } else if (C <= 2) {
+          cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
+        } else if (C <= 2) cell.s.alignment = { horizontal: 'left', vertical: 'center', indent: 1 };
 
         let borderLeft = { style: 'none' };
         let borderRight = { style: 'none' };

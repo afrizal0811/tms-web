@@ -2,7 +2,6 @@
 
 import { isEmpty } from '@/lib/utils';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 
@@ -187,7 +186,7 @@ export default function MapLocation({ data, activeCoords, highlightTrigger, t, l
       center={allPoints[0]}
       zoom={13}
       // Hapus inline style, gunakan class Tailwind penuh beserta trik filter Dark Mode
-      className="h-full w-full rounded-lg z-0 [&_.leaflet-layer]:dark:invert [&_.leaflet-layer]:dark:hue-rotate-180 [&_.leaflet-layer]:dark:brightness-95 [&_.leaflet-layer]:dark:contrast-90"
+      className="h-full w-full rounded-lg z-0"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -2,9 +2,9 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { createReason, deleteReason, updateReason } from '@/lib/api';
-import { PIC_OPTIONS } from '../helper/constants';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
+import { PIC_OPTIONS } from '../helper/constants';
 import Card from './Card';
 import Table from './Table';
 
@@ -95,16 +95,16 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       ),
     },
   ];
-  const confirmModalText = translate('setting.tab.general.reasons_title');
+  const title = translate('setting.tab.general.reasons_title');
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDeleteReason}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 
@@ -145,7 +145,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             disabled={!newReason.trim() || !newPic}
             className="shrink-0 px-2.5 sm:px-3 py-2 text-[12px] sm:text-sm font-bold text-white bg-sky-600 rounded-md hover:bg-sky-700 disabled:bg-gray-400 cursor-pointer"
           >
-            <span className="hidden sm:inline">{translate('setting.tab.button.btn_add')}</span>
+            <span className="hidden sm:inline">{translate('common.button.btn_add')}</span>
             <span className="sm:hidden text-sm leading-none">+</span>
           </button>
         </div>

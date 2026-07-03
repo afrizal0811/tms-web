@@ -1,17 +1,20 @@
 'use client';
 
+import Tooltip from '@/components/Tooltip';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
-import AverageKmDetailModal from './modals/AverageKmDetailModal';
+import RoutingDropdown from './components/RoutingDropdown';
+import AverageDistanceModal from './modals/AverageDistanceModal';
 
-export default function AverageKmTab({ data, monthTotals, translate, localeCode }) {
+export default function AverageDistanceTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
-    'border border-gray-400 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
-  const defaultVioletClass = `${defaultClass} bg-[#d9d2e9] dark:bg-[#34205c]`;
+    'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
+  const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-violet-900/30`;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
   const [modalTitle, setModalTitle] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
     if (details && details.length > 0) {
@@ -71,9 +74,35 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
     );
   };
 
+  const renderDateCell = (row) => {
+    if (row.isDynamicHoliday) {
+      return (
+        <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+          <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+            {formatLongDate(row.dateStr || row.date, localeCode)}
+          </span>
+        </Tooltip>
+      );
+    } else if (row.routingNames && row.routingNames.length > 0 && !row.isSunday) {
+      const dateVal = row.dateStr || row.date;
+      return (
+        <RoutingDropdown
+          displayText={formatLongDate(dateVal, localeCode)}
+          routingNames={row.routingNames}
+          translate={translate}
+          position="right"
+          isOpen={openDropdown === dateVal}
+          onToggle={() => setOpenDropdown(openDropdown === dateVal ? null : dateVal)}
+        />
+      );
+    } else {
+      return <span>{formatLongDate(row.dateStr || row.date, localeCode)}</span>;
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
-      <AverageKmDetailModal
+      <AverageDistanceModal
         isOpen={modalOpen}
         onClose={closeModal}
         data={modalData}
@@ -84,7 +113,7 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
 
       <div className="w-full flex-1 overflow-auto bg-white dark:bg-slate-800">
         <div className="min-w-max flex flex-col p-0">
-          <div className="border border-gray-300 dark:border-slate-700 mb-4">
+          <div className="mb-4">
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="bg-gray-50 dark:bg-slate-900">
                 <tr>
@@ -121,7 +150,7 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
               </tbody>
             </table>
           </div>
-          <div className="border border-gray-300 dark:border-slate-700">
+          <div>
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="sticky top-0 z-10 shadow-sm bg-gray-50 dark:bg-slate-900">
                 <tr>
@@ -152,18 +181,21 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
                 {data.map((row, idx) => (
                   <tr
                     key={idx}
-                    className={` ${row.isSunday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
+                    className={` ${row.isSunday || row.isDynamicHoliday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
                   >
-                    <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium">
-                      {formatLongDate(row.date, localeCode)}
+                    <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium relative">
+                      {renderDateCell(row)}
                     </td>
-                    {row.isSunday ? (
+
+                    {row.isSunday || row.isDynamicHoliday ? (
                       <>
                         <td
                           colSpan="6"
                           className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle whitespace-nowrap"
                         >
-                          {translate('summary.tabs.average_km.holiday')}
+                          {row.isSunday
+                            ? translate('common.holiday_sunday')
+                            : translate('common.holiday')}
                         </td>
                       </>
                     ) : (
@@ -195,10 +227,12 @@ export default function AverageKmTab({ data, monthTotals, translate, localeCode 
 
       <div className="mt-0.5 px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0 z-10 relative">
         <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *{translate('summary.click_box_hint')}
+          *
+          {translate('common.click_for_detail_param', {
+            parameter: translate('summary.underline'),
+          })}
         </div>
       </div>
     </div>
   );
 }
-  

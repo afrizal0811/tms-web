@@ -1,10 +1,13 @@
-import { formatLongDate, formatMinutesToHHMM, getBasePlate } from '@/lib/utils';
+import Tooltip from '@/components/Tooltip';
+import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap, isEmpty } from '@/lib/utils';
 import { Fragment, useState } from 'react';
+import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
 
-export default function TruckDetailTab({ data, translate, localeCode }) {
+export default function TruckDetailTab({ data, translate, localeCode, isIndonesian }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
   const [modalData, setModalData] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (metrics, driverName, dateStr) => {
     if (metrics && metrics.taskList && metrics.taskList.length > 0) {
@@ -13,13 +16,41 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
   };
   const closeModal = () => setModalData(null);
   const percentage = (data, maxData) => ((data / maxData) * 100).toFixed(1) + '%';
-  const isSunday = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    return date.getUTCDay() === 0;
+
+  const isPastDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const currentMidnight = new Date(y, m - 1, d);
+    currentMidnight.setHours(0, 0, 0, 0);
+    return currentMidnight < new Date().setHours(0, 0, 0, 0);
+  };
+
+  const isDayEmpty = (dateStr) => {
+    if (!dataMatrix || !dataMatrix[dateStr]) return true;
+    return driverEmails.every((email) => {
+      const metrics = dataMatrix[dateStr][email];
+      return !metrics || (metrics.outlets || 0) === 0;
+    });
+  };
+
+  const checkHolidayStatus = (dateStr) => {
+    if (!dateStr) return { isHoliday: false, isDynamic: false, isSunday: false };
+    const [y, m, day] = dateStr.split('-').map(Number);
+    const safeDate = new Date(y, m - 1, day);
+    const isSunday = safeDate.getDay() === 0;
+
+    const isDynamic = !isSunday && isPastDate(dateStr) && isDayEmpty(dateStr);
+    return {
+      isHoliday: isSunday || isDynamic,
+      isDynamic,
+      isSunday,
+    };
   };
 
   const errorColor = [
+    {
+      name: 'orange',
+      colors: 'bg-orange-400 text-white dark:bg-orange-600',
+    },
     {
       name: 'blue',
       colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
@@ -37,31 +68,97 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
     {
       key: 'weight',
       border: true,
-      getValue: (m) => (m?.maxWeight > 0 ? percentage(m.weight, m.maxWeight) : '-'),
+      getValue: (m) => {
+        if (!m || m.maxWeight <= 0) return '-';
+        const hasManualError = m.hasManualError;
+        const val = percentage(m.weight, m.maxWeight);
+        return (
+          <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
+      text: translate('common.weight'),
+      hasManualTooltip: true,
     },
     {
       key: 'volume',
-      getValue: (m) => (m?.maxVolume > 0 ? percentage(m.volume, m.maxVolume) : '-'),
+      getValue: (m) => {
+        if (!m || m.maxVolume <= 0) return '-';
+        const hasManualError = m.hasManualError;
+        const val = percentage(m.volume, m.maxVolume);
+        return (
+          <span className={`${hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
+      text: translate('common.volume'),
+      hasManualTooltip: true,
     },
     {
       key: 'distance',
-      getValue: (m) => m?.dist?.toLocaleString(),
+      getValue: (m) => {
+        const val = m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-';
+        return (
+          <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
+      text: translate('common.distance'),
+      hasManualTooltip: true,
     },
     {
       key: 'total_outlet',
-      getValue: (m) => m?.outlets,
+      getValue: (m) => {
+        if (!m.outlets) return 0;
+        const val = m?.outlets;
+        const hasSplitTask = m.taskList.some((item) => item.isSplitTask);
+        return (
+          <span className="inline-flex items-center justify-center gap-1 leading-none">
+            <span className="inline-block h-2.5 w-2.5 shrink-0" />
+            <span>{val}</span>
+            <span
+              className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-orange-400 dark:bg-orange-600 ${
+                hasSplitTask ? '' : 'opacity-0'
+              }`}
+            />
+          </span>
+        );
+      },
+      text: translate('summary.tabs.truck_detail.total_outlet'),
+      hasManualTooltip: true,
     },
     {
       key: 'total_delivery',
-      getValue: (m) => m?.delivered,
+      getValue: (m) => (m?.delivered ? m?.delivered : 0),
+      text: translate('summary.tabs.truck_detail.total_delivery'),
+      hasManualTooltip: false,
     },
     {
       key: 'ship_duration',
-      getValue: (m) => formatMinutesToHHMM(m?.duration),
+      getValue: (m) => {
+        const val = m?.duration ? formatMinutesToHHMM(m.duration, false) : '-';
+        return (
+          <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
+            {val}
+          </span>
+        );
+      },
+      text: translate('summary.tabs.truck_detail.ship_duration'),
+      hasManualTooltip: true,
     },
     {
       key: 'delivered',
-      getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : '-'),
+      getValue: (m) => (m?.outlets > 0 ? percentage(m.delivered, m.outlets) : 0),
+      getStyle: (m) => {
+        if (!m || m.outlets <= 0) return {};
+        const hex = heatMap(percentage(m.delivered, m.outlets));
+        return hex ? { backgroundColor: `#${hex}` } : {};
+      },
+      text: translate('summary.tabs.truck_detail.delivered'),
+      hasManualTooltip: false,
     },
   ];
   const titleColor = 'bg-[#fae2d5] dark:bg-[#3f2113]';
@@ -72,7 +169,7 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
   const thMetricClass =
     'border border-gray-300 dark:border-slate-700 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200';
   const tdClass =
-    'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
+    'border border-gray-300 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap';
   const tdClickable = `${tdClass} cursor-pointer hover:opacity-80 transition-opacity`;
 
   const stickyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r-slate-700';
@@ -88,8 +185,9 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         localeCode={localeCode}
         onClose={closeModal}
         translate={translate}
+        isIndonesian={isIndonesian}
       />
-      <div className="overflow-auto flex-1 rounded-b-xl border border-gray-200 dark:border-slate-700">
+      <div className="overflow-auto flex-1">
         <table className="border-collapse border-0 text-sm whitespace-nowrap">
           <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-slate-800">
             <tr>
@@ -112,49 +210,111 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                 {translate('common.driver')}
               </th>
               {dateKeys.map((d, i) => {
-                const headerColor = isSunday(d.str) ? holidayColor : dateColor;
-                const date = formatLongDate(d.str, localeCode);
+                const { isHoliday, isDynamic } = checkHolidayStatus(d.str);
+                const headerColor = isHoliday ? holidayColor : dateColor;
+                const dateText = formatLongDate(d.str, localeCode);
+                let headerContent;
+                if (isDynamic) {
+                  headerContent = (
+                    <Tooltip tooltipContent={translate('summary.tabs.task_summary.caution')}>
+                      <span className="cursor-help border-b-2 border-dotted border-red-900 dark:border-red-300 pb-0.5">
+                        {dateText}
+                      </span>
+                    </Tooltip>
+                  );
+                } else if (d.routingNames && d.routingNames.length > 0 && !isHoliday) {
+                  headerContent = (
+                    <RoutingDropdown
+                      displayText={dateText}
+                      routingNames={d.routingNames}
+                      translate={translate}
+                      position="bottom"
+                      isOpen={openDropdown === d.str}
+                      onToggle={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
+                    />
+                  );
+                } else {
+                  headerContent = <span>{dateText}</span>;
+                }
+
                 return (
                   <th
                     key={i}
                     colSpan="7"
                     className={`${thClass} border-l-2 border-l-gray-400 dark:border-l-slate-600 ${headerColor}`}
                   >
-                    {date}
+                    {headerContent}
                   </th>
                 );
               })}
             </tr>
             <tr>
               {dateKeys.map((d, i) => {
-                const metricColor = isSunday(d.str) ? holidayColor : titleColor;
+                const { isHoliday } = checkHolidayStatus(d.str);
+                const metricColor = isHoliday ? holidayColor : titleColor;
                 return (
                   <Fragment key={`${d.day}-${i}-header`}>
-                    {displayData.map(({ key, border }) => (
-                      <th
-                        key={key}
-                        className={`${thMetricClass} ${metricColor} ${
-                          border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
-                        }`}
-                      >
-                        {translate(`summary.tabs.truck_detail.${key}`)}
-                      </th>
-                    ))}
+                    {displayData.map(({ key, border, text }) => {
+                      const isTotalDelivery = key === 'total_delivery';
+                      const totalDeliveryTooltip = isTotalDelivery
+                        ? translate('summary.tabs.truck_detail.tooltip.pct_info')
+                        : '';
+                      const totalDeliveryClass = isTotalDelivery
+                        ? 'cursor-help border-b-2 border-dotted pb-0.5'
+                        : '';
+                      return (
+                        <Tooltip tooltipContent={totalDeliveryTooltip} key={key}>
+                          <th
+                            key={key}
+                            className={`${thMetricClass} ${metricColor} ${
+                              border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
+                            }`}
+                          >
+                            <span className={totalDeliveryClass}>{text}</span>
+                          </th>
+                        </Tooltip>
+                      );
+                    })}
                   </Fragment>
                 );
               })}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
-            {driverEmails.map((email) => {
+            {driverEmails.map((email, rowIndex) => {
               const driver = driverMap[email];
+              let driverMaxW = 0;
+              let driverMaxV = 0;
+              dateKeys.forEach((d) => {
+                const m = dataMatrix[d.str][email];
+                if (m) {
+                  if (m.maxWeight > driverMaxW) driverMaxW = m.maxWeight;
+                  if (m.maxVolume > driverMaxV) driverMaxV = m.maxVolume;
+                }
+              });
+
+              // Siapkan konten text untuk tooltip
+              const capacityTooltip =
+                driverMaxW > 0 || driverMaxV > 0 ? (
+                  <span>
+                    <div>- Max Weight: {driverMaxW} Kg</div>{' '}
+                    <div>- Max Volume: {driverMaxV} Cbm</div>
+                  </span>
+                ) : (
+                  translate('common.no_data')
+                );
+
               return (
                 <tr key={email} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                   <td className={`${tdClass} ${stickyType} bg-white dark:bg-slate-800`}>
                     {driver.type}
                   </td>
                   <td className={`${tdClass} ${stickyPlate} bg-white dark:bg-slate-800`}>
-                    {getBasePlate(driver.plat)}
+                    <Tooltip tooltipContent={capacityTooltip}>
+                      <span className="cursor-help border-b-2 border-dotted pb-0.4">
+                        {getBasePlate(driver.plat)}
+                      </span>
+                    </Tooltip>
                   </td>
                   <td
                     className={`${tdClass} ${stickyDriver} bg-white dark:bg-slate-800 text-left md:border-r-2 md:border-slate-400 dark:md:border-slate-600`}
@@ -167,10 +327,12 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                     const outletData = metrics?.outlets;
                     const onClick = () => handleCellClick(metrics, driver.name, d.display);
 
-                    const isSun = isSunday(d.str);
-                    let cellBg = isSun ? holidayColor : '';
-                    const emptyBg = isSun ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
+                    const { isHoliday, isSunday } = checkHolidayStatus(d.str);
+                    const dayIsEmpty = isDayEmpty(d.str);
+                    const shouldMergeHoliday = isHoliday && dayIsEmpty;
 
+                    let cellBg = isHoliday ? holidayColor : '';
+                    const emptyBg = isHoliday ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
                     if (metrics && outletData > 0) {
                       if (metrics.hasManualError && metrics.hasBedaHariError)
                         cellBg = errorColor.find((item) => item.name === 'indigo')?.colors;
@@ -178,6 +340,24 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
                         cellBg = errorColor.find((item) => item.name === 'blue')?.colors;
                       else if (metrics.hasBedaHariError)
                         cellBg = errorColor.find((item) => item.name === 'magenta')?.colors;
+                    }
+
+                    if (shouldMergeHoliday) {
+                      if (rowIndex === 0) {
+                        return (
+                          <td
+                            key={`${d.str}-merged`}
+                            rowSpan={driverEmails.length}
+                            colSpan={displayData.length}
+                            className={`border border-gray-300 dark:border-slate-700 px-2 py-1 text-center font-bold align-middle ${holidayColor} text-red-900 dark:text-red-300 border-l-2 border-l-gray-400 dark:border-l-slate-600`}
+                          >
+                            {isSunday
+                              ? translate('common.holiday_sunday')
+                              : translate('common.holiday')}
+                          </td>
+                        );
+                      }
+                      return null;
                     }
 
                     if (!metrics || outletData === 0) {
@@ -197,15 +377,104 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
 
                     return (
                       <Fragment key={`${d.day}-${i}-data`}>
-                        {displayData.map(({ key, border, getValue }) => (
-                          <td
-                            key={key}
-                            onClick={onClick}
-                            className={`${tdClickable} ${cellBg} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''}`}
-                          >
-                            {getValue(metrics)}
-                          </td>
-                        ))}
+                        {displayData.map(
+                          ({ key, border, getValue, getStyle, hasManualTooltip }) => {
+                            const hasHeatmap = getStyle && metrics.outlets > 0;
+                            const heatmapStyle = hasHeatmap ? getStyle(metrics) : {};
+                            const appliedBgClass = hasHeatmap ? '' : cellBg;
+                            const isWeightKey = key === 'weight';
+                            const isVolumeKey = key === 'volume';
+                            const isTotalOutlet = key === 'total_outlet';
+                            const hasSplitTask = metrics.taskList.some((item) => item.isSplitTask);
+                            const hasManualError =
+                              metrics.hasManualError &&
+                              (!isEmpty(metrics.weight) || !isEmpty(metrics.volume)) &&
+                              hasManualTooltip;
+
+                            let tooltipData = null;
+                            const metricUnit = isWeightKey ? 'Kg' : isVolumeKey ? 'Cbm' : '';
+                            if (hasSplitTask && isTotalOutlet) {
+                              tooltipData = translate(
+                                'summary.tabs.truck_detail.tooltip.split_task'
+                              );
+                            } else if (hasManualError) {
+                              const metricLabel = translate(
+                                isWeightKey ? 'common.weight' : 'common.volume'
+                              );
+                              const routingText = isIndonesian
+                                ? `${metricLabel} ${translate('common.routing')} `
+                                : `${translate('common.routing')} ${metricLabel}`;
+                              const routingPctText = `${translate('common.percentage')} ${routingText}`;
+
+                              const totalVal = isWeightKey
+                                ? metrics.weight
+                                : isVolumeKey
+                                  ? metrics.volume
+                                  : 0;
+                              const realVal = isWeightKey
+                                ? metrics.realWeight
+                                : isVolumeKey
+                                  ? metrics.realVolume
+                                  : 0;
+                              const maxVal = isWeightKey
+                                ? metrics.maxWeight
+                                : isVolumeKey
+                                  ? metrics.maxVolume
+                                  : 0;
+                              const anyHasRouting = metrics.taskList?.some(
+                                (t) => !isEmpty(t.roSequence)
+                              );
+                              const realPct = percentage(realVal, maxVal) || 0;
+                              tooltipData = !isTotalOutlet ? (
+                                <span>
+                                  <div>
+                                    {!anyHasRouting
+                                      ? translate('summary.tabs.truck_detail.tooltip.no_routing')
+                                      : translate(
+                                          'summary.tabs.truck_detail.tooltip.inaccurate_data'
+                                        )}
+                                  </div>
+                                  {(isWeightKey || isVolumeKey) && (
+                                    <div className="mt-1">
+                                      <div>
+                                        - Total: {totalVal.toFixed(2)} {metricUnit}
+                                      </div>
+                                      <div>
+                                        - Total {routingText}: {realVal.toFixed(2)} {metricUnit}
+                                      </div>
+                                      <div>
+                                        - {routingPctText}: {realPct}
+                                      </div>
+                                    </div>
+                                  )}
+                                </span>
+                              ) : null;
+                            } else if (isWeightKey || isVolumeKey) {
+                              tooltipData = (
+                                <span>
+                                  {isWeightKey
+                                    ? metrics.weight.toFixed(2)
+                                    : isVolumeKey
+                                      ? metrics.volume.toFixed(2)
+                                      : 0}{' '}
+                                  {metricUnit}
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <Tooltip key={key} tooltipContent={tooltipData}>
+                                <td
+                                  onClick={onClick}
+                                  className={`${tdClickable} ${appliedBgClass} ${border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''} `}
+                                  style={heatmapStyle}
+                                >
+                                  {getValue(metrics)}
+                                </td>
+                              </Tooltip>
+                            );
+                          }
+                        )}
                       </Fragment>
                     );
                   })}
@@ -216,11 +485,14 @@ export default function TruckDetailTab({ data, translate, localeCode }) {
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0">
+      <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
         <div>
           <div className="flex flex-col justify-between gap-2 pb-1">
             <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-              *{translate('summary.tabs.truck_detail.click_row_hint')}
+              *
+              {translate('common.click_for_detail_param', {
+                parameter: translate('summary.tabs.truck_detail.row'),
+              })}
             </div>
             <h4 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-200">
               {translate('summary.tabs.truck_detail.color_exp')}

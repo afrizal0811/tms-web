@@ -163,6 +163,8 @@
 │   │   │   ├── StandardType.js
 │   │   │   ├── Table.js
 │   │   │   └── VehicleMappingManager.js
+│   │   ├── helper
+│   │   │   └── constants.js
 │   │   ├── SettingPage.js
 │   │   └── tabs
 │   │       ├── GeneralTab.js
@@ -170,12 +172,12 @@
 │   ├── summary
 │   │   ├── SummaryPage.js
 │   │   └── tabs
-│   │       ├── AverageKmTab.js
+│   │       ├── AverageDistanceTab.js
 │   │       ├── components
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── modals
-│   │       │   ├── AverageKmDetailModal.js
+│   │       │   ├── AverageDistanceModal.js
 │   │       │   ├── PendingReasonModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
@@ -220,41 +222,38 @@
     │   ├── vehicleMappings.js
     │   ├── vehicles.js
     │   └── vehicleTypes.js
-    ├── constants.js
-    ├── dashboardHelper.js
     ├── dictionary.js
     ├── driverDataHelper.js
     ├── hooks
-    │   ├── useRangkumanData.js
+    │   ├── useSummaryData.js
     │   └── useVehicleTagCheck.js
+    ├── isTripInShift.js
     ├── localStorageHandler.js
     ├── prisma.js
     ├── reportGenerators
-    │   ├── delivery
-    │   │   ├── deliveryAutoReport.js
-    │   │   ├── deliveryManualReport.js
-    │   │   └── help.js
     │   ├── index.js
-    │   ├── rangkuman
-    │   │   ├── rangkumanReport.js
-    │   │   └── sheets
-    │   │       ├── averageKmSheet.js
-    │   │       ├── index.js
-    │   │       ├── pendingReasonSheet.js
-    │   │       ├── reportStyles.js
-    │   │       ├── taskSummarySheet.js
-    │   │       ├── timeDriverSheet.js
-    │   │       ├── timeROSheet.js
-    │   │       ├── truckDetailSheet.js
-    │   │       └── truckUsageSheet.js
-    │   ├── routing
+    │   ├── reports
+    │   │   ├── AutoReport.js
+    │   │   ├── builders.js
     │   │   ├── help.js
-    │   │   ├── routingAutoReport.js
-    │   │   └── routingManualReport.js
+    │   │   ├── ManualReport.js
+    │   │   └── parsers.js
+    │   ├── summary
+    │   │   ├── sheets
+    │   │   │   ├── averageDistanceSheet.js
+    │   │   │   ├── index.js
+    │   │   │   ├── pendingReasonSheet.js
+    │   │   │   ├── reportStyles.js
+    │   │   │   ├── taskSummarySheet.js
+    │   │   │   ├── timeDriverSheet.js
+    │   │   │   ├── timeROSheet.js
+    │   │   │   ├── truckDetailSheet.js
+    │   │   │   └── truckUsageSheet.js
+    │   │   └── summaryReport.js
     │   ├── taskCounter
     │   │   └── taskCountReport.js
-    │   └── time
-    │       └── timeReport.js
-    ├── toastHelper.js
+    │   └── taskDetail
+    │       └── taskDetailReport.js
+    ├── toast.js
     ├── unifiedRouting.js
     └── utils.js

@@ -53,7 +53,7 @@ export default function BaseModal({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-3 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 shrink-0 transition-colors">
+          <div className="px-6 py-3 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 shadow-[0_-4px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.3)] shrink-0 transition-colors">
             {footer}
           </div>
         )}

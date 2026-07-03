@@ -3,7 +3,7 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { updateHubSettings } from '@/lib/api';
-import { toastError, toastSuccess } from '@/lib/toastHelper';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
 import Table from './Table';
@@ -41,7 +41,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
 
   const columns = [
     {
-      header: 'HUB',
+      header: translate('common.branch'),
       field: 'name',
       render: (item) => (
         <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
@@ -50,7 +50,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       ),
     },
     {
-      header: 'Akronim',
+      header: translate('setting.tab.general.acronym_title'),
       field: 'acronym',
       headerClassName: 'w-20 md:w-24',
       render: (item) => (
@@ -99,7 +99,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       ),
     },
   ];
-  const confirmModalText = translate('setting.tab.general.branch_title');
+  const title = translate('setting.tab.general.branch_title');
   return (
     <Card>
       <ConfirmModal
@@ -109,9 +109,9 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           await handleSaveSettings(deleteConfig.id, { acronym: '', hasPendingGR: false });
           setDeleteConfig({ isOpen: false, id: null });
         }}
-        title={translate('setting.tab.modal.confirm_title', { text: confirmModalText })}
-        message={translate('setting.tab.modal.confirm_message', {
-          text: confirmModalText.toLowerCase(),
+        title={translate('common.modal.confirm_title', { text: title })}
+        message={translate('common.modal.confirm_message', {
+          text: title.toLowerCase(),
         })}
       />
 

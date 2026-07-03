@@ -1,93 +1,58 @@
 'use client';
 
-import * as XLSX from 'xlsx-js-style';
-// import { reportColumns, reportStyles } from './routingConfig';
+export const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+export const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
 
 export const reportStyles = {
-  centerStyle: { alignment: { horizontal: 'center', vertical: 'center' } },
-  defaultHeaderStyle: {
-    alignment: { horizontal: 'center', vertical: 'center' },
+  headerStyle: {
     font: { bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' },
   },
+  centerStyle: {
+    alignment: { horizontal: 'center', vertical: 'center' },
+  },
+  wrapTextStyle: {
+    alignment: { wrapText: true, vertical: 'center', horizontal: 'left' },
+  },
+  leftAlignStyle: {
+    alignment: { horizontal: 'left', vertical: 'center' },
+  },
+  blueFillStyle: { fill: { patternType: 'solid', fgColor: { rgb: 'BDE5F8' } } },
+  yellowFillStyle: { fill: { patternType: 'solid', fgColor: { rgb: 'ffe19c' } } },
+  greenFillStyle: { fill: { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } } },
   greenHeaderStyle: {
     alignment: { horizontal: 'center', vertical: 'center' },
     font: { bold: true },
-    fill: { patternType: 'solid', fgColor: { rgb: '84FA92' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '84fa92' } },
   },
-  distanceHeaderStyle: {
-    font: { bold: true },
+  hubRedStyle: {
+    alignment: { horizontal: 'center', vertical: 'center' },
+    font: { bold: true, color: { rgb: 'FF0000' } },
+  },
+  routingDateTitle: {
+    font: { bold: true, sz: 24, color: { rgb: 'FF0000' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   },
-  distanceDataStyle: {
+  routingDateValue: {
+    font: { bold: true, sz: 60 },
     alignment: { horizontal: 'center', vertical: 'center' },
-    t: 'n',
-    z: '0.00',
   },
-  usageDataNumStyle: {
-    alignment: { horizontal: 'center', vertical: 'center' },
-    t: 'n',
+  separatorStyle: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'FA9D9D' } },
   },
-  usageDataLabelStyle: {
-    alignment: { horizontal: 'left', vertical: 'center' },
-  },
-  helpDataStyle: {
-    alignment: { horizontal: 'left', vertical: 'center' },
+  colFillMapRoVsReal: {
+    5: { header: 'A7F3D0', data: 'D1FAE5' },
+    6: { header: 'A7F3D0', data: 'D1FAE5' },
+    7: { header: 'FED7AA', data: 'FFEDD5' },
+    8: { header: 'FED7AA', data: 'FFEDD5' },
+    9: { header: 'FDE68A', data: 'FEF9C3' },
+    10: { header: 'FDE68A', data: 'FEF9C3' },
+    11: { header: 'FBCFE8', data: 'FCE7F3' },
+    12: { header: 'FBCFE8', data: 'FCE7F3' },
+    13: { header: 'BFDBFE', data: 'DBEAFE' },
+    14: { header: 'BFDBFE', data: 'DBEAFE' },
   },
 };
-
-export const reportColumns = {
-  truckDetailCenterAligned: [2, 3, 4, 7, 8, 9],
-  distanceSummary: [{ wch: 15 }, { wch: 15 }],
-  truckUsage: [{ wch: 20 }, { wch: 15 }, { wch: 15 }],
-  help: [{ wch: 28 }, { wch: 30 }, { wch: 20 }, { wch: 22 }, { wch: 45 }],
-};
-
-export const getRoutingHeaders = (translate) => ({
-  truckDetail: [
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('excel.routing.headers.weight_pct'),
-    translate('excel.routing.headers.volume_pct'),
-    translate('excel.routing.headers.total_dist'),
-    translate('excel.routing.headers.total_visits'),
-    translate('excel.routing.headers.total_delivery'),
-    translate('excel.routing.headers.ship_dur'),
-    translate('excel.routing.headers.eta_first'),
-    translate('excel.routing.headers.etd_hub'),
-  ],
-  truckDetailGreen: [
-    translate('excel.routing.headers.weight_pct'),
-    translate('excel.routing.headers.volume_pct'),
-    translate('excel.routing.headers.total_dist'),
-    translate('excel.routing.headers.total_visits'),
-    translate('excel.routing.headers.total_delivery'),
-    translate('excel.routing.headers.ship_dur'),
-  ],
-  distanceSummary: [
-    translate('excel.routing.headers.dry_km'),
-    translate('excel.routing.headers.frozen_km'),
-  ],
-  truckUsage: [
-    translate('common.vehicle_type'),
-    translate('excel.routing.headers.count_dry'),
-    translate('excel.routing.headers.count_frozen'),
-  ],
-  help: [
-    translate('excel.routing.headers.routing_id'),
-    translate('excel.routing.headers.routing_name'),
-    translate('excel.routing.headers.created_by'),
-    translate('excel.routing.headers.created_at'),
-    translate('excel.routing.headers.routing_result'),
-  ],
-});
-
-export const getRoutingSheetNames = (translate) => ({
-  truckDetail: translate('excel.routing.sheets.truck_detail'),
-  distSummary: translate('excel.routing.sheets.dist_summary'),
-  truckUsage: translate('excel.routing.sheets.truck_usage'),
-  help: translate('excel.routing.sheets.help'),
-});
-
 
 export function ultraNormalize(str) {
   if (!str) return '';
@@ -189,54 +154,6 @@ export function resolveVehicleCategory(data, normalizedMappings) {
   return category || '';
 }
 
-export function buildTruckDetailSheet(wb, finalSheetData, headers, sheetNames) {
-  const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
-  const range = XLSX.utils.decode_range(ws['!ref']);
-
-  for (let R = range.s.r; R <= range.e.r; ++R) {
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellRef]) continue;
-
-      if (R === 0) {
-        const headerName = finalSheetData[0][C];
-        ws[cellRef].s = headers.truckDetailGreen.includes(headerName)
-          ? reportStyles.greenHeaderStyle
-          : reportStyles.defaultHeaderStyle;
-      } else if (reportColumns.truckDetailCenterAligned.includes(C)) {
-        ws[cellRef].s = reportStyles.centerStyle;
-      }
-    }
-  }
-
-  ws['!cols'] = headers.truckDetail.map((_, i) => ({
-    wch:
-      finalSheetData.reduce((max, row) => Math.max(max, row[i] ? String(row[i]).length : 0), 0) + 2,
-  }));
-
-  XLSX.utils.book_append_sheet(wb, ws, sheetNames.truckDetail);
-}
-
-export function buildDistanceSummarySheet(
-  wb,
-  dryKm,
-  frozenKm,
-  headers,
-  sheetNames,
-  decimalFormat = '0.00'
-) {
-  const dataStyle = { ...reportStyles.distanceDataStyle, z: decimalFormat };
-  const ws = XLSX.utils.aoa_to_sheet([headers.distanceSummary, [dryKm, frozenKm]]);
-
-  ws['A1'] = { v: headers.distanceSummary[0], t: 's', s: reportStyles.distanceHeaderStyle };
-  ws['B1'] = { v: headers.distanceSummary[1], t: 's', s: reportStyles.distanceHeaderStyle };
-  ws['A2'] = { v: dryKm, t: 'n', s: dataStyle };
-  ws['B2'] = { v: frozenKm, t: 'n', s: dataStyle };
-  ws['!cols'] = reportColumns.distanceSummary;
-
-  XLSX.utils.book_append_sheet(wb, ws, sheetNames.distSummary);
-}
-
 export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, headers, sheetNames) {
   const masterNames = vehicleTypes.map((v) => (typeof v === 'string' ? v : v.name));
 
@@ -281,4 +198,3 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, headers,
   ws['!cols'] = reportColumns.truckUsage;
   XLSX.utils.book_append_sheet(wb, ws, sheetNames.truckUsage);
 }
-

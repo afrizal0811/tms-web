@@ -1,4 +1,3 @@
-// File: src/features/rangkuman/tabs/modals/TaskSummaryModal.js
 'use client';
 
 import BaseModal from '@/components/BaseModal';
@@ -37,8 +36,10 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       onClose={onClose}
       maxWidth="max-w-lg"
       title={
-        <div>
-          <h3 className="text-lg font-bold">{title}</h3>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white">{title}</h3>
+          </div>
           <p className="text-slate-300 text-sm font-normal">
             {formatLongDate(dateObj, localeCode)}
           </p>

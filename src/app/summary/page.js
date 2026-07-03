@@ -1,8 +1,8 @@
-// File: src/app/rangkuman/page.js
+// File: src/app/summary/page.js
 import AppLayout from '@/components/AppLayout'; // Import AppLayout
 import SummaryPage from '@/features/summary/SummaryPage';
 
-export default function RangkumanPage() {
+export default function Page() {
   return (
     // --- PERUBAHAN 3: Bungkus dengan AppLayout agar Navbar muncul ---
     <AppLayout mainClassName="items-center px-4">

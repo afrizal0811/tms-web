@@ -354,3 +354,7 @@ body > div[style*='z-index: 9999'],
   content: counter(section) '. ';
   font-weight: bold;
 }
+
+.dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}

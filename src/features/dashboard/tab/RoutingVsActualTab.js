@@ -6,7 +6,7 @@ import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastWarning } from '@/lib/toastHelper';
+import { toastError, toastWarning } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual, processRoutingVsActualData } from '../help';
@@ -21,7 +21,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   const processedData = useMemo(() => {
     if (loading) return [];
 
-    // Cukup panggil fungsi dari help.js!
     return processRoutingVsActualData({
       tasks,
       results,
@@ -204,13 +203,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                     key={index}
                     className={`${baseClass} ${col.tooltip ? 'cursor-help' : ''} ${col.className || ''}`}
                   >
-                    {col.tooltip ? (
-                      <Tooltip tooltipContent={col.tooltip} width={col.tooltipWidth}>
-                        <span>{col.header}</span>
-                      </Tooltip>
-                    ) : (
-                      col.header
-                    )}
+                    <Tooltip
+                      tooltipContent={col.tooltip ? col.tooltip : ''}
+                      width={col.tooltipWidth}
+                    >
+                      <span>{col.header}</span>
+                    </Tooltip>
                   </th>
                 );
               })}
@@ -261,11 +259,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               }
 
               const rowClass = row.isManualAssign
-                ? 'bg-red-100/70 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-[#88191b] divide-y divide-red-200/30 dark:divide-red-900/30!'
+                ? 'bg-red-100/70 hover:bg-red-100 dark:bg-red-900/60 dark:hover:bg-red-900/70 divide-y divide-red-200/30 dark:divide-red-900/70!'
                 : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
 
               const cellContent = tableColumns.map((col, colIndex) => {
-                // Hapus semua bg-* class saat baris manual assign agar merah tetap prioritas
                 const colClass = row.isManualAssign
                   ? (col.className || '').replace(/\S*bg-\S+/g, '').trim()
                   : col.className || '';
@@ -279,7 +276,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 );
               });
 
-              // 4. Return baris
               if (row.isManualAssign) {
                 return (
                   <Tooltip key={rowIndex} tooltipContent={t('common.status.manual_assign')}>

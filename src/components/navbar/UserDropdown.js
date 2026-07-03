@@ -4,7 +4,7 @@ import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toastHelper';
+import { toastError } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';

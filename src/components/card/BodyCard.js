@@ -30,7 +30,7 @@ export default function BodyCard({
   customHeader = null,
   longLoadingContent = null,
   timerStartTime = null,
-  routingData = [],
+  routingData = null,
 }) {
   const { t } = useLanguage();
   const [elapsedTime, setElapsedTime] = useState(0);
