@@ -16,7 +16,7 @@ import {
   getVehicleTypes,
 } from '@/lib/api';
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
 import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -31,7 +31,6 @@ import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getTutorialData } from './helper/constants';
 import { getManualDate, validateRoutingFile, validateTaskFile } from './helper/help';
-
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
 export default function SingleReport({
@@ -127,7 +126,7 @@ export default function SingleReport({
         allTasks.forEach((task) => {
           if (task.createdFrom === 'API' && task.createdTime) {
             const d = new Date(task.createdTime);
-            d.setHours(d.getHours() + 7); 
+            d.setHours(d.getHours() + 7);
             dates.push(d.toISOString().split('T')[0]);
           }
         });
@@ -161,11 +160,10 @@ export default function SingleReport({
       };
 
       const { storedLocationAcronym } = getLocalStorage();
-
       const [filteredResults, hubsData, locationHistoriesRes, vehicleTypesObj, mappingsDB] =
         await Promise.all([
           getResultsSummary(summaryPayload),
-          getOrFetchDriverData(selectedLocation),
+          getCachedHubs(),
           getLocationHistories({
             timeFrom: timeFromHistories,
             timeTo: timeToHistories,
@@ -455,7 +453,7 @@ export default function SingleReport({
       )}
     </div>
   );
-  
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">

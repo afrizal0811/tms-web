@@ -5,13 +5,13 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import {
-  getHubs,
   getLocationHistories,
   getResultsSummary,
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook } from '@/lib/reportGenerators';
 import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
 import { toastError } from '@/lib/toast';
@@ -83,7 +83,7 @@ export default function BulkReport({ driverData }) {
       const [vehicleTypesObj, mappingsDB, hubsDB] = await Promise.all([
         getVehicleTypes(),
         getVehicleMappings(),
-        getHubs(),
+        getCachedHubs(),
       ]);
       vehicleTypes = vehicleTypesObj.map((v) => v.name);
       mappingsObj = mappingsDB.reduce((acc, curr) => {
