@@ -13,7 +13,7 @@ import {
 } from '@/lib/api';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook } from '@/lib/reportGenerators';
-import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
+import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -185,7 +185,11 @@ export default function PeriodReport({ driverData }) {
         ]);
 
         const allApiData = locationHistoriesRes?.tasks?.data || [];
-        const { timeDataObjects } = parseTimeData(allApiData || [], driverData, dateForFile);
+        const { timeDataObjects } = convertLocationHistories(
+          allApiData || [],
+          driverData,
+          dateForFile
+        );
         const filteredTimeData = timeDataObjects.filter(
           (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
         );

@@ -1,4 +1,4 @@
-import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
+import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   formatDateUniversal,
   formatLongDate,
@@ -270,7 +270,7 @@ export function calculateDistanceSummaryData(
         } else if (isPastDate(currentDateString)) {
           rowData.isDynamicHoliday = true;
         }
-        const { timeDataObjects } = parseTimeData(
+        const { timeDataObjects } = convertLocationHistories(
           locationHistoryData || [],
           driverData || [],
           currentDateString

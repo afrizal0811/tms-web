@@ -6,7 +6,7 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { isTripInShift } from '../../isTripInShift';
+import { isTripInShift } from '../helper';
 
 const getNameValue = (val) => {
   if (!val) return '';

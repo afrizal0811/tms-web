@@ -18,7 +18,7 @@ import {
 import { getOrFetchDriverData } from '@/lib/driverDataHelper';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
-import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
+import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -177,7 +177,11 @@ export default function SingleReport({
         ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
-      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
+      const { timeDataObjects } = convertLocationHistories(
+        allApiData || [],
+        driverData,
+        selectedDateString
+      );
       const filteredTimeData = timeDataObjects.filter(
         (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
       );
@@ -275,7 +279,11 @@ export default function SingleReport({
       ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
-      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, extractedStartDate);
+      const { timeDataObjects } = convertLocationHistories(
+        allApiData || [],
+        driverData,
+        extractedStartDate
+      );
       const activeHub = (hubsData || []).find(
         (h) => String(h._id || h.id) === String(selectedLocation)
       );
