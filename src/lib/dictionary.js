@@ -5,6 +5,7 @@ export const dictionary = {
     common: {
       accuracy: 'Akurasi',
       action: 'Aksi',
+      actual: 'Aktual',
       actual_arrival: 'Waktu Datang',
       actual_departure: 'Waktu Berangkat',
       actual_seq: 'Aktual Urutan',
@@ -29,6 +30,7 @@ export const dictionary = {
       downloading: 'Mengunduh...',
       driver: 'Sopir',
       eta: 'ETA',
+      estimate: 'Perkiraan',
       etd: 'ETD',
       finish_time: 'Waktu Selesai',
       flow: 'Alur',
@@ -669,6 +671,7 @@ export const dictionary = {
     common: {
       accuracy: 'Accuracy',
       action: 'Action',
+      actual: 'Actual',
       actual_arrival: 'Arrival Time',
       actual_departure: 'Departure Time',
       actual_seq: 'Actual Sequence',
@@ -693,6 +696,7 @@ export const dictionary = {
       downloading: 'Downloading...',
       driver: 'Driver',
       eta: 'ETA',
+      estimate: 'Estimate',
       etd: 'ETD',
       finish_time: 'Finish Time',
       flow: 'Flow',

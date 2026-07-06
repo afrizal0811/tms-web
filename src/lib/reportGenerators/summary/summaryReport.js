@@ -35,7 +35,8 @@ export async function generateSummaryDataPreview(
     endDateStr,
     localeCode,
     driverData,
-    taskData
+    taskData,
+    locationHistoryData
   );
 
   const truckUsageData = await calculateTruckUsageData(
@@ -152,8 +153,17 @@ export async function generateSummaryWorkbook(
     localeCode,
     taskData
   );
-  generateDistanceSummarySheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
-
+  generateDistanceSummarySheet(
+    wb,
+    resultsData,
+    startDateStr,
+    endDateStr,
+    translate,
+    localeCode,
+    driverData,
+    taskData,
+    locationHistoryData
+  );
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
   const { storedLocationAcronym: locationName } = getLocalStorage() || '-';

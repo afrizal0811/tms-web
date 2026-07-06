@@ -1,3 +1,4 @@
+import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
 import {
   formatDateUniversal,
   formatLongDate,
@@ -6,7 +7,6 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
-
 function formatMonthRange(startDateStr, endDateStr, localeCode) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
@@ -18,31 +18,35 @@ function formatMonthRange(startDateStr, endDateStr, localeCode) {
 }
 
 function createDriverMap(driverData) {
-  const driverMapHash = new Map();
+  const emailMap = new Map();
+  const platMap = new Map();
   (driverData || []).forEach((d) => {
+    let rawTags = d.tags || d.vehicleTags || d.userTags || [];
+    if (typeof rawTags === 'string') rawTags = rawTags.split(',');
+
+    let gType = 'DRY';
+    if (Array.isArray(rawTags)) {
+      const isFrz = rawTags.some(
+        (t) =>
+          typeof t === 'string' &&
+          (t.toUpperCase().includes('FROZEN') || t.toUpperCase().includes('FRZ'))
+      );
+      if (isFrz) gType = 'FROZEN';
+    }
+
+    const payload = {
+      name: d.name,
+      plat: d.plat,
+      type: gType,
+    };
     if (d.email) {
-      let rawTags = d.tags || d.vehicleTags || d.userTags || [];
-      if (typeof rawTags === 'string') rawTags = rawTags.split(',');
-      let mTag = '';
-      if (Array.isArray(rawTags) && rawTags.length > 0) {
-        mTag =
-          rawTags.find(
-            (t) =>
-              typeof t === 'string' &&
-              (t.toUpperCase().includes('DRY') ||
-                t.toUpperCase().includes('FROZEN') ||
-                t.toUpperCase().includes('FRZ'))
-          ) || rawTags[0];
-      }
-      driverMapHash.set(d.email.toLowerCase().trim(), {
-        name: d.name,
-        storage: (d.storage || 'DRY').toUpperCase(),
-        plat: d.plat,
-        masterTag: mTag,
-      });
+      emailMap.set(d.email.toLowerCase().trim(), payload);
+    }
+    if (d.plat) {
+      platMap.set(d.plat.replace(/\s+/g, '').toLowerCase(), payload);
     }
   });
-  return driverMapHash;
+  return { emailMap, platMap };
 }
 
 function isPastDate(dateStr) {
@@ -64,7 +68,7 @@ function initializeDateMap(startDateStr, endDateStr) {
     const m = String(currentIterDate.getUTCMonth() + 1).padStart(2, '0');
     const d = String(currentIterDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
-    dateMap[dateStr] = { routingNames: new Set(), vehicles: new Map() };
+    dateMap[dateStr] = { routingNames: new Set(), vehicles: new Map(), actVehicles: new Map() };
     currentIterDate.setUTCDate(currentIterDate.getUTCDate() + 1);
   }
   return dateMap;
@@ -76,7 +80,8 @@ export function calculateDistanceSummaryData(
   endDateStr,
   localeCode,
   driverData,
-  taskData
+  taskData,
+  locationHistoryData
 ) {
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
@@ -85,7 +90,7 @@ export function calculateDistanceSummaryData(
       if (d) taskPresence[d] = true;
     });
   }
-  const driverMapHash = createDriverMap(driverData);
+  const { emailMap, platMap } = createDriverMap(driverData);
   const dateMap = initializeDateMap(startDateStr, endDateStr);
 
   if (resultsData && Array.isArray(resultsData)) {
@@ -107,44 +112,42 @@ export function calculateDistanceSummaryData(
         const validTrips = (route.trips || []).filter((t) => !t.isHub);
         if (validTrips.length === 0) return;
 
-        const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-        const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
-        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        const canonicalPlate =
-          strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+        const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
+        const vehiclePlatNorm = route.vehicleName
+          ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
+          : '';
+        const driverInfo = emailMap.get(assigneeEmail) || platMap.get(vehiclePlatNorm);
+        const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
 
-        let driverInfo = driverMapHash.get(rawEmail);
-        const storage = driverInfo ? driverInfo.storage : 'DRY';
-        const routingTag =
-          route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
-        const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
+        if (!driverName) return;
 
-        const isFrozen =
-          storage.includes('FROZEN') ||
-          firstTag.toUpperCase().includes('FROZEN') ||
-          firstTag.toUpperCase().includes('FRZ');
-        const type = isFrozen ? 'Frozen' : 'Dry';
+        let generalType = 'DRY';
+        if (route.vehicleTags && route.vehicleTags.length > 0) {
+          generalType = String(route.vehicleTags[0]).split('-')[0].toUpperCase();
+        } else if (driverInfo && driverInfo.type) {
+          generalType = String(driverInfo.type).split('-')[0].toUpperCase();
+        }
+        if (!['DRY', 'FROZEN'].includes(generalType)) generalType = 'DRY';
 
-        const finalPlate = driverInfo
-          ? (driverInfo.plat || '').replace(/\s*\([^)]*\)/g, '').trim()
-          : strictBasePlate;
-        const driverName = driverInfo ? driverInfo.name : route.assignee || '-';
+        const type = generalType === 'FROZEN' ? 'Frozen' : 'Dry';
 
-        const manualDistMeters = (route.trips || []).reduce((acc, t) => acc + (t.distance || 0), 0);
+        const manualDistMeters = (route.trips || []).reduce(
+          (acc, t) => acc + (Number(t.distance) || 0),
+          0
+        );
         const distMeters = manualDistMeters || route.totalDistance || 0;
-        const distKm = distMeters / 1000;
 
-        if (!dailyVehicles.has(canonicalPlate)) {
-          dailyVehicles.set(canonicalPlate, {
+        if (!dailyVehicles.has(driverName)) {
+          dailyVehicles.set(driverName, {
             storageType: type,
-            plate: finalPlate,
+            plate: driverInfo?.plat || route.vehicleName || '',
             driverName,
-            distanceKm: distKm,
+            distanceMeters: distMeters,
             visits: validTrips.length,
           });
         } else {
-          const existing = dailyVehicles.get(canonicalPlate);
-          existing.distanceKm += distKm;
+          const existing = dailyVehicles.get(driverName);
+          existing.distanceMeters += distMeters;
           existing.visits += validTrips.length;
         }
       });
@@ -156,7 +159,6 @@ export function calculateDistanceSummaryData(
       });
     });
 
-    // Algoritma Lookback (H-3) Tersinkronisasi dengan Task Aktual
     const LOOKBACK_LIMIT = 3;
     Object.keys(dateMap)
       .sort()
@@ -195,6 +197,11 @@ export function calculateDistanceSummaryData(
     totalKm: 0,
     totalVehicle: 0,
     avgKm: 0,
+    actDryKm: 0,
+    actFrozenKm: 0,
+    actTotalKm: 0,
+    actTotalVehicle: 0,
+    actAvgKm: 0,
   };
 
   Object.keys(dateMap)
@@ -204,6 +211,7 @@ export function calculateDistanceSummaryData(
       const safeDate = new Date(y, m - 1, d);
       const isSunday = safeDate.getDay() === 0;
       const vehiclesMap = dateMap[currentDateString].vehicles;
+      const actVehiclesMap = dateMap[currentDateString].actVehicles;
       const routingNames = Array.from(dateMap[currentDateString].routingNames);
 
       let rowData = {
@@ -219,24 +227,33 @@ export function calculateDistanceSummaryData(
         avgKm: 0,
         dryDetails: [],
         frozenDetails: [],
+        actDryCount: 0,
+        actFrozenCount: 0,
+        actDryKm: 0,
+        actFrozenKm: 0,
+        actTotalKm: 0,
+        actAvgKm: 0,
+        actDryDetails: [],
+        actFrozenDetails: [],
       };
 
       if (!isSunday) {
         if (vehiclesMap.size > 0) {
           vehiclesMap.forEach((vh) => {
+            const distKm = vh.distanceMeters / 1000;
             const detailItem = {
               plate: vh.plate,
               driverName: vh.driverName,
-              distance: vh.distanceKm,
+              distance: distKm,
               visit: vh.visits,
             };
             if (vh.storageType === 'Frozen') {
               rowData.frozenCount++;
-              rowData.frozenKm += vh.distanceKm;
+              rowData.frozenKm += distKm;
               rowData.frozenDetails.push(detailItem);
             } else {
               rowData.dryCount++;
-              rowData.dryKm += vh.distanceKm;
+              rowData.dryKm += distKm;
               rowData.dryDetails.push(detailItem);
             }
           });
@@ -253,13 +270,94 @@ export function calculateDistanceSummaryData(
         } else if (isPastDate(currentDateString)) {
           rowData.isDynamicHoliday = true;
         }
+        const { timeDataObjects } = parseTimeData(
+          locationHistoryData || [],
+          driverData || [],
+          currentDateString
+        );
+
+        const dailyTasks = (taskData || []).filter((t) => {
+          const dDate = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+          return dDate === currentDateString;
+        });
+
+        timeDataObjects.forEach((tData) => {
+          if (!tData.totalDistance || tData.totalDistance < 5) return;
+          if (!tData.startTimeFmt || !tData.finishTimeFmt) return;
+
+          const email = (tData.email || '').toLowerCase().trim();
+          const plat = (tData.plat || '').replace(/\s+/g, '').toLowerCase();
+          const dInfo = emailMap.get(email) || platMap.get(plat);
+
+          const type = dInfo && String(dInfo.type).toUpperCase() === 'FROZEN' ? 'Frozen' : 'Dry';
+
+          const distKm = tData.totalDistance;
+
+          const actVisits = dailyTasks.filter((t) => {
+            const tEmail = Array.isArray(t.assignee)
+              ? t.assignee[0]
+              : t.assignee || t.assignedTo?.email || t.doneBy;
+            return String(tEmail).toLowerCase().trim() === email;
+          }).length;
+
+          if (!actVehiclesMap.has(tData.driver)) {
+            actVehiclesMap.set(tData.driver, {
+              storageType: type,
+              plate: tData.plat || '',
+              driverName: tData.driver,
+              distanceKm: distKm,
+              visit: actVisits,
+            });
+          } else {
+            const existing = actVehiclesMap.get(tData.driver);
+            existing.distanceKm += distKm;
+          }
+        });
+
+        if (actVehiclesMap.size > 0) {
+          actVehiclesMap.forEach((vh) => {
+            const detailItem = {
+              plate: vh.plate,
+              driverName: vh.driverName,
+              distance: vh.distanceKm,
+              visit: vh.visit,
+            };
+            if (vh.storageType === 'Frozen') {
+              rowData.actFrozenCount++;
+              rowData.actFrozenKm += vh.distanceKm;
+              rowData.actFrozenDetails.push(detailItem);
+            } else {
+              rowData.actDryCount++;
+              rowData.actDryKm += vh.distanceKm;
+              rowData.actDryDetails.push(detailItem);
+            }
+          });
+          rowData.actDryDetails.sort((a, b) =>
+            (a.driverName || '').localeCompare(b.driverName || '')
+          );
+          rowData.actFrozenDetails.sort((a, b) =>
+            (a.driverName || '').localeCompare(b.driverName || '')
+          );
+          rowData.actTotalKm = rowData.actDryKm + rowData.actFrozenKm;
+          const dailyActVehicle = rowData.actDryCount + rowData.actFrozenCount;
+          rowData.actAvgKm = dailyActVehicle > 0 ? rowData.actTotalKm / dailyActVehicle : 0;
+
+          monthTotals.actDryKm += rowData.actDryKm;
+          monthTotals.actFrozenKm += rowData.actFrozenKm;
+          monthTotals.actTotalVehicle += dailyActVehicle;
+        }
       }
+
       summaryData.push(rowData);
     });
 
   monthTotals.totalKm = monthTotals.dryKm + monthTotals.frozenKm;
   monthTotals.avgKm =
     monthTotals.totalVehicle > 0 ? monthTotals.totalKm / monthTotals.totalVehicle : 0;
+
+  monthTotals.actTotalKm = monthTotals.actDryKm + monthTotals.actFrozenKm;
+  monthTotals.actAvgKm =
+    monthTotals.actTotalVehicle > 0 ? monthTotals.actTotalKm / monthTotals.actTotalVehicle : 0;
 
   return { summaryData, monthTotals };
 }
@@ -271,33 +369,78 @@ export function generateDistanceSummarySheet(
   endDateStr,
   translate,
   localeCode,
-  driverData
+  driverData,
+  taskData,
+  locationHistoryData
 ) {
   const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
     startDateStr,
     endDateStr,
     localeCode,
-    driverData || []
+    driverData || [],
+    taskData,
+    locationHistoryData
   );
-
   const monthHeader1 = [
-    `${translate('common.date') || 'Routing Date'} (${translate('summary.tabs.dist_summary.month')})`,
+    `${translate('common.date')} (${translate('summary.tabs.dist_summary.month')})`,
+    `${translate('common.estimate')} (${translate('common.routing')})`,
+    '',
+    '',
+    '',
+    `${translate('common.actual')} (${translate('common.delivery')})`,
+    '',
+    '',
+    '',
+  ];
+  const monthHeader2 = [
+    '',
+    translate('summary.tabs.dist_summary.km_routing'),
+    '',
+    translate('summary.tabs.dist_summary.total_routing'),
+    translate('summary.tabs.dist_summary.average_routing'),
     translate('summary.tabs.dist_summary.km_routing'),
     '',
     translate('summary.tabs.dist_summary.total_routing'),
     translate('summary.tabs.dist_summary.average_routing'),
   ];
-  const monthHeader2 = ['', 'Dry', 'Frozen', '', ''];
+  const monthHeader3 = ['', 'Dry', 'Frozen', '', '', 'Dry', 'Frozen', '', ''];
+
   const monthDataRow = [
     monthTotals.range,
     monthTotals.dryKm,
     monthTotals.frozenKm,
     monthTotals.totalKm,
     monthTotals.avgKm,
+    monthTotals.actDryKm,
+    monthTotals.actFrozenKm,
+    monthTotals.actTotalKm,
+    monthTotals.actAvgKm,
   ];
+
   const dailyHeader1 = [
-    translate('common.date') || 'Routing Date',
+    translate('common.delivery_date'),
+    `${translate('common.estimate')} (${translate('common.routing')})`,
+    '',
+    '',
+    '',
+    '',
+    '',
+    `${translate('common.actual')} (${translate('common.delivery')})`,
+    '',
+    '',
+    '',
+    '',
+    '',
+  ];
+  const dailyHeader2 = [
+    '',
+    translate('summary.tabs.dist_summary.total_vehicle'),
+    '',
+    translate('summary.tabs.dist_summary.km_routing'),
+    '',
+    translate('summary.tabs.dist_summary.total_routing'),
+    translate('summary.tabs.dist_summary.average_routing'),
     translate('summary.tabs.dist_summary.total_vehicle'),
     '',
     translate('summary.tabs.dist_summary.km_routing'),
@@ -305,15 +448,51 @@ export function generateDistanceSummarySheet(
     translate('summary.tabs.dist_summary.total_routing'),
     translate('summary.tabs.dist_summary.average_routing'),
   ];
-  const dailyHeader2 = ['', 'Dry', 'Frozen', 'Dry', 'Frozen', '', ''];
+  const dailyHeader3 = [
+    '',
+    'Dry',
+    'Frozen',
+    'Dry',
+    'Frozen',
+    '',
+    '',
+    'Dry',
+    'Frozen',
+    'Dry',
+    'Frozen',
+    '',
+    '',
+  ];
 
-  const excelRows = [monthHeader1, monthHeader2, monthDataRow, [''], dailyHeader1, dailyHeader2];
-
+  const excelRows = [
+    monthHeader1,
+    monthHeader2,
+    monthHeader3,
+    monthDataRow,
+    [''],
+    dailyHeader1,
+    dailyHeader2,
+    dailyHeader3,
+  ];
   summaryData.forEach((row) => {
     const [y, m, d] = row.date.split('-').map(Number);
     const displayDate = formatLongDate(new Date(y, m - 1, d), localeCode);
     if (row.isSunday || row.isDynamicHoliday) {
-      excelRows.push([displayDate, null, null, null, null, null, null]);
+      excelRows.push([
+        displayDate,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ]);
     } else {
       excelRows.push([
         displayDate,
@@ -323,28 +502,45 @@ export function generateDistanceSummarySheet(
         row.frozenKm,
         row.totalKm,
         row.avgKm,
+        row.actDryCount,
+        row.actFrozenCount,
+        row.actDryKm,
+        row.actFrozenKm,
+        row.actTotalKm,
+        row.actAvgKm,
       ]);
     }
   });
 
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
   const staticMerges = [
-    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
-    { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
-    { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } },
-    { s: { r: 0, c: 4 }, e: { r: 1, c: 4 } },
-    { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } },
-    { s: { r: 4, c: 1 }, e: { r: 4, c: 2 } },
-    { s: { r: 4, c: 3 }, e: { r: 4, c: 4 } },
-    { s: { r: 4, c: 5 }, e: { r: 5, c: 5 } },
-    { s: { r: 4, c: 6 }, e: { r: 5, c: 6 } },
+    { s: { r: 0, c: 0 }, e: { r: 2, c: 0 } },
+    { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } },
+    { s: { r: 0, c: 5 }, e: { r: 0, c: 8 } },
+    { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } },
+    { s: { r: 1, c: 3 }, e: { r: 2, c: 3 } },
+    { s: { r: 1, c: 4 }, e: { r: 2, c: 4 } },
+    { s: { r: 1, c: 5 }, e: { r: 1, c: 6 } },
+    { s: { r: 1, c: 7 }, e: { r: 2, c: 7 } },
+    { s: { r: 1, c: 8 }, e: { r: 2, c: 8 } },
+    { s: { r: 5, c: 0 }, e: { r: 7, c: 0 } },
+    { s: { r: 5, c: 1 }, e: { r: 5, c: 6 } },
+    { s: { r: 5, c: 7 }, e: { r: 5, c: 12 } },
+    { s: { r: 6, c: 1 }, e: { r: 6, c: 2 } },
+    { s: { r: 6, c: 3 }, e: { r: 6, c: 4 } },
+    { s: { r: 6, c: 5 }, e: { r: 7, c: 5 } },
+    { s: { r: 6, c: 6 }, e: { r: 7, c: 6 } },
+    { s: { r: 6, c: 7 }, e: { r: 6, c: 8 } },
+    { s: { r: 6, c: 9 }, e: { r: 6, c: 10 } },
+    { s: { r: 6, c: 11 }, e: { r: 7, c: 11 } },
+    { s: { r: 6, c: 12 }, e: { r: 7, c: 12 } },
   ];
 
   ws['!merges'] = staticMerges.slice();
   summaryData.forEach((row, idx) => {
     if (row.isSunday || row.isDynamicHoliday) {
-      const rowIndex = 6 + idx;
-      ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 6 } });
+      const rowIndex = 8 + idx;
+      ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 12 } });
       const dateCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
       ws[dateCellRef].s = {
         ...BASE_STYLES.cellCenter,
@@ -363,63 +559,80 @@ export function generateDistanceSummarySheet(
           alignment: { horizontal: 'center', vertical: 'center' },
         },
       };
-      for (let c = 2; c <= 6; c++) {
+      for (let c = 2; c <= 12; c++) {
         const emptyRef = XLSX.utils.encode_cell({ r: rowIndex, c });
         ws[emptyRef] = { t: 's', v: '', s: { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red } };
       }
     }
   });
-
   const range = XLSX.utils.decode_range(ws['!ref']);
+
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
-      if (R < 3) {
-        if (C > 4) continue;
-        cell.s = { ...BASE_STYLES.cellCenter };
-        if (R === 0 || R === 1) cell.s = { ...HEADER_STYLES.main };
-        if (R === 2 && C >= 1) {
+
+      const greenFill = { patternType: 'solid', fgColor: { rgb: 'C6EFCE' } };
+      const orangeFill = { patternType: 'solid', fgColor: { rgb: 'FCE4D6' } };
+      const separatorBorder = { style: 'medium', color: { rgb: '000000' } };
+
+      let cellStyle = { ...BASE_STYLES.cellCenter };
+
+      if (R < 4) {
+        if (C > 8) continue;
+        if (R < 3) cellStyle = { ...HEADER_STYLES.main };
+        if (R === 0 && C === 0) cellStyle.fill = orangeFill;
+        if (R === 0 && (C === 1 || C === 5)) cellStyle.fill = greenFill;
+
+        if (R === 3 && C > 0) {
           cell.t = 'n';
-          cell.s = { ...cell.s, numFmt: '#,##0.000' };
-          if (C === 1) cell.s.fill = FILL_STYLES.dry;
-          if (C === 2) cell.s.fill = FILL_STYLES.frozen;
+          cellStyle.numFmt = '#,##0.00';
         }
-      } else if (R >= 4) {
-        if (R === 4 || R === 5) cell.s = { ...HEADER_STYLES.main };
-        else {
-          const rowData = summaryData[R - 6];
+      } else if (R >= 5) {
+        if (R >= 5 && R <= 7) {
+          cellStyle = { ...HEADER_STYLES.main };
+          if (R === 5 && C === 0) cellStyle.fill = orangeFill;
+          if (R === 5 && (C === 1 || C === 7)) cellStyle.fill = greenFill;
+        } else {
+          const rowData = summaryData[R - 8];
           if (rowData && (rowData.isSunday || rowData.isDynamicHoliday)) {
-            cell.s = {
-              ...((ws[cellRef] && ws[cellRef].s) || BASE_STYLES.cellCenter),
-              fill: FILL_STYLES.red,
-              font: { bold: true },
-              alignment: { horizontal: 'center', vertical: 'center' },
-            };
-            if (C === 0) cell.t = 's';
-            else if (C === 1) cell.s.alignment = { ...cell.s.alignment, wrapText: true };
-            else cell.s = { ...BASE_STYLES.cellCenter, fill: FILL_STYLES.red };
-            continue;
-          }
-          cell.s = { ...BASE_STYLES.cellCenter };
-          if (rowData && C >= 1) {
+            cellStyle.fill = FILL_STYLES.red;
+          } else if (C > 0) {
             cell.t = 'n';
-            cell.s.numFmt = C === 1 || C === 2 ? '0' : '#,##0.000';
-            if (C === 3) cell.s.fill = FILL_STYLES.dry;
-            if (C === 4) cell.s.fill = FILL_STYLES.frozen;
-          } else cell.t = 's';
+            cellStyle.numFmt = C === 1 || C === 2 || C === 7 || C === 8 ? '0' : '#,##0.00';
+          }
         }
       }
+
+      if ((R < 4 && C === 4) || (R >= 5 && C === 6)) {
+        cellStyle.border = { ...cellStyle.border, right: separatorBorder };
+      }
+
+      if ((R === 1 || R === 2) && (C === 3 || C === 4 || C === 7 || C === 8)) {
+        cellStyle.alignment = { wrapText: true, horizontal: 'center', vertical: 'center' };
+      }
+      if ((R === 6 || R === 7) && (C === 5 || C === 6 || C === 11 || C === 12)) {
+        cellStyle.alignment = { wrapText: true, horizontal: 'center', vertical: 'center' };
+      }
+
+      cell.s = cellStyle;
     }
   }
+
   ws['!cols'] = [
     { wch: 20 },
     { wch: 10 },
     { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
     { wch: 15 },
     { wch: 15 },
-    { wch: 18 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 15 },
     { wch: 15 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.dist_summary.title'));

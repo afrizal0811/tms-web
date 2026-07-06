@@ -10,15 +10,23 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
   const defaultClass =
     'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
   const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-violet-900/30`;
-
+  const greenHeaderClass = `${defaultClass} bg-green-200 dark:bg-green-900/40 font-bold`;
+  const orangeHeaderClass = `${defaultClass} bg-orange-200 dark:bg-orange-900/40 font-bold`;
+  const wrapVioletClass =
+    'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-normal break-words max-w-[120px] bg-violet-300 dark:bg-violet-900/30 font-bold';
+  const separatorClass = 'border-r-4 border-r-gray-400 dark:border-r-slate-500';
+  const bodyCellClass =
+    'border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap';
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
   const [modalTitle, setModalTitle] = useState('');
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
-    if (details && details.length > 0) {
-      setModalData(details);
+    const validDetails = (details || []).filter((d) => d.visit > 0);
+
+    if (validDetails.length > 0) {
+      setModalData(validDetails);
       setModalTitle(
         <div>
           <h3 className="text-lg font-bold">
@@ -59,7 +67,7 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
     return (
       <td
         onClick={() => handleCellClick(typeDetails, typeDate, title)}
-        className={`border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap ${normalColorClass} ${
+        className={`${bodyCellClass} ${normalColorClass} ${
           hasTypeDist ? `${hoverColorClass} cursor-pointer` : ''
         }`}
       >
@@ -117,20 +125,39 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="bg-gray-50 dark:bg-slate-900">
                 <tr>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="3" className={orangeHeaderClass}>
                     {translate('common.date')} ({translate('summary.tabs.dist_summary.month')})
+                  </th>
+                  <th colSpan="4" className={`${greenHeaderClass} ${separatorClass}`}>
+                    {`${translate('common.estimate')} (${translate('common.routing')})`}
+                  </th>
+                  <th colSpan="4" className={greenHeaderClass}>
+                    {`${translate('common.actual')} (${translate('common.delivery')})`}
+                  </th>
+                </tr>
+                <tr>
+                  <th colSpan="2" className={defaultVioletClass}>
+                    {translate('summary.tabs.dist_summary.km_routing')}
+                  </th>
+                  <th rowSpan="2" className={wrapVioletClass}>
+                    {translate('summary.tabs.dist_summary.total_routing')}
+                  </th>
+                  <th rowSpan="2" className={`${wrapVioletClass} ${separatorClass}`}>
+                    {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>
                     {translate('summary.tabs.dist_summary.km_routing')}
                   </th>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="2" className={wrapVioletClass}>
                     {translate('summary.tabs.dist_summary.total_routing')}
                   </th>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="2" className={wrapVioletClass}>
                     {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                 </tr>
                 <tr>
+                  <th className={defaultVioletClass}>Dry</th>
+                  <th className={defaultVioletClass}>Frozen</th>
                   <th className={defaultVioletClass}>Dry</th>
                   <th className={defaultVioletClass}>Frozen</th>
                 </tr>
@@ -138,14 +165,16 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
               <tbody className="bg-white dark:bg-slate-800">
                 <tr>
                   <td className={defaultClass}>{monthTotals?.range}</td>
-                  <td className={`${defaultClass} bg-red-100 dark:bg-red-900/30`}>
-                    {distanceConverter(monthTotals?.dryKm)}
-                  </td>
-                  <td className={`${defaultClass} bg-blue-100 dark:bg-blue-900/30`}>
-                    {distanceConverter(monthTotals?.frozenKm)}
-                  </td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.dryKm)}</td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.frozenKm)}</td>
                   <td className={defaultClass}>{distanceConverter(monthTotals?.totalKm)}</td>
-                  <td className={defaultClass}>{distanceConverter(monthTotals?.avgKm)}</td>
+                  <td className={`${defaultClass} ${separatorClass}`}>
+                    {distanceConverter(monthTotals?.avgKm)}
+                  </td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.actDryKm)}</td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.actFrozenKm)}</td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.actTotalKm)}</td>
+                  <td className={defaultClass}>{distanceConverter(monthTotals?.actAvgKm)}</td>
                 </tr>
               </tbody>
             </table>
@@ -154,8 +183,28 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
             <table className="w-full border-collapse text-sm text-slate-700 dark:text-slate-200">
               <thead className="sticky top-0 z-10 shadow-sm bg-gray-50 dark:bg-slate-900">
                 <tr>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="3" className={orangeHeaderClass}>
                     {translate('common.delivery_date')}
+                  </th>
+                  <th colSpan="6" className={`${greenHeaderClass} ${separatorClass}`}>
+                    {`${translate('common.estimate')} (${translate('common.routing')})`}
+                  </th>
+                  <th colSpan="6" className={greenHeaderClass}>
+                    {`${translate('common.actual')} (${translate('common.delivery')})`}
+                  </th>
+                </tr>
+                <tr>
+                  <th colSpan="2" className={defaultVioletClass}>
+                    {translate('summary.tabs.dist_summary.total_vehicle')}
+                  </th>
+                  <th colSpan="2" className={defaultVioletClass}>
+                    {translate('summary.tabs.dist_summary.km_routing')}
+                  </th>
+                  <th rowSpan="2" className={wrapVioletClass}>
+                    {translate('summary.tabs.dist_summary.total_routing')}
+                  </th>
+                  <th rowSpan="2" className={`${wrapVioletClass} ${separatorClass}`}>
+                    {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                   <th colSpan="2" className={defaultVioletClass}>
                     {translate('summary.tabs.dist_summary.total_vehicle')}
@@ -163,10 +212,10 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
                   <th colSpan="2" className={defaultVioletClass}>
                     {translate('summary.tabs.dist_summary.km_routing')}
                   </th>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="2" className={wrapVioletClass}>
                     {translate('summary.tabs.dist_summary.total_routing')}
                   </th>
-                  <th rowSpan="2" className={defaultVioletClass}>
+                  <th rowSpan="2" className={wrapVioletClass}>
                     {translate('summary.tabs.dist_summary.average_routing')}
                   </th>
                 </tr>
@@ -175,50 +224,56 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
                   <th className={defaultVioletClass}>Frozen</th>
                   <th className={defaultVioletClass}>Dry</th>
                   <th className={defaultVioletClass}>Frozen</th>
+                  <th className={defaultVioletClass}>Dry</th>
+                  <th className={defaultVioletClass}>Frozen</th>
+                  <th className={defaultVioletClass}>Dry</th>
+                  <th className={defaultVioletClass}>Frozen</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800">
-                {data.map((row, idx) => (
-                  <tr
-                    key={idx}
-                    className={` ${row.isSunday || row.isDynamicHoliday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
-                  >
-                    <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap font-medium relative">
-                      {renderDateCell(row)}
-                    </td>
+                {data.map((row, idx) => {
+                  return (
+                    <tr
+                      key={idx}
+                      className={` ${row.isSunday || row.isDynamicHoliday ? 'bg-red-200 dark:bg-[#4a1c1c] text-red-900 dark:text-red-300 border-b border-gray-300 dark:border-slate-700' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
+                    >
+                      <td className={`${bodyCellClass} font-medium relative`}>
+                        {renderDateCell(row)}
+                      </td>
 
-                    {row.isSunday || row.isDynamicHoliday ? (
-                      <>
-                        <td
-                          colSpan="6"
-                          className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle whitespace-nowrap"
-                        >
-                          {row.isSunday
-                            ? translate('common.holiday_sunday')
-                            : translate('common.holiday')}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap">
-                          {row.dryCount}
-                        </td>
-                        <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap">
-                          {row.frozenCount}
-                        </td>
-                        {distanceTable(row.dryDetails, row.date, row.dryKm, 'Dry')}
-                        {distanceTable(row.frozenDetails, row.date, row.frozenKm, 'Frozen')}
+                      {row.isSunday || row.isDynamicHoliday ? (
+                        <>
+                          <td
+                            colSpan="12"
+                            className="px-2 py-2 border border-gray-300 dark:border-slate-700 font-bold text-center align-middle whitespace-nowrap"
+                          >
+                            {row.isSunday
+                              ? translate('common.holiday_sunday')
+                              : translate('common.holiday')}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className={bodyCellClass}>{row.dryCount}</td>
+                          <td className={bodyCellClass}>{row.frozenCount}</td>
+                          {distanceTable(row.dryDetails, row.date, row.dryKm, 'Dry')}
+                          {distanceTable(row.frozenDetails, row.date, row.frozenKm, 'Frozen')}
+                          <td className={bodyCellClass}>{distanceConverter(row.totalKm)}</td>
+                          <td className={`${bodyCellClass} ${separatorClass}`}>
+                            {distanceConverter(row.avgKm)}
+                          </td>
 
-                        <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap">
-                          {distanceConverter(row.totalKm)}
-                        </td>
-                        <td className="border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap">
-                          {distanceConverter(row.avgKm)}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
+                          <td className={bodyCellClass}>{row.actDryCount}</td>
+                          <td className={bodyCellClass}>{row.actFrozenCount}</td>
+                          {distanceTable(row.actDryDetails, row.date, row.actDryKm, 'Dry')}
+                          {distanceTable(row.actFrozenDetails, row.date, row.actFrozenKm, 'Frozen')}
+                          <td className={bodyCellClass}>{distanceConverter(row.actTotalKm)}</td>
+                          <td className={bodyCellClass}>{distanceConverter(row.actAvgKm)}</td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
