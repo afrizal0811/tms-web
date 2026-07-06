@@ -1,6 +1,6 @@
 // File: src/lib/reportGenerators/summary/sheets/truckUsageSheet.js
 import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
-import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
@@ -207,7 +207,7 @@ export async function calculateTruckUsageData(
   const [vehicleTypesObj, mappingsDB, allDriversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
-    getOrFetchDriverData(hubId),
+    getDriverData(hubId),
     getTruckUsageData(hubId, startDateStr, endDateStr),
   ]);
 

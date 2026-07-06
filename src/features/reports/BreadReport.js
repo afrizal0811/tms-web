@@ -7,7 +7,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {
   buildDriverMap,
@@ -43,7 +43,7 @@ export default function BreadReport() {
     setShowWarningModal(false);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
-      const driverData = await getOrFetchDriverData(storedLocation);
+      const driverData = await getDriverData(storedLocation);
       const driverMap = buildDriverMap(driverData);
 
       const datesToProcess = getDatesInRange(startDate, endDate || startDate);

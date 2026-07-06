@@ -15,7 +15,7 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
@@ -83,7 +83,7 @@ export default function SingleReport({
 
   const disabledCommon = isAnyLoading || isMapping;
   const driversCheck = async () => {
-    const drivers = await getOrFetchDriverData(selectedLocation);
+    const drivers = await getDriverData(selectedLocation);
     if (isEmpty(drivers)) {
       throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
     }
@@ -267,7 +267,7 @@ export default function SingleReport({
       }, {});
 
       const [hubsData, locationHistoriesRes] = await Promise.all([
-        getOrFetchDriverData(selectedLocation),
+        getDriverData(selectedLocation),
         getLocationHistories({
           timeFrom,
           timeTo,

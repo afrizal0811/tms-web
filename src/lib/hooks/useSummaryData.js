@@ -8,7 +8,7 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { calculateMasterTruckStorage, getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toast';
@@ -713,7 +713,7 @@ export default function useSummaryData() {
       const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
-      const pDrivers = fetchWithTracker(() => getOrFetchDriverData(selectedLocation));
+      const pDrivers = fetchWithTracker(() => getDriverData(selectedLocation));
 
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];

@@ -16,7 +16,7 @@ import {
 } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { getOrFetchDriverData } from '../lib/driverDataHelper';
+import { getDriverData } from '../lib/driverData';
 import { toastError, toastInfo } from '../lib/toast';
 
 export default function Home() {
@@ -105,7 +105,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getOrFetchDriverData(selectedLocation);
+        const data = await getDriverData(selectedLocation);
         setDriverData({ data: data });
       } catch (err) {
         toastError(err);

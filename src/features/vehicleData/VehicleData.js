@@ -6,7 +6,7 @@ import HeaderCard from '@/components/card/HeaderCard';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -135,7 +135,7 @@ export default function VehicleData() {
         }
 
         const [rawDriversData, mappingsDB] = await Promise.all([
-          getOrFetchDriverData(storedLocation),
+          getDriverData(storedLocation),
           getVehicleMappings(),
         ]);
 
