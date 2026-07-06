@@ -23,13 +23,13 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useState } from 'react';
-import { bulkDownloader } from './helper/help';
+import { periodDownloader } from './helper/help';
 
 const parseDate = (dateStr) => {
   return new Date(dateStr.replace(/-/g, '/'));
 };
 
-export default function BulkReport({ driverData }) {
+export default function PeriodReport({ driverData }) {
   const today = parseDate(formatDateUniversal(new Date()));
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -74,7 +74,7 @@ export default function BulkReport({ driverData }) {
     setPendingAction(null);
   };
 
-  const handleBulkSummary = async (t) => {
+  const handlePeriodSummary = async (t) => {
     let mappingsObj = {};
     let vehicleTypes = [];
     let hubsMap = {};
@@ -102,11 +102,11 @@ export default function BulkReport({ driverData }) {
       setIsLoading(false);
     }
 
-    bulkDownloader({
+    periodDownloader({
       startDate,
       endDate,
       driverData,
-      zipPrefix: `${t('report.bulk')}`,
+      zipPrefix: `${t('report.period')}`,
       setIsLoading,
       processDateCallback: async ({ dateForFile, hubId, hubName }) => {
         const deliveryDateObj = parseDate(dateForFile);
@@ -242,7 +242,7 @@ export default function BulkReport({ driverData }) {
       <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
         <Button
           key="download"
-          onClick={() => executeWithCheck(() => handleBulkSummary(t))}
+          onClick={() => executeWithCheck(() => handlePeriodSummary(t))}
           disabled={isLoading || isRangeInvalid}
           isLoading={isLoading}
           text={t('common.download')}

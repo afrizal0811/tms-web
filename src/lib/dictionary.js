@@ -266,7 +266,7 @@ export const dictionary = {
     },
     report: {
       bread_summary: 'Ringkasan Barang Roti',
-      bulk: 'Laporan Massal',
+      period: 'Laporan Massal',
       change_date: 'Ubah Tanggal Ruting',
       daily_title: 'Laporan Harian',
       delivery_summary: 'Ringkasan Pengiriman',
@@ -933,7 +933,7 @@ export const dictionary = {
     },
     report: {
       bread_summary: 'Bread Item Summary',
-      bulk: 'Bulk Report',
+      period: 'Period Report',
       change_date: 'Change Routing Date',
       daily_title: 'Daily Report',
       delivery_summary: 'Delivery Summary',
