@@ -1,10 +1,10 @@
 import {
-  calculateHaversineDistance,
   calculateMinuteDifference,
-  extractTempFromDriverName,
   formatCoordinates,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getDistance,
+  getStorageType,
   getUTC7DateString,
   isEmpty,
   normalizeEmail,
@@ -405,7 +405,7 @@ export function parseDeliveryData(
       actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
       visitTime: task.visitTime,
       actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-      temperature: extractTempFromDriverName(driverName),
+      temperature: getStorageType(driverName),
       realSequence: 0,
       orderId: task.orderId || '',
       isWithinHoursStatus: hoursStatus,
@@ -418,7 +418,7 @@ export function parseDeliveryData(
         customerId: cId,
         locationId: cLoc,
         newLonglat: formatCoordinates(task.klikLokasiClient),
-        bedaJarak: calculateHaversineDistance(task.longlat, task.klikLokasiClient),
+        distanceDiff: getDistance(task.longlat, task.klikLokasiClient),
       });
     }
   });

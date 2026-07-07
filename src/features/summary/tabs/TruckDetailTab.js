@@ -1,5 +1,12 @@
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap, isEmpty } from '@/lib/utils';
+import {
+  formatLongDate,
+  formatMinutesToHHMM,
+  getBasePlate,
+  heatMap,
+  isEmpty,
+  isPastDate,
+} from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -16,13 +23,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
   };
   const closeModal = () => setModalData(null);
   const percentage = (data, maxData) => ((data / maxData) * 100).toFixed(1) + '%';
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    return currentMidnight < new Date().setHours(0, 0, 0, 0);
-  };
 
   const isDayEmpty = (dateStr) => {
     if (!dataMatrix || !dataMatrix[dateStr]) return true;
@@ -293,7 +293,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                 }
               });
 
-              // Siapkan konten text untuk tooltip
               const capacityTooltip =
                 driverMaxW > 0 || driverMaxV > 0 ? (
                   <span>

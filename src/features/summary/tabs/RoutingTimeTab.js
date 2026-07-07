@@ -2,10 +2,15 @@
 
 import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { formatDateWIB, formatLongDate, isDateSunday, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateWIB,
+  formatLongDate,
+  isDateSunday,
+  isPastDate,
+  parseCustomerString,
+} from '@/lib/utils';
 import { useMemo } from 'react';
 
-// --- Static Constants ---
 const headerClass =
   'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold w-1/3 text-center min-w-[200px]';
 const dataClass =
@@ -26,7 +31,6 @@ const HEADER_TITLES = [
   },
 ];
 
-// --- Pure Helper Functions ---
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
 
@@ -73,13 +77,6 @@ const formatInvoice = (invoiceString) => {
     .filter(Boolean);
 
   return invoices.length > 1 ? `${invoices[0]} (+${invoices.length - 1})` : invoices[0];
-};
-
-const isPastDate = (dateStr) => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const currentMidnight = new Date(y, m - 1, d);
-  currentMidnight.setHours(0, 0, 0, 0);
-  return currentMidnight < new Date().setHours(0, 0, 0, 0);
 };
 
 export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {

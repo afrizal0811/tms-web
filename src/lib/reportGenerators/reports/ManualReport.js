@@ -1,11 +1,11 @@
 import {
-  calculateHaversineDistance,
   calculateMinuteDifference,
-  extractTempFromDriverName,
   formatCoordinates,
   formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getDistance,
+  getStorageType,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
@@ -410,7 +410,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         actualDeparture: actualDepVal,
         visitTime: idxVisitTime !== -1 && row[idxVisitTime] ? row[idxVisitTime] : null,
         actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-        temperature: typeStorage || extractTempFromDriverName(driverName),
+        temperature: typeStorage || getStorageType(driverName),
         orderId,
         isWithinHoursStatus: hoursStatus,
         deliveryDate: formattedDeliveryDate,
@@ -429,7 +429,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           customerId,
           locationId: customerLocation,
           newLonglat: formatCoordinates(klikLokasi),
-          bedaJarak: calculateHaversineDistance(expectedCoord, klikLokasi),
+          distanceDiff: getDistance(expectedCoord, klikLokasi),
         });
       }
     }

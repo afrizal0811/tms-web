@@ -1,8 +1,8 @@
 import {
-  calculateHaversineDistance,
   formatDateUniversal,
   formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
+  getDistance,
   normalizeEmail,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -241,7 +241,7 @@ export const generateTaskDetailWorkbook = (
       let returnHubDistanceMeters = '-';
 
       if (doneCoord && hubCoordsStr) {
-        const rawDistance = calculateHaversineDistance(doneCoord, hubCoordsStr);
+        const rawDistance = getDistance(doneCoord, hubCoordsStr);
         if (rawDistance !== null) {
           returnHubDistanceMeters = Math.round(rawDistance * 1.3);
         }

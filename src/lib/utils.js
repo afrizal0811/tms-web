@@ -152,29 +152,28 @@ export function formatSimpleTime(timeString) {
 }
 
 // Mendeteksi jenis suhu (FRZ/DRY) berdasarkan kode string pada nama driver
-export function extractTempFromDriverName(driverName) {
-  if (typeof driverName !== 'string' || !driverName) {
-    return null;
+export function getStorageType(input) {
+  if (Array.isArray(input) || typeof input === 'string') {
+    const text = (Array.isArray(input) ? input.join(' ') : input).toUpperCase();
+    if (text.includes('FROZEN') || text.includes('FRZ')) return 'Frozen';
+    if (text.includes('DRY')) return 'Dry';
+    return '-';
   }
-
-  const trimmedName = driverName.trim().toUpperCase();
-
-  if (trimmedName.startsWith("'FRZ'")) {
-    return 'FRZ';
-  }
-  if (trimmedName.startsWith("'DRY'")) {
-    return 'DRY';
-  }
-
-  return null;
+  const typeStr = input.type || '';
+  const nameStr = input.name || input || '';
+  if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
+  if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
+  if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))
+    return 'Frozen';
+  if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
+    return 'Dry';
+  return '-';
 }
 
 // Memformat string koordinat agar memiliki presisi 6 angka desimal
 export function formatCoordinates(coordsString) {
   const coords = parseCoordinates(coordsString);
-
   if (!coords) return null;
-
   return `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}`;
 }
 
@@ -189,7 +188,7 @@ export function parseCoordinates(coordString) {
 }
 
 // Menghitung jarak antara dua koordinat menggunakan rumus Haversine (hasil dalam meter)
-export function calculateHaversineDistance(coordsString1, coordsString2) {
+export function getDistance(coordsString1, coordsString2) {
   const c1 = parseCoordinates(coordsString1);
   const c2 = parseCoordinates(coordsString2);
 
@@ -441,10 +440,11 @@ export function getDeliveryDateFromRouting(isoString) {
   }
 }
 
-export function heatMap(pctStr) {
-  if (!pctStr) return null;
-  const val = parseFloat(pctStr);
+export function heatMap(pctInput) {
+  if (pctInput === null || pctInput === undefined || pctInput === '') return null;
+  let val = parseFloat(pctInput);
   if (isNaN(val)) return null;
+  if (val > 0 && val <= 1) val = val * 100;
   const ratio = Math.max(0, Math.min(100, val)) / 100;
   let r, g, b;
   if (ratio <= 0.5) {
@@ -466,4 +466,19 @@ export function heatMap(pctStr) {
     )
     .join('')
     .toUpperCase();
+}
+
+export function isPastDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(y, m - 1, d) < today;
+}
+
+export function parseApiDateString(dateStr) {
+  if (!dateStr) return null;
+  let isoStr = dateStr.toString().replace(' ', 'T');
+  if (!isoStr.endsWith('Z') && !isoStr.includes('+')) isoStr += 'Z';
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? null : d;
 }

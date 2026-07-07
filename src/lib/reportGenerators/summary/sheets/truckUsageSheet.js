@@ -1,4 +1,3 @@
-// File: src/lib/reportGenerators/summary/sheets/truckUsageSheet.js
 import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
 import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { toastError } from '@/lib/toast';
@@ -6,38 +5,15 @@ import {
   formatDateUniversal,
   formatLongDate,
   getDeliveryDateFromRouting,
+  getStorageType,
   getUTC7DateString,
   isEmpty,
+  isPastDate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
 const normalizePlate = (plate) => (plate || '').replace(/\s+/g, '').toLowerCase();
-
-const extractFirstStorageTag = (sourceTags) => {
-  let rawTags = sourceTags || [];
-  if (typeof rawTags === 'string') rawTags = rawTags.split(',');
-  if (Array.isArray(rawTags) && rawTags.length > 0) {
-    return (
-      rawTags.find(
-        (t) =>
-          typeof t === 'string' &&
-          (t.toUpperCase().includes('DRY') ||
-            t.toUpperCase().includes('FROZEN') ||
-            t.toUpperCase().includes('FRZ'))
-      ) || rawTags[0]
-    );
-  }
-  return '';
-};
-
-const isStorageFrozen = (storage, firstTag) => {
-  return (
-    (storage || '').toUpperCase().includes('FROZEN') ||
-    (firstTag || '').toUpperCase().includes('FROZEN') ||
-    (firstTag || '').toUpperCase().includes('FRZ')
-  );
-};
 
 function getVehicleType(rawTag, vehiclePlate, mappingsObj, vehicleTypes) {
   const cleanPlate = normalizePlate(vehiclePlate);
@@ -282,12 +258,12 @@ export async function calculateTruckUsageData(
   });
 
   activeDrivers.forEach((d) => {
-    const firstTag = extractFirstStorageTag(d.tags || d.vehicleTags || d.userTags);
+    const firstTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
 
     const rawTypeSource = d.type || firstTag;
     const type = getVehicleType(rawTypeSource, d.plat, mappingsObj, vehicleTypes);
 
-    let isFrozen = isStorageFrozen(d.storage, firstTag);
+    let isFrozen = firstTag === 'Frozen';
     const platUpper = (d.plat || '').toUpperCase();
     const nameUpper = (d.name || '').toUpperCase();
     if (
@@ -364,18 +340,11 @@ export async function calculateTruckUsageData(
     });
   }
 
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    return currentMidnight < new Date().setHours(0, 0, 0, 0);
-  };
-
   if (resultsData && Array.isArray(resultsData)) {
     const driverMapHash = new Map();
     masterDriversDB.forEach((d) => {
       if (d.email) {
-        const mTag = extractFirstStorageTag(d.tags || d.vehicleTags || d.userTags);
+        const mTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
         driverMapHash.set(d.email.toLowerCase().trim(), {
           name: d.name,
           storage: (d.storage || 'DRY').toUpperCase(),
@@ -423,7 +392,7 @@ export async function calculateTruckUsageData(
             (d) => d.plat && normalizePlate(d.plat) === canonicalPlate
           );
           if (platMatch) {
-            const mTag = extractFirstStorageTag(
+            const mTag = getStorageType(
               platMatch.tags || platMatch.vehicleTags || platMatch.userTags
             );
             driverInfo = {
@@ -435,12 +404,11 @@ export async function calculateTruckUsageData(
           }
         }
 
-        const storage = driverInfo ? driverInfo.storage : 'DRY';
         const routingTag =
           route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
         const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
 
-        let isFrozen = isStorageFrozen(storage, firstTag);
+        let isFrozen = firstTag === 'Frozen';
         if (
           driverInfo &&
           ((driverInfo.name || '').toUpperCase().includes('FRZ') ||

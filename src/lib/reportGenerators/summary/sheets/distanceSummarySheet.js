@@ -4,9 +4,11 @@ import {
   formatLongDate,
   getDeliveryDateFromRouting,
   getUTC7DateString,
+  isPastDate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, FILL_STYLES, HEADER_STYLES } from './reportStyles';
+
 function formatMonthRange(startDateStr, endDateStr, localeCode) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
@@ -47,13 +49,6 @@ function createDriverMap(driverData) {
     }
   });
   return { emailMap, platMap };
-}
-
-function isPastDate(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const currentMidnight = new Date(y, m - 1, d);
-  currentMidnight.setHours(0, 0, 0, 0);
-  return currentMidnight < new Date().setHours(0, 0, 0, 0);
 }
 
 function initializeDateMap(startDateStr, endDateStr) {

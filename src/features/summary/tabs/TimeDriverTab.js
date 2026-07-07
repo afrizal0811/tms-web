@@ -1,7 +1,7 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, getBasePlate, isEmpty } from '@/lib/utils';
+import { formatLongDate, getBasePlate, isEmpty, isPastDate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
@@ -21,13 +21,6 @@ const stickyBodyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r
 const stickyBodyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r dark:md:border-r-slate-700';
 const stickyBodyDriver =
   'md:sticky md:left-[180px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
-
-const isPastDate = (dateStr) => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const currentMidnight = new Date(y, m - 1, d);
-  currentMidnight.setHours(0, 0, 0, 0);
-  return currentMidnight < new Date().setHours(0, 0, 0, 0);
-};
 
 export default function TimeDriverTab({ data, translate, localeCode, activeHubLocation }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};

@@ -1,19 +1,11 @@
-// File: src/lib/reportGenerators/rangkumanSheets/taskSummarySheet.js
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from './reportStyles';
-
-// --- HELPERS (Sama dengan UI) ---
-function getRoutingDateKey(dateObj) {
-  const y = dateObj.getFullYear();
-  const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-  const da = dateObj.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${da}`;
-}
 
 function calculatePct(num, den) {
   const n = num || 0;
   const d = den || 0;
-  if (d === 0) return 0; // Return number for Excel
+  if (d === 0) return 0;
   return n / d;
 }
 
@@ -48,15 +40,11 @@ export function generateTaskSummarySheet(
 
   const excelData = [headers];
   const merges = [];
-  const sundayRows = new Set(); // Simpan index baris minggu
-  const zeroDpRows = new Set(); // --- Simpan index baris DP = 0 ---
-
-  // --- GENERATE DATA ---
+  const sundayRows = new Set();
+  const zeroDpRows = new Set();
   const current = new Date(startDateStr);
   const end = new Date(endDateStr);
-  let currentRow = 1; // Start after header
-
-  // Mapping Master Truck (Default 0 jika undefined)
+  let currentRow = 1;
   const mtDry = masterTruckData?.Dry?.Total || 0;
   const mtFrozen = masterTruckData?.Frozen?.Total || 0;
 
@@ -67,7 +55,7 @@ export function generateTaskSummarySheet(
     const displayDate = `${day}-${month}-${year}`;
     const isSunday = current.getDay() === 0;
 
-    const routingKey = getRoutingDateKey(current);
+    const routingKey = formatDateUniversal(current);
     const data = metrics ? metrics[routingKey] : null;
     const d = data?.dry || {};
     const f = data?.frozen || {};
@@ -78,7 +66,6 @@ export function generateTaskSummarySheet(
     currentMidnight.setHours(0, 0, 0, 0);
     const isPast = currentMidnight < today;
 
-    // Logika Libur Dinamis jika SEMUA nilai adalah 0
     const checkZero = (obj) =>
       (obj.dp || 0) === 0 &&
       (obj.dt_total || 0) === 0 &&
@@ -92,14 +79,13 @@ export function generateTaskSummarySheet(
 
     const isDynamicHoliday = isPast && checkZero(d) && checkZero(f) && !isSunday;
 
-    // 1. MINGGU ATAU LIBUR DINAMIS
     if (isSunday || isDynamicHoliday) {
       excelData.push([
         displayDate,
         isSunday ? translate('common.holiday_sunday') : translate('common.holiday'),
         ...Array(16).fill(''),
       ]);
-      excelData.push(['', '', ...Array(16).fill('')]); // Dummy row for merge
+      excelData.push(['', '', ...Array(16).fill('')]);
 
       merges.push({ s: { r: currentRow, c: 0 }, e: { r: currentRow + 1, c: 0 } });
       merges.push({ s: { r: currentRow, c: 1 }, e: { r: currentRow + 1, c: 17 } });
@@ -107,16 +93,12 @@ export function generateTaskSummarySheet(
       sundayRows.add(currentRow);
       sundayRows.add(currentRow + 1);
       currentRow += 2;
-    }
-    // 2. HARI KERJA
-    else {
-      // isZeroDP untuk mewarnai merah khusus kolom tanggal jika hanya DP yg 0 tapi ada status lain
+    } else {
       if ((d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast) {
         zeroDpRows.add(currentRow);
         zeroDpRows.add(currentRow + 1);
       }
 
-      // ROW DRY
       excelData.push([
         displayDate,
         'Dry',
@@ -138,7 +120,6 @@ export function generateTaskSummarySheet(
         calculatePct(d.tvu, mtDry),
       ]);
 
-      // ROW FROZEN
       excelData.push([
         '',
         'Frozen',
@@ -160,7 +141,6 @@ export function generateTaskSummarySheet(
         calculatePct(f.tvu, mtFrozen),
       ]);
 
-      // Merge Date Column
       merges.push({ s: { r: currentRow, c: 0 }, e: { r: currentRow + 1, c: 0 } });
       currentRow += 2;
     }
@@ -170,7 +150,6 @@ export function generateTaskSummarySheet(
 
   excelData.push([]);
 
-  // --- BAGIAN LEGENDA ---
   excelData.push([translate('summary.tabs.task_summary.explanation')]);
   const legendTitleRow = excelData.length - 1;
 
@@ -192,16 +171,13 @@ export function generateTaskSummarySheet(
   const legendStartRow = excelData.length;
 
   legendMap.forEach((item, idx) => {
-    // Label Kolom A (misal: "DP")
     const label = `${item.label}`;
-    // Deskripsi Kolom B
     const desc =
       item.key === 'ma'
         ? translate('common.status.manual_assign')
         : translate(`summary.tabs.task_summary.${item.key}`);
     excelData.push([label, desc]);
 
-    // Merge Deskripsi (Kolom B sampai R)
     const r = legendStartRow + idx;
     merges.push({ s: { r: r, c: 1 }, e: { r: r, c: 17 } });
   });
@@ -209,7 +185,6 @@ export function generateTaskSummarySheet(
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   ws['!merges'] = merges;
 
-  // --- STYLING ---
   const range = XLSX.utils.decode_range(ws['!ref']);
   const headerFills = {
     0: FILL_STYLES.taskYellow,
@@ -239,18 +214,13 @@ export function generateTaskSummarySheet(
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      // --- STYLE LEGENDA ---
       if (R >= legendTitleRow) {
         if (R === legendTitleRow && C === 0) {
-          // Style Judul Legenda
           cell.s = { font: { bold: true, underline: true }, alignment: { horizontal: 'left' } };
         } else if (R >= legendStartRow) {
           if (C === 0) {
-            // KOLOM A: LABEL (DP, DT, dll) dengan WARNA BACKGROUND
             const legendIndex = R - legendStartRow;
             const legendKey = legendMap[legendIndex]?.key;
-
-            // Tentukan warna berdasarkan Key (Mapping Manual agar sesuai Header)
             let legendFill = null;
             switch (legendKey) {
               case 'dp':
@@ -287,18 +257,14 @@ export function generateTaskSummarySheet(
               font: { bold: true },
               alignment: { horizontal: 'center', vertical: 'top' },
               fill: legendFill,
-              border: BORDERS.thin, // Tambah border agar terlihat rapi seperti tombol/header
+              border: BORDERS.thin,
             };
           } else if (C === 1) {
-            // KOLOM B: DESKRIPSI
             cell.s = { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } };
           }
         }
         continue;
       }
-      // ---------------------
-
-      // STYLE HEADER & DATA
       if (R === 0) {
         cell.s = {
           ...HEADER_STYLES.main,
@@ -317,7 +283,6 @@ export function generateTaskSummarySheet(
               ...BASE_STYLES.center,
               alignment: { vertical: 'center', horizontal: 'center' },
             };
-            // --- TERAPKAN WARNA MERAH KHUSUS UNTUK CELL TANGGAL JIKA DP = 0 ---
             if (zeroDpRows.has(R)) {
               cell.s.fill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
               cell.s.font = { ...FONT_STYLES.bold, color: { rgb: '9C0006' } };

@@ -1,34 +1,16 @@
-// File: src/lib/reportGenerators/rangkumanSheets/pendingReasonSheet.js
-import { formatDateWIB, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateWIB,
+  formatSimpleTime,
+  getStorageType,
+  isEmpty,
+  normalizeEmail,
+  parseApiDateString,
+  parseCustomerString,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
-function parseApiDateString(dateStr) {
-  if (!dateStr) return null;
-  let isoStr = dateStr.toString().replace(' ', 'T');
-  if (!isoStr.endsWith('Z') && !isoStr.includes('+')) {
-    isoStr += 'Z';
-  }
-  const d = new Date(isoStr);
-  return isNaN(d.getTime()) ? null : d;
-}
-function formatSimpleTimeString(timeStr) {
-  if (!timeStr || typeof timeStr !== 'string') return null;
-  return timeStr.substring(0, 5);
-}
-
-function getDriverStorageType(driver) {
-  const typeStr = driver.type || '';
-  const nameStr = driver.name || '';
-  if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
-  if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
-  if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))
-    return 'Frozen';
-  if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
-    return 'Dry';
-  return '-';
-}
 
 export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
   const processedData = [];
@@ -39,7 +21,7 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
-        driverMap.set(email, { name: d.name, plat: plat, type: getDriverStorageType(d) });
+        driverMap.set(email, { name: d.name, plat: plat, type: getStorageType(d) });
       }
     });
   }
@@ -108,10 +90,10 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
           sortDateNum: sortDateNum,
           sortArrTimestamp: arrObj ? arrObj.getTime() : 9999999999999,
           dateStr: formatDateWIB(dateObj, 'DD-MM-YYYY'),
-          openStr: formatSimpleTimeString(task.openTime),
-          closeStr: formatSimpleTimeString(task.closeTime),
-          etaStr: formatSimpleTimeString(task.eta),
-          etdStr: formatSimpleTimeString(task.etd || task.ETD),
+          openStr: formatSimpleTime(task.openTime),
+          closeStr: formatSimpleTime(task.closeTime),
+          etaStr: formatSimpleTime(task.eta),
+          etdStr: formatSimpleTime(task.etd || task.ETD),
           arrStr: formatDateWIB(arrObj, 'HH:mm'),
           depStr: formatDateWIB(depObj, 'HH:mm'),
           actualVisitMins: actualVisitMins,
@@ -219,7 +201,6 @@ export function generatePendingReasonSheet(
     ];
     if (shouldShowPendingGR) row.push(pendingGR);
 
-    // Terapkan Kolom Tambahannya
     row.push(
       item.alasan || '-',
       pd.internalExternal || '-',
@@ -254,7 +235,6 @@ export function generatePendingReasonSheet(
     },
   ];
 
-  // Logic Indexer setelah dimasukan 4 Kolom Baru (Geser 4)
   const shift = shouldShowPendingGR ? 0 : -1;
   const shiftNew = 4;
   const idxPending = 6;
@@ -321,13 +301,12 @@ export function generatePendingReasonSheet(
   ];
   if (shouldShowPendingGR) widths.push({ wch: 20 });
 
-  // Masukkan Lebar 4 Kolom Baru
   widths.push(
     { wch: 25 },
-    { wch: 20 }, // internalExternal
-    { wch: 30 }, // detailReason
-    { wch: 20 }, // groupReason
-    { wch: 20 }, // PIC
+    { wch: 20 },
+    { wch: 30 },
+    { wch: 20 },
+    { wch: 20 },
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },

@@ -10,10 +10,10 @@ import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
-  calculateHaversineDistance,
   formatCoordinates,
   formatDateWIB,
   formatToApiUtc,
+  getDistance,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
@@ -33,8 +33,6 @@ export default function UpdateCoordinatePage() {
   const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
 
   const driverMapRef = useRef(new Map());
-  const { storedLocationName: hubName } = getLocalStorage();
-
   const processHistoryRawData = (rawTasks, targetCustomerSet) => {
     const tempMap = new Map();
 
@@ -54,13 +52,13 @@ export default function UpdateCoordinatePage() {
       const normAssignee = normalizeEmail(rawAssignee);
       const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
 
-      const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
+      const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
 
       tempMap.get(name).push({
         date: formatDateWIB(task.doneTime, 'HH:mm'),
         newLonglat: task.klikLokasiClient,
         oldLonglat: task.longlat,
-        distanceDiff: bedaJarak,
+        distanceDiff: distanceDiff,
         driverName: driverName,
       });
     });
@@ -162,13 +160,13 @@ export default function UpdateCoordinatePage() {
       if (task.klikLokasiClient) {
         const customerName = task.customerName || '';
         const { id: custId, location: locId, name: custName } = parseCustomerString(customerName);
-        const bedaJarak = calculateHaversineDistance(task.longlat, task.klikLokasiClient);
+        const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
         const isDataIncomplete = !custId || !locId;
 
         const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
         const normAssignee = normalizeEmail(rawAssignee);
         const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
-
+        const { invoiceNumber } = parseCustomerString(task.customerOrder);
         updateList.push({
           customerData: customerName,
           customerName: custName,
@@ -177,14 +175,15 @@ export default function UpdateCoordinatePage() {
           driverName: driverName,
           updateTime: formatDateWIB(task.doneTime, 'HH:mm'),
           newLonglat: formatCoordinates(task.klikLokasiClient),
-          bedaJarak: bedaJarak !== null ? bedaJarak : 0,
+          distanceDiff: distanceDiff !== null ? distanceDiff : 0,
+          soNumber: invoiceNumber || task.content || '-',
           originalTask: task,
           isIncomplete: isDataIncomplete,
         });
       }
     }
 
-    updateList.sort((a, b) => a.bedaJarak - b.bedaJarak);
+    updateList.sort((a, b) => a.distanceDiff - b.distanceDiff);
     return updateList;
   }, [tasksData, loading]);
 
@@ -201,7 +200,7 @@ export default function UpdateCoordinatePage() {
     <Button
       disabled={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
-      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, hubName, t)}
+      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, t)}
       text={t('common.download')}
     />
   );
