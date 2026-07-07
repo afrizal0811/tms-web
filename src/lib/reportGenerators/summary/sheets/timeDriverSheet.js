@@ -158,7 +158,10 @@ export function calculateTimeDriverData(
         const hubLat = activeHubLocation?.lat || 0;
         const hubLon = activeHubLocation?.lng || 0;
         const RADIUS_THRESHOLD = 500;
-
+        const startLocation = item.lat && item.lon ? `${item.lat}, ${item.lon}` : null;
+        const finishLocation =
+          item.finish?.lat && item.finish?.lon ? `${item.finish?.lat}, ${item.finish?.lon}` : null;
+        const hubLocation = `${hubLat}, ${hubLon}`;
         const entry = {
           startTimeISO: item.startTime,
           finishTimeISO: item.finish?.finishTime,
@@ -173,15 +176,13 @@ export function calculateTimeDriverData(
           startLon: item.lon,
           finishLat: item.finish?.lat,
           finishLon: item.finish?.lon,
-          isStartOutRadius:
-            item.lat && item.lon
-              ? getDistance(item.lat, item.lon, hubLat, hubLon) > RADIUS_THRESHOLD
-              : false,
+          isStartOutRadius: startLocation
+            ? getDistance(startLocation, hubLocation) > RADIUS_THRESHOLD
+            : false,
 
-          isFinishOutRadius:
-            item.finish?.lat && item.finish?.lon
-              ? getDistance(item.finish.lat, item.finish.lon, hubLat, hubLon) > RADIUS_THRESHOLD
-              : false,
+          isFinishOutRadius: finishLocation
+            ? getDistance(finishLocation, hubLocation) > RADIUS_THRESHOLD
+            : false,
         };
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {

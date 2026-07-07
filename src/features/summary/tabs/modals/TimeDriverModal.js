@@ -2,6 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
+import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
 const parseDurationToMinutes = (str) => {
@@ -156,6 +157,13 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             {entries.map((entry, idx) => {
               const hasOutStart = entry.isStartOutRadius;
               const hasOutFinish = entry.isFinishOutRadius;
+              const diffDay = entry.dayDiff;
+              const hasDiffDay = !isEmpty(diffDay);
+
+              const diffDayTooltip = hasDiffDay
+                ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                : '';
+              const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
               return (
                 <tr
                   key={idx}
@@ -175,11 +183,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
                       {entry.startDisplay}
                     </td>
                   </Tooltip>
-                  <Tooltip
-                    tooltipContent={
-                      hasOutFinish ? translate('summary.tabs.time_driver.tooltip.out_finish') : ''
-                    }
-                  >
+                  <Tooltip tooltipContent={hasOutFinish ? outFinishTooltip : diffDayTooltip}>
                     <td
                       className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutFinish ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
                     >
