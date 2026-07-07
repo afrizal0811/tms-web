@@ -47,9 +47,9 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
             <Th>{t('vehicle.tabs.template.vehicle_tags')}</Th>
             <Th>{t('vehicle.tabs.template.odd_even')}</Th>
             <Th>{t('vehicle.tabs.template.weight_min')}</Th>
-            <Th>{t('vehicle.tabs.template.weight_max')}</Th>
+            <Th>{t('common.weight_max')}</Th>
             <Th>{t('vehicle.tabs.template.volume_min')}</Th>
-            <Th>{t('vehicle.tabs.template.volume_max')}</Th>
+            <Th>{t('common.volume_max')}</Th>
           </tr>
         </thead>
         <tbody>
