@@ -16,20 +16,7 @@ const headerClass =
 const dataClass =
   'px-6 py-4 font-medium text-slate-900 dark:text-slate-200 border-r border-b border-gray-200 dark:border-slate-700 text-center';
 
-const HEADER_TITLES = [
-  {
-    tooltip: 'summary.tabs.routing_time.tooltip.date_ro',
-    name: 'summary.tabs.routing_time.date_ro',
-  },
-  {
-    name: 'common.start_time',
-    tooltip: 'summary.tabs.routing_time.tooltip.start_ro',
-  },
-  {
-    name: 'common.finish_time',
-    tooltip: 'summary.tabs.routing_time.tooltip.end_ro',
-  },
-];
+const HEADER_TITLES = ['routing_date', 'start_time', 'finish_time'];
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
@@ -184,9 +171,11 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             <tr>
               {HEADER_TITLES.map((header, index) => (
                 <th key={index} className={headerClass}>
-                  <Tooltip tooltipContent={translate(`${header.tooltip}`)}>
+                  <Tooltip
+                    tooltipContent={translate(`summary.tabs.routing_time.tooltip.${header}`)}
+                  >
                     <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
-                      {translate(`${header.name}`)}
+                      {translate(`common.${header}`)}
                     </span>
                   </Tooltip>
                 </th>
@@ -233,10 +222,8 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
               const isStartMissing = !hasStart && hasEnd;
               const isEndMissing = hasStart && !hasEnd;
-
               const startDisplay = hasStart ? formatDateWIB(row.startData.time, 'HH:mm') : '-';
               const endDisplay = hasEnd ? formatDateWIB(row.endData.time, 'HH:mm') : '-';
-
               const errorClass =
                 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
 
@@ -246,13 +233,11 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
-
-                  {/* CELL START RO */}
                   <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
                     <Tooltip
                       tooltipContent={
                         isStartMissing
-                          ? translate('summary.tabs.routing_time.tooltip.start_ro_error')
+                          ? translate('summary.tabs.routing_time.tooltip.start_time_error')
                           : hasStart
                             ? `${row.startData.name}\n${row.startData.soNumber}`
                             : ''
@@ -266,13 +251,11 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                       </span>
                     </Tooltip>
                   </td>
-
-                  {/* CELL END RO */}
                   <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
                     <Tooltip
                       tooltipContent={
-                        !isEndMissing
-                          ? translate('summary.tabs.routing_time.tooltip.end_ro_error')
+                        isEndMissing
+                          ? translate('summary.tabs.routing_time.tooltip.end_time_error')
                           : hasEnd
                             ? `${row.endData.name}\n${row.endData.soNumber}`
                             : ''

@@ -469,15 +469,13 @@ export const dictionary = {
       title: 'Rangkuman',
       tabs: {
         routing_time: {
-          end_ro: 'Selesai RO',
-          date_ro: 'Tanggal Ruting',
           title: 'Waktu Ruting',
           tooltip: {
-            date_ro: 'H-1 Pengiriman',
-            end_ro: 'Waktu terakhir penugasan',
-            end_ro_error: 'End RO tersedia, namun Start RO kosong',
-            start_ro: 'Waktu pertama pembuatan tugas',
-            start_ro_error: 'Start RO tersedia, namun End RO kosong',
+            routing_date: 'Tanggal proses ruting',
+            finish_time: 'Waktu penugasan tugas terakhir',
+            finish_time_error: 'Waktu mulai ruting tersedia, tetapi selesai ruting kosong',
+            start_time: 'Waktu pembuatan tugas pertama',
+            start_time_error: 'Waktu selesai ruting tersedia, tetapi mulai ruting kosong',
           },
         },
         task_summary: {
@@ -1136,14 +1134,13 @@ export const dictionary = {
       title: 'Summary',
       tabs: {
         routing_time: {
-          date_ro: 'Routing Date',
           title: 'Routing Time',
           tooltip: {
-            date_ro: 'Date of routing process',
-            end_ro: 'Last task assignment time',
-            end_ro_error: 'Start RO is available, but End RO is empty',
-            start_ro: 'First task creation time',
-            start_ro_error: 'End RO is available, but Start RO is empty',
+            routing_date: 'Date of routing process',
+            finish_time: 'Last task assignment time',
+            finish_time_error: 'Start RO is available, but End RO is empty',
+            start_time: 'First task creation time',
+            start_time_error: 'End RO is available, but Start RO is empty',
           },
         },
         task_summary: {
