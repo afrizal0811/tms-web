@@ -94,6 +94,7 @@ export async function POST(request) {
         const driverInfo = driverMapByEmail.get(assigneeEmail);
         const plat = vehicle.name || vehicle.plateNumber;
         if (plat && plat.trim() !== '') {
+          if (String(plat).toUpperCase().includes('DM')) continue;
           const type = vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null;
           const storage = type ? type.split('-')[0] : null;
 
