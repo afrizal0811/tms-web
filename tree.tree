@@ -49,11 +49,11 @@
 │   ├── report
 │   │   ├── bread
 │   │   │   └── page.js
-│   │   ├── bulk
-│   │   │   └── page.js
 │   │   ├── counter
 │   │   │   └── page.js
 │   │   ├── detail
+│   │   │   └── page.js
+│   │   ├── period
 │   │   │   └── page.js
 │   │   └── single
 │   │       └── page.js
@@ -227,16 +227,19 @@
     │   ├── vehicles.js
     │   └── vehicleTypes.js
     ├── dictionary.js
-    ├── driverDataHelper.js
+    ├── driverData.js
     ├── hooks
     │   ├── useSummaryData.js
     │   └── useVehicleTagCheck.js
-    ├── isTripInShift.js
     ├── localStorageHandler.js
     ├── prisma.js
     ├── reportGenerators
     │   ├── bread
     │   │   └── breadReport.js
+    │   ├── helper
+    │   │   ├── convertLocationHistories.js
+    │   │   ├── index.js
+    │   │   └── isTripInShift.js
     │   ├── index.js
     │   ├── reports
     │   │   ├── AutoReport.js

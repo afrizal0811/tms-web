@@ -44,18 +44,14 @@ export async function POST(request) {
 
     let allTransactions = [];
 
-    // Hapus semua data driver berdasarkan hubId yang aktif sebelum menarik data baru
-    allTransactions.push(
-      prisma.driver.deleteMany({
-        where: {
-          hubs: {
-            some: {
-              id: { in: hubIds },
-            },
-          },
-        },
-      })
-    );
+    for (const hId of hubIds) {
+      allTransactions.push(
+        prisma.hub.update({
+          where: { id: hId },
+          data: { drivers: { set: [] } },
+        })
+      );
+    }
 
     for (const hubId of hubIds) {
       let rawDrivers = [];
