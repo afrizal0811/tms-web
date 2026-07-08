@@ -528,7 +528,8 @@ export const dictionary = {
           tooltip: {
             out_finish: 'Sopir akhiri perjalanan di luar radius',
             out_start: 'Sopir mulai perjalanan di luar radius',
-            diff_day: 'Sopir selesaikan perjalanan pada {days} hari setelah mulai perjalanan',
+            diff_day:
+              'Sopir selesaikan perjalanan pada {days} hari setelah mulai perjalanan, yaitu {date}',
           },
         },
         truck_detail: {
@@ -1193,7 +1194,7 @@ export const dictionary = {
           tooltip: {
             out_finish: 'Driver finished trip outside radius',
             out_start: 'Driver started trip outside radius',
-            diff_day: 'Driver finished trip {days} day(s) after start trip.',
+            diff_day: 'Driver completed trip {days} day(s) after trip started, on {date}.',
           },
         },
         truck_detail: {

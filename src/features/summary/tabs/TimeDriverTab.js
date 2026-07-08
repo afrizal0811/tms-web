@@ -220,9 +220,9 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
 
                     const diffDay = metrics.dayDiff;
                     const hasDiffDay = !isEmpty(diffDay);
-
+                    const finishTime = formatLongDate(metrics.finishTime, localeCode);
                     const diffDayTooltip = hasDiffDay
-                      ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                      ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay, date: finishTime })} `
                       : '';
                     const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
 

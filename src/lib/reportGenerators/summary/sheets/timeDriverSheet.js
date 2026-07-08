@@ -2,11 +2,13 @@ import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { isTripInShift } from '@/lib/reportGenerators/helper';
 import {
   formatDateWIB,
+  formatToApiUtc,
   getDistance,
   getStorageType,
   isEmpty,
   isPastDate,
   normalizeEmail,
+  parseAndShiftToUTC7,
   parseApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -152,6 +154,11 @@ export function calculateTimeDriverData(
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
+        const startTime = parseAndShiftToUTC7(item.startTime);
+        const realStartTime = formatToApiUtc(startTime);
+        const finishTime = parseAndShiftToUTC7(item.finish?.finishTime);
+        const realFinishTime = formatToApiUtc(finishTime);
+
         const storedHubs = getCachedHubs();
         const { storedLocationName } = getLocalStorage();
         const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
@@ -163,19 +170,21 @@ export function calculateTimeDriverData(
           item.finish?.lat && item.finish?.lon ? `${item.finish?.lat}, ${item.finish?.lon}` : null;
         const hubLocation = `${hubLat}, ${hubLon}`;
         const entry = {
-          startTimeISO: item.startTime,
-          finishTimeISO: item.finish?.finishTime,
-          startDisplay: startStr,
-          finishDisplay: finishStr,
-          durationDisplay: durationStr,
           dayDiff: dayDiff,
-          hasData: true,
           distance: totalDistance,
-          trackedTime: trackedTime,
-          startLat: item.lat,
-          startLon: item.lon,
+          durationDisplay: durationStr,
+          finishDisplay: finishStr,
           finishLat: item.finish?.lat,
           finishLon: item.finish?.lon,
+          finishTime: realFinishTime,
+          finishTimeISO: item.finish?.finishTime,
+          hasData: true,
+          startDisplay: startStr,
+          startLat: item.lat,
+          startLon: item.lon,
+          startTime: realStartTime,
+          startTimeISO: item.startTime,
+          trackedTime: trackedTime,
           isStartOutRadius: startLocation
             ? getDistance(startLocation, hubLocation) > RADIUS_THRESHOLD
             : false,
