@@ -272,6 +272,7 @@ export default function Navbar() {
   const LoggedInComps = (
     <>
       {navLinkReport}
+      {isSuperadmin && <NavLink href="/kpi">{t('navbar.kpi')}</NavLink>}
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
@@ -395,6 +396,7 @@ export default function Navbar() {
                   {t(link.labelKey)}
                 </MobileNavLink>
               ))}
+              {isSuperadmin && <MobileNavLink href="/kpi">{t('navbar.kpi')}</MobileNavLink>}
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
