@@ -2,6 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
 const parseDurationToMinutes = (str) => {
@@ -65,12 +66,13 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       }
 
       // Helper for repetitive marker creation
-      const addMarker = (lat, lon, labelText, isOut, tooltipContent) => {
+      const addMarker = (lat, lon, labelText, isOut, tooltipContent, hasDayDiff = false) => {
         bounds.push([lat, lon]);
         const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
+        const dayDiffBorder = hasDayDiff ? 'border-red-500' : 'border-white';
         const icon = L.divIcon({
           className: 'bg-transparent border-none',
-          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 border-white shadow-md">${labelText}</div>`,
+          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 ${dayDiffBorder} shadow-md">${labelText}</div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         });
@@ -83,20 +85,21 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       data.entries.forEach((entry, idx) => {
         const sText = data.entries.length > 1 ? `S${idx + 1}` : 'S';
         const fText = data.entries.length > 1 ? `F${idx + 1}` : 'F';
-
+        const hasDayDiff = entry.dayDiff > 0;
         if (entry.startLat && entry.startLon) {
-          const tooltipContent = `${translate('summary.tabs.time_driver.modal.start_time')}: ${entry.startDisplay}`;
+          const tooltipContent = `<b>${translate('summary.tabs.time_driver.modal.start_time')}</b><br>${formatDateUniversal(entry.startTime, 'DD/MM/YYYY HH:mm')}`;
           addMarker(entry.startLat, entry.startLon, sText, entry.isStartOutRadius, tooltipContent);
         }
 
         if (entry.finishLat && entry.finishLon) {
-          const tooltipContent = `${translate('summary.tabs.time_driver.modal.finish_time')}: ${entry.finishDisplay}`;
+          const tooltipContent = `<b>${translate('summary.tabs.time_driver.modal.finish_time')}</b><br>${formatDateUniversal(entry.finishTime, 'DD/MM/YYYY HH:mm')} <span class="text-red-500">${hasDayDiff ? `(+${entry.dayDiff})` : ''}</span>`;
           addMarker(
             entry.finishLat,
             entry.finishLon,
             fText,
             entry.isFinishOutRadius,
-            tooltipContent
+            tooltipContent,
+            hasDayDiff
           );
         }
       });
@@ -156,6 +159,13 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
             {entries.map((entry, idx) => {
               const hasOutStart = entry.isStartOutRadius;
               const hasOutFinish = entry.isFinishOutRadius;
+              const diffDay = entry.dayDiff;
+              const hasDiffDay = !isEmpty(diffDay);
+
+              const diffDayTooltip = hasDiffDay
+                ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                : '';
+              const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
               return (
                 <tr
                   key={idx}
@@ -175,11 +185,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
                       {entry.startDisplay}
                     </td>
                   </Tooltip>
-                  <Tooltip
-                    tooltipContent={
-                      hasOutFinish ? translate('summary.tabs.time_driver.tooltip.out_finish') : ''
-                    }
-                  >
+                  <Tooltip tooltipContent={hasOutFinish ? outFinishTooltip : diffDayTooltip}>
                     <td
                       className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutFinish ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
                     >

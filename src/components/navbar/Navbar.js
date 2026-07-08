@@ -73,7 +73,7 @@ const DROPDOWN_LINK_CLASS =
 
 const REPORT_LINKS = [
   { href: '/report/single', labelKey: 'navbar.daily_report', superadminOnly: false },
-  { href: '/report/bulk', labelKey: 'navbar.period_report', superadminOnly: false },
+  { href: '/report/period', labelKey: 'navbar.period_report', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
   { href: '/report/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },

@@ -17,7 +17,7 @@ export const getDatesInRange = (startDate, endDate) => {
   return dates;
 };
 
-export const bulkDownloader = async ({
+export const periodDownloader = async ({
   startDate,
   endDate,
   driverData,

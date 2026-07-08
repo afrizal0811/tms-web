@@ -47,11 +47,13 @@
 │   ├── old.ico
 │   ├── page.js
 │   ├── report
-│   │   ├── bulk
+│   │   ├── bread
 │   │   │   └── page.js
 │   │   ├── counter
 │   │   │   └── page.js
 │   │   ├── detail
+│   │   │   └── page.js
+│   │   ├── period
 │   │   │   └── page.js
 │   │   └── single
 │   │       └── page.js
@@ -148,6 +150,7 @@
 │   │   ├── data.js
 │   │   └── HelpPage.js
 │   ├── reports
+│   │   ├── BreadReport.js
 │   │   ├── BulkReport.js
 │   │   ├── helper
 │   │   │   ├── constants.js
@@ -172,21 +175,22 @@
 │   ├── summary
 │   │   ├── SummaryPage.js
 │   │   └── tabs
-│   │       ├── AverageDistanceTab.js
 │   │       ├── components
+│   │       │   ├── RoutingDropdown.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
+│   │       ├── DistanceSummaryTab.js
 │   │       ├── modals
-│   │       │   ├── AverageDistanceModal.js
+│   │       │   ├── DistanceSummaryModal.js
 │   │       │   ├── PendingReasonModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
 │   │       │   ├── TruckDetailModal.js
 │   │       │   └── TruckUsageModal.js
 │   │       ├── PendingReasonsTab.js
+│   │       ├── RoutingTimeTab.js
 │   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
-│   │       ├── TimeROTab.js
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
 │   ├── updateCoordinate
@@ -223,14 +227,19 @@
     │   ├── vehicles.js
     │   └── vehicleTypes.js
     ├── dictionary.js
-    ├── driverDataHelper.js
+    ├── driverData.js
     ├── hooks
     │   ├── useSummaryData.js
     │   └── useVehicleTagCheck.js
-    ├── isTripInShift.js
     ├── localStorageHandler.js
     ├── prisma.js
     ├── reportGenerators
+    │   ├── bread
+    │   │   └── breadReport.js
+    │   ├── helper
+    │   │   ├── convertLocationHistories.js
+    │   │   ├── index.js
+    │   │   └── isTripInShift.js
     │   ├── index.js
     │   ├── reports
     │   │   ├── AutoReport.js
@@ -240,13 +249,13 @@
     │   │   └── parsers.js
     │   ├── summary
     │   │   ├── sheets
-    │   │   │   ├── averageDistanceSheet.js
+    │   │   │   ├── distanceSummarySheet.js
     │   │   │   ├── index.js
     │   │   │   ├── pendingReasonSheet.js
     │   │   │   ├── reportStyles.js
+    │   │   │   ├── routingTimeSheet.js
     │   │   │   ├── taskSummarySheet.js
     │   │   │   ├── timeDriverSheet.js
-    │   │   │   ├── timeROSheet.js
     │   │   │   ├── truckDetailSheet.js
     │   │   │   └── truckUsageSheet.js
     │   │   └── summaryReport.js

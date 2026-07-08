@@ -1,20 +1,20 @@
 import {
-  calculateHaversineDistance,
   calculateMinuteDifference,
-  extractTempFromDriverName,
   formatCoordinates,
   formatDateUniversal,
   formatSimpleTime,
   formatTimestampToHHMM,
+  getDistance,
+  getStorageType,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import {
+  buildDistanceSummary,
   buildMergedDetailSheet,
   buildPendingSOSheet,
-  buildRekapPerjalananSheet,
   buildRoVsRealSheet,
   buildStartFinishSheet,
   buildTanggalRoutingSheet,
@@ -410,7 +410,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         actualDeparture: actualDepVal,
         visitTime: idxVisitTime !== -1 && row[idxVisitTime] ? row[idxVisitTime] : null,
         actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-        temperature: typeStorage || extractTempFromDriverName(driverName),
+        temperature: typeStorage || getStorageType(driverName),
         orderId,
         isWithinHoursStatus: hoursStatus,
         deliveryDate: formattedDeliveryDate,
@@ -429,7 +429,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           customerId,
           locationId: customerLocation,
           newLonglat: formatCoordinates(klikLokasi),
-          bedaJarak: calculateHaversineDistance(expectedCoord, klikLokasi),
+          distanceDiff: getDistance(expectedCoord, klikLokasi),
         });
       }
     }
@@ -488,7 +488,7 @@ export async function generateManualReportWorkbook({
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
-  buildRekapPerjalananSheet(wb, driverData, routingMap, timeData, t);
+  buildDistanceSummary(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   const title = isIndonesian ? `${t('common.report')} Manual` : `Manual ${t('common.report')}`;

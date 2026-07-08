@@ -1,17 +1,18 @@
-import { isTripInShift } from '@/lib/isTripInShift';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateWIB, isEmpty, normalizeEmail } from '@/lib/utils';
+import { isTripInShift } from '@/lib/reportGenerators/helper';
+import {
+  formatDateWIB,
+  formatToApiUtc,
+  getDistance,
+  getStorageType,
+  isEmpty,
+  isPastDate,
+  normalizeEmail,
+  parseAndShiftToUTC7,
+  parseApiDateString,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
-function parseApiDateString(dateStr) {
-  if (!dateStr) return null;
-  let isoStr = dateStr.toString().replace(' ', 'T');
-  if (!isoStr.endsWith('Z') && !isoStr.includes('+')) {
-    isoStr += 'Z';
-  }
-  const d = new Date(isoStr);
-  return isNaN(d.getTime()) ? null : d;
-}
 
 function calculateDuration(startObj, finishObj) {
   if (!startObj || !finishObj) return '-';
@@ -36,33 +37,6 @@ function getDayDifferenceWIB(startObj, finishObj) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-function getDriverStorageType(driver) {
-  const typeStr = driver.type || '';
-  const nameStr = driver.name || '';
-  if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
-  if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
-  if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))
-    return 'Frozen';
-  if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
-    return 'Dry';
-  return '-';
-}
-
-function getDistanceInMeters(lat1, lon1, lat2, lon2) {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
 export function calculateTimeDriverData(
   driverData,
   locationHistoryData,
@@ -84,7 +58,7 @@ export function calculateTimeDriverData(
         driverMap.set(email, {
           name: d.name,
           plat: plat,
-          type: getDriverStorageType(d),
+          type: getStorageType(d),
           workingTime: d.workingTime,
         });
         driverEmailsRaw.push(email);
@@ -180,37 +154,44 @@ export function calculateTimeDriverData(
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
+        const startTime = parseAndShiftToUTC7(item.startTime);
+        const realStartTime = formatToApiUtc(startTime);
+        const finishTime = parseAndShiftToUTC7(item.finish?.finishTime);
+        const realFinishTime = formatToApiUtc(finishTime);
+
         const storedHubs = getCachedHubs();
         const { storedLocationName } = getLocalStorage();
         const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
         const hubLat = activeHubLocation?.lat || 0;
         const hubLon = activeHubLocation?.lng || 0;
         const RADIUS_THRESHOLD = 500;
-
+        const startLocation = item.lat && item.lon ? `${item.lat}, ${item.lon}` : null;
+        const finishLocation =
+          item.finish?.lat && item.finish?.lon ? `${item.finish?.lat}, ${item.finish?.lon}` : null;
+        const hubLocation = `${hubLat}, ${hubLon}`;
         const entry = {
-          startTimeISO: item.startTime,
-          finishTimeISO: item.finish?.finishTime,
-          startDisplay: startStr,
-          finishDisplay: finishStr,
-          durationDisplay: durationStr,
           dayDiff: dayDiff,
-          hasData: true,
           distance: totalDistance,
-          trackedTime: trackedTime,
-          startLat: item.lat,
-          startLon: item.lon,
+          durationDisplay: durationStr,
+          finishDisplay: finishStr,
           finishLat: item.finish?.lat,
           finishLon: item.finish?.lon,
-          isStartOutRadius:
-            item.lat && item.lon
-              ? getDistanceInMeters(item.lat, item.lon, hubLat, hubLon) > RADIUS_THRESHOLD
-              : false,
+          finishTime: realFinishTime,
+          finishTimeISO: item.finish?.finishTime,
+          hasData: true,
+          startDisplay: startStr,
+          startLat: item.lat,
+          startLon: item.lon,
+          startTime: realStartTime,
+          startTimeISO: item.startTime,
+          trackedTime: trackedTime,
+          isStartOutRadius: startLocation
+            ? getDistance(startLocation, hubLocation) > RADIUS_THRESHOLD
+            : false,
 
-          isFinishOutRadius:
-            item.finish?.lat && item.finish?.lon
-              ? getDistanceInMeters(item.finish.lat, item.finish.lon, hubLat, hubLon) >
-                RADIUS_THRESHOLD
-              : false,
+          isFinishOutRadius: finishLocation
+            ? getDistance(finishLocation, hubLocation) > RADIUS_THRESHOLD
+            : false,
         };
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
@@ -275,15 +256,6 @@ export function generateTimeDriverSheet(
     tasks,
     results
   );
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return currentMidnight < today;
-  };
 
   const isDayEmpty = (dateStr) => {
     if (!dataMatrix || !dataMatrix[dateStr]) return true;

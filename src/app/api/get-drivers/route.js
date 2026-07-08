@@ -44,18 +44,14 @@ export async function POST(request) {
 
     let allTransactions = [];
 
-    // Hapus semua data driver berdasarkan hubId yang aktif sebelum menarik data baru
-    allTransactions.push(
-      prisma.driver.deleteMany({
-        where: {
-          hubs: {
-            some: {
-              id: { in: hubIds },
-            },
-          },
-        },
-      })
-    );
+    for (const hId of hubIds) {
+      allTransactions.push(
+        prisma.hub.update({
+          where: { id: hId },
+          data: { drivers: { set: [] } },
+        })
+      );
+    }
 
     for (const hubId of hubIds) {
       let rawDrivers = [];
@@ -98,6 +94,7 @@ export async function POST(request) {
         const driverInfo = driverMapByEmail.get(assigneeEmail);
         const plat = vehicle.name || vehicle.plateNumber;
         if (plat && plat.trim() !== '') {
+          if (String(plat).toUpperCase().includes('DM')) continue;
           const type = vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null;
           const storage = type ? type.split('-')[0] : null;
 

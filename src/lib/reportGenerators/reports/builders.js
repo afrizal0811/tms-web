@@ -687,7 +687,7 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t) {
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_usage.sheet_name'));
 }
 
-export function buildRekapPerjalananSheet(wb, driverData, routingMap, timeDataObjects, t) {
+export function buildDistanceSummary(wb, driverData, routingMap, timeDataObjects, t) {
   let estDryT = 0,
     estDryD = 0,
     estFrzT = 0,
@@ -942,7 +942,7 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
     t('excel.reports.update_coord.new_longlat'),
     t('common.dist_diff'),
   ];
-  updateLonglatData.sort((a, b) => (a.bedaJarak || Infinity) - (b.bedaJarak || Infinity));
+  updateLonglatData.sort((a, b) => (a.distanceDiff || Infinity) - (b.distanceDiff || Infinity));
   const sheetData = [
     headers,
     ...updateLonglatData.map((r) => [
@@ -950,7 +950,7 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
       r.customerId,
       r.locationId,
       r.newLonglat,
-      r.bedaJarak,
+      r.distanceDiff,
     ]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(sheetData);

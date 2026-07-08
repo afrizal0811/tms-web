@@ -1,5 +1,12 @@
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, formatMinutesToHHMM, getBasePlate, heatMap, isEmpty } from '@/lib/utils';
+import {
+  formatLongDate,
+  formatMinutesToHHMM,
+  getBasePlate,
+  heatMap,
+  isEmpty,
+  isPastDate,
+} from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
 import TruckDetailModal from './modals/TruckDetailModal';
@@ -16,13 +23,6 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
   };
   const closeModal = () => setModalData(null);
   const percentage = (data, maxData) => ((data / maxData) * 100).toFixed(1) + '%';
-
-  const isPastDate = (dateStr) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const currentMidnight = new Date(y, m - 1, d);
-    currentMidnight.setHours(0, 0, 0, 0);
-    return currentMidnight < new Date().setHours(0, 0, 0, 0);
-  };
 
   const isDayEmpty = (dateStr) => {
     if (!dataMatrix || !dataMatrix[dateStr]) return true;
@@ -283,22 +283,17 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
           <tbody className="bg-white dark:bg-slate-800">
             {driverEmails.map((email, rowIndex) => {
               const driver = driverMap[email];
-              let driverMaxW = 0;
-              let driverMaxV = 0;
-              dateKeys.forEach((d) => {
-                const m = dataMatrix[d.str][email];
-                if (m) {
-                  if (m.maxWeight > driverMaxW) driverMaxW = m.maxWeight;
-                  if (m.maxVolume > driverMaxV) driverMaxV = m.maxVolume;
-                }
-              });
-
-              // Siapkan konten text untuk tooltip
+              const driverMaxW = driver.maxWeight || 0;
+              const driverMaxV = driver.maxVolume.toFixed(2) || 0;
               const capacityTooltip =
                 driverMaxW > 0 || driverMaxV > 0 ? (
                   <span>
-                    <div>- Max Weight: {driverMaxW} Kg</div>{' '}
-                    <div>- Max Volume: {driverMaxV} Cbm</div>
+                    <div>
+                      - {translate('common.weight_max')}: {driverMaxW} Kg
+                    </div>{' '}
+                    <div>
+                      - {translate('common.volume_max')}: {driverMaxV} Cbm
+                    </div>
                   </span>
                 ) : (
                   translate('common.no_data')

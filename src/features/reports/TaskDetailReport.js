@@ -5,7 +5,7 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocationHistories, getResult, getTasks } from '@/lib/api';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import {
   buildRoutingMap,
@@ -58,7 +58,7 @@ export default function TaskDetailReport() {
     setShowWarningModal(false);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
-      const driverData = await getOrFetchDriverData(storedLocation);
+      const driverData = await getDriverData(storedLocation);
 
       const hubsList = getCachedHubs() || [];
       const activeHub = hubsList.find((h) => h._id === storedLocation);

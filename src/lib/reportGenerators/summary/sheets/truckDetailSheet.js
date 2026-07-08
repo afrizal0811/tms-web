@@ -1,17 +1,19 @@
-// File: src/lib/reportGenerators/rangkumanSheets/truckDetailSheet.js
 import {
   formatDateUniversal,
   formatDateWIB,
   formatMinutesToHHMM,
   getDeliveryDateFromRouting,
+  getStorageType,
   getUTC7DateString,
+  heatMap,
   isEmpty,
+  isPastDate,
+  parseApiDateString,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-// Status yang dianggap GAGAL
 const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'TERIMA SEBAGIAN']);
 
 const ERROR_STYLES = {
@@ -33,20 +35,6 @@ const ERROR_STYLES = {
   },
 };
 
-// --- HELPER DATE ---
-
-function getDriverStorageType(driver) {
-  const typeStr = driver.type || '';
-  const nameStr = driver.name || '';
-  if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
-  if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
-  if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))
-    return 'Frozen';
-  if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))
-    return 'Dry';
-  return '-';
-}
-
 function formatDateTimeWIB(isoString) {
   if (!isoString) return '-';
   try {
@@ -57,14 +45,6 @@ function formatDateTimeWIB(isoString) {
   } catch {
     return '-';
   }
-}
-
-function parseApiDateString(dateStr) {
-  if (!dateStr) return null;
-  let isoStr = dateStr.toString().replace(' ', 'T');
-  if (!isoStr.endsWith('Z') && !isoStr.includes('+')) isoStr += 'Z';
-  const d = new Date(isoStr);
-  return isNaN(d.getTime()) ? null : d;
 }
 
 export function calculateTruckDetailData(
@@ -87,7 +67,7 @@ export function calculateTruckDetailData(
         driverMap.set(email, {
           name: d.name,
           plat: plat,
-          type: getDriverStorageType(d),
+          type: getStorageType(d),
           maxWeight: Number(d.maxWeight) || 0,
           maxVolume: Number(d.maxVolume) || 0,
         });
@@ -459,24 +439,6 @@ export function calculateTruckDetailData(
   return { driverMap, driverEmails, dateKeys, dataMatrix };
 }
 
-function getHeatmapColor(pct) {
-  const p = Math.min(Math.max(pct, 0), 1);
-  let r, g, b;
-  if (p < 0.5) {
-    const ratio = p / 0.5;
-    r = Math.round(248 + ratio * (255 - 248));
-    g = Math.round(105 + ratio * (235 - 105));
-    b = Math.round(107 + ratio * (132 - 107));
-  } else {
-    const ratio = (p - 0.5) / 0.5;
-    r = Math.round(255 + ratio * (99 - 255));
-    g = Math.round(235 + ratio * (190 - 235));
-    b = Math.round(132 + ratio * (123 - 132));
-  }
-  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
-  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
 export function generateTruckDetailSheet(
   wb,
   driverData,
@@ -495,13 +457,6 @@ export function generateTruckDetailSheet(
     endDateStr,
     localeCode
   );
-
-  const isPastDate = (dateStr) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d) < today;
-  };
 
   const isDayEmpty = (dateStr) => {
     if (!dataMatrix || !dataMatrix[dateStr]) return true;
@@ -718,7 +673,7 @@ export function generateTruckDetailSheet(
               cell.s = { ...dataStyle, numFmt: '0.0%' };
               if (metrics && metrics.outlets > 0) {
                 const pct = Math.min(Math.max(metrics.delivered / metrics.outlets, 0), 1);
-                const hexColor = getHeatmapColor(pct);
+                const hexColor = heatMap(pct);
                 cellFill = { patternType: 'solid', fgColor: { rgb: hexColor } };
                 currentFontStyle = dataStyle.font;
               }

@@ -3,7 +3,7 @@
 import Footer from '@/components/Footer';
 import Navbar from '@/components/navbar/Navbar';
 import { useLanguage } from '@/context/LanguageContext';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
+import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect } from 'react';
@@ -13,7 +13,7 @@ export default function AppLayout({ children, mainClassName }) {
   useEffect(() => {
     const { storedLocation } = getLocalStorage();
     if (storedLocation) {
-      getOrFetchDriverData(storedLocation, true).catch((err) => {
+      getDriverData(storedLocation, true).catch((err) => {
         toastError(t('common.toast.error', { err: err.message }));
       });
     }

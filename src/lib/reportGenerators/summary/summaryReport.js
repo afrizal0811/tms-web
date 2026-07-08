@@ -5,16 +5,16 @@ import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getLocalStorage } from '../../localStorageHandler';
 import {
-  calculateAverageDistanceData,
+  calculateDistanceSummaryData,
   calculatePendingReasonData,
   calculateTimeDriverData,
   calculateTruckDetailData,
   calculateTruckUsageData,
-  generateAverageDistanceSheet,
+  generateDistanceSummarySheet,
   generatePendingReasonSheet,
+  generateRoutingTimeSheet,
   generateTaskSummarySheet,
   generateTimeDriverSheet,
-  generateRoutingTimeSheet,
   generateTruckDetailSheet,
   generateTruckUsageSheet,
 } from './sheets';
@@ -29,13 +29,14 @@ export async function generateSummaryDataPreview(
   hubId,
   localeCode
 ) {
-  const { summaryData, monthTotals } = calculateAverageDistanceData(
+  const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
     startDateStr,
     endDateStr,
     localeCode,
     driverData,
-    taskData
+    taskData,
+    locationHistoryData
   );
 
   const truckUsageData = await calculateTruckUsageData(
@@ -72,7 +73,7 @@ export async function generateSummaryDataPreview(
   );
 
   return {
-    averageDistanceData: summaryData,
+    distanceSummaryData: summaryData,
     monthTotals: monthTotals,
     truckUsageData: truckUsageData,
     truckDetailData: { ...truckDetailRaw, driverMap: Object.fromEntries(truckDetailRaw.driverMap) },
@@ -152,8 +153,17 @@ export async function generateSummaryWorkbook(
     localeCode,
     taskData
   );
-  generateAverageDistanceSheet(wb, resultsData, startDateStr, endDateStr, translate, localeCode);
-
+  generateDistanceSummarySheet(
+    wb,
+    resultsData,
+    startDateStr,
+    endDateStr,
+    translate,
+    localeCode,
+    driverData,
+    taskData,
+    locationHistoryData
+  );
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
   const { storedLocationAcronym: locationName } = getLocalStorage() || '-';

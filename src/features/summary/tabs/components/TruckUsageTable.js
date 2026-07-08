@@ -490,7 +490,7 @@ export default function TruckUsageTable({
 
   return (
     <div className="w-full">
-      <table className="border-collapse border-0 text-sm whitespace-nowrap">
+      <table className="border-separate border-spacing-0 border-0 text-sm whitespace-nowrap min-w-max">
         <thead className="sticky top-0 z-40">
           <tr>
             <th

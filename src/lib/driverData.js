@@ -41,7 +41,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     const [vehicleTypesObj, drivers, mappingsDB] = await Promise.all([
       vehicleTypesPromise,
-      getOrFetchDriverData(hubId),
+      getDriverData(hubId),
       vehicleMappingsPromise,
     ]);
 
@@ -83,7 +83,7 @@ export async function checkUnmappedVehicles(hubId) {
   }
 }
 
-export async function getOrFetchDriverData(selectedLocation) {
+export async function getDriverData(selectedLocation) {
   if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
   if (!driversCache[selectedLocation]) {
     driversCache[selectedLocation] = (async () => {

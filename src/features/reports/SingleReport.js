@@ -15,10 +15,10 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api';
-import { getOrFetchDriverData } from '@/lib/driverDataHelper';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getDriverData } from '@/lib/driverData';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
-import { parseTimeData } from '@/lib/reportGenerators/reports/parsers';
+import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -31,7 +31,6 @@ import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getTutorialData } from './helper/constants';
 import { getManualDate, validateRoutingFile, validateTaskFile } from './helper/help';
-
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
 export default function SingleReport({
@@ -84,7 +83,7 @@ export default function SingleReport({
 
   const disabledCommon = isAnyLoading || isMapping;
   const driversCheck = async () => {
-    const drivers = await getOrFetchDriverData(selectedLocation);
+    const drivers = await getDriverData(selectedLocation);
     if (isEmpty(drivers)) {
       throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
     }
@@ -127,7 +126,7 @@ export default function SingleReport({
         allTasks.forEach((task) => {
           if (task.createdFrom === 'API' && task.createdTime) {
             const d = new Date(task.createdTime);
-            d.setHours(d.getHours() + 7); 
+            d.setHours(d.getHours() + 7);
             dates.push(d.toISOString().split('T')[0]);
           }
         });
@@ -161,11 +160,10 @@ export default function SingleReport({
       };
 
       const { storedLocationAcronym } = getLocalStorage();
-
       const [filteredResults, hubsData, locationHistoriesRes, vehicleTypesObj, mappingsDB] =
         await Promise.all([
           getResultsSummary(summaryPayload),
-          getOrFetchDriverData(selectedLocation),
+          getCachedHubs(),
           getLocationHistories({
             timeFrom: timeFromHistories,
             timeTo: timeToHistories,
@@ -179,7 +177,11 @@ export default function SingleReport({
         ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
-      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, selectedDateString);
+      const { timeDataObjects } = convertLocationHistories(
+        allApiData || [],
+        driverData,
+        selectedDateString
+      );
       const filteredTimeData = timeDataObjects.filter(
         (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
       );
@@ -265,7 +267,7 @@ export default function SingleReport({
       }, {});
 
       const [hubsData, locationHistoriesRes] = await Promise.all([
-        getOrFetchDriverData(selectedLocation),
+        getDriverData(selectedLocation),
         getLocationHistories({
           timeFrom,
           timeTo,
@@ -277,7 +279,11 @@ export default function SingleReport({
       ]);
 
       const allApiData = locationHistoriesRes?.tasks?.data || [];
-      const { timeDataObjects } = parseTimeData(allApiData || [], driverData, extractedStartDate);
+      const { timeDataObjects } = convertLocationHistories(
+        allApiData || [],
+        driverData,
+        extractedStartDate
+      );
       const activeHub = (hubsData || []).find(
         (h) => String(h._id || h.id) === String(selectedLocation)
       );
@@ -455,7 +461,7 @@ export default function SingleReport({
       )}
     </div>
   );
-  
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">

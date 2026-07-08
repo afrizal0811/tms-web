@@ -22,7 +22,7 @@ import { pdf } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
-import { driverTimeStamps, getOrFetchDriverData } from '../../lib/driverDataHelper';
+import { driverTimeStamps, getDriverData } from '../../lib/driverData';
 import { toastError, toastSuccess } from '../../lib/toast';
 import DeliveryForm from './components/DeliveryForm';
 import TableData from './components/TableData';
@@ -204,7 +204,7 @@ export default function DeliveryEstimatePage() {
           throw new Error(t('common.toast.error', { err: 'Location not found' }));
         }
 
-        const rawDrivers = await getOrFetchDriverData(storedLocation);
+        const rawDrivers = await getDriverData(storedLocation);
         if (isEmpty(rawDrivers)) {
           setEmptyMessage(t('common.no_driver'));
           throw new Error(t('common.no_driver'));

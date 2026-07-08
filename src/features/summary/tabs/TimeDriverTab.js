@@ -1,7 +1,7 @@
 'use client';
 
 import Tooltip from '@/components/Tooltip';
-import { formatLongDate, getBasePlate, isEmpty } from '@/lib/utils';
+import { formatLongDate, getBasePlate, isEmpty, isPastDate } from '@/lib/utils';
 import { Fragment, useState } from 'react';
 import TimeDriverModal from './modals/TimeDriverModal';
 
@@ -21,13 +21,6 @@ const stickyBodyType = 'md:sticky md:left-0 md:z-20 md:border-r dark:md:border-r
 const stickyBodyPlate = 'md:sticky md:left-[80px] md:z-20 md:border-r dark:md:border-r-slate-700';
 const stickyBodyDriver =
   'md:sticky md:left-[180px] md:z-20 md:border-r dark:md:border-r-slate-700 md:shadow-md';
-
-const isPastDate = (dateStr) => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const currentMidnight = new Date(y, m - 1, d);
-  currentMidnight.setHours(0, 0, 0, 0);
-  return currentMidnight < new Date().setHours(0, 0, 0, 0);
-};
 
 export default function TimeDriverTab({ data, translate, localeCode, activeHubLocation }) {
   const { driverEmails, driverMap, dateKeys, dataMatrix } = data || {};
@@ -217,19 +210,19 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                       );
                     }
 
-                    const hasStartOut = !!metrics.entries?.some((e) => e.isStartOutRadius === true);
-                    const hasFinishOut = !!metrics.entries?.some(
+                    const hasOutStart = !!metrics.entries?.some((e) => e.isStartOutRadius === true);
+                    const hasOutFinish = !!metrics.entries?.some(
                       (e) => e.isFinishOutRadius === true
                     );
 
-                    const startWarningBg = hasStartOut ? 'bg-red-100! dark:bg-red-900/40!' : '';
-                    const finishWarningBg = hasFinishOut ? 'bg-red-100! dark:bg-red-900/40!' : '';
+                    const startWarningBg = hasOutStart ? 'bg-red-100! dark:bg-red-900/40!' : '';
+                    const finishWarningBg = hasOutFinish ? 'bg-red-100! dark:bg-red-900/40!' : '';
 
                     const diffDay = metrics.dayDiff;
                     const hasDiffDay = !isEmpty(diffDay);
-
+                    const finishTime = formatLongDate(metrics.finishTime, localeCode);
                     const diffDayTooltip = hasDiffDay
-                      ? `${hasFinishOut ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+                      ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay, date: finishTime })} `
                       : '';
                     const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
 
@@ -239,17 +232,15 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                           onClick={() => hasCoords && handleCellClick(metrics, driver.name, d.str)}
                           className={`${tdClass} ${baseBorder} ${startWarningBg} ${cellCursor}`}
                         >
-                          {hasStartOut ? (
-                            <Tooltip
-                              tooltipContent={translate(
-                                'summary.tabs.time_driver.tooltip.out_start'
-                              )}
-                            >
-                              <span className="block w-full">{metrics.startDisplay}</span>
-                            </Tooltip>
-                          ) : (
-                            metrics.startDisplay
-                          )}
+                          <Tooltip
+                            tooltipContent={
+                              hasOutStart
+                                ? translate('summary.tabs.time_driver.tooltip.out_start')
+                                : ''
+                            }
+                          >
+                            <span className="block w-full">{metrics.startDisplay}</span>
+                          </Tooltip>
                         </td>
 
                         <td
@@ -257,7 +248,7 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                           className={`${tdClass} ${finishWarningBg} ${cellCursor}`}
                         >
                           <Tooltip
-                            tooltipContent={hasFinishOut ? outFinishTooltip : diffDayTooltip}
+                            tooltipContent={hasOutFinish ? outFinishTooltip : diffDayTooltip}
                           >
                             <div className="flex items-center justify-center w-full">
                               {metrics.finishDisplay}

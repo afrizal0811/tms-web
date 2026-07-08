@@ -5,6 +5,7 @@ export const dictionary = {
     common: {
       accuracy: 'Akurasi',
       action: 'Aksi',
+      actual: 'Aktual',
       actual_arrival: 'Waktu Datang',
       actual_departure: 'Waktu Berangkat',
       actual_seq: 'Aktual Urutan',
@@ -29,6 +30,7 @@ export const dictionary = {
       downloading: 'Mengunduh...',
       driver: 'Sopir',
       eta: 'ETA',
+      estimate: 'Perkiraan',
       etd: 'ETD',
       finish_time: 'Waktu Selesai',
       flow: 'Alur',
@@ -70,7 +72,9 @@ export const dictionary = {
       visit_actual: 'Aktual Waktu Kunjung (min)',
       visit_plan: 'Perkiraan Waktu Kunjung (min)',
       volume: 'Volume',
+      volume_max: 'Volume Maksimum',
       weight: 'Berat',
+      weight_max: 'Berat Maksimum',
       warning: '⚠️ Peringatan!',
       button: {
         btn_add: 'Tambah',
@@ -264,7 +268,7 @@ export const dictionary = {
     },
     report: {
       bread_summary: 'Ringkasan Barang Roti',
-      bulk: 'Laporan Massal',
+      period: 'Laporan Massal',
       change_date: 'Ubah Tanggal Ruting',
       daily_title: 'Laporan Harian',
       delivery_summary: 'Ringkasan Pengiriman',
@@ -355,8 +359,7 @@ export const dictionary = {
           actual: 'Aktual',
           category: 'Kategori',
           estimation: 'Estimasi',
-          sheet_name: 'Ringkasan Perjalanan',
-          sheet_name: 'Ringkasan Total Jarak',
+          sheet_name: 'Ringkasan Jarak',
           time_travel: 'Waktu Perjalanan',
         },
         pending_so: {
@@ -426,9 +429,7 @@ export const dictionary = {
           odd_even: 'Ganjil Genap',
           speed: 'Kecepatan',
           vehicle_tags: 'Tag Kendaraan',
-          volume_max: 'Volume Maks',
           volume_min: 'Volume Min',
-          weight_max: 'Berat Maks',
           weight_min: 'Berat Min',
         },
       },
@@ -468,15 +469,13 @@ export const dictionary = {
       title: 'Rangkuman',
       tabs: {
         routing_time: {
-          end_ro: 'Selesai RO',
-          date_ro: 'Tanggal Ruting',
           title: 'Waktu Ruting',
           tooltip: {
-            date_ro: 'H-1 Pengiriman',
-            end_ro: 'Waktu terakhir penugasan',
-            end_ro_error: 'End RO tersedia, namun Start RO kosong',
-            start_ro: 'Waktu pertama pembuatan tugas',
-            start_ro_error: 'Start RO tersedia, namun End RO kosong',
+            routing_date: 'Tanggal proses ruting',
+            finish_time: 'Waktu penugasan tugas terakhir',
+            finish_time_error: 'Waktu mulai ruting tersedia, tetapi selesai ruting kosong',
+            start_time: 'Waktu pembuatan tugas pertama',
+            start_time_error: 'Waktu selesai ruting tersedia, tetapi mulai ruting kosong',
           },
         },
         task_summary: {
@@ -529,7 +528,8 @@ export const dictionary = {
           tooltip: {
             out_finish: 'Sopir akhiri perjalanan di luar radius',
             out_start: 'Sopir mulai perjalanan di luar radius',
-            diff_day: 'Sopir selesaikan perjalanan pada {days} hari setelah mulai perjalanan',
+            diff_day:
+              'Sopir selesaikan perjalanan pada {days} hari setelah mulai perjalanan, yaitu {date}',
           },
         },
         truck_detail: {
@@ -588,12 +588,15 @@ export const dictionary = {
             vehicle_list: 'Daftar Kendaraan',
           },
         },
-        average_km: {
-          avg_km_routing: 'Rerata Jarak Ruting',
-          km_routing: 'Jarak Ruting',
+        dist_summary: {
+          average_actual: 'Rerata Jarak Aktual (km)',
+          average_routing: 'Rerata Jarak Ruting (km)',
+          km_actual: 'Jarak Aktual (km)',
+          km_routing: 'Jarak Ruting (km)',
           month: 'Bulan',
-          title: 'Rerata Jarak Ruting',
-          total_km_routing: 'Total Jarak Ruting',
+          title: 'Rangkuman Jarak',
+          total_actual: 'Total Jarak Aktual (km)',
+          total_routing: 'Total Jarak Ruting (km)',
           total_vehicle: 'Jumlah Kendaraan',
           modal: {
             title: 'Rincian Jarak Ruting',
@@ -667,6 +670,7 @@ export const dictionary = {
     common: {
       accuracy: 'Accuracy',
       action: 'Action',
+      actual: 'Actual',
       actual_arrival: 'Arrival Time',
       actual_departure: 'Departure Time',
       actual_seq: 'Actual Sequence',
@@ -691,6 +695,7 @@ export const dictionary = {
       downloading: 'Downloading...',
       driver: 'Driver',
       eta: 'ETA',
+      estimate: 'Estimate',
       etd: 'ETD',
       finish_time: 'Finish Time',
       flow: 'Flow',
@@ -732,7 +737,9 @@ export const dictionary = {
       visit_actual: 'Actual Visit Time (min)',
       visit_plan: 'Planned Visit Time (min)',
       volume: 'Volume',
+      volume_max: 'Max Volume',
       weight: 'Weight',
+      weight_max: 'Max Weight',
       warning: '⚠️ Warning!',
       button: {
         btn_add: 'Add',
@@ -927,7 +934,7 @@ export const dictionary = {
     },
     report: {
       bread_summary: 'Bread Item Summary',
-      bulk: 'Bulk Report',
+      period: 'Period Report',
       change_date: 'Change Routing Date',
       daily_title: 'Daily Report',
       delivery_summary: 'Delivery Summary',
@@ -1019,7 +1026,7 @@ export const dictionary = {
           actual: 'Actual',
           category: 'Category',
           estimation: 'Estimated',
-          sheet_name: 'Total Distance Summary',
+          sheet_name: 'Distance Summary',
           time_travel: 'Travel Time',
         },
         pending_so: {
@@ -1087,11 +1094,8 @@ export const dictionary = {
           name: 'Name',
           odd_even: 'Odd–Even',
           speed: 'Speed',
-
           vehicle_tags: 'Vehicle Tags',
-          volume_max: 'Max Volume',
           volume_min: 'Min Volume',
-          weight_max: 'Max Weight',
           weight_min: 'Min Weight',
         },
       },
@@ -1131,14 +1135,13 @@ export const dictionary = {
       title: 'Summary',
       tabs: {
         routing_time: {
-          date_ro: 'Routing Date',
           title: 'Routing Time',
           tooltip: {
-            date_ro: 'Date of routing process',
-            end_ro: 'Last task assignment time',
-            end_ro_error: 'Start RO is available, but End RO is empty',
-            start_ro: 'First task creation time',
-            start_ro_error: 'End RO is available, but Start RO is empty',
+            routing_date: 'Date of routing process',
+            finish_time: 'Last task assignment time',
+            finish_time_error: 'Start RO is available, but End RO is empty',
+            start_time: 'First task creation time',
+            start_time_error: 'End RO is available, but Start RO is empty',
           },
         },
         task_summary: {
@@ -1191,7 +1194,7 @@ export const dictionary = {
           tooltip: {
             out_finish: 'Driver finished trip outside radius',
             out_start: 'Driver started trip outside radius',
-            diff_day: 'Driver finished trip {days} day(s) after start trip.',
+            diff_day: 'Driver completed trip {days} day(s) after trip started, on {date}.',
           },
         },
         truck_detail: {
@@ -1250,12 +1253,15 @@ export const dictionary = {
             vehicle_list: 'Vehicle List',
           },
         },
-        average_km: {
-          avg_km_routing: 'Average Routing Distance',
-          km_routing: 'Routing Distance',
+        dist_summary: {
+          average_actual: 'Average Actual Distance (km)',
+          average_routing: 'Average Routing Distance (km)',
+          km_actual: 'Actual Distance (km)',
+          km_routing: 'Routing Distance (km)',
           month: 'Month',
-          title: 'Average Routing Distance',
-          total_km_routing: 'Total Routing Distance',
+          title: 'Distance Summary',
+          total_actual: 'Total Actual Distance (km)',
+          total_routing: 'Total Routing Distance (km)',
           total_vehicle: 'Total Vehicles',
           modal: {
             title: 'Routing Distance Details',

@@ -3,7 +3,7 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, hubName, t) => {
+export const handleDownloadExcel = (processedData, setIsDownloading, selectedDate, t) => {
   if (isEmpty(processedData)) {
     toastError(t('common.toast.error', { err: t('common.no_data') }));
     return;
@@ -14,6 +14,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const wb = XLSX.utils.book_new();
     const headers = [
       'No',
+      t('common.so_number'),
       t('common.customer_name'),
       t('common.customer_id'),
       t('common.location_id'),
@@ -29,11 +30,12 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       const displayLocId = row.isIncomplete ? '-' : row.locationId || '';
       sheetData.push([
         index + 1,
+        row.soNumber,
         row.customerName,
         displayCustId,
         displayLocId,
         row.newLonglat,
-        row.bedaJarak,
+        row.distanceDiff,
         row.driverName,
         row.updateTime,
       ]);
@@ -50,11 +52,12 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     ws['!cols'] = [
       { wch: 5 },
       { wch: 30 },
+      { wch: 30 },
       { wch: 25 },
       { wch: 20 },
       { wch: 25 },
       { wch: 15 },
-      { wch: 15 },
+      { wch: 20 },
       { wch: 15 },
     ];
 
@@ -63,14 +66,20 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
         if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
         if (R === 0) {
-          ws[cellRef].s = headerStyle;
+          ws[cellRef].s = {
+            ...headerStyle,
+            alignment: {
+              ...(headerStyle.alignment || {}),
+              horizontal: 'center',
+              wrapText: C === 6,
+            },
+          };
         } else {
-          if (rowData && rowData.isIncomplete) ws[cellRef].s = redFillStyle;
-          if (C !== 1 && C !== 6) {
-            if (!ws[cellRef].s) ws[cellRef].s = {};
-            ws[cellRef].s.alignment = { horizontal: 'center' };
-          }
+          ws[cellRef].s = rowData && rowData.isIncomplete ? { ...redFillStyle } : {};
+          const isLeftCol = C === 1 || C === 2 || C === 7;
+          ws[cellRef].s.alignment = { horizontal: isLeftCol ? 'left' : 'center' };
         }
       }
     }
