@@ -15,15 +15,10 @@ import {
   generateBreadWorkbook,
 } from '@/lib/reportGenerators/bread/breadReport';
 import { toastError, toastSuccess } from '@/lib/toast';
-import {
-  formatDateUniversal,
-  formatToApiUtc,
-  getDatesInRange,
-  isEmpty,
-  tomorrowDate,
-} from '@/lib/utils';
+import { formatDateUniversal, formatToApiUtc, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
+import { getDatesInRange } from './helper/help';
 
 const getDateParams = (date) => {
   const localStart = new Date(date);

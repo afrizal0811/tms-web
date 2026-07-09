@@ -1,5 +1,6 @@
-import { getStorageType, normalizeEmail } from '@/lib/utils';
-import { calculateRouteTime } from './help';
+// File: groupTwo.js
+import { normalizeEmail } from '@/lib/utils';
+import { calculateRouteTime, getVehicleCategory } from './help';
 
 export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
   let totalMinutesDry = 0;
@@ -40,7 +41,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
           }
           if (!driverName) driverName = route.assignee || '';
 
-          const category = getStorageType(driverName);
+          const category = getVehicleCategory(driverName);
 
           if (truckId) {
             let routeData = { ...route };
@@ -70,20 +71,20 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
               sumVisit > 0
                 ? sumVisit
                 : routeData.totalVisitTime !== undefined
-                  ? Number(routeData.totalVisitTime)
-                  : 0;
+                ? Number(routeData.totalVisitTime)
+                : 0;
             let rawTravel =
               sumTravel > 0
                 ? sumTravel
                 : routeData.totalTravelTime !== undefined
-                  ? Number(routeData.totalTravelTime)
-                  : 0;
+                ? Number(routeData.totalTravelTime)
+                : 0;
             let rawWait =
               sumWait > 0
                 ? sumWait
                 : routeData.totalWaitingTime !== undefined
-                  ? Number(routeData.totalWaitingTime)
-                  : 0;
+                ? Number(routeData.totalWaitingTime)
+                : 0;
 
             let rawSpent = Number(routeData.totalSpentTime) || 0;
 
@@ -148,7 +149,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
       const dNameUpper = dName.toUpperCase().trim();
 
       if (dName && !processedDrivers.has(dNameUpper)) {
-        const cat = getStorageType(dName);
+        const cat = getVehicleCategory(dName);
         detailRows.push({
           routing: '-',
           vehicle: dPlat,

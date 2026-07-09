@@ -1,8 +1,21 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import { formatDateUniversal, getDatesInRange, isDateSunday, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isDateSunday, isEmpty } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
+
+export const getDatesInRange = (startDate, endDate) => {
+  const dates = [];
+  let currentDate = new Date(startDate);
+  currentDate.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  while (currentDate <= end) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return dates;
+};
 
 export const periodDownloader = async ({
   startDate,

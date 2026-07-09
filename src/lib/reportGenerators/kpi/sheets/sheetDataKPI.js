@@ -194,6 +194,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
+  // Styles
   const headerStyle = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
@@ -249,9 +250,11 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
 
             if (typeof ws[cellAddress].v === 'number') {
               ws[cellAddress].t = 'n';
+              // Format Desimal Group 3 & 4
               if ((C >= 18 && C <= 19) || (C >= 21 && C <= 31)) {
                 ws[cellAddress].z = '0.00';
               }
+              // Format Integer Group 5
               if (C >= 33) {
                 ws[cellAddress].z = '0';
               }

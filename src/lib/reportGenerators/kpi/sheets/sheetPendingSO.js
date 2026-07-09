@@ -1,14 +1,27 @@
-import {
-  formatTimestampToDDMMYYYY_UTC7,
-  getBasePlate,
-  normalizeEmail,
-  parseCustomerString,
-} from '@/lib/utils';
+import { getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetPendingSO(tasksData, driverData) {
   const headers = ['Flow', 'Tanggal', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Alasan'];
+
   const sheetData = [headers];
+
+  const formatTanggalUTC7 = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+
+    if (isNaN(date.getTime())) return dateStr.split(' ')[0] || dateStr;
+
+    const utc7Ms = date.getTime() + 7 * 3600000;
+    const wibDate = new Date(utc7Ms);
+
+    const yyyy = wibDate.getUTCFullYear();
+    const mm = String(wibDate.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(wibDate.getUTCDate()).padStart(2, '0');
+
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
   const pendingRows = [];
 
   if (Array.isArray(tasksData)) {
@@ -31,7 +44,7 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
       if (isPending) {
         const flow = task.flow || '-';
-        const tanggal = formatTimestampToDDMMYYYY_UTC7(task.startTime);
+        const tanggal = formatTanggalUTC7(task.startTime);
 
         let platNomor = task.assignedVehicle;
         let driverName = task.driverName;

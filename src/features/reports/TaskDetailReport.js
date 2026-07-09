@@ -18,7 +18,6 @@ import {
   calculateStartFinishDates,
   formatDateUniversal,
   formatToApiUtc,
-  getDatesInRange,
   isEmpty,
   tomorrowDate,
 } from '@/lib/utils';
@@ -26,6 +25,7 @@ import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { taskDetailHeaders, taskDetailKeyMapping } from './helper/constants';
+import { getDatesInRange } from './helper/help';
 
 const getReportDates = (start, end) => {
   const localStart = new Date(start);

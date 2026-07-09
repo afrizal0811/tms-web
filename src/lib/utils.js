@@ -482,16 +482,3 @@ export function parseApiDateString(dateStr) {
   const d = new Date(isoStr);
   return isNaN(d.getTime()) ? null : d;
 }
-
-export const getDatesInRange = (startDate, endDate) => {
-  const dates = [];
-  let currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  const end = new Date(endDate);
-  end.setHours(0, 0, 0, 0);
-  while (currentDate <= end) {
-    dates.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  return dates;
-};

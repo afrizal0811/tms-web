@@ -53,6 +53,7 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     return newRow;
   });
 
+  // GRUG FILTER KEMBAR LAGI!
   const uniqueProcessed = [];
   const seenSF = new Set();
   let totalMenit = 0;

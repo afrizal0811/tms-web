@@ -14,6 +14,7 @@ export function generateSheetHelp() {
     },
   };
 
+  // Gunakan Unicode Arrow
   const arrow = ' ➜ ';
 
   const helpRows = [
