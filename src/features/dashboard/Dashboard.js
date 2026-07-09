@@ -24,6 +24,13 @@ export default function Dashboard({ driverData }) {
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('Detail');
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+  const [dismissedDots, setDismissedDots] = useState({
+    Diagram: false,
+    Detail: false,
+    RoutingVsActual: false,
+  });
 
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
@@ -31,15 +38,7 @@ export default function Dashboard({ driverData }) {
   const yearlyCacheRef = useRef({});
   const fetchStartTimeRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('Detail');
-  const [dismissedDots, setDismissedDots] = useState({
-    Diagram: false,
-    Detail: false,
-    RoutingVsActual: false,
-  });
-
   const { storedLocation: hubId } = getLocalStorage();
-  const [hasPendingGR, setHasPendingGR] = useState(false);
 
   useEffect(() => {
     const fetchHubSettings = async () => {

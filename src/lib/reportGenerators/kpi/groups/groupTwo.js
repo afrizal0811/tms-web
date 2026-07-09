@@ -1,6 +1,27 @@
 // File: groupTwo.js
-import { normalizeEmail } from '@/lib/utils';
-import { calculateRouteTime, getVehicleCategory } from './help';
+import { getStorageType, normalizeEmail } from '@/lib/utils';
+
+function calculateRouteTime(route) {
+  const rawVisit = route.totalVisitTime;
+  const rawTravel = route.totalTravelTime;
+  const rawWait = route.totalWaitingTime;
+  const rawSpent = route.totalSpentTime;
+  const isVisitMissing = rawVisit === undefined || rawVisit === null;
+  const isTravelMissing = rawTravel === undefined || rawTravel === null;
+  const isWaitMissing = rawWait === undefined || rawWait === null;
+  const isSpentMissing = rawSpent === undefined || rawSpent === null;
+  let usedMinutes = 0;
+  if (!isSpentMissing) {
+    usedMinutes = rawSpent;
+  } else {
+    usedMinutes = (rawVisit || 0) + (rawTravel || 0) + (rawWait || 0);
+  }
+  return {
+    minutes: usedMinutes,
+    isMissing: isVisitMissing || isTravelMissing || isWaitMissing || isSpentMissing,
+    rawData: { visit: rawVisit, travel: rawTravel, wait: rawWait, spent: rawSpent },
+  };
+}
 
 export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
   let totalMinutesDry = 0;
@@ -41,7 +62,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
           }
           if (!driverName) driverName = route.assignee || '';
 
-          const category = getVehicleCategory(driverName);
+          const category = getStorageType(driverName).toUpperCase();
 
           if (truckId) {
             let routeData = { ...route };
@@ -71,20 +92,20 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
               sumVisit > 0
                 ? sumVisit
                 : routeData.totalVisitTime !== undefined
-                ? Number(routeData.totalVisitTime)
-                : 0;
+                  ? Number(routeData.totalVisitTime)
+                  : 0;
             let rawTravel =
               sumTravel > 0
                 ? sumTravel
                 : routeData.totalTravelTime !== undefined
-                ? Number(routeData.totalTravelTime)
-                : 0;
+                  ? Number(routeData.totalTravelTime)
+                  : 0;
             let rawWait =
               sumWait > 0
                 ? sumWait
                 : routeData.totalWaitingTime !== undefined
-                ? Number(routeData.totalWaitingTime)
-                : 0;
+                  ? Number(routeData.totalWaitingTime)
+                  : 0;
 
             let rawSpent = Number(routeData.totalSpentTime) || 0;
 
@@ -115,7 +136,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
 
             detailRows.push({
               routing: routingName,
-              vehicle: truckId,
+              plat: truckId,
               driver: driverName,
               category: category,
               visit: rawData.visit,
@@ -149,7 +170,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
       const dNameUpper = dName.toUpperCase().trim();
 
       if (dName && !processedDrivers.has(dNameUpper)) {
-        const cat = getVehicleCategory(dName);
+        const cat = getStorageType(dName);
         detailRows.push({
           routing: '-',
           vehicle: dPlat,

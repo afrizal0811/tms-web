@@ -1,26 +1,8 @@
-import { getBasePlate } from '@/lib/utils';
+import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-function getCategoryRank(row) {
-  const plat = (row.plat || '').toUpperCase();
-  const driver = (row.driver || '').toUpperCase();
-  if (driver.includes('DM') || plat.includes('DM')) return 3;
-  if (driver.includes('SEWA') || plat.includes('SEWA')) return 2;
-  return 1;
-}
-
-function sortRows(rows) {
-  return rows.sort((a, b) => {
-    const rankA = getCategoryRank(a);
-    const rankB = getCategoryRank(b);
-    if (rankA !== rankB) return rankA - rankB;
-    if (a.tipe !== b.tipe) return (a.tipe || '').localeCompare(b.tipe || '');
-    return (a.driver || '').localeCompare(b.driver || '');
-  });
-}
-
-export function generateSheetStartFinish(startFinishRows, totalDurationStr, routeReviewRows = []) {
-  const sfHeaders = [
+export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) {
+  const headers = [
     'Tipe',
     'Plat Nomor',
     'Driver',
@@ -29,17 +11,14 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     'Durasi',
     'Durasi (hour)',
   ];
-  const sfData = [sfHeaders];
-
-  const isEmptyTime = (val) => val == null || val === '-' || val === 'N/A' || val === '';
-
+  const sheetData = [headers];
   const tempProcessed = startFinishRows.map((row) => {
     const rrRow = routeReviewRows.find((r) => r.driver === row.driver && r.plat === row.plat);
     const estOp = rrRow ? Number(rrRow.estOpHours) || 0 : 0;
 
     let newRow = { ...row, isErrorRed: false };
 
-    if (estOp > 0 && isEmptyTime(newRow.jamStart)) {
+    if (estOp > 0 && isEmpty(newRow.jamStart)) {
       newRow.isErrorRed = true;
     }
 
@@ -53,7 +32,6 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     return newRow;
   });
 
-  // GRUG FILTER KEMBAR LAGI!
   const uniqueProcessed = [];
   const seenSF = new Set();
   let totalMenit = 0;
@@ -90,10 +68,10 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     '0'
   )}`;
 
-  const sortedRows = sortRows([...uniqueProcessed]);
+  const sortedRows = sortRows([...uniqueProcessed], 'plat', 'driver');
 
   sortedRows.forEach((row) => {
-    sfData.push([
+    sheetData.push([
       row.tipe,
       getBasePlate(row.plat),
       row.driver,
@@ -104,13 +82,13 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     ]);
   });
 
-  sfData.push(['TOTAL', '', '', '', '', recalculatedTotalStr, finalJam]);
-  sfData.push([]);
-  sfData.push(['NOTE']);
-  sfData.push(['', 'Terdapat data routing tapi tidak ada waktu start-finish']);
-  sfData.push(['', 'Driver klik Start-Finish lebih dari 1x dalam sehari']);
+  sheetData.push(['TOTAL', '', '', '', '', recalculatedTotalStr, finalJam]);
+  sheetData.push([]);
+  sheetData.push(['NOTE']);
+  sheetData.push(['', 'Terdapat data routing tapi tidak ada waktu start-finish']);
+  sheetData.push(['', 'Driver klik Start-Finish lebih dari 1x dalam sehari']);
 
-  const wsSF = XLSX.utils.aoa_to_sheet(sfData);
+  const wsSF = XLSX.utils.aoa_to_sheet(sheetData);
 
   const headerStyle = {
     font: { bold: true },
@@ -140,10 +118,10 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
 
   const rangeSF = XLSX.utils.decode_range(wsSF['!ref']);
 
-  const sfLastRow = sfData.length - 5;
-  const noteTitleIdx = sfData.length - 3;
-  const legendErrorIdx = sfData.length - 2;
-  const legendYellowIdx = sfData.length - 1;
+  const sfLastRow = sheetData.length - 5;
+  const noteTitleIdx = sheetData.length - 3;
+  const legendErrorIdx = sheetData.length - 2;
+  const legendYellowIdx = sheetData.length - 1;
 
   for (let R = rangeSF.s.r; R <= rangeSF.e.r; ++R) {
     for (let C = rangeSF.s.c; C <= rangeSF.e.c; ++C) {

@@ -1,8 +1,11 @@
-import { normalizeEmail } from '@/lib/utils';
-import { formatMinutesToHHmm, formatTimeHHmm, getVehicleCategory } from './help';
+import {
+  formatMinutesToHHMM,
+  formatTimestampToQuotedHHMM_UTC7,
+  getStorageType,
+  normalizeEmail,
+} from '@/lib/utils';
 
 export function calculateGroupFive(tasksData, driverData, historiesData, g2DetailRows = []) {
-  // --- HITUNG MASTER MAINTENANCE (GPS Sesuai = Tidak) ---
   let countMasterMaintenance = 0;
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
@@ -21,7 +24,6 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
     });
   }
 
-  // --- MEMBACA HISTORY SEBAGAI ARRAY ---
   const historyMap = {};
   if (Array.isArray(historiesData)) {
     historiesData.forEach((h) => {
@@ -35,14 +37,13 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
 
   const startFinishRows = [];
   const routeReviewRows = [];
-  const totals = { estHours: 0, actHours: 0, overtime: 0 };
   let totalAllMinutes = 0;
 
   if (Array.isArray(driverData)) {
     driverData.forEach((driver) => {
       const email = normalizeEmail(driver.email);
       const driverHistories = historyMap[email] || [];
-      const category = getVehicleCategory(driver.name);
+      const category = getStorageType(driver.name).toUpperCase();
 
       let totalActMinutes = 0;
       let isMultipleSessions = driverHistories.length > 1;
@@ -58,13 +59,13 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           if (startStr && finishStr) {
             const st = new Date(startStr);
             const fi = new Date(finishStr);
-            jamStart = formatTimeHHmm(st);
-            jamFinish = formatTimeHHmm(fi);
+            jamStart = formatTimestampToQuotedHHMM_UTC7(startStr);
+            jamFinish = formatTimestampToQuotedHHMM_UTC7(finishStr);
             const diffMins = (fi - st) / 60000;
             if (diffMins > 0) {
               totalActMinutes += diffMins;
               totalAllMinutes += diffMins;
-              durasiStr = formatMinutesToHHmm(diffMins);
+              durasiStr = formatMinutesToHHMM(diffMins, false);
             }
           }
 
@@ -90,7 +91,6 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
         });
       }
 
-      // Sinkronisasi logika Est Operating Hours 100% dengan sheetRouteReview
       let totalEstHours = 0;
       let hasRouting = false;
 
@@ -130,10 +130,6 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           estOpHours = estH;
           actOpHours = actH;
           overtime = estH - actH;
-
-          totals.estHours += estH;
-          totals.actHours += actH;
-          totals.overtime += overtime;
         }
       }
 
@@ -148,13 +144,9 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
     });
   }
 
-  const totalDurationStr = formatMinutesToHHmm ? formatMinutesToHHmm(totalAllMinutes) : '00:00';
-
   return {
     countMasterMaintenance,
     startFinishRows,
     routeReviewRows,
-    totals,
-    totalDurationStr,
   };
 }

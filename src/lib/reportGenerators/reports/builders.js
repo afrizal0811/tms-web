@@ -5,6 +5,7 @@ import {
   getBasePlate,
   heatMap,
   isEmpty,
+  sortRows,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -32,14 +33,6 @@ const STYLES = {
   orangeFill: { fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } } },
   redFill: { fill: { patternType: 'solid', fgColor: { rgb: 'FF9999' } } },
 };
-
-function getSortGroup(platStr) {
-  if (!platStr) return 1;
-  const upper = platStr.toUpperCase();
-  if (upper.includes('DM')) return 3;
-  if (upper.includes('SEWA')) return 2;
-  return 1;
-}
 
 export function buildTanggalRoutingSheet(wb, dateStr, t) {
   const formattedDate = formatDateUniversal(dateStr, 'DD-MM-YYYY');
@@ -74,16 +67,10 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
     t('excel.reports.time_driver.duration'),
     t('excel.reports.time_driver.travel_dist'),
   ];
-
-  timeDataObjects.sort((a, b) => {
-    if (getSortGroup(a.plat) !== getSortGroup(b.plat))
-      return getSortGroup(a.plat) - getSortGroup(b.plat);
-    return a.driver.localeCompare(b.driver);
-  });
-
+  const sortTime = sortRows(timeDataObjects, 'plat', 'driver');
   const sheetData = [
     headers,
-    ...timeDataObjects.map((i) => {
+    ...sortTime.map((i) => {
       let dur = calculateDurationAsQuotedHHMM(i.rawStart, i.rawFinish);
       if (dur === "'-'" || dur === '-' || !dur) dur = null;
 
@@ -113,7 +100,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
     ),
   }));
 
-  const dataCount = timeDataObjects.length;
+  const dataCount = sortTime.length;
 
   for (let R = 0; R < sheetData.length; ++R) {
     for (let C = 0; C < headers.length; ++C) {
@@ -124,7 +111,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
         ws[cellRef].s = [2, 3, 4, 5, 6].includes(C) ? STYLES.greenHeader : STYLES.header;
       } else if (R <= dataCount) {
         ws[cellRef].s = C <= 1 ? STYLES.left : STYLES.center;
-        const rowData = timeDataObjects[R - 1];
+        const rowData = sortTime[R - 1];
 
         if (C === 1 && rowData?.isMultiple) {
           ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.magentaFill };
@@ -253,16 +240,10 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       hasSplitTask: dData?.hasSplitTask || false,
     });
   });
-
-  excelDataRows.sort((a, b) => {
-    if (getSortGroup(a.plat) !== getSortGroup(b.plat))
-      return getSortGroup(a.plat) - getSortGroup(b.plat);
-    return a.driver.localeCompare(b.driver);
-  });
-
+  const sortData = sortRows(excelDataRows, 'plat', 'driver');
   const sheetData = [
     headers,
-    ...excelDataRows.map((r) => [
+    ...sortData.map((r) => [
       r.plat,
       r.driver,
       r.wPct,
@@ -298,7 +279,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   ws['!rows'] = [{ hpt: 40 }];
 
   for (let R = 0; R < sheetData.length; ++R) {
-    const rType = R > 0 ? excelDataRows[R - 1].hType : 'none';
+    const rType = R > 0 ? sortData[R - 1].hType : 'none';
     let rowFill = null;
     if (rType === 'orange') rowFill = STYLES.orangeFill.fill;
     if (rType === 'blue') rowFill = STYLES.blueFill.fill;
@@ -326,7 +307,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
         }
 
         if (C === 8) {
-          const heatColor = heatMap(excelDataRows[R - 1]?.pct);
+          const heatColor = heatMap(sortData[R - 1]?.pct);
           if (heatColor) {
             ws[cellRef].s = {
               ...ws[cellRef].s,
@@ -335,7 +316,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
           }
         }
 
-        if (C === 5 && excelDataRows[R - 1]?.hasSplitTask) {
+        if (C === 5 && sortData[R - 1]?.hasSplitTask) {
           const splitBorder = { style: 'medium', color: { rgb: 'fb923c' } };
           ws[cellRef].s = {
             ...ws[cellRef].s,
@@ -428,23 +409,17 @@ export function buildRoVsRealSheet(
   });
 
   const seenDriversRo = new Set();
-  const driversSorted = driverData
-    .filter((d) => {
-      if (!tasksByNameMap.has(d.name)) return false;
-      if (seenDriversRo.has(d.name)) return false;
-      seenDriversRo.add(d.name);
-      return true;
-    })
-    .sort((a, b) => {
-      if (getSortGroup(a.plat) !== getSortGroup(b.plat))
-        return getSortGroup(a.plat) - getSortGroup(b.plat);
-      return a.name.localeCompare(b.name);
-    });
-
+  const filteredDrivers = driverData.filter((d) => {
+    if (!tasksByNameMap.has(d.name)) return false;
+    if (seenDriversRo.has(d.name)) return false;
+    seenDriversRo.add(d.name);
+    return true;
+  });
+  const sortedDrivers = sortRows(filteredDrivers, 'plat', 'name');
   const sheetData = [headers];
   const manualAssignRows = new Set();
 
-  driversSorted.forEach((driver) => {
+  sortedDrivers.forEach((driver) => {
     const tasks = tasksByNameMap.get(driver.name);
     const hT = hubTimesMap.get(driver.name) || { hubETD: null, hubETA: null };
     sheetData.push([

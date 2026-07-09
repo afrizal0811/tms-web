@@ -9,6 +9,7 @@ import {
   normalizeEmail,
   parseAndShiftToUTC7,
   parseCustomerString,
+  sortRows,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -586,35 +587,17 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
     tasksByNameMap.get(task.driver).push(task);
   }
 
-  const getSortGroup = (platStr) => {
-    if (!platStr) return 1;
-    const platUpper = platStr.toUpperCase();
-    if (platUpper.includes('DM')) return 3;
-    if (platUpper.includes('SEWA')) return 2;
-    return 1;
-  };
-
-  let driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
+  const driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
     return {
       plat: stats.plat,
       driver: driverName,
     };
   });
-
-  driverList.sort((a, b) => {
-    const groupA = getSortGroup(a.plat);
-    const groupB = getSortGroup(b.plat);
-    if (groupA !== groupB) {
-      return groupA - groupB;
-    }
-    return (a.driver || '').localeCompare(b.driver || '');
-  });
-
+  const sortDrivers = sortRows(driverList, 'plat', 'driver');
   const finalRows = [];
-  // Perbaiki handling saat searchQuery kosong
   const query = (searchQuery || '').toLowerCase();
 
-  for (const driverRow of driverList) {
+  for (const driverRow of sortDrivers) {
     const driverName = driverRow.driver;
     const driverPlat = driverRow.plat;
     const driverTasks = tasksByNameMap.get(driverName) || [];

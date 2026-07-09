@@ -1,4 +1,4 @@
-import { getBasePlate } from '@/lib/utils';
+import { getBasePlate, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 function formatTimeStats(totalMinutes) {
@@ -9,29 +9,6 @@ function formatTimeStats(totalMinutes) {
     readable: `${hours} Jam ${minutes} Menit`,
     rounded: `${hours} Jam`,
   };
-}
-
-function getCategoryRank(row) {
-  const plat = (row.vehicle || '').toUpperCase();
-  const driver = (row.driver || '').toUpperCase();
-
-  if (driver.includes('DM') || plat.includes('DM')) return 3;
-  if (driver.includes('SEWA') || plat.includes('SEWA')) return 2;
-  return 1;
-}
-
-function sortRows(rows) {
-  return rows.sort((a, b) => {
-    const rankA = getCategoryRank(a);
-    const rankB = getCategoryRank(b);
-    if (rankA !== rankB) return rankA - rankB;
-
-    const catA = a.category || '';
-    const catB = b.category || '';
-    if (catA !== catB) return catA.localeCompare(catB);
-
-    return (a.driver || '').localeCompare(b.driver || '');
-  });
 }
 
 export function generateSheetDataRouting(g2) {
@@ -83,12 +60,11 @@ export function generateSheetDataRouting(g2) {
     { v: 'PEMBULATAN', s: headerStyle },
   ];
 
-  // GRUG FILTER KEMBAR PALING AWAL SUPAYA TOTAL JUGA AMAN!
   const uniqueInputRows = [];
   const seenInput = new Set();
 
   (g2.detailRows || []).forEach((row) => {
-    const vPlatUpper = (row.vehicle || '').toUpperCase().trim();
+    const vPlatUpper = (row.plat || '').toUpperCase().trim();
     const displayPlat = getBasePlate(vPlatUpper);
     const isMissingRow = row.isNoRoutingData;
 
@@ -132,7 +108,7 @@ export function generateSheetDataRouting(g2) {
   const basePlateToOriginalPlates = {};
 
   const processedDetailRows = uniqueInputRows.map((row) => {
-    const vPlat = (row.vehicle || '').toUpperCase().trim();
+    const vPlat = (row.plat || '').toUpperCase().trim();
     if (vPlat && !row.isNoRoutingData) {
       exactVehicleCounts[vPlat] = (exactVehicleCounts[vPlat] || 0) + 1;
 
@@ -188,7 +164,7 @@ export function generateSheetDataRouting(g2) {
   ];
 
   const sheetData = [row0];
-  const sortedDetailRows = sortRows(processedDetailRows);
+  const sortedDetailRows = sortRows(processedDetailRows, 'plat', 'driver');
   const maxRows = Math.max(sortedDetailRows.length, 3);
 
   for (let i = 0; i < maxRows; i++) {
@@ -197,7 +173,7 @@ export function generateSheetDataRouting(g2) {
       const row = sortedDetailRows[i];
       const isMissingRow = row.isNoRoutingData;
 
-      const vPlatUpper = (row.vehicle || '').toUpperCase().trim();
+      const vPlatUpper = (row.plat || '').toUpperCase().trim();
       const basePlate = getBasePlate(vPlatUpper);
 
       const isDuplicateExact = exactVehicleCounts[vPlatUpper] > 1;
@@ -213,7 +189,7 @@ export function generateSheetDataRouting(g2) {
         rowStyle = duplicateStyle;
       }
 
-      let displayPlat = getBasePlate(row.vehicle);
+      let displayPlat = getBasePlate(row.plat);
       let spentTimeHHMM = '';
       let spentTimeHour = '';
 

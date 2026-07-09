@@ -1,7 +1,5 @@
-import { normalizeEmail } from '@/lib/utils';
-import { getVehicleCategory } from './help';
+import { getStorageType, normalizeEmail } from '@/lib/utils';
 
-// Kalkulasi menggunakan presisi penuh untuk mencegah hilangnya angka pecahan kecil
 const safeAdd = (a, b) => Number(a || 0) + Number(b || 0);
 const safeNum = (n) => Number(n || 0);
 
@@ -28,7 +26,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
       const email = normalizeEmail(h.email);
       const info = driverInfoMap[email];
       const driverName = info ? info.name : '';
-      const category = getVehicleCategory(driverName || h.email);
+      const category = getStorageType(driverName).toUpperCase();
       const dist = safeNum(h.finish?.totalDistance ?? h.totalDistance ?? 0);
       if (category === 'DRY') actDistDry = safeAdd(actDistDry, dist);
       else if (category === 'FROZEN') actDistFrz = safeAdd(actDistFrz, dist);
@@ -67,7 +65,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
             if (foundByObj) info = foundByObj;
           }
           const driverName = info ? info.name : route.assignee;
-          const category = getVehicleCategory(driverName);
+          const category = getStorageType(driverName).toUpperCase();
           const truckId = (route.vehicleName || route.vehicleId || route.assignee || 'Unknown')
             .toUpperCase()
             .trim();
@@ -91,19 +89,19 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
             route.vehicleMaxWeight !== undefined
               ? route.vehicleMaxWeight
               : route.maxWeight !== undefined
-              ? route.maxWeight
-              : info
-              ? info.maxWeight
-              : 0
+                ? route.maxWeight
+                : info
+                  ? info.maxWeight
+                  : 0
           );
           const maxV = safeNum(
             route.vehicleMaxVolume !== undefined
               ? route.vehicleMaxVolume
               : route.maxVolume !== undefined
-              ? route.maxVolume
-              : info
-              ? info.maxVolume
-              : 0
+                ? route.maxVolume
+                : info
+                  ? info.maxVolume
+                  : 0
           );
 
           activeVehicles[truckId] = {
@@ -137,20 +135,20 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
             sumTravel > 0
               ? sumTravel
               : route.totalTravelTime !== undefined
-              ? Number(route.totalTravelTime)
-              : 0;
+                ? Number(route.totalTravelTime)
+                : 0;
           const finalVisit =
             sumVisit > 0
               ? sumVisit
               : route.totalVisitTime !== undefined
-              ? Number(route.totalVisitTime)
-              : 0;
+                ? Number(route.totalVisitTime)
+                : 0;
           const finalWait =
             sumWait > 0
               ? sumWait
               : route.totalWaitingTime !== undefined
-              ? Number(route.totalWaitingTime)
-              : 0;
+                ? Number(route.totalWaitingTime)
+                : 0;
 
           const manualSpentTime = finalTravel + finalVisit + finalWait;
 
@@ -184,7 +182,6 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
     }
   });
 
-  // Pembulatan 1 angka desimal hanya di hasil akhir
   const fmt = (n) => (isNaN(Number(n)) ? 0 : Number(Number(n).toFixed(1)));
 
   return {

@@ -1,31 +1,8 @@
-import { getBasePlate } from '@/lib/utils';
+import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-function getCategoryRank(row) {
-  const plat = (row.plat || '').toUpperCase();
-  const driver = (row.driver || '').toUpperCase();
-  if (driver.includes('DM') || plat.includes('DM')) return 3;
-  if (driver.includes('SEWA') || plat.includes('SEWA')) return 2;
-  return 1;
-}
-
-function sortRows(rows) {
-  return rows.sort((a, b) => {
-    const rankA = getCategoryRank(a);
-    const rankB = getCategoryRank(b);
-    if (rankA !== rankB) return rankA - rankB;
-    if (a.tipe !== b.tipe) return (a.tipe || '').localeCompare(b.tipe || '');
-    return (a.driver || '').localeCompare(b.driver || '');
-  });
-}
-
-export function generateSheetRouteReview(
-  routeReviewRows,
-  totals,
-  startFinishRows = [],
-  g2DetailRows = []
-) {
-  const rrHeaders = [
+export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], g2DetailRows = []) {
+  const headers = [
     'Tipe',
     'Plat Nomor',
     'Driver',
@@ -33,9 +10,7 @@ export function generateSheetRouteReview(
     'Act Operating Hours',
     'Overtime',
   ];
-  const rrData = [rrHeaders];
-
-  const isEmptyTime = (val) => val == null || val === '-' || val === 'N/A' || val === '';
+  const sheetData = [headers];
 
   const tempProcessed = routeReviewRows.map((row) => {
     const sfRows = startFinishRows.filter((r) => {
@@ -69,7 +44,7 @@ export function generateSheetRouteReview(
       }
     }
 
-    if (estOp === '' && !isEmptyTime(row.estOpHours)) {
+    if (estOp === '' && !isEmpty(row.estOpHours)) {
       estOp = Number(row.estOpHours);
     }
 
@@ -89,7 +64,7 @@ export function generateSheetRouteReview(
 
     if (hasDurasi) {
       actOp = Math.floor(totalActMins / 60);
-    } else if (!isEmptyTime(row.actOpHours)) {
+    } else if (!isEmpty(row.actOpHours)) {
       actOp = Number(row.actOpHours);
     }
 
@@ -110,7 +85,7 @@ export function generateSheetRouteReview(
     const hasOperatingHours = typeof estOp === 'number' || typeof actOp === 'number';
     let isErrorRed = false;
 
-    const isAnyJamStartMissing = sfRows.some((sf) => isEmptyTime(sf.jamStart));
+    const isAnyJamStartMissing = sfRows.some((sf) => isEmpty(sf.jamStart));
     if (hasOperatingHours && (sfRows.length === 0 || isAnyJamStartMissing)) {
       isErrorRed = true;
     }
@@ -125,7 +100,6 @@ export function generateSheetRouteReview(
     };
   });
 
-  // GRUG FILTER DATA KEMBAR TEPAT SEBELUM HITUNG TOTAL
   const uniqueProcessed = [];
   const seenRR = new Set();
   let sumEstHours = 0;
@@ -152,22 +126,29 @@ export function generateSheetRouteReview(
     }
   });
 
-  const sortedRows = sortRows([...uniqueProcessed]);
+  const sortedRows = sortRows([...uniqueProcessed], 'plat', 'driver');
 
   sortedRows.forEach((row) => {
-    rrData.push([row.tipe, getBasePlate(row.plat), row.driver, row.estOp, row.actOp, row.overtime]);
+    sheetData.push([
+      row.tipe,
+      getBasePlate(row.plat),
+      row.driver,
+      row.estOp,
+      row.actOp,
+      row.overtime,
+    ]);
   });
 
-  rrData.push(['TOTAL', '', '', sumEstHours, sumActHours, sumOvertime]);
+  sheetData.push(['TOTAL', '', '', sumEstHours, sumActHours, sumOvertime]);
 
-  rrData.push([]);
-  rrData.push(['NOTE']);
-  rrData.push(['', 'Terdapat data routing tapi tidak ada waktu start-finish']);
-  rrData.push(['', 'Driver klik Start-Finish lebih dari 1x dalam sehari']);
-  rrData.push(['Est Operating Hours', 'Spent Time di Data Routing']);
-  rrData.push(['Act Operating Hours', 'Durasi di Start & Finish']);
+  sheetData.push([]);
+  sheetData.push(['NOTE']);
+  sheetData.push(['', 'Terdapat data routing tapi tidak ada waktu start-finish']);
+  sheetData.push(['', 'Driver klik Start-Finish lebih dari 1x dalam sehari']);
+  sheetData.push(['Est Operating Hours', 'Spent Time di Data Routing']);
+  sheetData.push(['Act Operating Hours', 'Durasi di Start & Finish']);
 
-  const wsRR = XLSX.utils.aoa_to_sheet(rrData);
+  const wsRR = XLSX.utils.aoa_to_sheet(sheetData);
 
   const headerStyle = {
     font: { bold: true },
@@ -196,12 +177,12 @@ export function generateSheetRouteReview(
 
   const rangeRR = XLSX.utils.decode_range(wsRR['!ref']);
 
-  const totalRowIndex = rrData.length - 7;
-  const noteTitleIdx = rrData.length - 5;
-  const legendErrorIdx = rrData.length - 4;
-  const legendYellowIdx = rrData.length - 3;
-  const estLegendIdx = rrData.length - 2;
-  const actLegendIdx = rrData.length - 1;
+  const totalRowIndex = sheetData.length - 7;
+  const noteTitleIdx = sheetData.length - 5;
+  const legendErrorIdx = sheetData.length - 4;
+  const legendYellowIdx = sheetData.length - 3;
+  const estLegendIdx = sheetData.length - 2;
+  const actLegendIdx = sheetData.length - 1;
 
   for (let R = rangeRR.s.r; R <= rangeRR.e.r; ++R) {
     for (let C = rangeRR.s.c; C <= rangeRR.e.c; ++C) {

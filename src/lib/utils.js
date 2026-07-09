@@ -482,3 +482,20 @@ export function parseApiDateString(dateStr) {
   const d = new Date(isoStr);
   return isNaN(d.getTime()) ? null : d;
 }
+
+function getSortGroup(plat) {
+  if (!plat) return 1;
+  const platUpper = plat.toUpperCase();
+  if (platUpper.includes('DM')) return 3;
+  if (platUpper.includes('SEWA')) return 2;
+  return 1;
+}
+
+export function sortRows(rows, platKey, driverKey) {
+  return rows.sort((a, b) => {
+    const rankA = getSortGroup(a[platKey]);
+    const rankB = getSortGroup(b[platKey]);
+    if (rankA !== rankB) return rankA - rankB;
+    return (a[driverKey] || '').localeCompare(b[driverKey] || '');
+  });
+}
