@@ -11,14 +11,3 @@ export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit 
 
   return await apiFetch(`/api/get-tasks?${params.toString()}`, 'Gagal mengambil data tasks');
 }
-
-export const getTask = async (taskId) => {
-  try {
-    const res = await fetch(`/api/get-task?taskId=${taskId}`);
-    if (!res.ok) throw new Error('Gagal menarik data single task');
-    return await res.json();
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
-};

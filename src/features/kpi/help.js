@@ -1,4 +1,4 @@
-import { getLocationHistories, getResultsSummary, getTask, getTasks } from '@/lib/api';
+import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { calculateStartFinishDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -64,6 +64,14 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
       timeBy: 'createdTime',
     }),
   ]);
+  const taskMap = new Map();
+  const allTasksData = tasks?.data || tasks?.tasks?.data || tasks || [];
+  allTasksData.forEach((t) => {
+    const taskId = t._id || t.id;
+    if (taskId && t.routingResultId) {
+      taskMap.set(String(taskId), String(t.routingResultId));
+    }
+  });
 
   const uniqueNames = [
     ...new Set((rawResults || []).filter((r) => r.name && r.name !== '-').map((r) => r.name)),
@@ -110,20 +118,12 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
                 .filter(Boolean);
 
               totalCheckedTasks += extractedIds.length;
-
-              if (extractedIds.length > 0) {
-                const taskPromises = extractedIds.map((id) => getTask(id).catch(() => null));
-                const taskResults = await Promise.all(taskPromises);
-
-                taskResults.forEach((taskRes) => {
-                  if (taskRes) {
-                    const taskData = taskRes.data || taskRes;
-                    if (String(taskData?.task?.routingResultId) === String(routingId)) {
-                      totalValidTasks++;
-                    }
-                  }
-                });
-              }
+              extractedIds.forEach((id) => {
+                const foundRoutingId = taskMap.get(String(id));
+                if (foundRoutingId === String(routingId)) {
+                  totalValidTasks++;
+                }
+              });
             }
           }
         }
