@@ -1,23 +1,15 @@
 import { getLocationHistories, getResultsSummary, getTask, getTasks } from '@/lib/api';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import { calculateStartFinishDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
+import {
+  calculateStartFinishDates,
+  formatDateUniversal,
+  formatToApiUtc,
+  getDatesInRange,
+} from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { convertLocationHistories } from '../../lib/reportGenerators/helper/convertLocationHistories';
 import { generateKpiWorkbook } from '../../lib/reportGenerators/kpi/kpiReport';
-
-const getDatesInRange = (start, end) => {
-  const dates = [];
-  let current = new Date(start);
-  const stop = new Date(end);
-  current.setHours(0, 0, 0, 0);
-  stop.setHours(0, 0, 0, 0);
-  while (current <= stop) {
-    dates.push(new Date(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-};
 
 const shuffleArray = (array) => {
   const newArr = [...array];
@@ -164,20 +156,6 @@ function parseToNumber(val) {
     .trim();
   const num = parseFloat(str);
   return isNaN(num) ? 0 : num;
-}
-
-function formatExcelDate(val) {
-  if (typeof val === 'number') {
-    const date = new Date((val - (25567 + 2)) * 86400 * 1000);
-    if (isNaN(date.getTime())) return String(val);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const HH = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${dd}-${mm}-${yyyy} ${HH}:${min}`;
-  }
-  return String(val || '').trim();
 }
 
 async function parseRoutingFiles(files) {
@@ -382,7 +360,7 @@ async function parseTaskFiles(files) {
       const statDeliv =
         colIdx.statusDelivery !== -1 ? String(row[colIdx.statusDelivery] || '').trim() : '';
       const statGr = colIdx.statusGr !== -1 ? String(row[colIdx.statusGr] || '').trim() : '';
-      const startTime = colIdx.startTime !== -1 ? formatExcelDate(row[colIdx.startTime]) : '';
+      const startTime = colIdx.startTime !== -1 ? String(row[colIdx.startTime] || '').trim() : '';
       const gps = colIdx.gpsSesuai !== -1 ? String(row[colIdx.gpsSesuai] || '').trim() : '';
 
       if (startTime) {

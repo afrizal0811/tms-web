@@ -83,7 +83,6 @@ export function generateSheetDataRouting(g2) {
     { v: 'PEMBULATAN', s: headerStyle },
   ];
 
-  // GRUG FILTER KEMBAR PALING AWAL SUPAYA TOTAL JUGA AMAN!
   const uniqueInputRows = [];
   const seenInput = new Set();
 

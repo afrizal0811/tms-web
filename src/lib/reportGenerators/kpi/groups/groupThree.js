@@ -1,5 +1,4 @@
-import { normalizeEmail } from '@/lib/utils';
-import { getVehicleCategory } from './help';
+import { getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupThree(resultsData, historiesData, driverMap) {
   let totalActMinutes = 0;
@@ -30,7 +29,7 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
         item.result.routing.forEach((route) => {
           const email = normalizeEmail(route.assignee);
           const driverName = driverMap[email] || route.assignee || '';
-          const category = getVehicleCategory(driverName);
+          const category = getStorageType(driverName);
 
           let routeWeight = 0;
           let routeVolume = 0;
@@ -70,8 +69,8 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
               sumDist > 0
                 ? sumDist
                 : route.totalDistance !== undefined
-                ? Number(route.totalDistance)
-                : 0;
+                  ? Number(route.totalDistance)
+                  : 0;
 
             if (category === 'DRY') {
               rawDistDryMeters += vehicleDistMeters;

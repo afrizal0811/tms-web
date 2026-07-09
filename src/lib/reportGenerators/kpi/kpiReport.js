@@ -1,20 +1,21 @@
 import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-// Import Logic Groups
-import { calculateGroupFive } from './groups/groupFive';
-import { calculateGroupFour } from './groups/groupFour';
-import { calculateGroupOne } from './groups/groupOne';
-import { calculateGroupThree } from './groups/groupThree';
-import { calculateGroupTwo } from './groups/groupTwo';
-
-// Import Sheet Generators
-import { generateSheetDataKPI } from './sheets/sheetDataKPI';
-import { generateSheetDataRouting } from './sheets/sheetDataRouting';
-import { generateSheetHelp } from './sheets/sheetHelp';
-import { generateSheetPendingSO } from './sheets/sheetPendingSO';
-import { generateSheetRouteReview } from './sheets/sheetRouteReview';
-import { generateSheetStartFinish } from './sheets/sheetStartFinish';
+import {
+  calculateGroupFive,
+  calculateGroupFour,
+  calculateGroupOne,
+  calculateGroupThree,
+  calculateGroupTwo,
+} from './groups';
+import {
+  generateSheetDataKPI,
+  generateSheetDataRouting,
+  generateSheetHelp,
+  generateSheetPendingSO,
+  generateSheetRouteReview,
+  generateSheetStartFinish,
+} from './sheets';
 
 export function generateKpiWorkbook(
   selectedDate,
@@ -37,16 +38,12 @@ export function generateKpiWorkbook(
     });
   }
 
-  // --- CALCULATE GROUPS ---
   const g1 = calculateGroupOne(resultsData, tasksData, driverMap);
   const g2 = calculateGroupTwo(resultsData, driverMap, driverData);
   const g3 = calculateGroupThree(resultsData, historiesData, driverMap);
   const g4 = calculateGroupFour(resultsData, historiesData, driverData);
-
-  // Mengirim g2.detailRows ke groupFive agar sinkron dengan Sheet Route Review
   const g5 = calculateGroupFive(tasksData, driverData, historiesData, g2.detailRows);
 
-  // --- CREATE WORKBOOK ---
   const wb = XLSX.utils.book_new();
 
   const { wsRR, sumOvertime } = generateSheetRouteReview(
@@ -56,21 +53,17 @@ export function generateKpiWorkbook(
     g2.detailRows
   );
 
-  // 1. SHEET: Data KPI
   const wsKPI = generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvertime);
   XLSX.utils.book_append_sheet(wb, wsKPI, 'Data KPI');
 
-  // SHEET: Pending SO
   const wsPendingSO = generateSheetPendingSO(tasksData, driverData);
   XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Pending SO');
 
-  // 2. SHEET: Data Routing
   if (g2.dataRoutingExists) {
     const wsRouting = generateSheetDataRouting(g2);
     XLSX.utils.book_append_sheet(wb, wsRouting, 'Data Routing');
   }
 
-  // 3. SHEET: Start & Finish
   const wsSF = generateSheetStartFinish(
     g5.startFinishRows,
     g5.totalDurationStr,
@@ -78,12 +71,10 @@ export function generateKpiWorkbook(
   );
   XLSX.utils.book_append_sheet(wb, wsSF, 'Start & Finish');
 
-  // 4. SHEET: Route Review
   XLSX.utils.book_append_sheet(wb, wsRR, 'Route Review');
 
-  // 5. SHEET: Help
   const wsHelp = generateSheetHelp();
   XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
 
-  return { wb, fileName: `Data KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
+  return { wb, fileName: `KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
 }

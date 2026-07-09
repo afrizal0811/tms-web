@@ -125,7 +125,6 @@ export function generateSheetRouteReview(
     };
   });
 
-  // GRUG FILTER DATA KEMBAR TEPAT SEBELUM HITUNG TOTAL
   const uniqueProcessed = [];
   const seenRR = new Set();
   let sumEstHours = 0;

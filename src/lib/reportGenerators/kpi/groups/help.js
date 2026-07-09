@@ -1,14 +1,3 @@
-export function getVehicleCategory(driverName) {
-  const name = (driverName || '').toUpperCase();
-  if (name.includes('DRY')) return 'DRY';
-  if (name.includes('FRZ') || name.includes('FROZEN') || name.includes('FRESH')) return 'FROZEN';
-  return 'OTHER';
-}
-
-export function getNormalizedTruckId(route) {
-  return route.assignee || route.vehicleName || route.vehicleId || 'Unknown';
-}
-
 export function calculateRouteTime(route) {
   const rawVisit = route.totalVisitTime;
   const rawTravel = route.totalTravelTime;
@@ -29,32 +18,6 @@ export function calculateRouteTime(route) {
     isMissing: isVisitMissing || isTravelMissing || isWaitMissing || isSpentMissing,
     rawData: { visit: rawVisit, travel: rawTravel, wait: rawWait, spent: rawSpent },
   };
-}
-
-export function formatMinutesToHHmm(totalMinutes) {
-  if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes <= 0) return '00:00';
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.floor(totalMinutes % 60);
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${pad(hours)}:${pad(minutes)}`;
-}
-
-export function parseToUTC7(dateStr) {
-  if (!dateStr) return null;
-  try {
-    const utcDate = new Date(dateStr.replace(' ', 'T') + 'Z');
-    if (isNaN(utcDate.getTime())) return null;
-    return new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
-  } catch (e) {
-    return null;
-  }
-}
-
-export function formatTimeHHmm(dateObj) {
-  if (!dateObj) return null;
-  const hours = dateObj.getUTCHours().toString().padStart(2, '0');
-  const minutes = dateObj.getUTCMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
 }
 
 export function getDayDifference(dateStart, dateEnd) {

@@ -1,5 +1,4 @@
-import { normalizeEmail } from '@/lib/utils';
-import { getNormalizedTruckId, getVehicleCategory } from './help';
+import { getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupOne(resultsData, tasksData, driverMap) {
   const dryTrucks = new Set();
@@ -18,8 +17,8 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
           if (tripsCount === 0) return;
           const email = normalizeEmail(route.assignee);
           const driverName = driverMap[email] || '';
-          const category = getVehicleCategory(driverName);
-          const truckId = getNormalizedTruckId(route);
+          const category = getStorageType(driverName);
+          const truckId = route.assignee || route.vehicleName || route.vehicleId || 'Unknown';
           if (truckId) {
             if (category === 'DRY') {
               dryTrucks.add(truckId);
@@ -70,7 +69,7 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
             if (!driverName && typeof rawAssignee === 'string') driverName = rawAssignee;
           }
         }
-        if (!category && driverName) category = getVehicleCategory(driverName);
+        if (!category && driverName) category = getStorageType(driverName);
         let finalCategory = '';
         if (category) {
           const catUp = category.toUpperCase();
