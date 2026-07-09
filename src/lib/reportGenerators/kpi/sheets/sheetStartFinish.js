@@ -2,95 +2,65 @@ import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) {
-  const headers = [
-    'Tipe',
-    'Plat Nomor',
-    'Driver',
-    'Jam Start',
-    'Jam Finish',
-    'Durasi',
-    'Durasi (hour)',
-  ];
-  const sheetData = [headers];
-  const tempProcessed = startFinishRows.map((row) => {
-    const rrRow = routeReviewRows.find((r) => r.driver === row.driver && r.plat === row.plat);
-    const estOp = rrRow ? Number(rrRow.estOpHours) || 0 : 0;
-
-    let newRow = { ...row, isErrorRed: false };
-
-    if (estOp > 0 && isEmpty(newRow.jamStart)) {
-      newRow.isErrorRed = true;
-    }
-
-    newRow.durasiHour = '';
-    if (newRow.durasi && typeof newRow.durasi === 'string' && newRow.durasi.includes(':')) {
-      const parts = newRow.durasi.split(' ')[0].split(':');
-      if (parts.length >= 2) {
-        newRow.durasiHour = parseInt(parts[0], 10) || 0;
-      }
-    }
-    return newRow;
-  });
+  const rrMap = new Map();
+  routeReviewRows.forEach((r) => rrMap.set(`${r.driver}|${r.plat}`, Number(r.estOpHours) || 0));
 
   const uniqueProcessed = [];
   const seenSF = new Set();
   let totalMenit = 0;
 
-  tempProcessed.forEach((row) => {
-    const excelValues = [
-      row.tipe,
-      getBasePlate(row.plat),
-      row.driver,
-      row.jamStart,
-      row.jamFinish,
-      row.durasi,
-      row.durasiHour,
-    ];
-    const key = JSON.stringify(excelValues);
+  startFinishRows.forEach((row) => {
+    let durasiHour = '';
+    if (typeof row.durasi === 'string' && row.durasi.includes(':')) {
+      durasiHour = parseInt(row.durasi.split(':')[0], 10) || 0;
+    }
+
+    const key = `${row.tipe}|${getBasePlate(row.plat)}|${row.driver}|${row.jamStart}|${row.jamFinish}|${row.durasi}|${durasiHour}`;
 
     if (!seenSF.has(key)) {
       seenSF.add(key);
-      uniqueProcessed.push(row);
+      const estOp = rrMap.get(`${row.driver}|${row.plat}`) || 0;
+      uniqueProcessed.push({ ...row, durasiHour, isErrorRed: estOp > 0 && isEmpty(row.jamStart) });
 
-      if (row.durasi && typeof row.durasi === 'string' && row.durasi.includes(':')) {
-        const parts = row.durasi.split(' ')[0].split(':');
-        if (parts.length >= 2) {
-          totalMenit += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        }
+      if (typeof row.durasi === 'string' && row.durasi.includes(':')) {
+        const parts = row.durasi.split(':')[0];
+        totalMenit +=
+          (parseInt(parts, 10) || 0) * 60 + (parseInt(row.durasi.split(':')[1], 10) || 0);
       }
     }
   });
 
   const finalJam = Math.floor(totalMenit / 60);
-  const finalMenit = totalMenit % 60;
-  const recalculatedTotalStr = `${String(finalJam).padStart(2, '0')}:${String(finalMenit).padStart(
-    2,
-    '0'
-  )}`;
+  const sortedRows = sortRows(uniqueProcessed, 'plat', 'driver');
 
-  const sortedRows = sortRows([...uniqueProcessed], 'plat', 'driver');
-
-  sortedRows.forEach((row) => {
-    sheetData.push([
-      row.tipe,
-      getBasePlate(row.plat),
-      row.driver,
-      row.jamStart,
-      row.jamFinish,
-      row.durasi,
-      row.durasiHour,
-    ]);
-  });
-
-  sheetData.push(['TOTAL', '', '', '', '', recalculatedTotalStr, finalJam]);
-  sheetData.push([]);
-  sheetData.push(['NOTE']);
-  sheetData.push(['', 'Terdapat data routing tapi tidak ada waktu start-finish']);
-  sheetData.push(['', 'Driver klik Start-Finish lebih dari 1x dalam sehari']);
+  const sheetData = [
+    ['Tipe', 'Plat Nomor', 'Driver', 'Jam Start', 'Jam Finish', 'Durasi', 'Durasi (hour)'],
+    ...sortedRows.map((r) => [
+      r.tipe,
+      getBasePlate(r.plat),
+      r.driver,
+      r.jamStart,
+      r.jamFinish,
+      r.durasi,
+      r.durasiHour,
+    ]),
+    [
+      'TOTAL',
+      '',
+      '',
+      '',
+      '',
+      `${String(finalJam).padStart(2, '0')}:${String(totalMenit % 60).padStart(2, '0')}`,
+      finalJam,
+    ],
+    [],
+    ['NOTE'],
+    ['', 'Terdapat data routing tapi tidak ada waktu start-finish'],
+    ['', 'Driver klik Start-Finish lebih dari 1x dalam sehari'],
+  ];
 
   const wsSF = XLSX.utils.aoa_to_sheet(sheetData);
-
-  const headerStyle = {
+  const styleHeader = {
     font: { bold: true },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     fill: { fgColor: { rgb: 'EFEFEF' } },
@@ -101,61 +71,46 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
       right: { style: 'thin' },
     },
   };
-
-  const dataCenterStyle = { alignment: { horizontal: 'center', vertical: 'center' } };
-
-  const errorRedStyle = {
+  const styleCenter = { alignment: { horizontal: 'center', vertical: 'center' } };
+  const styleError = {
     alignment: { horizontal: 'center', vertical: 'center' },
     fill: { fgColor: { rgb: 'FADBD8' } },
     font: { color: { rgb: '000000' } },
   };
-
-  const multipleYellowStyle = {
+  const styleMultiple = {
     alignment: { horizontal: 'center', vertical: 'center' },
     fill: { fgColor: { rgb: 'FFF2CC' } },
     font: { color: { rgb: '000000' } },
   };
 
-  const rangeSF = XLSX.utils.decode_range(wsSF['!ref']);
-
   const sfLastRow = sheetData.length - 5;
-  const noteTitleIdx = sheetData.length - 3;
-  const legendErrorIdx = sheetData.length - 2;
-  const legendYellowIdx = sheetData.length - 1;
-
-  for (let R = rangeSF.s.r; R <= rangeSF.e.r; ++R) {
-    for (let C = rangeSF.s.c; C <= rangeSF.e.c; ++C) {
+  for (let R = 0; R < sheetData.length; ++R) {
+    for (let C = 0; C < 7; ++C) {
       const cell = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsSF[cell]) wsSF[cell] = { v: '' };
 
-      if (R === 0) {
-        wsSF[cell].s = headerStyle;
-      } else if (R === sfLastRow) {
+      if (R === 0) wsSF[cell].s = styleHeader;
+      else if (R === sfLastRow) {
         wsSF[cell].s = { font: { bold: true }, alignment: { horizontal: 'center' } };
         if (typeof wsSF[cell].v === 'number') {
           wsSF[cell].t = 'n';
           wsSF[cell].z = '0';
         }
-      } else if (R === noteTitleIdx && C === 0) {
+      } else if (R === sheetData.length - 3 && C === 0)
         wsSF[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
-      } else if (R === legendErrorIdx && C === 0) {
+      else if (R === sheetData.length - 2 && C === 0)
         wsSF[cell].s = { fill: { fgColor: { rgb: 'FADBD8' } } };
-      } else if (R === legendErrorIdx && C === 1) {
-        wsSF[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
-      } else if (R === legendYellowIdx && C === 0) {
+      else if (R === sheetData.length - 1 && C === 0)
         wsSF[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
-      } else if (R === legendYellowIdx && C === 1) {
+      else if (R >= sheetData.length - 2 && C === 1)
         wsSF[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
-      } else if (R > 0 && R < sfLastRow) {
+      else if (R > 0 && R < sfLastRow) {
         const rowData = sortedRows[R - 1];
-        if (rowData && rowData.isErrorRed) {
-          wsSF[cell].s = errorRedStyle;
-        } else if (rowData && rowData.isMultipleSessions) {
-          wsSF[cell].s = multipleYellowStyle;
-        } else {
-          wsSF[cell].s = dataCenterStyle;
-        }
-
+        wsSF[cell].s = rowData?.isErrorRed
+          ? styleError
+          : rowData?.isMultipleSessions
+            ? styleMultiple
+            : styleCenter;
         if (typeof wsSF[cell].v === 'number') {
           wsSF[cell].t = 'n';
           wsSF[cell].z = '0';
@@ -173,10 +128,9 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     { wch: 15 },
     { wch: 15 },
   ];
-
   wsSF['!merges'] = [
-    { s: { r: legendErrorIdx, c: 1 }, e: { r: legendErrorIdx, c: 6 } },
-    { s: { r: legendYellowIdx, c: 1 }, e: { r: legendYellowIdx, c: 6 } },
+    { s: { r: sheetData.length - 2, c: 1 }, e: { r: sheetData.length - 2, c: 6 } },
+    { s: { r: sheetData.length - 1, c: 1 }, e: { r: sheetData.length - 1, c: 6 } },
   ];
 
   return wsSF;

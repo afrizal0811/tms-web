@@ -6,19 +6,12 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
   if (Array.isArray(historiesData)) {
     historiesData.forEach((history) => {
       if (history.startTime && history.finish?.finishTime) {
-        const start = new Date(history.startTime);
-        const end = new Date(history.finish.finishTime);
-        const diffMs = end - start;
-        const diffMins = diffMs / (1000 * 60);
-
-        if (diffMins > 0) {
-          totalActMinutes += diffMins;
-        }
+        const diffMins =
+          (new Date(history.finish.finishTime) - new Date(history.startTime)) / 60000;
+        if (diffMins > 0) totalActMinutes += diffMins;
       }
     });
   }
-
-  const actOperatingHours = Math.floor(totalActMinutes / 60);
 
   let rawDistDryMeters = 0;
   let rawDistFrzMeters = 0;
@@ -33,6 +26,7 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
 
           let routeWeight = 0;
           let routeVolume = 0;
+          let sumDist = 0;
           const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
 
           if (hasTrips) {
@@ -41,54 +35,29 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
                 routeWeight += Number(trip.weight) || 0;
                 routeVolume += Number(trip.volume) || 0;
               }
+              sumDist += Number(trip.distance) || 0;
             });
           }
 
-          const rawTotalWeight = route.totalWeight !== undefined ? Number(route.totalWeight) : 0;
-          const rawTotalVolume = route.totalVolume !== undefined ? Number(route.totalVolume) : 0;
-
-          const activeWeight = routeWeight > 0 ? routeWeight : rawTotalWeight;
-          const activeVolume = routeVolume > 0 ? routeVolume : rawTotalVolume;
-
+          const activeWeight = routeWeight > 0 ? routeWeight : Number(route.totalWeight || 0);
+          const activeVolume = routeVolume > 0 ? routeVolume : Number(route.totalVolume || 0);
           const isVehicleActive =
             hasTrips &&
-            (activeWeight > 0 ||
-              activeVolume > 0 ||
-              (route.totalVisits !== undefined && Number(route.totalVisits) > 0));
+            (activeWeight > 0 || activeVolume > 0 || Number(route.totalVisits || 0) > 0);
 
           if (isVehicleActive) {
-            let sumDist = 0;
-
-            if (hasTrips) {
-              route.trips.forEach((trip) => {
-                sumDist += Number(trip.distance) || 0;
-              });
-            }
-
-            const vehicleDistMeters =
-              sumDist > 0
-                ? sumDist
-                : route.totalDistance !== undefined
-                  ? Number(route.totalDistance)
-                  : 0;
-
-            if (category === 'DRY') {
-              rawDistDryMeters += vehicleDistMeters;
-            } else if (category === 'FROZEN') {
-              rawDistFrzMeters += vehicleDistMeters;
-            }
+            const vehicleDistMeters = sumDist > 0 ? sumDist : Number(route.totalDistance || 0);
+            if (category === 'DRY') rawDistDryMeters += vehicleDistMeters;
+            else if (category === 'FROZEN') rawDistFrzMeters += vehicleDistMeters;
           }
         });
       }
     });
   }
 
-  const estDistDry = Number((rawDistDryMeters / 1000).toFixed(2));
-  const estDistFrz = Number((rawDistFrzMeters / 1000).toFixed(2));
-
   return {
-    actOperatingHours,
-    estDistanceDry: estDistDry,
-    estDistanceFrz: estDistFrz,
+    actOperatingHours: Math.floor(totalActMinutes / 60),
+    estDistanceDry: Number((rawDistDryMeters / 1000).toFixed(2)),
+    estDistanceFrz: Number((rawDistFrzMeters / 1000).toFixed(2)),
   };
 }

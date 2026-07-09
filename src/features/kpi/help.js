@@ -6,12 +6,17 @@ import * as XLSX from 'xlsx-js-style';
 import { convertLocationHistories } from '../../lib/reportGenerators/helper/convertLocationHistories';
 import { generateKpiWorkbook } from '../../lib/reportGenerators/kpi/kpiReport';
 
+const cleanStr = (str) => String(str || '').trim();
+const normalizeStr = (str) =>
+  String(str || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
 const getDatesInRange = (start, end) => {
   const dates = [];
   let current = new Date(start);
-  const stop = new Date(end);
   current.setHours(0, 0, 0, 0);
-  stop.setHours(0, 0, 0, 0);
+  const stop = new Date(end).setHours(0, 0, 0, 0);
   while (current <= stop) {
     dates.push(new Date(current));
     current.setDate(current.getDate() + 1);
@@ -35,6 +40,7 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   const timeFrom = formatToApiUtc(startObj);
   const timeTo = formatToApiUtc(new Date(startObj.setHours(23, 59, 59)));
   const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(dateString);
+
   const targetRoutingDateObj = new Date(targetDateObj);
   targetRoutingDateObj.setDate(targetRoutingDateObj.getDate() - 1);
   if (targetRoutingDateObj.getDay() === 0) {
@@ -64,6 +70,7 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
       timeBy: 'createdTime',
     }),
   ]);
+
   const taskMap = new Map();
   const allTasksData = tasks?.data || tasks?.tasks?.data || tasks || [];
   allTasksData.forEach((t) => {
@@ -74,9 +81,8 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   });
 
   const uniqueNames = [
-    ...new Set((rawResults || []).filter((r) => r.name && r.name !== '-').map((r) => r.name)),
+    ...new Set((rawResults || []).map((r) => r.name).filter((n) => n && n !== '-')),
   ];
-
   const validRoutingIds = new Set();
 
   for (const name of uniqueNames) {
@@ -99,28 +105,21 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
         if (item.result && Array.isArray(item.result.routing)) {
           for (const route of item.result.routing) {
             const validCustomerTrips = (route.trips || []).filter(
-              (t) => !t.isHub && t.visitId && t.visitId.includes('taskId-')
+              (t) => !t.isHub && t.visitId?.includes('taskId-')
             );
 
             if (validCustomerTrips.length > 0) {
               hasTestedAnyTrip = true;
-
-              const maxSample =
-                validCustomerTrips.length > 5 ? 5 : Math.min(2, validCustomerTrips.length);
-              const shuffledTrips = shuffleArray(validCustomerTrips);
-              const sampledTrips = shuffledTrips.slice(0, maxSample);
+              const maxSample = Math.min(5, validCustomerTrips.length);
+              const sampledTrips = shuffleArray(validCustomerTrips).slice(0, maxSample);
 
               const extractedIds = sampledTrips
-                .map((trip) => {
-                  const match = trip.visitId.match(/taskId-([a-zA-Z0-9]+)/);
-                  return match ? match[1] : null;
-                })
+                .map((trip) => trip.visitId.match(/taskId-([a-zA-Z0-9]+)/)?.[1])
                 .filter(Boolean);
 
               totalCheckedTasks += extractedIds.length;
               extractedIds.forEach((id) => {
-                const foundRoutingId = taskMap.get(String(id));
-                if (foundRoutingId === String(routingId)) {
+                if (taskMap.get(String(id)) === String(routingId)) {
                   totalValidTasks++;
                 }
               });
@@ -129,8 +128,7 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
         }
 
         if (hasTestedAnyTrip && totalCheckedTasks > 0) {
-          const successRatio = (totalValidTasks / totalCheckedTasks) * 100;
-          if (successRatio >= 70) {
+          if ((totalValidTasks / totalCheckedTasks) * 100 >= 70) {
             validRoutingIds.add(routingId);
           }
         }
@@ -139,9 +137,11 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   }
 
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
-
-  const historiesData = histories?.tasks?.data || [];
-  const { kpiHistories } = convertLocationHistories(historiesData || [], drivers, dateString);
+  const { kpiHistories } = convertLocationHistories(
+    histories?.tasks?.data || [],
+    drivers,
+    dateString
+  );
 
   const { wb, fileName, hasError } = generateKpiWorkbook(
     dateString,
@@ -156,57 +156,52 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
 };
 
 function parseToNumber(val) {
-  if (val === undefined || val === null || val === '') return 0;
+  if (val == null || val === '') return 0;
   if (typeof val === 'number') return val;
-  const str = String(val)
-    .replace(/,/g, '')
-    .replace(/[^0-9.-]/g, '')
-    .trim();
-  const num = parseFloat(str);
+  const num = parseFloat(
+    String(val)
+      .replace(/,/g, '')
+      .replace(/[^0-9.-]/g, '')
+      .trim()
+  );
   return isNaN(num) ? 0 : num;
 }
 
 function formatExcelDate(val) {
   if (typeof val === 'number') {
-    const date = new Date((val - (25567 + 2)) * 86400 * 1000);
+    const date = new Date((val - 25569) * 86400 * 1000);
     if (isNaN(date.getTime())) return String(val);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const HH = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${dd}-${mm}-${yyyy} ${HH}:${min}`;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
-  return String(val || '').trim();
+  return cleanStr(val);
 }
+
+const getColIdx = (headers, keyword) => {
+  const cleanKw = normalizeStr(keyword);
+  return headers.findIndex((h) => h != null && normalizeStr(h).includes(cleanKw));
+};
 
 async function parseRoutingFiles(files) {
   const resultsData = [];
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  for (const file of files) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
 
-    let targetSheetName =
+    const targetSheetName =
       workbook.SheetNames.find((name) => name.toLowerCase().includes('summary')) ||
       workbook.SheetNames[0];
-
-    const ws = workbook.Sheets[targetSheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[targetSheetName], { header: 1 });
 
     let routingName = file.name.replace(/\.[^/.]+$/, '');
     if (routingName.includes('-')) {
-      const parts = routingName.split('-');
-      routingName = parts.slice(1).join('-').trim();
+      routingName = routingName.split('-').slice(1).join('-').trim();
     }
 
     let headerRowIdx = -1;
     for (let r = 0; r < Math.min(50, rows.length); r++) {
-      const rowStr = (rows[r] || [])
-        .join('')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
+      const rowStr = normalizeStr(rows[r]?.join(''));
       if (
         rowStr.includes('vehiclename') &&
         (rowStr.includes('totalvisit') || rowStr.includes('assignee'))
@@ -220,47 +215,29 @@ async function parseRoutingFiles(files) {
 
     const headers = rows[headerRowIdx];
 
-    const getColIdxForVehicle = () => {
-      return headers.findIndex((h) => {
-        if (h === undefined || h === null) return false;
-        const cleanH = String(h)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '');
-        return (
-          (cleanH.includes('assignedvehicle') || cleanH.includes('vehicle')) &&
-          !cleanH.includes('id')
-        );
-      });
-    };
-
-    const getColIdx = (keyword) => {
-      const cleanKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return headers.findIndex((h) => {
-        if (h === undefined || h === null) return false;
-        const cleanH = String(h)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '');
-        return cleanH.includes(cleanKeyword);
-      });
-    };
-
     const colIdx = {
-      vehicleName: getColIdx('vehiclename'),
-      assignee: getColIdx('assignee'),
-      visit: getColIdx('visittime'),
-      travel: getColIdx('traveltime'),
-      wait: getColIdx('waitingtime'),
-      spent: getColIdx('spenttime'),
-      totalVisits: getColIdx('totalvisit'),
-      totalDistance: getColIdx('totaldistance'),
-      totalWeight: getColIdx('totalweight'),
-      totalVolume: getColIdx('totalvolume'),
-      assignedVehicle: getColIdxForVehicle(),
-      maxWeight: Math.max(getColIdx('vehiclemaxweight'), getColIdx('maxweight')),
-      maxVolume: Math.max(getColIdx('vehiclemaxvolume'), getColIdx('maxvolume')),
+      vehicleName: getColIdx(headers, 'vehiclename'),
+      assignee: getColIdx(headers, 'assignee'),
+      visit: getColIdx(headers, 'visittime'),
+      travel: getColIdx(headers, 'traveltime'),
+      wait: getColIdx(headers, 'waitingtime'),
+      spent: getColIdx(headers, 'spenttime'),
+      totalVisits: getColIdx(headers, 'totalvisit'),
+      totalDistance: getColIdx(headers, 'totaldistance'),
+      totalWeight: getColIdx(headers, 'totalweight'),
+      totalVolume: getColIdx(headers, 'totalvolume'),
+      assignedVehicle: headers.findIndex((h) => {
+        if (h == null) return false;
+        const cl = normalizeStr(h);
+        return (cl.includes('assignedvehicle') || cl.includes('vehicle')) && !cl.includes('id');
+      }),
+      maxWeight: Math.max(getColIdx(headers, 'vehiclemaxweight'), getColIdx(headers, 'maxweight')),
+      maxVolume: Math.max(getColIdx(headers, 'vehiclemaxvolume'), getColIdx(headers, 'maxvolume')),
     };
 
     const routingArray = [];
+    const safeNum = (row, idx) => (idx !== -1 ? parseToNumber(row[idx]) : 0);
+    const safeStr = (row, idx) => (idx !== -1 ? cleanStr(row[idx]) : '');
 
     for (let r = headerRowIdx + 1; r < rows.length; r++) {
       const rowData = rows[r];
@@ -273,52 +250,33 @@ async function parseRoutingFiles(files) {
       )
         continue;
 
-      const vehicleName = String(rowData[colIdx.vehicleName] || '').trim();
-      const assignee = colIdx.assignee !== -1 ? String(rowData[colIdx.assignee] || '').trim() : '';
+      const visit = safeNum(rowData, colIdx.visit);
+      const travel = safeNum(rowData, colIdx.travel);
+      const wait = safeNum(rowData, colIdx.wait);
+      let spent = safeNum(rowData, colIdx.spent);
 
-      const visit = colIdx.visit !== -1 ? parseToNumber(rowData[colIdx.visit]) : 0;
-      const travel = colIdx.travel !== -1 ? parseToNumber(rowData[colIdx.travel]) : 0;
-      const wait = colIdx.wait !== -1 ? parseToNumber(rowData[colIdx.wait]) : 0;
-      let spent = colIdx.spent !== -1 ? parseToNumber(rowData[colIdx.spent]) : 0;
-
-      const totalVisits =
-        colIdx.totalVisits !== -1 ? parseToNumber(rowData[colIdx.totalVisits]) : 0;
-      const totalDistance =
-        colIdx.totalDistance !== -1 ? parseToNumber(rowData[colIdx.totalDistance]) : 0;
-      const totalWeight =
-        colIdx.totalWeight !== -1 ? parseToNumber(rowData[colIdx.totalWeight]) : 0;
-      const totalVolume =
-        colIdx.totalVolume !== -1 ? parseToNumber(rowData[colIdx.totalVolume]) : 0;
-
-      const maxWeight = colIdx.maxWeight !== -1 ? parseToNumber(rowData[colIdx.maxWeight]) : 0;
-      const maxVolume = colIdx.maxVolume !== -1 ? parseToNumber(rowData[colIdx.maxVolume]) : 0;
-
-      if (spent <= 0) {
-        spent = visit + travel + wait;
-      }
+      if (spent <= 0) spent = visit + travel + wait;
 
       routingArray.push({
-        vehicleName: vehicleName,
-        assignee: assignee,
+        vehicleName: safeStr(rowData, colIdx.vehicleName),
+        assignee: safeStr(rowData, colIdx.assignee),
         totalVisitTime: visit,
         totalTravelTime: travel,
         totalWaitingTime: wait,
         totalSpentTime: spent,
-        totalVisits: totalVisits,
-        totalDistance: totalDistance,
-        totalWeight: totalWeight,
-        totalVolume: totalVolume,
-        maxWeight: maxWeight,
-        maxVolume: maxVolume,
+        totalVisits: safeNum(rowData, colIdx.totalVisits),
+        totalDistance: safeNum(rowData, colIdx.totalDistance),
+        totalWeight: safeNum(rowData, colIdx.totalWeight),
+        totalVolume: safeNum(rowData, colIdx.totalVolume),
+        maxWeight: safeNum(rowData, colIdx.maxWeight),
+        maxVolume: safeNum(rowData, colIdx.maxVolume),
         trips: [{ isHub: false, weight: 0, volume: 0, distance: 0 }],
       });
     }
 
     resultsData.push({
       description: routingName,
-      result: {
-        routing: routingArray,
-      },
+      result: { routing: routingArray },
     });
   }
 
@@ -329,19 +287,14 @@ async function parseTaskFiles(files) {
   const parsedTasks = [];
   const dateFrequency = {};
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  for (const file of files) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
-    const ws = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
 
     let headerRowIdx = -1;
     for (let r = 0; r < Math.min(15, rows.length); r++) {
-      const rowStr = (rows[r] || [])
-        .join('')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
+      const rowStr = normalizeStr(rows[r]?.join(''));
       if (rowStr.includes('assignedto') && rowStr.includes('statusdelivery')) {
         headerRowIdx = r;
         break;
@@ -349,72 +302,64 @@ async function parseTaskFiles(files) {
     }
 
     if (headerRowIdx === -1) continue;
+
     const headers = rows[headerRowIdx];
 
-    const getColIdx = (keyword) => {
-      const cleanKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return headers.findIndex((h) => {
-        if (h === undefined || h === null) return false;
-        const cleanH = String(h)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '');
-        return cleanH.includes(cleanKeyword);
-      });
+    const colIdx = {
+      flow: getColIdx(headers, 'flow'),
+      startTime: getColIdx(headers, 'starttime'),
+      assignedTo: getColIdx(headers, 'assignedto'),
+      assignedVehicle: getColIdx(headers, 'assignedvehicle'),
+      statusGr: getColIdx(headers, 'statusgr'),
+      alasan: getColIdx(headers, 'alasan'),
+      customerOrder: getColIdx(headers, 'customerorder'),
+      typeStorage: getColIdx(headers, 'typestorage'),
+      statusDelivery: getColIdx(headers, 'statusdelivery'),
+      gpsSesuai: getColIdx(headers, 'gpssesuai'),
     };
 
-    const colIdx = {
-      flow: getColIdx('flow'),
-      startTime: getColIdx('starttime'),
-      assignedTo: getColIdx('assignedto'),
-      assignedVehicle: getColIdx('assignedvehicle'),
-      statusGr: getColIdx('statusgr'),
-      alasan: getColIdx('alasan'),
-      customerOrder: getColIdx('customerorder'),
-      typeStorage: getColIdx('typestorage'),
-      statusDelivery: getColIdx('statusdelivery'),
-      gpsSesuai: getColIdx('gpssesuai'),
-    };
+    const safeStr = (row, idx) => (idx !== -1 ? cleanStr(row[idx]) : '');
 
     for (let r = headerRowIdx + 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || row.length === 0 || colIdx.assignedTo === -1 || !row[colIdx.assignedTo]) continue;
 
-      const statDeliv =
-        colIdx.statusDelivery !== -1 ? String(row[colIdx.statusDelivery] || '').trim() : '';
-      const statGr = colIdx.statusGr !== -1 ? String(row[colIdx.statusGr] || '').trim() : '';
       const startTime = colIdx.startTime !== -1 ? formatExcelDate(row[colIdx.startTime]) : '';
-      const gps = colIdx.gpsSesuai !== -1 ? String(row[colIdx.gpsSesuai] || '').trim() : '';
 
       if (startTime) {
         const parts = startTime.split(' ')[0];
         let isoDate = '';
         if (parts.includes('-')) {
           const splitDash = parts.split('-');
-          if (splitDash[0].length === 4) isoDate = parts;
-          else if (splitDash[2]?.length === 4)
-            isoDate = `${splitDash[2]}-${splitDash[1]}-${splitDash[0]}`;
+          isoDate =
+            splitDash[0].length === 4
+              ? parts
+              : splitDash[2]?.length === 4
+                ? `${splitDash[2]}-${splitDash[1]}-${splitDash[0]}`
+                : '';
         } else if (parts.includes('/')) {
           const splitSlash = parts.split('/');
-          if (splitSlash[2]?.length === 4)
-            isoDate = `${splitSlash[2]}-${splitSlash[1]}-${splitSlash[0]}`;
-          else if (splitSlash[0].length === 4) isoDate = parts.replace(/\//g, '-');
+          isoDate =
+            splitSlash[2]?.length === 4
+              ? `${splitSlash[2]}-${splitSlash[1]}-${splitSlash[0]}`
+              : splitSlash[0].length === 4
+                ? parts.replace(/\//g, '-')
+                : '';
         }
         if (isoDate) dateFrequency[isoDate] = (dateFrequency[isoDate] || 0) + 1;
       }
 
       parsedTasks.push({
-        flow: colIdx.flow !== -1 ? String(row[colIdx.flow] || '').trim() : '-',
+        flow: safeStr(row, colIdx.flow) || '-',
         startTime: startTime,
-        assignedVehicle:
-          colIdx.assignedVehicle !== -1 ? String(row[colIdx.assignedVehicle] || '').trim() : '-',
-        driverName: String(row[colIdx.assignedTo] || '').trim(),
-        typeStorage: colIdx.typeStorage !== -1 ? String(row[colIdx.typeStorage] || '').trim() : '-',
-        customerOrder:
-          colIdx.customerOrder !== -1 ? String(row[colIdx.customerOrder] || '').trim() : '-',
-        statusDelivery: statDeliv,
-        statusGr: statGr,
-        alasan: colIdx.alasan !== -1 ? String(row[colIdx.alasan] || '').trim() : '-',
-        gpsSesuai: [gps],
+        assignedVehicle: safeStr(row, colIdx.assignedVehicle) || '-',
+        driverName: safeStr(row, colIdx.assignedTo),
+        typeStorage: safeStr(row, colIdx.typeStorage) || '-',
+        customerOrder: safeStr(row, colIdx.customerOrder) || '-',
+        statusDelivery: safeStr(row, colIdx.statusDelivery),
+        statusGr: safeStr(row, colIdx.statusGr),
+        alasan: safeStr(row, colIdx.alasan) || '-',
+        gpsSesuai: [safeStr(row, colIdx.gpsSesuai)],
       });
     }
   }
@@ -451,6 +396,7 @@ export const executeDownload = async ({
         throw new Error('Gagal membaca format file Routing: ' + err.message);
       }
     }
+
     let parsedTasksData = [];
     let extractedDateStr = null;
     if (taskFiles.length > 0) {
@@ -474,7 +420,6 @@ export const executeDownload = async ({
     const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(targetDateStr);
 
     let histories = [];
-
     try {
       histories =
         (await getLocationHistories({
@@ -489,29 +434,24 @@ export const executeDownload = async ({
       toastWarning('Gagal menarik data lokasi API, menggunakan data kosong.');
     }
 
-    const historiesData = histories?.tasks?.data || [];
     const { timeDataObjects } = convertLocationHistories(
-      historiesData || [],
+      histories?.tasks?.data || [],
       drivers,
       targetDateStr
     );
 
-    const combinedTasks = parsedTasksData;
     const { wb } = generateKpiWorkbook(
       targetDateStr,
       selectedHub.name,
       drivers,
       parsedResultsData,
-      combinedTasks,
+      parsedTasksData,
       timeDataObjects
     );
 
-    const formattedDateForName = formatDateUniversal(targetDateObj, 'DD.MM.YYYY');
-    const manualFileName = `Manual Data KPI - ${formattedDateForName} - ${selectedHub.name}.xlsx`;
-
+    const manualFileName = `Manual KPI - ${formatDateUniversal(targetDateObj, 'DD.MM.YYYY')} - ${selectedHub.name}.xlsx`;
     XLSX.writeFile(wb, manualFileName);
-
-    toastSuccess(`File berhasil diunduh (Mode Manual)`);
+    toastSuccess('File berhasil diunduh (Mode Manual)');
     return;
   }
 
@@ -521,7 +461,7 @@ export const executeDownload = async ({
 
     XLSX.writeFile(wb, fileName);
     if (hasError) toastError('Terdapat data yang hilang. Periksa sheet Error Data!');
-    toastSuccess(`Data berhasil diunduh!`);
+    toastSuccess('Data berhasil diunduh!');
   } else {
     if (!startDate || !endDate) throw new Error('Silahkan pilih rentang tanggal!');
     if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
@@ -532,9 +472,7 @@ export const executeDownload = async ({
     const zip = new JSZip();
     let errorCount = 0;
 
-    for (let i = 0; i < dateList.length; i++) {
-      const currentDate = dateList[i];
-
+    for (const currentDate of dateList) {
       if (currentDate.getDay() === 0) continue;
 
       try {
@@ -544,8 +482,7 @@ export const executeDownload = async ({
           selectedHub
         );
         if (hasError) errorCount++;
-        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        zip.file(fileName, excelBuffer);
+        zip.file(fileName, XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
       } catch (err) {
         toastError(`Gagal memproses ${formatDateUniversal(currentDate)}: ${err.message}`);
         zip.file(
@@ -556,10 +493,7 @@ export const executeDownload = async ({
     }
 
     const zipContent = await zip.generateAsync({ type: 'blob' });
-    const zipFileName = `Bulk Data KPI - ${formatDateUniversal(
-      startDate,
-      'DD.MM.YYYY'
-    )} sd ${formatDateUniversal(endDate, 'DD.MM.YYYY')} - ${selectedHub.name}.zip`;
+    const zipFileName = `Bulk KPI - ${formatDateUniversal(startDate, 'DD.MM.YYYY')} sd ${formatDateUniversal(endDate, 'DD.MM.YYYY')} - ${selectedHub.name}.zip`;
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(zipContent);

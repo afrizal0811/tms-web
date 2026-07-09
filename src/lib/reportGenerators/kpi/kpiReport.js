@@ -70,5 +70,5 @@ export function generateKpiWorkbook(
   const wsHelp = generateSheetHelp();
   XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
 
-  return { wb, fileName: `Data KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
+  return { wb, fileName: `KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
 }

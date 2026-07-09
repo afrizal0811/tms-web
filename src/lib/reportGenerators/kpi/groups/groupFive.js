@@ -7,33 +7,28 @@ import {
 
 export function calculateGroupFive(tasksData, driverData, historiesData, g2DetailRows = []) {
   let countMasterMaintenance = 0;
+
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let val = '';
-      if (Array.isArray(task.gpsSesuai) && task.gpsSesuai.length > 0) {
-        val = String(task.gpsSesuai[0] || '')
+      const val = Array.isArray(task.gpsSesuai) ? task.gpsSesuai[0] : task.gpsSesuai;
+      if (
+        String(val || '')
           .trim()
-          .toUpperCase();
-      } else if (typeof task.gpsSesuai === 'string') {
-        val = String(task.gpsSesuai).trim().toUpperCase();
-      }
-
-      if (val === 'TIDAK') {
+          .toUpperCase() === 'TIDAK'
+      ) {
         countMasterMaintenance++;
       }
     });
   }
 
-  const historyMap = {};
-  if (Array.isArray(historiesData)) {
-    historiesData.forEach((h) => {
-      const email = normalizeEmail(h.email);
-      if (email) {
-        if (!historyMap[email]) historyMap[email] = [];
-        historyMap[email].push(h);
-      }
-    });
-  }
+  const historyMap = (Array.isArray(historiesData) ? historiesData : []).reduce((acc, h) => {
+    const email = normalizeEmail(h.email);
+    if (email) {
+      if (!acc[email]) acc[email] = [];
+      acc[email].push(h);
+    }
+    return acc;
+  }, {});
 
   const startFinishRows = [];
   const routeReviewRows = [];
@@ -46,7 +41,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
       const category = getStorageType(driver.name).toUpperCase();
 
       let totalActMinutes = 0;
-      let isMultipleSessions = driverHistories.length > 1;
+      const isMultipleSessions = driverHistories.length > 1;
 
       if (driverHistories.length > 0) {
         driverHistories.forEach((h) => {
@@ -57,11 +52,9 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           let durasiStr = null;
 
           if (startStr && finishStr) {
-            const st = new Date(startStr);
-            const fi = new Date(finishStr);
             jamStart = formatTimestampToQuotedHHMM_UTC7(startStr);
             jamFinish = formatTimestampToQuotedHHMM_UTC7(finishStr);
-            const diffMins = (fi - st) / 60000;
+            const diffMins = (new Date(finishStr) - new Date(startStr)) / 60000;
             if (diffMins > 0) {
               totalActMinutes += diffMins;
               totalAllMinutes += diffMins;
@@ -95,11 +88,11 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
       let hasRouting = false;
 
       if (g2DetailRows && g2DetailRows.length > 0) {
+        const driverNameUpper = (driver.name || '').toUpperCase().trim();
         const matchingG2 = g2DetailRows.filter((g) => {
           if (g.isNoRoutingData) return false;
           const gDriver = (g.driver || '').toUpperCase().trim();
-          const rDriver = (driver.name || '').toUpperCase().trim();
-          return gDriver && rDriver && gDriver === rDriver;
+          return gDriver && driverNameUpper && gDriver === driverNameUpper;
         });
 
         if (matchingG2.length > 0) {
@@ -107,9 +100,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           matchingG2.forEach((g) => {
             const manualTotal =
               (Number(g.visit) || 0) + (Number(g.travel) || 0) + (Number(g.wait) || 0);
-            if (manualTotal > 0) {
-              totalEstHours += Math.floor(manualTotal / 60);
-            }
+            if (manualTotal > 0) totalEstHours += Math.floor(manualTotal / 60);
           });
         }
       }
@@ -119,17 +110,11 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
       let overtime = null;
 
       if (hasRouting || totalActMinutes > 0) {
-        const estH = totalEstHours;
         const actH = Math.floor(totalActMinutes / 60);
-
-        if (estH === 0 && actH === 0) {
-          estOpHours = null;
-          actOpHours = null;
-          overtime = null;
-        } else {
-          estOpHours = estH;
+        if (totalEstHours !== 0 || actH !== 0) {
+          estOpHours = totalEstHours;
           actOpHours = actH;
-          overtime = estH - actH;
+          overtime = totalEstHours - actH;
         }
       }
 

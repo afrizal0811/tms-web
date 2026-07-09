@@ -2,32 +2,31 @@ import { getStorageType, normalizeEmail } from '@/lib/utils';
 
 const safeAdd = (a, b) => Number(a || 0) + Number(b || 0);
 const safeNum = (n) => Number(n || 0);
+const fmt = (n) => (isNaN(Number(n)) ? 0 : Number(Number(n).toFixed(1)));
 
 export function calculateGroupFour(resultsData, historiesData, driverData) {
-  const driverInfoMap = {};
-  if (Array.isArray(driverData)) {
-    driverData.forEach((d) => {
-      const email = normalizeEmail(d.email);
-      if (email) {
-        driverInfoMap[email] = {
-          name: d.name || '',
-          maxWeight: safeNum(d.maxWeight),
-          maxVolume: safeNum(d.maxVolume),
-        };
-      }
-    });
-  }
+  const driverInfoMap = (Array.isArray(driverData) ? driverData : []).reduce((acc, d) => {
+    const email = normalizeEmail(d.email);
+    if (email) {
+      acc[email] = {
+        name: d.name || '',
+        maxWeight: safeNum(d.maxWeight),
+        maxVolume: safeNum(d.maxVolume),
+      };
+    }
+    return acc;
+  }, {});
 
-  let actDistDry = 0;
-  let actDistFrz = 0;
+  let actDistDry = 0,
+    actDistFrz = 0;
 
   if (Array.isArray(historiesData)) {
     historiesData.forEach((h) => {
       const email = normalizeEmail(h.email);
-      const info = driverInfoMap[email];
-      const driverName = info ? info.name : '';
+      const driverName = driverInfoMap[email]?.name || '';
       const category = getStorageType(driverName).toUpperCase();
       const dist = safeNum(h.finish?.totalDistance ?? h.totalDistance ?? 0);
+
       if (category === 'DRY') actDistDry = safeAdd(actDistDry, dist);
       else if (category === 'FROZEN') actDistFrz = safeAdd(actDistFrz, dist);
     });
@@ -36,14 +35,13 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
   let capWeightDry = 0,
     capVolDry = 0,
     capWeightFrz = 0,
-    capVolFrz = 0,
-    actWeightDry = 0,
+    capVolFrz = 0;
+  let actWeightDry = 0,
     actWeightFrz = 0,
     actVolDry = 0,
-    actVolFrz = 0,
-    estTimeDry = 0,
+    actVolFrz = 0;
+  let estTimeDry = 0,
     estTimeFrz = 0;
-
   const activeVehicles = {};
 
   if (Array.isArray(resultsData)) {
@@ -51,19 +49,18 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
       const summary = item.summary || {};
       if (item.result && Array.isArray(item.result.routing)) {
         const isSingleVehicle = item.result.routing.length === 1;
-        item.result.routing.forEach((route) => {
-          const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
 
-          if (!hasTrips) return;
+        item.result.routing.forEach((route) => {
+          if (!Array.isArray(route.trips) || route.trips.length === 0) return;
 
           const email = normalizeEmail(route.assignee || '');
           let info = driverInfoMap[email];
           if (!info) {
-            const foundByObj = Object.values(driverInfoMap).find(
+            info = Object.values(driverInfoMap).find(
               (d) => d.name.toUpperCase() === (route.assignee || '').toUpperCase()
             );
-            if (foundByObj) info = foundByObj;
           }
+
           const driverName = info ? info.name : route.assignee;
           const category = getStorageType(driverName).toUpperCase();
           const truckId = (route.vehicleName || route.vehicleId || route.assignee || 'Unknown')
@@ -72,11 +69,23 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
 
           let routeWeight = 0,
             routeVolume = 0;
+          let sumVisit = 0,
+            sumTravel = 0,
+            sumWait = 0;
+          let countedHubWait = false;
 
           route.trips.forEach((trip) => {
             if (!trip.isHub) {
               routeWeight = safeAdd(routeWeight, trip.weight);
               routeVolume = safeAdd(routeVolume, trip.volume);
+            }
+            const isHub = String(trip.isHub).toLowerCase() === 'true';
+            sumVisit += Number(trip.visitTime) || 0;
+            sumTravel += Number(trip.travelTime) || 0;
+
+            if (!isHub || !countedHubWait) {
+              sumWait += Number(trip.waitingTime) || 0;
+              if (isHub) countedHubWait = true;
             }
           });
 
@@ -85,71 +94,15 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
           if (routeVolume === 0 && route.totalVolume !== undefined)
             routeVolume = safeNum(route.totalVolume);
 
-          const maxW = safeNum(
-            route.vehicleMaxWeight !== undefined
-              ? route.vehicleMaxWeight
-              : route.maxWeight !== undefined
-                ? route.maxWeight
-                : info
-                  ? info.maxWeight
-                  : 0
-          );
-          const maxV = safeNum(
-            route.vehicleMaxVolume !== undefined
-              ? route.vehicleMaxVolume
-              : route.maxVolume !== undefined
-                ? route.maxVolume
-                : info
-                  ? info.maxVolume
-                  : 0
-          );
-
           activeVehicles[truckId] = {
-            maxWeight: maxW,
-            maxVolume: maxV,
-            category: category,
+            maxWeight: safeNum(route.vehicleMaxWeight ?? route.maxWeight ?? info?.maxWeight ?? 0),
+            maxVolume: safeNum(route.vehicleMaxVolume ?? route.maxVolume ?? info?.maxVolume ?? 0),
+            category,
           };
 
-          let sumVisit = 0,
-            sumTravel = 0,
-            sumWait = 0;
-          let countedHubWait = false;
-
-          route.trips.forEach((t) => {
-            const isHub = t.isHub === true || String(t.isHub).toLowerCase() === 'true';
-
-            sumVisit += Number(t.visitTime) || 0;
-            sumTravel += Number(t.travelTime) || 0;
-
-            if (isHub) {
-              if (!countedHubWait) {
-                sumWait += Number(t.waitingTime) || 0;
-                countedHubWait = true;
-              }
-            } else {
-              sumWait += Number(t.waitingTime) || 0;
-            }
-          });
-
-          const finalTravel =
-            sumTravel > 0
-              ? sumTravel
-              : route.totalTravelTime !== undefined
-                ? Number(route.totalTravelTime)
-                : 0;
-          const finalVisit =
-            sumVisit > 0
-              ? sumVisit
-              : route.totalVisitTime !== undefined
-                ? Number(route.totalVisitTime)
-                : 0;
-          const finalWait =
-            sumWait > 0
-              ? sumWait
-              : route.totalWaitingTime !== undefined
-                ? Number(route.totalWaitingTime)
-                : 0;
-
+          const finalTravel = sumTravel > 0 ? sumTravel : Number(route.totalTravelTime || 0);
+          const finalVisit = sumVisit > 0 ? sumVisit : Number(route.totalVisitTime || 0);
+          const finalWait = sumWait > 0 ? sumWait : Number(route.totalWaitingTime || 0);
           const manualSpentTime = finalTravel + finalVisit + finalWait;
 
           let finalSpentTime = Number(route.totalSpentTime) || 0;
@@ -171,8 +124,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
     });
   }
 
-  Object.keys(activeVehicles).forEach((truckId) => {
-    const vehicle = activeVehicles[truckId];
+  Object.values(activeVehicles).forEach((vehicle) => {
     if (vehicle.category === 'DRY') {
       capWeightDry = safeAdd(capWeightDry, vehicle.maxWeight);
       capVolDry = safeAdd(capVolDry, vehicle.maxVolume);
@@ -181,8 +133,6 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
       capVolFrz = safeAdd(capVolFrz, vehicle.maxVolume);
     }
   });
-
-  const fmt = (n) => (isNaN(Number(n)) ? 0 : Number(Number(n).toFixed(1)));
 
   return {
     actDistDryKm: fmt(actDistDry),
