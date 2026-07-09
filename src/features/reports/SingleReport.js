@@ -1,12 +1,10 @@
 'use client';
 
-import Accordion from '@/components/Accordion';
 import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
-import Carousel from '@/components/Carousel';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import FileUploader from '@/components/FileUploader';
 import Tooltip from '@/components/Tooltip';
+import FileUploader from '@/components/fileUploader/FileUploader';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getLocationHistories,
@@ -29,8 +27,8 @@ import {
 } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { getTutorialData } from './helper/constants';
-import { getManualDate, validateRoutingFile, validateTaskFile } from './helper/help';
+import { getManualDate } from './helper/help';
+
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
 export default function SingleReport({
@@ -443,25 +441,6 @@ export default function SingleReport({
     ? ` ${t('report.daily_title')} ${manualText}`
     : `${manualText} ${t('report.daily_title')}`;
 
-  const UploadSection = ({ labelKey, files, onUpdateFiles, validator, inputId, tutorialKey }) => (
-    <div className="flex flex-col gap-4">
-      <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
-        {t('common.upload')} {` `} {t(`common.${labelKey}`)}
-      </span>
-      <FileUploader
-        files={files}
-        onUpdateFiles={onUpdateFiles}
-        validator={validator}
-        id={inputId}
-      />
-      {getTutorialData(t)[tutorialKey] && (
-        <Accordion title={`Tutorial ${t(`common.${labelKey}`)}`} className="mt-2">
-          <Carousel items={getTutorialData(t)[tutorialKey]} />
-        </Accordion>
-      )}
-    </div>
-  );
-
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
@@ -505,22 +484,20 @@ export default function SingleReport({
       >
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
-            <UploadSection
+            <FileUploader
               labelKey="routing"
               files={selectedRoutingFiles}
               onUpdateFiles={setSelectedRoutingFiles}
-              validator={validateRoutingFile}
               inputId="routing-file-input"
               tutorialKey="routing"
             />
 
             <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2" />
 
-            <UploadSection
+            <FileUploader
               labelKey="delivery"
               files={selectedDeliveryFiles}
               onUpdateFiles={setSelectedDeliveryFiles}
-              validator={validateTaskFile}
               inputId="delivery-file-input"
               tutorialKey="delivery"
             />

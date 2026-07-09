@@ -2,7 +2,7 @@
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toast';
 
-export default function FileUploader({
+export default function UploadArea({
   files = [],
   onUpdateFiles,
   accept = '.xlsx, .xls',

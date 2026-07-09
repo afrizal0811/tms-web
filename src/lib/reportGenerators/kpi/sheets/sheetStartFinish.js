@@ -33,7 +33,7 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
 
   const isEmptyTime = (val) => val == null || val === '-' || val === 'N/A' || val === '';
 
-  const processedRows = startFinishRows.map((row) => {
+  const tempProcessed = startFinishRows.map((row) => {
     const rrRow = routeReviewRows.find((r) => r.driver === row.driver && r.plat === row.plat);
     const estOp = rrRow ? Number(rrRow.estOpHours) || 0 : 0;
 
@@ -53,12 +53,32 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     return newRow;
   });
 
+  // GRUG FILTER KEMBAR LAGI!
+  const uniqueProcessed = [];
+  const seenSF = new Set();
   let totalMenit = 0;
-  processedRows.forEach((row) => {
-    if (row.durasi && typeof row.durasi === 'string' && row.durasi.includes(':')) {
-      const parts = row.durasi.split(' ')[0].split(':');
-      if (parts.length >= 2) {
-        totalMenit += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+
+  tempProcessed.forEach((row) => {
+    const excelValues = [
+      row.tipe,
+      getBasePlate(row.plat),
+      row.driver,
+      row.jamStart,
+      row.jamFinish,
+      row.durasi,
+      row.durasiHour,
+    ];
+    const key = JSON.stringify(excelValues);
+
+    if (!seenSF.has(key)) {
+      seenSF.add(key);
+      uniqueProcessed.push(row);
+
+      if (row.durasi && typeof row.durasi === 'string' && row.durasi.includes(':')) {
+        const parts = row.durasi.split(' ')[0].split(':');
+        if (parts.length >= 2) {
+          totalMenit += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+        }
       }
     }
   });
@@ -70,7 +90,7 @@ export function generateSheetStartFinish(startFinishRows, totalDurationStr, rout
     '0'
   )}`;
 
-  const sortedRows = sortRows([...processedRows]);
+  const sortedRows = sortRows([...uniqueProcessed]);
 
   sortedRows.forEach((row) => {
     sfData.push([

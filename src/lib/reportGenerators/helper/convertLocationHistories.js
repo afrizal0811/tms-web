@@ -16,6 +16,7 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   const [y, m, d] = selectedDateString.split('-');
   const targetDateFormatted = `${d}-${m}-${y}`;
 
+  // GRUG BUANG SAMPAH DI SINI! (TRACKED TIME >= 10, DISTANCE > 5)
   const processed = allApiData
     .map((item) => {
       const email = normalizeEmail(item.email);
@@ -52,6 +53,8 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   });
 
   const timeDataObjects = [];
+  const kpiHistories = []; // GRUG BIKIN KOTAK BARU BUAT KPI!
+
   const seenEmails = new Set();
   const uniqueDrivers = driverData.filter((d) => {
     if (d.plat?.toUpperCase().includes('DEMO')) return false;
@@ -83,27 +86,53 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
           idx === self.findIndex((t) => t.rawStart === v.rawStart && t.rawFinish === v.rawFinish)
       );
       if (uniques.length === 1) {
+        // ISI KOTAK TMS
         timeDataObjects.push({
           ...uniques[0],
           plat: cleanPlat,
           driver: driver.name,
           isMultiple: false,
         });
+
+        // GRUG MASUKKIN DATA BERSIH KE KOTAK KPI
+        kpiHistories.push({
+          email: email,
+          startTime: uniques[0].rawStart,
+          finish: {
+            finishTime: uniques[0].rawFinish,
+            totalDistance: uniques[0].totalDistance,
+          },
+          isMultipleSessions: false,
+        });
         return;
       }
+
       const filtered = uniques.filter((r) => isTripInShift(r.rawStart, r.rawFinish, r.workingTime));
+
       if (filtered.length > 0) {
         filtered.sort(
           (a, b) => new Date(a.rawStart.replace(' ', 'T')) - new Date(b.rawStart.replace(' ', 'T'))
         );
-        filtered.forEach((r) =>
+        filtered.forEach((r) => {
+          // ISI KOTAK TMS
           timeDataObjects.push({
             ...r,
             plat: cleanPlat,
             driver: driver.name,
             isMultiple: filtered.length > 1,
-          })
-        );
+          });
+
+          // GRUG MASUKKIN DATA BERSIH KE KOTAK KPI
+          kpiHistories.push({
+            email: email,
+            startTime: r.rawStart,
+            finish: {
+              finishTime: r.rawFinish,
+              totalDistance: r.totalDistance,
+            },
+            isMultipleSessions: filtered.length > 1,
+          });
+        });
       } else {
         timeDataObjects.push(emptyRow);
       }
@@ -112,5 +141,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
     }
   });
 
-  return { timeDataObjects };
+  // GRUG KEMBALIKAN DUA-DUANYA! SEMUA BAHAGIA!
+  return { timeDataObjects, kpiHistories };
 }

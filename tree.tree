@@ -16,6 +16,8 @@
 │   │   │   └── route.js
 │   │   ├── get-roles
 │   │   │   └── route.js
+│   │   ├── get-task
+│   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
 │   │   ├── get-trash
@@ -41,6 +43,8 @@
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── help
+│   │   └── page.js
+│   ├── kpi
 │   │   └── page.js
 │   ├── layout.js
 │   ├── not-found.js
@@ -74,7 +78,12 @@
 │   ├── Carousel.js
 │   ├── CustomDatePicker.js
 │   ├── ErrorPage.js
-│   ├── FileUploader.js
+│   ├── fileUploader
+│   │   ├── FileUploader.js
+│   │   ├── helper
+│   │   │   ├── tutorialData.js
+│   │   │   └── validator.js
+│   │   └── UploadArea.js
 │   ├── Footer.js
 │   ├── HighlightText.js
 │   ├── LanguageToggle.js
@@ -149,6 +158,11 @@
 │   │   │       └── task.js
 │   │   ├── data.js
 │   │   └── HelpPage.js
+│   ├── kpi
+│   │   ├── constants
+│   │   │   └── tutorialSteps.js
+│   │   ├── help.js
+│   │   └── KpiPage.js
 │   ├── reports
 │   │   ├── BreadReport.js
 │   │   ├── BulkReport.js
@@ -241,6 +255,22 @@
     │   │   ├── index.js
     │   │   └── isTripInShift.js
     │   ├── index.js
+    │   ├── kpi
+    │   │   ├── groups
+    │   │   │   ├── groupFive.js
+    │   │   │   ├── groupFour.js
+    │   │   │   ├── groupOne.js
+    │   │   │   ├── groupThree.js
+    │   │   │   ├── groupTwo.js
+    │   │   │   └── help.js
+    │   │   ├── kpiReport.js
+    │   │   └── sheets
+    │   │       ├── sheetDataKPI.js
+    │   │       ├── sheetDataRouting.js
+    │   │       ├── sheetHelp.js
+    │   │       ├── sheetPendingSO.js
+    │   │       ├── sheetRouteReview.js
+    │   │       └── sheetStartFinish.js
     │   ├── reports
     │   │   ├── AutoReport.js
     │   │   ├── builders.js

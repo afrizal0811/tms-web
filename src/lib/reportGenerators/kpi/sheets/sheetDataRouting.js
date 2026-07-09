@@ -53,17 +53,14 @@ export function generateSheetDataRouting(g2) {
     alignment: { horizontal: 'center' },
     font: { color: { rgb: '000000' } },
   };
-
   const missingRowStyle = {
     fill: { fgColor: { rgb: 'FADBD8' } },
     alignment: { horizontal: 'center' },
   };
-
   const duplicateStyle = {
     fill: { fgColor: { rgb: 'FFF2CC' } },
     alignment: { horizontal: 'center' },
   };
-
   const differentLabelStyle = {
     fill: { fgColor: { rgb: 'D4E6F1' } },
     alignment: { horizontal: 'center' },
@@ -86,13 +83,55 @@ export function generateSheetDataRouting(g2) {
     { v: 'PEMBULATAN', s: headerStyle },
   ];
 
+  // GRUG FILTER KEMBAR PALING AWAL SUPAYA TOTAL JUGA AMAN!
+  const uniqueInputRows = [];
+  const seenInput = new Set();
+
+  (g2.detailRows || []).forEach((row) => {
+    const vPlatUpper = (row.vehicle || '').toUpperCase().trim();
+    const displayPlat = getBasePlate(vPlatUpper);
+    const isMissingRow = row.isNoRoutingData;
+
+    let v = Number(row.visit) || 0;
+    let t = Number(row.travel) || 0;
+    let w = Number(row.wait) || 0;
+    let manualTotal = v + t + w;
+
+    let spentTimeHHMM = '';
+    let spentTimeHour = '';
+
+    if (!isMissingRow && typeof manualTotal === 'number') {
+      const h = Math.floor(manualTotal / 60);
+      const m = manualTotal % 60;
+      spentTimeHHMM = `${h}:${String(m).padStart(2, '0')}`;
+      spentTimeHour = h;
+    }
+
+    const excelValues = [
+      row.routing,
+      displayPlat,
+      row.driver,
+      row.isVisitMissing && !isMissingRow ? '' : row.visit,
+      row.isTravelMissing && !isMissingRow ? '' : row.travel,
+      row.isWaitMissing && !isMissingRow ? '' : row.wait,
+      isMissingRow ? '' : manualTotal,
+      spentTimeHHMM,
+      spentTimeHour,
+    ];
+
+    const key = JSON.stringify(excelValues);
+    if (!seenInput.has(key)) {
+      seenInput.add(key);
+      uniqueInputRows.push(row);
+    }
+  });
+
   let recalcTotalDry = 0;
   let recalcTotalFrz = 0;
-
   const exactVehicleCounts = {};
   const basePlateToOriginalPlates = {};
 
-  const processedDetailRows = (g2.detailRows || []).map((row) => {
+  const processedDetailRows = uniqueInputRows.map((row) => {
     const vPlat = (row.vehicle || '').toUpperCase().trim();
     if (vPlat && !row.isNoRoutingData) {
       exactVehicleCounts[vPlat] = (exactVehicleCounts[vPlat] || 0) + 1;
@@ -175,7 +214,6 @@ export function generateSheetDataRouting(g2) {
       }
 
       let displayPlat = getBasePlate(row.vehicle);
-
       let spentTimeHHMM = '';
       let spentTimeHour = '';
 
@@ -207,10 +245,7 @@ export function generateSheetDataRouting(g2) {
           s: rowStyle,
           ...(isMissingRow ? {} : { t: 'n' }),
         },
-        {
-          v: spentTimeHHMM,
-          s: rowStyle,
-        },
+        { v: spentTimeHHMM, s: rowStyle },
         {
           v: spentTimeHour,
           s: rowStyle,

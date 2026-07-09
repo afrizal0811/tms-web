@@ -37,11 +37,7 @@ export function generateSheetRouteReview(
 
   const isEmptyTime = (val) => val == null || val === '-' || val === 'N/A' || val === '';
 
-  let sumEstHours = 0;
-  let sumActHours = 0;
-  let sumOvertime = 0;
-
-  const processedRows = routeReviewRows.map((row) => {
+  const tempProcessed = routeReviewRows.map((row) => {
     const sfRows = startFinishRows.filter((r) => {
       const rDriver = (r.driver || '').toUpperCase().trim();
       const rowDriver = (row.driver || '').toUpperCase().trim();
@@ -111,10 +107,6 @@ export function generateSheetRouteReview(
       overtime = estOp - actOp;
     }
 
-    if (typeof estOp === 'number') sumEstHours += estOp;
-    if (typeof actOp === 'number') sumActHours += actOp;
-    if (typeof overtime === 'number') sumOvertime += overtime;
-
     const hasOperatingHours = typeof estOp === 'number' || typeof actOp === 'number';
     let isErrorRed = false;
 
@@ -133,7 +125,34 @@ export function generateSheetRouteReview(
     };
   });
 
-  const sortedRows = sortRows([...processedRows]);
+  // GRUG FILTER DATA KEMBAR TEPAT SEBELUM HITUNG TOTAL
+  const uniqueProcessed = [];
+  const seenRR = new Set();
+  let sumEstHours = 0;
+  let sumActHours = 0;
+  let sumOvertime = 0;
+
+  tempProcessed.forEach((row) => {
+    const excelValues = [
+      row.tipe,
+      getBasePlate(row.plat),
+      row.driver,
+      row.estOp,
+      row.actOp,
+      row.overtime,
+    ];
+    const key = JSON.stringify(excelValues);
+
+    if (!seenRR.has(key)) {
+      seenRR.add(key);
+      uniqueProcessed.push(row);
+      if (typeof row.estOp === 'number') sumEstHours += row.estOp;
+      if (typeof row.actOp === 'number') sumActHours += row.actOp;
+      if (typeof row.overtime === 'number') sumOvertime += row.overtime;
+    }
+  });
+
+  const sortedRows = sortRows([...uniqueProcessed]);
 
   sortedRows.forEach((row) => {
     rrData.push([row.tipe, getBasePlate(row.plat), row.driver, row.estOp, row.actOp, row.overtime]);

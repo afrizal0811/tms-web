@@ -3,11 +3,11 @@
 import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import FileUploader from '@/components/FileUploader';
 import Tooltip from '@/components/Tooltip';
+import FileUploader from '@/components/fileUploader/FileUploader';
+import { executeDownload } from '@/features/kpi/help';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { executeDownload } from '@/lib/reportGenerators/kpi/reportDownloader';
 import { toastError } from '@/lib/toast';
 import { tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -105,7 +105,7 @@ export default function KpiPage() {
   );
 
   return (
-    <div className="flex flex-col items-center w-full max-w-6xl p-4">
+    <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
         {isManualMode ? 'Manual Laporan KPI' : 'Laporan KPI'}
       </h1>
@@ -224,25 +224,21 @@ export default function KpiPage() {
       >
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
-                Upload Data Routing
-              </span>
-              <FileUploader
-                files={routingFiles}
-                onUpdateFiles={setRoutingFiles}
-                id="routing-file-input"
-              />
-            </div>
-
+            <FileUploader
+              labelKey="routing"
+              files={routingFiles}
+              onUpdateFiles={setRoutingFiles}
+              inputId="routing-file-input"
+              tutorialKey="routing"
+            />
             <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2" />
-
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-200 block border-b pb-1">
-                Upload Data Task
-              </span>
-              <FileUploader files={taskFiles} onUpdateFiles={setTaskFiles} id="task-file-input" />
-            </div>
+            <FileUploader
+              labelKey="task"
+              files={taskFiles}
+              onUpdateFiles={setTaskFiles}
+              inputId="task-file-input"
+              tutorialKey="delivery"
+            />
           </div>
         </div>
       </BaseModal>
