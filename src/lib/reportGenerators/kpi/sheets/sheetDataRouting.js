@@ -24,18 +24,32 @@ export function generateSheetDataRouting(g2) {
     },
   };
   const styleNormal = { alignment: { horizontal: 'center' } };
+  const styleLeftNormal = { alignment: { horizontal: 'left', vertical: 'center' } };
   const styleError = {
     fill: { fgColor: { rgb: 'FADBD8' } },
     alignment: { horizontal: 'center' },
+    font: { color: { rgb: '000000' } },
+  };
+  const styleLeftError = {
+    fill: { fgColor: { rgb: 'FADBD8' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
     font: { color: { rgb: '000000' } },
   };
   const styleDuplicate = {
     fill: { fgColor: { rgb: 'FFF2CC' } },
     alignment: { horizontal: 'center' },
   };
+  const styleLeftDuplicate = {
+    fill: { fgColor: { rgb: 'FFF2CC' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
   const styleDiffLabel = {
     fill: { fgColor: { rgb: 'D4E6F1' } },
     alignment: { horizontal: 'center' },
+  };
+  const styleLeftDiffLabel = {
+    fill: { fgColor: { rgb: 'D4E6F1' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
   };
   const styleBoldCenter = { font: { bold: true }, alignment: { horizontal: 'center' } };
 
@@ -98,19 +112,26 @@ export function generateSheetDataRouting(g2) {
 
   const statsDry = formatTimeStats(recalcTotalDry);
   const statsFrz = formatTimeStats(recalcTotalFrz);
+  const statsTotal = formatTimeStats(recalcTotalDry + recalcTotalFrz);
 
   const summaries = [
     [
       { v: 'DRY', s: styleNormal },
       { v: statsDry.minutes, s: styleNormal },
       { v: statsDry.readable, s: styleNormal },
-      { v: statsDry.rounded, s: styleBoldCenter },
+      { v: statsDry.rounded, s: styleNormal },
     ],
     [
       { v: 'FROZEN', s: styleNormal },
       { v: statsFrz.minutes, s: styleNormal },
       { v: statsFrz.readable, s: styleNormal },
-      { v: statsFrz.rounded, s: styleBoldCenter },
+      { v: statsFrz.rounded, s: styleNormal },
+    ],
+    [
+      { v: 'TOTAL', s: styleBoldCenter },
+      { v: statsTotal.minutes, s: styleBoldCenter },
+      { v: statsTotal.readable, s: styleBoldCenter },
+      { v: statsTotal.rounded, s: styleBoldCenter },
     ],
   ];
 
@@ -126,17 +147,24 @@ export function generateSheetDataRouting(g2) {
       const vPlatUpper = (row.plat || '').toUpperCase().trim();
 
       let rowStyle = styleNormal;
-      if (isMissingRow) rowStyle = styleError;
-      else if (basePlateToOriginalPlates[getBasePlate(vPlatUpper)]?.size > 1)
+      let driverStyle = styleLeftNormal;
+      if (isMissingRow) {
+        rowStyle = styleError;
+        driverStyle = styleLeftError;
+      } else if (basePlateToOriginalPlates[getBasePlate(vPlatUpper)]?.size > 1) {
         rowStyle = styleDiffLabel;
-      else if (exactVehicleCounts[vPlatUpper] > 1) rowStyle = styleDuplicate;
+        driverStyle = styleLeftDiffLabel;
+      } else if (exactVehicleCounts[vPlatUpper] > 1) {
+        rowStyle = styleDuplicate;
+        driverStyle = styleLeftDuplicate;
+      }
 
       const spentH = typeof row.manualTotal === 'number' ? Math.round(row.manualTotal / 60) : '';
 
       currentRow = [
         { v: row.routing, s: rowStyle },
         { v: getBasePlate(row.plat), s: rowStyle },
-        { v: row.driver, s: rowStyle },
+        { v: row.driver, s: driverStyle },
         {
           v: row.isVisitMissing && !isMissingRow ? '' : row.visit,
           s: row.isVisitMissing && !isMissingRow ? styleError : rowStyle,
@@ -188,7 +216,7 @@ export function generateSheetDataRouting(g2) {
   ]);
   sheetData.push([
     { v: '', s: {} },
-    { v: 'kendaraan sama tapi menggunakan pelabelan berbeda', s: {} },
+    { v: 'kendaraan sama tapi digunakan pelabelan berbeda', s: {} },
   ]);
 
   const newWs = {};

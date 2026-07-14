@@ -65,13 +65,24 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     },
   };
   const styleCenter = { alignment: { horizontal: 'center', vertical: 'center' } };
+  const styleLeft = { alignment: { horizontal: 'left', vertical: 'center' } };
   const styleError = {
     alignment: { horizontal: 'center', vertical: 'center' },
     fill: { fgColor: { rgb: 'FADBD8' } },
     font: { color: { rgb: '000000' } },
   };
+  const styleLeftError = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+    fill: { fgColor: { rgb: 'FADBD8' } },
+    font: { color: { rgb: '000000' } },
+  };
   const styleMultiple = {
     alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'FFF2CC' } },
+    font: { color: { rgb: '000000' } },
+  };
+  const styleLeftMultiple = {
+    alignment: { horizontal: 'left', vertical: 'center' },
     fill: { fgColor: { rgb: 'FFF2CC' } },
     font: { color: { rgb: '000000' } },
   };
@@ -99,11 +110,19 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
         wsSF[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
       else if (R > 0 && R < sfLastRow) {
         const rowData = sortedRows[R - 1];
-        wsSF[cell].s = rowData?.isErrorRed
-          ? styleError
-          : rowData?.isMultipleSessions
-            ? styleMultiple
-            : styleCenter;
+        if (C === 2) {
+          wsSF[cell].s = rowData?.isErrorRed
+            ? styleLeftError
+            : rowData?.isMultipleSessions
+              ? styleLeftMultiple
+              : styleLeft;
+        } else {
+          wsSF[cell].s = rowData?.isErrorRed
+            ? styleError
+            : rowData?.isMultipleSessions
+              ? styleMultiple
+              : styleCenter;
+        }
         if (typeof wsSF[cell].v === 'number') {
           wsSF[cell].t = 'n';
           wsSF[cell].z = '0';
