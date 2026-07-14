@@ -3,10 +3,11 @@ import * as XLSX from 'xlsx-js-style';
 
 function formatTimeStats(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   return {
     minutes: totalMinutes,
-    readable: `${hours} Jam ${totalMinutes % 60} Menit`,
-    rounded: `${hours} Jam`,
+    readable: `${hours}:${String(minutes).padStart(2, '0')}`,
+    rounded: Math.round(totalMinutes / 60),
   };
 }
 
@@ -64,7 +65,6 @@ export function generateSheetDataRouting(g2) {
     const spentTimeHHMM = !row.isNoRoutingData
       ? `${Math.floor(manualTotal / 60)}:${String(manualTotal % 60).padStart(2, '0')}`
       : '';
-
     const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${manualTotal}|${spentTimeHHMM}`;
     if (!seenInput.has(key)) {
       seenInput.add(key);
@@ -98,26 +98,19 @@ export function generateSheetDataRouting(g2) {
 
   const statsDry = formatTimeStats(recalcTotalDry);
   const statsFrz = formatTimeStats(recalcTotalFrz);
-  const statsTotal = formatTimeStats(recalcTotalDry + recalcTotalFrz);
 
   const summaries = [
     [
       { v: 'DRY', s: styleNormal },
       { v: statsDry.minutes, s: styleNormal },
       { v: statsDry.readable, s: styleNormal },
-      { v: statsDry.rounded, s: styleNormal },
+      { v: statsDry.rounded, s: styleBoldCenter },
     ],
     [
       { v: 'FROZEN', s: styleNormal },
       { v: statsFrz.minutes, s: styleNormal },
       { v: statsFrz.readable, s: styleNormal },
-      { v: statsFrz.rounded, s: styleNormal },
-    ],
-    [
-      { v: 'TOTAL', s: styleBoldCenter },
-      { v: statsTotal.minutes, s: styleBoldCenter },
-      { v: statsTotal.readable, s: styleBoldCenter },
-      { v: statsTotal.rounded, s: styleBoldCenter },
+      { v: statsFrz.rounded, s: styleBoldCenter },
     ],
   ];
 
@@ -138,7 +131,7 @@ export function generateSheetDataRouting(g2) {
         rowStyle = styleDiffLabel;
       else if (exactVehicleCounts[vPlatUpper] > 1) rowStyle = styleDuplicate;
 
-      const spentH = typeof row.manualTotal === 'number' ? Math.floor(row.manualTotal / 60) : '';
+      const spentH = typeof row.manualTotal === 'number' ? Math.round(row.manualTotal / 60) : '';
 
       currentRow = [
         { v: row.routing, s: rowStyle },
@@ -164,7 +157,7 @@ export function generateSheetDataRouting(g2) {
         {
           v:
             !isMissingRow && spentH !== ''
-              ? `${spentH}:${String(row.manualTotal % 60).padStart(2, '0')}`
+              ? `${Math.floor(row.manualTotal / 60)}:${String(row.manualTotal % 60).padStart(2, '0')}`
               : '',
           s: rowStyle,
         },
@@ -174,26 +167,29 @@ export function generateSheetDataRouting(g2) {
       currentRow = Array(9).fill({ v: '', s: {} });
     }
 
-    currentRow.push({ v: '', s: {} }, ...(i < 3 ? summaries[i] : []));
+    currentRow.push({ v: '', s: {} });
+    if (i < 3 && summaries[i]) {
+      for (let j = 0; j < summaries[i].length; j++) {
+        currentRow.push(summaries[i][j]);
+      }
+    }
     sheetData.push(currentRow);
   }
 
-  sheetData.push(
-    Array(14).fill({ v: '', s: {} }),
-    [{ v: 'NOTE', s: {} }],
-    [
-      { v: '', s: {} },
-      { v: 'Kendaraan tidak digunakan dalam routing', s: {} },
-    ],
-    [
-      { v: '', s: {} },
-      { v: 'Kendaraan sama digunakan di beberapa routing berbeda', s: {} },
-    ],
-    [
-      { v: '', s: {} },
-      { v: 'kendaraan sama tapi digunakan pelabelan berbeda', s: {} },
-    ]
-  );
+  sheetData.push(Array(14).fill({ v: '', s: {} }));
+  sheetData.push([{ v: 'NOTE', s: {} }]);
+  sheetData.push([
+    { v: '', s: {} },
+    { v: 'Kendaraan tidak digunakan dalam routing', s: {} },
+  ]);
+  sheetData.push([
+    { v: '', s: {} },
+    { v: 'Kendaraan sama digunakan di beberapa routing berbeda', s: {} },
+  ]);
+  sheetData.push([
+    { v: '', s: {} },
+    { v: 'kendaraan sama tapi menggunakan pelabelan berbeda', s: {} },
+  ]);
 
   const newWs = {};
   const range = { s: { c: 0, r: 0 }, e: { c: 13, r: sheetData.length - 1 } };

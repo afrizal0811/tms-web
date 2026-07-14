@@ -56,7 +56,7 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
   }
 
   return {
-    actOperatingHours: Math.floor(totalActMinutes / 60),
+    actOperatingHours: Math.round(totalActMinutes / 60),
     estDistanceDry: Number((rawDistDryMeters / 1000).toFixed(2)),
     estDistanceFrz: Number((rawDistFrzMeters / 1000).toFixed(2)),
   };

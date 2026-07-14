@@ -22,8 +22,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     });
   }
 
-  const uniqueProcessed = [];
-  const seenRR = new Set();
+  const dedupeMap = new Map();
   let sumEstHours = 0,
     sumActHours = 0,
     sumOvertime = 0;
@@ -33,7 +32,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     const platUp = (row.plat || '').toUpperCase().trim();
     const sfRows = sfMap.get(`${driverUp}|${platUp}`) || [];
 
-    let estOp = g2Map.has(driverUp) ? Math.floor(g2Map.get(driverUp) / 60) : '';
+    let estOp = g2Map.has(driverUp) ? Math.round(g2Map.get(driverUp) / 60) : '';
     if (estOp === '' && !isEmpty(row.estOpHours)) estOp = Number(row.estOpHours);
 
     let actOp = '';
@@ -41,14 +40,13 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
 
     sfRows.forEach((sf) => {
       if (typeof sf.durasi === 'string' && sf.durasi.includes(':')) {
-        const parts = sf.durasi.split(':')[0];
-        totalActMins +=
-          (parseInt(parts, 10) || 0) * 60 + (parseInt(sf.durasi.split(':')[1], 10) || 0);
+        const parts = sf.durasi.split(':');
+        totalActMins += (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
         actOp = true;
       }
     });
 
-    if (actOp === true) actOp = Math.floor(totalActMins / 60);
+    if (actOp === true) actOp = Math.round(totalActMins / 60);
     else if (!isEmpty(row.actOpHours)) actOp = Number(row.actOpHours);
 
     const isEstEmpty = estOp === '' || estOp === 0;
@@ -64,21 +62,29 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     const isErrorRed =
       hasOperatingHours && (sfRows.length === 0 || sfRows.some((sf) => isEmpty(sf.jamStart)));
 
-    const key = `${row.tipe}|${getBasePlate(row.plat)}|${row.driver}|${estOp}|${actOp}|${overtime}`;
-    if (!seenRR.has(key)) {
-      seenRR.add(key);
-      uniqueProcessed.push({
-        ...row,
-        estOp,
-        actOp,
-        overtime,
-        isErrorRed,
-        isMultipleSessions: sfRows.some((sf) => sf.isMultipleSessions) || sfRows.length > 1,
-      });
-      if (typeof estOp === 'number') sumEstHours += estOp;
-      if (typeof actOp === 'number') sumActHours += actOp;
-      if (typeof overtime === 'number') sumOvertime += overtime;
+    if (isErrorRed) {
+      estOp = null;
+      actOp = null;
+      overtime = null;
     }
+
+    const key = `${row.tipe}|${row.driver}|${estOp}|${actOp}|${overtime}`;
+    dedupeMap.set(key, {
+      ...row,
+      estOp,
+      actOp,
+      overtime,
+      isErrorRed,
+      isMultipleSessions: sfRows.some((sf) => sf.isMultipleSessions) || sfRows.length > 1,
+    });
+  });
+
+  const uniqueProcessed = [];
+  dedupeMap.forEach((val) => {
+    uniqueProcessed.push(val);
+    if (typeof val.estOp === 'number') sumEstHours += val.estOp;
+    if (typeof val.actOp === 'number') sumActHours += val.actOp;
+    if (typeof val.overtime === 'number') sumOvertime += val.overtime;
   });
 
   const sortedRows = sortRows(uniqueProcessed, 'plat', 'driver');

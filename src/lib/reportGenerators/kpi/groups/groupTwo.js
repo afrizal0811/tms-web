@@ -1,4 +1,4 @@
-import { getStorageType, normalizeEmail } from '@/lib/utils';
+import { getBasePlate, getStorageType, normalizeEmail } from '@/lib/utils';
 
 function calculateRouteTime(route) {
   const rawVisit = route.totalVisitTime;
@@ -57,8 +57,6 @@ function calculateTripTimes(trips) {
 }
 
 export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
-  let totalMinutesDry = 0;
-  let totalMinutesFrz = 0;
   const detailRows = [];
   const processedDrivers = new Set();
   const dataRoutingExists = true;
@@ -103,11 +101,6 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
             };
 
             const { minutes, rawData } = calculateRouteTime(routeData);
-
-            if (minutes > 0) {
-              if (category === 'DRY') totalMinutesDry += minutes;
-              else if (category === 'FROZEN') totalMinutesFrz += minutes;
-            }
 
             detailRows.push({
               routing: routingName,
@@ -160,9 +153,27 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
     });
   }
 
+  let totalMinutesDry = 0;
+  let totalMinutesFrz = 0;
+  const seen = new Set();
+
+  detailRows.forEach((row) => {
+    if (!row.isNoRoutingData) {
+      const manualTotal =
+        (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
+      const spentTimeHHMM = `${Math.floor(manualTotal / 60)}:${String(manualTotal % 60).padStart(2, '0')}`;
+      const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${manualTotal}|${spentTimeHHMM}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        if (row.category === 'DRY') totalMinutesDry += manualTotal;
+        else if (row.category === 'FROZEN') totalMinutesFrz += manualTotal;
+      }
+    }
+  });
+
   return {
-    opsHoursDry: Math.floor(totalMinutesDry / 60),
-    opsHoursFrz: Math.floor(totalMinutesFrz / 60),
+    opsHoursDry: Math.round(totalMinutesDry / 60),
+    opsHoursFrz: Math.round(totalMinutesFrz / 60),
     totalMinutesDry,
     totalMinutesFrz,
     detailRows,

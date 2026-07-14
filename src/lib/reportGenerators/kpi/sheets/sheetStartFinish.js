@@ -5,32 +5,33 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
   const rrMap = new Map();
   routeReviewRows.forEach((r) => rrMap.set(`${r.driver}|${r.plat}`, Number(r.estOpHours) || 0));
 
-  const uniqueProcessed = [];
-  const seenSF = new Set();
-  let totalMenit = 0;
+  const dedupeMap = new Map();
+  let totalDurasiHour = 0;
 
   startFinishRows.forEach((row) => {
     let durasiHour = '';
+    let totalMenit = 0;
+
     if (typeof row.durasi === 'string' && row.durasi.includes(':')) {
-      durasiHour = parseInt(row.durasi.split(':')[0], 10) || 0;
+      const parts = row.durasi.split(':');
+      totalMenit = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+      durasiHour = Math.round(totalMenit / 60);
     }
 
-    const key = `${row.tipe}|${getBasePlate(row.plat)}|${row.driver}|${row.jamStart}|${row.jamFinish}|${row.durasi}|${durasiHour}`;
+    const estOp = rrMap.get(`${row.driver}|${row.plat}`) || 0;
+    const processedRow = { ...row, durasiHour, isErrorRed: estOp > 0 && isEmpty(row.jamStart) };
+    const key = `${row.tipe}|${row.driver}|${row.jamStart}|${row.jamFinish}|${row.durasi}`;
+    dedupeMap.set(key, processedRow);
+  });
 
-    if (!seenSF.has(key)) {
-      seenSF.add(key);
-      const estOp = rrMap.get(`${row.driver}|${row.plat}`) || 0;
-      uniqueProcessed.push({ ...row, durasiHour, isErrorRed: estOp > 0 && isEmpty(row.jamStart) });
-
-      if (typeof row.durasi === 'string' && row.durasi.includes(':')) {
-        const parts = row.durasi.split(':')[0];
-        totalMenit +=
-          (parseInt(parts, 10) || 0) * 60 + (parseInt(row.durasi.split(':')[1], 10) || 0);
-      }
+  const uniqueProcessed = [];
+  dedupeMap.forEach((val) => {
+    uniqueProcessed.push(val);
+    if (typeof val.durasiHour === 'number') {
+      totalDurasiHour += val.durasiHour;
     }
   });
 
-  const finalJam = Math.floor(totalMenit / 60);
   const sortedRows = sortRows(uniqueProcessed, 'plat', 'driver');
 
   const sheetData = [
@@ -44,15 +45,7 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
       r.durasi,
       r.durasiHour,
     ]),
-    [
-      'TOTAL',
-      '',
-      '',
-      '',
-      '',
-      `${String(finalJam).padStart(2, '0')}:${String(totalMenit % 60).padStart(2, '0')}`,
-      finalJam,
-    ],
+    ['TOTAL', '', '', '', '', '', totalDurasiHour],
     [],
     ['NOTE'],
     ['', 'Terdapat data routing tapi tidak ada waktu start-finish'],
