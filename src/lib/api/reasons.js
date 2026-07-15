@@ -1,6 +1,8 @@
 // File: src/lib/api/reasons.js
 import { apiFetch } from './base';
 
+const LOCAL_API = process.env.NEXT_PUBLIC_LOCAL_URL || 'http://127.0.0.1:8000/api';
+
 export async function getReasons() {
   return await apiFetch('/api/reasons', 'Gagal mengambil data reasons');
 }

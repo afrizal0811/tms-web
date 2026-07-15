@@ -35,3 +35,6 @@ export async function apiFetch(url, errorMessage, options = {}) {
     throw err;
   }
 }
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_LOCAL_URL || 'http://127.0.0.1:8000/api';
+

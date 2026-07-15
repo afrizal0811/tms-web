@@ -27,7 +27,8 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   }, []);
 
   const loadMappings = useCallback(async () => {
-    if (!activeHub) return;
+    if (!activeHub || !activeHub.hubId) return;
+
     setIsLoading(true);
     try {
       const data = await getVehicleMappings(activeHub.hubId);
