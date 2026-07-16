@@ -1,11 +1,10 @@
-// File: src/lib/api/reasons.js
 import { apiFetch } from './base';
 
 export async function getReasons() {
   return await apiFetch('/api/reasons', 'Gagal mengambil data reasons');
 }
 
-export async function createReason(reasons, pic) {
+export async function postReason(reasons, pic) {
   return await apiFetch('/api/reasons', 'Gagal menambah reason', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -22,7 +21,10 @@ export async function updateReason(id, reasons, pic) {
 }
 
 export async function deleteReason(id) {
-  return await apiFetch(`/api/reasons?id=${id}`, 'Gagal menghapus reason', {
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+
+  return await apiFetch(`/api/reasons?${params.toString()}`, 'Gagal menghapus reason', {
     method: 'DELETE',
   });
 }

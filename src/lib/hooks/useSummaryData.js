@@ -1,6 +1,6 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
-  getBatchHistories,
+  getResultHistories,
   getHubs,
   getLocationHistories,
   getResultsSummary,
@@ -359,7 +359,7 @@ export default function useSummaryData() {
       try {
         if (resultIdsToFetch.length > 0) {
           const batchData = await fetchWithTracker(
-            () => fetchWithRetry(() => getBatchHistories(resultIdsToFetch)),
+            () => fetchWithRetry(() => getResultHistories(resultIdsToFetch)),
             'Batch Histories'
           );
 

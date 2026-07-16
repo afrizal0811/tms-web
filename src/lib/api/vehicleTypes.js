@@ -21,7 +21,14 @@ export async function updateVehicleType(id, name) {
 }
 
 export async function deleteVehicleType(id) {
-  return await apiFetch(`/api/vehicle-types?id=${id}`, 'Gagal menghapus tipe kendaraan', {
-    method: 'DELETE',
-  });
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+
+  return await apiFetch(
+    `/api/vehicle-types?${params.toString()}`,
+    'Gagal menghapus tipe kendaraan',
+    {
+      method: 'DELETE',
+    }
+  );
 }

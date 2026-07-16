@@ -1,7 +1,7 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
-import { getVehicleTypes, saveVehicleMappings } from '@/lib/api';
+import { getVehicleTypes, postVehicleMappings } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 
@@ -40,7 +40,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       });
 
       if (payload.length > 0) {
-        await saveVehicleMappings(payload);
+        await postVehicleMappings(payload);
       }
       onCompleted();
     } catch (error) {

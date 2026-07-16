@@ -1,6 +1,6 @@
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { deleteTruckUsage, upsertTruckUsage } from '@/lib/api';
+import { deleteTruckUsage, postTruckUsage } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -109,7 +109,7 @@ export default function TruckUsageModal({
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const resData = await upsertTruckUsage({
+      const resData = await postTruckUsage({
         hubId,
         date: data.date,
         storageType: data.storage,

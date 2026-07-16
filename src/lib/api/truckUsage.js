@@ -1,6 +1,6 @@
 import { apiFetch } from './base';
 
-export async function upsertTruckUsage(payload) {
+export async function postTruckUsage(payload) {
   return await apiFetch('/api/truck-usage', 'Gagal menyimpan data penggunaan truk', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

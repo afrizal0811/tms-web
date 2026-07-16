@@ -9,7 +9,7 @@ export async function getUsers({ hubId, roleId, status }) {
   return await apiFetch(`/api/get-users?${params.toString()}`, 'Gagal mengambil data users');
 }
 
-export async function getUsersByEmail(email, hubId) {
+export async function getUser(email, hubId) {
   const params = new URLSearchParams();
   params.append('q', email);
   params.append('status', 'active');

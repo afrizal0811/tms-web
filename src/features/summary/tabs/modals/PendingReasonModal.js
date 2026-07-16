@@ -3,7 +3,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { deletePendingDetail, upsertPendingDetail } from '@/lib/api'; // Pastikan deletePendingDetail diimport
+import { deletePendingDetail, postPendingDetail } from '@/lib/api'; // Pastikan deletePendingDetail diimport
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -79,7 +79,7 @@ export default function PendingReasonModal({
         pic: pic,
       };
 
-      const res = await upsertPendingDetail(payload);
+      const res = await postPendingDetail(payload);
       toastSuccess(translate('common.toast.success'));
       onSuccess(res.data || res);
       onClose();
