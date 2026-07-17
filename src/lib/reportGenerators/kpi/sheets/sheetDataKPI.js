@@ -78,7 +78,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
         const totalMenit = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
         durasiHour = Math.round(totalMenit / 60);
       }
-      const key = `${row.tipe}|${row.driver}|${row.jamStart}|${row.jamFinish}|${row.durasi}`;
+      const key = `${row.tipe}|${row.driver}|${row.startTime}|${row.finishTime}|${row.durasi}`;
       dedupeSF.set(key, durasiHour);
     });
     dedupeSF.forEach((val) => {

@@ -216,7 +216,7 @@ export function generateSheetDataRouting(g2) {
   ]);
   sheetData.push([
     { v: '', s: {} },
-    { v: 'kendaraan sama tapi digunakan pelabelan berbeda', s: {} },
+    { v: 'kendaraan sama dengan pelabelan berbeda', s: {} },
   ]);
 
   const newWs = {};

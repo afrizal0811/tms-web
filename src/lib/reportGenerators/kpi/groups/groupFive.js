@@ -1,5 +1,6 @@
 import {
   formatMinutesToHHMM,
+  formatTimestampToDDMMYYYY_UTC7,
   formatTimestampToQuotedHHMM_UTC7,
   getStorageType,
   normalizeEmail,
@@ -47,13 +48,17 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
         driverHistories.forEach((h) => {
           const startStr = h.startTime;
           const finishStr = h.finish?.finishTime;
-          let jamStart = null;
-          let jamFinish = null;
+          let startDate = null;
+          let startTime = null;
+          let finishDate = null;
+          let finishTime = null;
           let durasiStr = null;
 
           if (startStr && finishStr) {
-            jamStart = formatTimestampToQuotedHHMM_UTC7(startStr);
-            jamFinish = formatTimestampToQuotedHHMM_UTC7(finishStr);
+            startDate = formatTimestampToDDMMYYYY_UTC7(startStr);
+            startTime = formatTimestampToQuotedHHMM_UTC7(startStr);
+            finishDate = formatTimestampToDDMMYYYY_UTC7(finishStr);
+            finishTime = formatTimestampToQuotedHHMM_UTC7(finishStr);
             const diffMins = (new Date(finishStr) - new Date(startStr)) / 60000;
             if (diffMins > 0) {
               totalActMinutes += diffMins;
@@ -66,8 +71,10 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
             tipe: category,
             plat: driver.plat,
             driver: driver.name,
-            jamStart,
-            jamFinish,
+            startDate,
+            startTime,
+            finishDate,
+            finishTime,
             durasi: durasiStr,
             isMultipleSessions,
           });
@@ -77,8 +84,10 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           tipe: category,
           plat: driver.plat,
           driver: driver.name,
-          jamStart: null,
-          jamFinish: null,
+          startDate: null,
+          startTime: null,
+          finishDate: null,
+          finishTime: null,
           durasi: null,
           isMultipleSessions: false,
         });

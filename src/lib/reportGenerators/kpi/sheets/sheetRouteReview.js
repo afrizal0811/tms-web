@@ -60,7 +60,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
 
     const hasOperatingHours = typeof estOp === 'number' || typeof actOp === 'number';
     const isErrorRed =
-      hasOperatingHours && (sfRows.length === 0 || sfRows.some((sf) => isEmpty(sf.jamStart)));
+      hasOperatingHours && (sfRows.length === 0 || sfRows.some((sf) => isEmpty(sf.startTime)));
 
     if (isErrorRed) {
       estOp = null;

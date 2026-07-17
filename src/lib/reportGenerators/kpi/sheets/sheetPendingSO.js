@@ -29,7 +29,8 @@ export function generateSheetPendingSO(tasksData, driverData) {
             (driverName && d.name && d.name.toUpperCase() === driverName.toUpperCase())
         );
 
-        const finalPlat = getBasePlate(driverInfo?.plat || task.assignedVehicle || '-');
+        let rawPlat = driverInfo?.plat || task.assignedVehicle.name || '-';
+        const finalPlat = getBasePlate(rawPlat);
         const finalDriver = driverInfo?.name || driverName || rawAssignee || '-';
         const custInfo = parseCustomerString(task.customerOrder || '');
 

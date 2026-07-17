@@ -19,8 +19,15 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     }
 
     const estOp = rrMap.get(`${row.driver}|${row.plat}`) || 0;
-    const processedRow = { ...row, durasiHour, isErrorRed: estOp > 0 && isEmpty(row.jamStart) };
-    const key = `${row.tipe}|${row.driver}|${row.jamStart}|${row.jamFinish}|${row.durasi}`;
+    const isDateDiff =
+      !isEmpty(row.startDate) && !isEmpty(row.finishDate) && row.startDate !== row.finishDate;
+    const processedRow = {
+      ...row,
+      durasiHour,
+      isErrorRed: estOp > 0 && isEmpty(row.startTime),
+      isDateDiff,
+    };
+    const key = `${row.tipe}|${row.driver}|${row.startTime}|${row.finishTime}|${row.durasi}`;
     dedupeMap.set(key, processedRow);
   });
 
@@ -35,21 +42,34 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
   const sortedRows = sortRows(uniqueProcessed, 'plat', 'driver');
 
   const sheetData = [
-    ['Tipe', 'Plat Nomor', 'Driver', 'Jam Start', 'Jam Finish', 'Durasi', 'Durasi (hour)'],
+    [
+      'Tipe',
+      'Plat Nomor',
+      'Driver',
+      'Tanggal Start',
+      'Jam Start',
+      'Tanggal Finish',
+      'Jam Finish',
+      'Durasi',
+      'Durasi (hour)',
+    ],
     ...sortedRows.map((r) => [
       r.tipe,
       getBasePlate(r.plat),
       r.driver,
-      r.jamStart,
-      r.jamFinish,
+      r.startDate || '',
+      r.startTime,
+      r.finishDate || '',
+      r.finishTime,
       r.durasi,
       r.durasiHour,
     ]),
-    ['TOTAL', '', '', '', '', '', totalDurasiHour],
+    ['TOTAL', '', '', '', '', '', '', '', totalDurasiHour],
     [],
     ['NOTE'],
     ['', 'Terdapat data routing tapi tidak ada waktu start-finish'],
     ['', 'Driver klik Start-Finish lebih dari 1x dalam sehari'],
+    ['', 'Tanggal start dan finish berbeda'],
   ];
 
   const wsSF = XLSX.utils.aoa_to_sheet(sheetData);
@@ -86,10 +106,16 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     fill: { fgColor: { rgb: 'FFF2CC' } },
     font: { color: { rgb: '000000' } },
   };
+  const styleDateDiff = {
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F8C471' } },
+    font: { color: { rgb: '000000' } },
+  };
 
-  const sfLastRow = sheetData.length - 5;
+  const TOTAL_COLS = 9;
+  const sfLastRow = sheetData.length - 6;
   for (let R = 0; R < sheetData.length; ++R) {
-    for (let C = 0; C < 7; ++C) {
+    for (let C = 0; C < TOTAL_COLS; ++C) {
       const cell = XLSX.utils.encode_cell({ r: R, c: C });
       if (!wsSF[cell]) wsSF[cell] = { v: '' };
 
@@ -100,17 +126,23 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
           wsSF[cell].t = 'n';
           wsSF[cell].z = '0';
         }
-      } else if (R === sheetData.length - 3 && C === 0)
+      } else if (R === sheetData.length - 4 && C === 0)
         wsSF[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
-      else if (R === sheetData.length - 2 && C === 0)
+      else if (R === sheetData.length - 3 && C === 0)
         wsSF[cell].s = { fill: { fgColor: { rgb: 'FADBD8' } } };
-      else if (R === sheetData.length - 1 && C === 0)
+      else if (R === sheetData.length - 2 && C === 0)
         wsSF[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
-      else if (R >= sheetData.length - 2 && C === 1)
+      else if (R === sheetData.length - 1 && C === 0)
+        wsSF[cell].s = { fill: { fgColor: { rgb: 'F8C471' } } };
+      else if (R >= sheetData.length - 3 && C === 1)
         wsSF[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
       else if (R > 0 && R < sfLastRow) {
         const rowData = sortedRows[R - 1];
-        if (C === 2) {
+        const isDateDiffCol = (C === 3 || C === 5) && rowData?.isDateDiff;
+
+        if (isDateDiffCol) {
+          wsSF[cell].s = styleDateDiff;
+        } else if (C === 2) {
           wsSF[cell].s = rowData?.isErrorRed
             ? styleLeftError
             : rowData?.isMultipleSessions
@@ -139,10 +171,13 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     { wch: 15 },
     { wch: 15 },
     { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
   ];
   wsSF['!merges'] = [
-    { s: { r: sheetData.length - 2, c: 1 }, e: { r: sheetData.length - 2, c: 6 } },
-    { s: { r: sheetData.length - 1, c: 1 }, e: { r: sheetData.length - 1, c: 6 } },
+    { s: { r: sheetData.length - 3, c: 1 }, e: { r: sheetData.length - 3, c: 8 } },
+    { s: { r: sheetData.length - 2, c: 1 }, e: { r: sheetData.length - 2, c: 8 } },
+    { s: { r: sheetData.length - 1, c: 1 }, e: { r: sheetData.length - 1, c: 8 } },
   ];
 
   return wsSF;
