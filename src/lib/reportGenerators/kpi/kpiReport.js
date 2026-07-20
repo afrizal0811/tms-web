@@ -10,7 +10,6 @@ import {
 import {
   generateSheetDataKPI,
   generateSheetDataRouting,
-  generateSheetHelp,
   generateSheetPendingSO,
   generateSheetRouteReview,
   generateSheetStartFinish,
@@ -66,9 +65,6 @@ export function generateKpiWorkbook(
   XLSX.utils.book_append_sheet(wb, wsSF, 'Start & Finish');
 
   XLSX.utils.book_append_sheet(wb, wsRR, 'Route Review');
-
-  const wsHelp = generateSheetHelp();
-  XLSX.utils.book_append_sheet(wb, wsHelp, 'Help');
 
   return { wb, fileName: `KPI - ${dateFileName} - ${locationName}.xlsx`, hasError: false };
 }
