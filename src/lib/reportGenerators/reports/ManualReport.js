@@ -470,7 +470,6 @@ export async function generateManualReportWorkbook({
   hubLabel,
   hasPendingGR,
   t,
-  isIndonesian,
 }) {
   const wb = XLSX.utils.book_new();
 
@@ -492,9 +491,8 @@ export async function generateManualReportWorkbook({
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
-  const title = isIndonesian ? `${t('common.report')} Manual` : `Manual ${t('common.report')}`;
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-  const excelFileName = `${title} - ${formattedDate} - ${hubLabel}.xlsx`;
+  const excelFileName = `${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }

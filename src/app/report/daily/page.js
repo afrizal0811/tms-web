@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import SingleReport from '@/features/reports/SingleReport';
+import DailyReport from '@/features/reports/DailyReport';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
@@ -50,7 +50,7 @@ export default function LaporanPage() {
 
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <SingleReport
+      <DailyReport
         selectedLocation={data.selectedLocation}
         selectedLocationName={data.selectedLocationName}
         driverData={data.driverData}

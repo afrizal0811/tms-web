@@ -72,8 +72,7 @@ const DROPDOWN_LINK_CLASS =
   'block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400';
 
 const REPORT_LINKS = [
-  { href: '/report/single', labelKey: 'navbar.daily_report', superadminOnly: false },
-  { href: '/report/period', labelKey: 'navbar.period_report', superadminOnly: false },
+  { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
   { href: '/report/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
