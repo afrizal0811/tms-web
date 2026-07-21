@@ -18,8 +18,8 @@ import { toastError } from '@/lib/toast';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
-  formatToApiUtc,
   isEmpty,
+  toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import { useState } from 'react';
@@ -116,8 +116,8 @@ export default function PeriodReport({ driverData }) {
         const endD = new Date(deliveryDateObj);
         endD.setHours(23, 59, 59, 999);
 
-        const timeFromTasks = formatToApiUtc(startD);
-        const timeToTasks = formatToApiUtc(endD);
+        const timeFromTasks = toApiDateString(startD);
+        const timeToTasks = toApiDateString(endD);
 
         const allTasks = await getTasks({
           hubId,

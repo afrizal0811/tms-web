@@ -2,8 +2,6 @@ import {
   calculateMinuteDifference,
   formatCoordinates,
   formatDateUniversal,
-  formatSimpleTime,
-  formatTimestampToHHMM,
   getDistance,
   getStorageType,
   isEmpty,
@@ -349,13 +347,16 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
       }
 
       const openTimeVal =
-        idxOpenTime !== -1 && row[idxOpenTime] ? formatSimpleTime(String(row[idxOpenTime])) : '-';
+        idxOpenTime !== -1 && row[idxOpenTime]
+          ? formatDateUniversal(String(row[idxOpenTime]), 'HH:mm')
+          : '-';
       const closeTimeVal =
         idxCloseTime !== -1 && row[idxCloseTime]
-          ? formatSimpleTime(String(row[idxCloseTime]))
+          ? formatDateUniversal(String(row[idxCloseTime]), 'HH:mm')
           : '-';
-      const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
-      const actualDepVal = formatTimestampToHHMM(actualDeparture) || '-';
+
+      const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
+      const actualDepVal = formatDateUniversal(actualDeparture, 'HH:mm') || '-';
 
       let hoursStatus = null;
       if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
@@ -404,8 +405,8 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         reason: idxAlasan !== -1 && row[idxAlasan] ? String(row[idxAlasan]) : '',
         openTime: openTimeVal,
         closeTime: closeTimeVal,
-        eta: formatSimpleTime(eta) || '-',
-        etd: formatSimpleTime(etd) || '-',
+        eta: formatDateUniversal(eta, 'HH:mm') || '-',
+        etd: formatDateUniversal(etd, 'HH:mm') || '-',
         actualArrival: actualArrVal,
         actualDeparture: actualDepVal,
         visitTime: idxVisitTime !== -1 && row[idxVisitTime] ? row[idxVisitTime] : null,

@@ -1,11 +1,10 @@
 import {
   calculateMinuteDifference,
   formatCoordinates,
-  formatSimpleTime,
-  formatTimestampToHHMM,
+  formatDateUniversal,
+  formatUTC7,
   getDistance,
   getStorageType,
-  getUTC7DateString,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
@@ -108,11 +107,17 @@ export function parseRoutingData(
 
       if (hasTrips) {
         const hubTrip = route.trips.find((t) => t.isHub);
-        if (hubTrip?.etd) etdHubVal = formatSimpleTime(hubTrip.etd);
-        else if (route.trips[0]?.etd) etdHubVal = formatSimpleTime(route.trips[0].etd);
+        if (hubTrip?.etd)
+          etdHubVal = formatDateUniversal(`${selectedDateString} ${hubTrip.etd}`, 'HH:mm');
+        else if (route.trips[0]?.etd)
+          etdHubVal = formatDateUniversal(`${selectedDateString} ${route.trips[0].etd}`, 'HH:mm');
 
         const firstStore = route.trips.find((t) => !t.isHub);
-        if (firstStore?.eta) etaFirstStoreVal = formatSimpleTime(firstStore.eta);
+        if (firstStore?.eta)
+          etaFirstStoreVal = formatDateUniversal(
+            `${selectedDateString} ${firstStore.eta}`,
+            'HH:mm'
+          );
 
         const hubTrips = route.trips.filter((t) => t.isHub);
         const maxHubWaitTime = hubTrips.length
@@ -201,7 +206,8 @@ export function parseRoutingData(
   const cleanTasks = Array.from(uniqueTasksMap.values());
 
   cleanTasks.forEach((task) => {
-    const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+    const dateKey =
+      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
 
     if (selectedDateString && dateKey !== selectedDateString) return;
     const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
@@ -286,8 +292,11 @@ export function parseDeliveryData(
             const hubTrips = (r.trips || []).filter((t) => t.isHub);
             if (hubTrips.length > 0) {
               hubTimesMap.set(dName, {
-                hubETD: formatSimpleTime(hubTrips[0].etd),
-                hubETA: formatSimpleTime(hubTrips[hubTrips.length - 1].eta),
+                hubETD: formatDateUniversal(`${selectedDateString} ${hubTrips[0].etd}`, 'HH:mm'),
+                hubETA: formatDateUniversal(
+                  `${selectedDateString} ${hubTrips[hubTrips.length - 1].eta}`,
+                  'HH:mm'
+                ),
               });
             }
           });
@@ -334,8 +343,8 @@ export function parseDeliveryData(
       if (FAILED_STATUSES.includes(statusLabel) || isEmpty(statusLabel)) stats.failedCount += 1;
       if (task.isSplitTask === 'true' || task.isSplitTask === true) stats.hasSplitTask = true;
 
-      const startDate = getUTC7DateString(task.startTime);
-      const doneDate = getUTC7DateString(task.doneTime);
+      const startDate = formatUTC7(task.startTime, 'YYYY-MM-DD');
+      const doneDate = formatUTC7(task.doneTime, 'YYYY-MM-DD');
       if (startDate && doneDate && startDate !== doneDate) {
         stats.mismatchCustomers.push({ name: cName, date: doneDate });
       }
@@ -353,9 +362,12 @@ export function parseDeliveryData(
       flow?.toUpperCase().includes('GR') || flow?.toUpperCase().includes('PICKUP')
         ? task.page1DoneTime
         : task.page3DoneTime;
-    const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
-    const openTimeVal = formatSimpleTime(task.openTime) || '-';
-    const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
+
+    const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
+    const openTimeVal =
+      formatDateUniversal(`${selectedDateString} ${task.openTime}`, 'HH:mm') || '-';
+    const closeTimeVal =
+      formatDateUniversal(`${selectedDateString} ${task.closeTime}`, 'HH:mm') || '-';
 
     let hoursStatus = null;
     if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
@@ -399,10 +411,10 @@ export function parseDeliveryData(
       reason: task.alasan,
       openTime: openTimeVal,
       closeTime: closeTimeVal,
-      eta: formatSimpleTime(task.eta) || '-',
-      etd: formatSimpleTime(task.etd) || '-',
+      eta: formatDateUniversal(`${selectedDateString} ${task.eta}`, 'HH:mm') || '-',
+      etd: formatDateUniversal(`${selectedDateString} ${task.etd}`, 'HH:mm') || '-',
       actualArrival: actualArrVal,
-      actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
+      actualDeparture: formatDateUniversal(actualDeparture, 'HH:mm') || '-',
       visitTime: task.visitTime,
       actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
       temperature: getStorageType(driverName),

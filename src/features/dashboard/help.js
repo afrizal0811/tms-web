@@ -1,9 +1,6 @@
 import {
   calculateMinuteDifference,
   formatDateUniversal,
-  formatDateWIB,
-  formatSimpleTime,
-  formatTimestampToHHMM,
   getBasePlate,
   isEmpty,
   normalizeEmail,
@@ -416,7 +413,7 @@ export function processSequenceAccuracyData(
     }));
 }
 
-export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery }) => {
+export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery, date }) => {
   if (!tasks || !drivers) return [];
 
   const emailToDriverMap = drivers.reduce((acc, driver) => {
@@ -443,10 +440,9 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
             const firstHub = hubTrips[0];
             const lastHub = hubTrips[hubTrips.length - 1];
             const hubLocation = firstHub.coordinate || null;
-
             hubTimesMap.set(driverName, {
-              hubETD: formatSimpleTime(firstHub.etd) || '-',
-              hubETA: formatSimpleTime(lastHub.eta) || '-',
+              hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',
+              hubETA: formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-',
               hubLongLat: hubLocation,
             });
           }
@@ -506,11 +502,11 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
     }
 
     const roSequence = task.routePlannedOrder || 0;
-    const etaVal = formatSimpleTime(task.eta);
-    const etdVal = formatSimpleTime(task.etd);
-    const openTimeVal = formatSimpleTime(task.openTime) || '-';
-    const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
-    const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
+    const etaVal = formatDateUniversal(`${date} ${task.eta}`, 'HH:mm');
+    const etdVal = formatDateUniversal(`${date} ${task.etd}`, 'HH:mm');
+    const openTimeVal = formatDateUniversal(`${date} ${task.openTime}`, 'HH:mm') || '-';
+    const closeTimeVal = formatDateUniversal(`${date} ${task.closeTime}`, 'HH:mm') || '-';
+    const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
 
     let hoursStatus = null;
     if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
@@ -546,7 +542,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       eta: etaVal || '-',
       etd: etdVal || '-',
       actualArrival: actualArrVal,
-      actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
+      actualDeparture: formatDateUniversal(actualDeparture, 'HH:mm') || '-',
       visitTime: task.visitTime || '-',
       actualVisitTime: actualVisitTimeVal,
       realSequence: 0,
@@ -747,8 +743,8 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     else if (flow.includes('Pending GR')) flowPendingGR++;
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
-      const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
-      const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
+      const startDateWIB = formatDateUniversal(task.startTime, 'DD-MM-YYYY');
+      const doneDateWIB = formatDateUniversal(task.doneTime, 'DD-MM-YYYY');
 
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
         const startDate = new Date(task.startTime);

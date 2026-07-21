@@ -15,7 +15,7 @@ import {
   generateBreadWorkbook,
 } from '@/lib/reportGenerators/bread/breadReport';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { formatDateUniversal, formatToApiUtc, isEmpty, tomorrowDate } from '@/lib/utils';
+import { formatDateUniversal, isEmpty, toApiDateString, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getDatesInRange } from './helper/help';
@@ -26,8 +26,8 @@ const getDateParams = (date) => {
   const localEnd = new Date(date);
   localEnd.setHours(23, 59, 59, 999);
   return {
-    timeFrom: formatToApiUtc(localStart),
-    timeTo: formatToApiUtc(localEnd),
+    timeFrom: toApiDateString(localStart),
+    timeTo: toApiDateString(localEnd),
   };
 };
 

@@ -1,9 +1,4 @@
-import {
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getBasePlate,
-  normalizeEmail,
-} from '@/lib/utils';
+import { formatUTC7, getBasePlate, normalizeEmail } from '@/lib/utils';
 import { isTripInShift } from './isTripInShift';
 
 export function convertLocationHistories(allApiData, driverData, selectedDateString) {
@@ -29,13 +24,13 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
         workingTime: dInfo?.workingTime,
         trackedTime: Math.abs(item.trackedTime || 0),
         totalDistance: item.finish?.totalDistance || 0,
-        startDate: formatTimestampToDDMMYYYY_UTC7(item.startTime),
+        startDate: formatUTC7(item.startTime, 'DD-MM-YYYY'),
         rawStart: item.startTime,
         rawFinish: item.finish?.finishTime,
         travelTimeVal: item.finish?.totalDuration || 0,
-        startTimeFmt: formatTimestampToQuotedHHMM_UTC7(item.startTime),
-        finishDateFmt: formatTimestampToDDMMYYYY_UTC7(item.finish?.finishTime),
-        finishTimeFmt: formatTimestampToQuotedHHMM_UTC7(item.finish?.finishTime),
+        startTimeFmt: formatUTC7(item.startTime, 'HH:mm'),
+        finishDateFmt: formatUTC7(item.finish?.finishTime, 'DD-MM-YYYY'),
+        finishTimeFmt: formatUTC7(item.finish?.finishTime, 'HH:mm'),
       };
     })
     .filter(

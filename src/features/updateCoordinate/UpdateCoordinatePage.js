@@ -11,12 +11,12 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
   formatCoordinates,
-  formatDateWIB,
-  formatToApiUtc,
+  formatDateUniversal,
   getDistance,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
+  toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -55,7 +55,7 @@ export default function UpdateCoordinatePage() {
       const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
 
       tempMap.get(name).push({
-        date: formatDateWIB(task.doneTime, 'HH:mm'),
+        date: formatDateUniversal(task.doneTime, 'HH:mm'),
         newLonglat: task.klikLokasiClient,
         oldLonglat: task.longlat,
         distanceDiff: distanceDiff,
@@ -89,8 +89,8 @@ export default function UpdateCoordinatePage() {
         const localEnd = new Date(selectedDate);
         localEnd.setHours(23, 59, 59, 999);
 
-        const timeFrom = formatToApiUtc(localStart);
-        const timeTo = formatToApiUtc(localEnd);
+        const timeFrom = toApiDateString(localStart);
+        const timeTo = toApiDateString(localEnd);
 
         const [drivers, todayTasks] = await Promise.all([
           getDriverData(hubId),
@@ -173,7 +173,7 @@ export default function UpdateCoordinatePage() {
           customerId: custId,
           locationId: locId,
           driverName: driverName,
-          updateTime: formatDateWIB(task.doneTime, 'HH:mm'),
+          updateTime: formatDateUniversal(task.doneTime, 'HH:mm'),
           newLonglat: formatCoordinates(task.klikLokasiClient),
           distanceDiff: distanceDiff !== null ? distanceDiff : 0,
           soNumber: invoiceNumber || task.content || '-',

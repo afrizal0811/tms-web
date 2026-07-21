@@ -4,9 +4,9 @@ import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatLongDate,
+  formatUTC7,
   getDeliveryDateFromRouting,
   getStorageType,
-  getUTC7DateString,
   isEmpty,
   isPastDate,
 } from '@/lib/utils';
@@ -176,7 +176,7 @@ export async function calculateTruckUsageData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+      const d = formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
       if (d) taskPresence[d] = true;
     });
   }

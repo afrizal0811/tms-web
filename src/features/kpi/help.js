@@ -1,6 +1,6 @@
 import { getLocationHistories, getResultsSummary, getTasks } from '@/lib/api';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import { calculateStartFinishDates, formatDateUniversal, formatToApiUtc } from '@/lib/utils';
+import { calculateStartFinishDates, formatDateUniversal, toApiDateString } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { convertLocationHistories } from '../../lib/reportGenerators/helper/convertLocationHistories';
@@ -37,8 +37,8 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   const dateString = formatDateUniversal(targetDateObj);
   const startObj = new Date(targetDateObj);
   startObj.setHours(0, 0, 0, 0);
-  const timeFrom = formatToApiUtc(startObj);
-  const timeTo = formatToApiUtc(new Date(startObj.setHours(23, 59, 59)));
+  const timeFrom = toApiDateString(startObj);
+  const timeTo = toApiDateString(new Date(startObj.setHours(23, 59, 59)));
   const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(dateString);
 
   const targetRoutingDateObj = new Date(targetDateObj);

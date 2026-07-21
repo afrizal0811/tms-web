@@ -17,8 +17,8 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
-  formatToApiUtc,
   isEmpty,
+  toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -34,8 +34,8 @@ const getReportDates = (start, end) => {
   const validEndDate = end ? new Date(end) : new Date(start);
   validEndDate.setHours(23, 59, 59, 999);
 
-  const timeFromUtc = formatToApiUtc(localStart);
-  const timeToUtc = formatToApiUtc(validEndDate);
+  const timeFromUtc = toApiDateString(localStart);
+  const timeToUtc = toApiDateString(validEndDate);
 
   const startString = formatDateUniversal(localStart);
   const endString = formatDateUniversal(validEndDate);

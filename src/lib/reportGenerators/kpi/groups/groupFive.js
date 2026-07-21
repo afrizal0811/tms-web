@@ -1,10 +1,4 @@
-import {
-  formatMinutesToHHMM,
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getStorageType,
-  normalizeEmail,
-} from '@/lib/utils';
+import { formatMinutesToHHMM, formatUTC7, getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupFive(tasksData, driverData, historiesData, g2DetailRows = []) {
   let countMasterMaintenance = 0;
@@ -55,10 +49,10 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           let durasiStr = null;
 
           if (startStr && finishStr) {
-            startDate = formatTimestampToDDMMYYYY_UTC7(startStr);
-            startTime = formatTimestampToQuotedHHMM_UTC7(startStr);
-            finishDate = formatTimestampToDDMMYYYY_UTC7(finishStr);
-            finishTime = formatTimestampToQuotedHHMM_UTC7(finishStr);
+            startDate = formatUTC7(startStr, 'DD-MM-YYYY');
+            startTime = formatUTC7(startStr, 'HH:mm');
+            finishDate = formatUTC7(finishStr, 'DD-MM-YYYY');
+            finishTime = formatUTC7(finishStr, 'HH:mm');
             const diffMins = (new Date(finishStr) - new Date(startStr)) / 60000;
             if (diffMins > 0) {
               totalActMinutes += diffMins;

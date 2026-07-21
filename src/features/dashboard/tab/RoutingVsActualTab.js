@@ -7,7 +7,7 @@ import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toast';
-import { isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { downloadRoutingVsActual, processRoutingVsActualData } from '../help';
 import RoutingMapModal from '../modals/RoutingMapModal';
@@ -17,17 +17,18 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const date = formatDateUniversal(selectedDate);
 
   const processedData = useMemo(() => {
     if (loading) return [];
-
     return processRoutingVsActualData({
       tasks,
       results,
       drivers,
       searchQuery,
+      date,
     });
-  }, [loading, tasks, results, drivers, searchQuery]);
+  }, [loading, tasks, results, drivers, searchQuery, date]);
 
   const handleDownload = async () => {
     if (isEmpty(processedData)) return;

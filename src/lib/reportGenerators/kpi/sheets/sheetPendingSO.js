@@ -1,9 +1,4 @@
-import {
-  formatTimestampToDDMMYYYY_UTC7,
-  getBasePlate,
-  normalizeEmail,
-  parseCustomerString,
-} from '@/lib/utils';
+import { formatUTC7, getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetPendingSO(tasksData, driverData) {
@@ -36,7 +31,7 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
         pendingRows.push([
           task.flow || '-',
-          formatTimestampToDDMMYYYY_UTC7(task.startTime),
+          formatUTC7(task.startTime, 'DD-MM-YYYY'),
           finalPlat,
           finalDriver,
           custInfo.fullCustomerName || custInfo.name || '-',

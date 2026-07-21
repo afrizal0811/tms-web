@@ -1,10 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import {
-  formatDateUniversal,
-  formatSimpleTime,
-  normalizeEmail,
-  parseCustomerString,
-} from '@/lib/utils';
+import { formatDateUniversal, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import { StyleSheet } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
@@ -127,8 +122,8 @@ export const handleConfirmDownload = async ({
         ) => {
           const openVal = isHub ? '' : trip.openTime || '-';
           const closeVal = isHub ? '' : trip.closeTime || '-';
-          let etaVal = isFirstHub ? '' : trip.eta ? formatSimpleTime(trip.eta) : '-';
-          const etdVal = isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-';
+          let etaVal = isFirstHub ? '' : trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
+          const etdVal = isLastHub ? '' : trip.etd ? formatDateUniversal(trip.etd, 'HH:mm') : '-';
 
           const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
           const rowPartner = partnerOverride !== null ? partnerOverride : trip.partnerVehicle;

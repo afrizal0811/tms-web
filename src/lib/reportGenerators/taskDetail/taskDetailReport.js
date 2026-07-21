@@ -1,10 +1,4 @@
-import {
-  formatDateUniversal,
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getDistance,
-  normalizeEmail,
-} from '@/lib/utils';
+import { formatDateUniversal, formatUTC7, getDistance, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { isTripInShift } from '../helper';
 
@@ -125,7 +119,7 @@ export const buildSyncTimeMap = (locHistories, driverData, selectedDateStr) => {
     const email = normalizeEmail(item.email);
     const startTime = item.startTime;
     const finishTime = item.finish?.finishTime;
-    const startDate = formatTimestampToDDMMYYYY_UTC7(startTime);
+    const startDate = formatUTC7(startTime, 'DD-MM-YYYY');
 
     return {
       email,
@@ -257,14 +251,8 @@ export const generateTaskDetailWorkbook = (
       hubStartRow[statusCol] = null;
 
       if (timeData && timeData.rawStartTime) {
-        const dateFormatted = formatTimestampToDDMMYYYY_UTC7(timeData.rawStartTime).replace(
-          /-/g,
-          '/'
-        );
-        const timeFormatted = formatTimestampToQuotedHHMM_UTC7(timeData.rawStartTime).replace(
-          "'",
-          ''
-        );
+        const dateFormatted = formatUTC7(timeData.rawStartTime, 'DD-MM-YYYY');
+        const timeFormatted = formatUTC7(timeData.rawStartTime, 'HH:mm');
         hubStartRow[doneTimeCol] = `${dateFormatted} ${timeFormatted}`;
       } else {
         hubStartRow[doneTimeCol] = '-';
@@ -278,18 +266,12 @@ export const generateTaskDetailWorkbook = (
       hubEndRow[statusCol] = null;
 
       if (timeData && timeData.rawFinishTime) {
-        const dateFormatted = formatTimestampToDDMMYYYY_UTC7(timeData.rawFinishTime).replace(
-          /-/g,
-          '/'
-        );
-        const timeFormatted = formatTimestampToQuotedHHMM_UTC7(timeData.rawFinishTime).replace(
-          "'",
-          ''
-        );
+        const dateFormatted = formatUTC7(timeData.rawFinishTime, 'DD-MM-YYYY');
+        const timeFormatted = formatUTC7(timeData.rawFinishTime, 'HH:mm');
 
         let diffDisplay = '';
-        const sDateStr = formatTimestampToDDMMYYYY_UTC7(timeData.rawStartTime);
-        const fDateStr = formatTimestampToDDMMYYYY_UTC7(timeData.rawFinishTime);
+        const sDateStr = formatUTC7(timeData.rawStartTime, 'DD-MM-YYYY');
+        const fDateStr = formatUTC7(timeData.rawFinishTime, 'DD-MM-YYYY');
 
         if (sDateStr !== fDateStr) {
           const sDate = new Date(timeData.rawStartTime.replace(' ', 'T') + 'Z');

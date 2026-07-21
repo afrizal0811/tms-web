@@ -68,21 +68,6 @@ export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
   return `${needQuote ? "'" : ''}${formattedHours}:${formattedMinutes}`;
 }
 
-// Mengambil jam dan menit dari timestamp ISO dan mengembalikannya sebagai string HH:mm
-export function formatTimestampToHHMM(timestamp) {
-  if (!timestamp) return null;
-  try {
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return null;
-
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  } catch (e) {
-    return null;
-  }
-}
-
 // Menghitung selisih waktu dalam satuan menit antara dua timestamp
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
@@ -139,19 +124,7 @@ export function parseCustomerString(fullString) {
   return { name, id, location, fullCustomerName, invoiceNumber };
 }
 
-// Menyederhanakan string waktu (HH:mm:ss) menjadi format HH:mm
-export function formatSimpleTime(timeString) {
-  if (typeof timeString !== 'string' || !timeString.includes(':')) {
-    return null;
-  }
-  const parts = timeString.split(':');
-  if (parts.length < 2) {
-    return null;
-  }
-  return `${parts[0]}:${parts[1]}`;
-}
-
-// Mendeteksi jenis suhu (FRZ/DRY) berdasarkan kode string pada nama driver
+// Menentukan tipe penyimpanan
 export function getStorageType(input) {
   if (Array.isArray(input) || typeof input === 'string') {
     const text = (Array.isArray(input) ? input.join(' ') : input).toUpperCase();
@@ -170,14 +143,14 @@ export function getStorageType(input) {
   return '-';
 }
 
-// Memformat string koordinat agar memiliki presisi 6 angka desimal
+// Memformat koordinat
 export function formatCoordinates(coordsString) {
   const coords = parseCoordinates(coordsString);
   if (!coords) return null;
   return `${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}`;
 }
 
-// Mengubah string "lat,long" menjadi objek { lat, lon } bertipe angka
+// Mengubah koordinat menjadi object
 export function parseCoordinates(coordString) {
   if (typeof coordString !== 'string' || !coordString.includes(',')) return null;
   const [latStr, lonStr] = coordString.split(',');
@@ -187,7 +160,7 @@ export function parseCoordinates(coordString) {
   return { lat, lon };
 }
 
-// Menghitung jarak antara dua koordinat menggunakan rumus Haversine (hasil dalam meter)
+// Menghitung jarak antar koordinat
 export function getDistance(coordsString1, coordsString2) {
   const c1 = parseCoordinates(coordsString1);
   const c2 = parseCoordinates(coordsString2);
@@ -210,7 +183,7 @@ export function getDistance(coordsString1, coordsString2) {
   return Math.round(R * c);
 }
 
-// Membersihkan string email (lowercase dan trim spasi)
+// Menormalkan email
 export const normalizeEmail = (email) => {
   if (typeof email !== 'string' || !email) {
     return null;
@@ -218,14 +191,14 @@ export const normalizeEmail = (email) => {
   return email.toLowerCase().trim();
 };
 
-// Menambahkan jumlah jam tertentu ke dalam objek Date
+// Menambahkan jam ke Date
 function addHours(date, hours) {
   const newDate = new Date(date);
   newDate.setTime(newDate.getTime() + hours * 60 * 60 * 1000);
   return newDate;
 }
 
-// Menghitung rentang waktu Start (H-1/H-2 00:00) hingga Finish (H 23:59) untuk keperluan query laporan
+// Menghasilkan rentang waktu laporan
 export function calculateStartFinishDates(selectedDateStr) {
   const selectedDate = new Date(selectedDateStr + 'T12:00:00');
 
@@ -247,7 +220,7 @@ export function calculateStartFinishDates(selectedDateStr) {
   };
 }
 
-// Mengonversi timestamp UTC string menjadi objek Date yang digeser manual ke UTC+7
+// Mengubah timestamp UTC ke UTC+7
 export function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
   try {
@@ -269,49 +242,37 @@ export function parseAndShiftToUTC7(timestampStr) {
   }
 }
 
-// Memformat tanggal UTC+7 menjadi DD-MM-YYYY
-export function formatTimestampToDDMMYYYY_UTC7(timestampStr) {
+// Memformat timestamp UTC+7
+export function formatUTC7(timestampStr, pattern = 'YYYY-MM-DD') {
   const date = parseAndShiftToUTC7(timestampStr);
   if (!date) return null;
 
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const year = date.getUTCFullYear();
+  const map = {
+    YYYY: date.getUTCFullYear(),
+    MM: String(date.getUTCMonth() + 1).padStart(2, '0'),
+    DD: String(date.getUTCDate()).padStart(2, '0'),
+    HH: String(date.getUTCHours()).padStart(2, '0'),
+    mm: String(date.getUTCMinutes()).padStart(2, '0'),
+    ss: String(date.getUTCSeconds()).padStart(2, '0'),
+  };
 
-  return `${day}-${month}-${year}`;
+  const result = pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+  return result;
 }
 
-// Memformat waktu UTC+7 menjadi string 'HH:mm (quoted untuk excel)
-export function formatTimestampToQuotedHHMM_UTC7(timestampStr) {
-  const date = parseAndShiftToUTC7(timestampStr);
-  if (!date) return null;
-
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-
-  return `'${hours}:${minutes}`;
-}
-
-// Wrapper untuk menghitung durasi antar dua waktu dan mengembalikan format 'HH:mm
+// Menghitung durasi format HH:mm
 export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
   const totalMinutes = calculateMinuteDifference(startTimeStr, finishTimeStr);
   return formatMinutesToHHMM(totalMinutes);
 }
 
-// Mendapatkan string YYYY-MM-DD dari timestamp yang sudah disesuaikan ke UTC+7
-export const getUTC7DateString = (timestamp) => {
-  const date = parseAndShiftToUTC7(timestamp);
-  if (!date) return null;
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
-};
-
-// Mengecek apakah string tanggal jatuh pada hari Minggu
+// Mengecek hari Minggu
 export const isDateSunday = (dateStr) => {
   const date = new Date(dateStr.replace(/-/g, '/'));
   return date.getDay() === 0;
 };
 
-// Memformat detik integer menjadi string timer MM:SS
+// Mengubah detik ke MM:SS
 export const formatTimer = (seconds) => {
   const m = Math.floor(seconds / 60)
     .toString()
@@ -320,49 +281,7 @@ export const formatTimer = (seconds) => {
   return `${m}:${s}`;
 };
 
-// Memformat objek Date menjadi string format database (YYYY-MM-DD HH:mm:ss)
-export const formatToApiUtc = (date) => date.toISOString().slice(0, 19).replace('T', ' ');
-
-// Mengubah input tanggal menjadi string sesuai pattern di zona waktu Asia/Jakarta.
-export function formatDateWIB(dateInput, pattern = 'YYYY-MM-DD') {
-  if (!dateInput) return '-';
-  const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return '-';
-
-  // 1. Ambil bagian waktu spesifik Asia/Jakarta
-  const formatter = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-
-  // 2. Pecah menjadi object { year: '2025', month: '12', ... }
-  const parts = formatter.formatToParts(date).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
-
-  // 3. Mapping pattern ke nilai
-  const map = {
-    YYYY: parts.year,
-    MM: parts.month,
-    DD: parts.day,
-    HH: parts.hour,
-    mm: parts.minute,
-    ss: parts.second,
-  };
-
-  // 4. Replace pattern
-  return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
-}
-
-// Khusus untuk format teks panjang Indonesia (Contoh: "23 Desember 2025")
-// Ini jarang dipakai untuk logic, biasanya cuma untuk tampilan UI
+// Memformat tanggal panjang
 export function formatLongDate(dateInput, language = 'id-ID') {
   if (!dateInput) return '-';
   try {
@@ -376,6 +295,7 @@ export function formatLongDate(dateInput, language = 'id-ID') {
   }
 }
 
+// Mengecek nilai kosong
 export function isEmpty(value) {
   if (Array.isArray(value)) return value.length === 0;
   return (
@@ -390,38 +310,42 @@ export function isEmpty(value) {
   );
 }
 
-export function convertWibToUtc(dateInput) {
-  if (!dateInput) return null;
-  const date = new Date(dateInput);
+// Mengubah Date ke format API
+export function toApiDateString(dateInput) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   if (isNaN(date.getTime())) return null;
-
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+// Mengubah teks ke Title Case
 export const capitalizeText = (text = '') =>
   text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
-export const tomorrowDate = (isTommorrow = true) => {
+// Menghasilkan tanggal besok atau minggu depan
+export const tomorrowDate = (isTomorrow = true) => {
   const date = new Date();
-  const day = isTommorrow ? 1 : 7;
+  const day = isTomorrow ? 1 : 7;
   date.setDate(date.getDate() + day);
   if (date.getDay() === 0) {
     date.setDate(date.getDate() + 1);
   }
 
-  if (!isTommorrow && new Date().getDay() === 6) {
+  if (!isTomorrow && new Date().getDay() === 6) {
     date.setDate(date.getDate() + 1);
   }
 
   return date;
 };
 
+// Mengambil plat utama
 export function getBasePlate(plat) {
   if (!plat) return '';
-  const parts = plat.trim().split(/\s+/);
-  return parts.length > 3 ? parts.slice(0, 3).join(' ') : plat.trim();
+  const platStr = String(plat).trim();
+  const parts = platStr.split(/\s+/);
+  return parts.length > 3 ? parts.slice(0, 3).join(' ') : platStr;
 }
 
+// Menghitung tanggal delivery berdasarkan tanggal routing
 export function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
   try {
@@ -440,6 +364,7 @@ export function getDeliveryDateFromRouting(isoString) {
   }
 }
 
+// Mengubah nilai persentase menjadi warna heatmap pastel dalam format HEX
 export function heatMap(pctInput) {
   if (pctInput === null || pctInput === undefined || pctInput === '') return null;
   let val = parseFloat(pctInput);
@@ -468,6 +393,7 @@ export function heatMap(pctInput) {
     .toUpperCase();
 }
 
+// Mengecek apakah tanggal lebih kecil dari hari ini
 export function isPastDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const today = new Date();
@@ -475,6 +401,7 @@ export function isPastDate(dateStr) {
   return new Date(y, m - 1, d) < today;
 }
 
+// Mengubah datetime API menjadi Date
 export function parseApiDateString(dateStr) {
   if (!dateStr) return null;
   let isoStr = dateStr.toString().replace(' ', 'T');
@@ -483,6 +410,7 @@ export function parseApiDateString(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Menentukan grup urutan plat
 function getSortGroup(plat) {
   if (!plat) return 1;
   const platUpper = plat.toUpperCase();
@@ -491,6 +419,7 @@ function getSortGroup(plat) {
   return 1;
 }
 
+// Mengurutkan data kendaraan
 export function sortRows(rows, platKey, driverKey) {
   return rows.sort((a, b) => {
     const rankA = getSortGroup(a[platKey]);

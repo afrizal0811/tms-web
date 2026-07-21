@@ -11,11 +11,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
   calculateStartFinishDates,
-  convertWibToUtc,
   formatDateUniversal,
+  formatUTC7,
   getBasePlate,
   isEmpty,
   normalizeEmail,
+  toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
@@ -230,8 +231,8 @@ export default function DeliveryEstimatePage() {
         startD.setHours(0, 0, 0, 0);
         const endD = new Date(selectedDate);
         endD.setHours(23, 59, 59, 999);
-        const timeFrom = convertWibToUtc(startD);
-        const timeTo = convertWibToUtc(endD);
+        const timeFrom = toApiDateString(startD);
+        const timeTo = toApiDateString(endD);
 
         const { timeFrom: historyFrom, timeTo: historyTo } =
           calculateStartFinishDates(selectedDate);
@@ -340,6 +341,8 @@ export default function DeliveryEstimatePage() {
               so,
               wh: soToWarehouseMap.get(so) || '',
             }));
+            const eta = `${formatUTC7(task.startTime)} ${task.eta}`;
+            const etd = `${formatUTC7(task.startTime)} ${task.etd}`;
 
             return {
               visitId: task._id || task.taskId,
@@ -352,8 +355,8 @@ export default function DeliveryEstimatePage() {
               locationName: task.locationName || null,
               openTime: task.openTime,
               closeTime: task.closeTime,
-              eta: task.eta,
-              etd: task.etd,
+              eta: eta,
+              etd: etd,
               weight: task.weightKg,
               volume: task.volumeCbm,
               isHub: false,
@@ -364,16 +367,21 @@ export default function DeliveryEstimatePage() {
           });
 
           const hubData = resultHubsByPlat.get(plat);
+          const rawEta = hubData?.endHub?.eta || null;
+          const rawEtd = hubData?.startHub?.etd || null;
+          const etaHub = `${selectedDate} ${rawEta}`;
+          const etdHub = `${selectedDate} ${rawEtd}`;
+          const hubTime = rawEta && rawEtd ? { eta: etaHub, etd: etdHub } : null;
           const finalTrips = [];
 
           if (hubData?.startHub) {
-            finalTrips.push({ ...hubData.startHub, isHub: true, visitName: 'HUB' });
+            finalTrips.push({ ...hubData.startHub, ...hubTime, isHub: true, visitName: 'HUB' });
           }
 
           finalTrips.push(...taskTrips);
 
           if (hubData?.endHub) {
-            finalTrips.push({ ...hubData.endHub, isHub: true, visitName: 'HUB' });
+            finalTrips.push({ ...hubData.endHub, ...hubTime, isHub: true, visitName: 'HUB' });
           }
 
           return {

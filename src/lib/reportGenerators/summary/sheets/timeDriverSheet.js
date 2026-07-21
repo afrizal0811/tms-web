@@ -1,8 +1,7 @@
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { isTripInShift } from '@/lib/reportGenerators/helper';
 import {
-  formatDateWIB,
-  formatToApiUtc,
+  formatDateUniversal,
   getDistance,
   getStorageType,
   isEmpty,
@@ -10,6 +9,7 @@ import {
   normalizeEmail,
   parseAndShiftToUTC7,
   parseApiDateString,
+  toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
@@ -28,8 +28,8 @@ function calculateDuration(startObj, finishObj) {
 
 function getDayDifferenceWIB(startObj, finishObj) {
   if (!startObj || !finishObj) return 0;
-  const startDateWIB = formatDateWIB(startObj, 'YYYY-MM-DD');
-  const finishDateWIB = formatDateWIB(finishObj, 'YYYY-MM-DD');
+  const startDateWIB = formatDateUniversal(startObj, 'YYYY-MM-DD');
+  const finishDateWIB = formatDateUniversal(finishObj, 'YYYY-MM-DD');
   if (startDateWIB === finishDateWIB) return 0;
   const s = new Date(startDateWIB);
   const f = new Date(finishDateWIB);
@@ -69,7 +69,7 @@ export function calculateTimeDriverData(
   const currentIterDate = new Date(startDateStr);
   const endDateObj = new Date(endDateStr);
   while (currentIterDate <= endDateObj) {
-    const dateStr = formatDateWIB(currentIterDate, 'YYYY-MM-DD');
+    const dateStr = formatDateUniversal(currentIterDate, 'YYYY-MM-DD');
     const dayNum = currentIterDate.getDate();
     const monthName = currentIterDate.toLocaleDateString(localeCode, {
       month: 'long',
@@ -99,7 +99,7 @@ export function calculateTimeDriverData(
       const email = normalizeEmail(rawEmail);
       const dateObj = parseApiDateString(t.startTime || t.doneTime);
       if (email && dateObj) {
-        activeDriverDates.add(`${email}_${formatDateWIB(dateObj, 'YYYY-MM-DD')}`);
+        activeDriverDates.add(`${email}_${formatDateUniversal(dateObj, 'YYYY-MM-DD')}`);
       }
     });
   }
@@ -109,7 +109,7 @@ export function calculateTimeDriverData(
     results.forEach((res) => {
       const dateObj = parseApiDateString(res.createdTime);
       if (!dateObj) return;
-      const dateStr = formatDateWIB(dateObj, 'YYYY-MM-DD');
+      const dateStr = formatDateUniversal(dateObj, 'YYYY-MM-DD');
       (res.result?.routing || []).forEach((vehicle) => {
         const email = normalizeEmail(vehicle.assignee);
         if (email) activeDriverDates.add(`${email}_${dateStr}`);
@@ -124,7 +124,7 @@ export function calculateTimeDriverData(
 
       const startObj = parseApiDateString(item.startTime);
       if (!startObj) return;
-      const dateKey = formatDateWIB(startObj, 'YYYY-MM-DD');
+      const dateKey = formatDateUniversal(startObj, 'YYYY-MM-DD');
 
       if (hasCrossReferenceData && dateKey) {
         if (!activeDriverDates.has(`${email}_${dateKey}`)) {
@@ -146,8 +146,8 @@ export function calculateTimeDriverData(
       const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
 
       if (dateKey && dataMatrix[dateKey]) {
-        const startStr = formatDateWIB(startObj, 'HH:mm');
-        const finishStr = formatDateWIB(finishObj, 'HH:mm');
+        const startStr = formatDateUniversal(startObj, 'HH:mm');
+        const finishStr = formatDateUniversal(finishObj, 'HH:mm');
         let durationStr = '-';
         let dayDiff = 0;
         if (startObj && finishObj) {
@@ -155,9 +155,9 @@ export function calculateTimeDriverData(
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
         const startTime = parseAndShiftToUTC7(item.startTime);
-        const realStartTime = formatToApiUtc(startTime);
+        const realStartTime = toApiDateString(startTime);
         const finishTime = parseAndShiftToUTC7(item.finish?.finishTime);
-        const realFinishTime = formatToApiUtc(finishTime);
+        const realFinishTime = toApiDateString(finishTime);
 
         const storedHubs = getCachedHubs();
         const { storedLocationName } = getLocalStorage();

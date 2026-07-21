@@ -2,7 +2,7 @@ import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatSimpleTime, parseCustomerString } from '@/lib/utils';
+import { formatDateUniversal, parseCustomerString } from '@/lib/utils';
 
 export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
   const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
@@ -237,7 +237,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                     {isFirstHub
                       ? ''
                       : (() => {
-                          const timeStr = trip.eta ? formatSimpleTime(trip.eta) : '-';
+                          const timeStr = trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
                           if (isLastHub && hasManualTaskInRoute && trip.eta) {
                             return (
                               <Tooltip tooltipContent={t('estimation.tooltip.hub_eta')}>
@@ -253,7 +253,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
                   <Td alignClass="text-center">
                     <p className={textClass}>
-                      {isLastHub ? '' : trip.etd ? formatSimpleTime(trip.etd) : '-'}
+                      {isLastHub ? '' : trip.etd ? formatDateUniversal(trip.etd, 'HH:mm') : '-'}
                     </p>
                   </Td>
                 </tr>

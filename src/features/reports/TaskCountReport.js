@@ -8,7 +8,7 @@ import { getTasks, getTrash } from '@/lib/api';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateTaskCountWorkbook } from '@/lib/reportGenerators';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import { formatDateUniversal, formatLongDate, formatToApiUtc } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate, toApiDateString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 
@@ -95,8 +95,8 @@ export default function TaskCountReport() {
       let isHitLimit = false;
 
       for (const chunk of chunks) {
-        const timeFrom = formatToApiUtc(chunk.from);
-        const timeTo = formatToApiUtc(chunk.to);
+        const timeFrom = toApiDateString(chunk.from);
+        const timeTo = toApiDateString(chunk.to);
 
         const response = await getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',

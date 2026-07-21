@@ -1,8 +1,8 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
-  getResultHistories,
   getHubs,
   getLocationHistories,
+  getResultHistories,
   getResultsSummary,
   getTasks,
   getVehicleMappings,
@@ -14,11 +14,11 @@ import { generateSummaryDataPreview } from '@/lib/reportGenerators';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
-  formatToApiUtc,
+  formatUTC7,
   getBasePlate,
   getDeliveryDateFromRouting,
-  getUTC7DateString,
   parseCustomerString,
+  toApiDateString,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -285,7 +285,8 @@ export default function useSummaryData() {
 
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
-          const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+          const dateKey =
+            formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
           if (!dateKey) return;
 
           initDate(dateKey);
@@ -667,7 +668,7 @@ export default function useSummaryData() {
           next.setDate(next.getDate() + maxDays - 1);
           next.setHours(23, 59, 59, 999);
           if (next > end) next = new Date(end);
-          chunks.push({ from: formatToApiUtc(curr), to: formatToApiUtc(next) });
+          chunks.push({ from: toApiDateString(curr), to: toApiDateString(next) });
           curr = new Date(next);
           curr.setDate(curr.getDate() + 1);
           curr.setHours(0, 0, 0, 0);
