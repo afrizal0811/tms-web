@@ -1,18 +1,278 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal, normalizeEmail, parseCustomerString } from '@/lib/utils';
-import { StyleSheet } from '@react-pdf/renderer';
+import { formatDateUniversal, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import { pdf, StyleSheet } from '@react-pdf/renderer';
+import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
+import DeliveryForm from './components/DeliveryForm';
 
-export function getDriverName(route, driverData) {
+export const getDriverName = (route, driverData) => {
   if (!route) return '';
-
   const email = normalizeEmail(route.assignee);
-  const storedDriver = driverData ? driverData[email] : null;
-  return storedDriver?.name || '-';
-}
+  return driverData?.[email]?.name || '-';
+};
 
-export const handleConfirmDownload = async ({
+export const handleRouteTransactionDownload = async ({
+  filteredVehicleRoutes,
+  setIsDownloading,
+  t,
+  selectedDate,
+}) => {
+  setIsDownloading(true);
+  try {
+    const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const isMultiVehicle = filteredVehicleRoutes.length > 1;
+    const zip = isMultiVehicle ? new JSZip() : null;
+
+    for (const route of filteredVehicleRoutes) {
+      const cleanName = (route.vehicleName || 'Vehicle').replace(/[\\/:*?\[\]]/g, '').trim();
+      const processedRows = [];
+      const seenSO = new Set();
+
+      (route.trips || []).forEach((trip) => {
+        const flowLower = (trip.flow || '').toLowerCase();
+        const visitLower = (trip.visitName || '').toLowerCase();
+
+        const isRedelivery =
+          flowLower.includes('re delivery') ||
+          flowLower.includes('redelivery') ||
+          visitLower.includes('re delivery') ||
+          visitLower.includes('redelivery') ||
+          trip.isReDelivery;
+
+        if (!trip.isHub && trip.orderId && !isRedelivery) {
+          const parsedCust = parseCustomerString(trip.visitName);
+          const custId = parsedCust?.id;
+          const locId = parsedCust?.location;
+
+          const isCustomerInvalid = isEmpty(custId) || isEmpty(locId);
+
+          const parsedInvoice = parsedCust.invoiceNumber;
+          const rawSOs = (parsedInvoice || trip.orderId)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          rawSOs.forEach((rawSo) => {
+            const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
+
+            if (!seenSO.has(cleanSo)) {
+              seenSO.add(cleanSo);
+              processedRows.push({
+                so: cleanSo,
+                isInvalidCustomer: isCustomerInvalid,
+              });
+            }
+          });
+        }
+      });
+
+      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{5,8}$/i.test(so);
+
+      processedRows.sort((a, b) => {
+        const validA = isValidSO(a.so) && !a.isInvalidCustomer;
+        const validB = isValidSO(b.so) && !b.isInvalidCustomer;
+        if (!validA && validB) return -1;
+        if (validA && !validB) return 1;
+        return a.so.localeCompare(b.so);
+      });
+
+      const wsData = [
+        ['Order Number', 'Order Type'],
+        ...processedRows.map((row) => {
+          const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+          if (!valid) {
+            return [row.so, '-'];
+          }
+          return [row.so, row.so.substring(0, 2).toUpperCase()];
+        }),
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ['A1', 'B1'].forEach((cell) => {
+        if (ws[cell]) {
+          ws[cell].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '4F46E5' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' },
+            },
+          };
+        }
+      });
+
+      processedRows.forEach((row, idx) => {
+        const rowIndex = idx + 2;
+        const cellRef = `A${rowIndex}`;
+        const typeCellRef = `B${rowIndex}`;
+
+        const baseStyle = {
+          border: {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' },
+          },
+          alignment: { vertical: 'center', horizontal: 'left' },
+        };
+
+        if (!ws[cellRef]) ws[cellRef] = { v: row.so };
+        if (!ws[typeCellRef]) ws[typeCellRef] = { v: '-' };
+
+        const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+
+        if (!valid) {
+          const errorStyle = {
+            ...baseStyle,
+            fill: { fgColor: { rgb: 'FFC7CE' } },
+            font: { color: { rgb: '9C0006' }, bold: true },
+          };
+
+          ws[cellRef].s = errorStyle;
+          ws[typeCellRef].s = {
+            ...errorStyle,
+            alignment: { vertical: 'center', horizontal: 'center' },
+          };
+          ws[cellRef].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
+        } else {
+          ws[cellRef].s = baseStyle;
+          ws[typeCellRef].s = {
+            ...baseStyle,
+            alignment: { vertical: 'center', horizontal: 'center' },
+          };
+        }
+      });
+
+      ws['!cols'] = [0, 1].map((colIndex) => {
+        let maxLen = 0;
+        for (let r = 0; r < wsData.length; r++) {
+          const cellValue = wsData[r][colIndex];
+          if (cellValue !== null && cellValue !== undefined) {
+            const strLen = cellValue.toString().length;
+            if (strLen > maxLen) {
+              maxLen = strLen;
+            }
+          }
+        }
+        return { wch: Math.min(Math.max(maxLen + 3, 14), 50) };
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
+
+      const fileName = `${cleanName} - ${dateForFilename}.xlsx`;
+
+      if (isMultiVehicle) {
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        zip.file(fileName, excelBuffer);
+      } else {
+        XLSX.writeFile(wb, fileName);
+        toastSuccess(t('common.toast.success'));
+        return;
+      }
+    }
+
+    if (isMultiVehicle) {
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toastSuccess(t('common.toast.success'));
+    }
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }));
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
+export const handleDeliveryFormDownload = async ({
+  filteredVehicleRoutes,
+  setIsDownloading,
+  t,
+  selectedDate,
+  driverData,
+  timeMap,
+}) => {
+  setIsDownloading(true);
+  try {
+    const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const isMultiVehicle = filteredVehicleRoutes.length > 1;
+    const zip = isMultiVehicle ? new JSZip() : null;
+
+    const generatePdfBlob = async (route) => {
+      const normalizedAssignee = normalizeEmail(route.assignee);
+      const realDriverName = getDriverName(route, driverData);
+      const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
+
+      return await pdf(
+        <DeliveryForm
+          data={route}
+          selectedDate={selectedDate}
+          driverNameOverride={realDriverName}
+          jamBerangkat={timeData.jamBerangkat}
+          jamKembali={timeData.jamKembali}
+        />
+      ).toBlob();
+    };
+
+    if (!isMultiVehicle) {
+      const route = filteredVehicleRoutes[0];
+      const blob = await generatePdfBlob(route);
+      const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Delivery Form - ${safeName} - ${dateForFilename}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toastSuccess(t('common.toast.success'));
+      return;
+    }
+
+    const pdfPromises = filteredVehicleRoutes.map(async (route) => {
+      const blob = await generatePdfBlob(route);
+      const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+      return { name: `${safeName} - ${dateForFilename}.pdf`, blob };
+    });
+
+    const generatedFiles = await Promise.all(pdfPromises);
+    generatedFiles.forEach((file) => zip.file(file.name, file.blob));
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Delivery Form - ${dateForFilename} - ${locationName}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toastSuccess(t('common.toast.success', { length: generatedFiles.length }));
+  } catch (error) {
+    toastError(t('common.toast.error', { err: error.message }));
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
+export const handleDeliveryListDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
@@ -23,29 +283,25 @@ export const handleConfirmDownload = async ({
   setIsDownloading(true);
   try {
     const wb = XLSX.utils.book_new();
-
     const activeCols = [
       { key: 'no', title: 'No.' },
       { key: 'visit', title: t('delivery.visit') },
-    ];
-
-    activeCols.push(
       { key: 'custId', title: t('common.customer_id') },
       { key: 'locId', title: t('common.location_id') },
       { key: 'so', title: t('common.so_number') },
       { key: 'openTime', title: t('common.open_time') },
       { key: 'closeTime', title: t('common.close_time') },
       { key: 'eta', title: t('delivery.est_arrival') },
-      { key: 'etd', title: t('delivery.est_depart') }
-    );
+      { key: 'etd', title: t('delivery.est_depart') },
+    ];
 
     filteredVehicleRoutes.forEach((route) => {
       const cleanName = (route.vehicleName || 'Vehicle')
         .replace(/[\\/:*?\[\]]/g, '')
         .substring(0, 30);
       const driverName = getDriverName(route, driverData);
-
       const hasManualInRoute = route.trips?.some((t) => t.isManual);
+
       const wsData = [
         [t('common.vehicle'), route.vehicleName],
         [t('common.driver'), driverName],
@@ -53,17 +309,15 @@ export const handleConfirmDownload = async ({
         activeCols.map((col) => col.title),
       ];
 
-      const stylingMeta = [];
-      stylingMeta.push(
+      const stylingMeta = [
         { row: 0, col: 0, style: { font: { bold: true } } },
         { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } },
-        { row: 1, col: 0, style: { font: { bold: true } } }
-      );
+        { row: 1, col: 0, style: { font: { bold: true } } },
+      ];
 
-      const headerRowIndex = 3;
-      for (let i = 0; i < activeCols.length; i++) {
+      activeCols.forEach((_, i) => {
         stylingMeta.push({
-          row: headerRowIndex,
+          row: 3,
           col: i,
           style: {
             font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -77,37 +331,24 @@ export const handleConfirmDownload = async ({
             },
           },
         });
-      }
+      });
 
       let currentRowIndex = 4;
       route.trips.forEach((trip, index) => {
         const isHub = trip.isHub;
         const isFirstHub = index === 0 && isHub;
         const isLastHub = index === route.trips.length - 1 && isHub;
-
-        let baseOutletName = '';
-        let custId = '-';
-        let locId = '-';
-
         const parsedCust = parseCustomerString(trip.visitName);
-        if (isHub) {
-          baseOutletName = 'HUB';
-          custId = '';
-          locId = '';
-        } else if (trip.flow === 'Pickup' && trip.warehouseName) {
-          baseOutletName = trip.warehouseName;
-          custId = parsedCust?.id || '-';
-          locId = parsedCust?.location || '-';
-        } else {
-          baseOutletName = parsedCust?.name || trip.visitName;
-          custId = parsedCust?.id || '-';
-          locId = parsedCust?.location || '-';
-        }
 
-        if (trip.isReDelivery && !isHub) {
-          baseOutletName = `[REDELIVERY] ${baseOutletName}`;
-        }
+        let baseOutletName = isHub
+          ? 'HUB'
+          : trip.flow === 'Pickup' && trip.warehouseName
+            ? trip.warehouseName
+            : parsedCust?.name || trip.visitName;
+        if (trip.isReDelivery && !isHub) baseOutletName = `[REDELIVERY] ${baseOutletName}`;
 
+        const custId = isHub ? '' : parsedCust?.id || '-';
+        const locId = isHub ? '' : parsedCust?.location || '-';
         const mapping = trip.soWarehouseMapping || [];
 
         const pushRow = (
@@ -122,7 +363,7 @@ export const handleConfirmDownload = async ({
         ) => {
           const openVal = isHub ? '' : trip.openTime || '-';
           const closeVal = isHub ? '' : trip.closeTime || '-';
-          let etaVal = isFirstHub ? '' : trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
+          const etaVal = isFirstHub ? '' : trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
           const etdVal = isLastHub ? '' : trip.etd ? formatDateUniversal(trip.etd, 'HH:mm') : '-';
 
           const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
@@ -130,24 +371,24 @@ export const handleConfirmDownload = async ({
 
           let outletWithWh =
             isDetailView && whInfo ? `${baseOutletName}\n↳ Pickup: ${whInfo}` : baseOutletName;
+          if (isRowUnsync && rowPartner) outletWithWh += `\n[Partner: ${rowPartner}]`;
 
-          if (isRowUnsync && rowPartner) {
-            outletWithWh += `\n[Partner: ${rowPartner}]`;
-          }
-
-          const rowVals = {
-            no: displayNo,
-            visit: outletWithWh,
-            custId: displayCustId,
-            locId: displayLocId,
-            so: displaySo,
-            openTime: openVal,
-            closeTime: closeVal,
-            eta: etaVal,
-            etd: etdVal,
-          };
-
-          wsData.push(activeCols.map((col) => rowVals[col.key]));
+          wsData.push(
+            activeCols.map(
+              (col) =>
+                ({
+                  no: displayNo,
+                  visit: outletWithWh,
+                  custId: displayCustId,
+                  locId: displayLocId,
+                  so: displaySo,
+                  openTime: openVal,
+                  closeTime: closeVal,
+                  eta: etaVal,
+                  etd: etdVal,
+                })[col.key]
+            )
+          );
 
           const cellStyle = {
             border: {
@@ -156,42 +397,27 @@ export const handleConfirmDownload = async ({
               left: { style: 'thin' },
               right: { style: 'thin' },
             },
-            alignment: {
-              vertical: 'center',
-              wrapText: true,
-            },
+            alignment: { vertical: 'center', wrapText: true },
+            ...(trip.isManual && { fill: { fgColor: { rgb: 'E6EEFF' } } }),
+            ...(isHub && { font: { color: { rgb: 'DC2626' }, bold: true } }),
           };
 
-          if (trip.isManual) {
-            cellStyle.fill = { fgColor: { rgb: 'E6EEFF' } };
-          }
-
-          if (isHub) {
-            cellStyle.font = { color: { rgb: 'DC2626' }, bold: true };
-          }
-
-          for (let c = 0; c < activeCols.length; c++) {
-            const colKey = activeCols[c].key;
+          activeCols.forEach((col, c) => {
             let colStyle = { ...cellStyle };
             let comment = null;
 
-            if (colKey === 'no') {
+            if (col.key === 'no') {
               colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
-              if (isSplit && !isHub) {
+              if (isSplit && !isHub)
                 colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
-              }
             }
-
-            if (colKey === 'visit' && trip.isReDelivery && !isHub) {
+            if (col.key === 'visit' && trip.isReDelivery && !isHub)
               colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
-            }
-
-            if (colKey === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
+            if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta)
               comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
-            }
 
             stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
-          }
+          });
           currentRowIndex++;
         };
 
@@ -199,40 +425,36 @@ export const handleConfirmDownload = async ({
           mapping.forEach((item, idx) => {
             const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
             const displayNo = trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`;
-            const whInfo = trip.flow !== 'Pickup' ? item.wh : null;
-
-            const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
-            const soIsUnsync = !!soPartner;
-
+            const soPartner = trip.syncDetails?.[item.so] || null;
             pushRow(
               displayNo,
               custId,
               locId,
               item.so,
-              whInfo,
+              trip.flow !== 'Pickup' ? item.wh : null,
               mapping.length > 1,
-              soIsUnsync,
+              !!soPartner,
               soPartner
             );
           });
           return;
         }
 
-        let displaySo = '-';
-        if (!isHub) {
-          if (mapping.length > 0) {
-            displaySo = mapping
-              .map((item) =>
-                item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
-              )
-              .join(', ');
-          } else {
-            displaySo = parseCustomerString(trip.visitName).invoiceNumber || trip.orderId || '-';
-          }
-        }
-
-        const displayNo = isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder;
-        pushRow(displayNo, custId, locId, displaySo, null, false);
+        let displaySo = isHub
+          ? '-'
+          : mapping.length > 0
+            ? mapping
+                .map((item) =>
+                  item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
+                )
+                .join(', ')
+            : parsedCust.invoiceNumber || trip.orderId || '-';
+        pushRow(
+          isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
+          custId,
+          locId,
+          displaySo
+        );
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -243,36 +465,31 @@ export const handleConfirmDownload = async ({
         if (meta.comment) ws[cellRef].c = meta.comment;
       });
 
-      const colWidths = activeCols.map((col, colIndex) => {
-        let maxLength = 0;
+      ws['!cols'] = activeCols.map((_, colIndex) => {
+        let maxLen = 0;
         for (let r = 3; r < wsData.length; r++) {
-          const cellValue = wsData[r][colIndex];
-          if (cellValue !== null && cellValue !== undefined) {
-            const lines = cellValue.toString().split('\n');
-            const maxLineLength = Math.max(...lines.map((l) => l.length));
-            maxLength = Math.max(maxLength, maxLineLength);
+          const val = wsData[r][colIndex];
+          if (val != null) {
+            const lines = val.toString().split('\n');
+            maxLen = Math.max(maxLen, ...lines.map((l) => l.length));
           }
         }
-        return { wch: Math.min(Math.max(maxLength + 2, 8), 60) };
+        return { wch: Math.min(Math.max(maxLen + 2, 8), 60) };
       });
-
-      ws['!cols'] = colWidths;
 
       let finalSheetName = cleanName;
       let counter = 1;
       while (wb.SheetNames.includes(finalSheetName)) {
-        finalSheetName = `${cleanName.substring(0, 25)}_${counter}`;
-        counter++;
+        finalSheetName = `${cleanName.substring(0, 25)}_${counter++}`;
       }
-
       XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
     });
+
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
     const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-    let fileName = `${t('delivery.title')} - ${date} - ${locationName}.xlsx`;
-    if (fileNamePrefix) {
-      fileName = `${t('delivery.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`;
-    }
+    const fileName = fileNamePrefix
+      ? `${t('delivery.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`
+      : `${t('delivery.title')} - ${date} - ${locationName}.xlsx`;
 
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
@@ -291,11 +508,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
   },
-
-  headerContainer: {
-    flexDirection: 'column',
-    marginBottom: 5,
-  },
+  headerContainer: { flexDirection: 'column', marginBottom: 5 },
   titleRow: {
     marginBottom: 10,
     borderBottomWidth: 1.5,
@@ -303,28 +516,10 @@ export const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingBottom: 2,
   },
-  mainTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-
-  formSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  inputsContainer: {
-    flex: 1,
-    marginRight: 20,
-    flexDirection: 'column',
-    gap: 4,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-
+  mainTitle: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  formSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  inputsContainer: { flex: 1, marginRight: 20, flexDirection: 'column', gap: 4 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
   labelCol1: { width: 50, fontSize: 8, fontWeight: 'bold' },
   lineCol1: {
     width: 140,
@@ -350,22 +545,9 @@ export const styles = StyleSheet.create({
     height: 12,
     justifyContent: 'flex-end',
   },
-  inputText: {
-    fontSize: 9,
-    marginLeft: 5,
-    marginBottom: 1,
-  },
-
-  miniTable: {
-    width: 180,
-    borderWidth: 1,
-    borderColor: '#000',
-    flexDirection: 'column',
-  },
-  miniTableRow: {
-    flexDirection: 'row',
-    height: 15,
-  },
+  inputText: { fontSize: 9, marginLeft: 5, marginBottom: 1 },
+  miniTable: { width: 180, borderWidth: 1, borderColor: '#000', flexDirection: 'column' },
+  miniTableRow: { flexDirection: 'row', height: 15 },
   miniTableHeader: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -383,12 +565,9 @@ export const styles = StyleSheet.create({
     height: '100%',
     paddingTop: 2,
   },
-  miniTableFont: {
-    fontWeight: 'bold',
-  },
+  miniTableFont: { fontWeight: 'bold' },
   colBln: { width: 60, borderRightWidth: 1 },
   colNamaDriver: { flex: 1, borderRightWidth: 0 },
-
   tableContainer: {
     marginTop: 5,
     flexDirection: 'column',
@@ -403,11 +582,7 @@ export const styles = StyleSheet.create({
     minHeight: 18,
     alignItems: 'stretch',
   },
-  tableHeaderRow: {
-    backgroundColor: '#FFFFFF',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+  tableHeaderRow: { backgroundColor: '#FFFFFF', fontWeight: 'bold', textAlign: 'center' },
   cell: {
     borderRightWidth: 1,
     borderRightColor: '#000',
@@ -422,14 +597,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   colFaktur: { width: '15%' },
   colOutlet: { width: '18%' },
   colQty: { width: '5%', textAlign: 'center' },
   colBiayaParent: { width: '37%', padding: 0 },
   colJml: { width: '10%', textAlign: 'center' },
   colKetParent: { width: '15%', padding: 0 },
-
   nestedHeaderTop: {
     borderBottomWidth: 1,
     borderColor: '#000',
@@ -439,11 +612,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  nestedSubContainer: {
-    flexDirection: 'row',
-    flex: 1,
-    width: '100%',
-  },
+  nestedSubContainer: { flexDirection: 'row', flex: 1, width: '100%' },
   nestedSubCell: {
     flex: 1,
     borderRightWidth: 1,
@@ -456,7 +625,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 1,
   },
   nestedSubCellLast: { borderRightWidth: 0 },
-
   footerLabelCell: {
     backgroundColor: '#FFFFFF',
     fontWeight: 'bold',
@@ -464,7 +632,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 5,
   },
-
   infoBox: {
     marginTop: 5,
     borderWidth: 1,
@@ -474,12 +641,7 @@ export const styles = StyleSheet.create({
     gap: 10,
     width: '100%',
   },
-  infoTextColumn: {
-    flexDirection: 'column',
-    gap: 1,
-    width: '30%',
-  },
-
+  infoTextColumn: { flexDirection: 'column', gap: 1, width: '30%' },
   legendContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -488,45 +650,18 @@ export const styles = StyleSheet.create({
     borderColor: '#000',
     paddingLeft: 8,
   },
-
-  legendColumn: {
-    width: '48%',
-    flexDirection: 'column',
-    gap: 1,
-  },
-
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 1,
-  },
-
-  bullet: {
-    width: 8,
-    fontSize: 7,
-    marginTop: -1,
-  },
-
-  legendTextContent: {
-    fontSize: 6,
-    fontFamily: 'Helvetica',
-    flex: 1,
-  },
-
-  infoText: {
-    fontSize: 7,
-    fontFamily: 'Helvetica',
-  },
-
+  legendColumn: { width: '48%', flexDirection: 'column', gap: 1 },
+  legendItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 1 },
+  bullet: { width: 8, fontSize: 7, marginTop: -1 },
+  legendTextContent: { fontSize: 6, fontFamily: 'Helvetica', flex: 1 },
+  infoText: { fontSize: 7, fontFamily: 'Helvetica' },
   signatureSection: {
     marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 20,
   },
-  signatureBox: {
-    flex: 1,
-  },
+  signatureBox: { flex: 1 },
   signatureHeader: {
     fontSize: 7,
     fontWeight: 'bold',
@@ -534,11 +669,7 @@ export const styles = StyleSheet.create({
     marginBottom: 2,
     textTransform: 'uppercase',
   },
-  sigTable: {
-    borderWidth: 1,
-    borderColor: '#000',
-    flexDirection: 'column',
-  },
+  sigTable: { borderWidth: 1, borderColor: '#000', flexDirection: 'column' },
   sigRowHeader: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -546,16 +677,8 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     height: 15,
   },
-  sigRowBody: {
-    flexDirection: 'row',
-    height: 40,
-  },
-  sigRowFooter: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderColor: '#000',
-    height: 15,
-  },
+  sigRowBody: { flexDirection: 'row', height: 40 },
+  sigRowFooter: { flexDirection: 'row', borderTopWidth: 1, borderColor: '#000', height: 15 },
   sigCell: {
     flex: 1,
     borderRightWidth: 1,
@@ -565,7 +688,5 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 7,
   },
-  sigCellLast: {
-    borderRightWidth: 0,
-  },
+  sigCellLast: { borderRightWidth: 0 },
 });

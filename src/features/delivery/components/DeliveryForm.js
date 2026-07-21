@@ -1,28 +1,26 @@
-import { getBasePlate, parseCustomerString, } from '@/lib/utils';
+import { getBasePlate, parseCustomerString } from '@/lib/utils';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
-import {  styles } from '../help';
+import { styles } from '../help';
 
-const cleanDriverName = (name) => {
-  if (!name) return '';
-  return name.replace(/^'[^']+'\s*/, '');
-};
+const cleanDriverName = (name) => (name ? name.replace(/^'[^']+'\s*/, '') : '');
 
 const formatIndoDate = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 };
 
 const getShortMonth = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('id-ID', { month: 'long' });
+  return new Date(dateStr).toLocaleDateString('id-ID', { month: 'long' });
 };
 
 const calculateItemWeight = (item) => {
   const soString = parseCustomerString(item.visitName).invoiceNumber || '';
-  const soList = soString ? soString.split(',') : [];
-  const soCount = soList.length;
+  const soCount = soString ? soString.split(',').length : 0;
   return Math.max(1, Math.ceil(soCount / 4));
 };
 
@@ -43,28 +41,21 @@ const chunkArrayWeighted = (data, maxTotalWeight = 15) => {
   });
 
   if (currentChunk.length > 0) chunks.push(currentChunk);
-  return chunks;
+  return chunks.length > 0 ? chunks : [[]];
 };
 
-const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, jamKembali }) => {
-  const rawDriverName = driverNameOverride || data?.vehicleName || '';
-  const driverName = cleanDriverName(rawDriverName);
-  const rawVehiclePlate = data?.vehicleName || '';
-  const vehiclePlate = getBasePlate(rawVehiclePlate);
-  const trips = data?.trips || [];
+const DeliveryForm = ({ data, selectedDate, driverNameOverride, jamBerangkat, jamKembali }) => {
+  const driverName = cleanDriverName(driverNameOverride || data?.vehicleName || '');
+  const vehiclePlate = getBasePlate(data?.vehicleName || '');
 
-  const validTrips = trips.filter((trip) => {
+  const validTrips = (data?.trips || []).filter((trip) => {
     if (trip.isHub) return false;
     const weight = parseFloat(trip.weight);
     const volume = parseFloat(trip.volume);
-    if ((!isNaN(weight) && weight < 0) || (!isNaN(volume) && volume < 0)) {
-      return false;
-    }
-    return true;
+    return !((!isNaN(weight) && weight < 0) || (!isNaN(volume) && volume < 0));
   });
 
   const dataChunks = chunkArrayWeighted(validTrips, 15);
-  if (dataChunks.length === 0) dataChunks.push([]);
 
   const legendsLeft = [
     { label: 'Qty', desc: 'Total barang terkirim sesuai faktur.' },
@@ -93,6 +84,22 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
     </View>
   );
 
+  const renderEmptyBiayaCells = () => (
+    <View style={[styles.cell, styles.colBiayaParent, { flexDirection: 'row', padding: 0 }]}>
+      {Array.from({ length: 5 }).map((_, idx) => (
+        <View key={idx} style={[styles.nestedSubCell, { borderRightWidth: 1 }]} />
+      ))}
+      <View style={[styles.nestedSubCell, styles.nestedSubCellLast]} />
+    </View>
+  );
+
+  const renderEmptyKetCells = () => (
+    <View style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}>
+      <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]} />
+      <View style={[styles.nestedSubCell, styles.nestedSubCellLast]} />
+    </View>
+  );
+
   return (
     <Document>
       {dataChunks.map((chunk, pageIndex) => (
@@ -115,7 +122,6 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                   <View style={styles.spacer} />
                   <Text style={styles.labelCol2}>Jam Berangkat :</Text>
                   <View style={styles.lineCol2}>
-                    {/* 2. UPDATE LOGIC JAM */}
                     <Text style={styles.inputText}>
                       {jamBerangkat === '-' ? '' : jamBerangkat || ''}
                     </Text>
@@ -134,7 +140,6 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                   <View style={styles.spacer} />
                   <Text style={styles.labelCol2}>Jam Kembali :</Text>
                   <View style={styles.lineCol2}>
-                    {/* 2. UPDATE LOGIC JAM */}
                     <Text style={styles.inputText}>
                       {jamKembali === '-' ? '' : jamKembali || ''}
                     </Text>
@@ -184,7 +189,6 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                   <Text style={styles.nestedSubCell}>KL. LUAR</Text>
                   <Text style={styles.nestedSubCell}>K. AMAN</Text>
                   <Text style={styles.nestedSubCell}>D. HELPER</Text>
-                  {/* 1. UPDATE RUPA2 -> RUPA-RUPA */}
                   <Text style={[styles.nestedSubCell, styles.nestedSubCellLast]}>RUPA-RUPA</Text>
                 </View>
               </View>
@@ -204,38 +208,18 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
 
             {chunk.map((trip, idx) => {
               const { name: outletDisplay, invoiceNumber } = parseCustomerString(trip.visitName);
-              const soNumbers = invoiceNumber || '';
-
               return (
                 <View key={idx} style={styles.tableRow} wrap={false}>
                   <View style={[styles.cell, styles.colFaktur]}>
-                    <Text style={{ fontSize: 7 }}>{soNumbers}</Text>
+                    <Text style={{ fontSize: 7 }}>{invoiceNumber || ''}</Text>
                   </View>
                   <View style={[styles.cell, styles.colOutlet]}>
                     <Text>{outletDisplay}</Text>
                   </View>
-                  <View style={[styles.cell, styles.colQty]}></View>
-                  <View
-                    style={[
-                      styles.cell,
-                      styles.colBiayaParent,
-                      { flexDirection: 'row', padding: 0 },
-                    ]}
-                  >
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-                  </View>
-                  <View style={[styles.cell, styles.colJml]}></View>
-                  <View
-                    style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}
-                  >
-                    <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                    <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-                  </View>
+                  <View style={[styles.cell, styles.colQty]} />
+                  {renderEmptyBiayaCells()}
+                  <View style={[styles.cell, styles.colJml]} />
+                  {renderEmptyKetCells()}
                 </View>
               );
             })}
@@ -244,64 +228,27 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
               length: Math.max(0, 15 - chunk.reduce((acc, i) => acc + calculateItemWeight(i), 0)),
             }).map((_, i) => (
               <View key={`empty-${i}`} style={styles.tableRow}>
-                <View style={[styles.cell, styles.colFaktur]}></View>
-                <View style={[styles.cell, styles.colOutlet]}></View>
-                <View style={[styles.cell, styles.colQty]}></View>
-                <View
-                  style={[styles.cell, styles.colBiayaParent, { flexDirection: 'row', padding: 0 }]}
-                >
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-                </View>
-                <View style={[styles.cell, styles.colJml]}></View>
-                <View
-                  style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}
-                >
-                  <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                  <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-                </View>
+                <View style={[styles.cell, styles.colFaktur]} />
+                <View style={[styles.cell, styles.colOutlet]} />
+                <View style={[styles.cell, styles.colQty]} />
+                {renderEmptyBiayaCells()}
+                <View style={[styles.cell, styles.colJml]} />
+                {renderEmptyKetCells()}
               </View>
             ))}
 
             <View style={[styles.tableRow, { minHeight: 15 }]}>
-              {/* Faktur(15)+Outlet(18)+Qty(5) = 38% */}
               <View
-                style={[
-                  styles.cell,
-                  {
-                    width: '38%',
-                    paddingLeft: 5,
-                    justifyContent: 'center',
-                  },
-                ]}
+                style={[styles.cell, { width: '38%', paddingLeft: 5, justifyContent: 'center' }]}
               >
                 <Text style={{ fontWeight: 'bold', fontSize: 8 }}>JUMLAH</Text>
               </View>
-              <View
-                style={[styles.cell, styles.colBiayaParent, { flexDirection: 'row', padding: 0 }]}
-              >
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-              </View>
-              <View style={[styles.cell, styles.colJml]}></View>
-              <View
-                style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}
-              >
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-              </View>
+              {renderEmptyBiayaCells()}
+              <View style={[styles.cell, styles.colJml]} />
+              {renderEmptyKetCells()}
             </View>
 
             <View style={[styles.tableRow, { borderBottomWidth: 1, minHeight: 15 }]}>
-              {/* 38% + 37% = 75% */}
               <View
                 style={[
                   styles.cell,
@@ -317,12 +264,7 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                 <Text>BON SEMENTARA</Text>
               </View>
               <View style={[styles.cell, styles.colJml]} />
-              <View
-                style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}
-              >
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-              </View>
+              {renderEmptyKetCells()}
             </View>
 
             <View style={[styles.tableRow, { borderBottomWidth: 1, minHeight: 15 }]}>
@@ -341,17 +283,11 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                 <Text>DIKEMBALIKAN/DIBAYAR</Text>
               </View>
               <View style={[styles.cell, styles.colJml]} />
-              <View
-                style={[styles.cell, styles.colKetParent, { flexDirection: 'row', padding: 0 }]}
-              >
-                <View style={[styles.nestedSubCell, { borderRightWidth: 1 }]}></View>
-                <View style={[styles.nestedSubCell, styles.nestedSubCellLast]}></View>
-              </View>
+              {renderEmptyKetCells()}
             </View>
           </View>
 
           <View style={styles.infoBox}>
-            {/* Bagian Kiri: Info Kertas (Asli/Copy) - Existing */}
             <View style={styles.infoTextColumn}>
               <View style={{ flexDirection: 'row' }}>
                 <Text style={[styles.infoText, { width: 25 }]}>Asli</Text>
@@ -375,7 +311,6 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
                 <Text style={styles.infoText}>Insentif</Text>
               </View>
             </View>
-
             <View style={styles.legendContainer}>
               <View style={styles.legendColumn}>{legendsLeft.map(renderLegendItem)}</View>
               <View style={styles.legendColumn}>{legendsRight.map(renderLegendItem)}</View>
@@ -431,4 +366,4 @@ const FormPengiriman = ({ data, selectedDate, driverNameOverride, jamBerangkat, 
   );
 };
 
-export default FormPengiriman;
+export default DeliveryForm;

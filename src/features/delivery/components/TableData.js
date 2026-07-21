@@ -3,84 +3,75 @@ import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import { formatDateUniversal, parseCustomerString } from '@/lib/utils';
+import { useMemo } from 'react';
 
 export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
-  const hasManualTaskInRoute = activeRoute.trips.some((t) => t.isManual);
-  const processedTrips = [];
-  activeRoute.trips.forEach((trip, index) => {
-    const isHub = trip.isHub;
-    let outletName;
-    let custId = '-';
-    let locId = '-';
-    const parsedCust = parseCustomerString(trip.visitName);
+  const hasManualTaskInRoute = useMemo(
+    () => activeRoute.trips.some((trip) => trip.isManual),
+    [activeRoute]
+  );
 
-    if (isHub) {
-      outletName = trip.visitName;
-      custId = '';
-      locId = '';
-    } else if (trip.flow === 'Pickup' && trip.warehouseName) {
-      outletName = trip.warehouseName;
-      custId = parsedCust?.id || '-';
-      locId = parsedCust?.location || '-';
-    } else {
-      outletName = parsedCust?.name || trip.visitName;
-      custId = parsedCust?.id || '-';
-      locId = parsedCust?.location || '-';
-    }
+  const processedTrips = useMemo(() => {
+    const list = [];
+    activeRoute.trips.forEach((trip, index) => {
+      const isHub = trip.isHub;
+      const parsedCust = parseCustomerString(trip.visitName);
+      const outletName = isHub
+        ? trip.visitName
+        : trip.flow === 'Pickup' && trip.warehouseName
+          ? trip.warehouseName
+          : parsedCust?.name || trip.visitName;
+      const custId = isHub ? '' : parsedCust?.id || '-';
+      const locId = isHub ? '' : parsedCust?.location || '-';
+      const mapping = trip.soWarehouseMapping || [];
 
-    const mapping = trip.soWarehouseMapping || [];
-
-    if (!isHub && isDetailView && mapping.length > 0) {
-      mapping.forEach((item, idx) => {
-        const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
-
-        const soPartner = trip.syncDetails ? trip.syncDetails[item.so] : null;
-        const soIsUnsync = !!soPartner;
-        const soHasPartner = trip.partnerSOs?.includes(item.so) || false;
-
-        processedTrips.push({
-          ...trip,
-          outletName,
-          custId,
-          locId,
-          displaySo: item.so,
-          displayNo: trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`,
-          pickupWh: trip.flow !== 'Pickup' ? item.wh : null,
-          isSplit: mapping.length > 1,
-          originalIndex: index,
-          isUnsync: soIsUnsync,
-          partnerVehicle: soPartner,
-          hasPartner: soHasPartner,
+      if (!isHub && isDetailView && mapping.length > 0) {
+        mapping.forEach((item, idx) => {
+          const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
+          const soPartner = trip.syncDetails?.[item.so] || null;
+          list.push({
+            ...trip,
+            outletName,
+            custId,
+            locId,
+            displaySo: item.so,
+            displayNo: trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`,
+            pickupWh: trip.flow !== 'Pickup' ? item.wh : null,
+            isSplit: mapping.length > 1,
+            originalIndex: index,
+            isUnsync: !!soPartner,
+            partnerVehicle: soPartner,
+            hasPartner: trip.partnerSOs?.includes(item.so) || false,
+          });
         });
-      });
-      return;
-    }
-
-    let displaySo = '-';
-    if (!isHub) {
-      if (mapping.length > 0) {
-        displaySo = mapping
-          .map((item) => (item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so))
-          .join(', ');
-      } else {
-        displaySo = parseCustomerString(trip.visitName).invoiceNumber || trip.orderId || '-';
+        return;
       }
-    }
 
-    processedTrips.push({
-      ...trip,
-      outletName,
-      custId,
-      locId,
-      displaySo,
-      displayNo: isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
-      pickupWh: null,
-      isSplit: false,
-      originalIndex: index,
-      hasPartner: trip.hasAnyPartner,
-      partnerSOs: trip.partnerSOs,
+      const displaySo = isHub
+        ? '-'
+        : mapping.length > 0
+          ? mapping
+              .map((item) =>
+                item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
+              )
+              .join(', ')
+          : parsedCust.invoiceNumber || trip.orderId || '-';
+      list.push({
+        ...trip,
+        outletName,
+        custId,
+        locId,
+        displaySo,
+        displayNo: isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
+        pickupWh: null,
+        isSplit: false,
+        originalIndex: index,
+        hasPartner: trip.hasAnyPartner,
+        partnerSOs: trip.partnerSOs,
+      });
     });
-  });
+    return list;
+  }, [activeRoute, isDetailView]);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors relative">
@@ -122,69 +113,42 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
               const isHub = trip.isHub;
               const isFirstHub = trip.originalIndex === 0 && isHub;
               const isLastHub = trip.originalIndex === activeRoute.trips.length - 1 && isHub;
-
-              let textClass = '';
               const isManual = trip.isManual;
               const hasPartner = trip.hasPartner;
 
-              if (isHub) {
-                textClass = 'text-red-600 dark:text-red-300 font-semibold';
-              }
+              const textClass = isHub ? 'text-red-600 dark:text-red-300 font-semibold' : '';
+              const rowClass = `transition-colors border-b border-gray-100 dark:border-slate-700/80 ${
+                isManual
+                  ? 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70'
+                  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
+              }`;
 
-              let rowClass = 'transition-colors ';
-              if (isManual) {
-                rowClass +=
-                  'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70 ';
-              } else {
-                rowClass += 'hover:bg-gray-50 dark:hover:bg-slate-700/50 ';
-              }
+              const tooltipMsg = hasPartner
+                ? t('delivery.tooltip.find_so')
+                : isManual
+                  ? t('delivery.tooltip.manual_assign')
+                  : '';
 
-              rowClass += 'border-b border-gray-100 dark:border-slate-700/80 ';
+              const rowKey = `${trip.visitId}-${idx}`;
 
-              let tooltipMsg = '';
-              if (hasPartner) {
-                tooltipMsg = t('delivery.tooltip.find_so');
-              } else if (isManual) {
-                tooltipMsg = t('delivery.tooltip.manual_assign');
-              }
-
-              const soAlignClass = isDetailView ? 'text-center' : 'text-left';
               const handleRowClick = () => {
                 if (hasPartner && setSearchQuery) {
-                  let filterTarget = '';
-
-                  if (trip.isSplit) {
-                    filterTarget = trip.displaySo;
-                  } else {
-                    const partnerSOs = trip.partnerSOs || [];
-                    if (partnerSOs.length > 0) {
-                      filterTarget = partnerSOs[0];
-                    } else if (trip.orderId) {
-                      filterTarget = trip.orderId.split(',')[0].trim();
-                    }
-                  }
-
-                  if (filterTarget) {
-                    setSearchQuery(filterTarget);
-                  }
+                  const target = trip.isSplit
+                    ? trip.displaySo
+                    : trip.partnerSOs?.[0] || trip.orderId?.split(',')[0].trim();
+                  if (target) setSearchQuery(target);
                 }
               };
 
               const RowContent = (
                 <tr
-                  key={`${trip.visitId}-${idx}`}
+                  key={rowKey}
                   className={`${rowClass} ${tooltipMsg ? (hasPartner ? 'cursor-pointer' : 'cursor-help') : ''}`}
                   onClick={handleRowClick}
                 >
                   <Td>
                     <p
-                      className={`text-center w-full ${
-                        trip.isSplit
-                          ? 'text-green-600 dark:text-green-400 font-bold'
-                          : isManual
-                            ? 'text-[#4F76C7] dark:text-blue-400 font-medium'
-                            : ''
-                      }`}
+                      className={`text-center w-full ${trip.isSplit ? 'text-green-600 dark:text-green-400 font-bold' : isManual ? 'text-[#4F76C7] dark:text-blue-400 font-medium' : ''}`}
                     >
                       {trip.displayNo}
                     </p>
@@ -202,14 +166,12 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                               Redelivery
                             </span>
                           )}
-
                           {trip.isUnsync && trip.partnerVehicle && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-900 tracking-tight shadow-sm hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-900 tracking-tight shadow-sm">
                               Partner: {trip.partnerVehicle}
                             </span>
                           )}
                         </div>
-
                         {isDetailView && trip.pickupWh && (
                           <span className="text-[10px] text-gray-500 dark:text-slate-400 font-medium leading-none italic">
                             ↳ Pickup: {trip.pickupWh}
@@ -225,11 +187,9 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                   <Td alignClass="text-center">
                     <p className={textClass}>{trip.locId}</p>
                   </Td>
-
-                  <Td alignClass={soAlignClass}>
+                  <Td alignClass={isDetailView ? 'text-center' : 'text-left'}>
                     {isHub ? '' : <HighlightText text={trip.displaySo} highlight={searchQuery} />}
                   </Td>
-
                   <Td alignClass="text-center">{isHub ? '' : trip.openTime || '-'}</Td>
                   <Td alignClass="text-center">{isHub ? '' : trip.closeTime || '-'}</Td>
 
@@ -259,15 +219,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 </tr>
               );
 
-              if (tooltipMsg) {
-                return (
-                  <Tooltip key={`${trip.visitId}-${idx}-tooltip`} tooltipContent={tooltipMsg}>
-                    {RowContent}
-                  </Tooltip>
-                );
-              }
-
-              return RowContent;
+              return tooltipMsg ? (
+                <Tooltip key={`${rowKey}-tooltip`} tooltipContent={tooltipMsg}>
+                  {RowContent}
+                </Tooltip>
+              ) : (
+                RowContent
+              );
             })}
           </tbody>
         </table>
