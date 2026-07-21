@@ -1,11 +1,7 @@
-// File: src/lib/reportGenerators/bread/breadReport.js
-
-import { getBasePlate, normalizeEmail } from '@/lib/utils';
+import { getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 const BREAD_KEYWORDS = ['BUN'];
-
-const CENTER_COL_EXCEPTIONS = new Set([2, 3]);
 
 const headerStyle = {
   font: { bold: true, color: { rgb: 'FFFFFF' } },
@@ -40,11 +36,18 @@ export const extractBreadRows = (tasksData, driverMap, dateStr) => {
     const driverName = driverInfo?.name || rawAssignee || '-';
     const platNomor = driverInfo?.plat || '-';
 
+    const parsedCustomer = parseCustomerString(task.customerOrder);
+    const custName = parsedCustomer.name || '-';
+    const custId = parsedCustomer.id || '-';
+    const locId = parsedCustomer.location || '-';
+    const address = task.address || '-';
+
     const breadProducts = (task.listProduct || []).filter(
       (p) =>
         typeof p.title === 'string' &&
         BREAD_KEYWORDS.some((kw) => p.title.toUpperCase().includes(kw))
     );
+
     breadProducts.forEach((p) => {
       rows.push([
         dateStr,
@@ -56,6 +59,10 @@ export const extractBreadRows = (tasksData, driverMap, dateStr) => {
         toNumOrDash(p.volume),
         toNumOrDash(p.weight),
         p.caption ?? '-',
+        custName,
+        custId,
+        locId,
+        address,
       ]);
     });
   });
@@ -74,6 +81,10 @@ export const generateBreadWorkbook = (allRows, translate) => {
     translate('common.volume'),
     translate('common.weight'),
     translate('common.so_number'),
+    translate('common.customer_name') || 'Customer Name',
+    translate('common.customer_id') || 'Customer ID',
+    translate('common.location_id') || 'Location ID',
+    translate('common.address') || 'Address',
   ];
 
   const wb = XLSX.utils.book_new();
@@ -83,23 +94,22 @@ export const generateBreadWorkbook = (allRows, translate) => {
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
   const range = XLSX.utils.decode_range(ws['!ref']);
+  const leftAlignedCols = new Set([2, 3, 9, 12]);
 
-  for (let C = 0; C <= range.e.c; C++) {
-    const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (ws[cellAddr]) ws[cellAddr].s = headerStyle;
-  }
-
-  for (let R = 1; R <= range.e.r; R++) {
+  for (let R = 0; R <= range.e.r; R++) {
     for (let C = 0; C <= range.e.c; C++) {
       const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cellAddr]) continue;
-      if (!CENTER_COL_EXCEPTIONS.has(C)) {
-        ws[cellAddr].s = { alignment: { horizontal: 'center', vertical: 'center' } };
+
+      if (R === 0) {
+        ws[cellAddr].s = headerStyle;
+      } else {
+        const alignHoriz = leftAlignedCols.has(C) ? 'left' : 'center';
+        ws[cellAddr].s = { alignment: { horizontal: alignHoriz, vertical: 'center' } };
       }
     }
   }
 
-  const PADDING = 4;
   const colWidths = HEADERS.map((h) => h.length);
 
   allRows.forEach((row) => {
@@ -109,7 +119,7 @@ export const generateBreadWorkbook = (allRows, translate) => {
     });
   });
 
-  ws['!cols'] = colWidths.map((w) => ({ wch: w + PADDING }));
+  ws['!cols'] = colWidths.map((w) => ({ wch: Math.min(w + 4, 60) }));
 
   XLSX.utils.book_append_sheet(wb, ws, translate('report.bread_summary'));
   return wb;
