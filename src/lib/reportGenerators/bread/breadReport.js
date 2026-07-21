@@ -88,7 +88,7 @@ export const generateBreadWorkbook = (allRows, translate) => {
   ];
 
   const wb = XLSX.utils.book_new();
-  wb.Props = { Title: translate('report.bread_summary') };
+  wb.Props = { Title: translate('report.bread_report') };
 
   const sheetData = [HEADERS, ...allRows];
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
@@ -121,6 +121,6 @@ export const generateBreadWorkbook = (allRows, translate) => {
 
   ws['!cols'] = colWidths.map((w) => ({ wch: Math.min(w + 4, 60) }));
 
-  XLSX.utils.book_append_sheet(wb, ws, translate('report.bread_summary'));
+  XLSX.utils.book_append_sheet(wb, ws, translate('report.bread_report'));
   return wb;
 };

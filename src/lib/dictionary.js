@@ -268,7 +268,7 @@ export const dictionary = {
     },
     report: {
       bulk_report: 'Laporan Massal',
-      bread_summary: 'Ringkasan Barang Roti',
+      bread_report: 'Laporan Barang Roti',
       change_date: 'Ubah Tanggal Ruting',
       daily_report: 'Laporan Harian',
       note_diff_date: 'Tanggal Mulai dan Selesai berbeda',
@@ -928,7 +928,7 @@ export const dictionary = {
     },
     report: {
       bulk_report: 'Bulk Report',
-      bread_summary: 'Bread Item Summary',
+      bread_report: 'Bread Item Report',
       change_date: 'Change Routing Date',
       daily_report: 'Daily Report',
       note_diff_date: 'Start and Finish date are different',

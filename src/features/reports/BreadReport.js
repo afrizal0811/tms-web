@@ -78,7 +78,7 @@ export default function BreadReport() {
       const endStr = endDate ? formatDateUniversal(endDate, 'DD.MM.YYYY') : startStr;
       const dateLabel = startStr === endStr ? startStr : `${startStr} - ${endStr}`;
       const locationName = storedLocationAcronym || storedLocationName;
-      const fileName = `${t('report.bread_summary')} - ${dateLabel} - ${locationName}.xlsx`;
+      const fileName = `${t('report.bread_report')} - ${dateLabel} - ${locationName}.xlsx`;
 
       XLSX.writeFile(wb, fileName);
       toastSuccess(t('common.toast.success'));
@@ -114,7 +114,7 @@ export default function BreadReport() {
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
-        {t('report.bread_summary')}
+        {t('report.bread_report')}
       </h1>
 
       <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 mb-10 w-full">
