@@ -92,7 +92,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 <span>No.</span>
               </Th>
               <Th widthClass="w-[20%]" alignClass="text-center">
-                {t('estimation.visit')}
+                {t('delivery.visit')}
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
                 {t('common.customer_id') || 'ID Customer'}
@@ -110,10 +110,10 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 {t('common.close_time')}
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
-                {t('estimation.est_arrival')}
+                {t('delivery.est_arrival')}
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
-                {t('estimation.est_depart')}
+                {t('delivery.est_depart')}
               </Th>
             </tr>
           </thead>
@@ -143,9 +143,9 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
 
               let tooltipMsg = '';
               if (hasPartner) {
-                tooltipMsg = t('estimation.tooltip.find_so');
+                tooltipMsg = t('delivery.tooltip.find_so');
               } else if (isManual) {
-                tooltipMsg = t('estimation.tooltip.manual_assign');
+                tooltipMsg = t('delivery.tooltip.manual_assign');
               }
 
               const soAlignClass = isDetailView ? 'text-center' : 'text-left';
@@ -240,7 +240,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                           const timeStr = trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
                           if (isLastHub && hasManualTaskInRoute && trip.eta) {
                             return (
-                              <Tooltip tooltipContent={t('estimation.tooltip.hub_eta')}>
+                              <Tooltip tooltipContent={t('delivery.tooltip.hub_eta')}>
                                 <span className="underline decoration-dashed decoration-red-600 dark:decoration-red-300 cursor-help text-red-600 dark:text-red-300 font-bold underline-offset-4">
                                   {timeStr}
                                 </span>

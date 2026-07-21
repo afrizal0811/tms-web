@@ -26,7 +26,7 @@ export const handleConfirmDownload = async ({
 
     const activeCols = [
       { key: 'no', title: 'No.' },
-      { key: 'visit', title: t('estimation.visit') },
+      { key: 'visit', title: t('delivery.visit') },
     ];
 
     activeCols.push(
@@ -35,8 +35,8 @@ export const handleConfirmDownload = async ({
       { key: 'so', title: t('common.so_number') },
       { key: 'openTime', title: t('common.open_time') },
       { key: 'closeTime', title: t('common.close_time') },
-      { key: 'eta', title: t('estimation.est_arrival') },
-      { key: 'etd', title: t('estimation.est_depart') }
+      { key: 'eta', title: t('delivery.est_arrival') },
+      { key: 'etd', title: t('delivery.est_depart') }
     );
 
     filteredVehicleRoutes.forEach((route) => {
@@ -187,7 +187,7 @@ export const handleConfirmDownload = async ({
             }
 
             if (colKey === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
-              comment = [{ a: 'Info', t: t('estimation.hub_eta_short'), h: true }];
+              comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
             }
 
             stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
@@ -269,9 +269,9 @@ export const handleConfirmDownload = async ({
     });
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
     const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-    let fileName = `${t('estimation.title')} - ${date} - ${locationName}.xlsx`;
+    let fileName = `${t('delivery.title')} - ${date} - ${locationName}.xlsx`;
     if (fileNamePrefix) {
-      fileName = `${t('estimation.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`;
+      fileName = `${t('delivery.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`;
     }
 
     XLSX.writeFile(wb, fileName);

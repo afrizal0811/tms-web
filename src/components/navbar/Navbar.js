@@ -175,10 +175,10 @@ export default function Navbar() {
   }, [isMobileMenuOpen, isLaporanOpen]);
 
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
-  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.deliveries');
-  const secondaryEstimate = isIndonesian ? t('navbar.deliveries') : t('navbar.estimate');
-  const primaryDeliveries = isIndonesian ? 'Data' : t('common.vehicle');
-  const secondaryDeliveries = isIndonesian ? t('common.vehicle') : 'Data';
+  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.delivery');
+  const secondaryEstimate = isIndonesian ? t('navbar.delivery') : t('navbar.estimate');
+  const primaryVehicle = isIndonesian ? 'Data' : t('common.vehicle');
+  const secondaryVehicle = isIndonesian ? t('common.vehicle') : 'Data';
 
   if (!mounted) {
     return (
@@ -199,29 +199,9 @@ export default function Navbar() {
     );
   }
 
-  const navLinkEstimate = (
-    <NavLink href="/estimate">
-      <span className={!isIndonesian ? hiddenTextClassName : ''}> {primaryEstimate} </span>
-      <span className={isIndonesian ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
-    </NavLink>
-  );
-
-  const navLinkDelivery = (
-    <NavLink href="/vehicles">
-      <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
-      <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
-    </NavLink>
-  );
-
-  const mobileLinkEstimate = (
-    <MobileNavLink href="/estimate">
-      {primaryEstimate} {secondaryEstimate}
-    </MobileNavLink>
-  );
-
-  const mobileLinkDelivery = (
+  const mobileLinkVehicle = (
     <MobileNavLink href="/vehicles">
-      {primaryDeliveries} {secondaryDeliveries}
+      {primaryVehicle} {secondaryVehicle}
     </MobileNavLink>
   );
 
@@ -277,8 +257,11 @@ export default function Navbar() {
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
       </NavLink>
-      {navLinkEstimate}
-      {navLinkDelivery}
+      <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>
+      <NavLink href="/vehicles">
+        <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryVehicle} </span>
+        <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryVehicle}</span>
+      </NavLink>
       <NavLink href="/help">{t('navbar.help')}</NavLink>
     </>
   );
@@ -401,8 +384,10 @@ export default function Navbar() {
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
-              {mobileLinkEstimate}
-              {mobileLinkDelivery}
+              <MobileNavLink href="/delivery">
+                {t('navbar.delivery')}
+              </MobileNavLink>
+              {mobileLinkVehicle}
               <Divider />
             </>
           ) : null}

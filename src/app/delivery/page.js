@@ -2,12 +2,12 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import DeliveryEstimatePage from '@/features/deliveryEstimate/DeliveryEstimatePage';
+import DeliveryPage from '@/features/delivery/DeliveryPage';
 
 export default function EstimasiPage() {
   return (
     <AppLayout mainClassName="items-center px-4">
-      <DeliveryEstimatePage />
+      <DeliveryPage />
     </AppLayout>
   );
 }

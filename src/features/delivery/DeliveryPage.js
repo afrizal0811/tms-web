@@ -29,7 +29,7 @@ import DeliveryForm from './components/DeliveryForm';
 import TableData from './components/TableData';
 import { getDriverName, handleConfirmDownload } from './help';
 
-export default function DeliveryEstimatePage() {
+export default function DeliveryPage() {
   const { t } = useLanguage();
 
   const [activeVehicleId, setActiveVehicleId] = useState(null);
@@ -132,7 +132,7 @@ export default function DeliveryEstimatePage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${t('estimation.delivery_form')} - ${safeName} - ${dateForFilename}.pdf`;
+        link.download = `${t('delivery.delivery_form')} - ${safeName} - ${dateForFilename}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -153,7 +153,7 @@ export default function DeliveryEstimatePage() {
         const url = URL.createObjectURL(content);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${t('estimation.delivery_form')} - ${dateForFilename} - ${locationName}.zip`;
+        link.download = `${t('delivery.delivery_form')} - ${dateForFilename} - ${locationName}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -613,7 +613,7 @@ export default function DeliveryEstimatePage() {
     <SearchBar
       disabled={isLoading || isAnyDownloading}
       onChange={(val) => setSearchQuery(val)}
-      placeholder={t('estimation.search_placeholder')}
+      placeholder={t('delivery.search_placeholder')}
       value={searchQuery}
       width="w-full xs:w-40!"
     />
@@ -640,8 +640,8 @@ export default function DeliveryEstimatePage() {
   );
 
   const viewOptions = [
-    { isDetail: false, label: t('estimation.view_summary') },
-    { isDetail: true, label: t('estimation.view_detail') },
+    { isDetail: false, label: t('delivery.view_summary') },
+    { isDetail: true, label: t('delivery.view_detail') },
   ];
 
   const isToggleDisabled = isLoading || isAnyDownloading;
@@ -699,7 +699,7 @@ export default function DeliveryEstimatePage() {
                 {filteredVehicleRoutes.length === 1 ? 'PDF' : 'ZIP'}
               </span>
               <span className="text-slate-600 dark:text-slate-300">
-                {t('estimation.delivery_form')}
+                {t('delivery.delivery_form')}
               </span>
             </button>
           </div>
@@ -712,7 +712,7 @@ export default function DeliveryEstimatePage() {
     { label: 'Filter', component: searchBar, hideLabel: false },
     { label: t('common.storage_type'), component: storageFilterComponent, hideLabel: false },
     { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
-    { label: t('estimation.view'), component: viewToggle, hideLabel: false },
+    { label: t('delivery.view'), component: viewToggle, hideLabel: false },
     { label: 'Export', component: downloadMenu, hideLabel: true },
   ];
 
@@ -751,8 +751,8 @@ export default function DeliveryEstimatePage() {
 
   const subtitle = (
     <>
-      {t('estimation.subtitle')}{' '}
-      <span className="font-semibold text-sky-600">{t('estimation.subtitle_highlight')}</span>
+      {t('delivery.subtitle')}{' '}
+      <span className="font-semibold text-sky-600">{t('delivery.subtitle_highlight')}</span>
     </>
   );
 
@@ -760,7 +760,7 @@ export default function DeliveryEstimatePage() {
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      <HeaderCard title={t('estimation.title')} subtitle={subtitle} items={headerItems} />
+      <HeaderCard title={t('delivery.title')} subtitle={subtitle} items={headerItems} />
       <BodyCard
         activeTabId={activeVehicleId}
         className="min-h-[400px]"
