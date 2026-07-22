@@ -16,8 +16,6 @@
 │   │   │   └── route.js
 │   │   ├── get-roles
 │   │   │   └── route.js
-│   │   ├── get-task
-│   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
 │   │   ├── get-trash
@@ -38,13 +36,11 @@
 │   │       └── route.js
 │   ├── coordinate
 │   │   └── page.js
-│   ├── estimate
+│   ├── delivery
 │   │   └── page.js
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── help
-│   │   └── page.js
-│   ├── kpi
 │   │   └── page.js
 │   ├── layout.js
 │   ├── not-found.js
@@ -55,11 +51,11 @@
 │   │   │   └── page.js
 │   │   ├── counter
 │   │   │   └── page.js
+│   │   ├── daily
+│   │   │   └── page.js
 │   │   ├── detail
 │   │   │   └── page.js
-│   │   ├── period
-│   │   │   └── page.js
-│   │   └── single
+│   │   └── kpi
 │   │       └── page.js
 │   ├── setting
 │   │   └── page.js
@@ -132,11 +128,11 @@
 │   │       ├── DetailTab.js
 │   │       ├── DiagramTab.js
 │   │       └── RoutingVsActualTab.js
-│   ├── deliveryEstimate
+│   ├── delivery
 │   │   ├── components
 │   │   │   ├── DeliveryForm.js
 │   │   │   └── TableData.js
-│   │   ├── DeliveryEstimatePage.js
+│   │   ├── DeliveryPage.js
 │   │   └── help.js
 │   ├── help
 │   │   ├── components
@@ -158,18 +154,13 @@
 │   │   │       └── task.js
 │   │   ├── data.js
 │   │   └── HelpPage.js
-│   ├── kpi
-│   │   ├── constants
-│   │   │   └── tutorialSteps.js
-│   │   ├── help.js
-│   │   └── KpiPage.js
 │   ├── reports
 │   │   ├── BreadReport.js
-│   │   ├── BulkReport.js
+│   │   ├── DailyReport.js
 │   │   ├── helper
 │   │   │   ├── constants.js
 │   │   │   └── help.js
-│   │   ├── SingleReport.js
+│   │   ├── KpiReport.js
 │   │   ├── TaskCountReport.js
 │   │   └── TaskDetailReport.js
 │   ├── setting
@@ -227,6 +218,7 @@
     ├── api
     │   ├── base.js
     │   ├── drivers.js
+    │   ├── fieldsApi.js
     │   ├── hubs.js
     │   ├── index.js
     │   ├── pendingDetails.js
@@ -262,12 +254,12 @@
     │   │   │   ├── groupOne.js
     │   │   │   ├── groupThree.js
     │   │   │   ├── groupTwo.js
-    │   │   │   └── help.js
+    │   │   │   └── index.js
     │   │   ├── kpiReport.js
     │   │   └── sheets
+    │   │       ├── index.js
     │   │       ├── sheetDataKPI.js
     │   │       ├── sheetDataRouting.js
-    │   │       ├── sheetHelp.js
     │   │       ├── sheetPendingSO.js
     │   │       ├── sheetRouteReview.js
     │   │       └── sheetStartFinish.js

@@ -2,12 +2,12 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import KpiPage from '@/features/kpi/KpiPage';
+import KpiReport from '@/features/reports/KpiReport';
 
 export default function Page() {
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <KpiPage />
+      <KpiReport />
     </AppLayout>
   );
 }

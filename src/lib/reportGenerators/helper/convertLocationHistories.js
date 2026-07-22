@@ -11,7 +11,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   const [y, m, d] = selectedDateString.split('-');
   const targetDateFormatted = `${d}-${m}-${y}`;
 
-  // GRUG BUANG SAMPAH DI SINI! (TRACKED TIME >= 10, DISTANCE > 5)
   const processed = allApiData
     .map((item) => {
       const email = normalizeEmail(item.email);
@@ -48,7 +47,7 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   });
 
   const timeDataObjects = [];
-  const kpiHistories = []; // GRUG BIKIN KOTAK BARU BUAT KPI!
+  const kpiHistories = []; 
 
   const seenEmails = new Set();
   const uniqueDrivers = driverData.filter((d) => {
@@ -81,7 +80,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
           idx === self.findIndex((t) => t.rawStart === v.rawStart && t.rawFinish === v.rawFinish)
       );
       if (uniques.length === 1) {
-        // ISI KOTAK TMS
         timeDataObjects.push({
           ...uniques[0],
           plat: cleanPlat,
@@ -89,7 +87,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
           isMultiple: false,
         });
 
-        // GRUG MASUKKIN DATA BERSIH KE KOTAK KPI
         kpiHistories.push({
           email: email,
           startTime: uniques[0].rawStart,
@@ -109,7 +106,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
           (a, b) => new Date(a.rawStart.replace(' ', 'T')) - new Date(b.rawStart.replace(' ', 'T'))
         );
         filtered.forEach((r) => {
-          // ISI KOTAK TMS
           timeDataObjects.push({
             ...r,
             plat: cleanPlat,
@@ -117,7 +113,6 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
             isMultiple: filtered.length > 1,
           });
 
-          // GRUG MASUKKIN DATA BERSIH KE KOTAK KPI
           kpiHistories.push({
             email: email,
             startTime: r.rawStart,
@@ -136,6 +131,5 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
     }
   });
 
-  // GRUG KEMBALIKAN DUA-DUANYA! SEMUA BAHAGIA!
   return { timeDataObjects, kpiHistories };
 }

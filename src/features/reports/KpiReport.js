@@ -6,14 +6,14 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import FileUploader from '@/components/fileUploader/FileUploader';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { executeDownload } from '@/features/kpi/help';
+import { handleKpiDownload } from '@/features/reports/helper/help';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
-export default function KpiPage() {
+export default function KpiReport() {
   const [isManualMode, setIsManualMode] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -83,7 +83,7 @@ export default function KpiPage() {
     }
     setLoading(true);
     try {
-      await executeDownload({
+      await handleKpiDownload({
         downloadMode: isBulkMode ? 'bulk' : 'single',
         singleDate,
         startDate,

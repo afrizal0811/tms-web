@@ -73,6 +73,7 @@ const DROPDOWN_LINK_CLASS =
 
 const REPORT_LINKS = [
   { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
+  { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
   { href: '/report/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
@@ -174,8 +175,6 @@ export default function Navbar() {
   }, [isMobileMenuOpen, isLaporanOpen]);
 
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
-  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.delivery');
-  const secondaryEstimate = isIndonesian ? t('navbar.delivery') : t('navbar.estimate');
   const primaryVehicle = isIndonesian ? 'Data' : t('common.vehicle');
   const secondaryVehicle = isIndonesian ? t('common.vehicle') : 'Data';
 
@@ -251,7 +250,6 @@ export default function Navbar() {
   const LoggedInComps = (
     <>
       {navLinkReport}
-      {isSuperadmin && <NavLink href="/kpi">{t('navbar.kpi')}</NavLink>}
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}

@@ -203,7 +203,7 @@ export function calculateStartFinishDates(selectedDateStr) {
   const selectedDate = new Date(selectedDateStr + 'T12:00:00');
 
   const timeToEnd = new Date(selectedDate);
-  timeToEnd.setHours(23, 59, 59, 999);
+  timeToEnd.setHours(16, 59, 59, 999);
   const timeTo = formatDateUniversal(timeToEnd, 'YYYY-MM-DD HH:mm:ss');
 
   const timeFromStart = new Date(selectedDate);
@@ -211,7 +211,7 @@ export function calculateStartFinishDates(selectedDateStr) {
   if (timeFromStart.getDay() === 0) {
     timeFromStart.setDate(timeFromStart.getDate() - 2);
   }
-  timeFromStart.setHours(0, 0, 0, 0);
+  timeFromStart.setHours(-7, 0, 0, 0);
   const timeFrom = formatDateUniversal(timeFromStart, 'YYYY-MM-DD HH:mm:ss');
 
   return {
