@@ -1,14 +1,7 @@
 import { apiFetch } from './base';
-import { fieldsApi } from './fieldsApi';
 
 export async function getHubs() {
-  const params = new URLSearchParams();
-
-  if (fieldsApi.hub && fieldsApi.hub.length > 0) {
-    params.append('fields', fieldsApi.hub.join(','));
-  }
-
-  return await apiFetch(`/api/get-hubs?${params.toString()}`, 'Gagal mengambil data hubs');
+  return await apiFetch('/api/get-hubs', 'Gagal mengambil data hubs');
 }
 
 export async function postHubs() {
