@@ -10,7 +10,7 @@ import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toast';
-import { formatToApiUtc, isEmpty, normalizeEmail, tomorrowDate } from '@/lib/utils';
+import { isEmpty, normalizeEmail, toApiDateString, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
@@ -24,6 +24,13 @@ export default function Dashboard({ driverData }) {
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('Detail');
+  const [hasPendingGR, setHasPendingGR] = useState(false);
+  const [dismissedDots, setDismissedDots] = useState({
+    Diagram: false,
+    Detail: false,
+    RoutingVsActual: false,
+  });
 
   const lastFetchedYear = useRef(null);
   const lastFetchedLocation = useRef(null);
@@ -31,15 +38,7 @@ export default function Dashboard({ driverData }) {
   const yearlyCacheRef = useRef({});
   const fetchStartTimeRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('Detail');
-  const [dismissedDots, setDismissedDots] = useState({
-    Diagram: false,
-    Detail: false,
-    RoutingVsActual: false,
-  });
-
   const { storedLocation: hubId } = getLocalStorage();
-  const [hasPendingGR, setHasPendingGR] = useState(false);
 
   useEffect(() => {
     const fetchHubSettings = async () => {
@@ -153,8 +152,8 @@ export default function Dashboard({ driverData }) {
       const localEnd = new Date(localStart);
       localEnd.setHours(23, 59, 59, 999);
 
-      const timeFrom = formatToApiUtc(localStart);
-      const timeTo = formatToApiUtc(localEnd);
+      const timeFrom = toApiDateString(localStart);
+      const timeTo = toApiDateString(localEnd);
 
       setLoading(true);
       fetchStartTimeRef.current = Date.now();
@@ -213,8 +212,8 @@ export default function Dashboard({ driverData }) {
         const localEnd = new Date(year, i, lastDayOfThisMonth, 23, 59, 59);
 
         monthlyRanges.push({
-          start: formatToApiUtc(localStart),
-          end: formatToApiUtc(localEnd),
+          start: toApiDateString(localStart),
+          end: toApiDateString(localEnd),
         });
       }
 

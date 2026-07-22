@@ -2,8 +2,8 @@ import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   formatDateUniversal,
   formatLongDate,
+  formatUTC7,
   getDeliveryDateFromRouting,
-  getUTC7DateString,
   isPastDate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -81,7 +81,7 @@ export function calculateDistanceSummaryData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+      const d = formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
       if (d) taskPresence[d] = true;
     });
   }
@@ -272,7 +272,8 @@ export function calculateDistanceSummaryData(
         );
 
         const dailyTasks = (taskData || []).filter((t) => {
-          const dDate = getUTC7DateString(t.startTime) || getUTC7DateString(t.doneTime);
+          const dDate =
+            formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
           return dDate === currentDateString;
         });
 

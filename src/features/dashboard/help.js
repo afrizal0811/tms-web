@@ -1,14 +1,12 @@
 import {
   calculateMinuteDifference,
   formatDateUniversal,
-  formatDateWIB,
-  formatSimpleTime,
-  formatTimestampToHHMM,
   getBasePlate,
   isEmpty,
   normalizeEmail,
   parseAndShiftToUTC7,
   parseCustomerString,
+  sortRows,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
@@ -415,7 +413,7 @@ export function processSequenceAccuracyData(
     }));
 }
 
-export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery }) => {
+export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery, date }) => {
   if (!tasks || !drivers) return [];
 
   const emailToDriverMap = drivers.reduce((acc, driver) => {
@@ -442,10 +440,9 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
             const firstHub = hubTrips[0];
             const lastHub = hubTrips[hubTrips.length - 1];
             const hubLocation = firstHub.coordinate || null;
-
             hubTimesMap.set(driverName, {
-              hubETD: formatSimpleTime(firstHub.etd) || '-',
-              hubETA: formatSimpleTime(lastHub.eta) || '-',
+              hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',
+              hubETA: formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-',
               hubLongLat: hubLocation,
             });
           }
@@ -505,11 +502,11 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
     }
 
     const roSequence = task.routePlannedOrder || 0;
-    const etaVal = formatSimpleTime(task.eta);
-    const etdVal = formatSimpleTime(task.etd);
-    const openTimeVal = formatSimpleTime(task.openTime) || '-';
-    const closeTimeVal = formatSimpleTime(task.closeTime) || '-';
-    const actualArrVal = formatTimestampToHHMM(actualArrival) || '-';
+    const etaVal = formatDateUniversal(`${date} ${task.eta}`, 'HH:mm');
+    const etdVal = formatDateUniversal(`${date} ${task.etd}`, 'HH:mm');
+    const openTimeVal = formatDateUniversal(`${date} ${task.openTime}`, 'HH:mm') || '-';
+    const closeTimeVal = formatDateUniversal(`${date} ${task.closeTime}`, 'HH:mm') || '-';
+    const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
 
     let hoursStatus = null;
     if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
@@ -545,7 +542,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       eta: etaVal || '-',
       etd: etdVal || '-',
       actualArrival: actualArrVal,
-      actualDeparture: formatTimestampToHHMM(actualDeparture) || '-',
+      actualDeparture: formatDateUniversal(actualDeparture, 'HH:mm') || '-',
       visitTime: task.visitTime || '-',
       actualVisitTime: actualVisitTimeVal,
       realSequence: 0,
@@ -586,35 +583,17 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
     tasksByNameMap.get(task.driver).push(task);
   }
 
-  const getSortGroup = (platStr) => {
-    if (!platStr) return 1;
-    const platUpper = platStr.toUpperCase();
-    if (platUpper.includes('DM')) return 3;
-    if (platUpper.includes('SEWA')) return 2;
-    return 1;
-  };
-
-  let driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
+  const driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
     return {
       plat: stats.plat,
       driver: driverName,
     };
   });
-
-  driverList.sort((a, b) => {
-    const groupA = getSortGroup(a.plat);
-    const groupB = getSortGroup(b.plat);
-    if (groupA !== groupB) {
-      return groupA - groupB;
-    }
-    return (a.driver || '').localeCompare(b.driver || '');
-  });
-
+  const sortDrivers = sortRows(driverList, 'plat', 'driver');
   const finalRows = [];
-  // Perbaiki handling saat searchQuery kosong
   const query = (searchQuery || '').toLowerCase();
 
-  for (const driverRow of driverList) {
+  for (const driverRow of sortDrivers) {
     const driverName = driverRow.driver;
     const driverPlat = driverRow.plat;
     const driverTasks = tasksByNameMap.get(driverName) || [];
@@ -764,8 +743,8 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     else if (flow.includes('Pending GR')) flowPendingGR++;
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
-      const startDateWIB = formatDateWIB(task.startTime, 'DD-MM-YYYY');
-      const doneDateWIB = formatDateWIB(task.doneTime, 'DD-MM-YYYY');
+      const startDateWIB = formatDateUniversal(task.startTime, 'DD-MM-YYYY');
+      const doneDateWIB = formatDateUniversal(task.doneTime, 'DD-MM-YYYY');
 
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
         const startDate = new Date(task.startTime);

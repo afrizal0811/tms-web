@@ -1,6 +1,6 @@
 'use client';
 
-import { syncDriversData, syncHubsData, syncRolesData } from '@/lib/api';
+import { postHubs, postDrivers, postRoles } from '@/lib/api';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
@@ -15,9 +15,9 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
 
     setSyncLoading({ [type]: true });
     try {
-      if (type === 'hubs') await syncHubsData();
-      else if (type === 'roles') await syncRolesData();
-      else if (type === 'drivers') await syncDriversData([activeHubId]);
+      if (type === 'hubs') await postHubs();
+      else if (type === 'roles') await postRoles();
+      else if (type === 'drivers') await postDrivers([activeHubId]);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
       window.location.reload();

@@ -3,7 +3,7 @@
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDriversSyncStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
+import { getDriverStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
 import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
@@ -29,7 +29,7 @@ export default function SettingPage() {
         const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
           getHubs(),
           getRoles(),
-          getDriversSyncStatus(),
+          getDriverStatus(),
           getVehicleTypes(),
           getReasons(),
         ]);

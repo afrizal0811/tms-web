@@ -8,9 +8,9 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useSummaryData from '@/lib/hooks/useSummaryData';
-import { generateSummaryWorkbook } from '@/lib/reportGenerators';
+import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { formatDateUniversal, getUTC7DateString, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, formatUTC7, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import DistanceSummaryTab from './tabs/DistanceSummaryTab';
@@ -211,7 +211,7 @@ export default function SummaryPage() {
         return !rawData.tasks?.some((t) => {
           if (t.createdFrom !== 'API') return false;
           if (!startStr || !endStr) return true;
-          const assignedDate = t.createdTime ? getUTC7DateString(t.createdTime) : null;
+          const assignedDate = t.createdTime ? formatUTC7(t.createdTime, 'YYYY-MM-DD') : null;
           return assignedDate && isInDateRange(assignedDate, startStr, endStr);
         });
       }

@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { createReason, deleteReason, updateReason } from '@/lib/api';
+import { postReason, deleteReason, updateReason } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import { PIC_OPTIONS } from '../helper/constants';
@@ -16,7 +16,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
   const handleAddReason = async () => {
     if (!newReason.trim() || !newPic || isReadOnly) return;
     try {
-      await createReason(newReason, newPic);
+      await postReason(newReason, newPic);
       setNewReason('');
       setNewPic('');
       toastSuccess(translate('common.toast.success'));

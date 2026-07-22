@@ -2,7 +2,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { updateHubSettings } from '@/lib/api';
+import { patchHubs } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
@@ -27,7 +27,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           ? Boolean(editValues.hasPendingGR)
           : Boolean(currentHub.hasPendingGR);
 
-      await updateHubSettings(id, {
+      await patchHubs(id, {
         acronym: safeAcronym,
         hasPendingGR: safePendingGR,
       });

@@ -1,12 +1,6 @@
 // File: src/lib/driverDataHelper.js
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api';
-import {
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getUTC7DateString,
-  isEmpty,
-  normalizeEmail,
-} from './utils';
+import { formatUTC7, isEmpty, normalizeEmail } from './utils';
 
 const driversCache = {};
 let vehicleTypesPromise = null;
@@ -184,23 +178,21 @@ export function driverTimeStamps(apiData, selectedDateStr) {
     if (trackedTime < 10 || totalDistance <= 5) return;
 
     const startTime = item.startTime;
-    const startDateFormatted = formatTimestampToDDMMYYYY_UTC7(startTime);
+    const startDateFormatted = formatUTC7(startTime, 'DD-MM-YYYY');
 
     if (startDateFormatted !== targetDateFormatted) return;
 
     const email = normalizeEmail(item.email);
     if (!email) return;
 
-    const rawStart = formatTimestampToQuotedHHMM_UTC7(startTime);
-    const startDisplay = rawStart ? rawStart.replace("'", '') : '-';
+    const startDisplay = formatUTC7(startTime, 'HH:mm') || '-';
 
     const finishTime = item.finish?.finishTime;
-    const rawFinish = formatTimestampToQuotedHHMM_UTC7(finishTime);
-    let finishDisplay = rawFinish ? rawFinish.replace("'", '') : '-';
+    let finishDisplay = formatUTC7(finishTime, 'HH:mm') || '-';
 
     if (startTime && finishTime) {
-      const sDate = new Date(getUTC7DateString(startTime));
-      const fDate = new Date(getUTC7DateString(finishTime));
+      const sDate = new Date(formatUTC7(startTime, 'YYYY-MM-DD'));
+      const fDate = new Date(formatUTC7(finishTime, 'YYYY-MM-DD'));
       const d1 = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
       const d2 = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate());
 
@@ -236,7 +228,7 @@ export function driverTimeStamps(apiData, selectedDateStr) {
         const d2 = new Date(newFinish.getFullYear(), newFinish.getMonth(), newFinish.getDate());
         const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
 
-        const updatedRawFinish = formatTimestampToQuotedHHMM_UTC7(finishTime).replace("'", '');
+        const updatedRawFinish = formatUTC7(finishTime, 'HH:mm');
         current.jamKembali =
           diffDays > 0 ? `${updatedRawFinish} (H+${diffDays})` : updatedRawFinish;
       }

@@ -1,6 +1,5 @@
 import {
-  formatDateWIB,
-  formatSimpleTime,
+  formatDateUniversal,
   getStorageType,
   isEmpty,
   normalizeEmail,
@@ -31,7 +30,7 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       if (startDateStr && endDateStr) {
         const dObj = parseApiDateString(task.doneTime || task.createdTime);
         if (dObj) {
-          const wibDate = formatDateWIB(dObj, 'YYYY-MM-DD');
+          const wibDate = formatDateUniversal(dObj, 'YYYY-MM-DD');
           if (wibDate < startDateStr || wibDate > endDateStr) {
             return;
           }
@@ -89,13 +88,13 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
           content: task.content,
           sortDateNum: sortDateNum,
           sortArrTimestamp: arrObj ? arrObj.getTime() : 9999999999999,
-          dateStr: formatDateWIB(dateObj, 'DD-MM-YYYY'),
-          openStr: formatSimpleTime(task.openTime),
-          closeStr: formatSimpleTime(task.closeTime),
-          etaStr: formatSimpleTime(task.eta),
-          etdStr: formatSimpleTime(task.etd || task.ETD),
-          arrStr: formatDateWIB(arrObj, 'HH:mm'),
-          depStr: formatDateWIB(depObj, 'HH:mm'),
+          dateStr: formatDateUniversal(dateObj, 'DD-MM-YYYY'),
+          openStr: formatDateUniversal(task.openTime, 'HH:mm'),
+          closeStr: formatDateUniversal(task.closeTime, 'HH:mm'),
+          etaStr: formatDateUniversal(task.eta, 'HH:mm'),
+          etdStr: formatDateUniversal(task.etd || task.ETD, 'HH:mm'),
+          arrStr: formatDateUniversal(arrObj, 'HH:mm'),
+          depStr: formatDateUniversal(depObj, 'HH:mm'),
           actualVisitMins: actualVisitMins,
         });
       }

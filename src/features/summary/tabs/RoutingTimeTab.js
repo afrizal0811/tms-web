@@ -3,7 +3,7 @@
 import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
-  formatDateWIB,
+  formatDateUniversal,
   formatLongDate,
   isDateSunday,
   isPastDate,
@@ -76,15 +76,15 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
     const end = new Date(endDateStr);
     end.setHours(0, 0, 0, 0);
 
-    const lastDayKey = formatDateWIB(end, 'YYYY-MM-DD');
+    const lastDayKey = formatDateUniversal(end, 'YYYY-MM-DD');
     const nextDay = new Date(end);
     nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayKey = formatDateWIB(nextDay, 'YYYY-MM-DD');
+    const nextDayKey = formatDateUniversal(nextDay, 'YYYY-MM-DD');
 
     const current = new Date(start);
 
     while (current <= end) {
-      const dateKey = formatDateWIB(current, 'YYYY-MM-DD');
+      const dateKey = formatDateUniversal(current, 'YYYY-MM-DD');
       const displayDate = formatLongDate(current, localeCode);
 
       dataMap[dateKey] = {
@@ -103,7 +103,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         if (!task.createdTime) return;
         if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-        let taskDateKey = formatDateWIB(new Date(task.createdTime), 'YYYY-MM-DD');
+        let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
 
         if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
           taskDateKey = '2025-12-31';
@@ -222,8 +222,10 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
               const isStartMissing = !hasStart && hasEnd;
               const isEndMissing = hasStart && !hasEnd;
-              const startDisplay = hasStart ? formatDateWIB(row.startData.time, 'HH:mm') : '-';
-              const endDisplay = hasEnd ? formatDateWIB(row.endData.time, 'HH:mm') : '-';
+              const startDisplay = hasStart
+                ? formatDateUniversal(row.startData.time, 'HH:mm')
+                : '-';
+              const endDisplay = hasEnd ? formatDateUniversal(row.endData.time, 'HH:mm') : '-';
               const errorClass =
                 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
 

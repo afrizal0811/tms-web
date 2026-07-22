@@ -2,7 +2,7 @@
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { formatDateWIB, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useState } from 'react';
 export default function RoutingInfo({ resultsData }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +74,7 @@ export default function RoutingInfo({ resultsData }) {
                   </td>
                   <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
                     {item.createdTime
-                      ? formatDateWIB(item.createdTime, 'DD/MM/YYYY HH:mm:ss')
+                      ? formatDateUniversal(item.createdTime, 'DD/MM/YYYY HH:mm:ss')
                       : '-'}
                   </td>
                 </tr>

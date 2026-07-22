@@ -1,9 +1,4 @@
-import {
-  formatTimestampToDDMMYYYY_UTC7,
-  formatTimestampToQuotedHHMM_UTC7,
-  getBasePlate,
-  normalizeEmail,
-} from '@/lib/utils';
+import { formatUTC7, getBasePlate, normalizeEmail } from '@/lib/utils';
 import { isTripInShift } from './isTripInShift';
 
 export function convertLocationHistories(allApiData, driverData, selectedDateString) {
@@ -28,13 +23,13 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
         workingTime: dInfo?.workingTime,
         trackedTime: Math.abs(item.trackedTime || 0),
         totalDistance: item.finish?.totalDistance || 0,
-        startDate: formatTimestampToDDMMYYYY_UTC7(item.startTime),
+        startDate: formatUTC7(item.startTime, 'DD-MM-YYYY'),
         rawStart: item.startTime,
         rawFinish: item.finish?.finishTime,
         travelTimeVal: item.finish?.totalDuration || 0,
-        startTimeFmt: formatTimestampToQuotedHHMM_UTC7(item.startTime),
-        finishDateFmt: formatTimestampToDDMMYYYY_UTC7(item.finish?.finishTime),
-        finishTimeFmt: formatTimestampToQuotedHHMM_UTC7(item.finish?.finishTime),
+        startTimeFmt: formatUTC7(item.startTime, 'HH:mm'),
+        finishDateFmt: formatUTC7(item.finish?.finishTime, 'DD-MM-YYYY'),
+        finishTimeFmt: formatUTC7(item.finish?.finishTime, 'HH:mm'),
       };
     })
     .filter(
@@ -52,6 +47,8 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   });
 
   const timeDataObjects = [];
+  const kpiHistories = []; 
+
   const seenEmails = new Set();
   const uniqueDrivers = driverData.filter((d) => {
     if (d.plat?.toUpperCase().includes('DEMO')) return false;
@@ -89,21 +86,43 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
           driver: driver.name,
           isMultiple: false,
         });
+
+        kpiHistories.push({
+          email: email,
+          startTime: uniques[0].rawStart,
+          finish: {
+            finishTime: uniques[0].rawFinish,
+            totalDistance: uniques[0].totalDistance,
+          },
+          isMultipleSessions: false,
+        });
         return;
       }
+
       const filtered = uniques.filter((r) => isTripInShift(r.rawStart, r.rawFinish, r.workingTime));
+
       if (filtered.length > 0) {
         filtered.sort(
           (a, b) => new Date(a.rawStart.replace(' ', 'T')) - new Date(b.rawStart.replace(' ', 'T'))
         );
-        filtered.forEach((r) =>
+        filtered.forEach((r) => {
           timeDataObjects.push({
             ...r,
             plat: cleanPlat,
             driver: driver.name,
             isMultiple: filtered.length > 1,
-          })
-        );
+          });
+
+          kpiHistories.push({
+            email: email,
+            startTime: r.rawStart,
+            finish: {
+              finishTime: r.rawFinish,
+              totalDistance: r.totalDistance,
+            },
+            isMultipleSessions: filtered.length > 1,
+          });
+        });
       } else {
         timeDataObjects.push(emptyRow);
       }
@@ -112,5 +131,5 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
     }
   });
 
-  return { timeDataObjects };
+  return { timeDataObjects, kpiHistories };
 }

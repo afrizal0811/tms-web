@@ -1,4 +1,4 @@
-import { formatDateWIB, formatLongDate } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 
@@ -56,14 +56,14 @@ export function generateRoutingTimeSheet(
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
-  const lastDayKey = formatDateWIB(end, 'YYYY-MM-DD');
+  const lastDayKey = formatDateUniversal(end, 'YYYY-MM-DD');
   const nextDay = new Date(end);
   nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayKey = formatDateWIB(nextDay, 'YYYY-MM-DD');
+  const nextDayKey = formatDateUniversal(nextDay, 'YYYY-MM-DD');
 
   const current = new Date(start);
   while (current <= end) {
-    const key = formatDateWIB(current, 'YYYY-MM-DD');
+    const key = formatDateUniversal(current, 'YYYY-MM-DD');
     dataMap[key] = {
       dateDisplay: formatLongDate(current, localeCode),
       firstCreatedTime: null,
@@ -80,7 +80,7 @@ export function generateRoutingTimeSheet(
       if (!task.createdTime) return;
       if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-      let taskDateKey = formatDateWIB(new Date(task.createdTime), 'YYYY-MM-DD');
+      let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
 
       if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
         taskDateKey = '2025-12-31';
@@ -152,8 +152,8 @@ export function generateRoutingTimeSheet(
       } else {
         excelData.push([
           row.dateDisplay,
-          hasStart ? formatDateWIB(row.firstCreatedTime, 'HH:mm') : '-',
-          hasEnd ? formatDateWIB(row.lastAssignedTime, 'HH:mm') : '-',
+          hasStart ? formatDateUniversal(row.firstCreatedTime, 'HH:mm') : '-',
+          hasEnd ? formatDateUniversal(row.lastAssignedTime, 'HH:mm') : '-',
         ]);
       }
     });

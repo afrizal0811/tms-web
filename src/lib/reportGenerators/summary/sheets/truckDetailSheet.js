@@ -1,10 +1,9 @@
 import {
   formatDateUniversal,
-  formatDateWIB,
   formatMinutesToHHMM,
+  formatUTC7,
   getDeliveryDateFromRouting,
   getStorageType,
-  getUTC7DateString,
   heatMap,
   isEmpty,
   isPastDate,
@@ -40,7 +39,7 @@ function formatDateTimeWIB(isoString) {
   try {
     const d = new Date(isoString);
     const dateStr = formatDateUniversal(d, 'DD/MM/YYYY');
-    const timeStr = formatDateWIB(d, 'HH:mm');
+    const timeStr = formatDateUniversal(d, 'HH:mm');
     return `${dateStr} ${timeStr}`;
   } catch {
     return '-';
@@ -191,7 +190,8 @@ export function calculateTruckDetailData(
   const cleanTasks = Array.from(uniqueTasksMap.values());
 
   cleanTasks.forEach((task) => {
-    const dateKey = getUTC7DateString(task.startTime) || getUTC7DateString(task.doneTime);
+    const dateKey =
+      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
     if (!dateKey) return;
 
     let rawEmail = null;
@@ -248,8 +248,8 @@ export function calculateTruckDetailData(
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
       const hasSplitTask = task.isSplitTask === 'true';
-      const startD = getUTC7DateString(task.startTime);
-      const doneD = getUTC7DateString(task.doneTime);
+      const startD = formatUTC7(task.startTime, 'YYYY-MM-DD');
+      const doneD = formatUTC7(task.doneTime, 'YYYY-MM-DD');
 
       let isDateDiff = false;
       let dayDiffCount = 0;

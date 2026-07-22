@@ -29,11 +29,3 @@ export async function getLocationHistories({
     'Gagal mengambil data location histories'
   );
 }
-
-export async function getBatchHistories(resultIds) {
-  return await apiFetch('/api/get-batch-histories', 'Gagal mengambil data batch histories', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resultIds }),
-  });
-}

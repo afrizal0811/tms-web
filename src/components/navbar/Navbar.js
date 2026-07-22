@@ -72,8 +72,8 @@ const DROPDOWN_LINK_CLASS =
   'block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400';
 
 const REPORT_LINKS = [
-  { href: '/report/single', labelKey: 'navbar.daily_report', superadminOnly: false },
-  { href: '/report/period', labelKey: 'navbar.period_report', superadminOnly: false },
+  { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
+  { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
   { href: '/report/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
@@ -175,10 +175,8 @@ export default function Navbar() {
   }, [isMobileMenuOpen, isLaporanOpen]);
 
   const toggleLaporan = () => setIsLaporanOpen((s) => !s);
-  const primaryEstimate = isIndonesian ? t('navbar.estimate') : t('navbar.deliveries');
-  const secondaryEstimate = isIndonesian ? t('navbar.deliveries') : t('navbar.estimate');
-  const primaryDeliveries = isIndonesian ? 'Data' : t('common.vehicle');
-  const secondaryDeliveries = isIndonesian ? t('common.vehicle') : 'Data';
+  const primaryVehicle = isIndonesian ? 'Data' : t('common.vehicle');
+  const secondaryVehicle = isIndonesian ? t('common.vehicle') : 'Data';
 
   if (!mounted) {
     return (
@@ -199,29 +197,9 @@ export default function Navbar() {
     );
   }
 
-  const navLinkEstimate = (
-    <NavLink href="/estimate">
-      <span className={!isIndonesian ? hiddenTextClassName : ''}> {primaryEstimate} </span>
-      <span className={isIndonesian ? hiddenTextClassName : ''}> {secondaryEstimate}</span>
-    </NavLink>
-  );
-
-  const navLinkDelivery = (
-    <NavLink href="/vehicles">
-      <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryDeliveries} </span>
-      <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryDeliveries}</span>
-    </NavLink>
-  );
-
-  const mobileLinkEstimate = (
-    <MobileNavLink href="/estimate">
-      {primaryEstimate} {secondaryEstimate}
-    </MobileNavLink>
-  );
-
-  const mobileLinkDelivery = (
+  const mobileLinkVehicle = (
     <MobileNavLink href="/vehicles">
-      {primaryDeliveries} {secondaryDeliveries}
+      {primaryVehicle} {secondaryVehicle}
     </MobileNavLink>
   );
 
@@ -276,8 +254,11 @@ export default function Navbar() {
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
       </NavLink>
-      {navLinkEstimate}
-      {navLinkDelivery}
+      <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>
+      <NavLink href="/vehicles">
+        <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryVehicle} </span>
+        <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryVehicle}</span>
+      </NavLink>
       <NavLink href="/help">{t('navbar.help')}</NavLink>
     </>
   );
@@ -395,12 +376,15 @@ export default function Navbar() {
                   {t(link.labelKey)}
                 </MobileNavLink>
               ))}
+              {isSuperadmin && <MobileNavLink href="/kpi">{t('navbar.kpi')}</MobileNavLink>}
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
-              {mobileLinkEstimate}
-              {mobileLinkDelivery}
+              <MobileNavLink href="/delivery">
+                {t('navbar.delivery')}
+              </MobileNavLink>
+              {mobileLinkVehicle}
               <Divider />
             </>
           ) : null}
