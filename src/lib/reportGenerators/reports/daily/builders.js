@@ -27,11 +27,29 @@ const STYLES = {
     font: { bold: true, color: { rgb: 'FF0000' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   },
-  blueFill: { fill: { patternType: 'solid', fgColor: { rgb: '4f76c7' } } },
-  magentaFill: { fill: { patternType: 'solid', fgColor: { rgb: 'c85d86' } } },
-  indigoFill: { fill: { patternType: 'solid', fgColor: { rgb: '5c5fb2' } } },
-  orangeFill: { fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } } },
-  redFill: { fill: { patternType: 'solid', fgColor: { rgb: 'FF9999' } } },
+  blueFill: {
+    fill: { patternType: 'solid', fgColor: { rgb: '4f76c7' } },
+  },
+  magentaFill: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'c85d86' } },
+  },
+  indigoFill: {
+    fill: { patternType: 'solid', fgColor: { rgb: '5c5fb2' } },
+  },
+  orangeFill: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'ff8904' } },
+  },
+  redFill: {
+    fill: { patternType: 'solid', fgColor: { rgb: 'F6C5C0' } },
+  },
+  orangeBorder: {
+    border: {
+      top: { style: 'thick', color: { rgb: 'FF8904' } },
+      bottom: { style: 'thick', color: { rgb: 'FF8904' } },
+      left: { style: 'thick', color: { rgb: 'FF8904' } },
+      right: { style: 'thick', color: { rgb: 'FF8904' } },
+    },
+  },
 };
 
 export function buildTanggalRoutingSheet(wb, dateStr, t) {
@@ -113,8 +131,8 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
         ws[cellRef].s = C <= 1 ? STYLES.left : STYLES.center;
         const rowData = sortTime[R - 1];
 
-        if (C === 1 && rowData?.isMultiple) {
-          ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.magentaFill };
+        if (rowData?.isMultiple) {
+          ws[cellRef].s = { ...ws[cellRef].s, ...STYLES.orangeFill };
         }
 
         if (
@@ -132,7 +150,7 @@ export function buildStartFinishSheet(wb, timeDataObjects, t) {
           if (C === 0) ws[cellRef].s = STYLES.redFill;
           if (C === 1) ws[cellRef].s = STYLES.left;
         } else if (R === dataCount + 4) {
-          if (C === 0) ws[cellRef].s = STYLES.magentaFill;
+          if (C === 0) ws[cellRef].s = STYLES.orangeFill;
           if (C === 1) ws[cellRef].s = STYLES.left;
         }
       }
@@ -281,7 +299,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   for (let R = 0; R < sheetData.length; ++R) {
     const rType = R > 0 ? sortData[R - 1].hType : 'none';
     let rowFill = null;
-    if (rType === 'orange') rowFill = STYLES.orangeFill.fill;
+    if (rType === 'orange') rowFill = STYLES.redFill.fill;
     if (rType === 'blue') rowFill = STYLES.blueFill.fill;
     if (rType === 'magenta') rowFill = STYLES.magentaFill.fill;
     if (rType === 'indigo') rowFill = STYLES.indigoFill.fill;
@@ -317,7 +335,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
         }
 
         if (C === 5 && sortData[R - 1]?.hasSplitTask) {
-          const splitBorder = { style: 'medium', color: { rgb: 'fb923c' } };
+          const splitBorder = { style: 'medium', color: { rgb: 'ffbe7d' } };
           ws[cellRef].s = {
             ...ws[cellRef].s,
             border: {
@@ -341,6 +359,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
       ['', t('excel.reports.truck_detail.blue')],
       ['', t('excel.reports.truck_detail.magenta')],
       ['', t('excel.reports.truck_detail.indigo')],
+      ['', t('excel.reports.truck_detail.red_text')],
     ],
     { origin: -1 }
   );
@@ -353,7 +372,10 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
   ws[XLSX.utils.encode_cell({ r: dataCount + 2, c: 0 })] = {
     t: 's',
     v: '',
-    s: { fill: STYLES.orangeFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+    s: {
+      border: STYLES.orangeBorder.border,
+      font: { color: { rgb: 'FFFFFF' } },
+    },
   };
   ws[XLSX.utils.encode_cell({ r: dataCount + 3, c: 0 })] = {
     t: 's',
@@ -369,6 +391,11 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     t: 's',
     v: '',
     s: { fill: STYLES.indigoFill.fill, font: { color: { rgb: 'FFFFFF' } } },
+  };
+  ws[XLSX.utils.encode_cell({ r: dataCount + 6, c: 0 })] = {
+    t: 's',
+    v: 'Text',
+    s: { font: { color: { rgb: 'ffb3b3' }, bold: true }, alignment: { horizontal: 'center' } },
   };
 
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.truck_detail.sheet_name'));

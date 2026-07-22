@@ -26,12 +26,12 @@ export function generateSheetDataRouting(g2) {
   const styleNormal = { alignment: { horizontal: 'center' } };
   const styleLeftNormal = { alignment: { horizontal: 'left', vertical: 'center' } };
   const styleError = {
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     alignment: { horizontal: 'center' },
     font: { color: { rgb: '000000' } },
   };
   const styleLeftError = {
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     alignment: { horizontal: 'left', vertical: 'center' },
     font: { color: { rgb: '000000' } },
   };
@@ -231,7 +231,7 @@ export function generateSheetDataRouting(g2) {
       if (R === sheetData.length - 4 && C === 0)
         newWs[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
       else if (R === sheetData.length - 3 && C === 0)
-        newWs[cell].s = { fill: { fgColor: { rgb: 'FADBD8' } } };
+        newWs[cell].s = { fill: { fgColor: { rgb: 'F6C5C0' } } };
       else if (R === sheetData.length - 2 && C === 0)
         newWs[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
       else if (R === sheetData.length - 1 && C === 0)

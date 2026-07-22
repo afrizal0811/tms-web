@@ -88,12 +88,12 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
   const styleLeft = { alignment: { horizontal: 'left', vertical: 'center' } };
   const styleError = {
     alignment: { horizontal: 'center', vertical: 'center' },
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     font: { color: { rgb: '000000' } },
   };
   const styleLeftError = {
     alignment: { horizontal: 'left', vertical: 'center' },
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     font: { color: { rgb: '000000' } },
   };
   const styleMultiple = {
@@ -108,7 +108,7 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
   };
   const styleDateDiff = {
     alignment: { horizontal: 'center', vertical: 'center' },
-    fill: { fgColor: { rgb: 'F8C471' } },
+    fill: { fgColor: { rgb: 'ffbe7d' } },
     font: { color: { rgb: '000000' } },
   };
 
@@ -129,11 +129,11 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
       } else if (R === sheetData.length - 4 && C === 0)
         wsSF[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
       else if (R === sheetData.length - 3 && C === 0)
-        wsSF[cell].s = { fill: { fgColor: { rgb: 'FADBD8' } } };
+        wsSF[cell].s = { fill: { fgColor: { rgb: 'F6C5C0' } } };
       else if (R === sheetData.length - 2 && C === 0)
         wsSF[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
       else if (R === sheetData.length - 1 && C === 0)
-        wsSF[cell].s = { fill: { fgColor: { rgb: 'F8C471' } } };
+        wsSF[cell].s = { fill: { fgColor: { rgb: 'ffbe7d' } } };
       else if (R >= sheetData.length - 3 && C === 1)
         wsSF[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
       else if (R > 0 && R < sfLastRow) {

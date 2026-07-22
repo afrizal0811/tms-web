@@ -123,12 +123,12 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
   const styleLeft = { alignment: { horizontal: 'left', vertical: 'center' } };
   const styleError = {
     alignment: { horizontal: 'center', vertical: 'center' },
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     font: { color: { rgb: '000000' } },
   };
   const styleLeftError = {
     alignment: { horizontal: 'left', vertical: 'center' },
-    fill: { fgColor: { rgb: 'FADBD8' } },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     font: { color: { rgb: '000000' } },
   };
   const styleMultiple = {
@@ -158,7 +158,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
       } else if (R === sheetData.length - 5 && C === 0)
         wsRR[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
       else if (R === sheetData.length - 4 && C === 0)
-        wsRR[cell].s = { fill: { fgColor: { rgb: 'FADBD8' } } };
+        wsRR[cell].s = { fill: { fgColor: { rgb: 'F6C5C0' } } };
       else if (R === sheetData.length - 3 && C === 0)
         wsRR[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
       else if (R >= sheetData.length - 2 && C === 0)

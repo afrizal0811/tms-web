@@ -346,14 +346,12 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         actualDeparture = page3DoneTime;
       }
 
+      const openTime = `${selectedDateString} ${String(row[idxOpenTime])}`;
+      const closeTime = `${selectedDateString} ${String(row[idxCloseTime])}`;
       const openTimeVal =
-        idxOpenTime !== -1 && row[idxOpenTime]
-          ? formatDateUniversal(String(row[idxOpenTime]), 'HH:mm')
-          : '-';
+        idxOpenTime !== -1 && row[idxOpenTime] ? formatDateUniversal(openTime, 'HH:mm') : '-';
       const closeTimeVal =
-        idxCloseTime !== -1 && row[idxCloseTime]
-          ? formatDateUniversal(String(row[idxCloseTime]), 'HH:mm')
-          : '-';
+        idxCloseTime !== -1 && row[idxCloseTime] ? formatDateUniversal(closeTime, 'HH:mm') : '-';
 
       const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
       const actualDepVal = formatDateUniversal(actualDeparture, 'HH:mm') || '-';
@@ -405,8 +403,8 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         reason: idxAlasan !== -1 && row[idxAlasan] ? String(row[idxAlasan]) : '',
         openTime: openTimeVal,
         closeTime: closeTimeVal,
-        eta: formatDateUniversal(eta, 'HH:mm') || '-',
-        etd: formatDateUniversal(etd, 'HH:mm') || '-',
+        eta: formatDateUniversal(`${selectedDateString} ${eta}`, 'HH:mm') || '-',
+        etd: formatDateUniversal(`${selectedDateString} ${etd}`, 'HH:mm') || '-',
         actualArrival: actualArrVal,
         actualDeparture: actualDepVal,
         visitTime: idxVisitTime !== -1 && row[idxVisitTime] ? row[idxVisitTime] : null,
@@ -492,7 +490,7 @@ export async function generateManualReportWorkbook({
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-  const excelFileName = `${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
+  const excelFileName = `Manual ${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }
