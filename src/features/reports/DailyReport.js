@@ -107,7 +107,6 @@ export default function DailyReport({
       setSelectedRoutingFiles,
       setSelectedDeliveryFiles,
       t,
-      isIndonesian,
     });
 
   const executeWithCheck = (actionFn) => {
@@ -230,15 +229,15 @@ export default function DailyReport({
       setCurrent: setIsBulkMode,
       others: [setIsManualMode, setIsCustomRouting],
     },
-    custom: {
-      current: isCustomRouting,
-      setCurrent: setIsCustomRouting,
-      others: [setIsBulkMode, setIsManualMode],
-    },
     manual: {
       current: isManualMode,
       setCurrent: setIsManualMode,
       others: [setIsBulkMode, setIsCustomRouting],
+    },
+    custom: {
+      current: isCustomRouting,
+      setCurrent: setIsCustomRouting,
+      others: [setIsBulkMode, setIsManualMode],
     },
   };
 
@@ -277,9 +276,26 @@ export default function DailyReport({
               disabled={disabledCommon}
               className="w-4 h-4 text-sky-600 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed pointer-events-none"
             />
-            <span className="text-sm select-none w-full">Mode Bulk</span>
+            <span className="text-sm select-none w-full">{t('common.bulk')}</span>
           </div>
-
+          <div
+            onClick={() => handleRadioToggle('manual')}
+            className={`flex items-center gap-2 ${
+              disabledCommon
+                ? 'cursor-not-allowed text-slate-400 dark:text-slate-500'
+                : 'cursor-pointer text-gray-600 dark:text-slate-300'
+            }`}
+          >
+            <input
+              type="radio"
+              name="reportMode"
+              checked={isManualMode}
+              readOnly
+              disabled={disabledCommon}
+              className="w-4 h-4 text-sky-600 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed pointer-events-none"
+            />
+            <span className="text-sm select-none w-full">Manual</span>
+          </div>
           <div
             onClick={() => handleRadioToggle('custom')}
             className={`flex items-center justify-between ${
@@ -301,32 +317,13 @@ export default function DailyReport({
             </div>
             {informationComp(t('report.tooltip.info_change_time'))}
           </div>
-
-          <div
-            onClick={() => handleRadioToggle('manual')}
-            className={`flex items-center gap-2 ${
-              disabledCommon
-                ? 'cursor-not-allowed text-slate-400 dark:text-slate-500'
-                : 'cursor-pointer text-gray-600 dark:text-slate-300'
-            }`}
-          >
-            <input
-              type="radio"
-              name="reportMode"
-              checked={isManualMode}
-              readOnly
-              disabled={disabledCommon}
-              className="w-4 h-4 text-sky-600 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed pointer-events-none"
-            />
-            <span className="text-sm select-none w-full">Manual</span>
-          </div>
         </div>
       )}
     </div>
   );
 
   const manualText = isManualMode ? 'Manual' : '';
-  const bulkText = isBulkMode ? 'Bulk' : '';
+  const bulkText = isBulkMode ? t('common.bulk') : '';
   const prefixText = `${manualText} ${bulkText}`.trim();
   const titleMenu = isIndonesian
     ? `${t('report.daily_report')} ${prefixText}`.trim()

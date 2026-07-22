@@ -28,7 +28,7 @@ export default function KpiReport() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
-  const { t } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
   const settingsRef = useRef(null);
   const isEmptyUploadedFile = routingFiles.length === 0 || taskFiles.length === 0;
 
@@ -130,11 +130,17 @@ export default function KpiReport() {
     setPendingAction(null);
   };
 
+  const manualText = isManualMode ? 'Manual' : '';
+  const bulkText = isBulkMode ? t('common.bulk') : '';
+  const prefixText = `${manualText} ${bulkText}`.trim();
+  const titleMenu = isIndonesian
+    ? `${t('report.kpi_report')} ${prefixText}`.trim()
+    : `${prefixText} ${t('report.kpi_report')}`.trim();
+
   return (
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
-        {isManualMode ? 'Manual ' : ''}
-        {t('report.kpi_report')}
+        {titleMenu}
       </h1>
 
       <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 w-full">
@@ -197,7 +203,7 @@ export default function KpiReport() {
                 disabled={loading}
                 className="w-4 h-4 text-sky-600 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-sky-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed pointer-events-none"
               />
-              <span className="text-sm select-none w-full">{t('common.bulk_mode')}</span>
+              <span className="text-sm select-none w-full">{t('common.bulk')}</span>
             </div>
 
             <div
