@@ -9,7 +9,7 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isDateSunday, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { handleManualDownload, handleBulkDownload, handleSingleDownload } from './helper/help';
+import { handleBulkDownload, handleManualDownload, handleSingleDownload } from './helper/help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -40,7 +40,6 @@ export default function DailyReport({
   const [isCustomRouting, setIsCustomRouting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [routingDate, setRoutingDate] = useState(() => calculateDefaultRoutingDate(initialDate));
-
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [startDate, setStartDate] = useState(initialDate);
   const [endDate, setEndDate] = useState(initialDate);
@@ -161,14 +160,13 @@ export default function DailyReport({
   );
 
   const MainDatePicker = (
-    /* Mengubah max-w-[320px] menjadi w-full sm:w-[280px] agar lebih rapi saat berdampingan */
     <div className="flex flex-col items-center w-full sm:w-[280px]">
       <label
         htmlFor="shippingDate"
         className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full"
       >
-        {isBulkMode ? t('common.range_delivery') || 'Rentang Tanggal' : t('common.delivery_date')}
-        {!isBulkMode && !isCustomRouting && informationComp(t('report.tooltip.info_delivery'))}
+        {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}
+        {!isCustomRouting && informationComp(t('report.tooltip.info_delivery'))}
       </label>
       {isBulkMode ? (
         <CustomDatePicker
@@ -205,7 +203,6 @@ export default function DailyReport({
   );
 
   const SecondaryDatePicker = (
-    /* Mengubah max-w-[320px] menjadi w-full sm:w-[280px] */
     <div className="flex flex-col items-center w-full sm:w-[280px] transition-opacity duration-300">
       <label
         htmlFor="routingDate"

@@ -33,6 +33,90 @@ const shuffleArray = (array) => {
   return newArr;
 };
 
+const parseToNumber = (val) => {
+  if (val == null || val === '') return 0;
+  if (typeof val === 'number') return val;
+  const num = parseFloat(
+    String(val)
+      .replace(/,/g, '')
+      .replace(/[^0-9.-]/g, '')
+      .trim()
+  );
+  return isNaN(num) ? 0 : num;
+};
+
+const formatExcelDate = (val) => {
+  if (typeof val === 'number') {
+    const date = new Date((val - 25569) * 86400 * 1000);
+    if (isNaN(date.getTime())) return String(val);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+  return cleanStr(val);
+};
+
+const getColIdx = (headers, keyword) => {
+  const cleanKw = normalizeStr(keyword);
+  return headers.findIndex((h) => h != null && normalizeStr(h).includes(cleanKw));
+};
+
+const evaluateRoutingValidity = async (
+  name,
+  targetRoutingDateObj,
+  targetDateObj,
+  hubId,
+  taskMap
+) => {
+  try {
+    const nameResults = await getResultsSummary({
+      routingDateObj: targetRoutingDateObj,
+      deliveryDateObj: targetDateObj,
+      hubId,
+      s: name,
+    });
+
+    if (!nameResults || nameResults.length === 0) return [];
+
+    const validIds = [];
+    for (const item of nameResults) {
+      if (!item.result || !Array.isArray(item.result.routing)) continue;
+
+      let totalChecked = 0;
+      let totalValid = 0;
+      let hasTested = false;
+
+      for (const route of item.result.routing) {
+        const validCustomerTrips = (route.trips || []).filter(
+          (t) => !t.isHub && t.visitId?.includes('taskId-')
+        );
+
+        if (validCustomerTrips.length > 0) {
+          hasTested = true;
+          const sampledTrips = shuffleArray(validCustomerTrips).slice(
+            0,
+            Math.min(5, validCustomerTrips.length)
+          );
+          const extractedIds = sampledTrips
+            .map((trip) => trip.visitId.match(/taskId-([a-zA-Z0-9]+)/)?.[1])
+            .filter(Boolean);
+
+          totalChecked += extractedIds.length;
+          extractedIds.forEach((id) => {
+            if (taskMap.get(String(id)) === String(item._id)) totalValid++;
+          });
+        }
+      }
+
+      if (hasTested && totalChecked > 0 && (totalValid / totalChecked) * 100 >= 70) {
+        validIds.push(item._id);
+      }
+    }
+    return validIds;
+  } catch {
+    return [];
+  }
+};
+
 const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   const dateString = formatDateUniversal(targetDateObj);
   const startObj = new Date(targetDateObj);
@@ -75,66 +159,18 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
   const allTasksData = tasks?.data || tasks?.tasks?.data || tasks || [];
   allTasksData.forEach((t) => {
     const taskId = t._id || t.id;
-    if (taskId && t.routingResultId) {
-      taskMap.set(String(taskId), String(t.routingResultId));
-    }
+    if (taskId && t.routingResultId) taskMap.set(String(taskId), String(t.routingResultId));
   });
 
   const uniqueNames = [
     ...new Set((rawResults || []).map((r) => r.name).filter((n) => n && n !== '-')),
   ];
-  const validRoutingIds = new Set();
+  const validationPromises = uniqueNames.map((name) =>
+    evaluateRoutingValidity(name, targetRoutingDateObj, targetDateObj, selectedHub.id, taskMap)
+  );
 
-  for (const name of uniqueNames) {
-    try {
-      const nameResults = await getResultsSummary({
-        routingDateObj: targetRoutingDateObj,
-        deliveryDateObj: targetDateObj,
-        hubId: selectedHub.id,
-        s: name,
-      });
-
-      if (!nameResults || nameResults.length === 0) continue;
-
-      for (const item of nameResults) {
-        const routingId = item._id;
-        let totalCheckedTasks = 0;
-        let totalValidTasks = 0;
-        let hasTestedAnyTrip = false;
-
-        if (item.result && Array.isArray(item.result.routing)) {
-          for (const route of item.result.routing) {
-            const validCustomerTrips = (route.trips || []).filter(
-              (t) => !t.isHub && t.visitId?.includes('taskId-')
-            );
-
-            if (validCustomerTrips.length > 0) {
-              hasTestedAnyTrip = true;
-              const maxSample = Math.min(5, validCustomerTrips.length);
-              const sampledTrips = shuffleArray(validCustomerTrips).slice(0, maxSample);
-
-              const extractedIds = sampledTrips
-                .map((trip) => trip.visitId.match(/taskId-([a-zA-Z0-9]+)/)?.[1])
-                .filter(Boolean);
-
-              totalCheckedTasks += extractedIds.length;
-              extractedIds.forEach((id) => {
-                if (taskMap.get(String(id)) === String(routingId)) {
-                  totalValidTasks++;
-                }
-              });
-            }
-          }
-        }
-
-        if (hasTestedAnyTrip && totalCheckedTasks > 0) {
-          if ((totalValidTasks / totalCheckedTasks) * 100 >= 70) {
-            validRoutingIds.add(routingId);
-          }
-        }
-      }
-    } catch (err) {}
-  }
+  const validIdsArrays = await Promise.all(validationPromises);
+  const validRoutingIds = new Set(validIdsArrays.flat());
 
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
   const { kpiHistories } = convertLocationHistories(
@@ -143,7 +179,7 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
     dateString
   );
 
-  const { wb, fileName, hasError } = generateKpiWorkbook(
+  return generateKpiWorkbook(
     dateString,
     selectedHub.name,
     drivers,
@@ -151,53 +187,20 @@ const processSingleDate = async (targetDateObj, drivers, selectedHub) => {
     tasks || [],
     kpiHistories
   );
-
-  return { wb, fileName, hasError };
-};
-
-function parseToNumber(val) {
-  if (val == null || val === '') return 0;
-  if (typeof val === 'number') return val;
-  const num = parseFloat(
-    String(val)
-      .replace(/,/g, '')
-      .replace(/[^0-9.-]/g, '')
-      .trim()
-  );
-  return isNaN(num) ? 0 : num;
-}
-
-function formatExcelDate(val) {
-  if (typeof val === 'number') {
-    const date = new Date((val - 25569) * 86400 * 1000);
-    if (isNaN(date.getTime())) return String(val);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-  return cleanStr(val);
-}
-
-const getColIdx = (headers, keyword) => {
-  const cleanKw = normalizeStr(keyword);
-  return headers.findIndex((h) => h != null && normalizeStr(h).includes(cleanKw));
 };
 
 async function parseRoutingFiles(files) {
   const resultsData = [];
-
   for (const file of files) {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
-
     const targetSheetName =
       workbook.SheetNames.find((name) => name.toLowerCase().includes('summary')) ||
       workbook.SheetNames[0];
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[targetSheetName], { header: 1 });
 
     let routingName = file.name.replace(/\.[^/.]+$/, '');
-    if (routingName.includes('-')) {
-      routingName = routingName.split('-').slice(1).join('-').trim();
-    }
+    if (routingName.includes('-')) routingName = routingName.split('-').slice(1).join('-').trim();
 
     let headerRowIdx = -1;
     for (let r = 0; r < Math.min(50, rows.length); r++) {
@@ -212,7 +215,6 @@ async function parseRoutingFiles(files) {
     }
 
     if (headerRowIdx === -1) continue;
-
     const headers = rows[headerRowIdx];
 
     const colIdx = {
@@ -226,11 +228,6 @@ async function parseRoutingFiles(files) {
       totalDistance: getColIdx(headers, 'totaldistance'),
       totalWeight: getColIdx(headers, 'totalweight'),
       totalVolume: getColIdx(headers, 'totalvolume'),
-      assignedVehicle: headers.findIndex((h) => {
-        if (h == null) return false;
-        const cl = normalizeStr(h);
-        return (cl.includes('assignedvehicle') || cl.includes('vehicle')) && !cl.includes('id');
-      }),
       maxWeight: Math.max(getColIdx(headers, 'vehiclemaxweight'), getColIdx(headers, 'maxweight')),
       maxVolume: Math.max(getColIdx(headers, 'vehiclemaxvolume'), getColIdx(headers, 'maxvolume')),
     };
@@ -241,7 +238,6 @@ async function parseRoutingFiles(files) {
 
     for (let r = headerRowIdx + 1; r < rows.length; r++) {
       const rowData = rows[r];
-
       if (
         !rowData ||
         rowData.length === 0 ||
@@ -254,7 +250,6 @@ async function parseRoutingFiles(files) {
       const travel = safeNum(rowData, colIdx.travel);
       const wait = safeNum(rowData, colIdx.wait);
       let spent = safeNum(rowData, colIdx.spent);
-
       if (spent <= 0) spent = visit + travel + wait;
 
       routingArray.push({
@@ -273,13 +268,8 @@ async function parseRoutingFiles(files) {
         trips: [{ isHub: false, weight: 0, volume: 0, distance: 0 }],
       });
     }
-
-    resultsData.push({
-      description: routingName,
-      result: { routing: routingArray },
-    });
+    resultsData.push({ description: routingName, result: { routing: routingArray } });
   }
-
   return resultsData;
 }
 
@@ -302,7 +292,6 @@ async function parseTaskFiles(files) {
     }
 
     if (headerRowIdx === -1) continue;
-
     const headers = rows[headerRowIdx];
 
     const colIdx = {
@@ -325,7 +314,6 @@ async function parseTaskFiles(files) {
       if (!row || row.length === 0 || colIdx.assignedTo === -1 || !row[colIdx.assignedTo]) continue;
 
       const startTime = colIdx.startTime !== -1 ? formatExcelDate(row[colIdx.startTime]) : '';
-
       if (startTime) {
         const parts = startTime.split(' ')[0];
         let isoDate = '';
@@ -351,7 +339,7 @@ async function parseTaskFiles(files) {
 
       parsedTasks.push({
         flow: safeStr(row, colIdx.flow) || '-',
-        startTime: startTime,
+        startTime,
         assignedVehicle: safeStr(row, colIdx.assignedVehicle) || '-',
         driverName: safeStr(row, colIdx.assignedTo),
         typeStorage: safeStr(row, colIdx.typeStorage) || '-',
@@ -372,9 +360,74 @@ async function parseTaskFiles(files) {
       majorityDate = date;
     }
   }
-
   return { tasks: parsedTasks, majorityDate };
 }
+
+const executeManualDownload = async ({ routingFiles, taskFiles, selectedHub, drivers }) => {
+  let parsedResultsData = [];
+  if (routingFiles.length > 0) {
+    try {
+      parsedResultsData = await parseRoutingFiles(routingFiles);
+    } catch (err) {
+      throw new Error('Gagal membaca format file Routing: ' + err.message);
+    }
+  }
+
+  let parsedTasksData = [];
+  let extractedDateStr = null;
+  if (taskFiles.length > 0) {
+    try {
+      const taskResult = await parseTaskFiles(taskFiles);
+      parsedTasksData = taskResult.tasks;
+      extractedDateStr = taskResult.majorityDate;
+    } catch (err) {
+      throw new Error('Gagal membaca format file Task: ' + err.message);
+    }
+  }
+
+  if (!extractedDateStr) {
+    throw new Error('Tidak dapat mendeteksi tanggal pengiriman dari kolom startTime di file Task.');
+  }
+
+  const targetDateObj = new Date(extractedDateStr);
+  const targetDateStr = formatDateUniversal(targetDateObj);
+  const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(targetDateStr);
+
+  let histories = [];
+  try {
+    histories =
+      (await getLocationHistories({
+        timeFrom: histFrom,
+        timeTo: histTo,
+        limit: 5000,
+        startFinish: 'true',
+        fields: 'finish,startTime,email,trackedTime,totalDistance',
+        timeBy: 'createdTime',
+      })) || [];
+  } catch {
+    toastWarning('Gagal menarik data lokasi API, menggunakan data kosong.');
+  }
+
+  const { timeDataObjects } = convertLocationHistories(
+    histories?.tasks?.data || [],
+    drivers,
+    targetDateStr
+  );
+  const { wb } = generateKpiWorkbook(
+    targetDateStr,
+    selectedHub.name,
+    drivers,
+    parsedResultsData,
+    parsedTasksData,
+    timeDataObjects
+  );
+
+  XLSX.writeFile(
+    wb,
+    `Manual KPI - ${formatDateUniversal(targetDateObj, 'DD.MM.YYYY')} - ${selectedHub.name}.xlsx`
+  );
+  toastSuccess('File berhasil diunduh (Mode Manual)');
+};
 
 export const executeDownload = async ({
   downloadMode,
@@ -388,122 +441,51 @@ export const executeDownload = async ({
   taskFiles = [],
 }) => {
   if (dataSource === 'manual') {
-    let parsedResultsData = [];
-    if (routingFiles.length > 0) {
-      try {
-        parsedResultsData = await parseRoutingFiles(routingFiles);
-      } catch (err) {
-        throw new Error('Gagal membaca format file Routing: ' + err.message);
-      }
-    }
-
-    let parsedTasksData = [];
-    let extractedDateStr = null;
-    if (taskFiles.length > 0) {
-      try {
-        const taskResult = await parseTaskFiles(taskFiles);
-        parsedTasksData = taskResult.tasks;
-        extractedDateStr = taskResult.majorityDate;
-      } catch (err) {
-        throw new Error('Gagal membaca format file Task: ' + err.message);
-      }
-    }
-
-    if (!extractedDateStr) {
-      throw new Error(
-        'Tidak dapat mendeteksi tanggal pengiriman dari kolom startTime di file Task.'
-      );
-    }
-
-    const targetDateObj = new Date(extractedDateStr);
-    const targetDateStr = formatDateUniversal(targetDateObj);
-    const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(targetDateStr);
-
-    let histories = [];
-    try {
-      histories =
-        (await getLocationHistories({
-          timeFrom: histFrom,
-          timeTo: histTo,
-          limit: 5000,
-          startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
-          timeBy: 'createdTime',
-        })) || [];
-    } catch (err) {
-      toastWarning('Gagal menarik data lokasi API, menggunakan data kosong.');
-    }
-
-    const { timeDataObjects } = convertLocationHistories(
-      histories?.tasks?.data || [],
-      drivers,
-      targetDateStr
-    );
-
-    const { wb } = generateKpiWorkbook(
-      targetDateStr,
-      selectedHub.name,
-      drivers,
-      parsedResultsData,
-      parsedTasksData,
-      timeDataObjects
-    );
-
-    const manualFileName = `Manual KPI - ${formatDateUniversal(targetDateObj, 'DD.MM.YYYY')} - ${selectedHub.name}.xlsx`;
-    XLSX.writeFile(wb, manualFileName);
-    toastSuccess('File berhasil diunduh (Mode Manual)');
-    return;
+    return executeManualDownload({ routingFiles, taskFiles, selectedHub, drivers });
   }
 
   if (downloadMode === 'single') {
     if (!singleDate) throw new Error('Silahkan pilih tanggal!');
     const { wb, fileName, hasError } = await processSingleDate(singleDate, drivers, selectedHub);
-
     XLSX.writeFile(wb, fileName);
     if (hasError) toastError('Terdapat data yang hilang. Periksa sheet Error Data!');
     toastSuccess('Data berhasil diunduh!');
-  } else {
-    if (!startDate || !endDate) throw new Error('Silahkan pilih rentang tanggal!');
-    if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
-
-    const dateList = getDatesInRange(startDate, endDate);
-    if (dateList.length > 16) throw new Error('Rentang tanggal terlalu besar.');
-
-    const zip = new JSZip();
-    let errorCount = 0;
-
-    for (const currentDate of dateList) {
-      if (currentDate.getDay() === 0) continue;
-
-      try {
-        const { wb, fileName, hasError } = await processSingleDate(
-          currentDate,
-          drivers,
-          selectedHub
-        );
-        if (hasError) errorCount++;
-        zip.file(fileName, XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
-      } catch (err) {
-        toastError(`Gagal memproses ${formatDateUniversal(currentDate)}: ${err.message}`);
-        zip.file(
-          `ERROR_LOG_${formatDateUniversal(currentDate)}.txt`,
-          `Gagal menarik data: ${err.message}`
-        );
-      }
-    }
-
-    const zipContent = await zip.generateAsync({ type: 'blob' });
-    const zipFileName = `Bulk KPI - ${formatDateUniversal(startDate, 'DD.MM.YYYY')} sd ${formatDateUniversal(endDate, 'DD.MM.YYYY')} - ${selectedHub.name}.zip`;
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(zipContent);
-    link.download = zipFileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    if (errorCount > 0)
-      toastWarning(`Selesai dengan catatan: ${errorCount} hari memiliki data error.`);
-    else toastSuccess('Semua data berhasil diunduh dalam ZIP!');
+    return;
   }
+
+  if (!startDate || !endDate) throw new Error('Silahkan pilih rentang tanggal!');
+  if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
+
+  const dateList = getDatesInRange(startDate, endDate);
+  if (dateList.length > 16) throw new Error('Rentang tanggal terlalu besar.');
+
+  const zip = new JSZip();
+  let errorCount = 0;
+
+  for (const currentDate of dateList) {
+    if (currentDate.getDay() === 0) continue;
+    try {
+      const { wb, fileName, hasError } = await processSingleDate(currentDate, drivers, selectedHub);
+      if (hasError) errorCount++;
+      zip.file(fileName, XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
+    } catch (err) {
+      toastError(`Gagal memproses ${formatDateUniversal(currentDate)}: ${err.message}`);
+      zip.file(
+        `ERROR_LOG_${formatDateUniversal(currentDate)}.txt`,
+        `Gagal menarik data: ${err.message}`
+      );
+    }
+  }
+
+  const zipContent = await zip.generateAsync({ type: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(zipContent);
+  link.download = `Bulk KPI - ${formatDateUniversal(startDate, 'DD.MM.YYYY')} sd ${formatDateUniversal(endDate, 'DD.MM.YYYY')} - ${selectedHub.name}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  if (errorCount > 0)
+    toastWarning(`Selesai dengan catatan: ${errorCount} hari memiliki data error.`);
+  else toastSuccess('Semua data berhasil diunduh dalam ZIP!');
 };
