@@ -7,9 +7,12 @@ import {
 } from '@/lib/api';
 import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import { generateAutoReportWorkbook, generateManualReportWorkbook } from '@/lib/reportGenerators/';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
-import { generateKpiWorkbook } from '@/lib/reportGenerators/kpi/kpiReport';
+import {
+  generateAutoReportWorkbook,
+  generateKpiWorkbook,
+  generateManualReportWorkbook,
+} from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import {
   calculateStartFinishDates,

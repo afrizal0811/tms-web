@@ -8,7 +8,7 @@ import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api';
 import useSummaryData from '@/lib/hooks/useSummaryData';
-import { generateSummaryWorkbook } from '@/lib/reportGenerators';
+import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, formatUTC7, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';

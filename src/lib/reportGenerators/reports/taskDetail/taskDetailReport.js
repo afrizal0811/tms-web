@@ -1,6 +1,6 @@
 import { formatDateUniversal, formatUTC7, getDistance, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { isTripInShift } from '../helper';
+import { isTripInShift } from '../../helper';
 
 const getNameValue = (val) => {
   if (!val) return '';

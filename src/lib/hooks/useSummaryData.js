@@ -10,7 +10,7 @@ import {
 } from '@/lib/api';
 import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { generateSummaryDataPreview } from '@/lib/reportGenerators';
+import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,

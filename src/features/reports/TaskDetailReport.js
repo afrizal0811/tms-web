@@ -12,7 +12,7 @@ import {
   buildSyncTimeMap,
   generateTaskDetailWorkbook,
   groupTasksByDriver,
-} from '@/lib/reportGenerators/taskDetail/taskDetailReport';
+} from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,

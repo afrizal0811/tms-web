@@ -13,7 +13,7 @@ import {
   buildDriverMap,
   extractBreadRows,
   generateBreadWorkbook,
-} from '@/lib/reportGenerators/bread/breadReport';
+} from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, isEmpty, toApiDateString, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';
