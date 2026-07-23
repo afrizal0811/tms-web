@@ -116,14 +116,6 @@ export default function useSummaryData() {
       setIsCalculatingMetrics(true);
       setHistoryProgress(0);
 
-      const getRoutingDateWIB = (dateStr) => {
-        if (!dateStr) return null;
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return null;
-        const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-        return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
-      };
-
       const taskToRoutingDate = new Map();
       (allResults || []).forEach((res) => {
         const rDate = getDeliveryDateFromRouting(res.createdTime);
@@ -366,48 +358,43 @@ export default function useSummaryData() {
 
           (batchData || []).forEach((item) => {
             const originalRes = resultMap.get(item.resultId);
-            if (!originalRes) return;
+            if (!originalRes || !item.history || !item.history[0]) return;
             const dateKey = getDeliveryDateFromRouting(originalRes.createdTime);
             if (!dateKey) return;
 
+            const { manual } = item.history[0];
             let histDry = 0;
             let histFrozen = 0;
             let histMaDry = 0;
             let histMaFrozen = 0;
 
-            (item.history || []).forEach((h) => {
-              const isVehicleFromDropped = h.vehicleFrom?.toLowerCase() === 'dropped';
-              const isActionMove = h.action?.toLowerCase() === 'move';
+            (manual?.data || []).forEach((h) => {
+              const vToClean = cleanPlat(h.vehicleTo);
+              const foundDriver = fetchedDrivers.find(
+                (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
+              );
+              const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
+              const isFrozen = storage.includes('FROZEN');
 
-              if (isVehicleFromDropped) {
-                const vToClean = cleanPlat(h.vehicleTo);
-                const foundDriver = fetchedDrivers.find(
-                  (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
-                );
-                const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
-                const isFrozen = storage.includes('FROZEN');
+              (h.visits || []).forEach((v) => {
+                const taskDetail = getTaskDetails(v);
 
-                (h.visits || []).forEach((v) => {
-                  const taskDetail = getTaskDetails(v);
-
-                  if (isFrozen) {
-                    histFrozen += 1;
-                    if (tempMetrics[dateKey]) tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
-                    if (isActionMove) {
-                      histMaFrozen += 1;
-                      if (tempMetrics[dateKey])
-                        tempMetrics[dateKey].frozen.ma_tasks.push(taskDetail);
-                    }
-                  } else {
-                    histDry += 1;
-                    if (tempMetrics[dateKey]) tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
-                    if (isActionMove) {
-                      histMaDry += 1;
-                      if (tempMetrics[dateKey]) tempMetrics[dateKey].dry.ma_tasks.push(taskDetail);
-                    }
+                if (isFrozen) {
+                  histFrozen += 1;
+                  histMaFrozen += 1;
+                  if (tempMetrics[dateKey]) {
+                    tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
+                    tempMetrics[dateKey].frozen.ma_tasks.push(taskDetail);
                   }
-                });
-              }
+                } else {
+                  histDry += 1;
+                  histMaDry += 1;
+                  if (tempMetrics[dateKey]) {
+                    tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
+                    tempMetrics[dateKey].dry.ma_tasks.push(taskDetail);
+                  }
+                }
+              });
             });
 
             if (tempMetrics[dateKey]) {
@@ -428,7 +415,6 @@ export default function useSummaryData() {
         if (!dateKey) return;
         if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
 
-        // Kumpulkan multi-routing name di Set
         if (tempMetrics[dateKey] && res.name) {
           tempMetrics[dateKey].routingNames.add(res.name);
         }
@@ -545,17 +531,13 @@ export default function useSummaryData() {
         });
       });
 
-      // Algoritma Lookback (H-3) untuk memindahkan rute dari hari libur nasional/Minggu ke hari aktif kerja
       const dateKeysSorted = Object.keys(tempMetrics).sort();
       const LOOKBACK_LIMIT = 3;
 
       dateKeysSorted.forEach((currDateKey) => {
         const currM = tempMetrics[currDateKey];
 
-        // 1. Deteksi Hari Eksekusi Nyata (Berdasarkan Task Aktual)
         const currHasExecutedTasks = (currM.actual_tasks_count || 0) > 0;
-
-        // 2. Deteksi Hari Pembuatan Routing (Ada DP/TV/Routing Name)
         const currHasRouting =
           currM.dry.tv > 0 ||
           currM.frozen.tv > 0 ||
@@ -579,10 +561,8 @@ export default function useSummaryData() {
                 prevM.dry.dp > 0 ||
                 prevM.frozen.dp > 0;
 
-              // Jika H-x ada Routing tapi TIDAK ADA eksekusi Task (Libur Nasional)
               if (prevHasRouting && !prevHasExecutedTasks) {
                 ['dry', 'frozen'].forEach((type) => {
-                  // Pindahkan SEMUA metrik bawaan Routing (DP, DT, MA, TV) ke hari eksekusi
                   currM[type].dp = prevM[type].dp;
                   currM[type].dp_tasks = [...prevM[type].dp_tasks];
 
@@ -600,7 +580,6 @@ export default function useSummaryData() {
                   currM[type].tvu = prevM[type].tvu;
                   currM[type].tv_details = [...prevM[type].tv_details];
 
-                  // Kosongkan total metrik di hari libur agar memicu UI Full Red Row
                   prevM[type].dp = 0;
                   prevM[type].dp_tasks = [];
 
@@ -630,7 +609,6 @@ export default function useSummaryData() {
         }
       });
 
-      // Konversi Set menjadi Array setelah seluruh proses Lookback selesai agar data kosong terdeteksi dengan benar
       Object.keys(tempMetrics).forEach((dateKey) => {
         tempMetrics[dateKey].routingNames = Array.from(tempMetrics[dateKey].routingNames || []);
       });
