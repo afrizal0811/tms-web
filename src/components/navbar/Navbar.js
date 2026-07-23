@@ -1,13 +1,8 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { getRoles } from '@/lib/api';
-import {
-  getLocalStorage,
-  getSuperadminRoleId,
-  removeLocalStorage,
-  setSuperadminRoleId,
-} from '@/lib/localStorageHandler';
+import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
+import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -85,7 +80,6 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
@@ -93,8 +87,11 @@ export default function Navbar() {
   const navRef = useRef(null);
   const laporanRef = useRef(null);
   const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
+
   const { storedUser } = getLocalStorage();
   const userName = storedUser ? JSON.parse(storedUser).name : '';
+
+  const { isSuperadmin } = useSuperadmin();
 
   const handleLogout = () => {
     removeLocalStorage('data');
@@ -102,38 +99,10 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    const checkUserAndRole = async () => {
-      try {
-        if (typeof window !== 'undefined') {
-          if (storedUser) {
-            const user = JSON.parse(storedUser);
-            setIsLoggedIn(!!user);
-
-            const cachedSuperadminId = getSuperadminRoleId();
-
-            if (cachedSuperadminId) {
-              setIsSuperadmin(user?.roleId === cachedSuperadminId);
-            } else {
-              const roles = await getRoles();
-              const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
-
-              if (superadminRole) {
-                setSuperadminRoleId(superadminRole._id);
-                setIsSuperadmin(user?.roleId === superadminRole._id);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        setIsLoggedIn(false);
-        setIsSuperadmin(false);
-      }
-    };
     const timer = setTimeout(() => {
       setMounted(true);
-      checkUserAndRole();
+      setIsLoggedIn(!!storedUser);
     }, 0);
-
     return () => clearTimeout(timer);
   }, [storedUser]);
 
@@ -381,9 +350,7 @@ export default function Navbar() {
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}
               </MobileNavLink>
-              <MobileNavLink href="/delivery">
-                {t('navbar.delivery')}
-              </MobileNavLink>
+              <MobileNavLink href="/delivery">{t('navbar.delivery')}</MobileNavLink>
               {mobileLinkVehicle}
               <Divider />
             </>
