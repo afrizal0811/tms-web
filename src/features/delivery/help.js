@@ -80,7 +80,7 @@ export const handleRouteTransactionDownload = async ({
       });
 
       const wsData = [
-        ['Order Number', 'Order Type'],
+        ['Order Nbr.', 'Order Type'],
         ...processedRows.map((row) => {
           const valid = isValidSO(row.so) && !row.isInvalidCustomer;
           if (!valid) {
