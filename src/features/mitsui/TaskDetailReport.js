@@ -12,7 +12,7 @@ import {
   buildSyncTimeMap,
   generateTaskDetailWorkbook,
   groupTasksByDriver,
-} from '@/lib/reportGenerators/reports';
+} from '@/lib/reportGenerators/mitsui';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -24,8 +24,8 @@ import {
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { taskDetailHeaders, taskDetailKeyMapping } from './helper/constants';
-import { getDatesInRange } from './helper/help';
+import { taskDetailHeaders, taskDetailKeyMapping } from '../reports/helper/constants';
+import { getDatesInRange } from '../reports/helper/help';
 
 const getReportDates = (start, end) => {
   const localStart = new Date(start);
