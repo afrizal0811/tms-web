@@ -1,4 +1,4 @@
-export const taskDetailHeaders = [
+export const taskHeaders = [
   '_id',
   'flow',
   'flowId',
@@ -105,7 +105,7 @@ export const taskDetailHeaders = [
   'routingResultId',
 ];
 
-export const taskDetailKeyMapping = {
+export const taskKeyMapping = {
   _id: '_id',
   flow: 'flow',
   flowId: 'flowId',

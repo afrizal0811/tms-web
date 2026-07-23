@@ -24,7 +24,7 @@ import {
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { taskDetailHeaders, taskDetailKeyMapping } from '../reports/helper/constants';
+import { taskHeaders, taskKeyMapping } from './helper/constants'
 import { getDatesInRange } from '../reports/helper/help';
 
 const getReportDates = (start, end) => {
@@ -109,8 +109,8 @@ export default function TaskDetailReport() {
           timeMap,
           routingMap,
           hubCoordsStr,
-          taskDetailHeaders,
-          taskDetailKeyMapping
+          taskHeaders,
+          taskKeyMapping
         );
 
         const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
