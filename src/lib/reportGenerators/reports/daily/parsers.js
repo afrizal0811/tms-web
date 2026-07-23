@@ -121,23 +121,25 @@ export function parseRoutingData(
 
         const hubTrips = route.trips.filter((t) => t.isHub);
         const maxHubWaitTime = hubTrips.length
-          ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
+          ? Math.max(...hubTrips.map((t) => Number(t.waitingTime) || 0))
           : 0;
-        manualWaitTime += maxHubWaitTime;
+        manualWaitTime += Number(maxHubWaitTime) || 0;
 
         route.trips.forEach((t) => {
           if (!t.isHub) {
-            manualVisitTime += t.visitTime || 0;
-            manualWaitTime += t.waitingTime || 0;
+            manualVisitTime += Number(t.visitTime) || 0;
+            manualWaitTime += Number(t.waitingTime) || 0;
           }
           manualDistance += Number(t.distance) || 0;
           manualTravelTime += Number(t.travelTime) || 0;
         });
       }
 
-      const fDist = manualDistance || route.totalDistance || 0;
+      const fDist = Number(manualDistance) || Number(route.totalDistance) || 0;
       const fSpent =
-        manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
+        Number(manualTravelTime + manualVisitTime + manualWaitTime) ||
+        Number(route.totalSpentTime) ||
+        0;
 
       const row = {
         hasTrips,
@@ -148,9 +150,9 @@ export function parseRoutingData(
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
         rawWeight: 0,
-        maxWeight: driverInfo?.maxWeight || route.vehicleMaxWeight || 0,
+        maxWeight: Number(driverInfo?.maxWeight || route.vehicleMaxWeight) || 0,
         rawVolume: 0,
-        maxVolume: driverInfo?.maxVolume || route.vehicleMaxVolume || 0,
+        maxVolume: Number(driverInfo?.maxVolume || route.vehicleMaxVolume) || 0,
       };
 
       if (!routingMap.has(driverName)) {
@@ -242,9 +244,9 @@ export function parseRoutingData(
           etaFirstStore: '-',
           etdHub: '-',
           rawWeight: 0,
-          maxWeight: masterData?.maxWeight || 0,
+          maxWeight: Number(masterData?.maxWeight) || 0,
           rawVolume: 0,
-          maxVolume: masterData?.maxVolume || 0,
+          maxVolume: Number(masterData?.maxVolume) || 0,
         });
       }
 

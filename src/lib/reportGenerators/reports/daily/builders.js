@@ -168,7 +168,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
     t('common.distance'),
     t('excel.reports.truck_detail.total_visit'),
     t('excel.reports.truck_detail.total_delivery'),
-    t('excel.reports.truck_detail.ship_dur'),
+    t('excel.reports.truck_detail.ship_duration'),
     t('excel.reports.truck_detail.delivered'),
     t('excel.reports.truck_detail.eta_first'),
     t('excel.reports.truck_detail.etd_hub'),
@@ -181,6 +181,7 @@ export function buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, 
 
   driverData.forEach((driver) => {
     if (driver.plat?.toUpperCase().includes('DEMO')) return;
+    if (!driver.name || driver.name === '-' || driver.name.trim() === '') return;
 
     if (seenDrivers.has(driver.name)) return;
     seenDrivers.add(driver.name);
