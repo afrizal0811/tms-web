@@ -11,8 +11,7 @@ import { formatDateUniversal, isEmpty, tomorrowDate } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { processDetailReport, processManualReport } from '../mitsui/helper/help';
-import { getDatesInRange } from './helper/help';
+import { getDatesInRange, processManualTaskReport, processTaskRoutingReport } from './helper/help';
 
 export default function MitsuiReport() {
   const [startDate, setStartDate] = useState(new Date());
@@ -45,17 +44,15 @@ export default function MitsuiReport() {
 
       const generatedFiles =
         reportType === 'detail'
-          ? await processDetailReport(storedLocation, datesToProcess, locationName, t)
-          : await processManualReport(storedLocation, datesToProcess, locationName, t);
+          ? await processTaskRoutingReport(storedLocation, datesToProcess, locationName, t)
+          : await processManualTaskReport(storedLocation, datesToProcess, locationName, t);
 
       if (generatedFiles.length === 0) {
         throw new Error(t('common.no_data'));
       }
 
       const reportTitleName =
-        reportType === 'detail'
-          ? t('report.task_routing')
-          : t('report.task_manual');
+        reportType === 'detail' ? t('report.task_routing') : t('report.task_manual');
 
       if (generatedFiles.length === 1) {
         XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
