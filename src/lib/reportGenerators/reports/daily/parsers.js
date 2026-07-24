@@ -1,13 +1,12 @@
+import { routingActual } from '@/lib/routingActual';
 import {
-  calculateMinuteDifference,
   formatCoordinates,
   formatDateUniversal,
   formatUTC7,
+  getBasePlate,
   getDistance,
-  getStorageType,
   isEmpty,
   normalizeEmail,
-  parseCustomerString,
 } from '@/lib/utils';
 import {
   buildDriverMaps,
@@ -15,7 +14,6 @@ import {
   FAILED_STATUSES,
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
-
 export function parseRoutingData(
   filteredResults,
   driverData,
@@ -121,25 +119,23 @@ export function parseRoutingData(
 
         const hubTrips = route.trips.filter((t) => t.isHub);
         const maxHubWaitTime = hubTrips.length
-          ? Math.max(...hubTrips.map((t) => Number(t.waitingTime) || 0))
+          ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
           : 0;
-        manualWaitTime += Number(maxHubWaitTime) || 0;
+        manualWaitTime += maxHubWaitTime;
 
         route.trips.forEach((t) => {
           if (!t.isHub) {
-            manualVisitTime += Number(t.visitTime) || 0;
-            manualWaitTime += Number(t.waitingTime) || 0;
+            manualVisitTime += t.visitTime || 0;
+            manualWaitTime += t.waitingTime || 0;
           }
           manualDistance += Number(t.distance) || 0;
           manualTravelTime += Number(t.travelTime) || 0;
         });
       }
 
-      const fDist = Number(manualDistance) || Number(route.totalDistance) || 0;
+      const fDist = manualDistance || route.totalDistance || 0;
       const fSpent =
-        Number(manualTravelTime + manualVisitTime + manualWaitTime) ||
-        Number(route.totalSpentTime) ||
-        0;
+        manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
 
       const row = {
         hasTrips,
@@ -150,9 +146,9 @@ export function parseRoutingData(
         etaFirstStore: etaFirstStoreVal,
         etdHub: etdHubVal,
         rawWeight: 0,
-        maxWeight: Number(driverInfo?.maxWeight || route.vehicleMaxWeight) || 0,
+        maxWeight: driverInfo?.maxWeight || route.vehicleMaxWeight || 0,
         rawVolume: 0,
-        maxVolume: Number(driverInfo?.maxVolume || route.vehicleMaxVolume) || 0,
+        maxVolume: driverInfo?.maxVolume || route.vehicleMaxVolume || 0,
       };
 
       if (!routingMap.has(driverName)) {
@@ -244,9 +240,9 @@ export function parseRoutingData(
           etaFirstStore: '-',
           etdHub: '-',
           rawWeight: 0,
-          maxWeight: Number(masterData?.maxWeight) || 0,
+          maxWeight: masterData?.maxWeight || 0,
           rawVolume: 0,
-          maxVolume: Number(masterData?.maxVolume) || 0,
+          maxVolume: masterData?.maxVolume || 0,
         });
       }
 
@@ -291,15 +287,20 @@ export function parseDeliveryData(
         if (Array.isArray(res.result?.routing)) {
           res.result.routing.forEach((r) => {
             const dName = emailToDriverMap[normalizeEmail(r.assignee)]?.name || r.assignee || 'N/A';
+            const routePlat =
+              r.vehicleName || emailToDriverMap[normalizeEmail(r.assignee)]?.plat || '';
+            const routeBasePlat = getBasePlate(routePlat) || routePlat;
             const hubTrips = (r.trips || []).filter((t) => t.isHub);
             if (hubTrips.length > 0) {
-              hubTimesMap.set(dName, {
+              const timesObj = {
                 hubETD: formatDateUniversal(`${selectedDateString} ${hubTrips[0].etd}`, 'HH:mm'),
                 hubETA: formatDateUniversal(
                   `${selectedDateString} ${hubTrips[hubTrips.length - 1].eta}`,
                   'HH:mm'
                 ),
-              });
+              };
+              hubTimesMap.set(dName, timesObj);
+              if (routeBasePlat) hubTimesMap.set(`${dName}_${routeBasePlat}`, timesObj);
             }
           });
         }
@@ -307,7 +308,6 @@ export function parseDeliveryData(
   }
 
   const deliveryMap = new Map();
-  const allTaskDataForSequence = [];
   const updateLonglatData = [];
   const PENDING_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
   if (hasPendingGR) PENDING_STATUSES.push('PENDING GR');
@@ -315,23 +315,18 @@ export function parseDeliveryData(
   const [y, m, d] = selectedDateString.split('-');
   const formattedDeliveryDate = `${d}-${m}-${y}`;
 
-  allTasks.forEach((task) => {
-    const emailStr =
-      Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
-    const flow = task.flow;
-    const driverEmail = normalizeEmail(emailStr);
-    const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-    const driverName = driverInfo?.name || driverEmail || 'N/A';
+  const baseSequence = routingActual({
+    tasks: allTasks,
+    drivers: driverData,
+    dateStr: selectedDateString,
+  });
 
-    let statusLabel = task.statusDelivery?.length > 0 ? task.statusDelivery[0].toUpperCase() : null;
-    statusLabel = flow === 'Pickup' && task.status ? 'SUKSES' : statusLabel;
-
-    const {
-      name: cName,
-      id: cId,
-      location: cLoc,
-    } = parseCustomerString(task.customerOrder || task.customerName);
-    const pickupCName = `${task.title} (${cName})`;
+  const allTaskDataForSequence = baseSequence.map((row) => {
+    const task = row.rawTask;
+    const driverName = row.driver;
+    const statusLabel = row.statusLabel;
+    const flow = row.flow;
+    const cName = row.customerName;
 
     if (driverName !== 'N/A') {
       const stats = deliveryMap.get(driverName) || {
@@ -351,35 +346,20 @@ export function parseDeliveryData(
         stats.mismatchCustomers.push({ name: cName, date: doneDate });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
+        const pickupCName = `${task.title} (${cName})`;
         stats.missingDataCustomers.push({ name: flow === 'Pickup' ? pickupCName : cName });
       }
       deliveryMap.set(driverName, stats);
     }
 
-    const actualArrival =
-      flow?.toUpperCase().includes('GR') || flow?.toUpperCase().includes('PICKUP')
-        ? task.page1DoneTime
-        : task.klikJikaSudahSampai;
-    const actualDeparture =
-      flow?.toUpperCase().includes('GR') || flow?.toUpperCase().includes('PICKUP')
-        ? task.page1DoneTime
-        : task.page3DoneTime;
-
-    const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
-    const openTimeVal =
-      formatDateUniversal(`${selectedDateString} ${task.openTime}`, 'HH:mm') || '-';
-    const closeTimeVal =
-      formatDateUniversal(`${selectedDateString} ${task.closeTime}`, 'HH:mm') || '-';
-
-    let hoursStatus = null;
-    if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
-      const isInside =
-        openTimeVal > closeTimeVal
-          ? actualArrVal >= openTimeVal || actualArrVal <= closeTimeVal
-          : actualArrVal >= openTimeVal && actualArrVal <= closeTimeVal;
-      if (isInside) hoursStatus = 'yes';
-      else if (actualArrVal < openTimeVal) hoursStatus = 'early';
-      else hoursStatus = 'no';
+    if (task.klikLokasiClient) {
+      updateLonglatData.push({
+        customerName: cName,
+        customerId: row.customerId,
+        locationId: row.locationId,
+        newLonglat: formatCoordinates(task.klikLokasiClient),
+        distanceDiff: getDistance(task.longlat, task.klikLokasiClient),
+      });
     }
 
     let isMigrated = false,
@@ -394,62 +374,15 @@ export function parseDeliveryData(
       }
     }
 
-    allTaskDataForSequence.push({
-      driverEmail,
-      driver: driverName,
-      plat: driverInfo?.plat,
-      actualArrivalTimestamp: actualArrival ? new Date(actualArrival).getTime() : null,
-      roSequence: task.routePlannedOrder || 0,
-      statusLabel,
+    return {
+      ...row,
       isMigrated,
-      flow,
-      customerName: cName,
-      customerId: cId,
-      locationId: cLoc,
       fakturBatal: statusLabel === 'BATAL' ? cName : null,
       terkirimSebagian: statusLabel === 'TERIMA SEBAGIAN' ? cName : null,
       pending,
       pendingGR,
-      reason: task.alasan,
-      openTime: openTimeVal,
-      closeTime: closeTimeVal,
-      eta: formatDateUniversal(`${selectedDateString} ${task.eta}`, 'HH:mm') || '-',
-      etd: formatDateUniversal(`${selectedDateString} ${task.etd}`, 'HH:mm') || '-',
-      actualArrival: actualArrVal,
-      actualDeparture: formatDateUniversal(actualDeparture, 'HH:mm') || '-',
-      visitTime: task.visitTime,
-      actualVisitTime: calculateMinuteDifference(actualDeparture, actualArrival),
-      temperature: getStorageType(driverName),
-      realSequence: 0,
-      orderId: task.orderId || '',
-      isWithinHoursStatus: hoursStatus,
       deliveryDate: formattedDeliveryDate,
-    });
-
-    if (task.klikLokasiClient) {
-      updateLonglatData.push({
-        customerName: cName,
-        customerId: cId,
-        locationId: cLoc,
-        newLonglat: formatCoordinates(task.klikLokasiClient),
-        distanceDiff: getDistance(task.longlat, task.klikLokasiClient),
-      });
-    }
-  });
-
-  allTaskDataForSequence.sort((a, b) => {
-    if (a.driver !== b.driver) return a.driver.localeCompare(b.driver);
-    return (a.actualArrivalTimestamp || Infinity) - (b.actualArrivalTimestamp || Infinity);
-  });
-
-  let currDriver = null,
-    rank = 1;
-  allTaskDataForSequence.forEach((row) => {
-    if (row.driver !== currDriver) {
-      currDriver = row.driver;
-      rank = 1;
-    }
-    row.realSequence = row.actualArrivalTimestamp ? rank++ : null;
+    };
   });
 
   const pendingSOData = allTaskDataForSequence.filter(
