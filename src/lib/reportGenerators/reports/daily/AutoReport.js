@@ -1,6 +1,5 @@
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { parseDeliveryData, parseRoutingData } from './parsers';
 import {
   buildDistanceSummary,
   buildHelpSheet,
@@ -12,6 +11,7 @@ import {
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
 } from './builders';
+import { parseDeliveryData, parseRoutingData } from './parsers';
 
 export async function generateAutoReportWorkbook({
   driverData,
@@ -48,7 +48,7 @@ export async function generateAutoReportWorkbook({
     );
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeData, t);
+  buildStartFinishSheet(wb, timeData, t, driverData);
   buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);

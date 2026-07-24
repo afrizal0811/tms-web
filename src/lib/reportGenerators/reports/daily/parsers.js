@@ -14,6 +14,28 @@ import {
   FAILED_STATUSES,
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
+
+const getTaskPlat = (item) => {
+  if (!item) return '';
+  return (
+    item.vehicleName ||
+    item.vehiclePlat ||
+    item.licenseNumber ||
+    item.licensePlate ||
+    item.vehicleId ||
+    item.vehicle_name ||
+    item.vehicle_plate ||
+    item.plate_number ||
+    item.plat_nomor ||
+    (typeof item.vehicle === 'string' ? item.vehicle : null) ||
+    item.assignedVehicle?.name ||
+    item.assignedVehicle?.plat ||
+    item.plat ||
+    item.nopol ||
+    ''
+  );
+};
+
 export function parseRoutingData(
   filteredResults,
   driverData,
@@ -95,6 +117,10 @@ export function parseRoutingData(
 
       if (!driverName) return;
 
+      const rawPlat = getTaskPlat(route) || driverInfo?.plat || '';
+      const basePlat = getBasePlate(rawPlat) || rawPlat;
+      const groupKey = `${driverName}_${basePlat}`;
+
       const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
       let etdHubVal = '-';
       let etaFirstStoreVal = '-';
@@ -138,6 +164,8 @@ export function parseRoutingData(
         manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
 
       const row = {
+        driver: driverName,
+        plat: rawPlat || driverInfo?.plat || '-',
         hasTrips,
         weightPercentage: 0,
         volumePercentage: 0,
@@ -151,10 +179,10 @@ export function parseRoutingData(
         maxVolume: driverInfo?.maxVolume || route.vehicleMaxVolume || 0,
       };
 
-      if (!routingMap.has(driverName)) {
-        routingMap.set(driverName, row);
+      if (!routingMap.has(groupKey)) {
+        routingMap.set(groupKey, row);
       } else {
-        const ext = routingMap.get(driverName);
+        const ext = routingMap.get(groupKey);
         ext.hasTrips = ext.hasTrips || row.hasTrips;
         ext.rawWeight = 0;
         ext.rawVolume = 0;
@@ -208,7 +236,6 @@ export function parseRoutingData(
       formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
 
     if (selectedDateString && dateKey !== selectedDateString) return;
-    const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
 
     let rawEmail = null;
     if (Array.isArray(task.assignee) && task.assignee.length > 0) {
@@ -228,10 +255,16 @@ export function parseRoutingData(
     const taskV = Math.abs(Number(task.volumeCbm) || 0);
 
     if (driverName !== 'N/A') {
-      if (!routingMap.has(driverName)) {
+      const taskPlat = getTaskPlat(task) || driverInfo?.plat || '';
+      const basePlat = getBasePlate(taskPlat) || taskPlat;
+      const groupKey = `${driverName}_${basePlat}`;
+
+      if (!routingMap.has(groupKey)) {
         const masterData = driverData.find((d) => normalizeEmail(d.email) === assigneeEmail);
 
-        routingMap.set(driverName, {
+        routingMap.set(groupKey, {
+          driver: driverName,
+          plat: taskPlat || masterData?.plat || '-',
           hasTrips: true,
           weightPercentage: 0,
           volumePercentage: 0,
@@ -246,7 +279,7 @@ export function parseRoutingData(
         });
       }
 
-      const ext = routingMap.get(driverName);
+      const ext = routingMap.get(groupKey);
       ext.hasTrips = true;
       ext.rawWeight += taskW;
       ext.rawVolume += taskV;
@@ -257,9 +290,9 @@ export function parseRoutingData(
         ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
     }
   });
-  for (const [dName, ext] of routingMap.entries()) {
+  for (const [key, ext] of routingMap.entries()) {
     if (ext.rawWeight === 0 && ext.rawVolume === 0) {
-      routingMap.delete(dName);
+      routingMap.delete(key);
     }
   }
 
@@ -288,7 +321,7 @@ export function parseDeliveryData(
           res.result.routing.forEach((r) => {
             const dName = emailToDriverMap[normalizeEmail(r.assignee)]?.name || r.assignee || 'N/A';
             const routePlat =
-              r.vehicleName || emailToDriverMap[normalizeEmail(r.assignee)]?.plat || '';
+              getTaskPlat(r) || emailToDriverMap[normalizeEmail(r.assignee)]?.plat || '';
             const routeBasePlat = getBasePlate(routePlat) || routePlat;
             const hubTrips = (r.trips || []).filter((t) => t.isHub);
             if (hubTrips.length > 0) {
@@ -329,7 +362,10 @@ export function parseDeliveryData(
     const cName = row.customerName;
 
     if (driverName !== 'N/A') {
-      const stats = deliveryMap.get(driverName) || {
+      const groupKey = row.groupKey || `${driverName}_${getBasePlate(row.plat) || row.plat || ''}`;
+      const stats = deliveryMap.get(groupKey) || {
+        driver: driverName,
+        plat: row.plat || '-',
         totalOutlet: 0,
         failedCount: 0,
         mismatchCustomers: [],
@@ -349,7 +385,7 @@ export function parseDeliveryData(
         const pickupCName = `${task.title} (${cName})`;
         stats.missingDataCustomers.push({ name: flow === 'Pickup' ? pickupCName : cName });
       }
-      deliveryMap.set(driverName, stats);
+      deliveryMap.set(groupKey, stats);
     }
 
     if (task.klikLokasiClient) {
