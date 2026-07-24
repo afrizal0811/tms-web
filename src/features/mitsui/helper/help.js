@@ -22,7 +22,7 @@ import {
   taskManualKeyMapping,
 } from '../../reports/helper/constants';
 
-export const getReportDates = (start, end) => {
+const getReportDates = (start, end) => {
   const localStart = new Date(start);
   localStart.setHours(0, 0, 0, 0);
 
@@ -156,7 +156,7 @@ export const processManualReport = async (storedLocation, datesToProcess, locati
 
       if (overrideTaskIds.has(taskId)) {
         task.isManual = true;
-        task.manualType = 'Manual Override';
+        task.manualType = 'Forced Assign';
       } else if (isUnassigned) {
         task.isManual = true;
         task.manualType = 'Manual Assign';

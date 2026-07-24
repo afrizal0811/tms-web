@@ -34,7 +34,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
           <tr>
             <Th>#</Th>
             <Th>{t('common.license_number')}</Th>
-            <Th>{t('vehicle.tabs.type')}</Th>
+            <Th>{t('common.type')}</Th>
             <Th>{t('vehicle.tabs.name')}</Th>
             <Th>{t('vehicle.tabs.email')}</Th>
           </tr>

@@ -391,7 +391,7 @@ export const generateTaskManualDetailWorkbook = (
       if (C === manualTypeCol) {
         ws[cell_address].c = [
           {
-            t: '- Manual Assign: Task assigned from Task menu (without routing process)\n- Manual Override: Task forcibly assigned from Dropped Tasks during routing process',
+            t: '- Manual Assign: Task assigned from Task menu (without routing process)\n- Forced Assign: Task forcibly assigned from Dropped Tasks during routing process',
           },
         ];
       }
