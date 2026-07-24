@@ -11,10 +11,10 @@ import { formatDateUniversal, isEmpty, tomorrowDate } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { getDatesInRange } from '../reports/helper/help';
-import { processDetailReport, processManualReport } from './helper/help';
+import { processDetailReport, processManualReport } from '../mitsui/helper/help';
+import { getDatesInRange } from './helper/help';
 
-export default function TaskDetailReport() {
+export default function MitsuiReport() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [reportType, setReportType] = useState('detail');
@@ -23,8 +23,16 @@ export default function TaskDetailReport() {
   const { t } = useLanguage();
 
   const reportOptions = [
-    { id: 'detail', label: 'Task Detail', tooltip: 'Task Detail' },
-    { id: 'manual', label: 'Task Manual', tooltip: 'Task Manual' },
+    {
+      id: 'detail',
+      label: t('report.task_routing'),
+      tooltip: t('report.tooltip.task_routing_info'),
+    },
+    {
+      id: 'manual',
+      label: t('report.task_manual'),
+      tooltip: t('report.tooltip.task_manual_info'),
+    },
   ];
 
   const executeProcess = async () => {
@@ -46,8 +54,8 @@ export default function TaskDetailReport() {
 
       const reportTitleName =
         reportType === 'detail'
-          ? t('report.task_detail_report')
-          : t('report.task_manual_detail_report');
+          ? t('report.task_routing')
+          : t('report.task_manual');
 
       if (generatedFiles.length === 1) {
         XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
@@ -111,7 +119,7 @@ export default function TaskDetailReport() {
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
-        Mitsui Report
+        {t('report.mitsui_report')}
       </h1>
 
       <div className="flex justify-center mb-6 w-full">
@@ -137,7 +145,7 @@ export default function TaskDetailReport() {
 
       <div className="flex flex-col items-center mb-10 w-full">
         <span className="text-lg mb-3 text-gray-500 dark:text-slate-400 font-medium text-center select-none">
-          Jenis Laporan
+          {t('common.type')}
         </span>
         <RadioCard
           options={reportOptions}

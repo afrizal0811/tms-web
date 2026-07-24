@@ -7,7 +7,7 @@ import {
   generateTaskDetailWorkbook,
   generateTaskManualDetailWorkbook,
   groupTasksByDriver,
-} from '@/lib/reportGenerators/mitsui';
+} from '@/lib/reportGenerators/reports';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
@@ -15,7 +15,12 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { taskHeaders, taskKeyMapping, taskManualHeaders, taskManualKeyMapping } from './constants';
+import {
+  taskHeaders,
+  taskKeyMapping,
+  taskManualHeaders,
+  taskManualKeyMapping,
+} from '../../reports/helper/constants';
 
 export const getReportDates = (start, end) => {
   const localStart = new Date(start);
@@ -93,7 +98,7 @@ export const processDetailReport = async (storedLocation, datesToProcess, locati
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.task_detail_report')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.task_routing')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });
@@ -168,9 +173,9 @@ export const processManualReport = async (storedLocation, datesToProcess, locati
       taskManualHeaders,
       taskManualKeyMapping
     );
-
+    
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.task_manual_detail_report')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.task_manual')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

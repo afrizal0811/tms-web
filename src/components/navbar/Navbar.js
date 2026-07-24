@@ -36,11 +36,8 @@ const REPORT_LINKS = [
   { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
   { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
+  { href: '/report/detail', labelKey: 'navbar.mitsui_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
-];
-
-const mitsuiLinks = [
-  { href: '/mitsui/detail', labelKey: 'navbar.task_detail_report', superadminOnly: true },
 ];
 
 export default function Navbar() {
@@ -96,7 +93,6 @@ export default function Navbar() {
   const LoggedInComps = (
     <>
       <NavDropdown label={t('navbar.report')} links={REPORT_LINKS} isSuperadmin={isSuperadmin} />
-      <NavDropdown label={t('navbar.mitsui')} links={mitsuiLinks} isSuperadmin={isSuperadmin} />
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
@@ -126,7 +122,6 @@ export default function Navbar() {
       isSuperadmin={isSuperadmin}
       handleLogout={handleLogout}
       reportLinks={REPORT_LINKS}
-      mitsuiLinks={mitsuiLinks}
     />
   );
 

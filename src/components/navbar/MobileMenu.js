@@ -88,7 +88,6 @@ export default function MobileMenu({
   isSuperadmin,
   handleLogout,
   reportLinks,
-  mitsuiLinks,
 }) {
   const { t, isIndonesian } = useLanguage();
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -202,11 +201,6 @@ export default function MobileMenu({
               <MobileNavGroup
                 label={t('navbar.report')}
                 links={reportLinks}
-                isSuperadmin={isSuperadmin}
-              />
-              <MobileNavGroup
-                label={t('navbar.mitsui')}
-                links={mitsuiLinks}
                 isSuperadmin={isSuperadmin}
               />
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
