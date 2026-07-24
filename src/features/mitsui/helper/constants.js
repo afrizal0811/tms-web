@@ -212,4 +212,10 @@ export const taskKeyMapping = {
   routingResultId: 'routingResultId',
 };
 
+export const taskManualHeaders = [...taskHeaders, 'isManual', 'Manual Type'];
 
+export const taskManualKeyMapping = {
+  ...taskKeyMapping,
+  isManual: 'isManual',
+  'Manual Type': 'manualType',
+};

@@ -1,1177 +1,800 @@
 {
   "data": [
     {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Ferysa Frozen - C0204600 - LOC001, SO0225-118310 moved to vehicle B 9201 FFX by MULYADHI",
-      "visits": [
+      "resultId": "6a4e4b69b9eb4ecdae0324b2",
+      "total": 20,
+      "history": [
         {
-          "visitId": "taskId-692a9adca41d4a2a180930f5",
-          "visitName": "Ferysa Frozen - C0204600 - LOC001, SO0225-118310",
-          "action": "move"
+          "move": {
+            "data": [
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit Megah Jaya Lestari - C0105929 - MAIN, SO0126-070797 moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c6068744",
+                    "visitName": "Megah Jaya Lestari - C0105929 - MAIN, SO0126-070797",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:15:04.000000Z",
+                "vehicleFrom": "L 8491 NH",
+                "vehicleTo": "W 8944 PC",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 20,
+                "updatedTime": "2026-07-08T13:15:04.674000Z",
+                "_id": "6a4e4d58684981a3e0094cf2"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "3 visits moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41b2e0771c9104f9c6",
+                    "visitName": "Wild Donut - C0106231 - MAIN, SO0126-070310",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c6068740",
+                    "visitName": "Prestisius RFA Kuliner, PT (Carls Jr.) - C0105803 - MAIN, SO0126-070390",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d2",
+                    "visitName": "Honey Pok - C0103754 - MAIN, SO0126-070535",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:14:33.000000Z",
+                "vehicleFrom": "W 8944 PC",
+                "vehicleTo": "W 8212 QH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 19,
+                "updatedTime": "2026-07-08T13:14:33.379000Z",
+                "_id": "6a4e4d39c2134895ad0b9fa9"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "3 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4105173a9c1c01c034",
+                    "visitName": "Rustic Market - C0101581 - LOC002, SO0126-070555",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d8",
+                    "visitName": "Bara, Cafe - C0101743 - MAIN, SO0126-070520",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42dfdd1ce637016421",
+                    "visitName": "Rifara Frozen Food - C0103408 - MAIN, SO0126-070605",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:14:21.000000Z",
+                "vehicleFrom": "W 8212 QH",
+                "vehicleTo": "L 8493 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 18,
+                "updatedTime": "2026-07-08T13:14:21.794000Z",
+                "_id": "6a4e4d2dcef75efb970cd002"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "3 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4268d4897afb0923ea",
+                    "visitName": "Albaik Adem Sejahtera, CV - C0102666 - LOC003, SO0126-070629",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41969e5e9946023c05",
+                    "visitName": "Hazanah Frozen, Toko - C0102578 - MAIN, SO0126-070616",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42969e5e9946023c13",
+                    "visitName": "Yin Gelato - C0105030 - MAIN, SO0126-070460,SO0126-070462,SO0126-070507",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:13:49.000000Z",
+                "vehicleFrom": "W 8212 QH, W 8944 PC",
+                "vehicleTo": "L 8493 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 17,
+                "updatedTime": "2026-07-08T13:13:49.705000Z",
+                "_id": "6a4e4d0d397364eb8a0b6f82"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "14 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41969e5e9946023c03",
+                    "visitName": "Ascarya Makmur Jaya, CV (Shamrock Surabaya) - C0104433 - MAIN, SO0126-070725",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42969e5e9946023c15",
+                    "visitName": "Mon Mon, Toko /Ps Puncak Permai - C0102177 - MAIN, SO0126-070455,SO0126-070458",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41dfdd1ce63701641b",
+                    "visitName": "Bina Srikandi Propertama, PT (Hotel Harris Bundaran Satelit Surabaya ) - C0101005 - MAIN, SO0126-070682",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d0808273f",
+                    "visitName": "Commond Ground, Cafe (PT.Kopi Sukses Bersama) - C0101325 - LOC001, SO0126-070705",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b410bbc9580ae079034",
+                    "visitName": "Inti Selera Ind., PT (Bentoya, Restaurant) - C0101861 - MAIN, SO0126-070467",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c606873e",
+                    "visitName": "Happy Tummy - C0101098 - MAIN, SO0126-070720,SO0126-070741",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b410bbc9580ae079032",
+                    "visitName": "Froz N Frez, Toko - C0102659 - LOC002, SO0126-070764",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42a857c2c4660ae8be",
+                    "visitName": "De Von - C0105383 - LOC001, SO0126-070345",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae07903a",
+                    "visitName": "The Westin, Hotel - C0101012 - LOC001, SO0126-070349,SO0126-070710",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41969e5e9946023c07",
+                    "visitName": "Four Points By Sheraton /Pakuwon Indah - C0101007 - MAIN, SO0126-070729",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4105173a9c1c01c036",
+                    "visitName": "Kone, Resto Cafe - C0104252 - MAIN, SO0126-070799",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b423046e9b79f08e589",
+                    "visitName": "Moos, Resto Cafe - C0105528 - LOC002, SO0126-070347",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4168d4897afb0923e0",
+                    "visitName": "Rasa Sayang Group - C0104627 - MAIN, SO0126-070803",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d08082743",
+                    "visitName": "ABG Sosis /Rumah Sosis - C0100479 - MAIN, SO0126-070512,SO0126-070515,SO0126-070517",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:13:36.000000Z",
+                "vehicleFrom": "W 8944 PC, L 8491 NH",
+                "vehicleTo": "L 8493 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 16,
+                "updatedTime": "2026-07-08T13:13:36.871000Z",
+                "_id": "6a4e4d001d556a649406fb64"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "2 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b42969e5e9946023c0f",
+                    "visitName": "Alfa Midi, Midi Utama Indonesia PT - C0103066 - LOC004, SO0126-070484",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b423046e9b79f08e583",
+                    "visitName": "Matahari Putra Prima, PT - C0103335 - LOC013, SO0126-070456",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:13:11.000000Z",
+                "vehicleFrom": "W 8958 PQ",
+                "vehicleTo": "L 8491 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 15,
+                "updatedTime": "2026-07-08T13:13:11.050000Z",
+                "_id": "6a4e4ce75fdd4b5cb50d3952"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "3 visits moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae079042",
+                    "visitName": "Rumah Bolu - C0105966 - MAIN, SO0126-070532",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c6068742",
+                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC099, SO0126-070573",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d08082741",
+                    "visitName": "Maulana Frozen - C0104198 - MAIN, SO0126-070429,SO0126-070431",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:13:00.000000Z",
+                "vehicleFrom": "L 8491 NH",
+                "vehicleTo": "W 8958 PQ",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 14,
+                "updatedTime": "2026-07-08T13:13:00.608000Z",
+                "_id": "6a4e4cdc22488b41ac066b7c"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit Jaya Bersama, CV - C0103899 - LOC004, SO0126-069879,SO0126-069880 moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4205173a9c1c01c03e",
+                    "visitName": "Jaya Bersama, CV - C0103899 - LOC004, SO0126-069879,SO0126-069880",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:12:29.000000Z",
+                "vehicleFrom": "L 8491 NH",
+                "vehicleTo": "W 8958 PQ",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 13,
+                "updatedTime": "2026-07-08T13:12:29.863000Z",
+                "_id": "6a4e4cbd22488b41ac066b7b"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "2 visits moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41a857c2c4660ae8ac",
+                    "visitName": "Dharma Graha Utama PT (Aston In) - C0101010 - MAIN, SO0126-070811",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d08082747",
+                    "visitName": "Bekuin Frozen Food - C0105196 - LOC002, SO0126-070621",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:11:48.000000Z",
+                "vehicleFrom": "L 8493 NH",
+                "vehicleTo": "W 8944 PC",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 12,
+                "updatedTime": "2026-07-08T13:11:48.756000Z",
+                "_id": "6a4e4c94811e111c0205da12"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit Barokah Sejahtera Grup, CV - C0101981 - LOC002, SO0126-070727 moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b8",
+                    "visitName": "Barokah Sejahtera Grup, CV - C0101981 - LOC002, SO0126-070727",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:11:36.000000Z",
+                "vehicleFrom": "L 8493 NH",
+                "vehicleTo": "W 8944 PC",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 11,
+                "updatedTime": "2026-07-08T13:11:36.662000Z",
+                "_id": "6a4e4c8817461db709082c42"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "22 visits moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b4",
+                    "visitName": "Tobys Estate - C0101428 - LOC005, SO0126-070342",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41dfdd1ce637016415",
+                    "visitName": "Hurricanes Grill - C0104107 - MAIN, SO0126-070344",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4205173a9c1c01c042",
+                    "visitName": "Karbs Bakehouse - C0104124 - LOC003, SO0126-070435",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42969e5e9946023c0d",
+                    "visitName": "Kampar, Resto - C0101849 - MAIN, SO0126-070343,SO0126-070806",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42dfdd1ce63701641d",
+                    "visitName": "Santika, Hotel /Pandegiling - C0100671 - MAIN, SO0126-070674",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b423046e9b79f08e581",
+                    "visitName": "Cold N Brew - C0105345 - LOC002, SO0126-070526",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41a857c2c4660ae8b2",
+                    "visitName": "De Soematra, Restaurant - C0101921 - MAIN, SO0126-070364",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4168d4897afb0923e4",
+                    "visitName": "Saudara Sekawan Sejahtera, PT (Harris, Hotel) /Gubeng - C0100966 - LOC001, SO0126-070810",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b410bbc9580ae079036",
+                    "visitName": "Santika Premier, Hotel - C0100652 - MAIN, SO0126-070730",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d6",
+                    "visitName": "Halaman 78, Resto Cafe - C0105476 - MAIN, SO0126-070769",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4268d4897afb0923f0",
+                    "visitName": "One Two Three, Resto Cafe - C0104363 - MAIN, SO0126-070772",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4132201a81c6068736",
+                    "visitName": "Cash /Lokal - C0102787 - LOC004, SS0126-000606,SS0126-000608,SS0126-000609",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41f23c378d0808273b",
+                    "visitName": "Am Pm Coffee - C0104460 - MAIN, SO0126-070587",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4205173a9c1c01c03a",
+                    "visitName": "Bekizaar, Hotel - C0103695 - MAIN, SO0126-070700",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41f23c378d0808273d",
+                    "visitName": "Max One, Hotel /Open Oven - C0100971 - MAIN, SO0126-070492",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41f23c378d08082739",
+                    "visitName": "La Freya, Bakery - C0100688 - LOC002, SO0126-070332",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b410bbc9580ae079038",
+                    "visitName": "Great Dipo, Hotel - C0100998 - MAIN, SO0126-070658",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41b2e0771c9104f9ca",
+                    "visitName": "Majapahit, Hotel - C0106214 - MAIN, SO0126-070815",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4168d4897afb0923e2",
+                    "visitName": "Paris Baguette (PT.Era Boga Patiserindo) - C0104196 - LOC002, SO0126-070788",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4168d4897afb0923e6",
+                    "visitName": "Sheraton, Hotel - C0100665 - LOC001, SO0126-070818",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9ce",
+                    "visitName": "JW Marriott, Hotel - C0100669 - LOC001, SO0126-070348,SO0126-070716",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b413046e9b79f08e579",
+                    "visitName": "Samudra Sukses Mandiri, PT - C0105554 - LOC002, SO0126-070723",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:11:23.000000Z",
+                "vehicleFrom": "W 9094 PD, W 8944 PC, L 8493 NH, L 8491 NH",
+                "vehicleTo": "W 8212 QH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 10,
+                "updatedTime": "2026-07-08T13:11:23.050000Z",
+                "_id": "6a4e4c7bac041f6fe90556d2"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit Pasar Terang - C0106047 - MAIN, SO0126-070771 moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41a857c2c4660ae8ae",
+                    "visitName": "Pasar Terang - C0106047 - MAIN, SO0126-070771",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:10:45.000000Z",
+                "vehicleFrom": "L 8491 NH",
+                "vehicleTo": "W 8212 QH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 9,
+                "updatedTime": "2026-07-08T13:10:45.232000Z",
+                "_id": "6a4e4c5568474e0a69096ba2"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit PT. Foods Beverages Indonesia - C0104613 - LOC008, SO0126-070809 moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41a857c2c4660ae8b0",
+                    "visitName": "PT. Foods Beverages Indonesia - C0104613 - LOC008, SO0126-070809",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:10:22.000000Z",
+                "vehicleFrom": "W 8212 QH",
+                "vehicleTo": "W 9094 PD",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 8,
+                "updatedTime": "2026-07-08T13:10:22.882000Z",
+                "_id": "6a4e4c3eb9eb4ecdae0324b3"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "3 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c606873a",
+                    "visitName": "Moriko Mise - C0101092 - MAIN, SO0126-070715",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41b2e0771c9104f9c8",
+                    "visitName": "Nooma - C0105395 - MAIN, SO0126-070801",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42a857c2c4660ae8bc",
+                    "visitName": "Bes Frozen Food, Toko - C0104225 - MAIN, SO0126-070695",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:09:58.000000Z",
+                "vehicleFrom": "W 8212 QH",
+                "vehicleTo": "W 9094 PD",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 7,
+                "updatedTime": "2026-07-08T13:09:58.540000Z",
+                "_id": "6a4e4c26c2134895ad0b9fa6"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "2 visits moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b6",
+                    "visitName": "Bastian Frozen Food - C0103073 - LOC001, SO0126-070627",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae07903e",
+                    "visitName": "Arida Makmur Sejahtera.CV - C0103735 - LOC001, SO0126-070388",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:09:36.000000Z",
+                "vehicleFrom": "W 9094 PD",
+                "vehicleTo": "W 8958 PQ",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 6,
+                "updatedTime": "2026-07-08T13:09:36.682000Z",
+                "_id": "6a4e4c103a81f4ab730c4042"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "2 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4205173a9c1c01c03c",
+                    "visitName": "Primaraya Sukses, CV - C0102274 - LOC001, SO0126-070567",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41969e5e9946023c09",
+                    "visitName": "Osaka Pool And Bistro - C0104842 - MAIN, SO0126-070560,SO0126-070561",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:09:04.000000Z",
+                "vehicleFrom": "L 8493 NH",
+                "vehicleTo": "W 9094 PD",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 5,
+                "updatedTime": "2026-07-08T13:09:04.418000Z",
+                "_id": "6a4e4bf0535c52c0c40b69c9"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "9 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4132201a81c6068734",
+                    "visitName": "Suka Sana Sini, CV (Camden Surabaya) - C0104432 - MAIN, SO0126-070724",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4132201a81c6068738",
+                    "visitName": "Citra Mulia, CV - C0100720 - LOC002, SO0126-070767",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4105173a9c1c01c038",
+                    "visitName": "House Of Daeju - C0106157 - MAIN, SO0126-070489,SO0126-070491",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4268d4897afb0923ec",
+                    "visitName": "Nio Billiard - C0104698 - MAIN, SO0126-070721",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d08082745",
+                    "visitName": "Le Ble Boulangerie - C0104244 - LOC002, SO0126-070793",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4268d4897afb0923ee",
+                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC007, SO0126-070578",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d0",
+                    "visitName": "Dopamine Chocolate - C0104903 - LOC001, SO0126-070702",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d4",
+                    "visitName": "Sweet Scoop, Bakery - C0104146 - MAIN, SO0126-070795",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b413046e9b79f08e577",
+                    "visitName": "Safaatul Komsiah, Toko - C0102534 - MAIN, SO0126-070579",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:08:44.000000Z",
+                "vehicleFrom": "W 8212 QH, L 8493 NH",
+                "vehicleTo": "W 9094 PD",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 4,
+                "updatedTime": "2026-07-08T13:08:44.640000Z",
+                "_id": "6a4e4bdc790ba249a402639a"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "4 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c606873c",
+                    "visitName": "Keke Frozen Food - C0104498 - MAIN, SO0126-070666",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae079040",
+                    "visitName": "Dhifi, Bapak - C0105858 - MAIN, SO0126-070307",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae07903c",
+                    "visitName": "Winda Rosa, Toko - C0102332 - MAIN, SO0126-070048",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b423046e9b79f08e585",
+                    "visitName": "Dapur Cokelat Indonesia, PT - C0101816 - MAIN, SO0126-070350",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:07:54.000000Z",
+                "vehicleFrom": "W 9094 PD, W 8212 QH",
+                "vehicleTo": "L 8491 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 2,
+                "updatedTime": "2026-07-08T13:07:54.333000Z",
+                "_id": "6a4e4baa790ba249a4026399"
+              },
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "8 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b41dfdd1ce637016417",
+                    "visitName": "Kedai Semoga Makmur - C0106048 - MAIN, SO0126-070822",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41b2e0771c9104f9cc",
+                    "visitName": "Novi Herayanti, Ibu - C0105512 - MAIN, SO0126-070626",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42dfdd1ce637016423",
+                    "visitName": "Uyan Coffee & Heritage - C0105209 - MAIN, SO0126-070375",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42969e5e9946023c0b",
+                    "visitName": "PT. Foods Beverages Indonesia - C0104613 - LOC017, SO0126-070808",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b41dfdd1ce637016419",
+                    "visitName": "Abel Frozen - C0102601 - MAIN, SO0126-070436",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b420bbc9580ae079042",
+                    "visitName": "Rumah Bolu - C0105966 - MAIN, SO0126-070532",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b4232201a81c6068742",
+                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC099, SO0126-070573",
+                    "action": "move"
+                  },
+                  {
+                    "visitId": "taskId-6a4e4b42f23c378d08082741",
+                    "visitName": "Maulana Frozen - C0104198 - MAIN, SO0126-070429,SO0126-070431",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:07:35.000000Z",
+                "vehicleFrom": "W 9094 PD, W 8212 QH",
+                "vehicleTo": "L 8491 NH",
+                "createdFrom": "WEB",
+                "createdType": "bulkMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 1,
+                "updatedTime": "2026-07-08T13:07:35.128000Z",
+                "_id": "6a4e4b971d556a649406fb63"
+              }
+            ],
+            "count": 19
+          },
+          "dropped": {
+            "data": [],
+            "count": 0
+          },
+          "switch": {
+            "data": [],
+            "count": 0
+          },
+          "manual": {
+            "data": [
+              {
+                "resultId": "6a4e4b69b9eb4ecdae0324b2",
+                "action": "move",
+                "description": "Visit Fast Food Indonesia Tbk, PT ( KFC ) - C0101990 - LOC005, SO0126-070781,SO0126-070782 moved to vehicle W 8137 PI by IMAM AGUNG GIRI SUBEKTI",
+                "visits": [
+                  {
+                    "visitId": "taskId-6a4e4b413046e9b79f08e57b",
+                    "visitName": "Fast Food Indonesia Tbk, PT ( KFC ) - C0101990 - LOC005, SO0126-070781,SO0126-070782",
+                    "action": "move"
+                  }
+                ],
+                "organizationId": "6703410af6be892f3208ecda",
+                "createdTime": "2026-07-08T13:08:14.000000Z",
+                "vehicleFrom": "dropped",
+                "vehicleTo": "W 8137 PI",
+                "createdFrom": "WEB",
+                "createdType": "individualMove",
+                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
+                "version": 3,
+                "updatedTime": "2026-07-08T13:08:14.236000Z",
+                "_id": "6a4e4bbe535c52c0c40b69c8"
+              }
+            ],
+            "count": 1
+          }
         }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:15:16.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9201 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 36,
-      "updatedTime": "2025-11-29T08:15:16.387000Z",
-      "_id": "692aab944f911811530e48bb"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit PT. Foods Beverages Indonesia - C0200266 - LOC035, SO0225-118841 moved to vehicle B 9171 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adb4d1526f6450dbe26",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC035, SO0225-118841",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:14:12.000000Z",
-      "vehicleFrom": "B 9172 FFX",
-      "vehicleTo": "B 9171 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 35,
-      "updatedTime": "2025-11-29T08:14:12.316000Z",
-      "_id": "692aab548997971964045c5d"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Endorphins - C0200111 - LOC002, SO0225-117838,SO0225-117840,SO0225-117841,SO0225-117843 moved to vehicle B 9793 FXW by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930ed",
-          "visitName": "Endorphins - C0200111 - LOC002, SO0225-117838,SO0225-117840,SO0225-117841,SO0225-117843",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:13:39.000000Z",
-      "vehicleFrom": "B 9172 FFX",
-      "vehicleTo": "B 9793 FXW",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 34,
-      "updatedTime": "2025-11-29T08:13:39.459000Z",
-      "_id": "692aab336475a98f69014ace"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Setia Putera Utama, PT - C0200152 - MAIN, SO0225-118624 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe2e",
-          "visitName": "Setia Putera Utama, PT - C0200152 - MAIN, SO0225-118624",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:13:02.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 33,
-      "updatedTime": "2025-11-29T08:13:02.494000Z",
-      "_id": "692aab0e9f193e529409caac"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Ferysa Frozen - C0204600 - LOC001, SO0225-118310 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f5",
-          "visitName": "Ferysa Frozen - C0204600 - LOC001, SO0225-118310",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:12:49.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 32,
-      "updatedTime": "2025-11-29T08:12:49.023000Z",
-      "_id": "692aab01ddd1b188af02fdf3"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit 99 Ranch, Market /DC Cakung - C0200333 - MAIN, SO0225-117876,SO0225-117878,SO0225-117884,SO0225-117901,SO0225-118472 moved to vehicle B 9201 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addc8717d64f70ebc5b",
-          "visitName": "99 Ranch, Market /DC Cakung - C0200333 - MAIN, SO0225-117876,SO0225-117878,SO0225-117884,SO0225-117901,SO0225-118472",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:12:36.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9201 FFX",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 31,
-      "updatedTime": "2025-11-29T08:12:36.046000Z",
-      "_id": "692aaaf45a8598eeca0e473c"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Sogo - C0200114 - LOC009, SO0225-118347 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addc78c79231704d8fb",
-          "visitName": "Sogo - C0200114 - LOC009, SO0225-118347",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:12:16.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 30,
-      "updatedTime": "2025-11-29T08:12:16.964000Z",
-      "_id": "692aaae08492b664c20fac72"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit PT. Foods Beverages Indonesia - C0200266 - LOC018, SO0225-118845 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adba41d4a2a180930e7",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC018, SO0225-118845",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:11:52.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 29,
-      "updatedTime": "2025-11-29T08:11:52.071000Z",
-      "_id": "692aaac8cc5ec376d0076ad8"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Endorphins - C0200111 - LOC004, SO0225-117581,SO0225-117591 moved to vehicle B 9793 FXW by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addf61b9353210846a8",
-          "visitName": "Endorphins - C0200111 - LOC004, SO0225-117581,SO0225-117591",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:10:20.000000Z",
-      "vehicleFrom": "B 9384 FCE",
-      "vehicleTo": "B 9793 FXW",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 28,
-      "updatedTime": "2025-11-29T08:10:20.944000Z",
-      "_id": "692aaa6c11e9b473eb0795d2"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Sukses Gemilang Bersama, PT (Sour Sally) - C0200002 - MAIN, SO0225-118305,SO0225-118309 moved to vehicle B 9793 FXW by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adb6c99a88c320782f5_2",
-          "visitName": "Sukses Gemilang Bersama, PT (Sour Sally) - C0200002 - MAIN, SO0225-118305,SO0225-118309",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:08:36.000000Z",
-      "vehicleFrom": "B 9802 FXW SOUR SALLY",
-      "vehicleTo": "B 9793 FXW",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 27,
-      "updatedTime": "2025-11-29T08:08:37.008000Z",
-      "_id": "692aaa0561e4cfbac107f1f1"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "switch",
-      "description": "Vehicle B 9793 FXW and vehicle B 9170 FFX were switched by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9add83876272ba079e36",
-          "visitName": "Taman Sari Nugget, Toko - C0201455 - MAIN, SO0225-118687",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add4d1526f6450dbe3c",
-          "visitName": "Tiga Saudara Frozen, Toko - C0200928 - MAIN, SO0225-118707",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc78c79231704d8f5",
-          "visitName": "Endang Bakso, Toko - C0202122 - MAIN, SO0225-118710",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add081e3986440f147e",
-          "visitName": "Aneka Frozen, Toko /Serang Banten - C0200202 - MAIN, SO0225-118572",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add081e3986440f1478",
-          "visitName": "Jihan Frozen, Toko - C0201760 - MAIN, SO0225-118783",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-69294a3111c62a436f0425a5",
-          "visitName": "Borneo Bakso Tahu Suvarna Sutra - C0201618 - MAIN, SO0225-117349",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adb6c99a88c320782f7",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC063, SO0225-118519",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b531d",
-          "visitName": "Berkah Jaya, Toko - C0202189 - MAIN, SO0225-118914",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b5317",
-          "visitName": "Rizquna Frozen, Toko - C0201596 - MAIN, SO0225-118764,SO0225-118913",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade6c99a88c32078315",
-          "visitName": "Dewi Jaya, Toko - C0203199 - MAIN, SO0225-118204",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade2db0cf95060c9476",
-          "visitName": "Sekawan Frozen, Toko - C0203282 - SHIPTO, SO0225-118184",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade83876272ba079e3e",
-          "visitName": "RD Frozen, Toko - C0201106 - MAIN, SO0225-118728",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adec8717d64f70ebc63",
-          "visitName": "Sarinande Sanjaya, CV - C0200647 - MAIN, SO0225-118256",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adcf61b93532108469e",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC069, SO0225-118840",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adba41d4a2a180930e7",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC018, SO0225-118845",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc78c79231704d8f9",
-          "visitName": "Yili Indonesia Dairy, PT - C0200046 - MAIN, SO0225-118725",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc78c79231704d8fb",
-          "visitName": "Sogo - C0200114 - LOC009, SO0225-118347",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc8717d64f70ebc5b",
-          "visitName": "99 Ranch, Market /DC Cakung - C0200333 - MAIN, SO0225-117876,SO0225-117878,SO0225-117884,SO0225-117901,SO0225-118472",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f5",
-          "visitName": "Ferysa Frozen - C0204600 - LOC001, SO0225-118310",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe2e",
-          "visitName": "Setia Putera Utama, PT - C0200152 - MAIN, SO0225-118624",
-          "action": "switch"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:07:58.000000Z",
-      "vehicleFrom": "B 9793 FXW",
-      "vehicleTo": "B 9170 FFX",
-      "createdFrom": "WEB",
-      "createdType": "switchVehicle",
-      "createdBy": "MULYADHI",
-      "version": 26,
-      "updatedTime": "2025-11-29T08:07:58.680000Z",
-      "_id": "692aa9de696effa3f604f9b2"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Sukses Gemilang Bersama, PT (Sour Sally) - C0200002 - MAIN, SO0225-118305,SO0225-118309 moved to vehicle B 9802 FXW SOUR SALLY by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adb6c99a88c320782f5_2",
-          "visitName": "Sukses Gemilang Bersama, PT (Sour Sally) - C0200002 - MAIN, SO0225-118305,SO0225-118309",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T08:03:49.000000Z",
-      "vehicleFrom": "B 9171 FFX",
-      "vehicleTo": "B 9802 FXW SOUR SALLY",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 25,
-      "updatedTime": "2025-11-29T08:03:49.299000Z",
-      "_id": "692aa8e5d05e3fa89b003b4f"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit London Layers /Ixora - C0204338 - MAIN, SO0225-118858 moved to vehicle B 9588 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adcf61b93532108469c",
-          "visitName": "London Layers /Ixora - C0204338 - MAIN, SO0225-118858",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:59:32.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9588 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 24,
-      "updatedTime": "2025-11-29T07:59:32.766000Z",
-      "_id": "692aa7e42eba92b842054403"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "switch",
-      "description": "Vehicle B 9598 FCC and vehicle B 9382 FCE were switched by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9add6c99a88c3207830b",
-          "visitName": "Sogo - C0200114 - LOC072, SO0225-118354",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adcf61b93532108469a",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC110, SO0225-118842",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adef61b9353210846ae",
-          "visitName": "Holycow Steak House By Chef Afit - C0201905 - LOC008, SO0225-118300",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade081e3986440f1482",
-          "visitName": "Wendy's - C0200769 - LOC038, SO0225-118098",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a180930f9",
-          "visitName": "Sentra Kuliner Sejahtera, PT - C0204397 - MAIN, SO0225-118287",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adcc8717d64f70ebc49",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC045, SO0225-118837",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adcc8717d64f70ebc53",
-          "visitName": "Blue Sky Central KIitchen - C0204565 - MAIN, SO0225-118444",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade4d1526f6450dbe44",
-          "visitName": "Ginchoux Inovasi Nusantara, PT - C0200237 - MAIN, SO0225-119015",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b5315",
-          "visitName": "Intercontinental, Hotel - C0200607 - MAIN, SO0225-118816",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add081e3986440f147c",
-          "visitName": "Genki Sushi - C0202957 - LOC033, SO0225-118470",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a18093101",
-          "visitName": "Sogo - C0200114 - LOC045, SO0225-118356",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a180930ff",
-          "visitName": "Paradise Dinasti - C0202836 - LOC016, SO0225-118344",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9ade4d1526f6450dbe48",
-          "visitName": "Erik Frozen Food, Toko - C0201358 - MAIN, SO0225-118708",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f3",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC043, SO0225-118836",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc081e3986440f1472",
-          "visitName": "Jendela Kuliner Bersama - C0200554 - LOC008, SO0225-118979",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc081e3986440f1470",
-          "visitName": "Sogo - C0200114 - LOC087, SO0225-118487",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc8717d64f70ebc55",
-          "visitName": "Fitri, Toko - C0204540 - MAIN, SO0225-118905",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9addc78c79231704d8f7",
-          "visitName": "The Harvest - C0200029 - LOC004, SO0225-118738",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adba41d4a2a180930e5",
-          "visitName": "Niaga Sukses Sejahter, CV - C0200476 - LOC003, SO0225-118896",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc6c99a88c320782fd",
-          "visitName": "Frozen Raja, Toko - C0203120 - MAIN, SO0225-118886",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc06112d4e190b530b",
-          "visitName": "Rumah Roti /Ciracas - C0200676 - MAIN, SO0225-118986",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc2db0cf95060c9466",
-          "visitName": "Frozen Berkah 51 - C0204559 - MAIN, SO0225-119004",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930ef",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC007, SO0225-118844",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe34",
-          "visitName": "Sakhila Abqory Kharisma Anugerah, Toko - C0200218 - MAIN, SO0225-118884",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adea41d4a2a18093105",
-          "visitName": "Kopi Nu Sae /Cibubur Baru - C0201644 - SHIPTO, SO0225-118760",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b5319",
-          "visitName": "Otista Frozen Food - C0201082 - MAIN, SO0225-119001",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9add2db0cf95060c9472",
-          "visitName": "Sari Food Lestari, PT - C0200717 - LOC019, SO0225-118788",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a180930fd",
-          "visitName": "Sanjaya Frozen, Toko - C0201273 - MAIN, SO0225-118922",
-          "action": "switch"
-        },
-        {
-          "visitId": "taskId-692a9adcf61b93532108469c",
-          "visitName": "London Layers /Ixora - C0204338 - MAIN, SO0225-118858",
-          "action": "switch"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:58:24.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9382 FCE",
-      "createdFrom": "WEB",
-      "createdType": "switchVehicle",
-      "createdBy": "MULYADHI",
-      "version": 23,
-      "updatedTime": "2025-11-29T07:58:24.344000Z",
-      "_id": "692aa7a0d222bad55905a6b4"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit London Layers /Ixora - C0204338 - MAIN, SO0225-118858 moved to vehicle B 9382 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adcf61b93532108469c",
-          "visitName": "London Layers /Ixora - C0204338 - MAIN, SO0225-118858",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:56:58.000000Z",
-      "vehicleFrom": "B 9588 FCC",
-      "vehicleTo": "B 9382 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 22,
-      "updatedTime": "2025-11-29T07:56:58.617000Z",
-      "_id": "692aa74ad11a8333b500e11f"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit PT. Foods Beverages Indonesia - C0200266 - LOC043, SO0225-118836 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f3",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC043, SO0225-118836",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:56:21.000000Z",
-      "vehicleFrom": "B 9588 FCC",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 21,
-      "updatedTime": "2025-11-29T07:56:21.067000Z",
-      "_id": "692aa725035206eb4c0e1b34"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Wendy's - C0200769 - LOC029, SO0225-118100 moved to vehicle B 9588 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9ade4d1526f6450dbe46",
-          "visitName": "Wendy's - C0200769 - LOC029, SO0225-118100",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:55:48.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9588 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 20,
-      "updatedTime": "2025-11-29T07:55:48.763000Z",
-      "_id": "692aa7042459e635d40a8ab8"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Erik Frozen Food, Toko - C0201358 - MAIN, SO0225-118708 moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9ade4d1526f6450dbe48",
-          "visitName": "Erik Frozen Food, Toko - C0201358 - MAIN, SO0225-118708",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:55:04.000000Z",
-      "vehicleFrom": "B 9588 FCC",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 19,
-      "updatedTime": "2025-11-29T07:55:04.756000Z",
-      "_id": "692aa6d82eba92b842054402"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Setia Putera Utama, PT - C0200152 - MAIN, SO0225-118624 moved to vehicle B 9170 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe2e",
-          "visitName": "Setia Putera Utama, PT - C0200152 - MAIN, SO0225-118624",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:53:13.000000Z",
-      "vehicleFrom": "B 9384 FCE",
-      "vehicleTo": "B 9170 FFX",
-      "createdFrom": "WEB",
-      "createdType": "individualMove",
-      "createdBy": "MULYADHI",
-      "version": 18,
-      "updatedTime": "2025-11-29T07:53:13.345000Z",
-      "_id": "692aa6694ee04396290b8658"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "3 visits moved to vehicle B 9172 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc6c99a88c32078303",
-          "visitName": "Sari Pizza Indonesia - C0202368 - LOC003, SO0225-118353",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b531b",
-          "visitName": "Kusnianto Bakso Sosis, Toko - C0201438 - MAIN, SO0225-118907",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9addc8717d64f70ebc59",
-          "visitName": "THE WESTIN JAKARTA - C0203766 - MAIN, SO0225-118856",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:51:51.000000Z",
-      "vehicleFrom": "B 9201 FFX, B 9588 FCC",
-      "vehicleTo": "B 9172 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 17,
-      "updatedTime": "2025-11-29T07:51:51.495000Z",
-      "_id": "692aa61761e4cfbac107f1dd"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Ruth`s Chris Steak House Jakarta - C0201038 - MAIN, SS0225-001567 moved to vehicle B 9172 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9ade2db0cf95060c9478",
-          "visitName": "Ruth`s Chris Steak House Jakarta - C0201038 - MAIN, SS0225-001567",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:51:25.000000Z",
-      "vehicleFrom": "B 9171 FFX",
-      "vehicleTo": "B 9172 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 16,
-      "updatedTime": "2025-11-29T07:51:25.520000Z",
-      "_id": "692aa5fdac3770bc1306f510"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "3 visits moved to vehicle B 9384 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addf61b9353210846aa",
-          "visitName": "Sogo - C0200114 - LOC023, SO0225-118350",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe32",
-          "visitName": "Sukur Jaya, Toko - C0201488 - SHIPTO, SO0225-118923",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adc081e3986440f1474",
-          "visitName": "Sukur Jaya, Toko - C0201488 - LOC001, SO0225-118924",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:50:29.000000Z",
-      "vehicleFrom": "B 9201 FFX",
-      "vehicleTo": "B 9384 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 15,
-      "updatedTime": "2025-11-29T07:50:29.765000Z",
-      "_id": "692aa5c5ceabb55c4a0f702f"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "3 visits moved to vehicle B 9384 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adba41d4a2a180930e9",
-          "visitName": "Nusaplaza International Hotel, PT - C0201564 - SHIPTO, SO0225-118826,SO0225-118966",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add83876272ba079e34",
-          "visitName": "Bright Food & Catering - C0203947 - LOC002, SO0225-118948",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add4d1526f6450dbe3a",
-          "visitName": "The Lynx - C0202282 - SHIPTO, SO0225-118888",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:49:48.000000Z",
-      "vehicleFrom": "B 9201 FFX",
-      "vehicleTo": "B 9384 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 14,
-      "updatedTime": "2025-11-29T07:49:48.450000Z",
-      "_id": "692aa59ccc5ec376d0076ac5"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "4 visits moved to vehicle B 9171 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930eb",
-          "visitName": "Exquise Boga Mulia, PT (Exquise Patisserie) - C0200099 - LOC002, SO0225-119000",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe2c",
-          "visitName": "Lumire, Hotel - C0202528 - MAIN, SO0225-118823",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adcc8717d64f70ebc4f",
-          "visitName": "Kopi Nu Sae /Gedung Djuanda 2 - C0204390 - MAIN, SO0225-118874",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adc06112d4e190b5313",
-          "visitName": "Ruang Maha Karya, PT - C0200506 - MAIN, SO0225-118796",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:49:15.000000Z",
-      "vehicleFrom": "B 9201 FFX, B 9384 FCE",
-      "vehicleTo": "B 9171 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 13,
-      "updatedTime": "2025-11-29T07:49:15.660000Z",
-      "_id": "692aa57bcc5ec376d0076ac4"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "2 visits moved to vehicle B 9201 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe32",
-          "visitName": "Sukur Jaya, Toko - C0201488 - SHIPTO, SO0225-118923",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adc081e3986440f1474",
-          "visitName": "Sukur Jaya, Toko - C0201488 - LOC001, SO0225-118924",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:47:38.000000Z",
-      "vehicleFrom": "B 9384 FCE",
-      "vehicleTo": "B 9201 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 12,
-      "updatedTime": "2025-11-29T07:47:38.119000Z",
-      "_id": "692aa51aa7a9cdab6900d20f"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "6 visits moved to vehicle B 9201 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f7",
-          "visitName": "Sembilan Nine Shop, Toko - C0200231 - MAIN, SO0225-118268",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adec78c79231704d8fd",
-          "visitName": "Wendy's - C0200769 - LOC006, SO0225-118088",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adb4d1526f6450dbe2a",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC056, SO0225-118838",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9ade06112d4e190b5323",
-          "visitName": "Cash Lokal - C0201524 - LOC031, SS0225-001574",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9addf61b9353210846a4",
-          "visitName": "Holycow Steak House By Chef Afit - C0201905 - LOC022, SO0225-118299",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9ade06112d4e190b5321",
-          "visitName": "Sari Food Lestari, PT - C0200717 - LOC020, SO0225-118804",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:46:16.000000Z",
-      "vehicleFrom": "B 9384 FCE, B 9382 FCE",
-      "vehicleTo": "B 9201 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 11,
-      "updatedTime": "2025-11-29T07:46:16.927000Z",
-      "_id": "692aa4c8ceabb55c4a0f702d"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Hr Frozen Food - C0201953 - MAIN, SO0225-118915 moved to vehicle B 9201 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9add081e3986440f147a",
-          "visitName": "Hr Frozen Food - C0201953 - MAIN, SO0225-118915",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:45:38.000000Z",
-      "vehicleFrom": "B 9384 FCE",
-      "vehicleTo": "B 9201 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 10,
-      "updatedTime": "2025-11-29T07:45:38.524000Z",
-      "_id": "692aa4a2035b49c8960f79b0"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "2 visits moved to vehicle B 9170 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addc8717d64f70ebc5b",
-          "visitName": "99 Ranch, Market /DC Cakung - C0200333 - MAIN, SO0225-117876,SO0225-117878,SO0225-117884,SO0225-117901,SO0225-118472",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930f5",
-          "visitName": "Ferysa Frozen - C0204600 - LOC001, SO0225-118310",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:44:57.000000Z",
-      "vehicleFrom": "B 9382 FCE",
-      "vehicleTo": "B 9170 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 9,
-      "updatedTime": "2025-11-29T07:44:57.463000Z",
-      "_id": "692aa479adae30b362053592"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "3 visits moved to vehicle B 9382 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9add06112d4e190b5319",
-          "visitName": "Otista Frozen Food - C0201082 - MAIN, SO0225-119001",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add2db0cf95060c9472",
-          "visitName": "Sari Food Lestari, PT - C0200717 - LOC019, SO0225-118788",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a180930fd",
-          "visitName": "Sanjaya Frozen, Toko - C0201273 - MAIN, SO0225-118922",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:44:04.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9382 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 8,
-      "updatedTime": "2025-11-29T07:44:04.625000Z",
-      "_id": "692aa44432df3573e701bffb"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit Sogo - C0200114 - LOC009, SO0225-118347 moved to vehicle B 9170 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9addc78c79231704d8fb",
-          "visitName": "Sogo - C0200114 - LOC009, SO0225-118347",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:43:26.000000Z",
-      "vehicleFrom": "B 9598 FCC",
-      "vehicleTo": "B 9170 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 7,
-      "updatedTime": "2025-11-29T07:43:26.959000Z",
-      "_id": "692aa41e61e4cfbac107f1d3"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "2 visits moved to vehicle B 9382 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc4d1526f6450dbe34",
-          "visitName": "Sakhila Abqory Kharisma Anugerah, Toko - C0200218 - MAIN, SO0225-118884",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adea41d4a2a18093105",
-          "visitName": "Kopi Nu Sae /Cibubur Baru - C0201644 - SHIPTO, SO0225-118760",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:42:54.000000Z",
-      "vehicleFrom": "B 9021 FCJ",
-      "vehicleTo": "B 9382 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 6,
-      "updatedTime": "2025-11-29T07:42:54.848000Z",
-      "_id": "692aa3feac3770bc1306f4fe"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "2 visits moved to vehicle B 9382 FCE by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc2db0cf95060c9466",
-          "visitName": "Frozen Berkah 51 - C0204559 - MAIN, SO0225-119004",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adca41d4a2a180930ef",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC007, SO0225-118844",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:42:13.000000Z",
-      "vehicleFrom": "B 9021 FCJ",
-      "vehicleTo": "B 9382 FCE",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 5,
-      "updatedTime": "2025-11-29T07:42:13.468000Z",
-      "_id": "692aa3d55a5ad316230fd71b"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "3 visits moved to vehicle B 9598 FCC by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9add081e3986440f147c",
-          "visitName": "Genki Sushi - C0202957 - LOC033, SO0225-118470",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a18093101",
-          "visitName": "Sogo - C0200114 - LOC045, SO0225-118356",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adda41d4a2a180930ff",
-          "visitName": "Paradise Dinasti - C0202836 - LOC016, SO0225-118344",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:41:41.000000Z",
-      "vehicleFrom": "B 9172 FFX",
-      "vehicleTo": "B 9598 FCC",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 4,
-      "updatedTime": "2025-11-29T07:41:41.264000Z",
-      "_id": "692aa3b5ceabb55c4a0f7026"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "2 visits moved to vehicle B 9172 FFX by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adc83876272ba079e2c",
-          "visitName": "Sogo - C0200114 - LOC048, SO0225-118355",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adcc8717d64f70ebc51",
-          "visitName": "Sogo - C0200114 - LOC062, SO0225-118407,SO0225-118515",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:40:50.000000Z",
-      "vehicleFrom": "dropped",
-      "vehicleTo": "B 9172 FFX",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 3,
-      "updatedTime": "2025-11-29T07:40:50.487000Z",
-      "_id": "692aa382125cfbc8aa0c6d75"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "Visit PT. Foods Beverages Indonesia - C0200266 - LOC069, SO0225-118840 moved to vehicle B 9793 FXW by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adcf61b93532108469e",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC069, SO0225-118840",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:34:52.000000Z",
-      "vehicleFrom": "B 9588 FCC",
-      "vehicleTo": "B 9793 FXW",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 2,
-      "updatedTime": "2025-11-29T07:34:53.001000Z",
-      "_id": "692aa21d839fb628b40ca732"
-    },
-    {
-      "resultId": "692aa03ea7a9cdab6900d202",
-      "action": "move",
-      "description": "7 visits moved to vehicle B 9793 FXW by MULYADHI",
-      "visits": [
-        {
-          "visitId": "taskId-692a9adb6c99a88c320782f7",
-          "visitName": "PT. Foods Beverages Indonesia - C0200266 - LOC063, SO0225-118519",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b531d",
-          "visitName": "Berkah Jaya, Toko - C0202189 - MAIN, SO0225-118914",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9add06112d4e190b5317",
-          "visitName": "Rizquna Frozen, Toko - C0201596 - MAIN, SO0225-118764,SO0225-118913",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9ade6c99a88c32078315",
-          "visitName": "Dewi Jaya, Toko - C0203199 - MAIN, SO0225-118204",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9ade2db0cf95060c9476",
-          "visitName": "Sekawan Frozen, Toko - C0203282 - SHIPTO, SO0225-118184",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9ade83876272ba079e3e",
-          "visitName": "RD Frozen, Toko - C0201106 - MAIN, SO0225-118728",
-          "action": "move"
-        },
-        {
-          "visitId": "taskId-692a9adec8717d64f70ebc63",
-          "visitName": "Sarinande Sanjaya, CV - C0200647 - MAIN, SO0225-118256",
-          "action": "move"
-        }
-      ],
-      "organizationId": "6703410af6be892f3208ecda",
-      "createdTime": "2025-11-29T07:32:26.000000Z",
-      "vehicleFrom": "dropped",
-      "vehicleTo": "B 9793 FXW",
-      "createdFrom": "WEB",
-      "createdType": "bulkMove",
-      "createdBy": "MULYADHI",
-      "version": 1,
-      "updatedTime": "2025-11-29T07:32:26.221000Z",
-      "_id": "692aa18aa559954aa602778e"
+      ]
     }
-  ],
-  "status": true
+  ]
 }

@@ -3,128 +3,51 @@
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import RadioCard from '@/components/RadioCard';
 import { useLanguage } from '@/context/LanguageContext';
-import { getLocationHistories, getResult, getTasks } from '@/lib/api';
-import { getDriverData } from '@/lib/driverData';
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import {
-  buildRoutingMap,
-  buildSyncTimeMap,
-  generateTaskDetailWorkbook,
-  groupTasksByDriver,
-} from '@/lib/reportGenerators/mitsui';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import {
-  calculateStartFinishDates,
-  formatDateUniversal,
-  isEmpty,
-  toApiDateString,
-  tomorrowDate,
-} from '@/lib/utils';
+import { formatDateUniversal, isEmpty, tomorrowDate } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { taskHeaders, taskKeyMapping } from './helper/constants'
 import { getDatesInRange } from '../reports/helper/help';
-
-const getReportDates = (start, end) => {
-  const localStart = new Date(start);
-  localStart.setHours(0, 0, 0, 0);
-
-  const validEndDate = end ? new Date(end) : new Date(start);
-  validEndDate.setHours(23, 59, 59, 999);
-
-  const timeFromUtc = toApiDateString(localStart);
-  const timeToUtc = toApiDateString(validEndDate);
-
-  const startString = formatDateUniversal(localStart);
-  const endString = formatDateUniversal(validEndDate);
-
-  const { timeFrom: locTimeFrom } = calculateStartFinishDates(startString);
-  const { timeTo: locTimeTo } = calculateStartFinishDates(endString);
-
-  return { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString: startString };
-};
+import { processDetailReport, processManualReport } from './helper/help';
 
 export default function TaskDetailReport() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
+  const [reportType, setReportType] = useState('detail');
   const [isLoading, setIsLoading] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const { t } = useLanguage();
+
+  const reportOptions = [
+    { id: 'detail', label: 'Task Detail', tooltip: 'Task Detail' },
+    { id: 'manual', label: 'Task Manual', tooltip: 'Task Manual' },
+  ];
 
   const executeProcess = async () => {
     setIsLoading(true);
     setShowWarningModal(false);
     try {
       const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
-      const driverData = await getDriverData(storedLocation);
-
-      const hubsList = getCachedHubs() || [];
-      const activeHub = hubsList.find((h) => h._id === storedLocation);
-      const hubCoordsStr =
-        activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
-
       const datesToProcess = getDatesInRange(startDate, endDate || startDate);
-      const generatedFiles = [];
+      const locationName = storedLocationAcronym || storedLocationName;
 
-      for (const date of datesToProcess) {
-        const { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString } =
-          getReportDates(date, date);
-
-        const [tasks, locHistories] = await Promise.all([
-          getTasks({
-            hubId: storedLocation,
-            status: 'DONE,ONGOING',
-            timeFrom: timeFromUtc,
-            timeTo: timeToUtc,
-            timeBy: 'startTime',
-            limit: 1000,
-          }),
-          getLocationHistories({
-            timeFrom: locTimeFrom,
-            timeTo: locTimeTo,
-            limit: 5000,
-            startFinish: 'true',
-            fields: 'finish,startTime,email,trackedTime,totalDistance',
-            timeBy: 'createdTime',
-          }),
-        ]);
-
-        const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
-        if (isEmpty(tasksData)) continue;
-
-        const uniqueRoutingIds = [
-          ...new Set(tasksData.map((task) => task.routingResultId).filter(Boolean)),
-        ];
-
-        const routingResults = await Promise.all(uniqueRoutingIds.map((id) => getResult(id)));
-        const routingMap = buildRoutingMap(routingResults);
-
-        const timeMap = buildSyncTimeMap(locHistories, driverData, selectedDateString);
-        const groupedData = groupTasksByDriver(tasksData);
-
-        const wb = generateTaskDetailWorkbook(
-          groupedData,
-          timeMap,
-          routingMap,
-          hubCoordsStr,
-          taskHeaders,
-          taskKeyMapping
-        );
-
-        const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-        const locationName = storedLocationAcronym || storedLocationName;
-        const fileName = `${t('report.task_detail_report')} - ${dateStr} - ${locationName}.xlsx`;
-
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-
-        generatedFiles.push({ fileName, wb, wbout });
-      }
+      const generatedFiles =
+        reportType === 'detail'
+          ? await processDetailReport(storedLocation, datesToProcess, locationName, t)
+          : await processManualReport(storedLocation, datesToProcess, locationName, t);
 
       if (generatedFiles.length === 0) {
         throw new Error(t('common.no_data'));
       }
+
+      const reportTitleName =
+        reportType === 'detail'
+          ? t('report.task_detail_report')
+          : t('report.task_manual_detail_report');
 
       if (generatedFiles.length === 1) {
         XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
@@ -139,12 +62,11 @@ export default function TaskDetailReport() {
         const endFormat = endDate ? formatDateUniversal(endDate, 'DD.MM.YYYY') : startFormat;
         const fileNameDate =
           startFormat === endFormat ? startFormat : `${startFormat} to ${endFormat}`;
-        const locationName = storedLocationAcronym || storedLocationName;
 
         const zipUrl = URL.createObjectURL(content);
         const link = document.createElement('a');
         link.href = zipUrl;
-        link.download = `${t('report.task_detail_report')} - ${fileNameDate} - ${locationName}.zip`;
+        link.download = `${reportTitleName} - ${fileNameDate} - ${locationName}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -166,7 +88,6 @@ export default function TaskDetailReport() {
     }
 
     const validEndDate = endDate || startDate;
-
     const diffTime = Math.abs(validEndDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -190,10 +111,10 @@ export default function TaskDetailReport() {
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
-        {t('report.task_detail_report')}
+        Mitsui Report
       </h1>
 
-      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-6 sm:gap-12 mb-10 w-full">
+      <div className="flex justify-center mb-6 w-full">
         <div className="flex flex-col items-center w-full max-w-xs">
           <label
             htmlFor="detailDate"
@@ -212,6 +133,18 @@ export default function TaskDetailReport() {
             maxDate={tomorrowDate(true)}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col items-center mb-10 w-full">
+        <span className="text-lg mb-3 text-gray-500 dark:text-slate-400 font-medium text-center select-none">
+          Jenis Laporan
+        </span>
+        <RadioCard
+          options={reportOptions}
+          selected={reportType}
+          onChange={setReportType}
+          disabled={isLoading}
+        />
       </div>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
