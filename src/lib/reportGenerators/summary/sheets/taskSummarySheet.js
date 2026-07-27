@@ -19,7 +19,7 @@ export function generateTaskSummarySheet(
 ) {
   const headers = [
     translate('common.date'),
-    translate('summary.tabs.task_summary.type'),
+    translate('common.type'),
     'DP',
     'DT',
     '%DT',

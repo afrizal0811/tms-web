@@ -314,7 +314,7 @@ export default function TaskSummaryTab({
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.yellow}`}
               >
-                {translate('summary.tabs.task_summary.type')}
+                {translate('common.type')}
               </th>
               {HEADER_COLUMNS.map((col) => {
                 const keyColumn =
