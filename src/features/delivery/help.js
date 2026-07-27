@@ -57,11 +57,21 @@ export const handleRouteTransactionDownload = async ({
 
           rawSOs.forEach((rawSo) => {
             const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
+            const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
 
-            if (!seenSO.has(cleanSo)) {
-              seenSO.add(cleanSo);
+            let standardizedSo = cleanSo;
+            if (match) {
+              const type = match[1].toUpperCase(); 
+              const branchYear = match[2];
+              const sequence = match[3].padStart(6, '0');
+
+              standardizedSo = `${type}${branchYear}-${sequence}`;
+            }
+
+            if (!seenSO.has(standardizedSo)) {
+              seenSO.add(standardizedSo);
               processedRows.push({
-                so: cleanSo,
+                so: standardizedSo,
                 isInvalidCustomer: isCustomerInvalid,
               });
             }
@@ -69,7 +79,7 @@ export const handleRouteTransactionDownload = async ({
         }
       });
 
-      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{5,8}$/i.test(so);
+      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
 
       processedRows.sort((a, b) => {
         const validA = isValidSO(a.so) && !a.isInvalidCustomer;
