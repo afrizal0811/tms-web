@@ -18,11 +18,11 @@ import {
 } from './help';
 import {
   buildDistanceSummary,
-  buildMergedDetailSheet,
   buildPendingSOSheet,
   buildRoVsRealSheet,
   buildStartFinishSheet,
   buildTanggalRoutingSheet,
+  buildTruckDetailSheet,
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
 } from './sheet';
@@ -493,7 +493,7 @@ export async function generateManualReportWorkbook({
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
   buildStartFinishSheet(wb, timeData, t, driverData);
-  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
+  buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);

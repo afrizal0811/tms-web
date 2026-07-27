@@ -4,7 +4,7 @@ import { parseDeliveryData, parseRoutingData } from './parsers';
 import {
   buildDistanceSummary,
   buildHelpSheet,
-  buildMergedDetailSheet,
+  buildTruckDetailSheet,
   buildPendingSOSheet,
   buildRoVsRealSheet,
   buildStartFinishSheet,
@@ -48,7 +48,7 @@ export async function generateAutoReportWorkbook({
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
   buildStartFinishSheet(wb, timeData, t, driverData);
-  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
+  buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);
