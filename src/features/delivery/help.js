@@ -25,9 +25,16 @@ export const handleRouteTransactionDownload = async ({
     const locationName = storedLocationAcronym || storedLocationName || 'Hub';
     const isMultiVehicle = filteredVehicleRoutes.length > 1;
     const zip = isMultiVehicle ? new JSZip() : null;
+    const seenFileNames = new Set();
 
     for (const route of filteredVehicleRoutes) {
       const cleanName = (route.vehicleName || 'Vehicle').replace(/[\\/:*?\[\]]/g, '').trim();
+      let nameFile = `${cleanName} - ${dateForFilename}.xlsx`;
+      let counter = 1;
+      while (seenFileNames.has(nameFile)) {
+        nameFile = `${cleanName}_${counter++} - ${dateForFilename}.xlsx`;
+      }
+      seenFileNames.add(nameFile);
       const processedRows = [];
       const seenSO = new Set();
 
@@ -57,21 +64,11 @@ export const handleRouteTransactionDownload = async ({
 
           rawSOs.forEach((rawSo) => {
             const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
-            const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
 
-            let standardizedSo = cleanSo;
-            if (match) {
-              const type = match[1].toUpperCase(); 
-              const branchYear = match[2];
-              const sequence = match[3].padStart(6, '0');
-
-              standardizedSo = `${type}${branchYear}-${sequence}`;
-            }
-
-            if (!seenSO.has(standardizedSo)) {
-              seenSO.add(standardizedSo);
+            if (!seenSO.has(cleanSo)) {
+              seenSO.add(cleanSo);
               processedRows.push({
-                so: standardizedSo,
+                so: cleanSo,
                 isInvalidCustomer: isCustomerInvalid,
               });
             }
@@ -79,7 +76,7 @@ export const handleRouteTransactionDownload = async ({
         }
       });
 
-      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
+      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{5,8}$/i.test(so);
 
       processedRows.sort((a, b) => {
         const validA = isValidSO(a.so) && !a.isInvalidCustomer;
@@ -259,11 +256,20 @@ export const handleDeliveryFormDownload = async ({
     const pdfPromises = filteredVehicleRoutes.map(async (route) => {
       const blob = await generatePdfBlob(route);
       const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-      return { name: `${safeName} - ${dateForFilename}.pdf`, blob };
+      return { safeName, blob };
     });
 
     const generatedFiles = await Promise.all(pdfPromises);
-    generatedFiles.forEach((file) => zip.file(file.name, file.blob));
+    const seenFileNames = new Set();
+    generatedFiles.forEach((file) => {
+      let fileName = `${file.safeName} - ${dateForFilename}.pdf`;
+      let counter = 1;
+      while (seenFileNames.has(fileName)) {
+        fileName = `${file.safeName}_${counter++} - ${dateForFilename}.pdf`;
+      }
+      seenFileNames.add(fileName);
+      zip.file(fileName, file.blob);
+    });
 
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);

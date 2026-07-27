@@ -195,15 +195,29 @@ export default function DeliveryPage() {
 
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
           const email = normalizeEmail(task?.assignee[0]);
-          const plat = mapObj.get(email) || t('common.others');
-          if (!groups[plat])
-            groups[plat] = {
+          const rawTaskPlat =
+            task.assignedVehicle?.name ||
+            task.assignedVehicle?.plat ||
+            (typeof task.assignedVehicle === 'string' ? task.assignedVehicle : null) ||
+            task.vehicle?.name ||
+            task.vehicle?.plat ||
+            task.vehicleName ||
+            task.vehicleId ||
+            task.plat ||
+            task.licensePlate ||
+            null;
+          const plat = getBasePlate(rawTaskPlat) || mapObj.get(email) || t('common.others');
+          const groupKey = `${email}_${plat}`;
+
+          if (!groups[groupKey])
+            groups[groupKey] = {
+              vehicleId: groupKey,
               plat,
               email,
-              assigneeName: task.user?.name || task.courierName || email,
+              assigneeName: task.user?.name || task.courierName || dataObj[email]?.name || email,
               tasks: [],
             };
-          groups[plat].tasks.push(task);
+          groups[groupKey].tasks.push(task);
           return groups;
         }, {});
 
@@ -213,18 +227,21 @@ export default function DeliveryPage() {
           .flatMap((i) => i.result.routing)
           .forEach((route) => {
             const plat = getBasePlate(route.vehicleName);
-            if (plat) {
-              const hubs = (route.trips || []).filter((t) => t.isHub);
-              if (hubs.length > 0)
-                resultHubsByPlat.set(plat, {
-                  startHub: hubs.find((t) => t.order === 0),
-                  endHub: hubs[hubs.length - 1],
-                });
+            const email = normalizeEmail(route.assignee);
+            const hubs = (route.trips || []).filter((t) => t.isHub);
+            if (hubs.length > 0) {
+              const hubObj = {
+                startHub: hubs.find((t) => t.order === 0),
+                endHub: hubs[hubs.length - 1],
+              };
+              if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
+              if (plat) resultHubsByPlat.set(plat, hubObj);
+              if (email) resultHubsByPlat.set(email, hubObj);
             }
           });
 
         const finalRoutes = Object.values(tasksByPlat).map(
-          ({ plat, tasks, email, assigneeName }) => {
+          ({ vehicleId, plat, tasks, email, assigneeName }) => {
             tasks.sort(
               (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
             );
@@ -254,7 +271,10 @@ export default function DeliveryPage() {
               };
             });
 
-            const hubData = resultHubsByPlat.get(plat);
+            const hubData =
+              resultHubsByPlat.get(`${email}_${plat}`) ||
+              resultHubsByPlat.get(plat) ||
+              resultHubsByPlat.get(email);
             const hubTime =
               hubData?.endHub?.eta && hubData?.startHub?.etd
                 ? {
@@ -271,7 +291,7 @@ export default function DeliveryPage() {
               finalTrips.push({ ...hubData.endHub, ...hubTime, isHub: true, visitName: 'HUB' });
 
             return {
-              vehicleId: plat,
+              vehicleId,
               vehicleName: plat,
               assignee: email,
               assigneeName,
@@ -279,6 +299,16 @@ export default function DeliveryPage() {
             };
           }
         );
+
+        finalRoutes.sort((a, b) => {
+          const etdA = a.trips?.find((t) => t.isHub)?.etd || null;
+          const etdB = b.trips?.find((t) => t.isHub)?.etd || null;
+          if (!etdA && etdB) return 1;
+          if (etdA && !etdB) return -1;
+          return (etdA || '').localeCompare(etdB || '');
+        });
+
+        setAllRoutes(finalRoutes);
 
         finalRoutes.sort((a, b) => {
           const etdA = a.trips?.find((t) => t.isHub)?.etd || null;

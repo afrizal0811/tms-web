@@ -4,19 +4,40 @@
 export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
   if (!dateInput) return '-';
 
-  let date;
+  let extraDays = 0;
+  let processedInput = dateInput;
+
   if (typeof dateInput === 'string') {
-    const dmyMatch = dateInput.match(
+    processedInput = dateInput.replace(
+      /(^|\s|T)(\d+):(\d{2})(?::(\d{2}))?/,
+      (match, prefix, hoursStr, minutesStr, secondsStr) => {
+        const hours = parseInt(hoursStr, 10);
+        if (!isNaN(hours) && hours >= 24) {
+          extraDays = Math.floor(hours / 24);
+          const modHours = String(hours % 24).padStart(2, '0');
+          const secPart = secondsStr !== undefined ? `:${secondsStr}` : '';
+          return `${prefix}${modHours}:${minutesStr}${secPart}`;
+        }
+        return match;
+      }
+    );
+  }
+
+  let date;
+  if (typeof processedInput === 'string') {
+    const dmyMatch = processedInput.match(
       /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
     );
     if (dmyMatch) {
       const [, dd, mm, yyyy, HH = '00', min = '00', ss = '00'] = dmyMatch;
       date = new Date(`${yyyy}-${mm}-${dd}T${HH}:${min}:${ss}`);
+    } else if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(processedInput.trim())) {
+      date = new Date(`1970-01-01T${processedInput.trim()}`);
     } else {
-      date = new Date(dateInput);
+      date = new Date(processedInput);
     }
   } else {
-    date = new Date(dateInput);
+    date = new Date(processedInput);
   }
 
   if (isNaN(date.getTime())) return '-';
@@ -30,9 +51,9 @@ export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
     ss: String(date.getSeconds()).padStart(2, '0'),
   };
 
-  return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+  const result = pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+  return extraDays > 0 ? `${result} (+${extraDays})` : result;
 }
-
 // Menentukan tanggal otomatis (H-1) dengan penyesuaian jika hari tersebut adalah Minggu (mundur ke Sabtu)
 export function calculateTargetDates(selectedDateStr) {
   if (!selectedDateStr) {
