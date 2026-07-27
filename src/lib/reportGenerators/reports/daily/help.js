@@ -1,7 +1,7 @@
 'use client';
 
 export const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
-export const PENDING_SHEET_STATUSES_BASE = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+export const PENDING_SHEET_STATUSES_BASE = [...FAILED_STATUSES];
 
 export const reportStyles = {
   headerStyle: {
@@ -112,17 +112,10 @@ export function resolveVehicleCategory(data, normalizedMappings) {
     category = normalizedMappings[originalRawStr];
     mapped = true;
   } else {
-    for (const dbKey of dbKeys) {
-      if (dbKey.length > 3 && (originalRawStr.includes(dbKey) || dbKey.includes(originalRawStr))) {
-        category = normalizedMappings[dbKey];
-        mapped = true;
-        break;
-      }
-    }
-
-    if (!mapped && basePlateStr) {
+    for (const targetStr of [originalRawStr, basePlateStr]) {
+      if (!targetStr || mapped) continue;
       for (const dbKey of dbKeys) {
-        if (dbKey.length > 3 && (basePlateStr.includes(dbKey) || dbKey.includes(basePlateStr))) {
+        if (dbKey.length > 3 && (targetStr.includes(dbKey) || dbKey.includes(targetStr))) {
           category = normalizedMappings[dbKey];
           mapped = true;
           break;
@@ -147,25 +140,19 @@ export function resolveVehicleCategory(data, normalizedMappings) {
     }
   }
 
-  if (category && typeof category === 'string') {
-    category = category.toUpperCase();
-  }
-
-  return category || '';
+  return category && typeof category === 'string' ? category.toUpperCase() : '';
 }
 
 export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, headers, sheetNames) {
   const masterNames = vehicleTypes.map((v) => (typeof v === 'string' ? v : v.name));
-
   const finalUsageData = [headers.truckUsage];
 
-  // Master types — always included (even when 0), processed first
   masterNames.forEach((type) => {
     if (truckUsageCount[type]) {
       const dry = truckUsageCount[type]['Dry'];
       const frozen = truckUsageCount[type]['Frozen'];
       finalUsageData.push([type, dry > 0 ? dry : null, frozen > 0 ? frozen : null]);
-      delete truckUsageCount[type]; // mark as processed to avoid duplication
+      delete truckUsageCount[type];
     }
   });
 
@@ -182,7 +169,6 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, headers,
   });
 
   const ws = XLSX.utils.aoa_to_sheet(finalUsageData);
-
   ws['A1'].s = reportStyles.distanceHeaderStyle;
   ws['B1'].s = reportStyles.distanceHeaderStyle;
   ws['C1'].s = reportStyles.distanceHeaderStyle;

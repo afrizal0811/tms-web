@@ -15,25 +15,37 @@ import {
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
 
-const getTaskPlat = (item) => {
-  if (!item) return '';
-  return (
-    item.vehicleName ||
-    item.vehiclePlat ||
-    item.licenseNumber ||
-    item.licensePlate ||
-    item.vehicleId ||
-    item.vehicle_name ||
-    item.vehicle_plate ||
-    item.plate_number ||
-    item.plat_nomor ||
-    (typeof item.vehicle === 'string' ? item.vehicle : null) ||
-    item.assignedVehicle?.name ||
-    item.assignedVehicle?.plat ||
-    item.plat ||
-    item.nopol ||
-    ''
-  );
+const getTaskPlat = (item) =>
+  item?.vehicleName ||
+  item?.vehiclePlat ||
+  item?.licenseNumber ||
+  item?.licensePlate ||
+  item?.vehicleId ||
+  item?.vehicle_name ||
+  item?.vehicle_plate ||
+  item?.plate_number ||
+  item?.plat_nomor ||
+  (typeof item?.vehicle === 'string' ? item.vehicle : null) ||
+  item?.assignedVehicle?.name ||
+  item?.assignedVehicle?.plat ||
+  item?.plat ||
+  item?.nopol ||
+  '';
+
+const matchNormalizedCategory = (originalStr, baseStr, normalizedMappings) => {
+  const dbKeys = Object.keys(normalizedMappings);
+  if (baseStr && normalizedMappings[baseStr]) return normalizedMappings[baseStr];
+  if (originalStr && normalizedMappings[originalStr]) return normalizedMappings[originalStr];
+
+  for (const targetStr of [originalStr, baseStr]) {
+    if (!targetStr) continue;
+    for (const dbKey of dbKeys) {
+      if (dbKey.length > 3 && (targetStr.includes(dbKey) || dbKey.includes(targetStr))) {
+        return normalizedMappings[dbKey];
+      }
+    }
+  }
+  return '';
 };
 
 export function parseRoutingData(
@@ -58,40 +70,9 @@ export function parseRoutingData(
   function resolveVehicleCategory(driverInfo, route) {
     const basePlateStr = (driverInfo?.plat || '').replace(/\s+/g, '').toLowerCase();
     const originalRawStr = (route.vehicleName || '').replace(/\s+/g, '').toLowerCase();
-    const dbKeys = Object.keys(normalizedMappings);
+    let category = matchNormalizedCategory(originalRawStr, basePlateStr, normalizedMappings);
 
-    let category = '';
-    let mapped = false;
-
-    if (basePlateStr && normalizedMappings[basePlateStr]) {
-      category = normalizedMappings[basePlateStr];
-      mapped = true;
-    } else if (originalRawStr && normalizedMappings[originalRawStr]) {
-      category = normalizedMappings[originalRawStr];
-      mapped = true;
-    } else {
-      for (const dbKey of dbKeys) {
-        if (
-          dbKey.length > 3 &&
-          (originalRawStr.includes(dbKey) || dbKey.includes(originalRawStr))
-        ) {
-          category = normalizedMappings[dbKey];
-          mapped = true;
-          break;
-        }
-      }
-      if (!mapped && basePlateStr) {
-        for (const dbKey of dbKeys) {
-          if (dbKey.length > 3 && (basePlateStr.includes(dbKey) || dbKey.includes(basePlateStr))) {
-            category = normalizedMappings[dbKey];
-            mapped = true;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!mapped) {
+    if (!category) {
       const tempCategory = driverInfo?.type || route.vehicleTags?.[0] || '';
       if (tempCategory) {
         const parts = String(tempCategory).split('-');
@@ -120,8 +101,8 @@ export function parseRoutingData(
       const rawPlat = getTaskPlat(route) || driverInfo?.plat || '';
       const basePlat = getBasePlate(rawPlat) || rawPlat;
       const groupKey = `${driverName}_${basePlat}`;
-
       const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
+
       let etdHubVal = '-';
       let etaFirstStoreVal = '-';
       let manualDistance = 0,
@@ -186,7 +167,6 @@ export function parseRoutingData(
         ext.hasTrips = ext.hasTrips || row.hasTrips;
         ext.rawWeight = 0;
         ext.rawVolume = 0;
-
         ext.maxWeight = Math.max(ext.maxWeight, row.maxWeight);
         ext.maxVolume = Math.max(ext.maxVolume, row.maxVolume);
         ext.totalDistance = Math.max(ext.totalDistance, row.totalDistance);
@@ -229,24 +209,17 @@ export function parseRoutingData(
       }
     });
   }
-  const cleanTasks = Array.from(uniqueTasksMap.values());
 
-  cleanTasks.forEach((task) => {
+  Array.from(uniqueTasksMap.values()).forEach((task) => {
     const dateKey =
       formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
-
     if (selectedDateString && dateKey !== selectedDateString) return;
 
     let rawEmail = null;
-    if (Array.isArray(task.assignee) && task.assignee.length > 0) {
-      rawEmail = task.assignee[0];
-    } else if (typeof task.assignee === 'string') {
-      rawEmail = task.assignee;
-    } else if (task.assignedTo && task.assignedTo.email) {
-      rawEmail = task.assignedTo.email;
-    } else if (task.doneBy) {
-      rawEmail = task.doneBy;
-    }
+    if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
+    else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+    else if (task.assignedTo?.email) rawEmail = task.assignedTo.email;
+    else if (task.doneBy) rawEmail = task.doneBy;
 
     const assigneeEmail = rawEmail ? String(rawEmail).trim().toLowerCase() : '';
     const driverInfo = emailMap.get(assigneeEmail);
@@ -261,7 +234,6 @@ export function parseRoutingData(
 
       if (!routingMap.has(groupKey)) {
         const masterData = driverData.find((d) => normalizeEmail(d.email) === assigneeEmail);
-
         routingMap.set(groupKey, {
           driver: driverName,
           plat: taskPlat || masterData?.plat || '-',
@@ -283,17 +255,15 @@ export function parseRoutingData(
       ext.hasTrips = true;
       ext.rawWeight += taskW;
       ext.rawVolume += taskV;
-
       ext.weightPercentage =
         ext.maxWeight > 0 ? ((ext.rawWeight / ext.maxWeight) * 100).toFixed(1) : 0;
       ext.volumePercentage =
         ext.maxVolume > 0 ? ((ext.rawVolume / ext.maxVolume) * 100).toFixed(1) : 0;
     }
   });
+
   for (const [key, ext] of routingMap.entries()) {
-    if (ext.rawWeight === 0 && ext.rawVolume === 0) {
-      routingMap.delete(key);
-    }
+    if (ext.rawWeight === 0 && ext.rawVolume === 0) routingMap.delete(key);
   }
 
   return { routingMap, distanceTotals, truckUsageCount };

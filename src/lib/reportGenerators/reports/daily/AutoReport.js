@@ -1,5 +1,6 @@
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+import { parseDeliveryData, parseRoutingData } from './parsers';
 import {
   buildDistanceSummary,
   buildHelpSheet,
@@ -10,8 +11,7 @@ import {
   buildTanggalRoutingSheet,
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
-} from './builders';
-import { parseDeliveryData, parseRoutingData } from './parsers';
+} from './sheet';
 
 export async function generateAutoReportWorkbook({
   driverData,
@@ -28,7 +28,6 @@ export async function generateAutoReportWorkbook({
 }) {
   const wb = XLSX.utils.book_new();
 
-  // 1. Ekstraksi dan Pengolahan Data Paralel
   const { routingMap, truckUsageCount } = parseRoutingData(
     filteredResults || [],
     driverData,
