@@ -37,6 +37,10 @@ const getVal = (obj, header, taskDetailKeyMapping) => {
     return obj.manualType || '-';
   }
 
+  if (header === 'Action') {
+    return obj.action || '-';
+  }
+
   const key = taskDetailKeyMapping[header];
   let val = obj[key];
 
@@ -362,6 +366,7 @@ export const generateTaskManualDetailWorkbook = (
   };
 
   const manualTypeCol = taskDetailHeaders.indexOf('Manual Type');
+  const actionCol = taskDetailHeaders.indexOf('Action');
   const sheetData = [taskDetailHeaders];
 
   Object.keys(groupedData)
@@ -391,7 +396,14 @@ export const generateTaskManualDetailWorkbook = (
       if (C === manualTypeCol) {
         ws[cell_address].c = [
           {
-            t: '- Manual Assign: Task assigned from Task menu (without routing process)\n- Forced Assign: Task forcibly assigned from Dropped Tasks during routing process',
+            t: '- Manual Assign : Task di assign dari menu Task (tanpa proses routing)\n- Forced Assign : Task di assign secara paksa dari dropped task saat proses routing',
+          },
+        ];
+      }
+      if (C === actionCol) {
+        ws[cell_address].c = [
+          {
+            t: '- Move: Task assigned or moved to specific vehicle.\n- Drop: Task removed from vehicle and no longer assigned for delivery.\n- Switch: All tasks assigned between 2 vehicles are exchanged.\n- Change: Task sequence changed.',
           },
         ];
       }

@@ -9,6 +9,7 @@ const processHistoryData = (rawHistory) => {
     dropped: createGroup(),
     switch: createGroup(),
     manual: createGroup(),
+    change: createGroup(),
   };
 
   (rawHistory || []).forEach((item) => {
@@ -30,6 +31,9 @@ const processHistoryData = (rawHistory) => {
     } else if (act === 'switch') {
       grouped.switch.data.push(item);
       grouped.switch.count++;
+    } else if (act === 'change') {
+      grouped.change.data.push(item);
+      grouped.change.count++;
     }
   });
 
@@ -69,7 +73,12 @@ export async function POST(request) {
 
         return {
           resultId: id,
-          total: hObj.move.count + hObj.dropped.count + hObj.switch.count + hObj.manual.count,
+          total:
+            hObj.move.count +
+            hObj.dropped.count +
+            hObj.switch.count +
+            hObj.manual.count +
+            hObj.change.count,
           history: historyData,
         };
       } catch (error) {

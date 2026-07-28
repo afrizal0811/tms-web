@@ -1115,14 +1115,19 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
     const historiesRes =
       uniqueRoutingIds.length > 0 ? await getResultHistories(uniqueRoutingIds) : [];
 
-    const overrideTaskIds = new Set();
+    const overrideTaskMap = new Map();
     (historiesRes || []).forEach((item) => {
       (item.history || []).forEach((h) => {
-        (h.manual?.data || []).forEach((m) => {
-          (m.visits || []).forEach((v) => {
-            if (v.visitId && v.visitId.includes('-')) {
-              overrideTaskIds.add(v.visitId.substring(v.visitId.indexOf('-') + 1));
-            }
+        ['move', 'dropped', 'switch', 'change'].forEach((key) => {
+          (h[key]?.data || []).forEach((m) => {
+            const ver = Number(m.version) || 0;
+            (m.visits || []).forEach((v) => {
+              if (v.visitId && v.visitId.includes('-')) {
+                const tId = v.visitId.substring(v.visitId.indexOf('-') + 1);
+                if (!overrideTaskMap.has(tId)) overrideTaskMap.set(tId, []);
+                overrideTaskMap.get(tId).push({ action: key, version: ver });
+              }
+            });
           });
         });
       });
@@ -1137,15 +1142,22 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
           task.routePlannedOrder === '-' ||
           task.routePlannedOrder === '');
 
-      if (overrideTaskIds.has(taskId)) {
+      if (overrideTaskMap.has(taskId)) {
         task.isManual = true;
         task.manualType = 'Forced Assign';
+        const sortedActions = overrideTaskMap
+          .get(taskId)
+          .sort((a, b) => a.version - b.version)
+          .map((item) => item.action);
+        task.action = [...new Set(sortedActions)].join(', ');
       } else if (isUnassigned) {
         task.isManual = true;
         task.manualType = 'Manual Assign';
+        task.action = '-';
       } else {
         task.isManual = false;
         task.manualType = null;
+        task.action = null;
       }
     });
 
