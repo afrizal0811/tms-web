@@ -6,6 +6,130 @@ import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
 import DeliveryForm from './components/DeliveryForm';
 
+const formatSO = (rawSo) => {
+  const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
+  const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
+  if (match) {
+    return `${match[1].toUpperCase()}${match[2]}-${match[3].padStart(6, '0')}`;
+  }
+  return cleanSo;
+};
+
+const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
+
+const isTripRedelivery = (trip) => {
+  const flowLower = (trip.flow || '').toLowerCase();
+  const visitLower = (trip.visitName || '').toLowerCase();
+  return (
+    flowLower.includes('re delivery') ||
+    flowLower.includes('redelivery') ||
+    visitLower.includes('re delivery') ||
+    visitLower.includes('redelivery') ||
+    trip.isReDelivery
+  );
+};
+
+const triggerDownload = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const buildSoWorksheet = (processedRows) => {
+  processedRows.sort((a, b) => {
+    const validA = isValidSO(a.so) && !a.isInvalidCustomer;
+    const validB = isValidSO(b.so) && !b.isInvalidCustomer;
+    if (!validA && validB) return -1;
+    if (validA && !validB) return 1;
+    return a.so.localeCompare(b.so);
+  });
+
+  const wsData = [
+    ['Order Nbr.', 'Order Type'],
+    ...processedRows.map((row) => {
+      const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+      return valid ? [row.so, row.so.substring(0, 2).toUpperCase()] : [row.so, '-'];
+    }),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  ['A1', 'B1'].forEach((cell) => {
+    if (ws[cell]) {
+      ws[cell].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '4F46E5' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      };
+    }
+  });
+
+  processedRows.forEach((row, idx) => {
+    const rowIndex = idx + 2;
+    const cellRef = `A${rowIndex}`;
+    const typeCellRef = `B${rowIndex}`;
+    const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+
+    const baseStyle = {
+      border: {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      },
+      alignment: { vertical: 'center', horizontal: 'left' },
+    };
+
+    if (!ws[cellRef]) ws[cellRef] = { v: row.so };
+    if (!ws[typeCellRef]) ws[typeCellRef] = { v: '-' };
+
+    if (!valid) {
+      const errorStyle = {
+        ...baseStyle,
+        fill: { fgColor: { rgb: 'FFC7CE' } },
+        font: { color: { rgb: '9C0006' }, bold: true },
+      };
+
+      ws[cellRef].s = errorStyle;
+      ws[typeCellRef].s = {
+        ...errorStyle,
+        alignment: { vertical: 'center', horizontal: 'center' },
+      };
+      ws[cellRef].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
+    } else {
+      ws[cellRef].s = baseStyle;
+      ws[typeCellRef].s = {
+        ...baseStyle,
+        alignment: { vertical: 'center', horizontal: 'center' },
+      };
+    }
+  });
+
+  ws['!cols'] = [0, 1].map((colIndex) => {
+    let maxLen = 0;
+    for (let r = 0; r < wsData.length; r++) {
+      const cellValue = wsData[r][colIndex];
+      if (cellValue !== null && cellValue !== undefined) {
+        maxLen = Math.max(maxLen, cellValue.toString().length);
+      }
+    }
+    return { wch: Math.min(Math.max(maxLen + 3, 14), 50) };
+  });
+
+  return ws;
+};
+
 export const getDriverName = (route, driverData) => {
   if (!route) return '';
   const email = normalizeEmail(route.assignee);
@@ -31,50 +155,26 @@ export const handleFullRouteTransDownload = async ({
       const cleanName = (route.vehicleName || 'Vehicle').replace(/[\\/:*?\[\]]/g, '').trim();
       let nameFile = `${cleanName} - ${dateForFilename}.xlsx`;
       let counter = 1;
+
       while (seenFileNames.has(nameFile)) {
         nameFile = `${cleanName}_${counter++} - ${dateForFilename}.xlsx`;
       }
       seenFileNames.add(nameFile);
+
       const processedRows = [];
       const seenSO = new Set();
 
       (route.trips || []).forEach((trip) => {
-        const flowLower = (trip.flow || '').toLowerCase();
-        const visitLower = (trip.visitName || '').toLowerCase();
-
-        const isRedelivery =
-          flowLower.includes('re delivery') ||
-          flowLower.includes('redelivery') ||
-          visitLower.includes('re delivery') ||
-          visitLower.includes('redelivery') ||
-          trip.isReDelivery;
-
-        if (!trip.isHub && trip.orderId && !isRedelivery) {
+        if (!trip.isHub && trip.orderId && !isTripRedelivery(trip)) {
           const parsedCust = parseCustomerString(trip.visitName);
-          const custId = parsedCust?.id;
-          const locId = parsedCust?.location;
-
-          const isCustomerInvalid = isEmpty(custId) || isEmpty(locId);
-
-          const parsedInvoice = parsedCust.invoiceNumber;
-          const rawSOs = (parsedInvoice || trip.orderId)
+          const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+          const rawSOs = (parsedCust.invoiceNumber || trip.orderId)
             .split(',')
             .map((s) => s.trim())
             .filter(Boolean);
 
           rawSOs.forEach((rawSo) => {
-            const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
-            const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
-
-            let standardizedSo = cleanSo;
-            if (match) {
-              const type = match[1].toUpperCase();
-              const branchYear = match[2];
-              const sequence = match[3].padStart(6, '0');
-
-              standardizedSo = `${type}${branchYear}-${sequence}`;
-            }
-
+            const standardizedSo = formatSO(rawSo);
             if (!seenSO.has(standardizedSo)) {
               seenSO.add(standardizedSo);
               processedRows.push({
@@ -86,111 +186,15 @@ export const handleFullRouteTransDownload = async ({
         }
       });
 
-      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
-
-      processedRows.sort((a, b) => {
-        const validA = isValidSO(a.so) && !a.isInvalidCustomer;
-        const validB = isValidSO(b.so) && !b.isInvalidCustomer;
-        if (!validA && validB) return -1;
-        if (validA && !validB) return 1;
-        return a.so.localeCompare(b.so);
-      });
-
-      const wsData = [
-        ['Order Nbr.', 'Order Type'],
-        ...processedRows.map((row) => {
-          const valid = isValidSO(row.so) && !row.isInvalidCustomer;
-          if (!valid) {
-            return [row.so, '-'];
-          }
-          return [row.so, row.so.substring(0, 2).toUpperCase()];
-        }),
-      ];
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      ['A1', 'B1'].forEach((cell) => {
-        if (ws[cell]) {
-          ws[cell].s = {
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '4F46E5' } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' },
-            },
-          };
-        }
-      });
-
-      processedRows.forEach((row, idx) => {
-        const rowIndex = idx + 2;
-        const cellRef = `A${rowIndex}`;
-        const typeCellRef = `B${rowIndex}`;
-
-        const baseStyle = {
-          border: {
-            top: { style: 'thin' },
-            bottom: { style: 'thin' },
-            left: { style: 'thin' },
-            right: { style: 'thin' },
-          },
-          alignment: { vertical: 'center', horizontal: 'left' },
-        };
-
-        if (!ws[cellRef]) ws[cellRef] = { v: row.so };
-        if (!ws[typeCellRef]) ws[typeCellRef] = { v: '-' };
-
-        const valid = isValidSO(row.so) && !row.isInvalidCustomer;
-
-        if (!valid) {
-          const errorStyle = {
-            ...baseStyle,
-            fill: { fgColor: { rgb: 'FFC7CE' } },
-            font: { color: { rgb: '9C0006' }, bold: true },
-          };
-
-          ws[cellRef].s = errorStyle;
-          ws[typeCellRef].s = {
-            ...errorStyle,
-            alignment: { vertical: 'center', horizontal: 'center' },
-          };
-          ws[cellRef].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
-        } else {
-          ws[cellRef].s = baseStyle;
-          ws[typeCellRef].s = {
-            ...baseStyle,
-            alignment: { vertical: 'center', horizontal: 'center' },
-          };
-        }
-      });
-
-      ws['!cols'] = [0, 1].map((colIndex) => {
-        let maxLen = 0;
-        for (let r = 0; r < wsData.length; r++) {
-          const cellValue = wsData[r][colIndex];
-          if (cellValue !== null && cellValue !== undefined) {
-            const strLen = cellValue.toString().length;
-            if (strLen > maxLen) {
-              maxLen = strLen;
-            }
-          }
-        }
-        return { wch: Math.min(Math.max(maxLen + 3, 14), 50) };
-      });
-
+      const ws = buildSoWorksheet(processedRows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
 
-      const fileName = `${cleanName} - ${dateForFilename}.xlsx`;
-
       if (isMultiVehicle) {
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        zip.file(fileName, excelBuffer);
+        zip.file(nameFile, excelBuffer);
       } else {
-        XLSX.writeFile(wb, fileName);
+        XLSX.writeFile(wb, nameFile);
         toastSuccess(t('common.toast.success'));
         return;
       }
@@ -198,14 +202,7 @@ export const handleFullRouteTransDownload = async ({
 
     if (isMultiVehicle) {
       const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      triggerDownload(content, `Route Transaction - ${dateForFilename} - ${locationName}.zip`);
       toastSuccess(t('common.toast.success'));
     }
   } catch (err) {
@@ -274,20 +271,11 @@ export const handlePartialRouteTransDownload = async ({
         const seenSO = new Set();
 
         (route.trips || []).forEach((trip) => {
-          const flowLower = (trip.flow || '').toLowerCase();
-          const visitLower = (trip.visitName || '').toLowerCase();
-          const isRedelivery =
-            flowLower.includes('re delivery') ||
-            flowLower.includes('redelivery') ||
-            visitLower.includes('re delivery') ||
-            visitLower.includes('redelivery') ||
-            trip.isReDelivery;
-
-          if (!trip.isHub && !isRedelivery) {
+          if (!trip.isHub && !isTripRedelivery(trip)) {
             const parsedCust = parseCustomerString(trip.visitName);
             const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
-
             const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
+
             if (!rawInvoice) return;
 
             const rawSOs = rawInvoice
@@ -296,13 +284,7 @@ export const handlePartialRouteTransDownload = async ({
               .filter(Boolean);
 
             rawSOs.forEach((rawSo) => {
-              const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
-              const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
-
-              let standardizedSo = cleanSo;
-              if (match) {
-                standardizedSo = `${match[1].toUpperCase()}${match[2]}-${match[3].padStart(6, '0')}`;
-              }
+              const standardizedSo = formatSO(rawSo);
 
               if (!vehicleSeenSOs.has(standardizedSo)) {
                 vehicleSeenSOs.add(standardizedSo);
@@ -329,88 +311,7 @@ export const handlePartialRouteTransDownload = async ({
         }
         seenFileNames.add(nameFile);
 
-        const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
-        processedRows.sort((a, b) => {
-          const validA = isValidSO(a.so) && !a.isInvalidCustomer;
-          const validB = isValidSO(b.so) && !b.isInvalidCustomer;
-          if (!validA && validB) return -1;
-          if (validA && !validB) return 1;
-          return a.so.localeCompare(b.so);
-        });
-
-        const wsData = [
-          ['Order Nbr.', 'Order Type'],
-          ...processedRows.map((row) => {
-            const valid = isValidSO(row.so) && !row.isInvalidCustomer;
-            return valid ? [row.so, row.so.substring(0, 2).toUpperCase()] : [row.so, '-'];
-          }),
-        ];
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        ['A1', 'B1'].forEach((cell) => {
-          if (ws[cell]) {
-            ws[cell].s = {
-              font: { bold: true, color: { rgb: 'FFFFFF' } },
-              fill: { fgColor: { rgb: '4F46E5' } },
-              alignment: { horizontal: 'center', vertical: 'center' },
-              border: {
-                top: { style: 'thin' },
-                bottom: { style: 'thin' },
-                left: { style: 'thin' },
-                right: { style: 'thin' },
-              },
-            };
-          }
-        });
-
-        processedRows.forEach((row, idx) => {
-          const rowIndex = idx + 2;
-          const valid = isValidSO(row.so) && !row.isInvalidCustomer;
-          const baseStyle = {
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' },
-            },
-            alignment: { vertical: 'center', horizontal: 'left' },
-          };
-
-          if (!ws[`A${rowIndex}`]) ws[`A${rowIndex}`] = { v: row.so };
-          if (!ws[`B${rowIndex}`]) ws[`B${rowIndex}`] = { v: '-' };
-
-          if (!valid) {
-            const errStyle = {
-              ...baseStyle,
-              fill: { fgColor: { rgb: 'FFC7CE' } },
-              font: { color: { rgb: '9C0006' }, bold: true },
-            };
-            ws[`A${rowIndex}`].s = errStyle;
-            ws[`B${rowIndex}`].s = {
-              ...errStyle,
-              alignment: { vertical: 'center', horizontal: 'center' },
-            };
-            ws[`A${rowIndex}`].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
-          } else {
-            ws[`A${rowIndex}`].s = baseStyle;
-            ws[`B${rowIndex}`].s = {
-              ...baseStyle,
-              alignment: { vertical: 'center', horizontal: 'center' },
-            };
-          }
-        });
-
-        ws['!cols'] = [0, 1].map((colIndex) => {
-          let maxLen = 0;
-          for (let r = 0; r < wsData.length; r++) {
-            const cellValue = wsData[r][colIndex];
-            if (cellValue !== null && cellValue !== undefined) {
-              maxLen = Math.max(maxLen, cellValue.toString().length);
-            }
-          }
-          return { wch: Math.min(Math.max(maxLen + 3, 14), 50) };
-        });
-
+        const ws = buildSoWorksheet(processedRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -431,14 +332,7 @@ export const handlePartialRouteTransDownload = async ({
     }
 
     const masterContent = await masterZip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(masterContent);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    triggerDownload(masterContent, `Route Transaction - ${dateForFilename} - ${locationName}.zip`);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }));
@@ -446,6 +340,7 @@ export const handlePartialRouteTransDownload = async ({
     setIsDownloading(false);
   }
 };
+
 export const handleDeliveryFormDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
@@ -482,14 +377,7 @@ export const handleDeliveryFormDownload = async ({
       const route = filteredVehicleRoutes[0];
       const blob = await generatePdfBlob(route);
       const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Delivery Form - ${safeName} - ${dateForFilename}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      triggerDownload(blob, `Delivery Form - ${safeName} - ${dateForFilename}.pdf`);
       toastSuccess(t('common.toast.success'));
       return;
     }
@@ -502,6 +390,7 @@ export const handleDeliveryFormDownload = async ({
 
     const generatedFiles = await Promise.all(pdfPromises);
     const seenFileNames = new Set();
+
     generatedFiles.forEach((file) => {
       let fileName = `${file.safeName} - ${dateForFilename}.pdf`;
       let counter = 1;
@@ -513,14 +402,7 @@ export const handleDeliveryFormDownload = async ({
     });
 
     const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Delivery Form - ${dateForFilename} - ${locationName}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    triggerDownload(content, `Delivery Form - ${dateForFilename} - ${locationName}.zip`);
     toastSuccess(t('common.toast.success', { length: generatedFiles.length }));
   } catch (error) {
     toastError(t('common.toast.error', { err: error.message }));
@@ -602,6 +484,7 @@ export const handleDeliveryListDownload = async ({
           : trip.flow === 'Pickup' && trip.warehouseName
             ? trip.warehouseName
             : parsedCust?.name || trip.visitName;
+
         if (trip.isReDelivery && !isHub) baseOutletName = `[REDELIVERY] ${baseOutletName}`;
 
         const custId = isHub ? '' : parsedCust?.id || '-';
@@ -628,6 +511,7 @@ export const handleDeliveryListDownload = async ({
 
           let outletWithWh =
             isDetailView && whInfo ? `${baseOutletName}\n↳ Pickup: ${whInfo}` : baseOutletName;
+
           if (isRowUnsync && rowPartner) outletWithWh += `\n[Partner: ${rowPartner}]`;
 
           wsData.push(
@@ -665,13 +549,16 @@ export const handleDeliveryListDownload = async ({
 
             if (col.key === 'no') {
               colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
-              if (isSplit && !isHub)
+              if (isSplit && !isHub) {
                 colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
+              }
             }
-            if (col.key === 'visit' && trip.isReDelivery && !isHub)
+            if (col.key === 'visit' && trip.isReDelivery && !isHub) {
               colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
-            if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta)
+            }
+            if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
               comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
+            }
 
             stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
           });
@@ -706,6 +593,7 @@ export const handleDeliveryListDownload = async ({
                 )
                 .join(', ')
             : parsedCust.invoiceNumber || trip.orderId || '-';
+
         pushRow(
           isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
           custId,
