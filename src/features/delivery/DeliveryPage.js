@@ -7,6 +7,7 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import RoutingModal from '@/components/modal/RoutingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -20,7 +21,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
+import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
 import { toastError } from '../../lib/toast';
 import TableData from './components/TableData';
@@ -28,7 +29,8 @@ import {
   getDriverName,
   handleDeliveryFormDownload,
   handleDeliveryListDownload,
-  handleRouteTransactionDownload,
+  handleFullRouteTransDownload,
+  handlePartialRouteTransDownload,
 } from './help';
 
 export default function DeliveryPage() {
@@ -47,6 +49,8 @@ export default function DeliveryPage() {
   const [isDetailView, setIsDetailView] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
   const [routingResults, setRoutingResults] = useState([]);
+  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
+  const [hubsData, setHubsData] = useState([]);
 
   const downloadDropdownRef = useRef(null);
 
@@ -58,6 +62,16 @@ export default function DeliveryPage() {
     if (storedSession && typeof storedSession.isDetailViewEstimasi === 'boolean') {
       setIsDetailView(storedSession.isDetailViewEstimasi);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchHubsData = async () => {
+      try {
+        const res = await getHubs();
+        setHubsData(res);
+      } catch (error) {}
+    };
+    fetchHubsData();
   }, []);
 
   useEffect(() => {
@@ -95,7 +109,18 @@ export default function DeliveryPage() {
       isDetailView,
     };
 
-    if (type === 'routeTransaction') handleRouteTransactionDownload(baseProps);
+    if (type === 'routeTransaction') {
+      const { storedLocation } = getLocalStorage();
+      const activeHub = hubsData.find(
+        (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
+      );
+
+      if (activeHub?.hasPartialRouting) {
+        setIsRoutingModalOpen(true);
+      } else {
+        handleFullRouteTransDownload(baseProps);
+      }
+    }
     if (type === 'deliveryForm') handleDeliveryFormDownload(baseProps);
     if (type === 'deliveryList') {
       let prefix = '';
@@ -299,16 +324,6 @@ export default function DeliveryPage() {
             };
           }
         );
-
-        finalRoutes.sort((a, b) => {
-          const etdA = a.trips?.find((t) => t.isHub)?.etd || null;
-          const etdB = b.trips?.find((t) => t.isHub)?.etd || null;
-          if (!etdA && etdB) return 1;
-          if (etdA && !etdB) return -1;
-          return (etdA || '').localeCompare(etdB || '');
-        });
-
-        setAllRoutes(finalRoutes);
 
         finalRoutes.sort((a, b) => {
           const etdA = a.trips?.find((t) => t.isHub)?.etd || null;
@@ -610,6 +625,30 @@ export default function DeliveryPage() {
           </div>
         </div>
       </BodyCard>
+
+      <RoutingModal
+        isOpen={isRoutingModalOpen}
+        onClose={() => setIsRoutingModalOpen(false)}
+        onPartial={() => {
+          handlePartialRouteTransDownload({
+            routingResults,
+            filteredVehicleRoutes,
+            setIsDownloading,
+            t,
+            selectedDate,
+          });
+          setIsRoutingModalOpen(false);
+        }}
+        onFull={() => {
+          handleFullRouteTransDownload({
+            filteredVehicleRoutes,
+            setIsDownloading,
+            t,
+            selectedDate,
+          });
+          setIsRoutingModalOpen(false);
+        }}
+      />
     </div>
   );
 }

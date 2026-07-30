@@ -12,7 +12,7 @@ export const getDriverName = (route, driverData) => {
   return driverData?.[email]?.name || '-';
 };
 
-export const handleRouteTransactionDownload = async ({
+export const handleFullRouteTransDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
@@ -64,11 +64,21 @@ export const handleRouteTransactionDownload = async ({
 
           rawSOs.forEach((rawSo) => {
             const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
+            const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
 
-            if (!seenSO.has(cleanSo)) {
-              seenSO.add(cleanSo);
+            let standardizedSo = cleanSo;
+            if (match) {
+              const type = match[1].toUpperCase();
+              const branchYear = match[2];
+              const sequence = match[3].padStart(6, '0');
+
+              standardizedSo = `${type}${branchYear}-${sequence}`;
+            }
+
+            if (!seenSO.has(standardizedSo)) {
+              seenSO.add(standardizedSo);
               processedRows.push({
-                so: cleanSo,
+                so: standardizedSo,
                 isInvalidCustomer: isCustomerInvalid,
               });
             }
@@ -76,7 +86,7 @@ export const handleRouteTransactionDownload = async ({
         }
       });
 
-      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{5,8}$/i.test(so);
+      const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
 
       processedRows.sort((a, b) => {
         const validA = isValidSO(a.so) && !a.isInvalidCustomer;
@@ -205,6 +215,237 @@ export const handleRouteTransactionDownload = async ({
   }
 };
 
+export const handlePartialRouteTransDownload = async ({
+  routingResults,
+  setIsDownloading,
+  t,
+  selectedDate,
+}) => {
+  setIsDownloading(true);
+  try {
+    const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+
+    if (!routingResults || routingResults.length === 0) {
+      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const sortedRoutingResults = [...routingResults].sort((a, b) => {
+      const timeA = new Date(a.createdTime || 0).getTime();
+      const timeB = new Date(b.createdTime || 0).getTime();
+      return timeA - timeB;
+    });
+
+    const masterZip = new JSZip();
+    let masterHasData = false;
+    const globalSeenSOByVehicle = new Map();
+    let routingIndex = 1;
+
+    for (const routing of sortedRoutingResults) {
+      const status = routing.status || routing.dispatchStatus || '';
+      if (String(status).toLowerCase() !== 'done') continue;
+      const routes = routing.result?.routing || [];
+      if (routes.length === 0) continue;
+
+      const cleanRoutingName = (routing.name || routing._id || 'Routing')
+        .replace(/[\\/:*?\[\]]/g, '')
+        .trim();
+      const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
+      routingIndex++;
+
+      const routingZip = new JSZip();
+      let routingHasData = false;
+      const seenFileNames = new Set();
+
+      for (const route of routes) {
+        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
+          .replace(/[\\/:*?\[\]]/g, '')
+          .trim();
+
+        if (!globalSeenSOByVehicle.has(cleanName)) {
+          globalSeenSOByVehicle.set(cleanName, new Set());
+        }
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+
+        const processedRows = [];
+        const seenSO = new Set();
+
+        (route.trips || []).forEach((trip) => {
+          const flowLower = (trip.flow || '').toLowerCase();
+          const visitLower = (trip.visitName || '').toLowerCase();
+          const isRedelivery =
+            flowLower.includes('re delivery') ||
+            flowLower.includes('redelivery') ||
+            visitLower.includes('re delivery') ||
+            visitLower.includes('redelivery') ||
+            trip.isReDelivery;
+
+          if (!trip.isHub && !isRedelivery) {
+            const parsedCust = parseCustomerString(trip.visitName);
+            const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+
+            const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
+            if (!rawInvoice) return;
+
+            const rawSOs = rawInvoice
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            rawSOs.forEach((rawSo) => {
+              const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
+              const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
+
+              let standardizedSo = cleanSo;
+              if (match) {
+                standardizedSo = `${match[1].toUpperCase()}${match[2]}-${match[3].padStart(6, '0')}`;
+              }
+
+              if (!vehicleSeenSOs.has(standardizedSo)) {
+                vehicleSeenSOs.add(standardizedSo);
+
+                if (!seenSO.has(standardizedSo)) {
+                  seenSO.add(standardizedSo);
+                  processedRows.push({
+                    so: standardizedSo,
+                    isInvalidCustomer: isCustomerInvalid,
+                  });
+                }
+              }
+            });
+          }
+        });
+
+        if (processedRows.length === 0) continue;
+
+        routingHasData = true;
+        let nameFile = `${cleanName} - ${dateForFilename}.xlsx`;
+        let counter = 1;
+        while (seenFileNames.has(nameFile)) {
+          nameFile = `${cleanName}_${counter++} - ${dateForFilename}.xlsx`;
+        }
+        seenFileNames.add(nameFile);
+
+        const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
+        processedRows.sort((a, b) => {
+          const validA = isValidSO(a.so) && !a.isInvalidCustomer;
+          const validB = isValidSO(b.so) && !b.isInvalidCustomer;
+          if (!validA && validB) return -1;
+          if (validA && !validB) return 1;
+          return a.so.localeCompare(b.so);
+        });
+
+        const wsData = [
+          ['Order Nbr.', 'Order Type'],
+          ...processedRows.map((row) => {
+            const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+            return valid ? [row.so, row.so.substring(0, 2).toUpperCase()] : [row.so, '-'];
+          }),
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ['A1', 'B1'].forEach((cell) => {
+          if (ws[cell]) {
+            ws[cell].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '4F46E5' } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' },
+              },
+            };
+          }
+        });
+
+        processedRows.forEach((row, idx) => {
+          const rowIndex = idx + 2;
+          const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+          const baseStyle = {
+            border: {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' },
+              left: { style: 'thin' },
+              right: { style: 'thin' },
+            },
+            alignment: { vertical: 'center', horizontal: 'left' },
+          };
+
+          if (!ws[`A${rowIndex}`]) ws[`A${rowIndex}`] = { v: row.so };
+          if (!ws[`B${rowIndex}`]) ws[`B${rowIndex}`] = { v: '-' };
+
+          if (!valid) {
+            const errStyle = {
+              ...baseStyle,
+              fill: { fgColor: { rgb: 'FFC7CE' } },
+              font: { color: { rgb: '9C0006' }, bold: true },
+            };
+            ws[`A${rowIndex}`].s = errStyle;
+            ws[`B${rowIndex}`].s = {
+              ...errStyle,
+              alignment: { vertical: 'center', horizontal: 'center' },
+            };
+            ws[`A${rowIndex}`].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
+          } else {
+            ws[`A${rowIndex}`].s = baseStyle;
+            ws[`B${rowIndex}`].s = {
+              ...baseStyle,
+              alignment: { vertical: 'center', horizontal: 'center' },
+            };
+          }
+        });
+
+        ws['!cols'] = [0, 1].map((colIndex) => {
+          let maxLen = 0;
+          for (let r = 0; r < wsData.length; r++) {
+            const cellValue = wsData[r][colIndex];
+            if (cellValue !== null && cellValue !== undefined) {
+              maxLen = Math.max(maxLen, cellValue.toString().length);
+            }
+          }
+          return { wch: Math.min(Math.max(maxLen + 3, 14), 50) };
+        });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        routingZip.file(nameFile, excelBuffer);
+      }
+
+      if (routingHasData) {
+        masterHasData = true;
+        const routingZipBlob = await routingZip.generateAsync({ type: 'blob' });
+        masterZip.file(`${zipFolderName}.zip`, routingZipBlob);
+      }
+    }
+
+    if (!masterHasData) {
+      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const masterContent = await masterZip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(masterContent);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toastSuccess(t('common.toast.success'));
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }));
+  } finally {
+    setIsDownloading(false);
+  }
+};
 export const handleDeliveryFormDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,

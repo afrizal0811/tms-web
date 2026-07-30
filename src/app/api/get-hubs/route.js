@@ -16,6 +16,7 @@ export async function GET() {
         name: hub.name.replace('Hub ', ''),
         acronym: hub.acronym,
         hasPendingGR: hub.hasPendingGR || false,
+        hasPartialRouting: hub.hasPartialRouting || false,
         lat: hub.lat,
         lng: hub.lng,
         updatedAt: hub.updatedAt,
@@ -104,7 +105,7 @@ export async function POST() {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, acronym, hasPendingGR } = body;
+    const { id, acronym, hasPendingGR, hasPartialRouting } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
@@ -116,6 +117,9 @@ export async function PATCH(req) {
     }
     if (hasPendingGR !== undefined && hasPendingGR !== null) {
       updateData.hasPendingGR = hasPendingGR === true || hasPendingGR === 'true';
+    }
+    if (hasPartialRouting !== undefined && hasPartialRouting !== null) {
+      updateData.hasPartialRouting = hasPartialRouting === true || hasPartialRouting === 'true';
     }
 
     const updatedHub = await prisma.hub.update({

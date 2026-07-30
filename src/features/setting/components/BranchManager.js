@@ -27,9 +27,15 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           ? Boolean(editValues.hasPendingGR)
           : Boolean(currentHub.hasPendingGR);
 
+      const safePartialRouting =
+        editValues.hasPartialRouting !== undefined
+          ? Boolean(editValues.hasPartialRouting)
+          : Boolean(currentHub.hasPartialRouting);
+
       await patchHubs(id, {
         acronym: safeAcronym,
         hasPendingGR: safePendingGR,
+        hasPartialRouting: safePartialRouting,
       });
 
       toastSuccess(translate('common.toast.success'));
@@ -98,6 +104,34 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         </div>
       ),
     },
+    {
+      header: 'Partial Routing',
+      field: 'hasPartialRouting',
+      headerClassName: 'w-24 md:w-28 text-center',
+      cellClassName: 'text-center',
+      render: (item) => (
+        <div
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${item.hasPartialRouting ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}
+        >
+          {item.hasPartialRouting
+            ? translate('common.button.btn_yes')
+            : translate('common.button.btn_no')}
+        </div>
+      ),
+      renderEdit: (value, onChange) => (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => onChange(!value)}
+            className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${value ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-700'}`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+          </button>
+        </div>
+      ),
+    },
   ];
   const title = translate('setting.tab.general.branch_title');
   return (
@@ -106,7 +140,11 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={async () => {
-          await handleSaveSettings(deleteConfig.id, { acronym: '', hasPendingGR: false });
+          await handleSaveSettings(deleteConfig.id, {
+            acronym: '',
+            hasPendingGR: false,
+            hasPartialRouting: false,
+          });
           setDeleteConfig({ isOpen: false, id: null });
         }}
         title={translate('common.modal.confirm_title', { text: title })}

@@ -16,6 +16,7 @@ model Hub {
   name         String
   acronym      String?
   hasPendingGR Boolean  @default(false)
+  hasPartialRouting Boolean  @default(false)
   lat          Float?   // Kolom latitude
   lng          Float?   // Kolom longitude
   updatedAt    DateTime @updatedAt
