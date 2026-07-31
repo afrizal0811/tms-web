@@ -30,8 +30,9 @@ import TableData from './components/TableData';
 import {
   getDriverName,
   handleDeliveryFormDownload,
-  handleDeliveryListDownload,
+  handleFullDeliveryListDownload,
   handleFullRouteTransDownload,
+  handlePartialDeliveryListDownload,
   handlePartialRouteTransDownload,
 } from './help';
 
@@ -54,6 +55,7 @@ export default function DeliveryPage() {
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [hubsData, setHubsData] = useState([]);
   const [hasPartialRouting, setHasPartialRouting] = useState(false);
+  const [downloadType, setDownloadType] = useState(null);
 
   const downloadDropdownRef = useRef(null);
 
@@ -135,7 +137,7 @@ export default function DeliveryPage() {
       isDetailView,
     };
 
-    if (type === 'routeTransaction') {
+    if (type === 'routeTransaction' || type === 'deliveryList') {
       const { storedLocation } = getLocalStorage();
       const activeHub = hubsData.find(
         (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
@@ -143,18 +145,20 @@ export default function DeliveryPage() {
 
       if (activeHub?.hasPartialRouting) {
         setHasPartialRouting(true);
+        setDownloadType(type);
         setIsRoutingModalOpen(true);
       } else {
-        handleFullRouteTransDownload(baseProps);
+        if (type === 'routeTransaction') {
+          handleFullRouteTransDownload(baseProps);
+        } else if (type === 'deliveryList') {
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+          handleFullDeliveryListDownload({ ...baseProps, fileNamePrefix: prefix });
+        }
       }
     }
     if (type === 'deliveryForm') handleDeliveryFormDownload(baseProps);
-    if (type === 'deliveryList') {
-      let prefix = '';
-      if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
-      if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
-      handleDeliveryListDownload({ ...baseProps, fileNamePrefix: prefix });
-    }
   };
 
   useEffect(() => {
@@ -658,22 +662,53 @@ export default function DeliveryPage() {
         isOpen={isRoutingModalOpen}
         onClose={() => setIsRoutingModalOpen(false)}
         onPartial={() => {
-          handlePartialRouteTransDownload({
-            routingResults,
-            filteredVehicleRoutes,
-            setIsDownloading,
-            t,
-            selectedDate,
-          });
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+
+          if (downloadType === 'routeTransaction') {
+            handlePartialRouteTransDownload({
+              routingResults,
+              setIsDownloading,
+              t,
+              selectedDate,
+            });
+          } else if (downloadType === 'deliveryList') {
+            handlePartialDeliveryListDownload({
+              routingResults,
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              driverData,
+              fileNamePrefix: prefix,
+              isDetailView,
+              selectedDate,
+            });
+          }
           setIsRoutingModalOpen(false);
         }}
         onFull={() => {
-          handleFullRouteTransDownload({
-            filteredVehicleRoutes,
-            setIsDownloading,
-            t,
-            selectedDate,
-          });
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+
+          if (downloadType === 'routeTransaction') {
+            handleFullRouteTransDownload({
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              selectedDate,
+            });
+          } else if (downloadType === 'deliveryList') {
+            handleFullDeliveryListDownload({
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              driverData,
+              fileNamePrefix: prefix,
+              isDetailView,
+            });
+          }
           setIsRoutingModalOpen(false);
         }}
         translate={t}

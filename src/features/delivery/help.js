@@ -38,6 +38,16 @@ const triggerDownload = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
+const getUniqueFileName = (prefix, suffix, ext, seen) => {
+  let name = `${prefix} - ${suffix}${ext}`;
+  let count = 1;
+  while (seen.has(name)) {
+    name = `${prefix}_${count++} - ${suffix}${ext}`;
+  }
+  seen.add(name);
+  return name;
+};
+
 const buildSoWorksheet = (processedRows, t) => {
   processedRows.sort((a, b) => {
     const validA = isValidSo(a.so) && !a.isInvalidCustomer;
@@ -128,6 +138,224 @@ const buildSoWorksheet = (processedRows, t) => {
   return ws;
 };
 
+const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailView, t) => {
+  const activeCols = [
+    { key: 'no', title: 'No.' },
+    { key: 'visit', title: t('delivery.visit') },
+    { key: 'custId', title: t('common.customer_id') },
+    { key: 'locId', title: t('common.location_id') },
+    { key: 'so', title: t('common.so_number') },
+    { key: 'openTime', title: t('common.open_time') },
+    { key: 'closeTime', title: t('common.close_time') },
+    { key: 'eta', title: t('delivery.est_arrival') },
+    { key: 'etd', title: t('delivery.est_depart') },
+  ];
+
+  const hasManualInRoute = tripsData.some((pt) => pt.trip.isManual);
+
+  const wsData = [
+    [t('common.vehicle'), cleanName],
+    [t('common.driver'), driverName],
+    [],
+    activeCols.map((col) => col.title),
+  ];
+
+  const stylingMeta = [
+    { row: 0, col: 0, style: { font: { bold: true } } },
+    { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } },
+    { row: 1, col: 0, style: { font: { bold: true } } },
+  ];
+
+  activeCols.forEach((_, i) => {
+    stylingMeta.push({
+      row: 3,
+      col: i,
+      style: {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '4F46E5' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+      },
+    });
+  });
+
+  let currentRowIndex = 4;
+
+  tripsData.forEach(({ trip, isFirstHub, isLastHub }) => {
+    const isHub = trip.isHub;
+    const parsedCust = parseCustomerString(trip.visitName);
+    const isBadCust = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+
+    let baseOutletName = isHub
+      ? 'HUB'
+      : trip.flow === 'Pickup' && trip.warehouseName
+        ? trip.warehouseName
+        : parsedCust?.name || trip.visitName;
+
+    if (trip.isReDelivery && !isHub) baseOutletName = `[REDELIVERY] ${baseOutletName}`;
+
+    const custId = isHub ? '' : parsedCust?.id || '-';
+    const locId = isHub ? '' : parsedCust?.location || '-';
+    const mapping = trip.soWarehouseMapping || [];
+
+    const pushRow = (
+      displayNo,
+      displayCustId,
+      displayLocId,
+      displaySo,
+      whInfo = null,
+      isSplit = false,
+      isUnsyncOverride = null,
+      partnerOverride = null,
+      isInvalidSo = false
+    ) => {
+      const openVal = isHub ? '' : trip.openTime || '-';
+      const closeVal = isHub ? '' : trip.closeTime || '-';
+      const etaVal = isFirstHub ? '' : trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
+      const etdVal = isLastHub ? '' : trip.etd ? formatDateUniversal(trip.etd, 'HH:mm') : '-';
+
+      const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
+      const rowPartner = partnerOverride !== null ? partnerOverride : trip.partnerVehicle;
+
+      let outletWithWh =
+        isDetailView && whInfo ? `${baseOutletName}\n↳ Pickup: ${whInfo}` : baseOutletName;
+
+      if (isRowUnsync && rowPartner) outletWithWh += `\n[Partner: ${rowPartner}]`;
+
+      wsData.push(
+        activeCols.map(
+          (col) =>
+            ({
+              no: displayNo,
+              visit: outletWithWh,
+              custId: displayCustId,
+              locId: displayLocId,
+              so: displaySo,
+              openTime: openVal,
+              closeTime: closeVal,
+              eta: etaVal,
+              etd: etdVal,
+            })[col.key]
+        )
+      );
+
+      const cellStyle = {
+        border: {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        },
+        alignment: { vertical: 'center', wrapText: true },
+        ...(trip.isManual && { fill: { fgColor: { rgb: 'E6EEFF' } } }),
+        ...(isHub && { font: { color: { rgb: 'DC2626' }, bold: true } }),
+      };
+
+      activeCols.forEach((col, c) => {
+        let colStyle = { ...cellStyle };
+        let comment = null;
+
+        if (col.key === 'no') {
+          colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
+          if (isSplit && !isHub) {
+            colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
+          }
+        }
+        if (col.key === 'visit' && trip.isReDelivery && !isHub) {
+          colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
+        }
+        if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
+          comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
+        }
+        if (col.key === 'so' && isInvalidSo && !isHub) {
+          colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' }, bold: true };
+        }
+
+        stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
+      });
+      currentRowIndex++;
+    };
+
+    if (!isHub && isDetailView && mapping.length > 0) {
+      mapping.forEach((item, idx) => {
+        const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
+        const displayNo = trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`;
+        const soPartner = trip.syncDetails?.[item.so] || null;
+        pushRow(
+          displayNo,
+          custId,
+          locId,
+          item.so,
+          trip.flow !== 'Pickup' ? item.wh : null,
+          mapping.length > 1,
+          !!soPartner,
+          soPartner,
+          checkInvalidSo(item.so, isBadCust)
+        );
+      });
+      return;
+    }
+
+    const invoiceToValidate =
+      trip.orderIdOverride || parsedCust?.invoiceNumber || trip.orderId || '';
+    const isInvalidSoTotal = isHub ? false : checkInvalidSoList(invoiceToValidate, isBadCust);
+
+    let displaySo = isHub
+      ? null
+      : mapping.length > 0
+        ? mapping
+            .map((item) =>
+              item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
+            )
+            .join(', ')
+        : invoiceToValidate || '-';
+
+    pushRow(
+      isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
+      custId,
+      locId,
+      displaySo,
+      null,
+      false,
+      null,
+      null,
+      isInvalidSoTotal
+    );
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  stylingMeta.forEach((meta) => {
+    const cellRef = XLSX.utils.encode_cell({ r: meta.row, c: meta.col });
+    if (!ws[cellRef]) ws[cellRef] = { v: '' };
+    ws[cellRef].s = { ...(ws[cellRef].s || {}), ...meta.style };
+    if (meta.comment) ws[cellRef].c = meta.comment;
+  });
+
+  ws['!cols'] = activeCols.map((_, colIndex) => {
+    let maxLen = 0;
+    for (let r = 3; r < wsData.length; r++) {
+      const val = wsData[r][colIndex];
+      if (val != null) {
+        const lines = val.toString().split('\n');
+        maxLen = Math.max(maxLen, ...lines.map((l) => l.length));
+      }
+    }
+    return { wch: Math.min(Math.max(maxLen + 2, 8), 60) };
+  });
+
+  let finalSheetName = cleanName;
+  let counter = 1;
+  while (wb.SheetNames.includes(finalSheetName)) {
+    finalSheetName = `${cleanName.substring(0, 25)}_${counter++}`;
+  }
+  XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
+};
+
 export const getDriverName = (route, driverData) => {
   if (!route) return '';
   const email = normalizeEmail(route.assignee);
@@ -151,14 +379,7 @@ export const handleFullRouteTransDownload = async ({
 
     for (const route of filteredVehicleRoutes) {
       const cleanName = (route.vehicleName || 'Vehicle').replace(/[\\/:*?\[\]]/g, '').trim();
-      let nameFile = `${cleanName} - ${dateForFilename}.xlsx`;
-      let counter = 1;
-
-      while (seenFileNames.has(nameFile)) {
-        nameFile = `${cleanName}_${counter++} - ${dateForFilename}.xlsx`;
-      }
-      seenFileNames.add(nameFile);
-
+      const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
       const processedRows = [];
       const seenSO = new Set();
 
@@ -175,10 +396,7 @@ export const handleFullRouteTransDownload = async ({
             const standardizedSo = standardizeSo(rawSo);
             if (!seenSO.has(standardizedSo)) {
               seenSO.add(standardizedSo);
-              processedRows.push({
-                so: standardizedSo,
-                isInvalidCustomer: isCustomerInvalid,
-              });
+              processedRows.push({ so: standardizedSo, isInvalidCustomer: isCustomerInvalid });
             }
           });
         }
@@ -289,10 +507,7 @@ export const handlePartialRouteTransDownload = async ({
 
                 if (!seenSO.has(standardizedSo)) {
                   seenSO.add(standardizedSo);
-                  processedRows.push({
-                    so: standardizedSo,
-                    isInvalidCustomer: isCustomerInvalid,
-                  });
+                  processedRows.push({ so: standardizedSo, isInvalidCustomer: isCustomerInvalid });
                 }
               }
             });
@@ -302,12 +517,7 @@ export const handlePartialRouteTransDownload = async ({
         if (processedRows.length === 0) continue;
 
         routingHasData = true;
-        let nameFile = `${cleanName} - ${dateForFilename}.xlsx`;
-        let counter = 1;
-        while (seenFileNames.has(nameFile)) {
-          nameFile = `${cleanName}_${counter++} - ${dateForFilename}.xlsx`;
-        }
-        seenFileNames.add(nameFile);
+        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
 
         const ws = buildSoWorksheet(processedRows, t);
         const wb = XLSX.utils.book_new();
@@ -390,12 +600,7 @@ export const handleDeliveryFormDownload = async ({
     const seenFileNames = new Set();
 
     generatedFiles.forEach((file) => {
-      let fileName = `${file.safeName} - ${dateForFilename}.pdf`;
-      let counter = 1;
-      while (seenFileNames.has(fileName)) {
-        fileName = `${file.safeName}_${counter++} - ${dateForFilename}.pdf`;
-      }
-      seenFileNames.add(fileName);
+      const fileName = getUniqueFileName(file.safeName, dateForFilename, '.pdf', seenFileNames);
       zip.file(fileName, file.blob);
     });
 
@@ -409,7 +614,7 @@ export const handleDeliveryFormDownload = async ({
   }
 };
 
-export const handleDeliveryListDownload = async ({
+export const handleFullDeliveryListDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
@@ -420,239 +625,199 @@ export const handleDeliveryListDownload = async ({
   setIsDownloading(true);
   try {
     const wb = XLSX.utils.book_new();
-    const activeCols = [
-      { key: 'no', title: 'No.' },
-      { key: 'visit', title: t('delivery.visit') },
-      { key: 'custId', title: t('common.customer_id') },
-      { key: 'locId', title: t('common.location_id') },
-      { key: 'so', title: t('common.so_number') },
-      { key: 'openTime', title: t('common.open_time') },
-      { key: 'closeTime', title: t('common.close_time') },
-      { key: 'eta', title: t('delivery.est_arrival') },
-      { key: 'etd', title: t('delivery.est_depart') },
-    ];
 
     filteredVehicleRoutes.forEach((route) => {
       const cleanName = (route.vehicleName || 'Vehicle')
         .replace(/[\\/:*?\[\]]/g, '')
         .substring(0, 30);
       const driverName = getDriverName(route, driverData);
-      const hasManualInRoute = route.trips?.some((t) => t.isManual);
 
-      const wsData = [
-        [t('common.vehicle'), route.vehicleName],
-        [t('common.driver'), driverName],
-        [],
-        activeCols.map((col) => col.title),
-      ];
+      const processedTrips = route.trips.map((trip, index) => ({
+        trip,
+        isFirstHub: index === 0 && trip.isHub,
+        isLastHub: index === route.trips.length - 1 && trip.isHub,
+      }));
 
-      const stylingMeta = [
-        { row: 0, col: 0, style: { font: { bold: true } } },
-        { row: 0, col: 1, style: { font: { bold: true, sz: 12 } } },
-        { row: 1, col: 0, style: { font: { bold: true } } },
-      ];
-
-      activeCols.forEach((_, i) => {
-        stylingMeta.push({
-          row: 3,
-          col: i,
-          style: {
-            font: { bold: true, color: { rgb: 'FFFFFF' } },
-            fill: { fgColor: { rgb: '4F46E5' } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' },
-            },
-          },
-        });
-      });
-
-      let currentRowIndex = 4;
-      route.trips.forEach((trip, index) => {
-        const isHub = trip.isHub;
-        const isFirstHub = index === 0 && isHub;
-        const isLastHub = index === route.trips.length - 1 && isHub;
-        const parsedCust = parseCustomerString(trip.visitName);
-        const isBadCust = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
-
-        let baseOutletName = isHub
-          ? 'HUB'
-          : trip.flow === 'Pickup' && trip.warehouseName
-            ? trip.warehouseName
-            : parsedCust?.name || trip.visitName;
-
-        if (trip.isReDelivery && !isHub) baseOutletName = `[REDELIVERY] ${baseOutletName}`;
-
-        const custId = isHub ? '' : parsedCust?.id || '-';
-        const locId = isHub ? '' : parsedCust?.location || '-';
-        const mapping = trip.soWarehouseMapping || [];
-
-        const pushRow = (
-          displayNo,
-          displayCustId,
-          displayLocId,
-          displaySo,
-          whInfo = null,
-          isSplit = false,
-          isUnsyncOverride = null,
-          partnerOverride = null,
-          isInvalidSo = false
-        ) => {
-          const openVal = isHub ? '' : trip.openTime || '-';
-          const closeVal = isHub ? '' : trip.closeTime || '-';
-          const etaVal = isFirstHub ? '' : trip.eta ? formatDateUniversal(trip.eta, 'HH:mm') : '-';
-          const etdVal = isLastHub ? '' : trip.etd ? formatDateUniversal(trip.etd, 'HH:mm') : '-';
-
-          const isRowUnsync = isUnsyncOverride !== null ? isUnsyncOverride : trip.isUnsync;
-          const rowPartner = partnerOverride !== null ? partnerOverride : trip.partnerVehicle;
-
-          let outletWithWh =
-            isDetailView && whInfo ? `${baseOutletName}\n↳ Pickup: ${whInfo}` : baseOutletName;
-
-          if (isRowUnsync && rowPartner) outletWithWh += `\n[Partner: ${rowPartner}]`;
-
-          wsData.push(
-            activeCols.map(
-              (col) =>
-                ({
-                  no: displayNo,
-                  visit: outletWithWh,
-                  custId: displayCustId,
-                  locId: displayLocId,
-                  so: displaySo,
-                  openTime: openVal,
-                  closeTime: closeVal,
-                  eta: etaVal,
-                  etd: etdVal,
-                })[col.key]
-            )
-          );
-
-          const cellStyle = {
-            border: {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' },
-              left: { style: 'thin' },
-              right: { style: 'thin' },
-            },
-            alignment: { vertical: 'center', wrapText: true },
-            ...(trip.isManual && { fill: { fgColor: { rgb: 'E6EEFF' } } }),
-            ...(isHub && { font: { color: { rgb: 'DC2626' }, bold: true } }),
-          };
-
-          activeCols.forEach((col, c) => {
-            let colStyle = { ...cellStyle };
-            let comment = null;
-
-            if (col.key === 'no') {
-              colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
-              if (isSplit && !isHub) {
-                colStyle.font = { ...(colStyle.font || {}), color: { rgb: '16A34A' }, bold: true };
-              }
-            }
-            if (col.key === 'visit' && trip.isReDelivery && !isHub) {
-              colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' } };
-            }
-            if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
-              comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
-            }
-            if (col.key === 'so' && isInvalidSo && !isHub) {
-              colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' }, bold: true };
-            }
-
-            stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
-          });
-          currentRowIndex++;
-        };
-
-        if (!isHub && isDetailView && mapping.length > 0) {
-          mapping.forEach((item, idx) => {
-            const letter = mapping.length > 1 ? String.fromCharCode(65 + idx) : '';
-            const displayNo = trip.isManual ? '-' : `${trip.routePlannedOrder}${letter}`;
-            const soPartner = trip.syncDetails?.[item.so] || null;
-            pushRow(
-              displayNo,
-              custId,
-              locId,
-              item.so,
-              trip.flow !== 'Pickup' ? item.wh : null,
-              mapping.length > 1,
-              !!soPartner,
-              soPartner,
-              checkInvalidSo(item.so, isBadCust)
-            );
-          });
-          return;
-        }
-
-        const isInvalidSoTotal = isHub
-          ? false
-          : checkInvalidSoList(parsedCust?.invoiceNumber || trip.orderId || '', isBadCust);
-
-        let displaySo = isHub
-          ? null
-          : mapping.length > 0
-            ? mapping
-                .map((item) =>
-                  item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
-                )
-                .join(', ')
-            : parsedCust.invoiceNumber || trip.orderId || '-';
-
-        pushRow(
-          isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
-          custId,
-          locId,
-          displaySo,
-          null,
-          false,
-          null,
-          null,
-          isInvalidSoTotal
-        );
-      });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      stylingMeta.forEach((meta) => {
-        const cellRef = XLSX.utils.encode_cell({ r: meta.row, c: meta.col });
-        if (!ws[cellRef]) ws[cellRef] = { v: '' };
-        ws[cellRef].s = { ...(ws[cellRef].s || {}), ...meta.style };
-        if (meta.comment) ws[cellRef].c = meta.comment;
-      });
-
-      ws['!cols'] = activeCols.map((_, colIndex) => {
-        let maxLen = 0;
-        for (let r = 3; r < wsData.length; r++) {
-          const val = wsData[r][colIndex];
-          if (val != null) {
-            const lines = val.toString().split('\n');
-            maxLen = Math.max(maxLen, ...lines.map((l) => l.length));
-          }
-        }
-        return { wch: Math.min(Math.max(maxLen + 2, 8), 60) };
-      });
-
-      let finalSheetName = cleanName;
-      let counter = 1;
-      while (wb.SheetNames.includes(finalSheetName)) {
-        finalSheetName = `${cleanName.substring(0, 25)}_${counter++}`;
-      }
-      XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
+      appendDeliveryListSheet(wb, cleanName, driverName, processedTrips, isDetailView, t);
     });
 
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
     const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
     const fileName = fileNamePrefix
-      ? `${t('delivery.title')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`
-      : `${t('delivery.title')} - ${date} - ${locationName}.xlsx`;
+      ? `${t('delivery.delivery_list')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`
+      : `${t('delivery.delivery_list')} - ${date} - ${locationName}.xlsx`;
 
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
     toastError(t('common.toast.error', { err: e.message }));
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
+export const handlePartialDeliveryListDownload = async ({
+  routingResults,
+  filteredVehicleRoutes,
+  setIsDownloading,
+  t,
+  driverData,
+  fileNamePrefix,
+  isDetailView,
+  selectedDate,
+}) => {
+  setIsDownloading(true);
+  try {
+    const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+
+    if (!routingResults || routingResults.length === 0) {
+      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const sortedRoutingResults = [...routingResults].sort((a, b) => {
+      const timeA = new Date(a.createdTime || 0).getTime();
+      const timeB = new Date(b.createdTime || 0).getTime();
+      return timeA - timeB;
+    });
+
+    const enrichedTripsMap = new Map();
+    (filteredVehicleRoutes || []).forEach((r) => {
+      (r.trips || []).forEach((trip) => {
+        if (!trip.isHub) {
+          const key = trip.visitId || trip.orderId;
+          if (key) enrichedTripsMap.set(key, trip);
+        }
+      });
+    });
+
+    const masterZip = new JSZip();
+    let masterHasData = false;
+    const globalSeenSOByVehicle = new Map();
+    let routingIndex = 1;
+
+    for (const routing of sortedRoutingResults) {
+      const status = routing.status || routing.dispatchStatus || '';
+      if (String(status).toLowerCase() !== 'done') continue;
+      const routes = routing.result?.routing || [];
+      if (routes.length === 0) continue;
+
+      const cleanRoutingName = (routing.name || routing._id || 'Routing')
+        .replace(/[\\/:*?\[\]]/g, '')
+        .trim();
+      const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
+      routingIndex++;
+
+      const routingZip = new JSZip();
+      let routingHasData = false;
+      const seenFileNames = new Set();
+
+      for (const route of routes) {
+        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
+          .replace(/[\\/:*?\[\]]/g, '')
+          .trim();
+
+        if (!globalSeenSOByVehicle.has(cleanName)) {
+          globalSeenSOByVehicle.set(cleanName, new Set());
+        }
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+        const processedTripsToRender = [];
+
+        (route.trips || []).forEach((rawTrip, index) => {
+          const isHub = rawTrip.isHub;
+          let trip = rawTrip;
+          let isFirstHub = index === 0 && isHub;
+          let isLastHub = index === route.trips.length - 1 && isHub;
+
+          if (!isHub) {
+            const key = rawTrip.visitId || rawTrip.orderId;
+            if (enrichedTripsMap.has(key)) {
+              trip = enrichedTripsMap.get(key);
+            }
+
+            if (!isTripRedelivery(trip)) {
+              const parsedCust = parseCustomerString(trip.visitName);
+              const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
+              if (!rawInvoice) return;
+
+              const rawSOs = rawInvoice
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+              const newSOs = [];
+              let hasNewSO = false;
+
+              rawSOs.forEach((rawSo) => {
+                const stdSo = standardizeSo(rawSo);
+                if (!vehicleSeenSOs.has(stdSo)) {
+                  vehicleSeenSOs.add(stdSo);
+                  newSOs.push(rawSo);
+                  hasNewSO = true;
+                }
+              });
+
+              if (!hasNewSO) return;
+
+              if (trip.soWarehouseMapping) {
+                trip = {
+                  ...trip,
+                  orderId: newSOs.join(', '),
+                  orderIdOverride: newSOs.join(', '),
+                  soWarehouseMapping: trip.soWarehouseMapping.filter((m) =>
+                    newSOs.some((n) => standardizeSo(n) === standardizeSo(m.so) || n === m.so)
+                  ),
+                };
+              } else {
+                trip = { ...trip, orderId: newSOs.join(', '), orderIdOverride: newSOs.join(', ') };
+              }
+            }
+          }
+          processedTripsToRender.push({ trip, isFirstHub, isLastHub });
+        });
+
+        if (
+          processedTripsToRender.length <= 2 &&
+          processedTripsToRender.every((pt) => pt.trip.isHub)
+        ) {
+          continue;
+        }
+
+        routingHasData = true;
+        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
+        const driverName = getDriverName(route, driverData);
+        const wb = XLSX.utils.book_new();
+
+        appendDeliveryListSheet(wb, cleanName, driverName, processedTripsToRender, isDetailView, t);
+
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        routingZip.file(nameFile, excelBuffer);
+      }
+
+      if (routingHasData) {
+        masterHasData = true;
+        const routingZipBlob = await routingZip.generateAsync({ type: 'blob' });
+        masterZip.file(`${zipFolderName}.zip`, routingZipBlob);
+      }
+    }
+
+    if (!masterHasData) {
+      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const masterContent = await masterZip.generateAsync({ type: 'blob' });
+    const finalFileName = fileNamePrefix
+      ? `${t('delivery.delivery_list')} (${fileNamePrefix}) - ${dateForFilename} - ${locationName}.zip`
+      : `${t('delivery.delivery_list')} - ${dateForFilename} - ${locationName}.zip`;
+
+    triggerDownload(masterContent, finalFileName);
+    toastSuccess(t('common.toast.success'));
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }));
   } finally {
     setIsDownloading(false);
   }
