@@ -1,10 +1,11 @@
 'use client';
 
+import BaseModal from '@/components/BaseModal';
+import Button from '@/components/Button';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 const CURRENT_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 
@@ -14,21 +15,16 @@ export default function SystemUpdateModal() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // ponytail: [cascading render fix] -> wrap entire logic in timeout
     const timer = setTimeout(() => {
       setMounted(true);
       const { storedUser, appVersion } = getLocalStorage();
-      if (storedUser) {
-        if (appVersion !== CURRENT_APP_VERSION) {
-          setIsOpen(true);
-          document.body.style.overflow = 'hidden';
-        }
+      if (storedUser && appVersion !== CURRENT_APP_VERSION) {
+        setIsOpen(true);
       }
     }, 0);
 
-    return () => {
-      clearTimeout(timer);
-      document.body.style.overflow = 'auto';
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   const handleApplyUpdate = async () => {
@@ -37,12 +33,14 @@ export default function SystemUpdateModal() {
     sessionStorage.clear();
 
     if (storedSession) {
-      const newData = {
-        user: storedSession.user || null,
-        superadminRoleId: storedSession.superadminRoleId || null,
-        colPrefs: storedSession.colPrefs || null,
-      };
-      setLocalStorage('data', JSON.stringify(newData));
+      setLocalStorage(
+        'data',
+        JSON.stringify({
+          user: storedSession.user || null,
+          superadminRoleId: storedSession.superadminRoleId || null,
+          colPrefs: storedSession.colPrefs || null,
+        })
+      );
     }
 
     if (storedLanguage) {
@@ -63,9 +61,17 @@ export default function SystemUpdateModal() {
 
   if (!mounted || !isOpen) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md p-6 mx-4 bg-white rounded-xl shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-300">
+  const footer = <Button text={t('update.btn_update')} onClick={handleApplyUpdate} />;
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      noClose={true}
+      title={t('update.title')}
+      maxWidth="max-w-md"
+      footer={footer}
+    >
+      <div className="flex flex-col items-center text-center">
         <div className="flex items-center justify-center w-16 h-16 bg-sky-100 rounded-full mb-4">
           <svg
             className="w-8 h-8 text-sky-600 animate-[spin_3s_linear_infinite_reverse]"
@@ -82,19 +88,8 @@ export default function SystemUpdateModal() {
             />
           </svg>
         </div>
-
-        <h3 className="text-xl font-bold text-slate-800 mb-2">{t('update.title')}</h3>
-
-        <p className="text-sm text-slate-600 mb-6 leading-relaxed">{t('update.text')}</p>
-
-        <button
-          onClick={handleApplyUpdate}
-          className="w-full px-4 py-3 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
-        >
-          {t('update.btn_update')}
-        </button>
+        <p className="text-sm text-slate-600 mb-2 leading-relaxed">{t('update.text')}</p>
       </div>
-    </div>,
-    document.body
+    </BaseModal>
   );
 }

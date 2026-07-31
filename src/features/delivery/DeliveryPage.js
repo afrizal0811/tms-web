@@ -7,28 +7,33 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import RoutingModal from '@/components/modal/RoutingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
   calculateStartFinishDates,
+  checkInvalidSoList,
   formatDateUniversal,
   formatUTC7,
   getBasePlate,
   isEmpty,
   normalizeEmail,
+  parseCustomerString,
   toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
+import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
-import { toastError } from '../../lib/toast';
+import { toastError, toastWarning } from '../../lib/toast';
 import TableData from './components/TableData';
 import {
   getDriverName,
   handleDeliveryFormDownload,
-  handleDeliveryListDownload,
-  handleRouteTransactionDownload,
+  handleFullDeliveryListDownload,
+  handleFullRouteTransDownload,
+  handlePartialDeliveryListDownload,
+  handlePartialRouteTransDownload,
 } from './help';
 
 export default function DeliveryPage() {
@@ -47,6 +52,10 @@ export default function DeliveryPage() {
   const [isDetailView, setIsDetailView] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
   const [routingResults, setRoutingResults] = useState([]);
+  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
+  const [hubsData, setHubsData] = useState([]);
+  const [hasPartialRouting, setHasPartialRouting] = useState(false);
+  const [downloadType, setDownloadType] = useState(null);
 
   const downloadDropdownRef = useRef(null);
 
@@ -61,6 +70,16 @@ export default function DeliveryPage() {
   }, []);
 
   useEffect(() => {
+    const fetchHubsData = async () => {
+      try {
+        const res = await getHubs();
+        setHubsData(res);
+      } catch (error) {}
+    };
+    fetchHubsData();
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(e.target)) {
         setIsDownloadDropdownOpen(false);
@@ -69,6 +88,29 @@ export default function DeliveryPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (allRoutes.length === 0) return;
+    const badPlates = new Set();
+
+    allRoutes.forEach((r) => {
+      r.trips.forEach((t) => {
+        if (t.isHub || !t.orderId || t.isReDelivery) return;
+        const parsed = parseCustomerString(t.visitName);
+        const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
+        const bad = checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust);
+
+        if (bad) badPlates.add(r.vehicleName || 'Vehicle');
+      });
+    });
+
+    if (badPlates.size > 0) {
+      const platesStr = Array.from(badPlates)
+        .map((p) => `${p}`)
+        .join('\n');
+      toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
+    }
+  }, [allRoutes, t]);
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);
@@ -95,14 +137,28 @@ export default function DeliveryPage() {
       isDetailView,
     };
 
-    if (type === 'routeTransaction') handleRouteTransactionDownload(baseProps);
-    if (type === 'deliveryForm') handleDeliveryFormDownload(baseProps);
-    if (type === 'deliveryList') {
-      let prefix = '';
-      if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
-      if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
-      handleDeliveryListDownload({ ...baseProps, fileNamePrefix: prefix });
+    if (type === 'routeTransaction' || type === 'deliveryList') {
+      const { storedLocation } = getLocalStorage();
+      const activeHub = hubsData.find(
+        (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
+      );
+
+      if (activeHub?.hasPartialRouting) {
+        setHasPartialRouting(true);
+        setDownloadType(type);
+        setIsRoutingModalOpen(true);
+      } else {
+        if (type === 'routeTransaction') {
+          handleFullRouteTransDownload(baseProps);
+        } else if (type === 'deliveryList') {
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+          handleFullDeliveryListDownload({ ...baseProps, fileNamePrefix: prefix });
+        }
+      }
     }
+    if (type === 'deliveryForm') handleDeliveryFormDownload(baseProps);
   };
 
   useEffect(() => {
@@ -156,6 +212,7 @@ export default function DeliveryPage() {
             hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,
+            hasPartialRouting: hasPartialRouting,
           }),
           getLocationHistories({
             timeFrom: historyFrom,
@@ -195,15 +252,29 @@ export default function DeliveryPage() {
 
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
           const email = normalizeEmail(task?.assignee[0]);
-          const plat = mapObj.get(email) || t('common.others');
-          if (!groups[plat])
-            groups[plat] = {
+          const rawTaskPlat =
+            task.assignedVehicle?.name ||
+            task.assignedVehicle?.plat ||
+            (typeof task.assignedVehicle === 'string' ? task.assignedVehicle : null) ||
+            task.vehicle?.name ||
+            task.vehicle?.plat ||
+            task.vehicleName ||
+            task.vehicleId ||
+            task.plat ||
+            task.licensePlate ||
+            null;
+          const plat = getBasePlate(rawTaskPlat) || mapObj.get(email) || t('common.others');
+          const groupKey = `${email}_${plat}`;
+
+          if (!groups[groupKey])
+            groups[groupKey] = {
+              vehicleId: groupKey,
               plat,
               email,
-              assigneeName: task.user?.name || task.courierName || email,
+              assigneeName: task.user?.name || task.courierName || dataObj[email]?.name || email,
               tasks: [],
             };
-          groups[plat].tasks.push(task);
+          groups[groupKey].tasks.push(task);
           return groups;
         }, {});
 
@@ -213,18 +284,21 @@ export default function DeliveryPage() {
           .flatMap((i) => i.result.routing)
           .forEach((route) => {
             const plat = getBasePlate(route.vehicleName);
-            if (plat) {
-              const hubs = (route.trips || []).filter((t) => t.isHub);
-              if (hubs.length > 0)
-                resultHubsByPlat.set(plat, {
-                  startHub: hubs.find((t) => t.order === 0),
-                  endHub: hubs[hubs.length - 1],
-                });
+            const email = normalizeEmail(route.assignee);
+            const hubs = (route.trips || []).filter((t) => t.isHub);
+            if (hubs.length > 0) {
+              const hubObj = {
+                startHub: hubs.find((t) => t.order === 0),
+                endHub: hubs[hubs.length - 1],
+              };
+              if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
+              if (plat) resultHubsByPlat.set(plat, hubObj);
+              if (email) resultHubsByPlat.set(email, hubObj);
             }
           });
 
         const finalRoutes = Object.values(tasksByPlat).map(
-          ({ plat, tasks, email, assigneeName }) => {
+          ({ vehicleId, plat, tasks, email, assigneeName }) => {
             tasks.sort(
               (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
             );
@@ -254,7 +328,10 @@ export default function DeliveryPage() {
               };
             });
 
-            const hubData = resultHubsByPlat.get(plat);
+            const hubData =
+              resultHubsByPlat.get(`${email}_${plat}`) ||
+              resultHubsByPlat.get(plat) ||
+              resultHubsByPlat.get(email);
             const hubTime =
               hubData?.endHub?.eta && hubData?.startHub?.etd
                 ? {
@@ -271,7 +348,7 @@ export default function DeliveryPage() {
               finalTrips.push({ ...hubData.endHub, ...hubTime, isHub: true, visitName: 'HUB' });
 
             return {
-              vehicleId: plat,
+              vehicleId,
               vehicleName: plat,
               assignee: email,
               assigneeName,
@@ -298,7 +375,7 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-  }, [selectedDate, t]);
+  }, [selectedDate, t, hasPartialRouting]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];
@@ -580,6 +657,62 @@ export default function DeliveryPage() {
           </div>
         </div>
       </BodyCard>
+
+      <RoutingModal
+        isOpen={isRoutingModalOpen}
+        onClose={() => setIsRoutingModalOpen(false)}
+        onPartial={() => {
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+
+          if (downloadType === 'routeTransaction') {
+            handlePartialRouteTransDownload({
+              routingResults,
+              setIsDownloading,
+              t,
+              selectedDate,
+            });
+          } else if (downloadType === 'deliveryList') {
+            handlePartialDeliveryListDownload({
+              routingResults,
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              driverData,
+              fileNamePrefix: prefix,
+              isDetailView,
+              selectedDate,
+            });
+          }
+          setIsRoutingModalOpen(false);
+        }}
+        onFull={() => {
+          let prefix = '';
+          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
+          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+
+          if (downloadType === 'routeTransaction') {
+            handleFullRouteTransDownload({
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              selectedDate,
+            });
+          } else if (downloadType === 'deliveryList') {
+            handleFullDeliveryListDownload({
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              driverData,
+              fileNamePrefix: prefix,
+              isDetailView,
+            });
+          }
+          setIsRoutingModalOpen(false);
+        }}
+        translate={t}
+      />
     </div>
   );
 }

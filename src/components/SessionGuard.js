@@ -1,9 +1,9 @@
-// File: src/components/SessionGuard.js
 'use client';
 
 import SelectionLayout from '@/components/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
+import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { usePathname, useRouter } from 'next/navigation';
@@ -16,13 +16,18 @@ export default function SessionGuard({ children }) {
 
   const [isVerified, setIsVerified] = useState(false);
 
+  const isSecret = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
   const publicPaths = ['/', '/help'];
+  if (isSecret) publicPaths.push('/setting');
   const isPublicPage = publicPaths.includes(pathname);
 
+  const superadminPaths = ['/mitsui', '/report/counter', '/summary'];
+  const isSuperadminPage = superadminPaths.some((p) => pathname.startsWith(p));
+
+  const { isSuperadmin, isChecking } = useSuperadmin('/');
+
   useEffect(() => {
-    if (isPublicPage) {
-      return;
-    }
+    if (isPublicPage) return;
 
     try {
       const {
@@ -31,7 +36,6 @@ export default function SessionGuard({ children }) {
         storedLocationName: locationName,
       } = getLocalStorage();
 
-      // 3. Validasi
       if (!user || !location || !locationName) {
         toastError(t('home.toast.no_session'));
         router.push('/');
@@ -46,17 +50,17 @@ export default function SessionGuard({ children }) {
     }
   }, [pathname, router, t, isPublicPage]);
 
-  if (isPublicPage) {
-    return <>{children}</>;
-  }
+  if (isPublicPage) return <>{children}</>;
 
-  if (!isVerified) {
+  if (!isVerified || (isSuperadminPage && isChecking)) {
     return (
       <SelectionLayout>
         <Spinner />
       </SelectionLayout>
     );
   }
+
+  if (isSuperadminPage && !isSuperadmin) return null;
 
   return <>{children}</>;
 }

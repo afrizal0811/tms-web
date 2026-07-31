@@ -2,20 +2,25 @@
 
 import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
-// HAPUS IMPORT INI: import L from 'leaflet';
+import { getBasePlate, isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MapViewSection from '../components/MapViewSection';
 
+const getGroupKey = (item) => {
+  const driver = item?.driver || item?.assignee || 'N/A';
+  const plat =
+    getBasePlate(item?.plat || item?.vehicleName) || item?.plat || item?.vehicleName || '';
+  return `${driver}_${plat}`;
+};
+
 export default function RoutingMapModal({ isOpen, onClose, data }) {
   const { t } = useLanguage();
-  const [userSelectedDriver, setUserSelectedDriver] = useState('');
+  const [userSelectedGroup, setUserSelectedGroup] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [prevDriver, setPrevDriver] = useState(null);
+  const [prevGroup, setPrevGroup] = useState(null);
   const [mapRo, setMapRo] = useState(null);
   const [mapReal, setMapReal] = useState(null);
 
-  // --- Logic Sync Map ---
   useEffect(() => {
     if (!mapRo || !mapReal) return;
     let isSyncing = false;
@@ -39,40 +44,58 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     };
   }, [mapRo, mapReal]);
 
-  const drivers = useMemo(() => {
+  const groups = useMemo(() => {
     if (!data) return [];
-    const unique = new Set(data.map((d) => d.driver).filter(Boolean));
-    return Array.from(unique).sort();
+    const map = new Map();
+    data.forEach((d) => {
+      const gKey = d.groupKey || getGroupKey(d);
+      const driverName = d.driver && d.driver !== 'N/A' && d.driver !== 'Driver' ? d.driver : '';
+      const platName = getBasePlate(d.plat || d.vehicleName) || d.plat || d.vehicleName || '';
+
+      if (gKey && driverName && platName && !map.has(gKey)) {
+        map.set(gKey, {
+          value: gKey,
+          label: `${driverName} (${platName})`,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [data]);
 
-  const selectedDriver = useMemo(() => {
-    if (userSelectedDriver && drivers.includes(userSelectedDriver)) {
-      return userSelectedDriver;
+  const selectedGroup = useMemo(() => {
+    if (userSelectedGroup && groups.some((g) => g.value === userSelectedGroup)) {
+      return userSelectedGroup;
     }
-    return drivers.length > 0 ? drivers[0] : '';
-  }, [userSelectedDriver, drivers]);
+    return groups.length > 0 ? groups[0].value : '';
+  }, [userSelectedGroup, groups]);
 
-  if (selectedDriver !== prevDriver) {
-    setPrevDriver(selectedDriver);
-    const tasks = data ? data.filter((d) => d.driver === selectedDriver) : [];
+  if (selectedGroup !== prevGroup) {
+    setPrevGroup(selectedGroup);
+    const tasks = data ? data.filter((d) => (d.groupKey || getGroupKey(d)) === selectedGroup) : [];
     const hasHub = tasks.some((t) => t.type === 'HUB_START');
     setSelectedCustomer(hasHub ? 'HUB' : '');
   }
 
-  const driverTasks = useMemo(() => {
-    if (!selectedDriver || !data) return [];
-    return data.filter((d) => d.driver === selectedDriver);
-  }, [data, selectedDriver]);
+  const filteredTasks = useMemo(() => {
+    if (!selectedGroup || !data) return [];
+    return data
+      .filter((d) => (d.groupKey || getGroupKey(d)) === selectedGroup)
+      .map((t) => ({
+        ...t,
+        longlat: t.longlat || t.rawTask?.longlat || t.coordinate || t.location || '',
+      }));
+  }, [data, selectedGroup]);
 
   const nameFrequency = useMemo(() => {
     const counts = {};
-    driverTasks.forEach((t) => {
+    filteredTasks.forEach((t) => {
       if (t.customerName === 'HUB') return;
-      const { name } = parseCustomerString(t.customerName);
+      const rawStr = t.originalCustomerString || t.customerName;
+      const { name } = parseCustomerString(rawStr);
       if (name) counts[name] = (counts[name] || 0) + 1;
     });
     return counts;
-  }, [driverTasks]);
+  }, [filteredTasks]);
 
   const resolveDisplayName = useCallback(
     (originalCustomerString, flow) => {
@@ -85,14 +108,10 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     [nameFrequency]
   );
 
-  const handleDriverChange = (driverVal) => {
-    setUserSelectedDriver(driverVal);
-  };
-
   const customerOptions = useMemo(() => {
-    if (!driverTasks.length) return [];
+    if (!filteredTasks.length) return [];
 
-    const sortedTasks = [...driverTasks].sort(
+    const sortedTasks = [...filteredTasks].sort(
       (a, b) => (a.realSequence ?? 999999) - (b.realSequence ?? 999999)
     );
 
@@ -110,7 +129,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           options.push({ value: 'Pickup', label: 'PICKUP', isPending: false });
         }
       } else {
-        const displayName = resolveDisplayName(t.customerName, t.flow);
+        const rawStr = t.originalCustomerString || t.customerName;
+        const displayName = resolveDisplayName(rawStr, t.flow);
         if (!seen.has(displayName)) {
           seen.add(displayName);
           options.push({
@@ -122,18 +142,18 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       }
     });
 
-    const hasHub = driverTasks.some((t) => t.type === 'HUB_START');
+    const hasHub = filteredTasks.some((t) => t.type === 'HUB_START');
     return hasHub ? [{ value: 'HUB', label: 'HUB', isPending: false }, ...options] : options;
-  }, [driverTasks, resolveDisplayName]);
+  }, [filteredTasks, resolveDisplayName]);
 
-  // FIX: Ubah function jadi async untuk import Leaflet secara dinamis
   const handleFocusCustomer = async (val) => {
     setSelectedCustomer(val);
     if (!val) return;
-    const targetTask = driverTasks.find((t) => {
+    const targetTask = filteredTasks.find((t) => {
       if (val === 'HUB' && t.type === 'HUB_START') return true;
       if (val === 'Pickup' && t.flow === 'Pickup') return true;
-      return resolveDisplayName(t.customerName, t.flow) === val;
+      const rawStr = t.originalCustomerString || t.customerName;
+      return resolveDisplayName(rawStr, t.flow) === val;
     });
 
     if (targetTask) {
@@ -143,9 +163,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
         if (isMobile) {
-          // Import Leaflet disini HANYA jika dijalankan di browser (client-side)
           const L = (await import('leaflet')).default;
-
           const mapSize = mapRo.getSize();
           const targetPoint = mapRo.project([coords.lat, coords.lon], zoomLevel);
           const offsetY = mapSize.y * 0.25;
@@ -168,17 +186,20 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       handleFocusCustomer('Pickup');
       return;
     }
-    if (task && task.customerName)
-      handleFocusCustomer(resolveDisplayName(task.customerName, task.flow));
+    if (task) {
+      const rawStr = task.originalCustomerString || task.customerName;
+      handleFocusCustomer(resolveDisplayName(rawStr, task.flow));
+    }
   };
 
   const handleCloseInfo = () => setSelectedCustomer('');
   const handleCloseModal = () => {
-    setUserSelectedDriver('');
+    setUserSelectedGroup('');
     setSelectedCustomer('');
-    setPrevDriver(null);
+    setPrevGroup(null);
     onClose();
   };
+
   const headerTitle = (
     <div className="text-left">
       <h2 className="text-xl font-bold">{t('dashboard.map.title')}</h2>
@@ -190,18 +211,16 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     <div className="flex flex-col lg:flex-row items-end justify-between w-full">
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
         <div className="flex flex-col w-1/2 lg:w-64 gap-1">
-          <label className="text-[10px] font-bold tracking-wide">
-            {t('common.driver')}
-          </label>
+          <label className="text-[10px] font-bold tracking-wide">{t('common.driver')}</label>
           <select
-            value={selectedDriver}
-            onChange={(e) => handleDriverChange(e.target.value)}
+            value={selectedGroup}
+            onChange={(e) => setUserSelectedGroup(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 outline-none bg-gray-50 cursor-pointer"
           >
-            {drivers.map((driver) => (
-              <option key={driver} value={driver}>
-                {driver}
+            {groups.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
               </option>
             ))}
           </select>
@@ -215,7 +234,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
             value={selectedCustomer}
             onChange={(e) => handleFocusCustomer(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            disabled={!selectedDriver}
+            disabled={!selectedGroup}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none bg-gray-50 cursor-pointer disabled:opacity-50"
           >
             {customerOptions.map((opt, i) => (
@@ -244,13 +263,13 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
       contentClassName="h-[90vh]"
       bodyClassName="p-4 flex flex-col gap-4 overflow-hidden h-full"
     >
-      {selectedDriver ? (
+      {selectedGroup ? (
         <>
           <MapViewSection
             title={t('dashboard.map.plan')}
-            tasks={driverTasks}
+            tasks={filteredTasks}
             sequenceKey="roSequence"
-            colorClass="bg-[#0D9488]" // Teal
+            colorClass="bg-[#0D9488]"
             lineColor="#FF0000"
             setMap={setMapRo}
             onMarkerClick={onMarkerClick}
@@ -262,9 +281,9 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
 
           <MapViewSection
             title={t('dashboard.map.real')}
-            tasks={driverTasks}
+            tasks={filteredTasks}
             sequenceKey="realSequence"
-            colorClass="bg-[#16A34A]" // Green
+            colorClass="bg-[#16A34A]"
             lineColor="#FF0000"
             setMap={setMapReal}
             onMarkerClick={onMarkerClick}

@@ -1,7 +1,5 @@
 ├── app
 │   ├── api
-│   │   ├── get-batch-histories
-│   │   │   └── route.js
 │   │   ├── get-drivers
 │   │   │   ├── route.js
 │   │   │   └── status
@@ -11,6 +9,8 @@
 │   │   ├── get-location-histories
 │   │   │   └── route.js
 │   │   ├── get-result
+│   │   │   └── route.js
+│   │   ├── get-result-histories
 │   │   │   └── route.js
 │   │   ├── get-results-summary
 │   │   │   └── route.js
@@ -43,6 +43,9 @@
 │   ├── help
 │   │   └── page.js
 │   ├── layout.js
+│   ├── mitsui
+│   │   └── detail
+│   │       └── page.js
 │   ├── not-found.js
 │   ├── old.ico
 │   ├── page.js
@@ -52,8 +55,6 @@
 │   │   ├── counter
 │   │   │   └── page.js
 │   │   ├── daily
-│   │   │   └── page.js
-│   │   ├── detail
 │   │   │   └── page.js
 │   │   └── kpi
 │   │       └── page.js
@@ -91,7 +92,9 @@
 │   │   └── VehicleTagMappingModal.js
 │   ├── navbar
 │   │   ├── LocationSwitcher.js
+│   │   ├── MobileMenu.js
 │   │   ├── Navbar.js
+│   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
 │   ├── RoutingInfo.js
 │   ├── SearchBar.js
@@ -154,15 +157,17 @@
 │   │   │       └── task.js
 │   │   ├── data.js
 │   │   └── HelpPage.js
+│   ├── mitsui
+│   │   ├── helper
+│   │   │   └── constants.js
+│   │   └── TaskDetailReport.js
 │   ├── reports
 │   │   ├── BreadReport.js
 │   │   ├── DailyReport.js
 │   │   ├── helper
-│   │   │   ├── constants.js
 │   │   │   └── help.js
 │   │   ├── KpiReport.js
-│   │   ├── TaskCountReport.js
-│   │   └── TaskDetailReport.js
+│   │   └── TaskCountReport.js
 │   ├── setting
 │   │   ├── components
 │   │   │   ├── BranchManager.js
@@ -218,7 +223,6 @@
     ├── api
     │   ├── base.js
     │   ├── drivers.js
-    │   ├── fieldsApi.js
     │   ├── hubs.js
     │   ├── index.js
     │   ├── pendingDetails.js
@@ -236,55 +240,59 @@
     ├── driverData.js
     ├── hooks
     │   ├── useSummaryData.js
+    │   ├── useSuperadmin.js
     │   └── useVehicleTagCheck.js
     ├── localStorageHandler.js
     ├── prisma.js
     ├── reportGenerators
-    │   ├── bread
-    │   │   └── breadReport.js
     │   ├── helper
     │   │   ├── convertLocationHistories.js
     │   │   ├── index.js
     │   │   └── isTripInShift.js
-    │   ├── index.js
-    │   ├── kpi
-    │   │   ├── groups
-    │   │   │   ├── groupFive.js
-    │   │   │   ├── groupFour.js
-    │   │   │   ├── groupOne.js
-    │   │   │   ├── groupThree.js
-    │   │   │   ├── groupTwo.js
-    │   │   │   └── index.js
-    │   │   ├── kpiReport.js
-    │   │   └── sheets
-    │   │       ├── index.js
-    │   │       ├── sheetDataKPI.js
-    │   │       ├── sheetDataRouting.js
-    │   │       ├── sheetPendingSO.js
-    │   │       ├── sheetRouteReview.js
-    │   │       └── sheetStartFinish.js
+    │   ├── mitsui
+    │   │   ├── index.js
+    │   │   └── taskDetail
+    │   │       └── taskDetailReport.js
     │   ├── reports
-    │   │   ├── AutoReport.js
-    │   │   ├── builders.js
-    │   │   ├── help.js
-    │   │   ├── ManualReport.js
-    │   │   └── parsers.js
-    │   ├── summary
-    │   │   ├── sheets
-    │   │   │   ├── distanceSummarySheet.js
-    │   │   │   ├── index.js
-    │   │   │   ├── pendingReasonSheet.js
-    │   │   │   ├── reportStyles.js
-    │   │   │   ├── routingTimeSheet.js
-    │   │   │   ├── taskSummarySheet.js
-    │   │   │   ├── timeDriverSheet.js
-    │   │   │   ├── truckDetailSheet.js
-    │   │   │   └── truckUsageSheet.js
-    │   │   └── summaryReport.js
-    │   ├── taskCounter
-    │   │   └── taskCountReport.js
-    │   └── taskDetail
-    │       └── taskDetailReport.js
+    │   │   ├── bread
+    │   │   │   └── breadReport.js
+    │   │   ├── daily
+    │   │   │   ├── AutoReport.js
+    │   │   │   ├── builders.js
+    │   │   │   ├── help.js
+    │   │   │   ├── ManualReport.js
+    │   │   │   └── parsers.js
+    │   │   ├── index.js
+    │   │   ├── kpi
+    │   │   │   ├── groups
+    │   │   │   │   ├── groupFive.js
+    │   │   │   │   ├── groupFour.js
+    │   │   │   │   ├── groupOne.js
+    │   │   │   │   ├── groupThree.js
+    │   │   │   │   ├── groupTwo.js
+    │   │   │   │   └── index.js
+    │   │   │   ├── kpiReport.js
+    │   │   │   └── sheets
+    │   │   │       ├── index.js
+    │   │   │       ├── sheetDataKPI.js
+    │   │   │       ├── sheetDataRouting.js
+    │   │   │       ├── sheetPendingSO.js
+    │   │   │       ├── sheetRouteReview.js
+    │   │   │       └── sheetStartFinish.js
+    │   │   └── taskCounter
+    │   │       └── taskCountReport.js
+    │   └── summary
+    │       ├── sheets
+    │       │   ├── distanceSummarySheet.js
+    │       │   ├── index.js
+    │       │   ├── pendingReasonSheet.js
+    │       │   ├── reportStyles.js
+    │       │   ├── routingTimeSheet.js
+    │       │   ├── taskSummarySheet.js
+    │       │   ├── timeDriverSheet.js
+    │       │   ├── truckDetailSheet.js
+    │       │   └── truckUsageSheet.js
+    │       └── summaryReport.js
     ├── toast.js
     ├── unifiedRouting.js
     └── utils.js

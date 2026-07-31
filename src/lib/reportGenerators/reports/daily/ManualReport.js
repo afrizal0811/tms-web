@@ -2,6 +2,7 @@ import {
   calculateMinuteDifference,
   formatCoordinates,
   formatDateUniversal,
+  getBasePlate,
   getDistance,
   getStorageType,
   isEmpty,
@@ -10,21 +11,21 @@ import {
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import {
-  buildDistanceSummary,
-  buildMergedDetailSheet,
-  buildPendingSOSheet,
-  buildRoVsRealSheet,
-  buildStartFinishSheet,
-  buildTanggalRoutingSheet,
-  buildTruckUsageSheet,
-  buildUpdateLonglatSheet,
-} from './builders';
-import {
   buildDriverMaps,
   buildNormalizedMappings,
   FAILED_STATUSES,
   PENDING_SHEET_STATUSES_BASE,
 } from './help';
+import {
+  buildDistanceSummary,
+  buildPendingSOSheet,
+  buildRoVsRealSheet,
+  buildStartFinishSheet,
+  buildTanggalRoutingSheet,
+  buildTruckDetailSheet,
+  buildTruckUsageSheet,
+  buildUpdateLonglatSheet,
+} from './sheet';
 
 function parseToNum(val) {
   if (typeof val === 'number') return val;
@@ -106,13 +107,18 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
       const driverName =
         driverInfo?.name || (idxAssignee !== -1 && row[idxAssignee] ? row[idxAssignee] : rawPlate);
 
+      const basePlat = getBasePlate(cleanPlat) || cleanPlat || '';
+      const groupKey = `${driverName}_${basePlat}`;
+
       const weightPct = idxWeight !== -1 ? parseToNum(row[idxWeight]) : 0;
       const volumePct = idxVolume !== -1 ? parseToNum(row[idxVolume]) : 0;
       const totalDistM = idxDist !== -1 ? parseToNum(row[idxDist]) : 0;
       const spentTimeMins = idxTime !== -1 ? parseToNum(row[idxTime]) : 0;
 
-      if (!routingMap.has(driverName)) {
-        routingMap.set(driverName, {
+      if (!routingMap.has(groupKey)) {
+        routingMap.set(groupKey, {
+          driver: driverName,
+          plat: cleanPlat || '-',
           hasTrips: true,
           weightPercentage: weightPct,
           volumePercentage: volumePct,
@@ -122,7 +128,7 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
           etdHub: '-',
         });
       } else {
-        const ext = routingMap.get(driverName);
+        const ext = routingMap.get(groupKey);
         ext.weightPercentage = Math.max(ext.weightPercentage, weightPct);
         ext.volumePercentage = Math.max(ext.volumePercentage, volumePct);
         ext.totalDistance += totalDistM;
@@ -301,7 +307,11 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         idxTypeStorage !== -1 && row[idxTypeStorage] ? String(row[idxTypeStorage]) : '';
 
       if (driverName !== 'N/A') {
-        const stats = deliveryMap.get(driverName) || {
+        const basePlat = getBasePlate(driverInfo?.plat) || driverInfo?.plat || '';
+        const groupKey = `${driverName}_${basePlat}`;
+        const stats = deliveryMap.get(groupKey) || {
+          driver: driverName,
+          plat: driverInfo?.plat || '-',
           totalOutlet: 0,
           failedCount: 0,
           mismatchCustomers: [],
@@ -329,7 +339,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
             name: flow.toLowerCase() === 'pickup' ? pickupCustomerName : customerName,
           });
         }
-        deliveryMap.set(driverName, stats);
+        deliveryMap.set(groupKey, stats);
       }
 
       const page1DoneTime = idxPage1 !== -1 && row[idxPage1] ? String(row[idxPage1]) : null;
@@ -482,8 +492,8 @@ export async function generateManualReportWorkbook({
     await parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, selectedDateString);
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeData, t);
-  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
+  buildStartFinishSheet(wb, timeData, t, driverData);
+  buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);

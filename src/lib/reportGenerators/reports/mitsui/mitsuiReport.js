@@ -29,6 +29,18 @@ const sanitizeCell = (val) => {
 const getVal = (obj, header, taskDetailKeyMapping) => {
   if (header === 'List Product') return '-';
 
+  if (header === 'isManual') {
+    return obj.isManual === true ? 'TRUE' : 'FALSE';
+  }
+
+  if (header === 'Manual Type') {
+    return obj.manualType || '-';
+  }
+
+  if (header === 'Action') {
+    return obj.action || '-';
+  }
+
   const key = taskDetailKeyMapping[header];
   let val = obj[key];
 
@@ -337,6 +349,79 @@ export const generateTaskDetailWorkbook = (
   ws['!cols'] = taskDetailHeaders.map(() => ({ wch: 18 }));
 
   XLSX.utils.book_append_sheet(wb, ws, 'Task Detail');
+
+  return wb;
+};
+
+export const generateTaskManualDetailWorkbook = (
+  groupedData,
+  taskDetailHeaders,
+  taskDetailKeyMapping
+) => {
+  const wb = XLSX.utils.book_new();
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '0369A1' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+
+  const manualTypeCol = taskDetailHeaders.indexOf('Manual Type');
+  const actionCol = taskDetailHeaders.indexOf('Action');
+  const sheetData = [taskDetailHeaders];
+
+  Object.keys(groupedData)
+    .sort()
+    .forEach((driverName) => {
+      const driverTasks = groupedData[driverName];
+
+      driverTasks.sort((a, b) => {
+        const timeA = a.doneTime ? new Date(a.doneTime).getTime() : 0;
+        const timeB = b.doneTime ? new Date(b.doneTime).getTime() : 0;
+        return timeA - timeB;
+      });
+
+      driverTasks.forEach((task) => {
+        const row = taskDetailHeaders.map((header) => getVal(task, header, taskDetailKeyMapping));
+        sheetData.push(row);
+      });
+    });
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  const range = XLSX.utils.decode_range(ws['!ref']);
+
+  for (let C = 0; C <= range.e.c; ++C) {
+    const cell_address = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (ws[cell_address]) {
+      ws[cell_address].s = headerStyle;
+      if (C === manualTypeCol) {
+        ws[cell_address].c = [
+          {
+            t: '- Manual Assign : Task di assign dari menu Task (tanpa proses routing)\n- Forced Assign : Task di assign secara paksa dari dropped task saat proses routing',
+          },
+        ];
+      }
+      if (C === actionCol) {
+        ws[cell_address].c = [
+          {
+            t: '- Move: Task assigned or moved to specific vehicle.\n- Drop: Task removed from vehicle and no longer assigned for delivery.\n- Switch: All tasks assigned between 2 vehicles are exchanged.\n- Change: Task sequence changed.',
+          },
+        ];
+      }
+    }
+  }
+
+  for (let R = 1; R <= range.e.r; ++R) {
+    for (let C = 0; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+      if (ws[cell_address] && ws[cell_address].v === '-') {
+        ws[cell_address].s = { alignment: { horizontal: 'center', vertical: 'center' } };
+      }
+    }
+  }
+
+  ws['!cols'] = taskDetailHeaders.map(() => ({ wch: 18 }));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Task Manual Detail');
 
   return wb;
 };

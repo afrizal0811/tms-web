@@ -1,12 +1,12 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import TaskDetailReport from '@/features/reports/TaskDetailReport';
+import MitsuiReport from '@/features/reports/MitsuiReport';
 
-export default function TaskDetailPage() {
+export default function MitsuiReportPage() {
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <TaskDetailReport />
+      <MitsuiReport />
     </AppLayout>
   );
 }

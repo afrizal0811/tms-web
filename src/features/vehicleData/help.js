@@ -85,7 +85,7 @@ export const handleConfirmDownload = ({
     const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'EFEFEF' } } };
     const tableHeader = [
       t('common.license_number'),
-      t('vehicle.tabs.type'),
+      t('common.type'),
       t('vehicle.tabs.name'),
       t('vehicle.tabs.email'),
     ];

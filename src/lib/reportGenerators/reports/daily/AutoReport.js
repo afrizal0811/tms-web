@@ -4,14 +4,14 @@ import { parseDeliveryData, parseRoutingData } from './parsers';
 import {
   buildDistanceSummary,
   buildHelpSheet,
-  buildMergedDetailSheet,
+  buildTruckDetailSheet,
   buildPendingSOSheet,
   buildRoVsRealSheet,
   buildStartFinishSheet,
   buildTanggalRoutingSheet,
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
-} from './builders';
+} from './sheet';
 
 export async function generateAutoReportWorkbook({
   driverData,
@@ -28,7 +28,6 @@ export async function generateAutoReportWorkbook({
 }) {
   const wb = XLSX.utils.book_new();
 
-  // 1. Ekstraksi dan Pengolahan Data Paralel
   const { routingMap, truckUsageCount } = parseRoutingData(
     filteredResults || [],
     driverData,
@@ -48,8 +47,8 @@ export async function generateAutoReportWorkbook({
     );
 
   buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeData, t);
-  buildMergedDetailSheet(wb, driverData, routingMap, deliveryMap, t);
+  buildStartFinishSheet(wb, timeData, t, driverData);
+  buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);

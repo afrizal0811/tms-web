@@ -1,5 +1,5 @@
+import { routingActual } from '@/lib/routingActual';
 import {
-  calculateMinuteDifference,
   formatDateUniversal,
   getBasePlate,
   isEmpty,
@@ -9,7 +9,6 @@ import {
   sortRows,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-
 export const serviceLevelData = [
   {
     name: 'SUKSES',
@@ -237,15 +236,10 @@ export function processServiceLevelData(
   const grouped = {};
 
   allTasks.forEach((task) => {
-    // 1. Cek Assignee
     if (!task.assignee || isEmpty(task.assignee)) return;
-
-    // 2. FILTER: Hapus Flow Pickup dari perhitungan Total Task
     if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
       return;
     }
-
-    // 3. Filter Hub
     if (hubId) {
       const taskHub =
         task.hubId ||
@@ -259,8 +253,6 @@ export function processServiceLevelData(
         return;
       }
     }
-
-    // 4. Cek Tanggal
     const dateStr = task.doneTime || task.createdTime;
     const wibTime = parseAndShiftToUTC7(dateStr);
     if (!wibTime) return;
@@ -297,11 +289,7 @@ export function processServiceLevelData(
         PENDING_GR: 0,
       };
     }
-
-    // Hitung Total (Task Pickup sudah dikecualikan di atas)
     grouped[key].total += 1;
-
-    // Cek Status Delivery (Menggunakan statusDelivery)
     if (task.statusDelivery) {
       const rawStatus = String(task.statusDelivery).toUpperCase();
       const status = rawStatus.replace('_', ' ').trim();
@@ -341,7 +329,6 @@ export function processSequenceAccuracyData(
   if (!allTasks || isEmpty(allTasks)) return [];
   const driverDateMap = {};
   allTasks.forEach((task) => {
-    // 1. FILTER: Hapus Flow Pickup (UPDATE BARU)
     if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
       return;
     }
@@ -416,16 +403,15 @@ export function processSequenceAccuracyData(
 export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuery, date }) => {
   if (!tasks || !drivers) return [];
 
-  const emailToDriverMap = drivers.reduce((acc, driver) => {
-    const normalized = normalizeEmail(driver.email);
-    if (normalized) {
-      acc[normalized] = { plat: driver.plat || null, name: driver.name };
-    }
-    return acc;
-  }, {});
-
   const hubTimesMap = new Map();
+  const hubTimesFallbackMap = new Map();
   if (results) {
+    const emailToDriverMap = drivers.reduce((acc, d) => {
+      const norm = normalizeEmail(d.email);
+      if (norm) acc[norm] = { plat: d.plat || null, name: d.name };
+      return acc;
+    }, {});
+
     const filteredResults = results.filter((item) => item.dispatchStatus === 'done');
     for (const result of filteredResults) {
       if (result.result && Array.isArray(result.result.routing)) {
@@ -439,156 +425,39 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
           if (hubTrips.length > 0) {
             const firstHub = hubTrips[0];
             const lastHub = hubTrips[hubTrips.length - 1];
-            const hubLocation = firstHub.coordinate || null;
-            hubTimesMap.set(driverName, {
+            const routePlat = route.vehicleName || driverInfo?.plat || '';
+            const routeBasePlat = getBasePlate(routePlat) || routePlat;
+            const timesObj = {
               hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',
               hubETA: formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-',
-              hubLongLat: hubLocation,
-            });
+              hubLongLat: firstHub.coordinate || null,
+            };
+            hubTimesFallbackMap.set(driverName, timesObj);
+            if (routeBasePlat) hubTimesMap.set(`${driverName}_${routeBasePlat}`, timesObj);
           }
         }
       }
     }
   }
 
-  const driverStats = new Map();
-  const allTaskData = [];
+  const allTaskData = routingActual({ tasks, drivers, dateStr: date });
+  const tasksByGroupMap = new Map();
+  const groupStats = new Map();
 
-  for (const task of tasks) {
-    const flow = task.flow;
-    const emailString =
-      Array.isArray(task.assignee) && task.assignee.length > 0 ? task.assignee[0] : null;
-    const driverEmail = normalizeEmail(emailString);
-    const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-    const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
-    let statusLabel = '';
-    if (flow !== 'Pickup') {
-      if (task.statusDelivery && task.statusDelivery.length > 0) {
-        statusLabel = task.statusDelivery[0].toUpperCase();
-      } else if (flow.includes('GR')) {
-        if (task.statusGr && task.statusGr.length > 0) {
-          statusLabel = task.statusGr[0].toUpperCase();
-        }
-      }
-    } else {
-      statusLabel = task.status && task.status.toUpperCase();
-    }
-    statusLabel = task.status !== 'ONGOING' ? statusLabel : '-';
-    if (flow === 'Pickup' && statusLabel === 'DONE') statusLabel = 'SUKSES';
-    let { fullCustomerName: customerName } = parseCustomerString(task.customerOrder);
-    if (isEmpty(customerName)) customerName = task.customerName;
-
-    if (driverName !== 'N/A') {
-      const stats = driverStats.get(driverName) || {
-        plat: null,
-        driverEmail: driverEmail,
-      };
-      if (!stats.plat && driverInfo && driverInfo.plat) {
-        stats.plat = driverInfo.plat;
-      }
-      driverStats.set(driverName, stats);
-    }
-
-    let actualArrival, actualDeparture;
-    if (flow && flow.toUpperCase().includes('GR')) {
-      actualArrival = task.page1DoneTime;
-      actualDeparture = task.page1DoneTime;
-    } else if (flow && flow.toUpperCase().includes('PICKUP')) {
-      actualArrival = task.klikJikaAndaSudahSampaiDiGudang;
-      actualDeparture = task.page1DoneTime;
-    } else {
-      actualArrival = task.klikJikaSudahSampai;
-      actualDeparture = task.page3DoneTime;
-    }
-
-    const roSequence = task.routePlannedOrder || 0;
-    const etaVal = formatDateUniversal(`${date} ${task.eta}`, 'HH:mm');
-    const etdVal = formatDateUniversal(`${date} ${task.etd}`, 'HH:mm');
-    const openTimeVal = formatDateUniversal(`${date} ${task.openTime}`, 'HH:mm') || '-';
-    const closeTimeVal = formatDateUniversal(`${date} ${task.closeTime}`, 'HH:mm') || '-';
-    const actualArrVal = formatDateUniversal(actualArrival, 'HH:mm') || '-';
-
-    let hoursStatus = null;
-    if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
-      const isInside =
-        openTimeVal > closeTimeVal
-          ? actualArrVal >= openTimeVal || actualArrVal <= closeTimeVal
-          : actualArrVal >= openTimeVal && actualArrVal <= closeTimeVal;
-
-      if (isInside) {
-        hoursStatus = 'yes';
-      } else if (actualArrVal < openTimeVal) {
-        hoursStatus = 'early';
-      } else {
-        hoursStatus = 'no';
-      }
-    }
-
-    const actualVisitTimeVal =
-      actualArrival && actualDeparture
-        ? calculateMinuteDifference(actualArrival, actualDeparture)
-        : '-';
-
-    allTaskData.push({
-      driver: driverName,
-      plat: driverInfo ? driverInfo.plat : null,
-      actualArrivalTimestamp: actualArrival ? new Date(actualArrival).getTime() : null,
-      roSequence: roSequence,
-      statusLabel: statusLabel,
-      flow: flow,
-      customerName: customerName,
-      openTime: openTimeVal,
-      closeTime: closeTimeVal,
-      eta: etaVal || '-',
-      etd: etdVal || '-',
-      actualArrival: actualArrVal,
-      actualDeparture: formatDateUniversal(actualDeparture, 'HH:mm') || '-',
-      visitTime: task.visitTime || '-',
-      actualVisitTime: actualVisitTimeVal,
-      realSequence: 0,
-      isManualAssign: roSequence === 0,
-      longlat: task.longlat,
-      isWithinHoursStatus: hoursStatus,
-    });
-  }
-
-  allTaskData.sort((a, b) => {
-    const driverCompare = a.driver.localeCompare(b.driver);
-    if (driverCompare !== 0) return driverCompare;
-    const timeA = a.actualArrivalTimestamp || Infinity;
-    const timeB = b.actualArrivalTimestamp || Infinity;
-    return timeA - timeB;
-  });
-
-  let currentDriver = null;
-  let rankCounter = 1;
-  for (const row of allTaskData) {
-    if (row.driver !== currentDriver) {
-      currentDriver = row.driver;
-      rankCounter = 1;
-    }
-    if (row.actualArrivalTimestamp !== null) {
-      row.realSequence = rankCounter;
-      rankCounter++;
-    } else {
-      row.realSequence = null;
-    }
-  }
-
-  const tasksByNameMap = new Map();
   for (const task of allTaskData) {
-    if (!tasksByNameMap.has(task.driver)) {
-      tasksByNameMap.set(task.driver, []);
+    const gKey = task.groupKey;
+    if (!tasksByGroupMap.has(gKey)) tasksByGroupMap.set(gKey, []);
+    tasksByGroupMap.get(gKey).push(task);
+    if (!groupStats.has(gKey)) {
+      groupStats.set(gKey, { driver: task.driver, plat: task.plat, basePlat: task.basePlat });
     }
-    tasksByNameMap.get(task.driver).push(task);
   }
 
-  const driverList = Array.from(driverStats.entries()).map(([driverName, stats]) => {
-    return {
-      plat: stats.plat,
-      driver: driverName,
-    };
-  });
+  const driverList = Array.from(groupStats.entries()).map(([gKey, stats]) => ({
+    gKey,
+    plat: stats.plat,
+    driver: stats.driver,
+  }));
   const sortDrivers = sortRows(driverList, 'plat', 'driver');
   const finalRows = [];
   const query = (searchQuery || '').toLowerCase();
@@ -596,12 +465,9 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   for (const driverRow of sortDrivers) {
     const driverName = driverRow.driver;
     const driverPlat = driverRow.plat;
-    const driverTasks = tasksByNameMap.get(driverName) || [];
-    const hubTimes = hubTimesMap.get(driverName) || {
-      hubETD: '-',
-      hubETA: '-',
-      hubLongLat: null,
-    };
+    const driverTasks = tasksByGroupMap.get(driverRow.gKey) || [];
+    const hubTimes = hubTimesMap.get(driverRow.gKey) ||
+      hubTimesFallbackMap.get(driverName) || { hubETD: '-', hubETA: '-', hubLongLat: null };
 
     const isDriverMatch =
       driverName.toLowerCase().includes(query) ||
@@ -623,16 +489,8 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       customerName: 'HUB',
     });
 
-    matchingTasks.sort((a, b) => {
-      return (a.roSequence || 0) - (b.roSequence || 0);
-    });
-
-    matchingTasks.forEach((t) => {
-      finalRows.push({
-        type: 'TASK',
-        ...t,
-      });
-    });
+    matchingTasks.sort((a, b) => (a.roSequence || 0) - (b.roSequence || 0));
+    matchingTasks.forEach((t) => finalRows.push({ type: 'TASK', ...t }));
 
     finalRows.push({
       type: 'HUB_END',
@@ -927,11 +785,10 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
 
   ws['!cols'] = colWidths;
 
-  // Override lebar kolom sempit (nilai 3-4 char, header wrap text)
-  colWidths[11] = { wch: 10 }; // visit plan
-  colWidths[12] = { wch: 10 }; // visit actual
-  colWidths[13] = { wch: 10 }; // ro seq
-  colWidths[14] = { wch: 10 }; // actual seq
+  colWidths[11] = { wch: 10 };
+  colWidths[12] = { wch: 10 };
+  colWidths[13] = { wch: 10 };
+  colWidths[14] = { wch: 10 };
 
   const leftAlignment = { alignment: { horizontal: 'left', vertical: 'center' } };
   const centerAlignment = {
@@ -958,20 +815,17 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
   const textGreenStyle = { ...centerAlignment, font: { bold: true, color: { rgb: '16A34A' } } };
   const textAmberStyle = { ...centerAlignment, font: { bold: true, color: { rgb: 'F59E0B' } } };
   const textRedStyle = { ...centerAlignment, font: { bold: true, color: { rgb: 'DC2626' } } };
-
-  // Warna background per kolom: header (lebih gelap) & data (lebih terang)
-  // Col 5,6=Green | 7,8=Orange | 9,10=Yellow | 11,12=Pink | 13,14=Blue
   const colFillMap = {
-    5: { header: 'A7F3D0', data: 'D1FAE5' }, // open_time  - green
-    6: { header: 'A7F3D0', data: 'D1FAE5' }, // close_time - green
-    7: { header: 'FED7AA', data: 'FFEDD5' }, // eta        - orange
-    8: { header: 'FED7AA', data: 'FFEDD5' }, // actual arr - orange
-    9: { header: 'FDE68A', data: 'FEF9C3' }, // etd        - yellow
-    10: { header: 'FDE68A', data: 'FEF9C3' }, // actual dep - yellow
-    11: { header: 'FBCFE8', data: 'FCE7F3' }, // visit plan - pink
-    12: { header: 'FBCFE8', data: 'FCE7F3' }, // visit act  - pink
-    13: { header: 'BFDBFE', data: 'DBEAFE' }, // ro seq     - blue
-    14: { header: 'BFDBFE', data: 'DBEAFE' }, // actual seq - blue
+    5: { header: 'A7F3D0', data: 'D1FAE5' },
+    6: { header: 'A7F3D0', data: 'D1FAE5' },
+    7: { header: 'FED7AA', data: 'FFEDD5' },
+    8: { header: 'FED7AA', data: 'FFEDD5' },
+    9: { header: 'FDE68A', data: 'FEF9C3' },
+    10: { header: 'FDE68A', data: 'FEF9C3' },
+    11: { header: 'FBCFE8', data: 'FCE7F3' },
+    12: { header: 'FBCFE8', data: 'FCE7F3' },
+    13: { header: 'BFDBFE', data: 'DBEAFE' },
+    14: { header: 'BFDBFE', data: 'DBEAFE' },
   };
 
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -995,11 +849,7 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
         const isSpacerRow =
           (!ws[firstCellRef] || isEmpty(ws[firstCellRef].v)) &&
           !(ws[XLSX.utils.encode_cell({ r: R, c: 3 })]?.v === 'HUB');
-
-        // Spacer row: skip semua styling (tidak ada warna apapun)
         if (isSpacerRow) continue;
-
-        // Cols 0-3: rata kiri | Cols 4-16: rata kanan
         if (C <= 3) {
           ws[cellRef].s = { ...leftAlignment };
         } else if (C >= 4 && C <= 16) {

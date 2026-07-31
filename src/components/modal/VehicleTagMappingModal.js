@@ -1,6 +1,7 @@
 'use client';
 
 import BaseModal from '@/components/BaseModal';
+import Button from '@/components/Button';
 import { getVehicleTypes, postVehicleMappings } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -28,16 +29,13 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const payload = [];
-      unmappedData.forEach((item) => {
+      const payload = unmappedData.reduce((acc, item) => {
         const selectedType = mappings[item.plat];
         if (selectedType) {
-          payload.push({
-            plat: item.plat,
-            mappedType: selectedType,
-          });
+          acc.push({ plat: item.plat, mappedType: selectedType });
         }
-      });
+        return acc;
+      }, []);
 
       if (payload.length > 0) {
         await postVehicleMappings(payload);
@@ -54,13 +52,13 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
 
   const footerContent = (
     <div className="flex justify-end">
-      <button
+      <Button
+        text={t('common.save')}
         onClick={handleSave}
         disabled={!isAllSelected || isLoading || isSaving}
-        className={`px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors w-full sm:w-auto ${isSaving ? 'hover:cursor-progress' : 'hover:cursor-pointer '}`}
-      >
-        {t('common.save')}
-      </button>
+        isLoading={isSaving}
+        width="w-full sm:w-auto"
+      />
     </div>
   );
 
@@ -130,7 +128,11 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
                   {vehicleTypes.map((type) => (
                     <label
                       key={type}
-                      className={`cursor-pointer px-3 py-1.5 rounded-md text-sm border transition-all ${mappings[info.plat] === type ? 'bg-sky-600 text-white border-sky-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-300 hover:border-sky-400 hover:bg-sky-50'}`}
+                      className={`cursor-pointer px-3 py-1.5 rounded-md text-sm border transition-all ${
+                        mappings[info.plat] === type
+                          ? 'bg-sky-600 text-white border-sky-600 shadow-md transform scale-105'
+                          : 'bg-white text-gray-600 border-gray-300 hover:border-sky-400 hover:bg-sky-50'
+                      }`}
                     >
                       <input
                         type="radio"

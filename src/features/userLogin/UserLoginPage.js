@@ -16,13 +16,11 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
   const [selectedLocationName, setSelectedLocationName] = useState('');
   const [tempSelectedLocation, setTempSelectedLocation] = useState('');
   const [tempSelectedLocationName, setTempSelectedLocationName] = useState('');
-
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToConfirm, setUserToConfirm] = useState(null);
-
-  const [titleClicks, setTitleClicks] = useState(0);
+  const [secretClicks, setSecretClicks] = useState(0);
   const [isSecretMode, setIsSecretMode] = useState(false);
 
   const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
@@ -38,14 +36,12 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
   }, []);
 
   useEffect(() => {
-    if (titleClicks === 0 || isSecretMode) return;
-
+    if (secretClicks === 0 || isSecretMode) return;
     const timer = setTimeout(() => {
-      setTitleClicks(0);
+      setSecretClicks(0);
     }, 3000);
-
     return () => clearTimeout(timer);
-  }, [titleClicks, isSecretMode]);
+  }, [secretClicks, isSecretMode]);
 
   const handleLocationChange = (id, name) => {
     setTempSelectedLocation(id);
@@ -54,7 +50,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
 
   const handleSaveLocation = () => {
     if (!tempSelectedLocation) return toastError(t('home.select_branch'));
-
     const selectedHubObj = allHubsList.find((h) => h._id === tempSelectedLocation);
     const { storedSession } = getLocalStorage();
     const currentData = storedSession || {};
@@ -69,7 +64,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
 
     const newSession = { ...currentData, user: userObj };
     setLocalStorage('data', JSON.stringify(newSession));
-
     setSelectedLocation(tempSelectedLocation);
     setSelectedLocationName(tempSelectedLocationName);
   };
@@ -81,7 +75,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
       delete newSession.user;
       setLocalStorage('data', JSON.stringify(newSession));
     }
-
     setSelectedLocation('');
     setSelectedLocationName('');
     setEmailInput('');
@@ -89,28 +82,29 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     setTempSelectedLocationName('');
   };
 
-  const handleTitleClick = () => {
+  const handleSecretTrigger = () => {
     if (isSecretMode) return;
-
-    const nextClicks = titleClicks + 1;
+    const nextClicks = secretClicks + 1;
     if (nextClicks === 3) {
       setIsSecretMode(true);
+      if (typeof window !== 'undefined') {
+        window.SECRET_MODE_ACTIVE = true;
+        window.dispatchEvent(new Event('secret_update'));
+      }
       toastSuccess(t('home.toast.active'));
-      setTitleClicks(0);
+      setSecretClicks(0);
     } else {
-      setTitleClicks(nextClicks);
+      setSecretClicks(nextClicks);
     }
   };
 
   const handleSearchUser = async (e) => {
     e.preventDefault();
     if (!emailInput) return;
-
     if (!selectedLocation) {
       toastError(t('home.toast.no_session'));
       return;
     }
-
     setLoading(true);
     try {
       const response = await getUser(emailInput, selectedLocation);
@@ -249,10 +243,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 transition-colors text-left">
         <div className="flex flex-col gap-1 mb-6 text-center">
-          <h1
-            onClick={handleTitleClick}
-            className="text-3xl font-bold text-slate-900 dark:text-slate-100 select-none"
-          >
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 select-none">
             {t('home.welcome')}
           </h1>
           <p className="text-sm text-gray-400 dark:text-slate-500">
@@ -338,12 +329,15 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
               </button>
             </form>
           )}
+        </div>
 
-          <div className="mt-4 text-right">
-            <span className="text-xs text-gray-400 dark:text-slate-500 italic">
-              *{t('home.note')}
-            </span>
-          </div>
+        <div className="mt-4 text-right">
+          <span
+            onClick={handleSecretTrigger}
+            className="text-xs text-gray-400 dark:text-slate-500 italic cursor-default select-none pointer-events-auto block"
+          >
+            *{t('home.note')}
+          </span>
         </div>
       </div>
 
