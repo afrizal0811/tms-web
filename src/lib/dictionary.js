@@ -455,10 +455,21 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Ringkas',
       visit: 'Kunjungan',
+      partial: 'Sebagian',
+      full: 'Seluruh',
       tooltip: {
         find_so: 'Klik untuk filter berdasarkan nomor SO',
         hub_eta: 'Terdapat tugas yang ditugaskan secara manual. Estimasi menjadi tidak akurat',
         manual_assign: 'Penugasan Manual',
+        invalid_so: 'Nomor SO tidak valid',
+      },
+      modal: {
+        choose_type: 'Pilih tipe laporan',
+        partial: 'Data route transaction dipisah berdasarkan hasil routing',
+        full: 'Data route transaction digabungkan berdasarkan hasil routing',
+      },
+      toast: {
+        invalid_so: 'Kendaraan memiliki nomor faktur yang salah:',
       },
     },
     summary: {
@@ -1123,10 +1134,21 @@ export const dictionary = {
       view_detail: 'Detail',
       view_summary: 'Summary',
       visit: 'Visit',
+      partial: 'Partial',
+      full: 'Full',
       tooltip: {
         find_so: 'Click to filter by SO number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
         manual_assign: 'Manual Assign',
+        invalid_so: 'Invalid SO number',
+      },
+      modal: {
+        choose_type: 'Choose Report Type',
+        partial: 'Separate route transaction data by routing result',
+        full: 'Merge route transaction data by routing result',
+      },
+      toast: {
+        invalid_so: 'Vehicle contains incorrect invoice numbers:',
       },
     },
     summary: {

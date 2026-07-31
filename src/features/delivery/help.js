@@ -38,7 +38,7 @@ const triggerDownload = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const buildSoWorksheet = (processedRows) => {
+const buildSoWorksheet = (processedRows, t) => {
   processedRows.sort((a, b) => {
     const validA = isValidSo(a.so) && !a.isInvalidCustomer;
     const validB = isValidSo(b.so) && !b.isInvalidCustomer;
@@ -104,7 +104,7 @@ const buildSoWorksheet = (processedRows) => {
         ...errorStyle,
         alignment: { vertical: 'center', horizontal: 'center' },
       };
-      ws[cellRef].c = [{ a: 'System', t: 'Nomor SO tidak ditemukan!', h: true }];
+      ws[cellRef].c = [{ a: 'System', t: t('delivery.tooltip.invalid_so'), h: true }];
     } else {
       ws[cellRef].s = baseStyle;
       ws[typeCellRef].s = {
@@ -184,7 +184,7 @@ export const handleFullRouteTransDownload = async ({
         }
       });
 
-      const ws = buildSoWorksheet(processedRows);
+      const ws = buildSoWorksheet(processedRows, t);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
 
@@ -309,7 +309,7 @@ export const handlePartialRouteTransDownload = async ({
         }
         seenFileNames.add(nameFile);
 
-        const ws = buildSoWorksheet(processedRows);
+        const ws = buildSoWorksheet(processedRows, t);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });

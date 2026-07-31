@@ -207,7 +207,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                     {isHub ? (
                       ''
                     ) : trip.isInvalidSo ? (
-                      <Tooltip tooltipContent="Nomor SO tidak sesuai">
+                      <Tooltip tooltipContent={t('delivery.tooltip.invalid_so')}>
                         <span className="text-red-600 dark:text-red-400 font-bold cursor-help border-b border-dashed border-red-400">
                           <HighlightText text={trip.displaySo} highlight={searchQuery} />
                         </span>

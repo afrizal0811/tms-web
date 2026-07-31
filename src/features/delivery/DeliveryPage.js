@@ -105,9 +105,9 @@ export default function DeliveryPage() {
       const platesStr = Array.from(badPlates)
         .map((p) => `${p}`)
         .join('\n');
-      toastWarning(`Ada nomor faktur yang kurang tepat di kendaraan:\n${platesStr}`);
+      toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
     }
-  }, [allRoutes]);
+  }, [allRoutes, t]);
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);
@@ -673,6 +673,7 @@ export default function DeliveryPage() {
           });
           setIsRoutingModalOpen(false);
         }}
+        translate={t}
       />
     </div>
   );
