@@ -323,17 +323,27 @@ body > div[style*='z-index: 9999'],
 
 /* 8. Mobile Optimization */
 @media (max-width: 420px) {
-  .custom-year-picker .react-datepicker,
-  .react-datepicker--year-only {
-    width: 95vw !important;
+  .react-datepicker-popper {
+    left: 50% !important;
+    transform: translateX(-50%) translateY(10px) !important;
   }
-  .custom-year-picker .react-datepicker__year-wrapper {
-    gap: 8px !important;
-    padding: 12px !important;
+  
+  .react-datepicker {
+    width: auto !important;
+    max-width: 92vw !important;
+    padding: 0.5rem !important;
   }
-  .custom-year-picker .react-datepicker__year-text {
-    font-size: 1rem !important;
-    padding: 10px 0 !important;
+  
+  .react-datepicker__day-name, 
+  .react-datepicker__day {
+    width: 2.2rem !important;
+    line-height: 2.2rem !important;
+    margin: 0.1rem !important;
+  }
+
+  .react-datepicker__month-text {
+    width: 4rem !important;
+    height: 2.5rem !important;
   }
 }
 

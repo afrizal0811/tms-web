@@ -1,4 +1,3 @@
-// File: src/components/CustomDatePicker.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
@@ -11,7 +10,7 @@ registerLocale('id', id);
 registerLocale('en', enUS);
 
 export default function CustomDatePicker({
-  className = 'w-full xl:w-[250px]! ',
+  className = 'w-full xl:w-[250px]!',
   dateFormat = 'dd MMMM yyyy',
   disableSunday = true,
   disabled = false,
@@ -32,69 +31,47 @@ export default function CustomDatePicker({
   showDropdowns = true,
   ...props
 }) {
-  const isDisabled = isLoading || disabled;
   const { localeCode, isIndonesian } = useLanguage();
   const datePickerRef = useRef(null);
+  const isDisabled = isLoading || disabled;
 
-  const baseClasses =
-    'px-4 py-2.5 h-[42px] rounded-lg border text-center font-medium shadow-sm transition-colors outline-none w-full';
+  // ponytail: inline dynamic classes -> low maintenance
   const stateClasses = isDisabled
     ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 cursor-not-allowed border-gray-200 dark:border-slate-700'
     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700';
 
-  const handleFilterDate = (date) => {
-    if (disableSunday && date.getDay() === 0) {
-      return false;
-    }
-    if (filterDate) {
-      return filterDate(date);
-    }
-    return true;
-  };
+  const handleFilterDate = (date) =>
+    disableSunday && date.getDay() === 0 ? false : filterDate ? filterDate(date) : true;
 
-  const handleDayClassName = (date) => {
-    let classes = [];
-    if (date.getDay() === 0) {
-      classes.push('!text-[#ff0000] font-bold');
-      if (disableSunday) {
-        classes.push('!cursor-not-allowed');
-      }
-    }
-    return classes.length > 0 ? classes.join(' ') : undefined;
-  };
+  const handleDayClassName = (date) =>
+    date.getDay() === 0
+      ? `!text-[#ff0000] font-bold ${disableSunday ? '!cursor-not-allowed' : ''}`
+      : undefined;
 
   const getCustomRangeValue = () => {
     if (!useCustomRangeFormat || !selectsRange || !startDate) return undefined;
 
-    const sDay = startDate.getDate();
-    const sMonthShort = startDate.toLocaleDateString(localeCode, { month: 'short' });
-    const sMonthLong = startDate.toLocaleDateString(localeCode, { month: 'long' });
-    const sYear = startDate.getFullYear();
+    const sDay = startDate.getDate(),
+      sYear = startDate.getFullYear();
+    const sMonthS = startDate.toLocaleDateString(localeCode, { month: 'short' });
+    const sMonthL = startDate.toLocaleDateString(localeCode, { month: 'long' });
 
-    if (!endDate) {
-      return `${sDay} ${sMonthLong} ${sYear}`;
-    }
+    if (!endDate) return `${sDay} ${sMonthL} ${sYear}`;
 
-    const eDay = endDate.getDate();
-    const eMonthShort = endDate.toLocaleDateString(localeCode, { month: 'short' });
-    const eYear = endDate.getFullYear();
+    const eDay = endDate.getDate(),
+      eYear = endDate.getFullYear();
+    const eMonthS = endDate.toLocaleDateString(localeCode, { month: 'short' });
 
-    if (sYear !== eYear) {
-      return `${sDay} ${sMonthShort} ${sYear} - ${eDay} ${eMonthShort} ${eYear}`;
-    } else if (sMonthShort !== eMonthShort) {
-      return `${sDay} ${sMonthShort} - ${eDay} ${eMonthShort} ${eYear}`;
-    } else {
-      return `${sDay}-${eDay} ${sMonthLong} ${sYear}`;
-    }
+    if (sYear !== eYear) return `${sDay} ${sMonthS} ${sYear} - ${eDay} ${eMonthS} ${eYear}`;
+    if (sMonthS !== eMonthS) return `${sDay} ${sMonthS} - ${eDay} ${eMonthS} ${eYear}`;
+    return `${sDay}-${eDay} ${sMonthL} ${sYear}`;
   };
-
-  const customValue = getCustomRangeValue();
 
   return (
     <DatePicker
       ref={datePickerRef}
       locale={isIndonesian ? 'id' : 'en'}
-      className={`${baseClasses} ${stateClasses} ${className}`}
+      className={`px-4 py-2.5 h-[42px] rounded-lg border text-center font-medium shadow-sm transition-colors outline-none w-full ${stateClasses} ${className}`}
       dateFormat={dateFormat}
       disabled={isDisabled}
       filterDate={handleFilterDate}
@@ -108,7 +85,7 @@ export default function CustomDatePicker({
       selectsRange={selectsRange}
       wrapperClassName={wrapperClassName}
       shouldCloseOnSelect={!showApplyButton}
-      value={customValue}
+      value={getCustomRangeValue()}
       showMonthDropdown={showDropdowns}
       showYearDropdown={showDropdowns}
       dropdownMode="select"
@@ -121,7 +98,7 @@ export default function CustomDatePicker({
           <button
             type="button"
             onClick={() => {
-              if (onApply) onApply();
+              onApply?.();
               datePickerRef.current?.setOpen(false);
             }}
             className="px-3 py-1.5 bg-sky-600 dark:bg-sky-700 text-white text-xs font-medium rounded-md hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors shadow-sm cursor-pointer"
