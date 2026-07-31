@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import BaseModal from '../BaseModal';
+import BaseModal from '@/components/BaseModal';
 
 export default function TokenExpirationModal() {
   const { t, localeCode } = useLanguage();
@@ -14,23 +14,20 @@ export default function TokenExpirationModal() {
 
   useEffect(() => {
     const checkTokenExpiration = () => {
-      const envDate = process.env.NEXT_PUBLIC_TOKEN_EXPIRE; // Format: DD/MM/YYYY
+      const envDate = process.env.NEXT_PUBLIC_TOKEN_EXPIRE;
       if (!envDate) return;
 
       try {
         const [day, month, year] = envDate.split('/').map(Number);
-        // Note: Month di JS Date dimulai dari 0 (Januari = 0)
         const targetDate = new Date(year, month - 1, day);
         const today = new Date();
 
-        // Set jam ke 00:00:00 untuk perbandingan hari yang akurat
         targetDate.setHours(0, 0, 0, 0);
         today.setHours(0, 0, 0, 0);
 
         const diffTime = targetDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Munculkan jika kurang dari 14 hari (termasuk jika sudah minus/expired)
         if (diffDays < 14) {
           setDaysRemaining(diffDays);
           setTargetDateObj(targetDate);
@@ -44,7 +41,6 @@ export default function TokenExpirationModal() {
     checkTokenExpiration();
   }, [t]);
 
-  // Konten pesan berdasarkan status hari
   const getMessage = () => {
     const formattedDate = targetDateObj ? formatLongDate(targetDateObj, localeCode) : '-';
     const contact = <span className="font-bold text-red-600">{t('home.contact_edp')}</span>;

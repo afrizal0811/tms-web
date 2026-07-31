@@ -1,3 +1,5 @@
+'use client';
+
 import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 
