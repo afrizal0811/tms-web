@@ -93,8 +93,16 @@ export default function MobileMenu({
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isSecret, setIsSecret] = useState(false);
   const pathname = usePathname();
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    const checkSecret = () => setIsSecret(window.SECRET_MODE_ACTIVE === true);
+    checkSecret();
+    window.addEventListener('secret_update', checkSecret);
+    return () => window.removeEventListener('secret_update', checkSecret);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -221,6 +229,9 @@ export default function MobileMenu({
           />
           <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />
           <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
+          {!isLoggedIn && isSecret && (
+            <MobileNavLink href="/setting">{t('setting.title')}</MobileNavLink>
+          )}
           {isLoggedIn && (
             <>
               <MobileNavLink href="/setting">{t('setting.title')}</MobileNavLink>

@@ -1,4 +1,3 @@
-// File: src/components/SessionGuard.js
 'use client';
 
 import SelectionLayout from '@/components/SelectionLayout';
@@ -17,7 +16,9 @@ export default function SessionGuard({ children }) {
 
   const [isVerified, setIsVerified] = useState(false);
 
+  const isSecret = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
   const publicPaths = ['/', '/help'];
+  if (isSecret) publicPaths.push('/setting');
   const isPublicPage = publicPaths.includes(pathname);
 
   const superadminPaths = ['/mitsui', '/report/counter', '/summary'];

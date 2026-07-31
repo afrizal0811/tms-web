@@ -44,6 +44,7 @@ export default function Navbar() {
   const { t, isIndonesian } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSecret, setIsSecret] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
@@ -59,6 +60,13 @@ export default function Navbar() {
     removeLocalStorage('data');
     window.location.href = '/';
   };
+
+  useEffect(() => {
+    const checkSecret = () => setIsSecret(window.SECRET_MODE_ACTIVE === true);
+    checkSecret();
+    window.addEventListener('secret_update', checkSecret);
+    return () => window.removeEventListener('secret_update', checkSecret);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -141,7 +149,14 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden lg:flex items-center space-x-4 sm:space-x-6">
-            {isLoggedIn ? LoggedInComps : <NavLink href="/help">{t('navbar.help')}</NavLink>}
+            {isLoggedIn ? (
+              LoggedInComps
+            ) : (
+              <>
+                {isSecret && <NavLink href="/setting">{t('setting.title')}</NavLink>}
+                <NavLink href="/help">{t('navbar.help')}</NavLink>
+              </>
+            )}
           </div>
         </div>
 
