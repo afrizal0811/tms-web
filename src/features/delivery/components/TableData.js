@@ -2,7 +2,13 @@ import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { formatDateUniversal, parseCustomerString } from '@/lib/utils';
+import {
+  checkInvalidSo,
+  checkInvalidSoList,
+  formatDateUniversal,
+  isEmpty,
+  parseCustomerString,
+} from '@/lib/utils';
 import { useMemo } from 'react';
 
 export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
@@ -16,6 +22,8 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
     activeRoute.trips.forEach((trip, index) => {
       const isHub = trip.isHub;
       const parsedCust = parseCustomerString(trip.visitName);
+      const isBadCust = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+
       const outletName = isHub
         ? trip.visitName
         : trip.flow === 'Pickup' && trip.warehouseName
@@ -42,10 +50,15 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
             isUnsync: !!soPartner,
             partnerVehicle: soPartner,
             hasPartner: trip.partnerSOs?.includes(item.so) || false,
+            isInvalidSo: checkInvalidSo(item.so, isBadCust),
           });
         });
         return;
       }
+
+      const isInvalidSo = isHub
+        ? false
+        : checkInvalidSoList(parsedCust?.invoiceNumber || trip.orderId || '', isBadCust);
 
       const displaySo = isHub
         ? '-'
@@ -55,7 +68,8 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 item.wh && trip.flow !== 'Pickup' ? `${item.so} (${item.wh})` : item.so
               )
               .join(', ')
-          : parsedCust.invoiceNumber || trip.orderId || '-';
+          : parsedCust?.invoiceNumber || trip.orderId || '-';
+
       list.push({
         ...trip,
         outletName,
@@ -68,6 +82,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
         originalIndex: index,
         hasPartner: trip.hasAnyPartner,
         partnerSOs: trip.partnerSOs,
+        isInvalidSo,
       });
     });
     return list;
@@ -187,9 +202,21 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                   <Td alignClass="text-center">
                     <p className={textClass}>{trip.locId}</p>
                   </Td>
+
                   <Td alignClass={isDetailView ? 'text-center' : 'text-left'}>
-                    {isHub ? '' : <HighlightText text={trip.displaySo} highlight={searchQuery} />}
+                    {isHub ? (
+                      ''
+                    ) : trip.isInvalidSo ? (
+                      <Tooltip tooltipContent="Nomor SO tidak sesuai">
+                        <span className="text-red-600 dark:text-red-400 font-bold cursor-help border-b border-dashed border-red-400">
+                          <HighlightText text={trip.displaySo} highlight={searchQuery} />
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <HighlightText text={trip.displaySo} highlight={searchQuery} />
+                    )}
                   </Td>
+
                   <Td alignClass="text-center">{isHub ? '' : trip.openTime || '-'}</Td>
                   <Td alignClass="text-center">{isHub ? '' : trip.closeTime || '-'}</Td>
 

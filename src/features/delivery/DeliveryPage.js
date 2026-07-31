@@ -12,18 +12,20 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
   calculateStartFinishDates,
+  checkInvalidSoList,
   formatDateUniversal,
   formatUTC7,
   getBasePlate,
   isEmpty,
   normalizeEmail,
+  parseCustomerString,
   toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
-import { toastError } from '../../lib/toast';
+import { toastError, toastWarning } from '../../lib/toast';
 import TableData from './components/TableData';
 import {
   getDriverName,
@@ -83,6 +85,29 @@ export default function DeliveryPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (allRoutes.length === 0) return;
+    const badPlates = new Set();
+
+    allRoutes.forEach((r) => {
+      r.trips.forEach((t) => {
+        if (t.isHub || !t.orderId || t.isReDelivery) return;
+        const parsed = parseCustomerString(t.visitName);
+        const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
+        const bad = checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust);
+
+        if (bad) badPlates.add(r.vehicleName || 'Vehicle');
+      });
+    });
+
+    if (badPlates.size > 0) {
+      const platesStr = Array.from(badPlates)
+        .map((p) => `${p}`)
+        .join('\n');
+      toastWarning(`Ada nomor faktur yang kurang tepat di kendaraan:\n${platesStr}`);
+    }
+  }, [allRoutes]);
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);

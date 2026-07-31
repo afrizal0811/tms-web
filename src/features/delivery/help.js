@@ -1,21 +1,19 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import {
+  checkInvalidSo,
+  checkInvalidSoList,
+  formatDateUniversal,
+  isEmpty,
+  isValidSo,
+  normalizeEmail,
+  parseCustomerString,
+  standardizeSo,
+} from '@/lib/utils';
 import { pdf, StyleSheet } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
 import DeliveryForm from './components/DeliveryForm';
-
-const formatSO = (rawSo) => {
-  const cleanSo = rawSo.replace(/[^a-zA-Z0-9-]/g, '');
-  const match = cleanSo.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
-  if (match) {
-    return `${match[1].toUpperCase()}${match[2]}-${match[3].padStart(6, '0')}`;
-  }
-  return cleanSo;
-};
-
-const isValidSO = (so) => /^[A-Z]{2,5}\d{4}-\d{6}$/i.test(so);
 
 const isTripRedelivery = (trip) => {
   const flowLower = (trip.flow || '').toLowerCase();
@@ -42,8 +40,8 @@ const triggerDownload = (blob, filename) => {
 
 const buildSoWorksheet = (processedRows) => {
   processedRows.sort((a, b) => {
-    const validA = isValidSO(a.so) && !a.isInvalidCustomer;
-    const validB = isValidSO(b.so) && !b.isInvalidCustomer;
+    const validA = isValidSo(a.so) && !a.isInvalidCustomer;
+    const validB = isValidSo(b.so) && !b.isInvalidCustomer;
     if (!validA && validB) return -1;
     if (validA && !validB) return 1;
     return a.so.localeCompare(b.so);
@@ -52,7 +50,7 @@ const buildSoWorksheet = (processedRows) => {
   const wsData = [
     ['Order Nbr.', 'Order Type'],
     ...processedRows.map((row) => {
-      const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+      const valid = isValidSo(row.so) && !row.isInvalidCustomer;
       return valid ? [row.so, row.so.substring(0, 2).toUpperCase()] : [row.so, '-'];
     }),
   ];
@@ -79,7 +77,7 @@ const buildSoWorksheet = (processedRows) => {
     const rowIndex = idx + 2;
     const cellRef = `A${rowIndex}`;
     const typeCellRef = `B${rowIndex}`;
-    const valid = isValidSO(row.so) && !row.isInvalidCustomer;
+    const valid = isValidSo(row.so) && !row.isInvalidCustomer;
 
     const baseStyle = {
       border: {
@@ -174,7 +172,7 @@ export const handleFullRouteTransDownload = async ({
             .filter(Boolean);
 
           rawSOs.forEach((rawSo) => {
-            const standardizedSo = formatSO(rawSo);
+            const standardizedSo = standardizeSo(rawSo);
             if (!seenSO.has(standardizedSo)) {
               seenSO.add(standardizedSo);
               processedRows.push({
@@ -284,7 +282,7 @@ export const handlePartialRouteTransDownload = async ({
               .filter(Boolean);
 
             rawSOs.forEach((rawSo) => {
-              const standardizedSo = formatSO(rawSo);
+              const standardizedSo = standardizeSo(rawSo);
 
               if (!vehicleSeenSOs.has(standardizedSo)) {
                 vehicleSeenSOs.add(standardizedSo);
@@ -478,6 +476,7 @@ export const handleDeliveryListDownload = async ({
         const isFirstHub = index === 0 && isHub;
         const isLastHub = index === route.trips.length - 1 && isHub;
         const parsedCust = parseCustomerString(trip.visitName);
+        const isBadCust = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
 
         let baseOutletName = isHub
           ? 'HUB'
@@ -499,7 +498,8 @@ export const handleDeliveryListDownload = async ({
           whInfo = null,
           isSplit = false,
           isUnsyncOverride = null,
-          partnerOverride = null
+          partnerOverride = null,
+          isInvalidSo = false
         ) => {
           const openVal = isHub ? '' : trip.openTime || '-';
           const closeVal = isHub ? '' : trip.closeTime || '-';
@@ -559,6 +559,9 @@ export const handleDeliveryListDownload = async ({
             if (col.key === 'eta' && isLastHub && hasManualInRoute && trip.eta) {
               comment = [{ a: 'Info', t: t('delivery.hub_eta_short'), h: true }];
             }
+            if (col.key === 'so' && isInvalidSo && !isHub) {
+              colStyle.font = { ...(colStyle.font || {}), color: { rgb: 'DC2626' }, bold: true };
+            }
 
             stylingMeta.push({ row: currentRowIndex, col: c, style: colStyle, comment });
           });
@@ -578,14 +581,19 @@ export const handleDeliveryListDownload = async ({
               trip.flow !== 'Pickup' ? item.wh : null,
               mapping.length > 1,
               !!soPartner,
-              soPartner
+              soPartner,
+              checkInvalidSo(item.so, isBadCust)
             );
           });
           return;
         }
 
+        const isInvalidSoTotal = isHub
+          ? false
+          : checkInvalidSoList(parsedCust?.invoiceNumber || trip.orderId || '', isBadCust);
+
         let displaySo = isHub
-          ? '-'
+          ? null
           : mapping.length > 0
             ? mapping
                 .map((item) =>
@@ -598,7 +606,12 @@ export const handleDeliveryListDownload = async ({
           isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
           custId,
           locId,
-          displaySo
+          displaySo,
+          null,
+          false,
+          null,
+          null,
+          isInvalidSoTotal
         );
       });
 
