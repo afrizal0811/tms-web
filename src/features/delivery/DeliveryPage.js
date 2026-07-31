@@ -53,6 +53,7 @@ export default function DeliveryPage() {
   const [routingResults, setRoutingResults] = useState([]);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [hubsData, setHubsData] = useState([]);
+  const [hasPartialRouting, setHasPartialRouting] = useState(false);
 
   const downloadDropdownRef = useRef(null);
 
@@ -141,6 +142,7 @@ export default function DeliveryPage() {
       );
 
       if (activeHub?.hasPartialRouting) {
+        setHasPartialRouting(true);
         setIsRoutingModalOpen(true);
       } else {
         handleFullRouteTransDownload(baseProps);
@@ -206,6 +208,7 @@ export default function DeliveryPage() {
             hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,
+            hasPartialRouting: hasPartialRouting,
           }),
           getLocationHistories({
             timeFrom: historyFrom,
@@ -368,7 +371,7 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-  }, [selectedDate, t]);
+  }, [selectedDate, t, hasPartialRouting]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];

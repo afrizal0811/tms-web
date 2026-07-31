@@ -3,10 +3,10 @@
 import { formatDateUniversal } from '../utils';
 import { apiFetch } from './base';
 
-function getCutOffTime(dateObj) {
+function getCutOffTime(dateObj, hasPartialRouting = false) {
   const isSaturday = dateObj.getDay() === 6;
   return {
-    startTime: isSaturday ? '11:00:00' : '16:00:00',
+    startTime: hasPartialRouting ? '09:00:00' : isSaturday ? '04:00:00' : '09:00:00',
     endTime: isSaturday ? '10:59:59' : '15:59:59',
   };
 }
@@ -17,14 +17,15 @@ export async function getResultsSummary({
   routingDateObj,
   deliveryDateObj,
   hubId,
+  hasPartialRouting = false,
   limit = 1000,
 }) {
   let finalDateFrom = dateFrom;
   let finalDateTo = dateTo;
 
   if (routingDateObj && deliveryDateObj) {
-    const { startTime } = getCutOffTime(routingDateObj);
-    const { endTime } = getCutOffTime(deliveryDateObj);
+    const { startTime } = getCutOffTime(routingDateObj, hasPartialRouting);
+    const { endTime } = getCutOffTime(deliveryDateObj, hasPartialRouting);
 
     const startStr = formatDateUniversal(routingDateObj, 'YYYY-MM-DD');
     const endStr = formatDateUniversal(deliveryDateObj, 'YYYY-MM-DD');
@@ -63,9 +64,8 @@ export async function getResult(id) {
   return result;
 }
 
-
 export async function getResultHistories(resultIds) {
-  return await apiFetch('/api/get-result-histories', 'Gagal mengambil data batch histories', {
+  return await apiFetch('/api/get-batch-histories', 'Gagal mengambil data batch histories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resultIds }),
