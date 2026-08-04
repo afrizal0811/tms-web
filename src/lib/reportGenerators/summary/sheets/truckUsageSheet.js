@@ -187,7 +187,7 @@ export async function calculateTruckUsageData(
     getTruckUsageData(hubId, startDateStr, endDateStr),
   ]);
 
-  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
+  let vehicleTypes = vehicleTypesObj.map((v) => v.name);
 
   const mappingsObj = mappingsDB.reduce((acc, curr) => {
     const cleanType = (curr.mappedType || '').replace(/["'\\]/g, '').trim();
@@ -234,6 +234,23 @@ export async function calculateTruckUsageData(
       masterDriversDB.push(d);
     }
   });
+
+  const branchTypesSet = new Set();
+  masterDriversDB.forEach((d) => {
+    const firstTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
+    const rawTypeSource = d.type || firstTag;
+    const type = getVehicleType(rawTypeSource, d.plat, mappingsObj, vehicleTypes);
+    if (type && type !== 'Lainnya') branchTypesSet.add(type);
+  });
+
+  const filteredVehicleTypes = vehicleTypes.filter((vt) => branchTypesSet.has(vt));
+  Array.from(branchTypesSet).forEach((bt) => {
+    if (!filteredVehicleTypes.includes(bt)) filteredVehicleTypes.push(bt);
+  });
+
+  if (filteredVehicleTypes.length > 0) {
+    vehicleTypes = filteredVehicleTypes;
+  }
 
   const hubMasterData = await calculateMasterTruckStorage(
     masterDriversDB,

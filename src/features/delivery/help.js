@@ -356,6 +356,49 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
   XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
 };
 
+const resolveDedupedTrip = (rawTrip, enrichedTripsMap, vehicleSeenSOs) => {
+  if (rawTrip.isHub) return rawTrip;
+
+  const key = rawTrip.visitId || rawTrip.orderId;
+  const trip = enrichedTripsMap.has(key) ? enrichedTripsMap.get(key) : rawTrip;
+
+  if (isTripRedelivery(trip)) return trip;
+
+  const parsedCust = parseCustomerString(trip.visitName);
+  const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
+  if (!rawInvoice) return null;
+
+  const rawSOs = rawInvoice
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const newSOs = [];
+  let hasNewSO = false;
+
+  rawSOs.forEach((rawSo) => {
+    const stdSo = standardizeSo(rawSo);
+    if (!vehicleSeenSOs.has(stdSo)) {
+      vehicleSeenSOs.add(stdSo);
+      newSOs.push(rawSo);
+      hasNewSO = true;
+    }
+  });
+
+  if (!hasNewSO) return null;
+
+  if (trip.soWarehouseMapping) {
+    return {
+      ...trip,
+      orderId: newSOs.join(', '),
+      orderIdOverride: newSOs.join(', '),
+      soWarehouseMapping: trip.soWarehouseMapping.filter((m) =>
+        newSOs.some((n) => standardizeSo(n) === standardizeSo(m.so) || n === m.so)
+      ),
+    };
+  }
+  return { ...trip, orderId: newSOs.join(', '), orderIdOverride: newSOs.join(', ') };
+};
+
 export const getDriverName = (route, driverData) => {
   if (!route) return '';
   const email = normalizeEmail(route.assignee);
@@ -549,7 +592,7 @@ export const handlePartialRouteTransDownload = async ({
   }
 };
 
-export const handleDeliveryFormDownload = async ({
+export const handleFullDeliveryFormDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
@@ -609,6 +652,134 @@ export const handleDeliveryFormDownload = async ({
     toastSuccess(t('common.toast.success', { length: generatedFiles.length }));
   } catch (error) {
     toastError(t('common.toast.error', { err: error.message }));
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
+export const handlePartialDeliveryFormDownload = async ({
+  routingResults,
+  filteredVehicleRoutes,
+  setIsDownloading,
+  t,
+  selectedDate,
+  driverData,
+  timeMap,
+}) => {
+  setIsDownloading(true);
+  try {
+    const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+
+    if (!routingResults || routingResults.length === 0) {
+      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const sortedRoutingResults = [...routingResults].sort((a, b) => {
+      const timeA = new Date(a.createdTime || 0).getTime();
+      const timeB = new Date(b.createdTime || 0).getTime();
+      return timeA - timeB;
+    });
+
+    const enrichedTripsMap = new Map();
+    (filteredVehicleRoutes || []).forEach((r) => {
+      (r.trips || []).forEach((trip) => {
+        if (!trip.isHub) {
+          const key = trip.visitId || trip.orderId;
+          if (key) enrichedTripsMap.set(key, trip);
+        }
+      });
+    });
+
+    const masterZip = new JSZip();
+    let masterHasData = false;
+    const globalSeenSOByVehicle = new Map();
+    let routingIndex = 1;
+
+    const generatePdfBlob = async (route, realDriverName, tData) => {
+      return await pdf(
+        <DeliveryForm
+          data={route}
+          selectedDate={selectedDate}
+          driverNameOverride={realDriverName}
+          jamBerangkat={tData.jamBerangkat}
+          jamKembali={tData.jamKembali}
+        />
+      ).toBlob();
+    };
+
+    for (const routing of sortedRoutingResults) {
+      const status = routing.status || routing.dispatchStatus || '';
+      if (String(status).toLowerCase() !== 'done') continue;
+      const routes = routing.result?.routing || [];
+      if (routes.length === 0) continue;
+
+      const cleanRoutingName = (routing.name || routing._id || 'Routing')
+        .replace(/[\\/:*?\[\]]/g, '')
+        .trim();
+      const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
+      routingIndex++;
+
+      const routingZip = new JSZip();
+      let routingHasData = false;
+      const seenFileNames = new Set();
+
+      for (const route of routes) {
+        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
+          .replace(/[\\/:*?\[\]]/g, '')
+          .trim();
+
+        if (!globalSeenSOByVehicle.has(cleanName)) {
+          globalSeenSOByVehicle.set(cleanName, new Set());
+        }
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+
+        const processedTripsToRender = [];
+
+        (route.trips || []).forEach((rawTrip) => {
+          const trip = resolveDedupedTrip(rawTrip, enrichedTripsMap, vehicleSeenSOs);
+          if (trip === null) return;
+          processedTripsToRender.push(trip);
+        });
+
+        if (processedTripsToRender.length <= 2 && processedTripsToRender.every((pt) => pt.isHub)) {
+          continue;
+        }
+
+        routingHasData = true;
+        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.pdf', seenFileNames);
+        const driverName = getDriverName(route, driverData);
+
+        const normalizedAssignee = normalizeEmail(route.assignee);
+        const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
+
+        const modifiedRoute = { ...route, trips: processedTripsToRender };
+        const blob = await generatePdfBlob(modifiedRoute, driverName, timeData);
+
+        routingZip.file(nameFile, blob);
+      }
+
+      if (routingHasData) {
+        masterHasData = true;
+        const routingZipBlob = await routingZip.generateAsync({ type: 'blob' });
+        masterZip.file(`${zipFolderName}.zip`, routingZipBlob);
+      }
+    }
+
+    if (!masterHasData) {
+      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      setIsDownloading(false);
+      return;
+    }
+
+    const masterContent = await masterZip.generateAsync({ type: 'blob' });
+    triggerDownload(masterContent, `Delivery Form - ${dateForFilename} - ${locationName}.zip`);
+    toastSuccess(t('common.toast.success'));
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }));
   } finally {
     setIsDownloading(false);
   }
@@ -728,53 +899,10 @@ export const handlePartialDeliveryListDownload = async ({
 
         (route.trips || []).forEach((rawTrip, index) => {
           const isHub = rawTrip.isHub;
-          let trip = rawTrip;
-          let isFirstHub = index === 0 && isHub;
-          let isLastHub = index === route.trips.length - 1 && isHub;
-
-          if (!isHub) {
-            const key = rawTrip.visitId || rawTrip.orderId;
-            if (enrichedTripsMap.has(key)) {
-              trip = enrichedTripsMap.get(key);
-            }
-
-            if (!isTripRedelivery(trip)) {
-              const parsedCust = parseCustomerString(trip.visitName);
-              const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
-              if (!rawInvoice) return;
-
-              const rawSOs = rawInvoice
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const newSOs = [];
-              let hasNewSO = false;
-
-              rawSOs.forEach((rawSo) => {
-                const stdSo = standardizeSo(rawSo);
-                if (!vehicleSeenSOs.has(stdSo)) {
-                  vehicleSeenSOs.add(stdSo);
-                  newSOs.push(rawSo);
-                  hasNewSO = true;
-                }
-              });
-
-              if (!hasNewSO) return;
-
-              if (trip.soWarehouseMapping) {
-                trip = {
-                  ...trip,
-                  orderId: newSOs.join(', '),
-                  orderIdOverride: newSOs.join(', '),
-                  soWarehouseMapping: trip.soWarehouseMapping.filter((m) =>
-                    newSOs.some((n) => standardizeSo(n) === standardizeSo(m.so) || n === m.so)
-                  ),
-                };
-              } else {
-                trip = { ...trip, orderId: newSOs.join(', '), orderIdOverride: newSOs.join(', ') };
-              }
-            }
-          }
+          const isFirstHub = index === 0 && isHub;
+          const isLastHub = index === route.trips.length - 1 && isHub;
+          const trip = resolveDedupedTrip(rawTrip, enrichedTripsMap, vehicleSeenSOs);
+          if (trip === null) return;
           processedTripsToRender.push({ trip, isFirstHub, isLastHub });
         });
 

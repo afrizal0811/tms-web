@@ -9,6 +9,7 @@ import {
   sortRows,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
+
 export const serviceLevelData = [
   {
     name: 'SUKSES',
@@ -445,6 +446,8 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   const groupStats = new Map();
 
   for (const task of allTaskData) {
+    if (task.driver === 'N/A' || task.rawTask?.status === 'UNASSIGNED') continue;
+
     const gKey = task.groupKey;
     if (!tasksByGroupMap.has(gKey)) tasksByGroupMap.set(gKey, []);
     tasksByGroupMap.get(gKey).push(task);
@@ -651,16 +654,6 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
     return;
   }
 
-  const sortedData = [...data].sort((a, b) => {
-    const driverA = a.driver || '';
-    const driverB = b.driver || '';
-
-    if (driverA < driverB) return -1;
-    if (driverA > driverB) return 1;
-
-    return (a.routeSequence || 0) - (b.routeSequence || 0);
-  });
-
   const wb = XLSX.utils.book_new();
 
   const headers = [
@@ -688,7 +681,7 @@ export const downloadRoutingVsActual = (data, t, selectedDate, hubLabel) => {
 
   let lastDriver = null;
 
-  sortedData.forEach((row, index) => {
+  data.forEach((row, index) => {
     if (row.type === 'SPACER') {
       return;
     }

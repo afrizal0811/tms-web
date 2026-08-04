@@ -29,6 +29,7 @@ export const STYLES = {
       right: { style: 'thick', color: { rgb: 'FF8904' } },
     },
   },
+  yellowFillHighlight: { fill: { patternType: 'solid', fgColor: { rgb: 'FFF2CC' } } },
 };
 
 export const getRawPlate = (i) =>

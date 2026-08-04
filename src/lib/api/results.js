@@ -65,7 +65,7 @@ export async function getResult(id) {
 }
 
 export async function getResultHistories(resultIds) {
-  return await apiFetch('/api/get-batch-histories', 'Gagal mengambil data batch histories', {
+  return await apiFetch('/api/get-result-histories', 'Gagal mengambil data batch histories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resultIds }),

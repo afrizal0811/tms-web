@@ -1,4 +1,9 @@
-import { calculateDurationAsQuotedHHMM, getBasePlate, sortRows } from '@/lib/utils';
+import {
+  calculateMinuteDifference,
+  formatMinutesToHHMM,
+  getBasePlate,
+  sortRows,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getCleanString, getRawPlate, isValidValue, STYLES } from './shared';
 
@@ -69,7 +74,8 @@ export function buildStartFinishSheet(wb, timeDataObjects, t, driverData = []) {
   const sheetData = [
     headers,
     ...sortTime.map((i) => {
-      let dur = calculateDurationAsQuotedHHMM(i.rawStart, i.rawFinish);
+      const timeDur = calculateMinuteDifference(i.rawStart, i.rawFinish);
+      let dur = formatMinutesToHHMM(timeDur, false);
       if (dur === "'-'" || dur === '-' || !dur) dur = null;
 
       return [

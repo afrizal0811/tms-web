@@ -3,9 +3,14 @@
 import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 
-export default function RoutingModal({ isOpen, onClose, onPartial, onFull, translate }) {
+export default function PartialRoutingModal({ isOpen, onClose, onPartial, onFull, translate, title }) {
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Route Transaction" maxWidth="max-w-md">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title || 'Download Options'}
+      maxWidth="max-w-md"
+    >
       <div className="p-4 flex flex-col gap-6">
         <p className="text-lg font-bold text-center text-slate-700 dark:text-slate-300">
           {translate('delivery.modal.choose_type')}

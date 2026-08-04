@@ -45,11 +45,37 @@ function ultraNormalize(str) {
 async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehicleTypes) {
   const routingMap = new Map();
   const truckUsageCount = {};
+  const seenTrucks = new Set();
   const { emailMap, platMap } = buildDriverMaps(driverData);
   const normalizedMappings = buildNormalizedMappings(mappingsObj);
 
-  vehicleTypes.forEach((v) => {
-    truckUsageCount[String(v).toUpperCase()] = { Dry: 0, Frozen: 0 };
+  driverData.forEach((d) => {
+    const basePlateStr = ultraNormalize(d?.plat);
+    let cat = normalizedMappings[basePlateStr];
+    if (!cat && basePlateStr) {
+      const dbKeys = Object.keys(normalizedMappings);
+      for (const dbKey of dbKeys) {
+        if (dbKey.length > 3 && (basePlateStr.includes(dbKey) || dbKey.includes(basePlateStr))) {
+          cat = normalizedMappings[dbKey];
+          break;
+        }
+      }
+    }
+    if (!cat) {
+      let tCat = d?.type || '';
+      if (tCat) {
+        const pts = String(tCat).split('-');
+        let sType = pts.length > 1 ? pts[1].toUpperCase() : pts[0].toUpperCase();
+        if (pts.length > 2 && pts[2].toUpperCase() === 'LONG') {
+          if (['CDE', 'CDD', 'FUSO'].includes(sType)) sType = `${sType}-LONG`;
+        }
+        cat = sType;
+      }
+    }
+    if (cat) {
+      const uCat = String(cat).toUpperCase();
+      if (!truckUsageCount[uCat]) truckUsageCount[uCat] = { Dry: 0, Frozen: 0 };
+    }
   });
 
   for (const fileBuffer of routingBuffers) {
@@ -188,10 +214,14 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
       category = category ? String(category).toUpperCase() : '';
       const storageType = (driverInfo?.storage || 'DRY').toUpperCase();
 
-      if (category) {
-        if (!truckUsageCount[category]) truckUsageCount[category] = { Dry: 0, Frozen: 0 };
-        if (storageType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
-        else truckUsageCount[category]['Dry'] += 1;
+      if (category && basePlat) {
+        const truckKey = `${category}_${storageType}_${basePlat}`;
+        if (!seenTrucks.has(truckKey)) {
+          seenTrucks.add(truckKey);
+          if (!truckUsageCount[category]) truckUsageCount[category] = { Dry: 0, Frozen: 0 };
+          if (storageType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
+          else truckUsageCount[category]['Dry'] += 1;
+        }
       }
     }
   }

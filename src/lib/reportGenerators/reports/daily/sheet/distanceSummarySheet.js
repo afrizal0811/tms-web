@@ -135,7 +135,12 @@ export function buildDistanceSummary(wb, driverData, routingMap, timeDataObjects
       if (R === 0 && (C === 0 || C === 4)) baseStyle = STYLES.greenHeader;
       else if (R === 1) baseStyle = STYLES.header;
 
-      ws[cellRef].s = { ...baseStyle, border: borderAll };
+      let highlightStyle = {};
+      if (C === 2 && (R === 2 || R === 3)) {
+        highlightStyle = STYLES.yellowFillHighlight;
+      }
+
+      ws[cellRef].s = { ...baseStyle, border: borderAll, ...highlightStyle };
     }
   }
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.dist_summary.sheet_name'));
