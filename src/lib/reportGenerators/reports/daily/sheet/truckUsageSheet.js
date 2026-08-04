@@ -10,21 +10,19 @@ export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t) {
   ];
   const finalUsageData = [headers];
 
-  masterNames.forEach((type) => {
-    if (truckUsageCount[type]) {
-      const dry = truckUsageCount[type]['Dry'] || 0;
-      const frozen = truckUsageCount[type]['Frozen'] || 0;
-      finalUsageData.push([type, dry > 0 ? dry : null, frozen > 0 ? frozen : null]);
-      delete truckUsageCount[type];
-    }
+  const keys = Object.keys(truckUsageCount).sort((a, b) => {
+    const idxA = masterNames.indexOf(a);
+    const idxB = masterNames.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
   });
 
-  Object.keys(truckUsageCount).forEach((type) => {
+  keys.forEach((type) => {
     const dry = truckUsageCount[type]['Dry'] || 0;
     const frozen = truckUsageCount[type]['Frozen'] || 0;
-    if (dry > 0 || frozen > 0) {
-      finalUsageData.push([type || null, dry > 0 ? dry : null, frozen > 0 ? frozen : null]);
-    }
+    finalUsageData.push([type || null, dry > 0 ? dry : null, frozen > 0 ? frozen : null]);
   });
 
   const ws = XLSX.utils.aoa_to_sheet(finalUsageData);

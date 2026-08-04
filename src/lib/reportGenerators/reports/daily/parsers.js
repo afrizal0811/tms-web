@@ -61,10 +61,26 @@ export function parseRoutingData(
   const routingMap = new Map();
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
+  const seenTrucks = new Set();
 
-  vehicleTypes.forEach((v) => {
-    const typeName = typeof v === 'string' ? v : v.name;
-    truckUsageCount[String(typeName).toUpperCase()] = { Dry: 0, Frozen: 0 };
+  driverData.forEach((d) => {
+    const basePlateStr = (d?.plat || '').replace(/\s+/g, '').toLowerCase();
+    let cat = matchNormalizedCategory(basePlateStr, basePlateStr, normalizedMappings);
+    if (!cat) {
+      let tCat = d?.type || '';
+      if (tCat) {
+        const pts = String(tCat).split('-');
+        let sType = pts.length > 1 ? pts[1].toUpperCase() : pts[0].toUpperCase();
+        if (pts.length > 2 && pts[2].toUpperCase() === 'LONG') {
+          if (['CDE', 'CDD', 'FUSO'].includes(sType)) sType = `${sType}-LONG`;
+        }
+        cat = sType;
+      }
+    }
+    if (cat) {
+      const uCat = String(cat).toUpperCase();
+      if (!truckUsageCount[uCat]) truckUsageCount[uCat] = { Dry: 0, Frozen: 0 };
+    }
   });
 
   function resolveVehicleCategory(driverInfo, route) {
@@ -183,15 +199,17 @@ export function parseRoutingData(
         } else if (driverInfo && driverInfo.type) {
           generalType = String(driverInfo.type).split('-')[0].toUpperCase();
         }
-        if (!['DRY', 'FROZEN'].includes(generalType)) generalType = 'DRY';
-
         if (generalType === 'FROZEN') distanceTotals.frozen += fDist;
         else distanceTotals.dry += fDist;
 
-        if (category) {
-          if (!truckUsageCount[category]) truckUsageCount[category] = { Dry: 0, Frozen: 0 };
-          if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
-          else truckUsageCount[category]['Dry'] += 1;
+        if (category && basePlat) {
+          const truckKey = `${category}_${generalType}_${basePlat}`;
+          if (!seenTrucks.has(truckKey)) {
+            seenTrucks.add(truckKey);
+            if (!truckUsageCount[category]) truckUsageCount[category] = { Dry: 0, Frozen: 0 };
+            if (generalType === 'FROZEN') truckUsageCount[category]['Frozen'] += 1;
+            else truckUsageCount[category]['Dry'] += 1;
+          }
         }
       }
     });
