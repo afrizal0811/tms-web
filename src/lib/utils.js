@@ -99,10 +99,10 @@ export function calculateMinuteDifference(time1, time2) {
 
     if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
 
-    const minutes1 = date1.getHours() * 60 + date1.getMinutes();
-    const minutes2 = date2.getHours() * 60 + date2.getMinutes();
+    const m1 = Math.floor(date1.getTime() / 60000);
+    const m2 = Math.floor(date2.getTime() / 60000);
 
-    return Math.abs(minutes1 - minutes2);
+    return Math.abs(m2 - m1);
   } catch (e) {
     return null;
   }
@@ -279,12 +279,6 @@ export function formatUTC7(timestampStr, pattern = 'YYYY-MM-DD') {
 
   const result = pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
   return result;
-}
-
-// Menghitung durasi format HH:mm
-export function calculateDurationAsQuotedHHMM(startTimeStr, finishTimeStr) {
-  const totalMinutes = calculateMinuteDifference(startTimeStr, finishTimeStr);
-  return formatMinutesToHHMM(totalMinutes);
 }
 
 // Mengecek hari Minggu
