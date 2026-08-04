@@ -7,7 +7,7 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import RoutingModal from '@/components/modal/RoutingModal';
+import PartialRoutingModal from '@/components/modal/PartialRoutingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -29,12 +29,19 @@ import { toastError, toastWarning } from '../../lib/toast';
 import TableData from './components/TableData';
 import {
   getDriverName,
-  handleDeliveryFormDownload,
+  handleFullDeliveryFormDownload,
   handleFullDeliveryListDownload,
   handleFullRouteTransDownload,
+  handlePartialDeliveryFormDownload,
   handlePartialDeliveryListDownload,
   handlePartialRouteTransDownload,
 } from './help';
+
+const getStoragePrefix = (storageFilter) => {
+  if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) return 'DRY';
+  if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) return 'FRZ';
+  return '';
+};
 
 export default function DeliveryPage() {
   const { t } = useLanguage();
@@ -54,7 +61,6 @@ export default function DeliveryPage() {
   const [routingResults, setRoutingResults] = useState([]);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [hubsData, setHubsData] = useState([]);
-  const [hasPartialRouting, setHasPartialRouting] = useState(false);
   const [downloadType, setDownloadType] = useState(null);
 
   const downloadDropdownRef = useRef(null);
@@ -137,28 +143,28 @@ export default function DeliveryPage() {
       isDetailView,
     };
 
-    if (type === 'routeTransaction' || type === 'deliveryList') {
+    if (['routeTransaction', 'deliveryList', 'deliveryForm'].includes(type)) {
       const { storedLocation } = getLocalStorage();
       const activeHub = hubsData.find(
         (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
       );
 
       if (activeHub?.hasPartialRouting) {
-        setHasPartialRouting(true);
         setDownloadType(type);
         setIsRoutingModalOpen(true);
       } else {
         if (type === 'routeTransaction') {
           handleFullRouteTransDownload(baseProps);
         } else if (type === 'deliveryList') {
-          let prefix = '';
-          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
-          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
-          handleFullDeliveryListDownload({ ...baseProps, fileNamePrefix: prefix });
+          handleFullDeliveryListDownload({
+            ...baseProps,
+            fileNamePrefix: getStoragePrefix(storageFilter),
+          });
+        } else if (type === 'deliveryForm') {
+          handleFullDeliveryFormDownload(baseProps);
         }
       }
     }
-    if (type === 'deliveryForm') handleDeliveryFormDownload(baseProps);
   };
 
   useEffect(() => {
@@ -180,6 +186,17 @@ export default function DeliveryPage() {
         const { storedLocation } = getLocalStorage();
         if (!storedLocation)
           throw new Error(t('common.toast.error', { err: 'Location not found' }));
+
+        let currentHubs = hubsData;
+        if (currentHubs.length === 0) {
+          currentHubs = await getHubs();
+          setHubsData(currentHubs);
+        }
+
+        const activeHub = currentHubs.find(
+          (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
+        );
+        const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
         const rawDrivers = await getDriverData(storedLocation);
         if (isEmpty(rawDrivers)) {
@@ -212,7 +229,7 @@ export default function DeliveryPage() {
             hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,
-            hasPartialRouting: hasPartialRouting,
+            hasPartialRouting: currentHasPartialRouting,
           }),
           getLocationHistories({
             timeFrom: historyFrom,
@@ -375,7 +392,7 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-  }, [selectedDate, t, hasPartialRouting]);
+  }, [selectedDate, t, hubsData]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];
@@ -509,6 +526,19 @@ export default function DeliveryPage() {
     () => filteredVehicleRoutes.find((r) => r.vehicleId === activeVehicleId) || null,
     [filteredVehicleRoutes, activeVehicleId]
   );
+
+  const getModalTitle = () => {
+    switch (downloadType) {
+      case 'routeTransaction':
+        return 'Route Transaction';
+      case 'deliveryList':
+        return 'Delivery List';
+      case 'deliveryForm':
+        return 'Delivery Form';
+      default:
+        return 'Download Options';
+    }
+  };
 
   if (!isClient) return null;
 
@@ -658,13 +688,13 @@ export default function DeliveryPage() {
         </div>
       </BodyCard>
 
-      <RoutingModal
+      <PartialRoutingModal
         isOpen={isRoutingModalOpen}
+        title={getModalTitle()}
         onClose={() => setIsRoutingModalOpen(false)}
-        onPartial={() => {
-          let prefix = '';
-          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
-          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+        onPartial={(e) => {
+          if (e) e.preventDefault();
+          const prefix = getStoragePrefix(storageFilter);
 
           if (downloadType === 'routeTransaction') {
             handlePartialRouteTransDownload({
@@ -684,13 +714,22 @@ export default function DeliveryPage() {
               isDetailView,
               selectedDate,
             });
+          } else if (downloadType === 'deliveryForm') {
+            handlePartialDeliveryFormDownload({
+              routingResults,
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              selectedDate,
+              driverData,
+              timeMap,
+            });
           }
           setIsRoutingModalOpen(false);
         }}
-        onFull={() => {
-          let prefix = '';
-          if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) prefix = 'DRY';
-          if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) prefix = 'FRZ';
+        onFull={(e) => {
+          if (e) e.preventDefault();
+          const prefix = getStoragePrefix(storageFilter);
 
           if (downloadType === 'routeTransaction') {
             handleFullRouteTransDownload({
@@ -707,6 +746,15 @@ export default function DeliveryPage() {
               driverData,
               fileNamePrefix: prefix,
               isDetailView,
+            });
+          } else if (downloadType === 'deliveryForm') {
+            handleFullDeliveryFormDownload({
+              filteredVehicleRoutes,
+              setIsDownloading,
+              t,
+              selectedDate,
+              driverData,
+              timeMap,
             });
           }
           setIsRoutingModalOpen(false);
