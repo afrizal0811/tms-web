@@ -3,7 +3,15 @@
 import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 
-export default function PartialRoutingModal({ isOpen, onClose, onPartial, onFull, translate, title }) {
+export default function PartialRoutingModal({
+  isOpen,
+  onClose,
+  onPartial,
+  onFull,
+  translate,
+  title,
+}) {
+  const titleLowercase = title?.toLowerCase();
   return (
     <BaseModal
       isOpen={isOpen}
@@ -18,10 +26,12 @@ export default function PartialRoutingModal({ isOpen, onClose, onPartial, onFull
 
         <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
           <p>
-            <b>{translate('delivery.partial')}</b>: {translate('delivery.modal.partial')}
+            <b>{translate('delivery.partial')}</b>:{' '}
+            {translate('delivery.modal.partial', { type: titleLowercase })}
           </p>
           <p className="mt-1">
-            <b>{translate('delivery.full')}</b>: {translate('delivery.modal.full')}
+            <b>{translate('delivery.full')}</b>:{' '}
+            {translate('delivery.modal.full', { type: titleLowercase })}
           </p>
         </div>
 

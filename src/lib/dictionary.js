@@ -466,8 +466,8 @@ export const dictionary = {
       },
       modal: {
         choose_type: 'Pilih tipe laporan',
-        partial: 'Data route transaction dipisah berdasarkan hasil routing',
-        full: 'Data route transaction digabungkan berdasarkan hasil routing',
+        partial: 'Data {type} dipisah berdasarkan hasil routing',
+        full: 'Data {type} digabungkan berdasarkan hasil routing',
       },
       toast: {
         invalid_so: 'Kendaraan memiliki nomor faktur yang salah:',
@@ -1146,8 +1146,8 @@ export const dictionary = {
       },
       modal: {
         choose_type: 'Choose Report Type',
-        partial: 'Separate route transaction data by routing result',
-        full: 'Merge route transaction data by routing result',
+        partial: 'Separate {type} data by routing result',
+        full: 'Merge {type} data by routing result',
       },
       toast: {
         invalid_so: 'Vehicle contains incorrect invoice numbers:',
