@@ -11,7 +11,7 @@ export async function getVehicles({ hubId, limit }) {
 export async function getLocationHistories({
   timeFrom,
   timeTo,
-  limit,
+  limit = 10000,
   startFinish,
   fields,
   timeBy,

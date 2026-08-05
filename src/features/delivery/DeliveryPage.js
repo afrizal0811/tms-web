@@ -234,7 +234,6 @@ export default function DeliveryPage() {
           getLocationHistories({
             timeFrom: historyFrom,
             timeTo: historyTo,
-            limit: 5000,
             startFinish: 'true',
             fields: 'finish,startTime,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
