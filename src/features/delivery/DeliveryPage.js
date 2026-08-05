@@ -64,6 +64,7 @@ export default function DeliveryPage() {
   const [downloadType, setDownloadType] = useState(null);
 
   const downloadDropdownRef = useRef(null);
+  const lastWarnedPlates = useRef('');
 
   useEffect(() => {
     setIsClient(true);
@@ -94,29 +95,6 @@ export default function DeliveryPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (allRoutes.length === 0) return;
-    const badPlates = new Set();
-
-    allRoutes.forEach((r) => {
-      r.trips.forEach((t) => {
-        if (t.isHub || !t.orderId || t.isReDelivery) return;
-        const parsed = parseCustomerString(t.visitName);
-        const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
-        const bad = checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust);
-
-        if (bad) badPlates.add(r.vehicleName || 'Vehicle');
-      });
-    });
-
-    if (badPlates.size > 0) {
-      const platesStr = Array.from(badPlates)
-        .map((p) => `${p}`)
-        .join('\n');
-      toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
-    }
-  }, [allRoutes, t]);
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);
@@ -380,6 +358,28 @@ export default function DeliveryPage() {
           if (etdA && !etdB) return -1;
           return (etdA || '').localeCompare(etdB || '');
         });
+
+        const badPlates = new Set();
+        finalRoutes.forEach((r) => {
+          r.trips.forEach((t) => {
+            if (t.isHub || !t.orderId || t.isReDelivery) return;
+            const parsed = parseCustomerString(t.visitName);
+            const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
+            const bad = checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust);
+
+            if (bad) badPlates.add(r.vehicleName || 'Vehicle');
+          });
+        });
+
+        if (badPlates.size > 0) {
+          const platesStr = Array.from(badPlates).join('\n');
+          if (lastWarnedPlates.current !== platesStr) {
+            toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
+            lastWarnedPlates.current = platesStr;
+          }
+        } else {
+          lastWarnedPlates.current = '';
+        }
 
         setAllRoutes(finalRoutes);
         setActiveVehicleId(finalRoutes.length > 0 ? finalRoutes[0].vehicleId : null);
