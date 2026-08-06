@@ -1,17 +1,18 @@
 'use client';
 
+import BaseModal from '@/components/BaseModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import BaseModal from '@/components/BaseModal';
 
 export default function TokenExpirationModal() {
   const { t, localeCode } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [targetDateObj, setTargetDateObj] = useState(null);
-
+  const [isExpired, setIsExpired] = useState(false);
+  
   useEffect(() => {
     const checkTokenExpiration = () => {
       const envDate = process.env.NEXT_PUBLIC_TOKEN_EXPIRE;
@@ -27,7 +28,7 @@ export default function TokenExpirationModal() {
 
         const diffTime = targetDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+        setIsExpired(diffDays < 0);
         if (diffDays < 14) {
           setDaysRemaining(diffDays);
           setTargetDateObj(targetDate);
@@ -43,37 +44,29 @@ export default function TokenExpirationModal() {
 
   const getMessage = () => {
     const formattedDate = targetDateObj ? formatLongDate(targetDateObj, localeCode) : '-';
-    const contact = <span className="font-bold text-red-600">{t('home.contact_edp')}</span>;
+    const contact = (
+      <p className="font-bold text-red-600 text-center w-full">{t('home.contact_edp')}</p>
+    );
     const absDaysRemaining = Math.abs(daysRemaining);
 
-    if (daysRemaining < 0) {
-      return (
-        <div className="text-red-600 font-medium">
-          {t('home.already_exp', { remaining: absDaysRemaining })} ({formattedDate})
-          <br />
-          <br />
-          {contact}
-        </div>
-      );
-    }
     return (
-      <div className="text-slate-700">
-        {t('home.exp_remaining')}{' '}
-        <span className="font-bold text-red-600">
-          {t('home.exp_remaining_days', { remaining: absDaysRemaining })}{' '}
-        </span>
-        ({formattedDate})
+      <span className="text-slate-700 flex flex-col text-center">
+        {isExpired
+          ? t('home.already_exp', { remaining: absDaysRemaining })
+          : t('home.exp_remaining', { remaining: absDaysRemaining })}
         <br />
+        <strong>({formattedDate})</strong>
         <br />
         {contact}
-      </div>
-    );
+      </span>
+    ); 
   };
 
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
+      onClose={() => !isExpired ? setIsOpen(false) : null}
+      noClose={isExpired}
       title={t('common.warning')}
       maxWidth="max-w-lg"
     >

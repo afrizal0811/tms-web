@@ -9,7 +9,7 @@ import Table from './Table';
 
 export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, translate }) {
   const [newTypeName, setNewTypeName] = useState('');
-  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
+  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
 
   const handleAddVehicleType = async () => {
     if (!newTypeName.trim() || isReadOnly) return;
@@ -31,13 +31,13 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
       await onRefresh();
     } catch (err) {
       toastError(translate('common.toast.error', { err: err.message }));
-      throw err; // Lempar ke Table agar form edit tidak tertutup
+      throw err;
     }
   };
 
   const confirmDeleteType = async () => {
     const targetId = deleteConfig.id;
-    setDeleteConfig({ isOpen: false, id: null });
+    setDeleteConfig({ isOpen: false, id: null, name: null });
     if (!targetId) return;
     try {
       await deleteVehicleType(targetId);
@@ -71,17 +71,22 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
   ];
 
   const title = translate('setting.tab.general.standard_title');
+  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
-        onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
+        onCancel={() => setDeleteConfig({ isOpen: false, id: null, name: null })}
         onConfirm={confirmDeleteType}
         title={translate('common.modal.confirm_title', { text: title })}
-        message={translate('common.modal.confirm_message', {
-          text: title.toLowerCase(),
-        })}
+        message={
+          <span>
+            {msgParts[0]}
+            <strong>{deleteConfig.name}</strong>
+            {msgParts[1]}
+          </span>
+        }
       />
 
       <div className="mb-4 border-b border-gray-100 pb-3">
@@ -120,7 +125,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
         emptyMessage={translate('common.no_data')}
         translate={translate}
         onSave={handleUpdateVehicleType}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id })}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, name: item.name })}
       />
     </Card>
   );

@@ -219,7 +219,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
 
   const modalMessage = (
     <div className="flex flex-col gap-2">
-      <div className="text-slate-200">
+      <div>
         {t('home.modal.question')}{' '}
         <span className="font-bold">{capitalizeText(userToConfirm?.name || '')}</span>?
       </div>

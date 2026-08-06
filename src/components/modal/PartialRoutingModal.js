@@ -12,12 +12,20 @@ export default function PartialRoutingModal({
   title,
 }) {
   const titleLowercase = title?.toLowerCase();
+  const footer = (
+    <div className="flex justify-center gap-4 w-full">
+      <Button text={translate('delivery.partial')} onClick={onPartial} width="w-28" />
+      <Button text={translate('delivery.full')} onClick={onFull} width="w-28" />
+    </div>
+  );
+
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={title || 'Download Options'}
       maxWidth="max-w-md"
+      footer={footer}
     >
       <div className="p-4 flex flex-col gap-6">
         <p className="text-lg font-bold text-center text-slate-700 dark:text-slate-300">
@@ -33,11 +41,6 @@ export default function PartialRoutingModal({
             <b>{translate('delivery.full')}</b>:{' '}
             {translate('delivery.modal.full', { type: titleLowercase })}
           </p>
-        </div>
-
-        <div className="flex justify-center gap-4">
-          <Button text={translate('delivery.partial')} onClick={onPartial} width="w-28" />
-          <Button text={translate('delivery.full')} onClick={onFull} width="w-28" />
         </div>
       </div>
     </BaseModal>
