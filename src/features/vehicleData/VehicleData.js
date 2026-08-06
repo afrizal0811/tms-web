@@ -17,7 +17,11 @@ import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';
 
 const countSpaces = (str) => (str ? (str.match(/ /g) || []).length : 0);
-const sortByEmail = (a, b) => (a.email || '').localeCompare(b.email || '');
+const sortData = (a, b) => {
+  const typeCmp = (a.type || '').localeCompare(b.type || '');
+  if (typeCmp !== 0) return typeCmp;
+  return (a.email || '').localeCompare(b.email || '');
+};
 
 const processVehicleData = (rawDriversData, mappingsDB) => {
   const mappingsObj = mappingsDB.reduce((acc, curr) => {
@@ -66,17 +70,6 @@ const processVehicleData = (rawDriversData, mappingsDB) => {
     }
   });
 
-  const templateData = processedData
-    .map((item) => {
-      const emailKey = (item.email || '').toLowerCase();
-      const vehicles = emailToVehiclesMap.get(emailKey) || [];
-      return {
-        ...item,
-        isDuplicateDriver: vehicles.length > 1,
-      };
-    })
-    .sort(sortByEmail);
-
   const masterList = [];
   const conditionalList = [];
 
@@ -105,10 +98,14 @@ const processVehicleData = (rawDriversData, mappingsDB) => {
     }
   }
 
+  const masterSorted = masterList.sort(sortData);
+  const conditionalSorted = conditionalList.sort(sortData);
+  const templateData = [...masterSorted, ...conditionalSorted];
+
   return {
     templateData,
-    masterData: masterList.sort(sortByEmail),
-    conditionalData: conditionalList.sort(sortByEmail),
+    masterData: masterSorted,
+    conditionalData: conditionalSorted,
   };
 };
 
