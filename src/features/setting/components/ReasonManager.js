@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { postReason, deleteReason, updateReason } from '@/lib/api';
+import { deleteReason, postReason, updateReason } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import { PIC_OPTIONS } from '../helper/constants';
@@ -11,7 +11,7 @@ import Table from './Table';
 export default function ReasonManager({ reasons, onRefresh, isReadOnly, translate }) {
   const [newReason, setNewReason] = useState('');
   const [newPic, setNewPic] = useState('');
-  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
+  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
 
   const handleAddReason = async () => {
     if (!newReason.trim() || !newPic || isReadOnly) return;
@@ -40,7 +40,12 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
 
   const confirmDeleteReason = async () => {
     const targetId = deleteConfig.id;
-    setDeleteConfig({ isOpen: false, id: null });
+    setDeleteConfig({
+      isOpen: false,
+      id: null,
+      name: null,
+      reason: '',
+    });
     if (!targetId) return;
     try {
       await deleteReason(targetId);
@@ -95,17 +100,24 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       ),
     },
   ];
-  const title = translate('setting.tab.general.reasons_title');
+  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
-        onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
+        onCancel={() => setDeleteConfig({ isOpen: false, id: null, name: null })}
         onConfirm={confirmDeleteReason}
-        title={translate('common.modal.confirm_title', { text: title })}
-        message={translate('common.modal.confirm_message', {
-          text: title.toLowerCase(),
+        title={translate('common.modal.confirm_title', {
+          text: translate('setting.tab.general.reasons_title'),
         })}
+        message={
+          <span>
+            {msgParts[0]}
+            <strong>{deleteConfig.reason}</strong>
+            {msgParts[1]}
+          </span>
+        }
       />
 
       <div className="mb-4 border-b border-gray-100 pb-3">
@@ -158,7 +170,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
         emptyMessage={translate('common.no_data')}
         translate={translate}
         onSave={handleUpdateReason}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id })}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, reason: item.reasons })}
       />
     </Card>
   );

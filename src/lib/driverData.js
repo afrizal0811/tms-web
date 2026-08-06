@@ -1,15 +1,47 @@
-// File: src/lib/driverDataHelper.js
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api';
-import { formatUTC7, isEmpty, normalizeEmail } from './utils';
+import { formatUTC7, getBasePlate, isEmpty, normalizeEmail } from './utils';
 
 const driversCache = {};
 let vehicleTypesPromise = null;
 let vehicleMappingsPromise = null;
 
+function syncConditionalTags(drivers) {
+  if (!Array.isArray(drivers)) return [];
+  const baseMap = new Map();
+
+  drivers.forEach((d) => {
+    const bp = getBasePlate(d.plat);
+    if (d.plat === bp && d.type) {
+      baseMap.set(bp, {
+        type: d.type,
+        tags: d.tags,
+        storage: d.storage,
+        _rawType: d._rawType || d.type,
+      });
+    }
+  });
+
+  return drivers.map((d) => {
+    const bp = getBasePlate(d.plat);
+    if (d.plat !== bp && baseMap.has(bp)) {
+      const m = baseMap.get(bp);
+      return {
+        ...d,
+        type: m.type,
+        tags: m.tags,
+        storage: d.storage || m.storage,
+        _rawType: m._rawType,
+      };
+    }
+    return d;
+  });
+}
+
 const resolveVehicleType = (rawTag, plate, mappingsObj) => {
-  if (plate && mappingsObj[plate]) {
-    return mappingsObj[plate];
-  }
+  if (plate && mappingsObj[plate]) return mappingsObj[plate];
+
+  const basePlat = getBasePlate(plate);
+  if (basePlat && mappingsObj[basePlat]) return mappingsObj[basePlat];
 
   if (!rawTag) return null;
   const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
@@ -31,7 +63,7 @@ export async function checkUnmappedVehicles(hubId) {
 
   try {
     if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
-    if (!vehicleMappingsPromise) vehicleMappingsPromise = getVehicleMappings();
+    vehicleMappingsPromise = getVehicleMappings();
 
     const [vehicleTypesObj, drivers, mappingsDB] = await Promise.all([
       vehicleTypesPromise,
@@ -40,6 +72,7 @@ export async function checkUnmappedVehicles(hubId) {
     ]);
 
     const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
+
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
       acc[curr.plat] = curr.mappedType;
       return acc;
@@ -49,11 +82,12 @@ export async function checkUnmappedVehicles(hubId) {
     const processedPlates = new Set();
 
     drivers.forEach((v) => {
-      const rawTag = v.type ? String(v.type).toUpperCase() : null;
+      const rawTag = v._rawType ? String(v._rawType).toUpperCase() : null;
       if (isEmpty(rawTag)) return;
 
       const plat = v.plat || '';
       if (isEmpty(plat) || processedPlates.has(plat)) return;
+
       const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
       const parts = cleanTag.split('-');
       let specificType = parts.length > 1 ? parts[1] : cleanTag;
@@ -63,16 +97,20 @@ export async function checkUnmappedVehicles(hubId) {
       }
 
       const isStandard = VEHICLE_TYPES.includes(specificType);
-      const isMapped = !!mappingsObj[plat];
+      const isMappedInDB = !!mappingsObj[plat];
 
-      if (!isStandard && !isMapped) {
-        unmappedList.push({ plat: plat, fullTag: rawTag, tag: specificType });
+      if (isStandard || isMappedInDB) {
         processedPlates.add(plat);
+        return;
       }
+
+      unmappedList.push({ plat, fullTag: rawTag, tag: specificType });
+      processedPlates.add(plat);
     });
 
     return unmappedList;
   } catch (error) {
+    console.error(error);
     return [];
   }
 }
@@ -83,12 +121,13 @@ export async function getDriverData(selectedLocation) {
     driversCache[selectedLocation] = (async () => {
       try {
         const driversFromDB = await getDrivers(selectedLocation);
-        return driversFromDB.map((d) => ({
+        const parsed = driversFromDB.map((d) => ({
           _id: d.id,
           email: d.email,
           name: d.name,
           plat: d.plat,
           type: d.type,
+          _rawType: d.type,
           tags: d.tags,
           minWeight: d.minWeight,
           maxWeight: d.maxWeight,
@@ -108,6 +147,8 @@ export async function getDriverData(selectedLocation) {
             endTime: d.endBreakTime,
           },
         }));
+
+        return syncConditionalTags(parsed);
       } catch (err) {
         delete driversCache[selectedLocation];
         throw err;
@@ -127,6 +168,24 @@ export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_
   });
 
   if (!Array.isArray(drivers)) return masterData;
+
+  drivers.forEach((d) => {
+    const sourceTag = d._rawType || d.type;
+    if (!d.plat || !sourceTag) return;
+    const cleanTag = String(sourceTag)
+      .toUpperCase()
+      .replace(/["'\\]/g, '')
+      .trim();
+    const parts = cleanTag.split('-');
+    let specificType = parts.length > 1 ? parts[1] : cleanTag;
+    if (parts.length > 2 && parts[2] === 'LONG') {
+      if (['CDE', 'CDD', 'FUSO'].includes(specificType)) specificType = `${specificType}-LONG`;
+    }
+    if (VEHICLE_TYPES.includes(specificType)) {
+      mappingsObj[d.plat] = specificType;
+      mappingsObj[getBasePlate(d.plat)] = specificType;
+    }
+  });
 
   drivers.forEach((d) => {
     const plat = d.plat || '';

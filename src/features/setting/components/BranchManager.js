@@ -1,4 +1,3 @@
-// File: src/features/settings/components/BranchManager.js
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
@@ -9,7 +8,7 @@ import Card from './Card';
 import Table from './Table';
 
 export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }) {
-  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
+  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
 
   const handleSaveSettings = async (id, editValues) => {
     try {
@@ -69,7 +68,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       renderEdit: (value, onChange) => (
         <input
           type="text"
-          value={value || ''} // Mencegah error input uncontrolled karena null
+          value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           className="w-full min-w-0 px-2 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none uppercase"
           autoFocus
@@ -133,24 +132,32 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       ),
     },
   ];
-  const title = translate('setting.tab.general.branch_title');
+
+  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+
   return (
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
-        onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
+        onCancel={() => setDeleteConfig({ isOpen: false, id: null, name: null })}
         onConfirm={async () => {
           await handleSaveSettings(deleteConfig.id, {
             acronym: '',
             hasPendingGR: false,
             hasPartialRouting: false,
           });
-          setDeleteConfig({ isOpen: false, id: null });
+          setDeleteConfig({ isOpen: false, id: null, name: null });
         }}
-        title={translate('common.modal.confirm_title', { text: title })}
-        message={translate('common.modal.confirm_message', {
-          text: title.toLowerCase(),
+        title={translate('common.modal.confirm_title', {
+          text: translate('setting.tab.general.branch_title'),
         })}
+        message={
+          <span>
+            {msgParts[0]}
+            <strong>{deleteConfig.name}</strong>
+            {msgParts[1]}
+          </span>
+        }
       />
 
       <div className="mb-4 border-b border-gray-100 dark:border-slate-800 pb-3">
@@ -169,7 +176,9 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         containerHeight="h-[408px]"
         translate={translate}
         onSave={handleSaveSettings}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id || item._id })}
+        onDelete={(item) =>
+          setDeleteConfig({ isOpen: true, id: item.id || item._id, name: item.name })
+        }
       />
     </Card>
   );

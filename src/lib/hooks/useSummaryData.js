@@ -732,7 +732,6 @@ export default function useSummaryData() {
         for (const range of historyRanges) {
           const res = await fetchWithRetry(() =>
             getLocationHistories({
-              limit: 10000,
               startFinish: 'true',
               fields: 'finish,startTime,lat,lon,email,trackedTime,totalDistance',
               timeBy: 'createdTime',

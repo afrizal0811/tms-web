@@ -11,14 +11,15 @@ import { formatVolume } from '../help';
 const getRowStyleAndTooltip = (v, t) => {
   if (v.isIncomplete) {
     return {
-      rowClass: 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15',
+      rowClass:
+        'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15 cursor-help',
       tooltipMsg: t('vehicle.tabs.incomplete_data'),
     };
   }
   if (v.isDuplicateDriver) {
     return {
       rowClass:
-        'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15',
+        'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15 cursor-help',
       tooltipMsg: t('vehicle.tabs.duplicate_driver'),
     };
   }

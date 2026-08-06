@@ -2,11 +2,11 @@
 'use client';
 
 export default function BaseModal({
-  bodyClassName = 'p-6 overflow-y-auto',
+  bodyClassName = 'm-6 overflow-y-auto',
   children,
   contentClassName = '',
   footer,
-  headerClassName = 'bg-slate-800 dark:bg-slate-950 text-white',
+  headerClassName = '',
   headerContent = '',
   isOpen,
   maxWidth = 'max-w-4xl',
@@ -22,12 +22,12 @@ export default function BaseModal({
       onClick={onClose}
     >
       <div
-        className={`bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
+        className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${contentClassName || 'max-h-[90vh]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className={`px-6 py-4 flex justify-between shrink-0 border-b border-transparent ${headerClassName}`}
+          className={`px-6 py-4 flex justify-between shrink-0 border-b border-gray-200 dark:border-slate-900 bg-gray-100 dark:bg-slate-900/80 transition-colors ${headerClassName}`}
         >
           <div className="flex-column lg:flex items-center gap-4 justify-between w-full">
             <div className="text-lg font-bold truncate flex-1">{title}</div>
@@ -47,13 +47,13 @@ export default function BaseModal({
         </div>
 
         {/* Body */}
-        <div className={`flex-1 text-slate-800 dark:text-slate-200 ${bodyClassName}`}>
+        <div className={`flex-1 text-slate-800 dark:text-slate-100 ${bodyClassName}`}>
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-3 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 shadow-[0_-4px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.3)] shrink-0 transition-colors">
+          <div className="px-6 py-3 bg-white dark:bg-slate-800/80 shrink-0 transition-colors">
             {footer}
           </div>
         )}

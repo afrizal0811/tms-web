@@ -166,7 +166,7 @@ export default function TruckDetailModal({
       title={
         <div>
           <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-300 text-sm font-normal">
+          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">
             {formatLongDate(dateStr, localeCode)}
           </p>
         </div>

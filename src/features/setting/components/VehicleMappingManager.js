@@ -113,7 +113,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     },
   ];
 
-  const title = translate('setting.tab.general.mapping_title');
+  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -121,10 +121,16 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('common.modal.confirm_title', { text: title })}
-        message={translate('common.modal.confirm_message', {
-          text: title.toLowerCase(),
+        title={translate('common.modal.confirm_title', {
+          text: translate('setting.tab.general.mapping_title'),
         })}
+        message={
+          <span>
+            {msgParts[0]}
+            <strong>{deleteConfig.plat}</strong>
+            {msgParts[1]}
+          </span>
+        }
       />
 
       <div className="mb-4 border-b border-gray-100 pb-3">

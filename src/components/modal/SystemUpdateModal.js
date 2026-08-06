@@ -15,7 +15,6 @@ export default function SystemUpdateModal() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // ponytail: [cascading render fix] -> wrap entire logic in timeout
     const timer = setTimeout(() => {
       setMounted(true);
       const { storedUser, appVersion } = getLocalStorage();
@@ -88,7 +87,7 @@ export default function SystemUpdateModal() {
             />
           </svg>
         </div>
-        <p className="text-sm text-slate-600 mb-2 leading-relaxed">{t('update.text')}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 leading-relaxed">{t('update.text')}</p>
       </div>
     </BaseModal>
   );

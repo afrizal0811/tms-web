@@ -5,7 +5,6 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 
-// --- HELPER COMPONENTS & FUNCTIONS ---
 const EmptyState = ({ translate }) => (
   <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-6 italic border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
     {translate('common.no_data')}
@@ -38,7 +37,6 @@ export default function TruckUsageModal({
   localeCode,
   masterVehicleList,
 }) {
-  // --- STATES ---
   const [count, setCount] = useState('');
   const [desc, setDesc] = useState('');
   const [initialCount, setInitialCount] = useState('');
@@ -47,7 +45,6 @@ export default function TruckUsageModal({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
-  // --- EFFECTS ---
   useEffect(() => {
     if (isOpen) {
       setShowAll(false);
@@ -66,7 +63,6 @@ export default function TruckUsageModal({
     }
   }, [data]);
 
-  // --- MEMOIZED DATA PROCESSORS ---
   const sortedMasterVehicles = useMemo(() => {
     if (!data?.isMaster) return [];
     const vehicles = masterVehicleList?.[data.storage]?.[data.type] || [];
@@ -105,7 +101,6 @@ export default function TruckUsageModal({
 
   if (!data) return null;
 
-  // --- HANDLERS ---
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -150,7 +145,6 @@ export default function TruckUsageModal({
     }
   };
 
-  // --- RENDER BLOCKS ---
   const renderMasterVehicle = () => {
     const modalTitle = `Master - ${data.storage} (${data.type === 'Gabungan' ? 'Total' : data.type})`;
 
@@ -225,7 +219,7 @@ export default function TruckUsageModal({
             <div className="flex items-center gap-2">
               <span>{modalTitle}</span>
             </div>
-            <span className="text-sm font-normal opacity-70">
+            <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
               {formatLongDate(data.date, localeCode)}
             </span>
           </div>
@@ -301,6 +295,8 @@ export default function TruckUsageModal({
     const isChanged = count !== initialCount || desc !== initialDesc;
     const isSaveDisabled = isLoading || count === '' || !desc.trim() || !isChanged;
 
+    const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+
     return (
       <>
         <ConfirmModal
@@ -308,7 +304,13 @@ export default function TruckUsageModal({
           onCancel={() => setIsConfirmOpen(false)}
           onConfirm={handleDelete}
           title={translate('common.modal.confirm_title', { text: 'data' })}
-          message={translate('common.modal.confirm_message', { text: 'data' })}
+          message={
+            <span>
+              {msgParts[0]}
+              <strong>Non TMS data</strong>
+              {msgParts[1]}
+            </span>
+          }
         />
 
         <BaseModal
@@ -320,7 +322,7 @@ export default function TruckUsageModal({
               <span>
                 Non TMS - {data.storage} ({data.type})
               </span>
-              <span className="text-sm font-normal opacity-70">
+              <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
                 {formatLongDate(data.date, localeCode)}
               </span>
             </div>
@@ -400,7 +402,6 @@ export default function TruckUsageModal({
     );
   };
 
-  // --- MAIN RENDER ROUTER ---
   if (data.isMaster) return renderMasterVehicle();
   if (data.isTms) return renderTmsVehicle();
   return renderManualForm();

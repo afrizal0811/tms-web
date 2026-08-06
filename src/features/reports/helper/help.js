@@ -316,7 +316,6 @@ export const handleSingleDownload = async ({
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          limit: 5000,
           startFinish: 'true',
           fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
@@ -474,7 +473,6 @@ export const handleBulkDownload = async ({
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          limit: 1000,
           startFinish: 'true',
           fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
@@ -564,7 +562,6 @@ export const handleManualDownload = async ({
         getLocationHistories({
           timeFrom,
           timeTo,
-          limit: 5000,
           startFinish: 'true',
           fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
@@ -709,7 +706,6 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
     getLocationHistories({
       timeFrom: histFrom,
       timeTo: histTo,
-      limit: 5000,
       startFinish: 'true',
       fields: 'finish,startTime,email,trackedTime,totalDistance',
       timeBy: 'createdTime',
@@ -929,7 +925,6 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, selectedHub, 
       (await getLocationHistories({
         timeFrom,
         timeTo,
-        limit: 5000,
         startFinish: 'true',
         fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
@@ -1051,7 +1046,6 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
       getLocationHistories({
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
-        limit: 5000,
         startFinish: 'true',
         fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
