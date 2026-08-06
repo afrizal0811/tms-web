@@ -219,7 +219,7 @@ export default function TruckUsageModal({
             <div className="flex items-center gap-2">
               <span>{modalTitle}</span>
             </div>
-            <span className="text-sm font-normal opacity-70">
+            <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
               {formatLongDate(data.date, localeCode)}
             </span>
           </div>
@@ -322,7 +322,7 @@ export default function TruckUsageModal({
               <span>
                 Non TMS - {data.storage} ({data.type})
               </span>
-              <span className="text-sm font-normal opacity-70">
+              <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
                 {formatLongDate(data.date, localeCode)}
               </span>
             </div>

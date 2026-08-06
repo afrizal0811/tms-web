@@ -140,8 +140,8 @@ export default function PendingReasonModal({
         maxWidth="max-w-lg"
         title={
           <div className="flex flex-col gap-0.5">
-            <span>{title}</span>
-            <span className="text-sm font-normal opacity-70">
+            <span>{translate('summary.tabs.pending_reasons.modal_title')}</span>
+            <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
               {statusText} | {data.customer}
             </span>
           </div>

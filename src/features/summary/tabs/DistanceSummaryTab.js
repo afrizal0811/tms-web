@@ -32,7 +32,7 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
           <h3 className="text-lg font-bold">
             {translate('summary.tabs.dist_summary.modal.title')} - {type}
           </h3>
-          <p className="text-slate-300 text-sm font-normal">
+          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">
             {formatLongDate(dateStr, localeCode)}
           </p>
         </div>

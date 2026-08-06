@@ -1,9 +1,9 @@
 import { calculateUsageSummary } from '@/lib/reportGenerators/summary/sheets/truckUsageSheet';
-import { toastError, toastSuccess } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageModal from './modals/TruckUsageModal';
+
 export default function TruckUsageTab({ data, translate, hubId, driverData, localeCode }) {
   const [localData, setLocalData] = useState(data);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
@@ -17,16 +17,6 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
 
   const handleCellClick = (cellData) => {
     setModalConfig({ isOpen: true, data: cellData });
-  };
-
-  const handleCopyRoutingName = async (routingName) => {
-    if (!routingName) return;
-    try {
-      await navigator.clipboard.writeText(routingName);
-      toastSuccess(`${translate('common.copied')}: ${routingName}`);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
   };
 
   const handleModalSuccess = (resData) => {
