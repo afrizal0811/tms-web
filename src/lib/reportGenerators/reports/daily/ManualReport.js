@@ -19,9 +19,9 @@ import {
 import {
   buildDistanceSummary,
   buildPendingSOSheet,
+  buildRoutingDateSheet,
   buildRoVsRealSheet,
-  buildStartFinishSheet,
-  buildTanggalRoutingSheet,
+  buildTimeDriverSheet,
   buildTruckDetailSheet,
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
@@ -521,8 +521,8 @@ export async function generateManualReportWorkbook({
   const { deliveryMap, hubTimesMap, allTaskDataForSequence, updateLonglatData, pendingSOData } =
     await parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, selectedDateString);
 
-  buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeData, t, driverData);
+  buildRoutingDateSheet(wb, targetRoutingStr, t);
+  buildTimeDriverSheet(wb, timeData, t, driverData);
   buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);

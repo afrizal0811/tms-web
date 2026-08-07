@@ -1,7 +1,7 @@
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
-export function buildTanggalRoutingSheet(wb, dateStr, t) {
+export function buildRoutingDateSheet(wb, dateStr, t) {
   const formattedDate = formatDateUniversal(dateStr, 'DD-MM-YYYY');
   const ws = XLSX.utils.aoa_to_sheet([
     [t('common.routing_date').toUpperCase()],

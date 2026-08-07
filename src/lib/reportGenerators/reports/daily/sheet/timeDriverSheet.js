@@ -7,7 +7,7 @@ import {
 import * as XLSX from 'xlsx-js-style';
 import { getCleanString, getRawPlate, isValidValue, STYLES } from './shared';
 
-export function buildStartFinishSheet(wb, timeDataObjects, t, driverData = []) {
+export function buildTimeDriverSheet(wb, timeDataObjects, t, driverData = []) {
   const headers = [
     t('common.license_number'),
     t('common.driver'),

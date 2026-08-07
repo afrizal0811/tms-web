@@ -4,11 +4,11 @@ import { parseDeliveryData, parseRoutingData } from './parsers';
 import {
   buildDistanceSummary,
   buildHelpSheet,
-  buildTruckDetailSheet,
   buildPendingSOSheet,
+  buildRoutingDateSheet,
   buildRoVsRealSheet,
-  buildStartFinishSheet,
-  buildTanggalRoutingSheet,
+  buildTimeDriverSheet,
+  buildTruckDetailSheet,
   buildTruckUsageSheet,
   buildUpdateLonglatSheet,
 } from './sheet';
@@ -46,8 +46,8 @@ export async function generateAutoReportWorkbook({
       selectedDateString
     );
 
-  buildTanggalRoutingSheet(wb, targetRoutingStr, t);
-  buildStartFinishSheet(wb, timeData, t, driverData);
+  buildRoutingDateSheet(wb, targetRoutingStr, t);
+  buildTimeDriverSheet(wb, timeData, t, driverData);
   buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
   buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
