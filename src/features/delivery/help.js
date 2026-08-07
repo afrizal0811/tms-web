@@ -3,6 +3,7 @@ import {
   checkInvalidSo,
   checkInvalidSoList,
   formatDateUniversal,
+  isBypassSo,
   isEmpty,
   isValidSo,
   normalizeEmail,
@@ -38,6 +39,38 @@ const triggerDownload = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
+const getLocationName = () => {
+  const { storedLocationAcronym, storedLocationName } = getLocalStorage();
+  return storedLocationAcronym || storedLocationName || 'Hub';
+};
+
+const sortRoutingResultsByCreatedTime = (routingResults) =>
+  [...routingResults].sort((a, b) => {
+    const timeA = new Date(a.createdTime || 0).getTime();
+    const timeB = new Date(b.createdTime || 0).getTime();
+    return timeA - timeB;
+  });
+
+const abortIfNoRoutingResults = (routingResults, t, setIsDownloading) => {
+  if (routingResults && routingResults.length > 0) return false;
+  toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
+  setIsDownloading(false);
+  return true;
+};
+
+const buildEnrichedTripsMap = (filteredVehicleRoutes) => {
+  const enrichedTripsMap = new Map();
+  (filteredVehicleRoutes || []).forEach((r) => {
+    (r.trips || []).forEach((trip) => {
+      if (!trip.isHub) {
+        const key = trip.visitId || trip.orderId;
+        if (key) enrichedTripsMap.set(key, trip);
+      }
+    });
+  });
+  return enrichedTripsMap;
+};
+
 const getUniqueFileName = (prefix, suffix, ext, seen) => {
   let name = `${prefix} - ${suffix}${ext}`;
   let count = 1;
@@ -50,18 +83,30 @@ const getUniqueFileName = (prefix, suffix, ext, seen) => {
 
 const buildSoWorksheet = (processedRows, t) => {
   processedRows.sort((a, b) => {
-    const validA = isValidSo(a.so) && !a.isInvalidCustomer;
-    const validB = isValidSo(b.so) && !b.isInvalidCustomer;
+    const validA = (isValidSo(a.so) || isBypassSo(a.so)) && !a.isInvalidCustomer;
+    const validB = (isValidSo(b.so) || isBypassSo(b.so)) && !b.isInvalidCustomer;
     if (!validA && validB) return -1;
     if (validA && !validB) return 1;
     return a.so.localeCompare(b.so);
   });
 
+  const getCleanSo = (so) => {
+    if (isBypassSo(so)) {
+      const match = so.match(/^([a-zA-Z]{2,5}\d{4}-\d{6})/);
+      return match ? match[1].toUpperCase() : so;
+    }
+    return so;
+  };
+
   const wsData = [
     ['Order Nbr.', 'Order Type'],
     ...processedRows.map((row) => {
-      const valid = isValidSo(row.so) && !row.isInvalidCustomer;
-      return valid ? [row.so, row.so.substring(0, 2).toUpperCase()] : [row.so, '-'];
+      const isStrictValid = isValidSo(row.so) && !row.isInvalidCustomer;
+      const isBypass = isBypassSo(row.so) && !row.isInvalidCustomer;
+      const finalSo = getCleanSo(row.so);
+      return isStrictValid || isBypass
+        ? [finalSo, finalSo.substring(0, 2).toUpperCase()]
+        : [finalSo, '-'];
     }),
   ];
 
@@ -87,7 +132,10 @@ const buildSoWorksheet = (processedRows, t) => {
     const rowIndex = idx + 2;
     const cellRef = `A${rowIndex}`;
     const typeCellRef = `B${rowIndex}`;
-    const valid = isValidSo(row.so) && !row.isInvalidCustomer;
+
+    const isStrictValid = isValidSo(row.so) && !row.isInvalidCustomer;
+    const isBypass = isBypassSo(row.so) && !row.isInvalidCustomer;
+    const finalSo = getCleanSo(row.so);
 
     const baseStyle = {
       border: {
@@ -99,10 +147,20 @@ const buildSoWorksheet = (processedRows, t) => {
       alignment: { vertical: 'center', horizontal: 'left' },
     };
 
-    if (!ws[cellRef]) ws[cellRef] = { v: row.so };
+    if (!ws[cellRef]) ws[cellRef] = { v: finalSo };
     if (!ws[typeCellRef]) ws[typeCellRef] = { v: '-' };
 
-    if (!valid) {
+    if (isBypass) {
+      const bypassStyle = {
+        ...baseStyle,
+        fill: { fgColor: { rgb: 'FFF2CC' } },
+      };
+      ws[cellRef].s = bypassStyle;
+      ws[typeCellRef].s = {
+        ...bypassStyle,
+        alignment: { vertical: 'center', horizontal: 'center' },
+      };
+    } else if (!isStrictValid) {
       const errorStyle = {
         ...baseStyle,
         fill: { fgColor: { rgb: 'FFC7CE' } },
@@ -414,8 +472,7 @@ export const handleFullRouteTransDownload = async ({
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
-    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const locationName = getLocationName();
     const isMultiVehicle = filteredVehicleRoutes.length > 1;
     const zip = isMultiVehicle ? new JSZip() : null;
     const seenFileNames = new Set();
@@ -480,20 +537,11 @@ export const handlePartialRouteTransDownload = async ({
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
-    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const locationName = getLocationName();
 
-    if (!routingResults || routingResults.length === 0) {
-      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
-      setIsDownloading(false);
-      return;
-    }
+    if (abortIfNoRoutingResults(routingResults, t, setIsDownloading)) return;
 
-    const sortedRoutingResults = [...routingResults].sort((a, b) => {
-      const timeA = new Date(a.createdTime || 0).getTime();
-      const timeB = new Date(b.createdTime || 0).getTime();
-      return timeA - timeB;
-    });
+    const sortedRoutingResults = sortRoutingResultsByCreatedTime(routingResults);
 
     const masterZip = new JSZip();
     let masterHasData = false;
@@ -603,8 +651,7 @@ export const handleFullDeliveryFormDownload = async ({
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
-    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const locationName = getLocationName();
     const isMultiVehicle = filteredVehicleRoutes.length > 1;
     const zip = isMultiVehicle ? new JSZip() : null;
 
@@ -669,30 +716,13 @@ export const handlePartialDeliveryFormDownload = async ({
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
-    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const locationName = getLocationName();
 
-    if (!routingResults || routingResults.length === 0) {
-      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
-      setIsDownloading(false);
-      return;
-    }
+    if (abortIfNoRoutingResults(routingResults, t, setIsDownloading)) return;
 
-    const sortedRoutingResults = [...routingResults].sort((a, b) => {
-      const timeA = new Date(a.createdTime || 0).getTime();
-      const timeB = new Date(b.createdTime || 0).getTime();
-      return timeA - timeB;
-    });
+    const sortedRoutingResults = sortRoutingResultsByCreatedTime(routingResults);
 
-    const enrichedTripsMap = new Map();
-    (filteredVehicleRoutes || []).forEach((r) => {
-      (r.trips || []).forEach((trip) => {
-        if (!trip.isHub) {
-          const key = trip.visitId || trip.orderId;
-          if (key) enrichedTripsMap.set(key, trip);
-        }
-      });
-    });
+    const enrichedTripsMap = buildEnrichedTripsMap(filteredVehicleRoutes);
 
     const masterZip = new JSZip();
     let masterHasData = false;
@@ -840,30 +870,13 @@ export const handlePartialDeliveryListDownload = async ({
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
-    const { storedLocationAcronym, storedLocationName } = getLocalStorage();
-    const locationName = storedLocationAcronym || storedLocationName || 'Hub';
+    const locationName = getLocationName();
 
-    if (!routingResults || routingResults.length === 0) {
-      toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
-      setIsDownloading(false);
-      return;
-    }
+    if (abortIfNoRoutingResults(routingResults, t, setIsDownloading)) return;
 
-    const sortedRoutingResults = [...routingResults].sort((a, b) => {
-      const timeA = new Date(a.createdTime || 0).getTime();
-      const timeB = new Date(b.createdTime || 0).getTime();
-      return timeA - timeB;
-    });
+    const sortedRoutingResults = sortRoutingResultsByCreatedTime(routingResults);
 
-    const enrichedTripsMap = new Map();
-    (filteredVehicleRoutes || []).forEach((r) => {
-      (r.trips || []).forEach((trip) => {
-        if (!trip.isHub) {
-          const key = trip.visitId || trip.orderId;
-          if (key) enrichedTripsMap.set(key, trip);
-        }
-      });
-    });
+    const enrichedTripsMap = buildEnrichedTripsMap(filteredVehicleRoutes);
 
     const masterZip = new JSZip();
     let masterHasData = false;

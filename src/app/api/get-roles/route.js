@@ -4,13 +4,10 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// ==========================================
-// FUNGSI GET: HANYA MEMBACA DATABASE LOKAL
-// ==========================================
 export async function GET() {
   try {
     const roles = await prisma.role.findMany({
-      orderBy: { name: 'asc' }, // Opsional: urutkan sesuai abjad
+      orderBy: { name: 'asc' },
     });
 
     const formattedRoles = roles.map((role) => ({
@@ -31,9 +28,6 @@ export async function GET() {
   }
 }
 
-// ==========================================
-// FUNGSI POST: SINKRONISASI DENGAN VENDOR API
-// ==========================================
 export async function POST() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const apiToken = process.env.API_TOKEN;
