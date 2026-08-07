@@ -1112,14 +1112,28 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
     const overrideTaskMap = new Map();
     (historiesRes || []).forEach((item) => {
       (item.history || []).forEach((h) => {
-        ['move', 'dropped', 'switch', 'change'].forEach((key) => {
+        ['move', 'dropped', 'switch', 'change', 'manual'].forEach((key) => {
           (h[key]?.data || []).forEach((m) => {
             const ver = Number(m.version) || 0;
-            (m.visits || []).forEach((v) => {
+
+            let targetVisits = m.visits || [];
+            if (key === 'change' && m.description) {
+              if (m.description.toLowerCase().startsWith('visit ')) {
+                const specific = targetVisits.filter(
+                  (v) => v.visitName && m.description.includes(v.visitName)
+                );
+                if (specific.length > 0) targetVisits = specific;
+              }
+            }
+
+            targetVisits.forEach((v) => {
               if (v.visitId && v.visitId.includes('-')) {
                 const tId = v.visitId.substring(v.visitId.indexOf('-') + 1);
                 if (!overrideTaskMap.has(tId)) overrideTaskMap.set(tId, []);
-                overrideTaskMap.get(tId).push({ action: key, version: ver });
+                overrideTaskMap.get(tId).push({
+                  action: key === 'manual' ? 'manual' : (m.action || key).toLowerCase(),
+                  version: ver,
+                });
               }
             });
           });
@@ -1160,7 +1174,8 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
     const wb = generateTaskManualDetailWorkbook(
       groupedData,
       taskManualHeaders,
-      taskManualKeyMapping
+      taskManualKeyMapping,
+      historiesRes
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
