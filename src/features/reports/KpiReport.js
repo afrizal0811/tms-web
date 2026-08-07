@@ -72,13 +72,9 @@ export default function KpiReport() {
   };
 
   const handleFetchData = async () => {
-    if (isManualMode && isEmptyUploadedFile) {
-      return toastError('Silahkan upload file Data Routing dan Data Task!');
-    }
-
     const drivers = await getDriverData(selectedHub.id);
     if (drivers.length === 0) {
-      toastError('Data driver kosong, mohon pilih ulang lokasi.');
+      toastError(t('common.no_driver'));
       return;
     }
     setLoading(true);
