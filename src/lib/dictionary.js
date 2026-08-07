@@ -485,11 +485,11 @@ export const dictionary = {
         routing_time: {
           title: 'Waktu Ruting',
           tooltip: {
-            routing_date: 'Tanggal proses ruting',
             finish_time: 'Waktu penugasan tugas terakhir',
-            finish_time_error: 'Waktu mulai ruting tersedia, tetapi selesai ruting kosong',
+            finish_time_error: 'Tidak ada tugas yang ditugaskan melalui proses ruting',
+            routing_date: 'Tanggal proses ruting',
             start_time: 'Waktu pembuatan tugas pertama',
-            start_time_error: 'Waktu selesai ruting tersedia, tetapi mulai ruting kosong',
+            start_time_error: 'Tidak ada tugas yang dibuat melalui proses impor',
           },
         },
         task_summary: {
@@ -1164,11 +1164,11 @@ export const dictionary = {
         routing_time: {
           title: 'Routing Time',
           tooltip: {
-            routing_date: 'Date of routing process',
             finish_time: 'Last task assignment time',
-            finish_time_error: 'Start RO is available, but End RO is empty',
+            finish_time_error: 'No tasks assigned through routing process',
+            routing_date: 'Date of routing process',
             start_time: 'First task creation time',
-            start_time_error: 'End RO is available, but Start RO is empty',
+            start_time_error: 'No tasks created through import process',
           },
         },
         task_summary: {
