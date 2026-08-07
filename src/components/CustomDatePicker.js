@@ -35,7 +35,6 @@ export default function CustomDatePicker({
   const datePickerRef = useRef(null);
   const isDisabled = isLoading || disabled;
 
-  // ponytail: inline dynamic classes -> low maintenance
   const stateClasses = isDisabled
     ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 cursor-not-allowed border-gray-200 dark:border-slate-700'
     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700';

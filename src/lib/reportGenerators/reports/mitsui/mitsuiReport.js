@@ -443,7 +443,6 @@ export const generateTaskManualDetailWorkbook = (
         forcedData.push({
           resultId: item.resultId || '-',
           version: item.version || 0,
-          // ponytail: override text
           action: cat === 'manual' ? 'manual' : item.action || '-',
           from: item.vehicleFrom || '-',
           to: item.vehicleTo || '-',
