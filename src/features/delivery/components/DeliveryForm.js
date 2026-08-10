@@ -1,6 +1,6 @@
 import { getBasePlate, parseCustomerString } from '@/lib/utils';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
-import { styles } from '../help';
+import { styles } from '../helper';
 
 const cleanDriverName = (name) => (name ? name.replace(/^'[^']+'\s*/, '') : '');
 
