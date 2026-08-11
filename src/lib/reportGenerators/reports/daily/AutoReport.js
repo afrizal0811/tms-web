@@ -49,7 +49,7 @@ export async function generateAutoReportWorkbook({
   buildRoutingDateSheet(wb, targetRoutingStr, t);
   buildTimeDriverSheet(wb, timeData, t, driverData);
   buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
-  buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, driverData, hasPendingGR, t);
+  buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);

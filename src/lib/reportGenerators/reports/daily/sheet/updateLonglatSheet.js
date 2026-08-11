@@ -25,7 +25,9 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
   for (let r = 0; r < sheetData.length; r++) {
     for (let c = 0; c < 5; c++) {
       const cell = XLSX.utils.encode_cell({ r, c });
-      if (ws[cell]) ws[cell].s = r === 0 ? STYLES.header : STYLES.center;
+      if (ws[cell]) {
+        ws[cell].s = r === 0 ? STYLES.header : c === 0 ? STYLES.left : STYLES.center;
+      }
     }
   }
   XLSX.utils.book_append_sheet(wb, ws, t('excel.reports.update_coord.sheet_name'));

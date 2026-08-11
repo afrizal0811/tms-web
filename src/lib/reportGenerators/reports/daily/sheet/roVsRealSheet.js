@@ -6,8 +6,6 @@ export function buildRoVsRealSheet(
   wb,
   allTaskDataForSequence,
   hubTimesMap,
-  driverData,
-  hasPendingGR,
   t
 ) {
   const headers = [
