@@ -15,7 +15,7 @@ import {
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
-import { isEmpty } from '@/lib/utils';
+import { formatLongDate, isEmpty } from '@/lib/utils';
 import { processSequenceAccuracyData, seqAccuracyData } from '../../help';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
@@ -128,28 +128,6 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
     }
   }, [selectedMonth]);
 
-  const getModalTitle = () => {
-    if (!selectedDateObj) return '';
-    try {
-      const fullMonth = selectedDateObj.toLocaleDateString(localeCode, {
-        month: 'long',
-        year: 'numeric',
-      });
-      return (
-        <div>
-          <h3 className="text-lg font-bold">{t('dashboard.charts.sequence.title')}</h3>
-          <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
-        </div>
-      );
-    } catch {
-      return (
-        <div>
-          <h3 className="text-lg font-bold">{t('dashboard.charts.sequence.title')}</h3>
-        </div>
-      );
-    }
-  };
-
   const isPreparing = monthlyData === null;
   const hasData = Array.isArray(monthlyData) && monthlyData.length > 0;
 
@@ -238,7 +216,8 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
       <DailySequenceAccuracyModal
         isOpen={!!selectedMonth}
         onClose={() => setSelectedMonth(null)}
-        title={getModalTitle()}
+        title={t('dashboard.charts.sequence.title')}
+        subtitle={formatLongDate(selectedDateObj, localeCode, false)}
         data={dailyData}
         isLoading={isModalLoading}
         selectedDate={selectedDateObj}

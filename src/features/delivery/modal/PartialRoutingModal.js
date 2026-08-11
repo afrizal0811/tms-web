@@ -23,7 +23,7 @@ export default function PartialRoutingModal({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={title || 'Download Options'}
+      title={title}
       maxWidth="max-w-md"
       footer={footer}
     >

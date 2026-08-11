@@ -200,12 +200,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     onClose();
   };
 
-  const headerTitle = (
-    <div className="text-left">
-      <h2 className="text-xl font-bold">{t('dashboard.map.title')}</h2>
-      <p className="text-xs font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
-    </div>
-  );
 
   const headerContent = (
     <div className="flex flex-col lg:flex-row items-end justify-between w-full">
@@ -257,7 +251,8 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     <BaseModal
       isOpen={isOpen}
       onClose={handleCloseModal}
-      title={headerTitle}
+      title={t('dashboard.map.title')}
+      subtitle={t('dashboard.map.subtitle')}
       headerContent={headerContent}
       maxWidth="max-w-6xl"
       contentClassName="h-[90vh]"

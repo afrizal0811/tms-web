@@ -297,14 +297,15 @@ export const formatTimer = (seconds) => {
 };
 
 // Memformat tanggal panjang
-export function formatLongDate(dateInput, language = 'id-ID') {
+export function formatLongDate(dateInput, language = 'id-ID', withDate = true) {
   if (!dateInput) return '-';
+  let config = {
+    month: 'long',
+    year: 'numeric',
+  };
+  if (withDate) config.day = 'numeric';
   try {
-    return new Date(dateInput).toLocaleDateString(language, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return new Date(dateInput).toLocaleDateString(language, config);
   } catch (e) {
     return '-';
   }

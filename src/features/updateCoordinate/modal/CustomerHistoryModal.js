@@ -36,24 +36,12 @@ export default function CustomerHistoryModal({
 
   if (!isOpen) return null;
 
-  const headerContent = (
-    <div>
-      <h3 className="text-lg font-bold">
-        {t('longlat.modal.title')} ({formatLongDate(selectedDate, localeCode)})
-      </h3>
-      <div className="flex mt-1 font-normal">
-        <p className="text-sm text-slate-500 dark:text-slate-300 font-small break-all">
-          {customerData}
-        </p>
-      </div>
-    </div>
-  );
-
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={headerContent}
+      title={`${t('longlat.modal.title')} (${formatLongDate(selectedDate, localeCode)})`}
+      subtitle={customerData}
       maxWidth="max-w-5xl"
       contentClassName="h-[80vh] sm:h-[70vh]"
       bodyClassName="p-0 flex flex-col overflow-hidden h-full"

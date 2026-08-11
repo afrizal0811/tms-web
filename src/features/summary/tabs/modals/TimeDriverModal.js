@@ -225,16 +225,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   );
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={
-        <div>
-          <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">{dateStr}</p>
-        </div>
-      }
-    >
+    <BaseModal isOpen={isOpen} onClose={onClose} title={driverName} subtitle={dateStr}>
       <div className="flex flex-col gap-4">
         <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0">
           <div ref={mapContainerRef} className="w-full h-full" />

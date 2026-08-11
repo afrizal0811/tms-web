@@ -3,7 +3,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
-import { isEmpty } from '@/lib/utils';
+import { formatLongDate, isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -131,28 +131,6 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
     }
   }, [selectedMonth]);
 
-  const getModalTitle = () => {
-    if (!selectedDateObj) return '';
-    try {
-      const fullMonth = selectedDateObj.toLocaleDateString(localeCode, {
-        month: 'long',
-        year: 'numeric',
-      });
-      return (
-        <div>
-          <h3 className="text-lg font-bold">{t('dashboard.charts.service_level.title')}</h3>
-          <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
-        </div>
-      );
-    } catch {
-      return (
-        <div>
-          <h3 className="text-lg font-bold">{t('dashboard.charts.service_level.title')}</h3>
-        </div>
-      );
-    }
-  };
-
   const isPreparing = monthlyData === null;
   const hasData = Array.isArray(monthlyData) && monthlyData.length > 0;
 
@@ -241,7 +219,8 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
       <DailyServiceLevelModal
         isOpen={!!selectedMonth}
         onClose={() => setSelectedMonth(null)}
-        title={getModalTitle()}
+        title={t('dashboard.charts.service_level.title')}
+        subtitle={formatLongDate(selectedDateObj, localeCode, false)}
         data={dailyData}
         isLoading={isModalLoading}
         selectedDate={selectedDateObj}

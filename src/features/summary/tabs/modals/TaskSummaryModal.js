@@ -35,16 +35,8 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="max-w-lg"
-      title={
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold ">{title}</h3>
-          </div>
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">
-            {formatLongDate(dateObj, localeCode)}
-          </p>
-        </div>
-      }
+      title={title}
+      subtitle={formatLongDate(dateObj, localeCode)}
       bodyClassName="p-0 bg-gray-50 overflow-y-auto"
     >
       {vehicles ? (

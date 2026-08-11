@@ -4,6 +4,7 @@ import BaseModal from '@/components/BaseModal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
+import { capitalizeText } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function PendingReasonModal({
@@ -138,14 +139,8 @@ export default function PendingReasonModal({
         isOpen={isOpen && !isConfirmOpen}
         onClose={onClose}
         maxWidth="max-w-lg"
-        title={
-          <div className="flex flex-col gap-0.5">
-            <span>{translate('summary.tabs.pending_reasons.modal_title')}</span>
-            <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
-              {statusText} | {data.customer}
-            </span>
-          </div>
-        }
+        title={translate('summary.tabs.pending_reasons.modal_title')}
+        subtitle={`${capitalizeText(statusText)} | ${data.customer}`}
         footer={
           <div className="flex justify-between items-center w-full">
             <div>

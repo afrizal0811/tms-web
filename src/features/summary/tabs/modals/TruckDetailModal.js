@@ -163,14 +163,8 @@ export default function TruckDetailModal({
       isOpen={isOpen}
       onClose={handleClose}
       maxWidth={selectedTask ? 'max-w-5xl' : 'max-w-lg'}
-      title={
-        <div>
-          <h3 className="text-lg font-bold">{driverName}</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">
-            {formatLongDate(dateStr, localeCode)}
-          </p>
-        </div>
-      }
+      title={driverName}
+      subtitle={formatLongDate(dateStr, localeCode)}
       bodyClassName="p-0 bg-gray-50 dark:bg-slate-900 overflow-hidden"
       footer={
         <span className="text-sm text-slate-400 italic">

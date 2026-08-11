@@ -3,7 +3,7 @@
 import BaseModal from '@/components/BaseModal';
 import Tooltip from '@/components/Tooltip';
 import { toastError } from '@/lib/toast';
-import { isEmpty } from '@/lib/utils';
+import { isEmpty, getBasePlate} from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
   Bar,
@@ -64,6 +64,7 @@ const DailyLoadCapacityModal = ({
   isOpen,
   onClose,
   title,
+  subtitle,
   monthData,
   isDarkMode,
   t,
@@ -160,7 +161,8 @@ const DailyLoadCapacityModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={typeof title === 'function' ? title(selectedDay) : title}
+      title={title}
+      subtitle={subtitle}
       maxWidth="max-w-4xl"
       footer={footerContent}
     >
@@ -235,7 +237,7 @@ const DailyLoadCapacityModal = ({
 
                   return (
                     <div
-                      key={`${trip.date}-${trip.email}-${idx}`}
+                      key={`${trip.date}-${trip.email}-${idx}`} 
                       className="bg-slate-50 border border-slate-200 rounded-lg p-4 grid grid-cols-[1fr_auto] md:flex md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700"
                     >
                       <div className="min-w-0 md:w-40 md:shrink-0 overflow-hidden">
@@ -247,7 +249,7 @@ const DailyLoadCapacityModal = ({
                         </p>
                         <div className="flex flex-col items-start gap-1 mt-1">
                           <p className="text-xs text-slate-500 font-mono font-bold bg-slate-300 inline-block px-1 rounded truncate max-w-full dark:text-slate-700">
-                            {trip.vehicleName}
+                            {getBasePlate(trip.vehicleName)}
                           </p>
                           <p className="text-xs text-slate-400 ">
                             {trip.tasksCount} {t('common.task')}

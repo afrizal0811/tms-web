@@ -33,14 +33,8 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={
-        <div className="flex flex-col gap-0.5">
-          <span>{t('delivery.modal.bun_list')}</span>
-          <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
-            {t('delivery.modal.bun_list_desc')}
-          </span>
-        </div>
-      }
+      title={t('delivery.modal.bun_list')}
+      subtitle={t('delivery.modal.bun_list_desc')}
       footer={
         <div className="flex justify-end w-full">
           <Button onClick={handleDownload} text={t('common.download')} width="w-full sm:w-auto" />

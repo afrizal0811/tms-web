@@ -59,6 +59,7 @@ function DailySequenceAccuracyModal({
   isOpen,
   onClose,
   title,
+  subtitle,
   data,
   isLoading,
   selectedDate,
@@ -93,6 +94,7 @@ function DailySequenceAccuracyModal({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      subtitle={subtitle}
       maxWidth="max-w-5xl"
       footer={footerContent}
     >

@@ -13,6 +13,7 @@ export default function BaseModal({
   noClose = false,
   onClose,
   title,
+  subtitle,
 }) {
   if (!isOpen) return null;
 
@@ -30,7 +31,10 @@ export default function BaseModal({
           className={`px-6 py-4 flex justify-between shrink-0 border-b border-gray-200 dark:border-slate-900 bg-gray-100 dark:bg-slate-900/80 transition-colors ${headerClassName}`}
         >
           <div className="flex-column lg:flex items-center gap-4 justify-between w-full">
-            <div className="text-lg font-bold truncate flex-1">{title}</div>
+            <div>
+              <h2 className="text-lg font-bold truncate flex-1">{title}</h2>
+              <p className="text-sm mt-0.5 font-normal text-slate-500 dark:text-slate-400">{subtitle}</p>
+            </div>
             {headerContent && <div className="flex items-center py-3 ">{headerContent}</div>}
           </div>
           <div className="flex-column lg:flex items-start gap-4 justify-between">

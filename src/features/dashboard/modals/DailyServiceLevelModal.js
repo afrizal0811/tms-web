@@ -59,6 +59,7 @@ function DailyServiceLevelModal({
   isOpen,
   onClose,
   title,
+  subtitle,
   data,
   isLoading,
   selectedDate,
@@ -94,6 +95,7 @@ function DailyServiceLevelModal({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      subtitle={subtitle}
       maxWidth="max-w-5xl"
       footer={footerContent}
     >
