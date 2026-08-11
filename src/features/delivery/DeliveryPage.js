@@ -74,7 +74,7 @@ export default function DeliveryPage() {
   const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'asc' });
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [timeMap, setTimeMap] = useState(new Map());
-
+  const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
 
@@ -675,7 +675,7 @@ export default function DeliveryPage() {
   };
 
   if (!isClient) return null;
-
+  
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard
@@ -756,35 +756,63 @@ export default function DeliveryPage() {
                 />
                 {isDownloadDropdownOpen && (
                   <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-10 py-1.5 w-full min-w-[220px] flex flex-col">
-                    <button
-                      onClick={() => handleDownloadTrigger('routeTransaction')}
-                      className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
-                    >
-                      Route Transaction
-                    </button>
-
-                    <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5">
-                      <div className="flex items-center justify-between pr-3 py-1">
-                        <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-300 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
-                            checked={isNoBun}
-                            onChange={(e) => handleToggleNoBun(e.target.checked)}
-                          />
-                          No Bun <Information infoText={t('delivery.no_bun_info')} size="3.5" />
-                        </label>
-                        <button
-                          onClick={() => {
-                            setIsDownloadDropdownOpen(false);
-                            setIsBunModalOpen(true);
+                    <div className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <button
+                        onClick={() => handleDownloadTrigger('routeTransaction')}
+                        className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
+                      >
+                        Route Transaction
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsRouteSettingsOpen(!isRouteSettingsOpen);
+                        }}
+                        className="px-3 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-transform"
+                      >
+                        <svg
+                          className="w-4 h-4 transition-transform duration-200"
+                          style={{
+                            transform: isRouteSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                           }}
-                          className="text-[10px] text-sky-600 dark:text-sky-300 hover:underline cursor-pointer font-medium"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          {t('delivery.more')}
-                        </button>
-                      </div>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
                     </div>
+
+                    {isRouteSettingsOpen && (
+                      <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5 animate-in slide-in-from-top-1 duration-200">
+                        <div className="flex items-center justify-between pr-3 py-1">
+                          <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                              checked={isNoBun}
+                              onChange={(e) => handleToggleNoBun(e.target.checked)}
+                            />
+                            No Bun
+                          </label>
+                          <button
+                            onClick={() => {
+                              setIsDownloadDropdownOpen(false);
+                              setIsBunModalOpen(true);
+                            }}
+                            className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
+                          >
+                            More
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <button
                       onClick={() => handleDownloadTrigger('deliveryList')}
