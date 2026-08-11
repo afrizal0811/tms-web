@@ -729,7 +729,7 @@ export default function DeliveryPage() {
 
                     <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5">
                       <div className="flex items-center justify-between pr-3 py-1">
-                        <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                        <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-300 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
@@ -743,7 +743,7 @@ export default function DeliveryPage() {
                             setIsDownloadDropdownOpen(false);
                             setIsBunModalOpen(true);
                           }}
-                          className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
+                          className="text-[10px] text-sky-600 dark:text-sky-300 hover:underline cursor-pointer font-medium"
                         >
                           {t('delivery.more')}
                         </button>
@@ -781,11 +781,7 @@ export default function DeliveryPage() {
         tabs={filteredVehicleRoutes.map((r) => {
           const dName = getDriverName(r, driverData);
           const isManual = r.hasManual;
-          const textClass = r.hasInvalidSo
-            ? 'text-red-600 dark:text-red-400 font-bold'
-            : isManual
-              ? 'text-[#4F76C7] dark:text-blue-400'
-              : '';
+          const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
 
           return {
             id: r.vehicleId,

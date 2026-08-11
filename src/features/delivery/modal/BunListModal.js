@@ -47,13 +47,13 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <SearchBar
           value={bunSearch}
           onChange={setBunSearch}
           placeholder={t('delivery.search_placeholder')}
           width="w-full"
-          className="p-1"
+          className="px-1 py-0.5"
         />
 
         <div className="flex justify-between items-center px-1 -my-2">
@@ -79,7 +79,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
 
         <div className="max-h-[60vh] overflow-auto border border-gray-200 dark:border-slate-700 rounded-lg">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 dark:bg-slate-900/50 sticky top-0">
+            <thead className="bg-gray-50 dark:bg-slate-900 sticky top-0">
               <tr>
                 <th className="p-3 w-10 text-center">
                   <input
@@ -121,10 +121,16 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
                         }}
                       />
                     </td>
-                    <td className="p-3 text-xs align-top">{b.vehicle}</td>
-                    <td className="p-3 font-medium align-top whitespace-nowrap">{b.so}</td>
-                    <td className="p-3 align-top">{b.customer}</td>
-                    <td className="p-3 text-xs text-slate-500 align-top">
+                    <td className="p-3 text-xs align-top text-slate-500 dark:text-slate-300">
+                      {b.vehicle}
+                    </td>
+                    <td className="p-3 font-medium align-top whitespace-nowrap text-slate-500 dark:text-slate-300">
+                      {b.so}
+                    </td>
+                    <td className="p-3 align-top text-slate-500 dark:text-slate-300">
+                      {b.customer}
+                    </td>
+                    <td className="p-3 text-xs text-slate-500 dark:text-slate-300 align-top">
                       <ul className="list-outside list-disc pl-3">
                         {b.items.map((item, idx) => (
                           <li key={idx}>{item}</li>
