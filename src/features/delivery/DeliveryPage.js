@@ -55,25 +55,25 @@ export default function DeliveryPage() {
   const { t } = useLanguage();
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [allRoutes, setAllRoutes] = useState([]);
+  const [bunSoList, setBunSoList] = useState([]);
+  const [downloadType, setDownloadType] = useState(null);
   const [driverData, setDriverData] = useState({});
-  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
-  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
+  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
+  const [hubsData, setHubsData] = useState([]);
+  const [isBunModalOpen, setIsBunModalOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isDetailView, setIsDetailView] = useState(false);
+  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNoBun, setIsNoBun] = useState(false);
+  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
+  const [routingResults, setRoutingResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'asc' });
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [timeMap, setTimeMap] = useState(new Map());
-  const [isDetailView, setIsDetailView] = useState(false);
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
-  const [routingResults, setRoutingResults] = useState([]);
-  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
-  const [hubsData, setHubsData] = useState([]);
-  const [downloadType, setDownloadType] = useState(null);
-
-  const [isNoBunActive, setIsNoBunActive] = useState(false);
-  const [isBunModalOpen, setIsBunModalOpen] = useState(false);
-  const [bunSoList, setBunSoList] = useState([]);
 
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
@@ -83,8 +83,17 @@ export default function DeliveryPage() {
     const date = new Date();
     setSelectedDate(formatDateUniversal(date, 'YYYY-MM-DD'));
     const { storedSession } = getLocalStorage();
-    if (storedSession && typeof storedSession.isDetailViewEstimasi === 'boolean') {
-      setIsDetailView(storedSession.isDetailViewEstimasi);
+    if (storedSession && storedSession.deliveryPage) {
+      const dp = storedSession.deliveryPage;
+      if (typeof dp.isDetailView === 'boolean') {
+        setIsDetailView(dp.isDetailView);
+      }
+      if (typeof dp.isNoBun === 'boolean') {
+        setIsNoBun(dp.isNoBun);
+      }
+      if (dp.sortConfig) {
+        setSortConfig(dp.sortConfig);
+      }
     }
   }, []);
 
@@ -112,7 +121,32 @@ export default function DeliveryPage() {
     setIsDetailView(isDetail);
     const { storedSession } = getLocalStorage();
     if (storedSession) {
-      setLocalStorage('data', { ...storedSession, isDetailViewEstimasi: isDetail });
+      setLocalStorage('data', {
+        ...storedSession,
+        deliveryPage: { ...(storedSession.deliveryPage || {}), isDetailView: isDetail },
+      });
+    }
+  };
+
+  const handleToggleNoBun = (isActive) => {
+    setIsNoBun(isActive);
+    const { storedSession } = getLocalStorage();
+    if (storedSession) {
+      setLocalStorage('data', {
+        ...storedSession,
+        deliveryPage: { ...(storedSession.deliveryPage || {}), isNoBun: isActive },
+      });
+    }
+  };
+
+  const handleSortUpdate = (newConfig) => {
+    setSortConfig(newConfig);
+    const { storedSession } = getLocalStorage();
+    if (storedSession) {
+      setLocalStorage('data', {
+        ...storedSession,
+        deliveryPage: { ...(storedSession.deliveryPage || {}), sortConfig: newConfig },
+      });
     }
   };
 
@@ -128,6 +162,7 @@ export default function DeliveryPage() {
       isDetailView,
       fileNamePrefix,
       excludeSoList,
+      sortConfig,
     };
 
     if (type === 'routeTransaction') {
@@ -149,6 +184,7 @@ export default function DeliveryPage() {
       timeMap,
       isDetailView,
       excludeSoList,
+      sortConfig,
     };
 
     if (type === 'routeTransaction') {
@@ -172,7 +208,7 @@ export default function DeliveryPage() {
       const activeHub = findActiveHub(hubsData, storedLocation);
 
       let excludeList = [];
-      if (type === 'routeTransaction' && isNoBunActive) {
+      if (type === 'routeTransaction' && isNoBun) {
         excludeList = bunSoList.map((b) => b.so);
       }
 
@@ -733,8 +769,8 @@ export default function DeliveryPage() {
                           <input
                             type="checkbox"
                             className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
-                            checked={isNoBunActive}
-                            onChange={(e) => setIsNoBunActive(e.target.checked)}
+                            checked={isNoBun}
+                            onChange={(e) => handleToggleNoBun(e.target.checked)}
                           />
                           No Bun <Information infoText={t('delivery.no_bun_info')} size="3.5" />
                         </label>
@@ -807,6 +843,8 @@ export default function DeliveryPage() {
                 setSearchQuery={setSearchQuery}
                 isDetailView={isDetailView}
                 t={t}
+                sortConfig={sortConfig}
+                setSortConfig={handleSortUpdate}
               />
             )}
           </div>
@@ -820,7 +858,7 @@ export default function DeliveryPage() {
         onPartial={(e) => {
           if (e) e.preventDefault();
           let excludeList = [];
-          if (downloadType === 'routeTransaction' && isNoBunActive) {
+          if (downloadType === 'routeTransaction' && isNoBun) {
             excludeList = bunSoList.map((b) => b.so);
           }
           runPartialDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
@@ -829,7 +867,7 @@ export default function DeliveryPage() {
         onFull={(e) => {
           if (e) e.preventDefault();
           let excludeList = [];
-          if (downloadType === 'routeTransaction' && isNoBunActive) {
+          if (downloadType === 'routeTransaction' && isNoBun) {
             excludeList = bunSoList.map((b) => b.so);
           }
           runFullDownload(downloadType, getStoragePrefix(storageFilter), excludeList);

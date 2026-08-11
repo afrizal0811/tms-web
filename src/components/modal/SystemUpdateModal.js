@@ -37,7 +37,6 @@ export default function SystemUpdateModal() {
         JSON.stringify({
           user: storedSession.user || null,
           superadminRoleId: storedSession.superadminRoleId || null,
-          colPrefs: storedSession.colPrefs || null,
         })
       );
     }

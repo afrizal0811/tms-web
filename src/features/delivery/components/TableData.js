@@ -11,12 +11,30 @@ import {
 } from '@/lib/utils';
 import { useMemo } from 'react';
 
-export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
+export default function TableData({
+  activeRoute,
+  searchQuery,
+  setSearchQuery,
+  t,
+  isDetailView,
+  sortConfig,
+  setSortConfig,
+}) {
   const hasManualTaskInRoute = useMemo(
     () => activeRoute.trips.some((trip) => trip.isManual),
     [activeRoute]
   );
+  const handleSort = (key) => {
+    const newDirection =
+      sortConfig?.key === key && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+    setSortConfig({ key, direction: newDirection });
+  };
 
+  const renderSortIcon = (key) => {
+    if (sortConfig?.key !== key)
+      return <span className="text-gray-300 dark:text-slate-600 opacity-50">↕</span>;
+    return sortConfig.direction === 'asc' ? <span>↑</span> : <span>↓</span>;
+  };
   const processedTrips = useMemo(() => {
     const list = [];
     activeRoute.trips.forEach((trip, index) => {
@@ -85,8 +103,30 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
         isInvalidSo,
       });
     });
+    if (sortConfig) {
+      list.sort((a, b) => {
+        // Kunci Hub di atas & bawah
+        if (a.isHub && a.originalIndex === 0) return -1;
+        if (b.isHub && b.originalIndex === 0) return 1;
+        if (a.isHub) return 1;
+        if (b.isHub) return -1;
+
+        if (sortConfig.key === 'no') {
+          const noA = parseInt(a.displayNo) || (a.isManual ? 9999 : 0);
+          const noB = parseInt(b.displayNo) || (b.isManual ? 9999 : 0);
+          return sortConfig.direction === 'asc' ? noA - noB : noB - noA;
+        }
+        if (sortConfig.key === 'so') {
+          const soA = String(a.displaySo || '');
+          const soB = String(b.displaySo || '');
+          return sortConfig.direction === 'asc' ? soA.localeCompare(soB) : soB.localeCompare(soA);
+        }
+        return 0;
+      });
+    }
+
     return list;
-  }, [activeRoute, isDetailView]);
+  }, [activeRoute, isDetailView, sortConfig]);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors relative">
@@ -95,7 +135,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           <thead className="bg-gray-50 sticky top-0">
             <tr>
               <Th widthClass="w-[7%]" alignClass="text-center relative">
-                <span>No.</span>
+                <div
+                  className="flex items-center justify-center gap-1 cursor-pointer select-none"
+                  onClick={() => handleSort('no')}
+                >
+                  <span>No.</span>
+                  {renderSortIcon('no')}
+                </div>
               </Th>
               <Th widthClass="w-[20%]" alignClass="text-center">
                 {t('delivery.visit')}
@@ -107,7 +153,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 {t('common.location_id') || 'ID Location'}
               </Th>
               <Th widthClass="w-[15%]" alignClass="text-center">
-                {t('common.so_number')}
+                <div
+                  className="flex items-center justify-center gap-1 cursor-pointer select-none"
+                  onClick={() => handleSort('so')}
+                >
+                  <span>{t('common.so_number')}</span>
+                  {renderSortIcon('so')}
+                </div>
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
                 {t('common.open_time')}

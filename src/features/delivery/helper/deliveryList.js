@@ -239,6 +239,7 @@ export const handleFullDeliveryListDownload = async ({
   driverData,
   fileNamePrefix,
   isDetailView,
+  sortConfig,
 }) => {
   setIsDownloading(true);
   try {
@@ -255,6 +256,27 @@ export const handleFullDeliveryListDownload = async ({
         isFirstHub: index === 0 && trip.isHub,
         isLastHub: index === route.trips.length - 1 && trip.isHub,
       }));
+
+      if (sortConfig) {
+        processedTrips.sort((a, b) => {
+          if (a.isFirstHub) return -1;
+          if (b.isFirstHub) return 1;
+          if (a.isLastHub) return 1;
+          if (b.isLastHub) return -1;
+
+          if (sortConfig.key === 'no') {
+            const noA = a.trip.routePlannedOrder ?? (a.trip.isManual ? 9999 : 0);
+            const noB = b.trip.routePlannedOrder ?? (b.trip.isManual ? 9999 : 0);
+            return sortConfig.direction === 'asc' ? noA - noB : noB - noA;
+          }
+          if (sortConfig.key === 'so') {
+            const soA = String(a.trip.orderId || '');
+            const soB = String(b.trip.orderId || '');
+            return sortConfig.direction === 'asc' ? soA.localeCompare(soB) : soB.localeCompare(soA);
+          }
+          return 0;
+        });
+      }
 
       appendDeliveryListSheet(wb, cleanName, driverName, processedTrips, isDetailView, t);
     });
