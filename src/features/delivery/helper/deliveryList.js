@@ -1,5 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal, parseCustomerString, isEmpty, checkInvalidSo } from '@/lib/utils';
+import { checkInvalidSo, formatDateUniversal, isEmpty, parseCustomerString } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../../lib/toast';
@@ -20,7 +20,7 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
     { key: 'visit', title: t('delivery.visit') },
     { key: 'custId', title: t('common.customer_id') },
     { key: 'locId', title: t('common.location_id') },
-    { key: 'so', title: t('common.so_number') },
+    { key: 'so', title: t('common.invoice_number') },
     { key: 'openTime', title: t('common.open_time') },
     { key: 'closeTime', title: t('common.close_time') },
     { key: 'eta', title: t('delivery.est_arrival') },

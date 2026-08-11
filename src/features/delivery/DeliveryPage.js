@@ -498,7 +498,7 @@ export default function DeliveryPage() {
         if (badPlates.size > 0) {
           const platesStr = Array.from(badPlates).join('\n');
           if (lastWarnedPlates.current !== platesStr) {
-            toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
+            toastWarning(`${t('delivery.toast.invalid_invoice')}\n${platesStr}`);
             lastWarnedPlates.current = platesStr;
           }
         } else {

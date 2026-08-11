@@ -80,11 +80,11 @@ export const generateBreadWorkbook = (allRows, translate) => {
     translate('excel.bread.uom'),
     translate('common.volume'),
     translate('common.weight'),
-    translate('common.so_number'),
-    translate('common.customer_name') || 'Customer Name',
-    translate('common.customer_id') || 'Customer ID',
-    translate('common.location_id') || 'Location ID',
-    translate('common.address') || 'Address',
+    translate('common.invoice_number'),
+    translate('common.customer_name'),
+    translate('common.customer_id'),
+    translate('common.location_id'),
+    translate('common.address'),
   ];
 
   const wb = XLSX.utils.book_new();

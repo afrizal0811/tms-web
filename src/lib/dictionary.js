@@ -38,6 +38,7 @@ export const dictionary = {
       flow: 'Alur',
       holiday: 'Libur',
       holiday_sunday: 'Libur (Minggu)',
+      invoice_number: 'Nomor Faktur',
       items: 'Barang',
       invalid_date: 'Tanggal tidak valid',
       language: 'Bahasa',
@@ -63,7 +64,6 @@ export const dictionary = {
       saving: 'Menyimpan...',
       scroll_down: 'Scroll ke bawah',
       select: 'Pilih',
-      so_number: 'Nomor SO',
       start_time: 'Waktu Mulai',
       storage_type: 'Tipe Penyimpanan',
       task: 'Tugas',
@@ -162,7 +162,6 @@ export const dictionary = {
     },
     dashboard: {
       copy: 'Salin',
-      empty_so: 'There is no SO Number',
       subtitle: 'Overview performa',
       subtitle_highlight: 'harian & tahunan',
       title: 'Dashboard',
@@ -451,7 +450,7 @@ export const dictionary = {
       more: 'Selengkapnya',
       no_bun_info: 'Kecualikan faktur dengan barang "BUN"',
       partial: 'Sebagian',
-      search_placeholder: 'Cari Plat, Customer, atau SO',
+      search_placeholder: 'Cari plat, pelanggan, atau nomor faktur',
       subtitle: 'Monitoring',
       subtitle_highlight: 'rute kunjungan & jadwal pengiriman',
       title: 'Pengiriman',
@@ -460,10 +459,10 @@ export const dictionary = {
       view_summary: 'Ringkas',
       visit: 'Kunjungan',
       tooltip: {
-        find_so: 'Klik untuk filter berdasarkan nomor SO',
+        find_invoice: 'Klik untuk filter berdasarkan nomor faktur',
         hub_eta: 'Terdapat tugas yang ditugaskan secara manual. Estimasi menjadi tidak akurat',
         manual_assign: 'Penugasan Manual',
-        invalid_so: 'Nomor SO tidak valid',
+        invalid_invoice: 'Nomor faktur tidak valid',
       },
       modal: {
         bun_list: 'Daftar faktur dengan barang "BUN"',
@@ -473,7 +472,7 @@ export const dictionary = {
         partial: 'Data {type} dipisah berdasarkan hasil routing',
       },
       toast: {
-        invalid_so: 'Kendaraan memiliki nomor faktur yang salah:',
+        invalid_invoice: 'Kendaraan memiliki nomor faktur yang salah:',
       },
     },
     summary: {
@@ -721,6 +720,7 @@ export const dictionary = {
       flow: 'Flow',
       holiday: 'Holiday',
       holiday_sunday: 'Holiday (Sunday)',
+      invoice_number: 'Invoice Number',
       items: 'Items',
       invalid_date: 'Invalid date',
       language: 'Language',
@@ -746,7 +746,6 @@ export const dictionary = {
       saving: 'Saving...',
       scroll_down: 'Scroll down',
       select: 'Select',
-      so_number: 'SO Number',
       start_time: 'Start Time',
       storage_type: 'Storage Type',
       task: 'Task',
@@ -845,7 +844,6 @@ export const dictionary = {
     },
     dashboard: {
       copy: 'Copied',
-      empty_so: 'There is no SO Number',
       subtitle: 'Performance overview',
       subtitle_highlight: 'daily & yearly',
       title: 'Dashboard',
@@ -1134,7 +1132,7 @@ export const dictionary = {
       more: 'More',
       no_bun_info: 'Exclude invoices with "BUN" Items',
       partial: 'Partial',
-      search_placeholder: 'Search Plate, Customer, or SO Number',
+      search_placeholder: 'Search Plate, Customer, or Invoice Number',
       subtitle: 'Monitoring of',
       subtitle_highlight: 'visit routes & delivery schedules',
       title: 'Delivery',
@@ -1143,10 +1141,10 @@ export const dictionary = {
       view_summary: 'Summary',
       visit: 'Visit',
       tooltip: {
-        find_so: 'Click to filter by SO number',
+        find_invoice: 'Click to filter by invoice number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
         manual_assign: 'Manual Assign',
-        invalid_so: 'Invalid SO number',
+        invalid_invoice: 'Invalid invoice number',
       },
       modal: {
         bun_list: 'List of invoices with "BUN" items',
@@ -1156,7 +1154,7 @@ export const dictionary = {
         partial: 'Separate {type} data by routing result',
       },
       toast: {
-        invalid_so: 'Vehicle contains incorrect invoice numbers:',
+        invalid_invoice: 'Vehicle contains incorrect invoice numbers:',
       },
     },
     summary: {

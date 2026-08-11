@@ -109,7 +109,7 @@ const buildSoWorksheet = (processedRows, t) => {
         ...errorStyle,
         alignment: { vertical: 'center', horizontal: 'center' },
       };
-      ws[cellRef].c = [{ a: 'System', t: t('delivery.tooltip.invalid_so'), h: true }];
+      ws[cellRef].c = [{ a: 'System', t: t('delivery.tooltip.invalid_invoice'), h: true }];
     } else {
       ws[cellRef].s = baseStyle;
       ws[typeCellRef].s = {

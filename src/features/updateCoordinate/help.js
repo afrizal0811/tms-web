@@ -14,7 +14,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const wb = XLSX.utils.book_new();
     const headers = [
       'No',
-      t('common.so_number'),
+      t('common.invoice_number'),
       t('common.customer_name'),
       t('common.customer_id'),
       t('common.location_id'),

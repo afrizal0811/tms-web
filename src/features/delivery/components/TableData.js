@@ -157,7 +157,7 @@ export default function TableData({
                   className="flex items-center justify-center gap-1 cursor-pointer select-none"
                   onClick={() => handleSort('so')}
                 >
-                  <span>{t('common.so_number')}</span>
+                  <span>{t('common.invoice_number')}</span>
                   {renderSortIcon('so')}
                 </div>
               </Th>
@@ -191,7 +191,7 @@ export default function TableData({
               }`;
 
               const tooltipMsg = hasPartner
-                ? t('delivery.tooltip.find_so')
+                ? t('delivery.tooltip.find_invoice')
                 : isManual
                   ? t('delivery.tooltip.manual_assign')
                   : '';
@@ -259,7 +259,7 @@ export default function TableData({
                     {isHub ? (
                       ''
                     ) : trip.isInvalidSo ? (
-                      <Tooltip tooltipContent={t('delivery.tooltip.invalid_so')}>
+                      <Tooltip tooltipContent={t('delivery.tooltip.invalid_invoice')}>
                         <span className="text-red-600 dark:text-red-400 font-bold cursor-help border-b border-dashed border-red-400">
                           <HighlightText text={trip.displaySo} highlight={searchQuery} />
                         </span>

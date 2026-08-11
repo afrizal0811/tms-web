@@ -89,7 +89,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
                   />
                 </th>
                 <th className="p-3">{t('common.license_number')}</th>
-                <th className="p-3">{t('common.so_number')}</th>
+                <th className="p-3">{t('common.invoice_number')}</th>
                 <th className="p-3">{t('common.customer_name')}</th>
                 <th className="p-3">{t('common.items')}</th>
               </tr>
