@@ -1,7 +1,7 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
@@ -62,7 +62,7 @@ export default function SystemUpdateModal() {
   const footer = <Button text={t('update.btn_update')} onClick={handleApplyUpdate} />;
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       noClose={true}
       title={t('update.title')}
@@ -86,8 +86,10 @@ export default function SystemUpdateModal() {
             />
           </svg>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 leading-relaxed">{t('update.text')}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-2 leading-relaxed">
+          {t('update.text')}
+        </p>
       </div>
-    </BaseModal>
+    </Modal>
   );
 }

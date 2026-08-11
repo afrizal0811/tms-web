@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
 
@@ -31,7 +31,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="max-w-lg"
@@ -113,6 +113,6 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       ) : (
         emptyDataContent
       )}
-    </BaseModal>
+    </Modal>
   );
 }

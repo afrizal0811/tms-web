@@ -1,9 +1,9 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import Tooltip from '@/components/Tooltip';
 import { toastError } from '@/lib/toast';
-import { isEmpty, getBasePlate} from '@/lib/utils';
+import { getBasePlate, isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
   Bar,
@@ -158,7 +158,7 @@ const DailyLoadCapacityModal = ({
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={title}
@@ -237,7 +237,7 @@ const DailyLoadCapacityModal = ({
 
                   return (
                     <div
-                      key={`${trip.date}-${trip.email}-${idx}`} 
+                      key={`${trip.date}-${trip.email}-${idx}`}
                       className="bg-slate-50 border border-slate-200 rounded-lg p-4 grid grid-cols-[1fr_auto] md:flex md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700"
                     >
                       <div className="min-w-0 md:w-40 md:shrink-0 overflow-hidden">
@@ -334,7 +334,7 @@ const DailyLoadCapacityModal = ({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 };
 

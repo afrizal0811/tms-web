@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -37,7 +37,7 @@ export default function CustomerHistoryModal({
   if (!isOpen) return null;
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={`${t('longlat.modal.title')} (${formatLongDate(selectedDate, localeCode)})`}
@@ -70,6 +70,6 @@ export default function CustomerHistoryModal({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 }

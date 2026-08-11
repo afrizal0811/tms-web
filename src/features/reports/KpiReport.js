@@ -1,9 +1,9 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import FileUploader from '@/components/fileUploader/FileUploader';
+import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { handleKpiDownload } from '@/features/reports/helper/help';
@@ -238,7 +238,7 @@ export default function KpiReport() {
         />
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -276,7 +276,7 @@ export default function KpiReport() {
             />
           </div>
         </div>
-      </BaseModal>
+      </Modal>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}

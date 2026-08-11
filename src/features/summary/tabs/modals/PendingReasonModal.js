@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -135,7 +135,7 @@ export default function PendingReasonModal({
           </span>
         }
       />
-      <BaseModal
+      <Modal
         isOpen={isOpen && !isConfirmOpen}
         onClose={onClose}
         maxWidth="max-w-lg"
@@ -244,7 +244,7 @@ export default function PendingReasonModal({
             ></textarea>
           </div>
         </div>
-      </BaseModal>
+      </Modal>
     </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getBasePlate, isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -200,7 +200,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     onClose();
   };
 
-
   const headerContent = (
     <div className="flex flex-col lg:flex-row items-end justify-between w-full">
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
@@ -248,7 +247,7 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleCloseModal}
       title={t('dashboard.map.title')}
@@ -294,6 +293,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           {t('dashboard.map.select_driver')}
         </div>
       )}
-    </BaseModal>
+    </Modal>
   );
 }

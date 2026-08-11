@@ -1,5 +1,5 @@
 // File: src/features/summary/tabs/modals/TruckDetailModal.js
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import Tooltip from '@/components/Tooltip';
 import {
   formatDateUniversal,
@@ -159,7 +159,7 @@ export default function TruckDetailModal({
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       maxWidth={selectedTask ? 'max-w-5xl' : 'max-w-lg'}
@@ -315,6 +315,6 @@ export default function TruckDetailModal({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 }

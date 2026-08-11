@@ -1,7 +1,7 @@
 // File: src/features/dashboard/modals/DailySequenceAccuracyModal.js
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import Spinner from '@/components/Spinner';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -90,7 +90,7 @@ function DailySequenceAccuracyModal({
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={title}
@@ -153,7 +153,7 @@ function DailySequenceAccuracyModal({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 }
 

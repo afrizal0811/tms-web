@@ -1,8 +1,8 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import Modal from '@/components/Modal';
 import Tooltip from '@/components/Tooltip';
 import FileUploader from '@/components/fileUploader/FileUploader';
 import ConfirmModal from '@/components/modal/ConfirmModal';
@@ -360,7 +360,7 @@ export default function DailyReport({
         />
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -398,7 +398,7 @@ export default function DailyReport({
             />
           </div>
         </div>
-      </BaseModal>
+      </Modal>
 
       <ConfirmModal
         isOpen={showWarningModal}

@@ -1,8 +1,8 @@
 // File: src/features/delivery/modal/BunListModal.js
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 import SearchBar from '@/components/SearchBar';
 import { useState } from 'react';
 
@@ -30,7 +30,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={t('delivery.modal.bun_list')}
@@ -138,6 +138,6 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
           </table>
         </div>
       </div>
-    </BaseModal>
+    </Modal>
   );
 }
