@@ -53,16 +53,16 @@ export const extractBreadRows = (tasksData, driverMap, dateStr) => {
         dateStr,
         platNomor,
         driverName,
-        p.title ?? '-',
-        toNumOrDash(p.qtyProcessed),
-        p.content ?? '-',
-        toNumOrDash(p.volume),
-        toNumOrDash(p.weight),
         p.caption ?? '-',
         custName,
         custId,
         locId,
         address,
+        p.title ?? '-',
+        toNumOrDash(p.qtyProcessed),
+        p.content ?? '-',
+        toNumOrDash(p.volume),
+        toNumOrDash(p.weight),
       ]);
     });
   });
@@ -75,16 +75,16 @@ export const generateBreadWorkbook = (allRows, translate) => {
     translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
-    translate('common.items'),
-    translate('excel.bread.qty'),
-    translate('excel.bread.uom'),
-    translate('common.volume'),
-    translate('common.weight'),
     translate('common.invoice_number'),
     translate('common.customer_name'),
     translate('common.customer_id'),
     translate('common.location_id'),
     translate('common.address'),
+    translate('common.items'),
+    translate('excel.bread.qty'),
+    translate('excel.bread.uom'),
+    translate('common.volume'),
+    translate('common.weight'),
   ];
 
   const wb = XLSX.utils.book_new();
@@ -94,7 +94,7 @@ export const generateBreadWorkbook = (allRows, translate) => {
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
   const range = XLSX.utils.decode_range(ws['!ref']);
-  const leftAlignedCols = new Set([2, 3, 9, 12]);
+  const leftAlignedCols = new Set([2, 4, 7, 8]);
 
   for (let R = 0; R <= range.e.r; R++) {
     for (let C = 0; C <= range.e.c; C++) {
