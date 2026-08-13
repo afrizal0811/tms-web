@@ -16,7 +16,27 @@ import {
   isTripRedelivery,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
+  sanitizeName,
 } from './shared';
+
+const buildSegments = (trips, isSplitMultitrip) => {
+  const segments = [];
+  let currentSegment = [];
+
+  (trips || []).forEach((trip) => {
+    if (trip.isHub) {
+      if (isSplitMultitrip && currentSegment.length > 0) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    } else {
+      currentSegment.push(trip);
+    }
+  });
+  if (currentSegment.length > 0) segments.push(currentSegment);
+
+  return segments;
+};
 
 const buildSoWorksheet = (processedRows, t) => {
   processedRows.sort((a, b) => {
@@ -139,60 +159,89 @@ export const handleFullRouteTransDownload = async ({
   t,
   selectedDate,
   excludeSoList = [],
+  isSplitMultitrip,
 }) => {
   setIsDownloading(true);
   try {
     const dateForFilename = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
     const locationName = getLocationName();
-    const isMultiVehicle = filteredVehicleRoutes.length > 1;
-    const zip = isMultiVehicle ? new JSZip() : null;
+    const zip = new JSZip();
     const seenFileNames = new Set();
+    let fileCount = 0;
+    let lastFileBuffer = null;
+    let lastFileName = '';
 
     for (const route of filteredVehicleRoutes) {
-      const cleanName = (route.vehicleName || 'Vehicle').replace(/[\\/:*?\[\]]/g, '').trim();
-      const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
-      const processedRows = [];
+      const cleanName = sanitizeName(route.vehicleName || 'Vehicle');
       const seenSO = new Set();
+      const segments = buildSegments(route.trips, isSplitMultitrip);
+      const generatedSegments = [];
 
-      (route.trips || []).forEach((trip) => {
-        if (!trip.isHub && trip.orderId && !isTripRedelivery(trip)) {
-          const parsedCust = parseCustomerString(trip.visitName);
-          const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
-          const rawSOs = (parsedCust.invoiceNumber || trip.orderId)
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
+      segments.forEach((segmentTrips) => {
+        const processedRows = [];
+        segmentTrips.forEach((trip) => {
+          if (trip.orderId && !isTripRedelivery(trip)) {
+            const parsedCust = parseCustomerString(trip.visitName);
+            const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+            const rawSOs = (parsedCust.invoiceNumber || trip.orderId)
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
 
-          rawSOs.forEach((rawSo) => {
-            const standardizedSo = standardizeSo(rawSo);
-            if (!seenSO.has(standardizedSo)) {
-              seenSO.add(standardizedSo);
-              if (!excludeSoList.includes(standardizedSo) && !excludeSoList.includes(rawSo)) {
-                processedRows.push({ so: standardizedSo, isInvalidCustomer: isCustomerInvalid });
+            rawSOs.forEach((rawSo) => {
+              const standardizedSo = standardizeSo(rawSo);
+              if (!seenSO.has(standardizedSo)) {
+                seenSO.add(standardizedSo);
+                if (!excludeSoList.includes(standardizedSo) && !excludeSoList.includes(rawSo)) {
+                  processedRows.push({ so: standardizedSo, isInvalidCustomer: isCustomerInvalid });
+                }
               }
-            }
-          });
-        }
+            });
+          }
+        });
+        if (processedRows.length > 0) generatedSegments.push(processedRows);
       });
 
-      const ws = buildSoWorksheet(processedRows, t);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
+      generatedSegments.forEach((processedRows, idx) => {
+        const isMulti = generatedSegments.length > 1;
+        const baseName = isMulti ? `${cleanName} - ${idx + 1}` : cleanName;
+        const nameFile = isMulti
+          ? `${baseName}.xlsx`
+          : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);
 
-      if (isMultiVehicle) {
+        const ws = buildSoWorksheet(processedRows, t);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, baseName.substring(0, 31));
+
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        zip.file(nameFile, excelBuffer);
-      } else {
-        XLSX.writeFile(wb, nameFile);
-        toastSuccess(t('common.toast.success'));
-        return;
-      }
+
+        if (isMulti && filteredVehicleRoutes.length > 1) {
+          zip.folder(`${cleanName} - ${dateForFilename}`).file(nameFile, excelBuffer);
+        } else {
+          zip.file(nameFile, excelBuffer);
+        }
+
+        fileCount++;
+        lastFileBuffer = excelBuffer;
+        lastFileName = nameFile;
+      });
     }
 
-    if (isMultiVehicle) {
+    if (fileCount > 1) {
       const content = await zip.generateAsync({ type: 'blob' });
-      triggerDownload(content, `Route Transaction - ${dateForFilename} - ${locationName}.zip`);
+      let zipName = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
+      if (filteredVehicleRoutes.length === 1) {
+        const singleName = sanitizeName(filteredVehicleRoutes[0].vehicleName || 'Vehicle');
+        zipName = `${singleName} - ${dateForFilename}.zip`;
+      }
+      triggerDownload(content, zipName);
       toastSuccess(t('common.toast.success'));
+    } else if (fileCount === 1) {
+      const blob = new Blob([lastFileBuffer], { type: 'application/octet-stream' });
+      triggerDownload(blob, lastFileName);
+      toastSuccess(t('common.toast.success'));
+    } else {
+      toastError(t('common.toast.error', { err: 'Tidak ada data valid' }));
     }
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }));
@@ -207,6 +256,7 @@ export const handlePartialRouteTransDownload = async ({
   t,
   selectedDate,
   excludeSoList = [],
+  isSplitMultitrip,
 }) => {
   setIsDownloading(true);
   try {
@@ -228,9 +278,7 @@ export const handlePartialRouteTransDownload = async ({
       const routes = routing.result?.routing || [];
       if (routes.length === 0) continue;
 
-      const cleanRoutingName = (routing.name || routing._id || 'Routing')
-        .replace(/[\\/:*?\[\]]/g, '')
-        .trim();
+      const cleanRoutingName = sanitizeName(routing.name || routing._id || 'Routing');
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
       routingIndex++;
 
@@ -239,61 +287,75 @@ export const handlePartialRouteTransDownload = async ({
       const seenFileNames = new Set();
 
       for (const route of routes) {
-        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
-          .replace(/[\\/:*?\[\]]/g, '')
-          .trim();
+        const cleanName = sanitizeName(route.vehicleName || route.vehicleId || 'Vehicle');
 
         if (!globalSeenSOByVehicle.has(cleanName)) {
           globalSeenSOByVehicle.set(cleanName, new Set());
         }
         const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
 
-        const processedRows = [];
         const seenSO = new Set();
+        const segments = buildSegments(route.trips, isSplitMultitrip);
+        const generatedSegments = [];
 
-        (route.trips || []).forEach((trip) => {
-          if (!trip.isHub && !isTripRedelivery(trip)) {
-            const parsedCust = parseCustomerString(trip.visitName);
-            const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
-            const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
+        segments.forEach((segmentTrips) => {
+          const processedRows = [];
+          segmentTrips.forEach((trip) => {
+            if (!isTripRedelivery(trip)) {
+              const parsedCust = parseCustomerString(trip.visitName);
+              const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
+              const rawInvoice = parsedCust.invoiceNumber || trip.orderId || '';
 
-            if (!rawInvoice) return;
+              if (!rawInvoice) return;
 
-            const rawSOs = rawInvoice
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean);
+              const rawSOs = rawInvoice
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
 
-            rawSOs.forEach((rawSo) => {
-              const standardizedSo = standardizeSo(rawSo);
+              rawSOs.forEach((rawSo) => {
+                const standardizedSo = standardizeSo(rawSo);
 
-              if (!vehicleSeenSOs.has(standardizedSo)) {
-                vehicleSeenSOs.add(standardizedSo);
+                if (!vehicleSeenSOs.has(standardizedSo)) {
+                  vehicleSeenSOs.add(standardizedSo);
 
-                if (!seenSO.has(standardizedSo)) {
-                  seenSO.add(standardizedSo);
-                  if (!excludeSoList.includes(standardizedSo) && !excludeSoList.includes(rawSo)) {
-                    processedRows.push({
-                      so: standardizedSo,
-                      isInvalidCustomer: isCustomerInvalid,
-                    });
+                  if (!seenSO.has(standardizedSo)) {
+                    seenSO.add(standardizedSo);
+                    if (!excludeSoList.includes(standardizedSo) && !excludeSoList.includes(rawSo)) {
+                      processedRows.push({
+                        so: standardizedSo,
+                        isInvalidCustomer: isCustomerInvalid,
+                      });
+                    }
                   }
                 }
-              }
-            });
-          }
+              });
+            }
+          });
+
+          if (processedRows.length > 0) generatedSegments.push(processedRows);
         });
 
-        if (processedRows.length === 0) continue;
+        generatedSegments.forEach((processedRows, idx) => {
+          const isMulti = generatedSegments.length > 1;
+          const baseName = isMulti ? `${cleanName} - ${idx + 1}` : cleanName;
+          const nameFile = isMulti
+            ? `${baseName}.xlsx`
+            : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);
 
-        routingHasData = true;
-        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
+          const ws = buildSoWorksheet(processedRows, t);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, baseName.substring(0, 31));
+          const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
-        const ws = buildSoWorksheet(processedRows, t);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, cleanName.substring(0, 31));
-        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        routingZip.file(nameFile, excelBuffer);
+          if (isMulti) {
+            routingZip.folder(`${cleanName} - ${dateForFilename}`).file(nameFile, excelBuffer);
+          } else {
+            routingZip.file(nameFile, excelBuffer);
+          }
+
+          routingHasData = true;
+        });
       }
 
       if (routingHasData) {

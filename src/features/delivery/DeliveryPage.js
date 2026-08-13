@@ -1,4 +1,3 @@
-// File: src/features/delivery/DeliveryPage.js
 'use client';
 
 import Button from '@/components/Button';
@@ -51,6 +50,16 @@ const findActiveHub = (hubs, storedLocation) =>
     (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
   );
 
+const persistDeliveryPageSetting = (key, value) => {
+  const { storedSession } = getLocalStorage();
+  if (storedSession) {
+    setLocalStorage('data', {
+      ...storedSession,
+      deliveryPage: { ...(storedSession.deliveryPage || {}), [key]: value },
+    });
+  }
+};
+
 export default function DeliveryPage() {
   const { t } = useLanguage();
   const [activeVehicleId, setActiveVehicleId] = useState(null);
@@ -67,6 +76,7 @@ export default function DeliveryPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isNoBun, setIsNoBun] = useState(false);
+  const [isSplitMultitrip, setIsSplitMultitrip] = useState(false);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [routingResults, setRoutingResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,8 +101,8 @@ export default function DeliveryPage() {
       if (typeof dp.isNoBun === 'boolean') {
         setIsNoBun(dp.isNoBun);
       }
-      if (dp.sortConfig) {
-        setSortConfig(dp.sortConfig);
+      if (typeof dp.isSplitMultitrip === 'boolean') {
+        setIsSplitMultitrip(dp.isSplitMultitrip);
       }
     }
   }, []);
@@ -119,35 +129,17 @@ export default function DeliveryPage() {
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);
-    const { storedSession } = getLocalStorage();
-    if (storedSession) {
-      setLocalStorage('data', {
-        ...storedSession,
-        deliveryPage: { ...(storedSession.deliveryPage || {}), isDetailView: isDetail },
-      });
-    }
+    persistDeliveryPageSetting('isDetailView', isDetail);
   };
 
   const handleToggleNoBun = (isActive) => {
     setIsNoBun(isActive);
-    const { storedSession } = getLocalStorage();
-    if (storedSession) {
-      setLocalStorage('data', {
-        ...storedSession,
-        deliveryPage: { ...(storedSession.deliveryPage || {}), isNoBun: isActive },
-      });
-    }
+    persistDeliveryPageSetting('isNoBun', isActive);
   };
 
-  const handleSortUpdate = (newConfig) => {
-    setSortConfig(newConfig);
-    const { storedSession } = getLocalStorage();
-    if (storedSession) {
-      setLocalStorage('data', {
-        ...storedSession,
-        deliveryPage: { ...(storedSession.deliveryPage || {}), sortConfig: newConfig },
-      });
-    }
+  const handleToggleSplitMultitrip = (isActive) => {
+    setIsSplitMultitrip(isActive);
+    persistDeliveryPageSetting('isSplitMultitrip', isActive);
   };
 
   const runPartialDownload = (type, fileNamePrefix, excludeSoList = []) => {
@@ -163,6 +155,7 @@ export default function DeliveryPage() {
       fileNamePrefix,
       excludeSoList,
       sortConfig,
+      isSplitMultitrip,
     };
 
     if (type === 'routeTransaction') {
@@ -185,6 +178,7 @@ export default function DeliveryPage() {
       isDetailView,
       excludeSoList,
       sortConfig,
+      isSplitMultitrip,
     };
 
     if (type === 'routeTransaction') {
@@ -226,22 +220,18 @@ export default function DeliveryPage() {
     const { storedLocation } = getLocalStorage();
     const activeHub = findActiveHub(hubsData, storedLocation);
 
+    const baseProps = {
+      setIsDownloading,
+      t,
+      selectedDate,
+      excludeSoList: excludeList,
+      isSplitMultitrip,
+    };
+
     if (activeHub?.hasPartialRouting) {
-      handlePartialRouteTransDownload({
-        routingResults,
-        setIsDownloading,
-        t,
-        selectedDate,
-        excludeSoList: excludeList,
-      });
+      handlePartialRouteTransDownload({ ...baseProps, routingResults });
     } else {
-      handleFullRouteTransDownload({
-        filteredVehicleRoutes,
-        setIsDownloading,
-        t,
-        selectedDate,
-        excludeSoList: excludeList,
-      });
+      handleFullRouteTransDownload({ ...baseProps, filteredVehicleRoutes });
     }
   };
 
@@ -405,8 +395,9 @@ export default function DeliveryPage() {
             const hubs = (route.trips || []).filter((t) => t.isHub);
             if (hubs.length > 0) {
               const hubObj = {
-                startHub: hubs.find((t) => t.order === 0),
+                startHub: hubs.find((t) => t.order === 0) || hubs[0],
                 endHub: hubs[hubs.length - 1],
+                middleHubs: hubs.length > 2 ? hubs.slice(1, hubs.length - 1) : [],
               };
               if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
               if (plat) resultHubsByPlat.set(plat, hubObj);
@@ -458,9 +449,23 @@ export default function DeliveryPage() {
                 : null;
             const finalTrips = [];
 
+            const middleHubTrips = (hubData?.middleHubs || []).map((h) => ({
+              ...h,
+              isHub: true,
+              visitName: 'HUB',
+              routePlannedOrder: h.order,
+              eta: h.eta ? `${selectedDate} ${h.eta}` : null,
+              etd: h.etd ? `${selectedDate} ${h.etd}` : null,
+              isMiddleHub: true,
+            }));
+
+            const combinedTrips = [...taskTrips, ...middleHubTrips].sort(
+              (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
+            );
+
             if (hubData?.startHub)
               finalTrips.push({ ...hubData.startHub, ...hubTime, isHub: true, visitName: 'HUB' });
-            finalTrips.push(...taskTrips);
+            finalTrips.push(...combinedTrips);
             if (hubData?.endHub)
               finalTrips.push({ ...hubData.endHub, ...hubTime, isHub: true, visitName: 'HUB' });
 
@@ -513,7 +518,6 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, t]);
 
   const enrichedRoutes = useMemo(() => {
@@ -674,7 +678,7 @@ export default function DeliveryPage() {
   };
 
   if (!isClient) return null;
-  
+
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard
@@ -754,7 +758,7 @@ export default function DeliveryPage() {
                   text={t('common.download')}
                 />
                 {isDownloadDropdownOpen && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-10 py-1.5 w-full min-w-[220px] flex flex-col">
+                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-100 py-1.5 w-max min-w-[260px] flex flex-col">
                     <div className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                       <button
                         onClick={() => handleDownloadTrigger('routeTransaction')}
@@ -790,29 +794,41 @@ export default function DeliveryPage() {
 
                     {isRouteSettingsOpen && (
                       <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5 animate-in slide-in-from-top-1 duration-200">
-                        <div className="flex items-center justify-between pr-3 py-1">
+                        <div className="flex flex-col gap-2 pr-3 py-1">
+                          <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                                checked={isNoBun}
+                                onChange={(e) => handleToggleNoBun(e.target.checked)}
+                              />
+                              {t('delivery.no_bun')}
+                              <Information infoText={t('delivery.no_bun_info')} size="3.5" />
+                            </label>
+                            <button
+                              onClick={() => {
+                                setIsDownloadDropdownOpen(false);
+                                setIsBunModalOpen(true);
+                              }}
+                              className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
+                            >
+                              More
+                            </button>
+                          </div>
                           <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                             <input
                               type="checkbox"
                               className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
-                              checked={isNoBun}
-                              onChange={(e) => handleToggleNoBun(e.target.checked)}
+                              checked={isSplitMultitrip}
+                              onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
                             />
-                            No Bun
+                            {t('delivery.spit_multitrip')}
+                            <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
                           </label>
-                          <button
-                            onClick={() => {
-                              setIsDownloadDropdownOpen(false);
-                              setIsBunModalOpen(true);
-                            }}
-                            className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
-                          >
-                            More
-                          </button>
                         </div>
                       </div>
                     )}
-
                     <button
                       onClick={() => handleDownloadTrigger('deliveryList')}
                       className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
@@ -844,6 +860,7 @@ export default function DeliveryPage() {
         tabs={filteredVehicleRoutes.map((r) => {
           const dName = getDriverName(r, driverData);
           const isManual = r.hasManual;
+          const hasMT = r.trips?.some((t) => t.isMiddleHub);
           const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
 
           return {
@@ -854,7 +871,14 @@ export default function DeliveryPage() {
                   className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
                 >
                   {r.vehicleName}{' '}
-                  {r.isRedelivery && <span className="text-red-600 dark:text-red-300">[R]</span>}
+                  {hasMT && (
+                    <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">
+                      [MT]
+                    </span>
+                  )}
+                  {r.isRedelivery && (
+                    <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+                  )}
                 </span>
               </Tooltip>
             ),
@@ -871,7 +895,7 @@ export default function DeliveryPage() {
                 isDetailView={isDetailView}
                 t={t}
                 sortConfig={sortConfig}
-                setSortConfig={handleSortUpdate}
+                setSortConfig={setSortConfig}
               />
             )}
           </div>

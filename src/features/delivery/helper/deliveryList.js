@@ -1,5 +1,11 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { checkInvalidSo, formatDateUniversal, isEmpty, parseCustomerString } from '@/lib/utils';
+import {
+  checkInvalidSo,
+  checkInvalidSoList,
+  formatDateUniversal,
+  isEmpty,
+  parseCustomerString,
+} from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../../lib/toast';
@@ -12,6 +18,7 @@ import {
   resolveDedupedTrip,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
+  sanitizeName,
 } from './shared';
 
 const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailView, t) => {
@@ -62,7 +69,7 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
 
   let currentRowIndex = 4;
 
-  tripsData.forEach(({ trip, isFirstHub, isLastHub }) => {
+  tripsData.forEach(({ trip, isFirstHub, isLastHub, isMisplacedMiddleHub }) => {
     const isHub = trip.isHub;
     const parsedCust = parseCustomerString(trip.visitName);
     const isBadCust = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
@@ -128,13 +135,27 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
           right: { style: 'thin' },
         },
         alignment: { vertical: 'center', wrapText: true },
-        ...(trip.isManual && { fill: { fgColor: { rgb: 'E6EEFF' } } }),
+        ...(isMisplacedMiddleHub
+          ? { fill: { fgColor: { rgb: 'FEE2E2' } } }
+          : trip.isManual
+            ? { fill: { fgColor: { rgb: 'E6EEFF' } } }
+            : {}),
         ...(isHub && { font: { color: { rgb: 'DC2626' }, bold: true } }),
       };
 
       activeCols.forEach((col, c) => {
         let colStyle = { ...cellStyle };
         let comment = null;
+
+        if (col.key === 'visit' && isMisplacedMiddleHub) {
+          comment = [
+            {
+              a: 'Info',
+              t: 'Urutan Hub tambahan tidak sesuai karena perubahan pengurutan',
+              h: true,
+            },
+          ];
+        }
 
         if (col.key === 'no') {
           colStyle.alignment = { ...colStyle.alignment, horizontal: 'right' };
@@ -246,15 +267,16 @@ export const handleFullDeliveryListDownload = async ({
     const wb = XLSX.utils.book_new();
 
     filteredVehicleRoutes.forEach((route) => {
-      const cleanName = (route.vehicleName || 'Vehicle')
-        .replace(/[\\/:*?\[\]]/g, '')
-        .substring(0, 30);
+      const cleanName = sanitizeName(route.vehicleName || 'Vehicle').substring(0, 30);
       const driverName = getDriverName(route, driverData);
+
+      const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
 
       const processedTrips = route.trips.map((trip, index) => ({
         trip,
         isFirstHub: index === 0 && trip.isHub,
         isLastHub: index === route.trips.length - 1 && trip.isHub,
+        isMisplacedMiddleHub: trip.isMiddleHub && !isDefaultSort,
       }));
 
       if (sortConfig) {
@@ -263,6 +285,11 @@ export const handleFullDeliveryListDownload = async ({
           if (b.isFirstHub) return 1;
           if (a.isLastHub) return 1;
           if (b.isLastHub) return -1;
+
+          if (!isDefaultSort) {
+            if (a.trip.isMiddleHub && !b.trip.isMiddleHub) return 1;
+            if (!a.trip.isMiddleHub && b.trip.isMiddleHub) return -1;
+          }
 
           if (sortConfig.key === 'no') {
             const noA = a.trip.routePlannedOrder ?? (a.trip.isManual ? 9999 : 0);
@@ -290,7 +317,6 @@ export const handleFullDeliveryListDownload = async ({
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
-    console.error(e);
     toastError(t('common.toast.error', { err: e.message }));
   } finally {
     setIsDownloading(false);
@@ -306,6 +332,7 @@ export const handlePartialDeliveryListDownload = async ({
   fileNamePrefix,
   isDetailView,
   selectedDate,
+  sortConfig,
 }) => {
   setIsDownloading(true);
   try {
@@ -329,9 +356,7 @@ export const handlePartialDeliveryListDownload = async ({
       const routes = routing.result?.routing || [];
       if (routes.length === 0) continue;
 
-      const cleanRoutingName = (routing.name || routing._id || 'Routing')
-        .replace(/[\\/:*?\[\]]/g, '')
-        .trim();
+      const cleanRoutingName = sanitizeName(routing.name || routing._id || 'Routing').trim();
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
       routingIndex++;
 
@@ -340,9 +365,7 @@ export const handlePartialDeliveryListDownload = async ({
       const seenFileNames = new Set();
 
       for (const route of routes) {
-        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
-          .replace(/[\\/:*?\[\]]/g, '')
-          .trim();
+        const cleanName = sanitizeName(route.vehicleName || route.vehicleId || 'Vehicle').trim();
 
         if (!globalSeenSOByVehicle.has(cleanName)) {
           globalSeenSOByVehicle.set(cleanName, new Set());
@@ -350,14 +373,49 @@ export const handlePartialDeliveryListDownload = async ({
         const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
         const processedTripsToRender = [];
 
+        const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
+
         (route.trips || []).forEach((rawTrip, index) => {
           const isHub = rawTrip.isHub;
           const isFirstHub = index === 0 && isHub;
           const isLastHub = index === route.trips.length - 1 && isHub;
           const trip = resolveDedupedTrip(rawTrip, enrichedTripsMap, vehicleSeenSOs);
           if (trip === null) return;
-          processedTripsToRender.push({ trip, isFirstHub, isLastHub });
+          processedTripsToRender.push({
+            trip,
+            isFirstHub,
+            isLastHub,
+            isMisplacedMiddleHub: trip.isMiddleHub && !isDefaultSort,
+          });
         });
+
+        if (sortConfig) {
+          processedTripsToRender.sort((a, b) => {
+            if (a.isFirstHub) return -1;
+            if (b.isFirstHub) return 1;
+            if (a.isLastHub) return 1;
+            if (b.isLastHub) return -1;
+
+            if (!isDefaultSort) {
+              if (a.trip.isMiddleHub && !b.trip.isMiddleHub) return 1;
+              if (!a.trip.isMiddleHub && b.trip.isMiddleHub) return -1;
+            }
+
+            if (sortConfig.key === 'no') {
+              const noA = a.trip.routePlannedOrder ?? (a.trip.isManual ? 9999 : 0);
+              const noB = b.trip.routePlannedOrder ?? (b.trip.isManual ? 9999 : 0);
+              return sortConfig.direction === 'asc' ? noA - noB : noB - noA;
+            }
+            if (sortConfig.key === 'so') {
+              const soA = String(a.trip.orderId || '');
+              const soB = String(b.trip.orderId || '');
+              return sortConfig.direction === 'asc'
+                ? soA.localeCompare(soB)
+                : soB.localeCompare(soA);
+            }
+            return 0;
+          });
+        }
 
         if (
           processedTripsToRender.length <= 2 &&

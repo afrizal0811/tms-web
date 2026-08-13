@@ -122,3 +122,5 @@ export const resolveDedupedTrip = (rawTrip, enrichedTripsMap, vehicleSeenSOs) =>
   }
   return { ...trip, orderId: newSOs.join(', '), orderIdOverride: newSOs.join(', ') };
 };
+
+export const sanitizeName = (name) => name.replace(/[\\/:*?\[\]]/g, '');

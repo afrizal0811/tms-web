@@ -104,18 +104,28 @@ export default function TableData({
       });
     });
     if (sortConfig) {
+      const isDefaultSort = sortConfig.key === 'no' && sortConfig.direction === 'asc';
       list.sort((a, b) => {
-        // Kunci Hub di atas & bawah
         if (a.isHub && a.originalIndex === 0) return -1;
         if (b.isHub && b.originalIndex === 0) return 1;
-        if (a.isHub) return 1;
-        if (b.isHub) return -1;
+        if (a.isHub && a.originalIndex === activeRoute.trips.length - 1) return 1;
+        if (b.isHub && b.originalIndex === activeRoute.trips.length - 1) return -1;
+
+        if (!isDefaultSort) {
+          if (a.isMiddleHub && !b.isMiddleHub) return 1;
+          if (!a.isMiddleHub && b.isMiddleHub) return -1;
+        }
 
         if (sortConfig.key === 'no') {
-          const noA = parseInt(a.displayNo) || (a.isManual ? 9999 : 0);
-          const noB = parseInt(b.displayNo) || (b.isManual ? 9999 : 0);
+          const getVal = (item) =>
+            item.isMiddleHub
+              ? (item.routePlannedOrder ?? 0)
+              : parseInt(item.displayNo) || (item.isManual ? 9999 : 0);
+          const noA = getVal(a);
+          const noB = getVal(b);
           return sortConfig.direction === 'asc' ? noA - noB : noB - noA;
         }
+
         if (sortConfig.key === 'so') {
           const soA = String(a.displaySo || '');
           const soB = String(b.displaySo || '');
@@ -182,19 +192,27 @@ export default function TableData({
               const isLastHub = trip.originalIndex === activeRoute.trips.length - 1 && isHub;
               const isManual = trip.isManual;
               const hasPartner = trip.hasPartner;
+              const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
+              const isMisplacedMiddleHub = trip.isMiddleHub && !isDefaultSort;
 
               const textClass = isHub ? 'text-red-600 dark:text-red-300 font-semibold' : '';
               const rowClass = `transition-colors border-b border-gray-100 dark:border-slate-700/80 ${
-                isManual
-                  ? 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70'
-                  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
+                isMisplacedMiddleHub
+                  ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60'
+                  : isManual
+                    ? 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70'
+                    : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
               }`;
 
-              const tooltipMsg = hasPartner
+              let tooltipMsg = hasPartner
                 ? t('delivery.tooltip.find_invoice')
                 : isManual
                   ? t('delivery.tooltip.manual_assign')
                   : '';
+
+              if (isMisplacedMiddleHub) {
+                tooltipMsg = 'Urutan Hub tambahan tidak sesuai karena perubahan pengurutan';
+              }
 
               const rowKey = `${trip.visitId}-${idx}`;
 
