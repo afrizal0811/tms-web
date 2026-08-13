@@ -23,7 +23,6 @@ import {
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import {
   calculateStartFinishDates,
-  fetchWithRetry,
   formatDateUniversal,
   isDateSunday,
   isEmpty,
@@ -687,32 +686,26 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
   );
 
   const [tasks, rawResults, histories] = await Promise.all([
-    fetchWithRetry(() =>
-      getTasks({
-        hubId: selectedHub.id,
-        status: 'DONE,ONGOING',
-        timeFrom,
-        timeTo,
-        timeBy: 'startTime',
-        limit: 5000,
-      })
-    ),
-    fetchWithRetry(() =>
-      getResultsSummary({
-        routingDateObj: targetRoutingDateObj,
-        deliveryDateObj: targetDateObj,
-        hubId: selectedHub.id,
-      })
-    ),
-    fetchWithRetry(() =>
-      getLocationHistories({
-        timeFrom: histFrom,
-        timeTo: histTo,
-        startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
-        timeBy: 'createdTime',
-      })
-    ),
+    getTasks({
+      hubId: selectedHub.id,
+      status: 'DONE,ONGOING',
+      timeFrom,
+      timeTo,
+      timeBy: 'startTime',
+      limit: 5000,
+    }),
+    getResultsSummary({
+      routingDateObj: targetRoutingDateObj,
+      deliveryDateObj: targetDateObj,
+      hubId: selectedHub.id,
+    }),
+    getLocationHistories({
+      timeFrom: histFrom,
+      timeTo: histTo,
+      startFinish: 'true',
+      fields: 'finish,startTime,email,trackedTime,totalDistance',
+      timeBy: 'createdTime',
+    }),
   ]);
 
   const taskList = tasks?.data || tasks?.tasks?.data || tasks || [];
