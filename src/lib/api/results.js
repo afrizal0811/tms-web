@@ -6,8 +6,8 @@ import { apiFetch } from './base';
 function getCutOffTime(dateObj, hasPartialRouting = false) {
   const isSaturday = dateObj.getDay() === 6;
   return {
-    startTime: hasPartialRouting ? '09:00:00' : isSaturday ? '04:00:00' : '09:00:00',
-    endTime: isSaturday ? '10:59:59' : '15:59:59',
+    startTime: hasPartialRouting ? '07:00:00' : isSaturday ? '04:00:00' : '08:00:00',
+    endTime: isSaturday ? '11:59:59' : '15:59:59',
   };
 }
 
@@ -18,7 +18,7 @@ export async function getResultsSummary({
   deliveryDateObj,
   hubId,
   hasPartialRouting = false,
-  limit = 1000,
+  limit = 10000,
 }) {
   let finalDateFrom = dateFrom;
   let finalDateTo = dateTo;
