@@ -16,9 +16,9 @@ import {
   getLocationName,
   getUniqueFileName,
   resolveDedupedTrip,
+  sanitizeName,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
-  sanitizeName,
 } from './shared';
 
 const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailView, t) => {
@@ -261,6 +261,7 @@ export const handleFullDeliveryListDownload = async ({
   fileNamePrefix,
   isDetailView,
   sortConfig,
+  selectedDate,
 }) => {
   setIsDownloading(true);
   try {
@@ -309,7 +310,7 @@ export const handleFullDeliveryListDownload = async ({
     });
 
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
-    const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+    const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
     const fileName = fileNamePrefix
       ? `${t('delivery.delivery_list')} (${fileNamePrefix}) - ${date} - ${locationName}.xlsx`
       : `${t('delivery.delivery_list')} - ${date} - ${locationName}.xlsx`;
