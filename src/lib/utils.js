@@ -483,3 +483,20 @@ export function sortRows(rows, platKey, driverKey) {
     return (a[driverKey] || '').localeCompare(b[driverKey] || '');
   });
 }
+
+export const fetchWithRetry = async (fn, { retries = 3, baseMs = 700 } = {}) => {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      const status = err?.response?.status || err?.status || null;
+      if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
+        throw err;
+      }
+      const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+};

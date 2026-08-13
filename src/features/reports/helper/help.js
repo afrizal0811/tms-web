@@ -23,6 +23,7 @@ import {
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import {
   calculateStartFinishDates,
+  fetchWithRetry,
   formatDateUniversal,
   isDateSunday,
   isEmpty,
@@ -629,53 +630,49 @@ const getColIdx = (headers, keyword) => {
   return headers.findIndex((h) => h && normalizeStr(h).includes(kw));
 };
 
-const evaluateRoutingValidity = async (
-  name,
-  targetRoutingDateObj,
-  targetDateObj,
-  hubId,
-  taskMap
-) => {
-  try {
-    const results = await getResultsSummary({
-      routingDateObj: targetRoutingDateObj,
-      deliveryDateObj: targetDateObj,
-      hubId,
-      s: name,
-    });
-    if (isEmpty(results)) return [];
+const evaluateRoutingValidity = (results, taskMap) => {
+  if (isEmpty(results)) return [];
 
-    return results
-      .filter((item) => {
-        if (!Array.isArray(item.result?.routing)) return false;
-        let checked = 0,
-          valid = 0;
+  return results
+    .filter((item) => {
+      if (!item.name || item.name === '-') {
+        return false;
+      }
+      if (!Array.isArray(item.result?.routing)) {
+        return false;
+      }
+      let checked = 0,
+        valid = 0;
 
-        item.result.routing.forEach((route) => {
-          const validTrips = (route.trips || []).filter(
-            (t) => !t.isHub && t.visitId?.includes('taskId-')
-          );
-          if (isEmpty(validTrips)) return;
+      item.result.routing.forEach((route) => {
+        const validTrips = (route.trips || []).filter((t) => !t.isHub && t.visitId);
+        if (isEmpty(validTrips)) return;
 
-          [...validTrips]
-            .sort(() => 0.5 - Math.random())
-            .slice(0, 5)
-            .forEach((trip) => {
-              const id = trip.visitId.match(/taskId-([a-zA-Z0-9]+)/)?.[1];
-              if (id) {
-                checked++;
-                if (taskMap.get(String(id)) === String(item._id)) valid++;
-              }
-            });
-        });
-        return checked > 0 && valid / checked >= 0.7;
-      })
-      .map((i) => i._id);
-  } catch {
-    return [];
-  }
+        [...validTrips]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 5)
+          .forEach((trip) => {
+            let id = trip.visitId;
+            if (id.includes('taskId-')) {
+              id = id.split('taskId-')[1];
+            }
+            if (id) {
+              checked++;
+              const mapValue = taskMap.get(String(id));
+              const itemValue = String(item._id);
+              if (mapValue === itemValue) valid++;
+            }
+          });
+      });
+
+      if (checked === 0) {
+        return true;
+      }
+      const ratio = valid / checked;
+      return ratio >= 0.5;
+    })
+    .map((i) => i._id);
 };
-
 const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
   const dateString = formatDateUniversal(targetDateObj);
   const startObj = new Date(targetDateObj);
@@ -690,50 +687,37 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
   );
 
   const [tasks, rawResults, histories] = await Promise.all([
-    getTasks({
-      hubId: selectedHub.id,
-      status: 'DONE',
-      timeFrom,
-      timeTo,
-      timeBy: 'startTime',
-      limit: 5000,
-    }),
-    getResultsSummary({
-      routingDateObj: targetRoutingDateObj,
-      deliveryDateObj: targetDateObj,
-      hubId: selectedHub.id,
-    }),
-    getLocationHistories({
-      timeFrom: histFrom,
-      timeTo: histTo,
-      startFinish: 'true',
-      fields: 'finish,startTime,email,trackedTime,totalDistance',
-      timeBy: 'createdTime',
-    }),
+    fetchWithRetry(() =>
+      getTasks({
+        hubId: selectedHub.id,
+        status: 'DONE,ONGOING',
+        timeFrom,
+        timeTo,
+        timeBy: 'startTime',
+        limit: 5000,
+      })
+    ),
+    fetchWithRetry(() =>
+      getResultsSummary({
+        routingDateObj: targetRoutingDateObj,
+        deliveryDateObj: targetDateObj,
+        hubId: selectedHub.id,
+      })
+    ),
+    fetchWithRetry(() =>
+      getLocationHistories({
+        timeFrom: histFrom,
+        timeTo: histTo,
+        startFinish: 'true',
+        fields: 'finish,startTime,email,trackedTime,totalDistance',
+        timeBy: 'createdTime',
+      })
+    ),
   ]);
 
   const taskList = tasks?.data || tasks?.tasks?.data || tasks || [];
   const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
-
-  const uniqueNames = [
-    ...new Set((rawResults || []).map((r) => r.name).filter((n) => n && n !== '-')),
-  ];
-  const validRoutingIds = new Set(
-    (
-      await Promise.all(
-        uniqueNames.map((name) =>
-          evaluateRoutingValidity(
-            name,
-            targetRoutingDateObj,
-            targetDateObj,
-            selectedHub.id,
-            taskMap
-          )
-        )
-      )
-    ).flat()
-  );
-
+  const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
   const { kpiHistories } = convertLocationHistories(
     histories?.tasks?.data || [],
