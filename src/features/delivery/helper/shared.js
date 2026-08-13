@@ -1,13 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import {
-  checkInvalidSo,
-  checkInvalidSoList,
-  formatDateUniversal,
-  isEmpty,
-  normalizeEmail,
-  parseCustomerString,
-  standardizeSo,
-} from '@/lib/utils';
+import { normalizeEmail, parseCustomerString, standardizeSo } from '@/lib/utils';
 
 export const getDriverName = (route, driverData) => {
   if (!route) return '';
@@ -52,7 +44,7 @@ export const sortRoutingResultsByCreatedTime = (routingResults) =>
 
 export const abortIfNoRoutingResults = (routingResults, t, setIsDownloading) => {
   if (routingResults && routingResults.length > 0) return false;
-  toastError(t('common.toast.error', { err: 'Data routing tidak ditemukan' }));
+  toastError(t('common.toast.error', { err: t('common.no_data') }));
   setIsDownloading(false);
   return true;
 };

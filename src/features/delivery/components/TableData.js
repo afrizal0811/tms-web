@@ -211,7 +211,7 @@ export default function TableData({
                   : '';
 
               if (isMisplacedMiddleHub) {
-                tooltipMsg = 'Urutan Hub tambahan tidak sesuai karena perubahan pengurutan';
+                tooltipMsg = t('delivery.tooltip.inaccurate_hub');
               }
 
               const rowKey = `${trip.visitId}-${idx}`;

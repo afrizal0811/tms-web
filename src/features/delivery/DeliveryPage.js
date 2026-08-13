@@ -518,6 +518,7 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
+    // eslint-disable-next-line
   }, [selectedDate, t]);
 
   const enrichedRoutes = useMemo(() => {
