@@ -1,4 +1,4 @@
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteTruckUsage, postTruckUsage } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -149,16 +149,7 @@ export default function TruckUsageModal({
     const modalTitle = `Master - ${data.storage} (${data.type === 'Gabungan' ? 'Total' : data.type})`;
 
     return (
-      <BaseModal
-        isOpen={isOpen}
-        onClose={onClose}
-        maxWidth="max-w-md"
-        title={
-          <div className="flex flex-col gap-0.5">
-            <span>{modalTitle}</span>
-          </div>
-        }
-      >
+      <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md" title={modalTitle}>
         <div className="flex flex-col gap-3 pt-2 pb-2">
           <div className="bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-sm px-3 py-2.5 rounded-md border border-sky-100 dark:border-sky-800 flex justify-between items-center">
             <span>Total</span>
@@ -198,7 +189,7 @@ export default function TruckUsageModal({
             )}
           </div>
         </div>
-      </BaseModal>
+      </Modal>
     );
   };
 
@@ -210,20 +201,12 @@ export default function TruckUsageModal({
     }
 
     return (
-      <BaseModal
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         maxWidth="max-w-md"
-        title={
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <span>{modalTitle}</span>
-            </div>
-            <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
-              {formatLongDate(data.date, localeCode)}
-            </span>
-          </div>
-        }
+        title={modalTitle}
+        subtitle={formatLongDate(data.date, localeCode)}
       >
         <div className="flex flex-col gap-3 pt-2 pb-2">
           <div className="bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-sm px-3 py-2.5 rounded-md border border-sky-100 dark:border-sky-800 flex justify-between items-center">
@@ -284,7 +267,7 @@ export default function TruckUsageModal({
             )}
           </div>
         </div>
-      </BaseModal>
+      </Modal>
     );
   };
 
@@ -313,20 +296,12 @@ export default function TruckUsageModal({
           }
         />
 
-        <BaseModal
+        <Modal
           isOpen={isOpen && !isConfirmOpen}
           onClose={onClose}
           maxWidth="max-w-md"
-          title={
-            <div className="flex flex-col gap-0.5">
-              <span>
-                Non TMS - {data.storage} ({data.type})
-              </span>
-              <span className="text-sm font-normal text-slate-600 dark:text-slate-400">
-                {formatLongDate(data.date, localeCode)}
-              </span>
-            </div>
-          }
+          title={`Non TMS - ${data.storage} (${data.type})`}
+          subtitle={formatLongDate(data.date, localeCode)}
           footer={
             <div className="flex justify-between items-center w-full">
               <div>
@@ -397,7 +372,7 @@ export default function TruckUsageModal({
               ></textarea>
             </div>
           </div>
-        </BaseModal>
+        </Modal>
       </>
     );
   };

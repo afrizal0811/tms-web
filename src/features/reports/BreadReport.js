@@ -83,7 +83,6 @@ export default function BreadReport() {
           timeFrom,
           timeTo,
           timeBy: 'startTime',
-          limit: 10000,
         });
 
         const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];

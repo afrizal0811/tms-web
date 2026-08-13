@@ -11,12 +11,30 @@ import {
 } from '@/lib/utils';
 import { useMemo } from 'react';
 
-export default function TableData({ activeRoute, searchQuery, setSearchQuery, t, isDetailView }) {
+export default function TableData({
+  activeRoute,
+  searchQuery,
+  setSearchQuery,
+  t,
+  isDetailView,
+  sortConfig,
+  setSortConfig,
+}) {
   const hasManualTaskInRoute = useMemo(
     () => activeRoute.trips.some((trip) => trip.isManual),
     [activeRoute]
   );
+  const handleSort = (key) => {
+    const newDirection =
+      sortConfig?.key === key && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+    setSortConfig({ key, direction: newDirection });
+  };
 
+  const renderSortIcon = (key) => {
+    if (sortConfig?.key !== key)
+      return <span className="text-gray-300 dark:text-slate-600 opacity-50">↕</span>;
+    return sortConfig.direction === 'asc' ? <span>↑</span> : <span>↓</span>;
+  };
   const processedTrips = useMemo(() => {
     const list = [];
     activeRoute.trips.forEach((trip, index) => {
@@ -85,8 +103,40 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
         isInvalidSo,
       });
     });
+    if (sortConfig) {
+      const isDefaultSort = sortConfig.key === 'no' && sortConfig.direction === 'asc';
+      list.sort((a, b) => {
+        if (a.isHub && a.originalIndex === 0) return -1;
+        if (b.isHub && b.originalIndex === 0) return 1;
+        if (a.isHub && a.originalIndex === activeRoute.trips.length - 1) return 1;
+        if (b.isHub && b.originalIndex === activeRoute.trips.length - 1) return -1;
+
+        if (!isDefaultSort) {
+          if (a.isMiddleHub && !b.isMiddleHub) return 1;
+          if (!a.isMiddleHub && b.isMiddleHub) return -1;
+        }
+
+        if (sortConfig.key === 'no') {
+          const getVal = (item) =>
+            item.isMiddleHub
+              ? (item.routePlannedOrder ?? 0)
+              : parseInt(item.displayNo) || (item.isManual ? 9999 : 0);
+          const noA = getVal(a);
+          const noB = getVal(b);
+          return sortConfig.direction === 'asc' ? noA - noB : noB - noA;
+        }
+
+        if (sortConfig.key === 'so') {
+          const soA = String(a.displaySo || '');
+          const soB = String(b.displaySo || '');
+          return sortConfig.direction === 'asc' ? soA.localeCompare(soB) : soB.localeCompare(soA);
+        }
+        return 0;
+      });
+    }
+
     return list;
-  }, [activeRoute, isDetailView]);
+  }, [activeRoute, isDetailView, sortConfig]);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors relative">
@@ -95,7 +145,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
           <thead className="bg-gray-50 sticky top-0">
             <tr>
               <Th widthClass="w-[7%]" alignClass="text-center relative">
-                <span>No.</span>
+                <div
+                  className="flex items-center justify-center gap-1 cursor-pointer select-none"
+                  onClick={() => handleSort('no')}
+                >
+                  <span>No.</span>
+                  {renderSortIcon('no')}
+                </div>
               </Th>
               <Th widthClass="w-[20%]" alignClass="text-center">
                 {t('delivery.visit')}
@@ -107,7 +163,13 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                 {t('common.location_id') || 'ID Location'}
               </Th>
               <Th widthClass="w-[15%]" alignClass="text-center">
-                {t('common.so_number')}
+                <div
+                  className="flex items-center justify-center gap-1 cursor-pointer select-none"
+                  onClick={() => handleSort('so')}
+                >
+                  <span>{t('common.invoice_number')}</span>
+                  {renderSortIcon('so')}
+                </div>
               </Th>
               <Th widthClass="w-[10%]" alignClass="text-center">
                 {t('common.open_time')}
@@ -130,19 +192,27 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
               const isLastHub = trip.originalIndex === activeRoute.trips.length - 1 && isHub;
               const isManual = trip.isManual;
               const hasPartner = trip.hasPartner;
+              const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
+              const isMisplacedMiddleHub = trip.isMiddleHub && !isDefaultSort;
 
               const textClass = isHub ? 'text-red-600 dark:text-red-300 font-semibold' : '';
               const rowClass = `transition-colors border-b border-gray-100 dark:border-slate-700/80 ${
-                isManual
-                  ? 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70'
-                  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
+                isMisplacedMiddleHub
+                  ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60'
+                  : isManual
+                    ? 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70'
+                    : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'
               }`;
 
-              const tooltipMsg = hasPartner
-                ? t('delivery.tooltip.find_so')
+              let tooltipMsg = hasPartner
+                ? t('delivery.tooltip.find_invoice')
                 : isManual
                   ? t('delivery.tooltip.manual_assign')
                   : '';
+
+              if (isMisplacedMiddleHub) {
+                tooltipMsg = t('delivery.tooltip.inaccurate_hub');
+              }
 
               const rowKey = `${trip.visitId}-${idx}`;
 
@@ -207,7 +277,7 @@ export default function TableData({ activeRoute, searchQuery, setSearchQuery, t,
                     {isHub ? (
                       ''
                     ) : trip.isInvalidSo ? (
-                      <Tooltip tooltipContent={t('delivery.tooltip.invalid_so')}>
+                      <Tooltip tooltipContent={t('delivery.tooltip.invalid_invoice')}>
                         <span className="text-red-600 dark:text-red-400 font-bold cursor-help border-b border-dashed border-red-400">
                           <HighlightText text={trip.displaySo} highlight={searchQuery} />
                         </span>

@@ -2,6 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import Information from '@/components/Information';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks, getTrash } from '@/lib/api';
@@ -104,7 +105,6 @@ export default function TaskCountReport() {
           timeFrom,
           timeTo,
           timeBy: 'startTime',
-          limit: 1000,
         });
 
         const chunkData = Array.isArray(response) ? response : response?.data || [];
@@ -186,27 +186,6 @@ export default function TaskCountReport() {
   const startHelp = new Date(yHelp, mHelp, 24, 8, 34, 0);
   const endHelp = new Date(yHelp, mHelp + 1, 24, 8, 34, 0);
 
-  const informationComp = (tooltipContent) => (
-    <Tooltip tooltipContent={tooltipContent}>
-      <span className="flex items-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-      </span>
-    </Tooltip>
-  );
-
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-6 text-slate-900 dark:text-slate-100">
@@ -248,7 +227,7 @@ export default function TaskCountReport() {
               <strong className="text-slate-700 dark:text-slate-300">
                 {formatLongDate(endHelp, localeCode)} 08:34 WIB
               </strong>
-              {informationComp(t('report.tooltip.cut_off'))}
+              <Information infoText={t('report.tooltip.cut_off')} />
             </p>
           </div>
         ) : (

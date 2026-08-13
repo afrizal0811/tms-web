@@ -2,12 +2,12 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import Information from '@/components/Information';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import PartialRoutingModal from '@/components/modal/PartialRoutingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -35,7 +35,9 @@ import {
   handlePartialDeliveryFormDownload,
   handlePartialDeliveryListDownload,
   handlePartialRouteTransDownload,
-} from './help';
+} from './helper';
+import BunListModal from './modal/BunListModal';
+import PartialRoutingModal from './modal/PartialRoutingModal';
 
 const getStoragePrefix = (storageFilter) => {
   if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) return 'DRY';
@@ -43,26 +45,46 @@ const getStoragePrefix = (storageFilter) => {
   return '';
 };
 
+const findActiveHub = (hubs, storedLocation) =>
+  hubs.find(
+    (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
+  );
+
+const persistDeliveryPageSetting = (key, value) => {
+  const { storedSession } = getLocalStorage();
+  if (storedSession) {
+    setLocalStorage('data', {
+      ...storedSession,
+      deliveryPage: { ...(storedSession.deliveryPage || {}), [key]: value },
+    });
+  }
+};
+
 export default function DeliveryPage() {
   const { t } = useLanguage();
   const [activeVehicleId, setActiveVehicleId] = useState(null);
   const [allRoutes, setAllRoutes] = useState([]);
+  const [bunSoList, setBunSoList] = useState([]);
+  const [downloadType, setDownloadType] = useState(null);
   const [driverData, setDriverData] = useState({});
-  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
-  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
+  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
+  const [hubsData, setHubsData] = useState([]);
+  const [isBunModalOpen, setIsBunModalOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isDetailView, setIsDetailView] = useState(false);
+  const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNoBun, setIsNoBun] = useState(false);
+  const [isSplitMultitrip, setIsSplitMultitrip] = useState(false);
+  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
+  const [routingResults, setRoutingResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'asc' });
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [timeMap, setTimeMap] = useState(new Map());
-  const [isDetailView, setIsDetailView] = useState(false);
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
-  const [routingResults, setRoutingResults] = useState([]);
-  const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
-  const [hubsData, setHubsData] = useState([]);
-  const [downloadType, setDownloadType] = useState(null);
-
+  const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
 
@@ -71,8 +93,17 @@ export default function DeliveryPage() {
     const date = new Date();
     setSelectedDate(formatDateUniversal(date, 'YYYY-MM-DD'));
     const { storedSession } = getLocalStorage();
-    if (storedSession && typeof storedSession.isDetailViewEstimasi === 'boolean') {
-      setIsDetailView(storedSession.isDetailViewEstimasi);
+    if (storedSession && storedSession.deliveryPage) {
+      const dp = storedSession.deliveryPage;
+      if (typeof dp.isDetailView === 'boolean') {
+        setIsDetailView(dp.isDetailView);
+      }
+      if (typeof dp.isNoBun === 'boolean') {
+        setIsNoBun(dp.isNoBun);
+      }
+      if (typeof dp.isSplitMultitrip === 'boolean') {
+        setIsSplitMultitrip(dp.isSplitMultitrip);
+      }
     }
   }, []);
 
@@ -98,9 +129,64 @@ export default function DeliveryPage() {
 
   const handleToggleView = (isDetail) => {
     setIsDetailView(isDetail);
-    const { storedSession } = getLocalStorage();
-    if (storedSession) {
-      setLocalStorage('data', { ...storedSession, isDetailViewEstimasi: isDetail });
+    persistDeliveryPageSetting('isDetailView', isDetail);
+  };
+
+  const handleToggleNoBun = (isActive) => {
+    setIsNoBun(isActive);
+    persistDeliveryPageSetting('isNoBun', isActive);
+  };
+
+  const handleToggleSplitMultitrip = (isActive) => {
+    setIsSplitMultitrip(isActive);
+    persistDeliveryPageSetting('isSplitMultitrip', isActive);
+  };
+
+  const runPartialDownload = (type, fileNamePrefix, excludeSoList = []) => {
+    const baseProps = {
+      routingResults,
+      filteredVehicleRoutes,
+      setIsDownloading,
+      t,
+      selectedDate,
+      driverData,
+      timeMap,
+      isDetailView,
+      fileNamePrefix,
+      excludeSoList,
+      sortConfig,
+      isSplitMultitrip,
+    };
+
+    if (type === 'routeTransaction') {
+      handlePartialRouteTransDownload(baseProps);
+    } else if (type === 'deliveryList') {
+      handlePartialDeliveryListDownload(baseProps);
+    } else if (type === 'deliveryForm') {
+      handlePartialDeliveryFormDownload(baseProps);
+    }
+  };
+
+  const runFullDownload = (type, fileNamePrefix, excludeSoList = []) => {
+    const baseProps = {
+      filteredVehicleRoutes,
+      setIsDownloading,
+      t,
+      selectedDate,
+      driverData,
+      timeMap,
+      isDetailView,
+      excludeSoList,
+      sortConfig,
+      isSplitMultitrip,
+    };
+
+    if (type === 'routeTransaction') {
+      handleFullRouteTransDownload(baseProps);
+    } else if (type === 'deliveryList') {
+      handleFullDeliveryListDownload({ ...baseProps, fileNamePrefix });
+    } else if (type === 'deliveryForm') {
+      handleFullDeliveryFormDownload(baseProps);
     }
   };
 
@@ -111,37 +197,41 @@ export default function DeliveryPage() {
     }
     setIsDownloadDropdownOpen(false);
 
-    const baseProps = {
-      filteredVehicleRoutes,
-      setIsDownloading,
-      t,
-      selectedDate,
-      driverData,
-      timeMap,
-      isDetailView,
-    };
-
     if (['routeTransaction', 'deliveryList', 'deliveryForm'].includes(type)) {
       const { storedLocation } = getLocalStorage();
-      const activeHub = hubsData.find(
-        (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-      );
+      const activeHub = findActiveHub(hubsData, storedLocation);
+
+      let excludeList = [];
+      if (type === 'routeTransaction' && isNoBun) {
+        excludeList = bunSoList.map((b) => b.so);
+      }
 
       if (activeHub?.hasPartialRouting) {
         setDownloadType(type);
         setIsRoutingModalOpen(true);
       } else {
-        if (type === 'routeTransaction') {
-          handleFullRouteTransDownload(baseProps);
-        } else if (type === 'deliveryList') {
-          handleFullDeliveryListDownload({
-            ...baseProps,
-            fileNamePrefix: getStoragePrefix(storageFilter),
-          });
-        } else if (type === 'deliveryForm') {
-          handleFullDeliveryFormDownload(baseProps);
-        }
+        runFullDownload(type, getStoragePrefix(storageFilter), excludeList);
       }
+    }
+  };
+
+  const handleDownloadBunSpecific = (excludeList) => {
+    setIsBunModalOpen(false);
+    const { storedLocation } = getLocalStorage();
+    const activeHub = findActiveHub(hubsData, storedLocation);
+
+    const baseProps = {
+      setIsDownloading,
+      t,
+      selectedDate,
+      excludeSoList: excludeList,
+      isSplitMultitrip,
+    };
+
+    if (activeHub?.hasPartialRouting) {
+      handlePartialRouteTransDownload({ ...baseProps, routingResults });
+    } else {
+      handleFullRouteTransDownload({ ...baseProps, filteredVehicleRoutes });
     }
   };
 
@@ -171,9 +261,7 @@ export default function DeliveryPage() {
           setHubsData(currentHubs);
         }
 
-        const activeHub = currentHubs.find(
-          (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-        );
+        const activeHub = findActiveHub(currentHubs, storedLocation);
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
         const rawDrivers = await getDriverData(storedLocation);
@@ -213,12 +301,10 @@ export default function DeliveryPage() {
             timeFrom: historyFrom,
             timeTo: historyTo,
             startFinish: 'true',
-            fields: 'finish,startTime,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
           }),
           getTasks({
             hubId: storedLocation,
-            limit: 2000,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
             timeBy: 'startTime',
@@ -227,9 +313,36 @@ export default function DeliveryPage() {
         ]);
 
         setRoutingResults(resultsData || []);
+
         const filteredTasks = (Array.isArray(tasksResponse) ? tasksResponse : []).filter(
           (t) => Array.isArray(t?.assignee) && t.assignee.length > 0
         );
+
+        const tempBunList = [];
+        filteredTasks.forEach((task) => {
+          const hasBun = (task.listProduct || []).some(
+            (p) => p.title && p.title.toUpperCase().includes('BUN')
+          );
+          if (hasBun && task.customerOrder) {
+            const parsedCust = parseCustomerString(task.customerOrder);
+            const sos = (parsedCust.invoiceNumber || task.orderId || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+            sos.forEach((so) => {
+              tempBunList.push({
+                so,
+                customer: parsedCust.name || '-',
+                vehicle: task.assignedVehicle?.name || task.vehicleName || task.plat || '-',
+                items: task.listProduct
+                  .filter((p) => p.title?.toUpperCase().includes('BUN'))
+                  .map((p) => p.title),
+              });
+            });
+          }
+        });
+        tempBunList.sort((a, b) => a.so.localeCompare(b.so));
+        setBunSoList(tempBunList);
 
         const soToWarehouseMap = new Map();
         filteredTasks.forEach((t) => {
@@ -282,8 +395,9 @@ export default function DeliveryPage() {
             const hubs = (route.trips || []).filter((t) => t.isHub);
             if (hubs.length > 0) {
               const hubObj = {
-                startHub: hubs.find((t) => t.order === 0),
+                startHub: hubs.find((t) => t.order === 0) || hubs[0],
                 endHub: hubs[hubs.length - 1],
+                middleHubs: hubs.length > 2 ? hubs.slice(1, hubs.length - 1) : [],
               };
               if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
               if (plat) resultHubsByPlat.set(plat, hubObj);
@@ -335,9 +449,23 @@ export default function DeliveryPage() {
                 : null;
             const finalTrips = [];
 
+            const middleHubTrips = (hubData?.middleHubs || []).map((h) => ({
+              ...h,
+              isHub: true,
+              visitName: 'HUB',
+              routePlannedOrder: h.order,
+              eta: h.eta ? `${selectedDate} ${h.eta}` : null,
+              etd: h.etd ? `${selectedDate} ${h.etd}` : null,
+              isMiddleHub: true,
+            }));
+
+            const combinedTrips = [...taskTrips, ...middleHubTrips].sort(
+              (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
+            );
+
             if (hubData?.startHub)
               finalTrips.push({ ...hubData.startHub, ...hubTime, isHub: true, visitName: 'HUB' });
-            finalTrips.push(...taskTrips);
+            finalTrips.push(...combinedTrips);
             if (hubData?.endHub)
               finalTrips.push({ ...hubData.endHub, ...hubTime, isHub: true, visitName: 'HUB' });
 
@@ -366,7 +494,6 @@ export default function DeliveryPage() {
             const parsed = parseCustomerString(t.visitName);
             const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
             const bad = checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust);
-
             if (bad) badPlates.add(r.vehicleName || 'Vehicle');
           });
         });
@@ -374,7 +501,7 @@ export default function DeliveryPage() {
         if (badPlates.size > 0) {
           const platesStr = Array.from(badPlates).join('\n');
           if (lastWarnedPlates.current !== platesStr) {
-            toastWarning(`${t('delivery.toast.invalid_so')}\n${platesStr}`);
+            toastWarning(`${t('delivery.toast.invalid_invoice')}\n${platesStr}`);
             lastWarnedPlates.current = platesStr;
           }
         } else {
@@ -391,7 +518,8 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-  }, [selectedDate, t, hubsData]);
+    // eslint-disable-next-line
+  }, [selectedDate, t]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];
@@ -460,12 +588,23 @@ export default function DeliveryPage() {
         };
       });
 
+      let hasInvalidSo = false;
+      tripsWithSyncStatus.forEach((t) => {
+        if (t.isHub || !t.orderId || t.isReDelivery) return;
+        const parsed = parseCustomerString(t.visitName);
+        const isBadCust = isEmpty(parsed?.id) || isEmpty(parsed?.location);
+        if (checkInvalidSoList(parsed.invoiceNumber || t.orderId, isBadCust)) {
+          hasInvalidSo = true;
+        }
+      });
+
       return {
         ...route,
         trips: tripsWithSyncStatus,
         hasManual: tripsWithSyncStatus.some((t) => t.isManual),
         hasUnsync: tripsWithSyncStatus.some((t) => t.isUnsync),
         isRedelivery: tripsWithSyncStatus.some((t) => t.isRedelivery),
+        hasInvalidSo,
       };
     });
   }, [allRoutes]);
@@ -620,24 +759,88 @@ export default function DeliveryPage() {
                   text={t('common.download')}
                 />
                 {isDownloadDropdownOpen && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-10 p-2 w-full min-w-44 flex flex-col gap-1">
-                    <button
-                      onClick={() => handleDownloadTrigger('routeTransaction')}
-                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
-                    >
-                      <span>Route Transaction</span>
-                    </button>
+                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-100 py-1.5 w-max min-w-[260px] flex flex-col">
+                    <div className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <button
+                        onClick={() => handleDownloadTrigger('routeTransaction')}
+                        className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
+                      >
+                        Route Transaction
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsRouteSettingsOpen(!isRouteSettingsOpen);
+                        }}
+                        className="px-3 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-transform"
+                      >
+                        <svg
+                          className="w-4 h-4 transition-transform duration-200"
+                          style={{
+                            transform: isRouteSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                          }}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {isRouteSettingsOpen && (
+                      <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5 animate-in slide-in-from-top-1 duration-200">
+                        <div className="flex flex-col gap-2 pr-3 py-1">
+                          <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                                checked={isNoBun}
+                                onChange={(e) => handleToggleNoBun(e.target.checked)}
+                              />
+                              {t('delivery.no_bun')}
+                              <Information infoText={t('delivery.no_bun_info')} size="3.5" />
+                            </label>
+                            <button
+                              onClick={() => {
+                                setIsDownloadDropdownOpen(false);
+                                setIsBunModalOpen(true);
+                              }}
+                              className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
+                            >
+                              More
+                            </button>
+                          </div>
+                          <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                              checked={isSplitMultitrip}
+                              onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
+                            />
+                            {t('delivery.spit_multitrip')}
+                            <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                          </label>
+                        </div>
+                      </div>
+                    )}
                     <button
                       onClick={() => handleDownloadTrigger('deliveryList')}
-                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded font-medium text-slate-700 dark:text-slate-200 cursor-pointer border-t border-gray-100 dark:border-slate-600"
+                      className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
                     >
-                      <span>Delivery List</span>
+                      Delivery List
                     </button>
                     <button
                       onClick={() => handleDownloadTrigger('deliveryForm')}
-                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/30 rounded font-medium text-slate-700 dark:text-slate-200 cursor-pointer border-t border-gray-100 dark:border-slate-600"
+                      className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
                     >
-                      <span>Delivery Form</span>
+                      Delivery Form
                     </button>
                   </div>
                 )}
@@ -646,6 +849,7 @@ export default function DeliveryPage() {
           },
         ]}
       />
+
       <BodyCard
         activeTabId={activeVehicleId}
         className="min-h-[400px]"
@@ -657,15 +861,25 @@ export default function DeliveryPage() {
         tabs={filteredVehicleRoutes.map((r) => {
           const dName = getDriverName(r, driverData);
           const isManual = r.hasManual;
+          const hasMT = r.trips?.some((t) => t.isMiddleHub);
+          const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
+
           return {
             id: r.vehicleId,
             label: (
               <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
                 <span
-                  className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] text-[#4F76C7] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-900' : 'bg-transparent border-transparent'}`}
+                  className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
                 >
                   {r.vehicleName}{' '}
-                  {r.isRedelivery && <span className="text-red-600 dark:text-red-300">[R]</span>}
+                  {hasMT && (
+                    <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">
+                      [MT]
+                    </span>
+                  )}
+                  {r.isRedelivery && (
+                    <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+                  )}
                 </span>
               </Tooltip>
             ),
@@ -681,6 +895,8 @@ export default function DeliveryPage() {
                 setSearchQuery={setSearchQuery}
                 isDetailView={isDetailView}
                 t={t}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
               />
             )}
           </div>
@@ -693,72 +909,31 @@ export default function DeliveryPage() {
         onClose={() => setIsRoutingModalOpen(false)}
         onPartial={(e) => {
           if (e) e.preventDefault();
-          const prefix = getStoragePrefix(storageFilter);
-
-          if (downloadType === 'routeTransaction') {
-            handlePartialRouteTransDownload({
-              routingResults,
-              setIsDownloading,
-              t,
-              selectedDate,
-            });
-          } else if (downloadType === 'deliveryList') {
-            handlePartialDeliveryListDownload({
-              routingResults,
-              filteredVehicleRoutes,
-              setIsDownloading,
-              t,
-              driverData,
-              fileNamePrefix: prefix,
-              isDetailView,
-              selectedDate,
-            });
-          } else if (downloadType === 'deliveryForm') {
-            handlePartialDeliveryFormDownload({
-              routingResults,
-              filteredVehicleRoutes,
-              setIsDownloading,
-              t,
-              selectedDate,
-              driverData,
-              timeMap,
-            });
+          let excludeList = [];
+          if (downloadType === 'routeTransaction' && isNoBun) {
+            excludeList = bunSoList.map((b) => b.so);
           }
+          runPartialDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
         }}
         onFull={(e) => {
           if (e) e.preventDefault();
-          const prefix = getStoragePrefix(storageFilter);
-
-          if (downloadType === 'routeTransaction') {
-            handleFullRouteTransDownload({
-              filteredVehicleRoutes,
-              setIsDownloading,
-              t,
-              selectedDate,
-            });
-          } else if (downloadType === 'deliveryList') {
-            handleFullDeliveryListDownload({
-              filteredVehicleRoutes,
-              setIsDownloading,
-              t,
-              driverData,
-              fileNamePrefix: prefix,
-              isDetailView,
-            });
-          } else if (downloadType === 'deliveryForm') {
-            handleFullDeliveryFormDownload({
-              filteredVehicleRoutes,
-              setIsDownloading,
-              t,
-              selectedDate,
-              driverData,
-              timeMap,
-            });
+          let excludeList = [];
+          if (downloadType === 'routeTransaction' && isNoBun) {
+            excludeList = bunSoList.map((b) => b.so);
           }
+          runFullDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
         }}
         translate={t}
+      />
+
+      <BunListModal
+        isOpen={isBunModalOpen}
+        onClose={() => setIsBunModalOpen(false)}
+        bunSoList={bunSoList}
+        onDownload={handleDownloadBunSpecific}
+        t={t}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 // File: src/features/dashboard/modals/DailyServiceLevelModal.js
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import Spinner from '@/components/Spinner';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -59,6 +59,7 @@ function DailyServiceLevelModal({
   isOpen,
   onClose,
   title,
+  subtitle,
   data,
   isLoading,
   selectedDate,
@@ -90,10 +91,11 @@ function DailyServiceLevelModal({
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      subtitle={subtitle}
       maxWidth="max-w-5xl"
       footer={footerContent}
     >
@@ -153,7 +155,7 @@ function DailyServiceLevelModal({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 }
 

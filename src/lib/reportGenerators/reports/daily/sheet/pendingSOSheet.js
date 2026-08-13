@@ -5,7 +5,7 @@ import { STYLES } from './shared';
 export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
   const headers = [
     t('common.flow'),
-    t('common.so_number'),
+    t('common.invoice_number'),
     t('common.date'),
     t('common.license_number'),
     t('common.driver'),

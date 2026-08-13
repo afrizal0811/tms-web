@@ -1,4 +1,5 @@
 import { apiFetch } from './base';
+import { fields } from './fields';
 
 export async function getVehicles({ hubId, limit }) {
   const params = new URLSearchParams();
@@ -13,15 +14,16 @@ export async function getLocationHistories({
   timeTo,
   limit = 10000,
   startFinish,
-  fields,
   timeBy,
 }) {
+  const locationsFields = fields.locations.join(',');
   const params = new URLSearchParams();
+  
   if (timeFrom) params.append('timeFrom', timeFrom);
   if (timeTo) params.append('timeTo', timeTo);
   if (limit) params.append('limit', limit);
   if (startFinish) params.append('startFinish', startFinish);
-  if (fields) params.append('fields', fields);
+  if (locationsFields) params.append('fields', locationsFields);
   if (timeBy) params.append('timeBy', timeBy);
 
   return await apiFetch(

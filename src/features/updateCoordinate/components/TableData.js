@@ -33,7 +33,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
               <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm dark:bg-slate-900">
                 <tr className="dark:text-slate-300 text-center">
                   <th className="px-4 py-3 w-[5%]">No</th>
-                  <th className="px-4 py-3 w-[20%]">{t('common.so_number')}</th>
+                  <th className="px-4 py-3 w-[20%]">{t('common.invoice_number')}</th>
                   <th className="px-4 py-3 w-[20%]">{t('common.customer_name')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('common.customer_id')}</th>
                   <th className="px-4 py-3 w-[10%]">{t('common.location_id')}</th>

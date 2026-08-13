@@ -3,7 +3,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
-import { isEmpty } from '@/lib/utils';
+import { formatLongDate, isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
   Bar,
@@ -49,47 +49,31 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
 
 const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
   const { t, localeCode } = useLanguage();
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   const chartData = useMemo(() => {
     const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
     const rawData = processLoadCapacityData(tasks, driverData, year);
     const localizedData = rawData.map((item) => {
       const dateObj = new Date(year, item.monthIndex, 1);
-      const monthShortName = dateObj.toLocaleDateString(localeCode, {
-        month: 'short',
-      });
-      return {
-        ...item,
-        name: monthShortName,
-      };
+      const monthShortName = dateObj.toLocaleDateString(localeCode, { month: 'short' });
+      return { ...item, name: monthShortName };
     });
 
     return localizedData.filter((m) => m.veryLow + m.low + m.normal + m.full + m.overload > 0);
   }, [tasks, driverData, selectedYear, localeCode]);
 
-  const handleBarClick = (data, index) => {
-    setSelectedMonthIndex(index);
+  const handleBarClick = (data) => {
+    const payload = data && data.payload ? data.payload : data;
+    if (!payload || !payload.key) return;
+    setSelectedMonth(payload);
   };
 
-  const getModalTitle = () => {
-    if (selectedMonthIndex === null) return '';
-    const monthItem = chartData[selectedMonthIndex];
-    if (!monthItem) return '';
-
+  const selectedDateObj = useMemo(() => {
+    if (!selectedMonth) return null;
     const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
-    const dateObj = new Date(year, monthItem.monthIndex, 1);
-    const fullMonth = dateObj.toLocaleDateString(localeCode, {
-      month: 'long',
-      year: 'numeric',
-    });
-    return (
-      <div>
-        <h3 className="text-lg font-bold">{t('dashboard.charts.load_capacity.title')}</h3>
-        <p className="text-slate-300 text-sm font-normal">{fullMonth}</p>
-      </div>
-    );
-  };
+    return new Date(year, selectedMonth.monthIndex, 1);
+  }, [selectedMonth, selectedYear]);
 
   return (
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
@@ -164,10 +148,11 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
         )}
 
         <DailyLoadCapacityModal
-          isOpen={selectedMonthIndex !== null}
-          onClose={() => setSelectedMonthIndex(null)}
-          title={getModalTitle()}
-          monthData={selectedMonthIndex !== null ? chartData[selectedMonthIndex] : null}
+          isOpen={!!selectedMonth}
+          onClose={() => setSelectedMonth(null)}
+          title={t('dashboard.charts.load_capacity.title')}
+          subtitle={selectedMonth ? formatLongDate(selectedMonth.key, localeCode, false) : null}
+          monthData={selectedMonth}
           isDarkMode={isDarkMode}
           t={t}
           localeCode={localeCode}

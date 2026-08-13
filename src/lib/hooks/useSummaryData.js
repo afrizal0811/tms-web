@@ -84,24 +84,6 @@ export default function useSummaryData() {
     };
   }, [isLoading]);
 
-  const wait = (ms) => new Promise((res) => setTimeout(res, ms));
-
-  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 500 } = {}) => {
-    let attempt = 0;
-    while (true) {
-      try {
-        return await fn();
-      } catch (err) {
-        attempt++;
-        const status = err?.response?.status || err?.status || null;
-        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err.message;
-        }
-        await wait(baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100));
-      }
-    }
-  }, []);
-
   const fetchWithTracker = useCallback(async (promiseOrFn, label) => {
     setPendingEndpoints((prev) => [...prev, label]);
     try {
@@ -352,7 +334,7 @@ export default function useSummaryData() {
       try {
         if (resultIdsToFetch.length > 0) {
           const batchData = await fetchWithTracker(
-            () => fetchWithRetry(() => getResultHistories(resultIdsToFetch)),
+            () => getResultHistories(resultIdsToFetch),
             'Batch Histories'
           );
 
@@ -616,7 +598,7 @@ export default function useSummaryData() {
       setTaskSummaryMetrics(tempMetrics);
       setIsCalculatingMetrics(false);
     },
-    [t, fetchWithTracker, fetchWithRetry]
+    [t, fetchWithTracker]
   );
 
   const fetchData = useCallback(async () => {
@@ -697,16 +679,14 @@ export default function useSummaryData() {
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];
         for (const range of taskRanges) {
-          const res = await fetchWithRetry(() =>
-            getTasks({
-              hubId: selectedLocation,
-              status: 'ONGOING,DONE',
-              timeBy: 'startTime',
-              limit: 10000,
-              timeFrom: range.from,
-              timeTo: range.to,
-            })
-          );
+          const res = await getTasks({
+            hubId: selectedLocation,
+            status: 'ONGOING,DONE',
+            timeBy: 'startTime',
+
+            timeFrom: range.from,
+            timeTo: range.to,
+          });
           rawResults.push(res);
         }
         return mergeResults(rawResults);
@@ -715,13 +695,12 @@ export default function useSummaryData() {
       const pRouting = fetchWithTracker(async () => {
         const rawResults = [];
         for (const range of routingRanges) {
-          const res = await fetchWithRetry(() =>
-            getResultsSummary({
-              hubId: selectedLocation,
-              routingDateObj: new Date(range.from),
-              deliveryDateObj: new Date(range.to),
-            })
-          );
+          const res = await getResultsSummary({
+            hubId: selectedLocation,
+            routingDateObj: new Date(range.from),
+            deliveryDateObj: new Date(range.to),
+          });
+
           rawResults.push(res);
         }
         return mergeResults(rawResults);
@@ -730,15 +709,12 @@ export default function useSummaryData() {
       const pHistory = fetchWithTracker(async () => {
         const rawResults = [];
         for (const range of historyRanges) {
-          const res = await fetchWithRetry(() =>
-            getLocationHistories({
-              startFinish: 'true',
-              fields: 'finish,startTime,lat,lon,email,trackedTime,totalDistance',
-              timeBy: 'createdTime',
-              timeFrom: range.from,
-              timeTo: range.to,
-            })
-          );
+          const res = await getLocationHistories({
+            startFinish: 'true',
+            timeBy: 'createdTime',
+            timeFrom: range.from,
+            timeTo: range.to,
+          });
           rawResults.push(res);
         }
         return mergeResults(rawResults);
@@ -840,7 +816,6 @@ export default function useSummaryData() {
   }, [
     selectedLocation,
     dateRange,
-    fetchWithRetry,
     fetchWithTracker,
     processTaskSummaryMetrics,
     localeCode,

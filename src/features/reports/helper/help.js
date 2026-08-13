@@ -259,7 +259,6 @@ export const handleSingleDownload = async ({
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
       timeBy: 'startTime',
-      limit: 5000,
     });
 
     if (isEmpty(allTasks)) {
@@ -304,7 +303,6 @@ export const handleSingleDownload = async ({
     const summaryPayload = {
       dateFrom: `${targetRoutingStr} 00:00:00`,
       dateTo: `${targetRoutingStr} 23:59:59`,
-      limit: 1000,
       hubId: selectedLocation,
     };
 
@@ -317,7 +315,6 @@ export const handleSingleDownload = async ({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
         fetchVehicleMetadata(),
@@ -422,7 +419,6 @@ export const handleBulkDownload = async ({
         timeFrom: timeFromTasks,
         timeTo: timeToTasks,
         timeBy: 'startTime',
-        limit: 1000,
       });
 
       if (isEmpty(allTasks)) return null;
@@ -461,7 +457,6 @@ export const handleBulkDownload = async ({
       const summaryPayload = {
         dateFrom: `${targetRoutingStr} 00:00:00`,
         dateTo: `${targetRoutingStr} 23:59:59`,
-        limit: 1000,
         hubId,
       };
 
@@ -474,7 +469,6 @@ export const handleBulkDownload = async ({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
       ]);
@@ -563,7 +557,6 @@ export const handleManualDownload = async ({
           timeFrom,
           timeTo,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
       ]),
@@ -629,53 +622,49 @@ const getColIdx = (headers, keyword) => {
   return headers.findIndex((h) => h && normalizeStr(h).includes(kw));
 };
 
-const evaluateRoutingValidity = async (
-  name,
-  targetRoutingDateObj,
-  targetDateObj,
-  hubId,
-  taskMap
-) => {
-  try {
-    const results = await getResultsSummary({
-      routingDateObj: targetRoutingDateObj,
-      deliveryDateObj: targetDateObj,
-      hubId,
-      s: name,
-    });
-    if (isEmpty(results)) return [];
+const evaluateRoutingValidity = (results, taskMap) => {
+  if (isEmpty(results)) return [];
 
-    return results
-      .filter((item) => {
-        if (!Array.isArray(item.result?.routing)) return false;
-        let checked = 0,
-          valid = 0;
+  return results
+    .filter((item) => {
+      if (!item.name || item.name === '-') {
+        return false;
+      }
+      if (!Array.isArray(item.result?.routing)) {
+        return false;
+      }
+      let checked = 0,
+        valid = 0;
 
-        item.result.routing.forEach((route) => {
-          const validTrips = (route.trips || []).filter(
-            (t) => !t.isHub && t.visitId?.includes('taskId-')
-          );
-          if (isEmpty(validTrips)) return;
+      item.result.routing.forEach((route) => {
+        const validTrips = (route.trips || []).filter((t) => !t.isHub && t.visitId);
+        if (isEmpty(validTrips)) return;
 
-          [...validTrips]
-            .sort(() => 0.5 - Math.random())
-            .slice(0, 5)
-            .forEach((trip) => {
-              const id = trip.visitId.match(/taskId-([a-zA-Z0-9]+)/)?.[1];
-              if (id) {
-                checked++;
-                if (taskMap.get(String(id)) === String(item._id)) valid++;
-              }
-            });
-        });
-        return checked > 0 && valid / checked >= 0.7;
-      })
-      .map((i) => i._id);
-  } catch {
-    return [];
-  }
+        [...validTrips]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 5)
+          .forEach((trip) => {
+            let id = trip.visitId;
+            if (id.includes('taskId-')) {
+              id = id.split('taskId-')[1];
+            }
+            if (id) {
+              checked++;
+              const mapValue = taskMap.get(String(id));
+              const itemValue = String(item._id);
+              if (mapValue === itemValue) valid++;
+            }
+          });
+      });
+
+      if (checked === 0) {
+        return true;
+      }
+      const ratio = valid / checked;
+      return ratio >= 0.5;
+    })
+    .map((i) => i._id);
 };
-
 const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
   const dateString = formatDateUniversal(targetDateObj);
   const startObj = new Date(targetDateObj);
@@ -692,11 +681,10 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
   const [tasks, rawResults, histories] = await Promise.all([
     getTasks({
       hubId: selectedHub.id,
-      status: 'DONE',
+      status: 'DONE,ONGOING',
       timeFrom,
       timeTo,
       timeBy: 'startTime',
-      limit: 5000,
     }),
     getResultsSummary({
       routingDateObj: targetRoutingDateObj,
@@ -707,33 +695,13 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
       timeFrom: histFrom,
       timeTo: histTo,
       startFinish: 'true',
-      fields: 'finish,startTime,email,trackedTime,totalDistance',
       timeBy: 'createdTime',
     }),
   ]);
 
   const taskList = tasks?.data || tasks?.tasks?.data || tasks || [];
   const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
-
-  const uniqueNames = [
-    ...new Set((rawResults || []).map((r) => r.name).filter((n) => n && n !== '-')),
-  ];
-  const validRoutingIds = new Set(
-    (
-      await Promise.all(
-        uniqueNames.map((name) =>
-          evaluateRoutingValidity(
-            name,
-            targetRoutingDateObj,
-            targetDateObj,
-            selectedHub.id,
-            taskMap
-          )
-        )
-      )
-    ).flat()
-  );
-
+  const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
   const { kpiHistories } = convertLocationHistories(
     histories?.tasks?.data || [],
@@ -926,7 +894,6 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, selectedHub, 
         timeFrom,
         timeTo,
         startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       })) || [];
   } catch {
@@ -1041,13 +1008,11 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
         timeBy: 'startTime',
-        limit: 1000,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
         startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       }),
     ]);
@@ -1096,7 +1061,6 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
       timeBy: 'startTime',
-      limit: 1000,
     });
 
     const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
@@ -1112,14 +1076,28 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
     const overrideTaskMap = new Map();
     (historiesRes || []).forEach((item) => {
       (item.history || []).forEach((h) => {
-        ['move', 'dropped', 'switch', 'change'].forEach((key) => {
+        ['move', 'dropped', 'switch', 'change', 'manual'].forEach((key) => {
           (h[key]?.data || []).forEach((m) => {
             const ver = Number(m.version) || 0;
-            (m.visits || []).forEach((v) => {
+
+            let targetVisits = m.visits || [];
+            if (key === 'change' && m.description) {
+              if (m.description.toLowerCase().startsWith('visit ')) {
+                const specific = targetVisits.filter(
+                  (v) => v.visitName && m.description.includes(v.visitName)
+                );
+                if (specific.length > 0) targetVisits = specific;
+              }
+            }
+
+            targetVisits.forEach((v) => {
               if (v.visitId && v.visitId.includes('-')) {
                 const tId = v.visitId.substring(v.visitId.indexOf('-') + 1);
                 if (!overrideTaskMap.has(tId)) overrideTaskMap.set(tId, []);
-                overrideTaskMap.get(tId).push({ action: key, version: ver });
+                overrideTaskMap.get(tId).push({
+                  action: key === 'manual' ? 'manual' : (m.action || key).toLowerCase(),
+                  version: ver,
+                });
               }
             });
           });
@@ -1160,7 +1138,8 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
     const wb = generateTaskManualDetailWorkbook(
       groupedData,
       taskManualHeaders,
-      taskManualKeyMapping
+      taskManualKeyMapping,
+      historiesRes
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');

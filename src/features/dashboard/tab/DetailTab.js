@@ -42,11 +42,11 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
 
   const handleCopy = (task) => {
     const copyText = isIndonesian
-      ? `${t('dashboard.copy')} ${t('common.so_number')}`
-      : `${t('common.so_number')} ${t('dashboard.copy')}`;
+      ? `${t('dashboard.copy')} ${t('common.invoice_number')}`
+      : `${t('common.invoice_number')} ${t('dashboard.copy')}`;
 
     if (!task.soNumber) {
-      toastWarning(t('dashboard.empty_so'));
+      toastWarning(t('common.no_data'));
       return;
     }
     navigator.clipboard.writeText(task.soNumber).then(
@@ -206,7 +206,7 @@ export default function DetailTab({ loading, summaryData }) {
             title={t('dashboard.tab.detail.unassigned_list')}
             data={summaryData?.unassignedList}
             loading={loading}
-            headers={[t('common.flow'), t('common.customer_name'), t('common.so_number')]}
+            headers={[t('common.flow'), t('common.customer_name'), t('common.invoice_number')]}
             renderRow={(item) => (
               <>
                 <Td className="p-3 text-xs">{item.flow}</Td>

@@ -114,23 +114,6 @@ export default function Dashboard({ driverData }) {
     if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
   }, [isYearlyLoading]);
 
-  const fetchWithRetry = useCallback(async (fn, { retries = 3, baseMs = 700 } = {}) => {
-    let attempt = 0;
-    while (true) {
-      try {
-        return await fn();
-      } catch (err) {
-        attempt++;
-        const status = err?.response?.status || err?.status || null;
-        if (attempt > retries || (status && status >= 400 && status < 500 && status !== 429)) {
-          throw err;
-        }
-        const delay = baseMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-  }, []);
-
   const fetchData = useCallback(async () => {
     if (isEmpty(driverData)) {
       setLoading(false);
@@ -166,23 +149,18 @@ export default function Dashboard({ driverData }) {
       }
 
       const [tasksData, resultsData] = await Promise.all([
-        fetchWithRetry(() =>
-          getTasks({
-            status: 'DONE,ONGOING,UNASSIGNED',
-            hubId,
-            timeFrom,
-            timeTo,
-            timeBy: 'startTime',
-            limit: 1000,
-          })
-        ),
-        fetchWithRetry(() =>
-          getResultsSummary({
-            routingDateObj: routingStart,
-            deliveryDateObj: localStart,
-            hubId: hubId,
-          })
-        ),
+        getTasks({
+          status: 'DONE,ONGOING,UNASSIGNED',
+          hubId,
+          timeFrom,
+          timeTo,
+          timeBy: 'startTime',
+        }),
+        getResultsSummary({
+          routingDateObj: routingStart,
+          deliveryDateObj: localStart,
+          hubId: hubId,
+        }),
       ]);
 
       const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
@@ -194,7 +172,7 @@ export default function Dashboard({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, fetchWithRetry, hubId, t, driverData]);
+  }, [selectedDate, hubId, t, driverData]);
 
   useEffect(() => {
     fetchData();
@@ -220,16 +198,13 @@ export default function Dashboard({ driverData }) {
       let allTasks = [];
       try {
         const promises = monthlyRanges.map((range) =>
-          fetchWithRetry(() =>
-            getTasks({
-              hubId,
-              status: 'DONE',
-              timeFrom: range.start,
-              timeTo: range.end,
-              timeBy: 'startTime',
-              limit: 10000,
-            })
-          )
+          getTasks({
+            hubId,
+            status: 'DONE',
+            timeFrom: range.start,
+            timeTo: range.end,
+            timeBy: 'startTime',
+          })
         );
 
         const results = await Promise.allSettled(promises);
@@ -264,7 +239,7 @@ export default function Dashboard({ driverData }) {
         setIsYearlyLoading(false);
       }
     },
-    [fetchWithRetry, t]
+    [t]
   );
 
   useEffect(() => {

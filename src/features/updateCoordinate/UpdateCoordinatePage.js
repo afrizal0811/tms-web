@@ -100,7 +100,6 @@ export default function UpdateCoordinatePage() {
             timeFrom,
             timeTo,
             timeBy: 'startTime',
-            limit: 1000,
           }),
         ]);
 

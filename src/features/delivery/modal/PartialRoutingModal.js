@@ -1,7 +1,7 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 
 export default function PartialRoutingModal({
   isOpen,
@@ -20,13 +20,7 @@ export default function PartialRoutingModal({
   );
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title || 'Download Options'}
-      maxWidth="max-w-md"
-      footer={footer}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="max-w-md" footer={footer}>
       <div className="p-4 flex flex-col gap-6">
         <p className="text-lg font-bold text-center text-slate-700 dark:text-slate-300">
           {translate('delivery.modal.choose_type')}
@@ -43,6 +37,6 @@ export default function PartialRoutingModal({
           </p>
         </div>
       </div>
-    </BaseModal>
+    </Modal>
   );
 }

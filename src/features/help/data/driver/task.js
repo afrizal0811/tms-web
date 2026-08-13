@@ -35,7 +35,7 @@ export const taskTopic = [
       {
         type: 'text',
         content: `
-            <p class=" font-bold text-2xl underline mb-2">Submenu Kategori</p>  
+            <p class=" font-bold text-2xl underline mb-2">Kategori</p>  
             <p>Setiap tugas yang tersedia akan dikelompokkan berdasarkan status dari tugas tersebut, yaitu tugas yang sedang berjalan (<em>Ongoing</em>) dan tugas selesai (<em>Done</em>). Berikut penjelasannya:</p> 
             <ul class="list-decimal pl-5 space-y-2 mt-2">
               <li>
@@ -52,35 +52,17 @@ export const taskTopic = [
             </ul>
         `,
       },
-    ],
-    subTopics: [
       {
-        id: 'task-do',
-        title: 'Lakukan Tugas',
-        blocks: [
-          {
-            type: 'text',
-            content: `
-            <p>Pada bagian ini akan dijelaskan cara untuk mengerjakan tugas yang sudah diterima. Pengerjaan tugas <strong>harus</strong> dilakukan secara berurutan dari <strong>atas ke bawah.</strong></p>
-            <p class='underline mb-2'>Perhatikan video berikut ini:</p>
-            <div style="margin-top: 10px; margin-bottom: 10px;">
-              <iframe 
-                width="100%" 
-                height="450" 
-                src="https://www.youtube.com/embed/tAuvtUgzKss" 
-                title="YouTube video player" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-              </iframe>
-            </div>
-            <p>Berikut ini penjelasannya:</p>
-            `,
-          },
-          {
-            type: 'text',
-            content: `
-            <p class=" font-bold text-2xl underline mb-2">Halaman Informasi Utama</p>  
+        type: 'text',
+        content: `
+          <p class=" font-bold text-2xl underline mb-2">Kerjakan Tugas</p>  
+          <p>Pada bagian ini akan dijelaskan cara untuk mengerjakan tugas yang sudah diterima. Pengerjaan tugas <strong>harus</strong> dilakukan secara berurutan dari <strong>atas ke bawah.</strong></p>
+          `,
+      },
+      {
+        type: 'text',
+        content: `
+            <p class="font-bold text-lg underline mb-2">Halaman Informasi Utama</p>  
             <p>Halaman 1 adalah halaman <strong>Informasi Utama</strong>. Dalam halaman ini terdapat beberapa informasi umum terkait pengiriman. </p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/general-info-1.png" alt="Halaman Informasi Utama" style="width: 100%; border-radius: 4px;" />
@@ -125,11 +107,11 @@ export const taskTopic = [
             </ul>
             <p>Tujuan dari menyelesaikan halaman 1 adalah untuk mendapatkan data <span class='italic underline'>visit time</span> (durasi waktu bongkar muatan barang di lokasi pelanggan) secara akurat.</p>
             `,
-          },
-          {
-            type: 'text',
-            content: `
-            <p class=" font-bold text-2xl underline mb-2">Halaman Konfirmasi <em>Delivery</em></p>  
+      },
+      {
+        type: 'text',
+        content: `
+            <p class="font-bold text-lg underline mb-2">Halaman Konfirmasi <em>Delivery</em></p>  
             <p>Halaman 2 adalah halaman <strong>Konfirmasi <em>Delivery</em></strong>. Dalam halaman ini terdapat beberapa alur pengerjaan tugas. </p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/confirm-delivery.png" alt="Halaman Konfirmasi Delivery" style="width: 100%; border-radius: 4px;" />
@@ -179,11 +161,11 @@ export const taskTopic = [
                 </li>
             </ul>
             `,
-          },
-          {
-            type: 'text',
-            content: `
-            <p class=" font-bold text-2xl underline mb-2">Halaman Konfirmasi Lokasi</p>  
+      },
+      {
+        type: 'text',
+        content: `
+            <p class="font-bold text-lg underline mb-2">Halaman Konfirmasi Lokasi</p>  
             <p>Halaman 3 adalah halaman <strong>Konfirmasi Lokasi</strong>. Dalam halaman ini terdapat beberapa kolom yang harus diisikan oleh <em>driver</em>.</p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/confirm-location-1.png" alt="Halaman Konfirmasi Lokasi" style="width: 100%; border-radius: 4px;" />
@@ -200,22 +182,22 @@ export const taskTopic = [
                 </li>
             </ul>
             `,
-          },
-        ],
-        subSubTopics: [
+      },
+    ],
+    subTopics: [
+      {
+        id: 'status-success',
+        title: 'Tugas Berhasil',
+        blocks: [
           {
-            id: 'status-success',
-            title: 'Tugas Berhasil',
-            blocks: [
-              {
-                type: 'text',
-                content: `
+            type: 'text',
+            content: `
                 <p>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>berhasil</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/ONsP8-71dSI" 
+                    src="https://www.youtube.com/embed/1AtcBn7oprg" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -263,22 +245,22 @@ export const taskTopic = [
                   </li>
                 </ul>
                 `,
-              },
-            ],
           },
+        ],
+      },
+      {
+        id: 'status-partial',
+        title: 'Tugas Terima Sebagian',
+        blocks: [
           {
-            id: 'status-partial',
-            title: 'Tugas Terima Sebagian',
-            blocks: [
-              {
-                type: 'text',
-                content: `
+            type: 'text',
+            content: `
                 <p>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>terima sebagian</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/UsiJSZ7wE90" 
+                    src="https://www.youtube.com/embed/LQvUhCFjnV8" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -354,22 +336,22 @@ export const taskTopic = [
                   </li>
                 </ul>
                 `,
-              },
-            ],
           },
+        ],
+      },
+      {
+        id: 'status-pending',
+        title: 'Tugas Pending',
+        blocks: [
           {
-            id: 'status-pending',
-            title: 'Tugas Pending',
-            blocks: [
-              {
-                type: 'text',
-                content: `
+            type: 'text',
+            content: `
                 <p>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>pending</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/5jH8HaHR0fQ" 
+                    src="https://www.youtube.com/embed/nHvPZsmkjZQ" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -410,22 +392,22 @@ export const taskTopic = [
                   </li>
                 </ul>
                 `,
-              },
-            ],
           },
+        ],
+      },
+      {
+        id: 'status-cancel',
+        title: 'Tugas Batal',
+        blocks: [
           {
-            id: 'status-cancel',
-            title: 'Tugas Batal',
-            blocks: [
-              {
-                type: 'text',
-                content: `
+            type: 'text',
+            content: `
                 <p>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>batal</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
                   <iframe 
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/D856Tni_aBk" 
+                    src="https://www.youtube.com/embed/2Ow0BxFSVMU" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -472,26 +454,25 @@ export const taskTopic = [
                   </li>
                 </ul>
                 `,
-              },
-            ],
           },
+        ],
+      },
+      {
+        id: 'status-pending-gr',
+        title: 'Tugas Pending GR',
+        blocks: [
           {
-            id: 'status-pending-gr',
-            title: 'Tugas Pending GR',
-            blocks: [
-              {
-                type: 'text',
-                content: `
+            type: 'text',
+            content: `
                 <p class='underline text-red-500 text-lg'><strong>Kondisi ini dapat diabaikan apabila tidak ada kasus Pending GR (<em>Goods Receipt</em>).</strong></p>
                 <p class='mt-3'>Video dibawah ini adalah contoh pengisian tugas dengan status pengiriman <strong>pending GR</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px;">
-                  <iframe 
+                  <iframe
                     width="100%" 
                     height="450" 
-                    src="https://www.youtube.com/embed/zZWUifeLeTk" 
-                    title="YouTube video player" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    src="https://www.youtube.com/embed/3FTs33RwTyU"
+                    title="YouTube video player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen>
                   </iframe>
                 </div>
@@ -541,37 +522,6 @@ export const taskTopic = [
                   </li>
                 </ul>
                 `,
-              },
-              {
-                type: 'text',
-                content: `
-                <p>Pada saat <em>driver</em> menerima tugas dengan alur <em>Pending GR</em>, maka terdapat beberapa perbedaan dalam pengisian kolomnya.</p>
-                <p>Video dibawah ini adalah contoh pengisian tugas dengan alur pending GR yang <strong>sukses</strong> dan <strong>pending</strong>.</p>
-                <div style="margin-top: 10px; margin-bottom: 10px;">
-                  <iframe 
-                    width="100%" 
-                    height="450" 
-                    src="https://www.youtube.com/embed/N-ZUemoeIGE" 
-                    title="YouTube video player" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-                  </iframe>
-                </div>
-                <p class=" font-bold text-2xl underline mb-2">Status Sukses</p>
-                <p>Berikut ini alur pengerjaan tugas dengan alur Pending GR yang <strong>sukses</strong>. Pada halaman tugas Pending GR ini, hanya terdapat 1 halaman. Terdapat informasi umum terkait tugas tersebut. Lalu pilih status GR <strong>Sukses</strong> dan tekan tombol <strong>Selesaikan Tugas</strong>.</p>  
-                <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                    <img src="/images/tutorial/driver/pending-gr-1.png" alt="Pending GR - Sukses" style="width: 100%; border-radius: 4px;" />
-                </div>
-                
-                <p class=" font-bold text-2xl underline mb-2">Status Pending</p>  
-                <p>Berikut ini alur pengerjaan tugas dengan alur Pending GR yang <strong>pending</strong>. Pada halaman tugas Pending GR ini, hanya terdapat 1 halaman. Terdapat informasi umum terkait tugas tersebut. Lalu pilih status GR <strong>Pending</strong> dan isikan alasannya secara <u>jelas, detail, dan lengkap</u>. Lalu tekan tombol <strong>Selesaikan Tugas</strong>.</p>  
-                <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                    <img src="/images/tutorial/driver/pending-gr-2.png" alt="Pending GR - Pending" style="width: 100%; border-radius: 4px;" />
-                </div>
-                `,
-              },
-            ],
           },
         ],
       },

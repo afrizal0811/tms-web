@@ -47,7 +47,7 @@ const isValidRoutingTimeWIB = (utcString) => {
   const hour = wibDate.getUTCHours();
 
   if (day >= 1 && day <= 5) {
-    return hour >= 16;
+    return hour >= 15;
   } else if (day === 6) {
     return hour >= 12;
   } else {
@@ -257,7 +257,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                     <Tooltip
                       tooltipContent={
                         isEndMissing
-                          ? translate('summary.tabs.routing_time.tooltip.end_time_error')
+                          ? translate('summary.tabs.routing_time.tooltip.finish_time_error')
                           : hasEnd
                             ? `${row.endData.name}\n${row.endData.soNumber}`
                             : ''

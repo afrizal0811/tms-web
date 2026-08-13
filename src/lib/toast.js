@@ -45,29 +45,34 @@ const ToastContent = ({ message, toastId, type }) => {
           to   { width: 0%; }
         }
         .toast-close-btn {
-          background: rgba(255,255,255,0.25);
-          border: 1px solid rgba(255,255,255,0.5);
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background: rgba(0, 0, 0, 0.05);
+          border: 1px solid rgba(0, 0, 0, 0.1);
           border-radius: 2px;
           cursor: pointer;
-          font-size: 10.8px;
+          font-size: 12px;
           font-weight: bold;
           line-height: 1;
-          color: ${styles.button};
-          flex-shrink: 0;
+          color: #000;
           transition: background 0.15s;
           padding: 3px 3px;
+          z-index: 10;
         }
         .toast-close-btn:hover {
           background: rgba(255,255,255,0.4);
         }
       `}</style>
 
-      {/* Message + Close Button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <button onClick={() => toast.dismiss(toastId)} className="toast-close-btn">
+        X
+      </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px' }}>
         <span style={{ flex: 1 }}>{message}</span>
       </div>
 
-      {/* Progress Bar */}
       <div style={{ paddingTop: '6px' }}>
         <div
           ref={barRef}

@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
@@ -12,7 +12,7 @@ export default function TokenExpirationModal() {
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [targetDateObj, setTargetDateObj] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
-  
+
   useEffect(() => {
     const checkTokenExpiration = () => {
       const envDate = process.env.NEXT_PUBLIC_TOKEN_EXPIRE;
@@ -59,18 +59,18 @@ export default function TokenExpirationModal() {
         <br />
         {contact}
       </span>
-    ); 
+    );
   };
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
-      onClose={() => !isExpired ? setIsOpen(false) : null}
+      onClose={() => (!isExpired ? setIsOpen(false) : null)}
       noClose={isExpired}
       title={t('common.warning')}
       maxWidth="max-w-lg"
     >
       <div className="flex flex-col gap-4">{getMessage()}</div>
-    </BaseModal>
+    </Modal>
   );
 }

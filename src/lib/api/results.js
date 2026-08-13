@@ -2,12 +2,13 @@
 
 import { formatDateUniversal } from '../utils';
 import { apiFetch } from './base';
+import { fields } from './fields';
 
 function getCutOffTime(dateObj, hasPartialRouting = false) {
   const isSaturday = dateObj.getDay() === 6;
   return {
-    startTime: hasPartialRouting ? '09:00:00' : isSaturday ? '04:00:00' : '09:00:00',
-    endTime: isSaturday ? '10:59:59' : '15:59:59',
+    startTime: hasPartialRouting ? '07:00:00' : isSaturday ? '04:00:00' : '08:00:00',
+    endTime: isSaturday ? '11:59:59' : '15:59:59',
   };
 }
 
@@ -18,7 +19,7 @@ export async function getResultsSummary({
   deliveryDateObj,
   hubId,
   hasPartialRouting = false,
-  limit = 1000,
+  limit = 10000,
 }) {
   let finalDateFrom = dateFrom;
   let finalDateTo = dateTo;
@@ -33,12 +34,13 @@ export async function getResultsSummary({
     finalDateFrom = `${startStr} ${startTime}`;
     finalDateTo = `${endStr} ${endTime}`;
   }
-
+  const resultsFields = fields.results.join(',');
   const params = new URLSearchParams();
   if (finalDateFrom) params.append('dateFrom', finalDateFrom);
   if (finalDateTo) params.append('dateTo', finalDateTo);
   if (hubId) params.append('hubId', hubId);
   if (limit) params.append('limit', limit);
+  if (resultsFields) params.append('fields', resultsFields);
 
   const results = await apiFetch(
     `/api/get-results-summary?${params.toString()}`,
@@ -55,7 +57,7 @@ export async function getResult(id) {
 
   const params = new URLSearchParams();
   params.append('id', id);
-
+  
   const result = await apiFetch(
     `/api/get-result?${params.toString()}`,
     `Gagal mengambil data result dengan ID ${id}`

@@ -4,7 +4,7 @@ import Tooltip from '@/components/Tooltip';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
 import RoutingDropdown from './components/RoutingDropdown';
-import AverageDistanceModal from './modals/DistanceSummaryModal';
+import DistanceSummaryModal from './modals/DistanceSummaryModal';
 
 export default function DistanceSummaryTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
@@ -19,7 +19,7 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
     'border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap';
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
-  const [modalTitle, setModalTitle] = useState('');
+  const [modalHeader, setModalHeader] = useState({ title: '', subtitle: '' });
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
@@ -27,16 +27,10 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
 
     if (validDetails.length > 0) {
       setModalData(validDetails);
-      setModalTitle(
-        <div>
-          <h3 className="text-lg font-bold">
-            {translate('summary.tabs.dist_summary.modal.title')} - {type}
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm font-normal">
-            {formatLongDate(dateStr, localeCode)}
-          </p>
-        </div>
-      );
+      setModalHeader({
+        title: `${translate('summary.tabs.dist_summary.modal.title')} - ${type}`,
+        subtitle: formatLongDate(dateStr, localeCode),
+      });
       setModalOpen(true);
     }
   };
@@ -110,11 +104,12 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
-      <AverageDistanceModal
+      <DistanceSummaryModal
         isOpen={modalOpen}
         onClose={closeModal}
         data={modalData}
-        title={modalTitle}
+        title={modalHeader.title}
+        subtitle={modalHeader.subtitle}
         translate={translate}
         localeCode={localeCode}
       />

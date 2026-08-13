@@ -9,6 +9,7 @@ export async function GET(request) {
     const dateTo = searchParams.get('dateTo');
     const limit = searchParams.get('limit') || 500;
     const hubId = searchParams.get('hubId');
+    const fields = searchParams.get('fields');
 
     if (!dateFrom || !dateTo || !hubId) {
       return NextResponse.json(
@@ -33,7 +34,9 @@ export async function GET(request) {
     externalUrl.searchParams.append('dateTo', dateTo);
     externalUrl.searchParams.append('limit', limit);
     externalUrl.searchParams.append('hubId', hubId);
-
+    if (fields) {
+      externalUrl.searchParams.append('fields', fields);
+    }
     const externalResponse = await fetch(externalUrl.toString(), {
       headers: {
         Authorization: `Bearer ${apiToken}`,

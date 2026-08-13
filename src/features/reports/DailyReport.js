@@ -1,8 +1,8 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import Modal from '@/components/Modal';
 import Tooltip from '@/components/Tooltip';
 import FileUploader from '@/components/fileUploader/FileUploader';
 import ConfirmModal from '@/components/modal/ConfirmModal';
@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isDateSunday, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { handleBulkDownload, handleManualDownload, handleSingleDownload } from './helper/help';
+import Information from '@/components/Information';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -137,27 +138,6 @@ export default function DailyReport({
     setPendingAction(null);
   };
 
-  const informationComp = (tooltipContent) => (
-    <Tooltip tooltipContent={tooltipContent}>
-      <span className="flex items-center cursor-help">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          className="w-4 h-4 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-      </span>
-    </Tooltip>
-  );
-
   const MainDatePicker = (
     <div className="flex flex-col items-center w-full sm:w-[280px]">
       <label
@@ -165,7 +145,7 @@ export default function DailyReport({
         className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full"
       >
         {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}
-        {!isCustomRouting && informationComp(t('report.tooltip.info_delivery'))}
+        {!isCustomRouting && <Information infoText={t('report.tooltip.info_delivery')} />}
       </label>
       {isBulkMode ? (
         <CustomDatePicker
@@ -315,7 +295,7 @@ export default function DailyReport({
               />
               <span className="text-sm select-none w-full">{t('report.change_date')}</span>
             </div>
-            {informationComp(t('report.tooltip.info_change_time'))}
+            <Information infoText={t('report.tooltip.info_change_time')} />
           </div>
         </div>
       )}
@@ -360,7 +340,7 @@ export default function DailyReport({
         />
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -398,7 +378,7 @@ export default function DailyReport({
             />
           </div>
         </div>
-      </BaseModal>
+      </Modal>
 
       <ConfirmModal
         isOpen={showWarningModal}

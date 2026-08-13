@@ -1,7 +1,7 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 import { getVehicleTypes, postVehicleMappings } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -63,14 +63,10 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={true}
-      title={
-        <div>
-          <h2 className="text-xl font-bold">{t('common.warning')}</h2>
-          <p className="text-sm mt-1 font-normal">{t('vehicle_tag.description')}</p>
-        </div>
-      }
+      title={t('common.warning')}
+      subtitle={t('vehicle_tag.description')}
       maxWidth="max-w-3xl"
       footer={footerContent}
       noClose={true}
@@ -149,6 +145,6 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
           ))
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 }

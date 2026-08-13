@@ -297,14 +297,15 @@ export const formatTimer = (seconds) => {
 };
 
 // Memformat tanggal panjang
-export function formatLongDate(dateInput, language = 'id-ID') {
+export function formatLongDate(dateInput, language = 'id-ID', withDate = true) {
   if (!dateInput) return '-';
+  let config = {
+    month: 'long',
+    year: 'numeric',
+  };
+  if (withDate) config.day = 'numeric';
   try {
-    return new Date(dateInput).toLocaleDateString(language, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return new Date(dateInput).toLocaleDateString(language, config);
   } catch (e) {
     return '-';
   }
@@ -355,19 +356,27 @@ export const tomorrowDate = (isTomorrow = true) => {
 // Pola format SO yang valid: 2-5 huruf + 4 digit + strip + 6 digit
 const SO_PATTERN = /^[A-Z]{2,5}\d{4}-\d{6}$/i;
 
-// Membersihkan karakter aneh & menstandarkan format satu nomor SO
 export function standardizeSo(rawSo) {
   const clean = String(rawSo).replace(/[^a-zA-Z0-9-]/g, '');
-  const match = clean.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
-  return match ? `${match[1].toUpperCase()}${match[2]}-${match[3].padStart(6, '0')}` : clean;
+  const matchStrict = clean.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)$/);
+  if (matchStrict)
+    return `${matchStrict[1].toUpperCase()}${matchStrict[2]}-${matchStrict[3].padStart(6, '0')}`;
+
+  const matchBypass = clean.match(/^([a-zA-Z]{2,5})(\d{4})-(\d+)(.+)$/);
+  if (matchBypass)
+    return `${matchBypass[1].toUpperCase()}${matchBypass[2]}-${matchBypass[3].padStart(6, '0')}${matchBypass[4]}`;
+
+  return clean;
 }
 
-// Cek satu nomor (raw atau udah distandarkan) sesuai pola SO
 export function isValidSo(so) {
   return SO_PATTERN.test(so);
 }
 
-// Cek satu raw SO invalid, mempertimbangkan status customer (bad cust = otomatis invalid)
+export function isBypassSo(so) {
+  return /^[A-Z]{2,5}\d{4}-\d{6}.+$/i.test(so);
+}
+
 export function checkInvalidSo(rawSo, isBadCust = false) {
   if (isBadCust) return true;
   return !isValidSo(standardizeSo(rawSo));

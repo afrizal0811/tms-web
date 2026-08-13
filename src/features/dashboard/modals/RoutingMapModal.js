@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getBasePlate, isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -200,13 +200,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
     onClose();
   };
 
-  const headerTitle = (
-    <div className="text-left">
-      <h2 className="text-xl font-bold">{t('dashboard.map.title')}</h2>
-      <p className="text-xs font-normal mt-0.5">{t('dashboard.map.subtitle')}</p>
-    </div>
-  );
-
   const headerContent = (
     <div className="flex flex-col lg:flex-row items-end justify-between w-full">
       <div className="flex flex-row gap-2 w-full lg:w-auto items-end ml-auto">
@@ -254,10 +247,11 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleCloseModal}
-      title={headerTitle}
+      title={t('dashboard.map.title')}
+      subtitle={t('dashboard.map.subtitle')}
       headerContent={headerContent}
       maxWidth="max-w-6xl"
       contentClassName="h-[90vh]"
@@ -299,6 +293,6 @@ export default function RoutingMapModal({ isOpen, onClose, data }) {
           {t('dashboard.map.select_driver')}
         </div>
       )}
-    </BaseModal>
+    </Modal>
   );
 }

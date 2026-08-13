@@ -1,9 +1,9 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import Tooltip from '@/components/Tooltip';
 import { toastError } from '@/lib/toast';
-import { isEmpty } from '@/lib/utils';
+import { getBasePlate, isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
   Bar,
@@ -64,6 +64,7 @@ const DailyLoadCapacityModal = ({
   isOpen,
   onClose,
   title,
+  subtitle,
   monthData,
   isDarkMode,
   t,
@@ -157,10 +158,11 @@ const DailyLoadCapacityModal = ({
   );
 
   return (
-    <BaseModal
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={typeof title === 'function' ? title(selectedDay) : title}
+      title={title}
+      subtitle={subtitle}
       maxWidth="max-w-4xl"
       footer={footerContent}
     >
@@ -247,7 +249,7 @@ const DailyLoadCapacityModal = ({
                         </p>
                         <div className="flex flex-col items-start gap-1 mt-1">
                           <p className="text-xs text-slate-500 font-mono font-bold bg-slate-300 inline-block px-1 rounded truncate max-w-full dark:text-slate-700">
-                            {trip.vehicleName}
+                            {getBasePlate(trip.vehicleName)}
                           </p>
                           <p className="text-xs text-slate-400 ">
                             {trip.tasksCount} {t('common.task')}
@@ -332,7 +334,7 @@ const DailyLoadCapacityModal = ({
           </div>
         )}
       </div>
-    </BaseModal>
+    </Modal>
   );
 };
 

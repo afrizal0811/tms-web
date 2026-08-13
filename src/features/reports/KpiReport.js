@@ -1,9 +1,9 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import FileUploader from '@/components/fileUploader/FileUploader';
+import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { handleKpiDownload } from '@/features/reports/helper/help';
@@ -72,13 +72,9 @@ export default function KpiReport() {
   };
 
   const handleFetchData = async () => {
-    if (isManualMode && isEmptyUploadedFile) {
-      return toastError('Silahkan upload file Data Routing dan Data Task!');
-    }
-
     const drivers = await getDriverData(selectedHub.id);
     if (drivers.length === 0) {
-      toastError('Data driver kosong, mohon pilih ulang lokasi.');
+      toastError(t('common.no_driver'));
       return;
     }
     setLoading(true);
@@ -242,7 +238,7 @@ export default function KpiReport() {
         />
       </div>
 
-      <BaseModal
+      <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -280,7 +276,7 @@ export default function KpiReport() {
             />
           </div>
         </div>
-      </BaseModal>
+      </Modal>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}

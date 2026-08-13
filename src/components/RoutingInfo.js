@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useState } from 'react';
@@ -41,7 +41,7 @@ export default function RoutingInfo({ resultsData }) {
         <span className="italic">{t('routing_info.title')}</span>
       </button>
 
-      <BaseModal
+      <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title={t('routing_info.title')}
@@ -82,7 +82,7 @@ export default function RoutingInfo({ resultsData }) {
             </tbody>
           </table>
         </div>
-      </BaseModal>
+      </Modal>
     </>
   );
 }

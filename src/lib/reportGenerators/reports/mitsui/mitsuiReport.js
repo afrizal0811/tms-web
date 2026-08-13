@@ -356,7 +356,8 @@ export const generateTaskDetailWorkbook = (
 export const generateTaskManualDetailWorkbook = (
   groupedData,
   taskDetailHeaders,
-  taskDetailKeyMapping
+  taskDetailKeyMapping,
+  historiesRes
 ) => {
   const wb = XLSX.utils.book_new();
   const headerStyle = {
@@ -420,8 +421,70 @@ export const generateTaskManualDetailWorkbook = (
   }
 
   ws['!cols'] = taskDetailHeaders.map(() => ({ wch: 18 }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Task Manual');
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Task Manual Detail');
+  const forcedHeaders = [
+    'Result ID',
+    'Version',
+    'Action',
+    'From',
+    'To',
+    'Description',
+    'Created By',
+    'Created Time',
+  ];
+  const forcedData = [];
+
+  (historiesRes || []).forEach((res) => {
+    const h = res.history?.[0];
+    if (!h) return;
+    ['change', 'dropped', 'manual', 'move', 'switch'].forEach((cat) => {
+      (h[cat]?.data || []).forEach((item) => {
+        forcedData.push({
+          resultId: item.resultId || '-',
+          version: item.version || 0,
+          action: cat === 'manual' ? 'manual' : item.action || '-',
+          from: item.vehicleFrom || '-',
+          to: item.vehicleTo || '-',
+          desc: item.description || '-',
+          createdBy: item.createdBy || '-',
+          createdTime: item.createdTime
+            ? formatDateUniversal(item.createdTime, 'DD/MM/YYYY HH:mm:ss')
+            : '-',
+        });
+      });
+    });
+  });
+
+  forcedData.sort((a, b) => {
+    const idCmp = String(a.resultId).localeCompare(String(b.resultId));
+    if (idCmp !== 0) return idCmp;
+    return a.version - b.version;
+  });
+
+  const sheet2Data = [forcedHeaders];
+  forcedData.forEach((item) => {
+    sheet2Data.push([
+      item.resultId,
+      item.version,
+      item.action,
+      item.from,
+      item.to,
+      item.desc,
+      item.createdBy,
+      item.createdTime,
+    ]);
+  });
+
+  const ws2 = XLSX.utils.aoa_to_sheet(sheet2Data);
+  const range2 = XLSX.utils.decode_range(ws2['!ref']);
+  for (let C = 0; C <= range2.e.c; ++C) {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (ws2[cellRef]) ws2[cellRef].s = headerStyle;
+  }
+
+  ws2['!cols'] = forcedHeaders.map((_, i) => ({ wch: i === 5 ? 40 : 20 }));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Forced Assign Detail');
 
   return wb;
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import BaseModal from '@/components/BaseModal';
+import Modal from '@/components/Modal';
 import { getBasePlate } from '@/lib/utils';
 
 export default function DistanceSummaryModal({
@@ -8,6 +8,7 @@ export default function DistanceSummaryModal({
   onClose,
   data,
   title,
+  subtitle,
   translate,
   localeCode,
 }) {
@@ -43,7 +44,7 @@ export default function DistanceSummaryModal({
   ];
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title={title} maxWidth="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} maxWidth="max-w-3xl">
       <div className="p-0">
         <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
           <table className="min-w-full text-sm text-left">
@@ -82,6 +83,6 @@ export default function DistanceSummaryModal({
           </table>
         </div>
       </div>
-    </BaseModal>
+    </Modal>
   );
 }
