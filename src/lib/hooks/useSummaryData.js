@@ -711,7 +711,6 @@ export default function useSummaryData() {
         for (const range of historyRanges) {
           const res = await getLocationHistories({
             startFinish: 'true',
-            fields: 'finish,startTime,lat,lon,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
             timeFrom: range.from,
             timeTo: range.to,

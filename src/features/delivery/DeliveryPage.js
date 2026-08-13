@@ -311,7 +311,6 @@ export default function DeliveryPage() {
             timeFrom: historyFrom,
             timeTo: historyTo,
             startFinish: 'true',
-            fields: 'finish,startTime,email,trackedTime,totalDistance',
             timeBy: 'createdTime',
           }),
           getTasks({
@@ -514,7 +513,8 @@ export default function DeliveryPage() {
       }
     };
     fetchData();
-  }, [selectedDate, t, hubsData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, t]);
 
   const enrichedRoutes = useMemo(() => {
     if (isEmpty(allRoutes)) return [];

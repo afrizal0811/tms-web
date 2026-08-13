@@ -315,7 +315,6 @@ export const handleSingleDownload = async ({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
         fetchVehicleMetadata(),
@@ -470,7 +469,6 @@ export const handleBulkDownload = async ({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
       ]);
@@ -559,7 +557,6 @@ export const handleManualDownload = async ({
           timeFrom,
           timeTo,
           startFinish: 'true',
-          fields: 'finish,startTime,email,trackedTime,totalDistance',
           timeBy: 'createdTime',
         }),
       ]),
@@ -698,7 +695,6 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
       timeFrom: histFrom,
       timeTo: histTo,
       startFinish: 'true',
-      fields: 'finish,startTime,email,trackedTime,totalDistance',
       timeBy: 'createdTime',
     }),
   ]);
@@ -898,7 +894,6 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, selectedHub, 
         timeFrom,
         timeTo,
         startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       })) || [];
   } catch {
@@ -1018,7 +1013,6 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
         startFinish: 'true',
-        fields: 'finish,startTime,email,trackedTime,totalDistance',
         timeBy: 'createdTime',
       }),
     ]);
