@@ -259,7 +259,6 @@ export const handleSingleDownload = async ({
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
       timeBy: 'startTime',
-      limit: 5000,
     });
 
     if (isEmpty(allTasks)) {
@@ -304,7 +303,6 @@ export const handleSingleDownload = async ({
     const summaryPayload = {
       dateFrom: `${targetRoutingStr} 00:00:00`,
       dateTo: `${targetRoutingStr} 23:59:59`,
-      limit: 1000,
       hubId: selectedLocation,
     };
 
@@ -422,7 +420,6 @@ export const handleBulkDownload = async ({
         timeFrom: timeFromTasks,
         timeTo: timeToTasks,
         timeBy: 'startTime',
-        limit: 1000,
       });
 
       if (isEmpty(allTasks)) return null;
@@ -461,7 +458,6 @@ export const handleBulkDownload = async ({
       const summaryPayload = {
         dateFrom: `${targetRoutingStr} 00:00:00`,
         dateTo: `${targetRoutingStr} 23:59:59`,
-        limit: 1000,
         hubId,
       };
 
@@ -692,7 +688,6 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
       timeFrom,
       timeTo,
       timeBy: 'startTime',
-      limit: 5000,
     }),
     getResultsSummary({
       routingDateObj: targetRoutingDateObj,
@@ -1018,7 +1013,6 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
         timeBy: 'startTime',
-        limit: 1000,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
@@ -1073,7 +1067,6 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
       timeBy: 'startTime',
-      limit: 1000,
     });
 
     const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];

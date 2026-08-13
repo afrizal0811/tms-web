@@ -155,9 +155,7 @@ export default function Dashboard({ driverData }) {
           timeFrom,
           timeTo,
           timeBy: 'startTime',
-          limit: 1000,
         }),
-
         getResultsSummary({
           routingDateObj: routingStart,
           deliveryDateObj: localStart,
@@ -206,7 +204,6 @@ export default function Dashboard({ driverData }) {
             timeFrom: range.start,
             timeTo: range.end,
             timeBy: 'startTime',
-            limit: 10000,
           })
         );
 

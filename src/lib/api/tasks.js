@@ -1,6 +1,6 @@
 import { apiFetch } from './base';
 
-export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit }) {
+export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit = 10000 }) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
   if (status) params.append('status', status);

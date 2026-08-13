@@ -316,7 +316,6 @@ export default function DeliveryPage() {
           }),
           getTasks({
             hubId: storedLocation,
-            limit: 2000,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
             timeBy: 'startTime',

@@ -683,7 +683,7 @@ export default function useSummaryData() {
             hubId: selectedLocation,
             status: 'ONGOING,DONE',
             timeBy: 'startTime',
-            limit: 10000,
+
             timeFrom: range.from,
             timeTo: range.to,
           });

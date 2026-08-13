@@ -104,7 +104,6 @@ export default function TaskCountReport() {
           timeFrom,
           timeTo,
           timeBy: 'startTime',
-          limit: 1000,
         });
 
         const chunkData = Array.isArray(response) ? response : response?.data || [];
