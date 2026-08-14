@@ -228,7 +228,7 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Sesuai?',
-          search_placeholder: 'Cari Nomor Kendaraan, Driver, atau Customer',
+          search_placeholder: 'Cari plat, sopir, atau pelanggan',
           show_map: 'Lihat Peta',
           status: 'Status',
           is_within_hours: 'Dalam Jam Buka?',
@@ -249,7 +249,7 @@ export const dictionary = {
         pickup: 'Pickup',
         plan: 'Urutan Rencana',
         real: 'Urutan Aktual',
-        select_driver: 'Silakan pilih driver terlebih dahulu.',
+        select_driver: 'Silakan pilih sopir terlebih dahulu.',
         subtitle: 'Bandingkan jalur Rencana vs Aktual',
         title: 'Peta Perbandingan Rute',
         status: {
@@ -407,7 +407,7 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Cari Data Kendaraan',
+      search_placeholder: 'Cari plat, sopir, atau tipe kendaraan',
       subtitle: 'Manajemen daftar',
       subtitle_highlight: 'kendaraan',
       title: 'Data Kendaraan',
@@ -916,7 +916,7 @@ export const dictionary = {
         },
         routingreal: {
           is_match: 'Is Match?',
-          search_placeholder: 'Search Plate, Driver, or Customer',
+          search_placeholder: 'Search plate, driver, or customer',
           show_map: 'View Map',
           status: 'Status',
           is_within_hours: 'Is Within Hours?',
@@ -1095,7 +1095,7 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Search Vehicle Data',
+      search_placeholder: 'Search plate, driver, or vehicle type',
       subtitle: 'Manage the list of',
       subtitle_highlight: 'vehicles',
       title: 'Vehicle Data',
