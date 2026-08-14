@@ -19,9 +19,9 @@ import {
   isEmpty,
   normalizeEmail,
   parseCustomerString,
+  sortRows,
   toApiDateString,
   tomorrowDate,
-  sortRows,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
@@ -204,7 +204,7 @@ export default function DeliveryPage() {
 
       let excludeList = [];
       if (type === 'routeTransaction' && isNoBun) {
-        excludeList = bunSoList.map((b) => b.so);
+        excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
       }
 
       if (activeHub?.hasPartialRouting) {
@@ -321,23 +321,26 @@ export default function DeliveryPage() {
 
         const tempBunList = [];
         filteredTasks.forEach((task) => {
-          const hasBun = (task.listProduct || []).some(
-            (p) => p.title && p.title.toUpperCase().includes('BUN')
-          );
+          const regexBun = /\bbun\b/i;
+          const allItems = (task.listProduct || []).map((p) => p.title || '');
+          const hasBun = allItems.some((title) => regexBun.test(title));
+
           if (hasBun && task.customerOrder) {
             const parsedCust = parseCustomerString(task.customerOrder);
             const sos = (parsedCust.invoiceNumber || task.orderId || '')
               .split(',')
               .map((s) => s.trim())
               .filter(Boolean);
+
+            const hasNonBun = allItems.some((title) => !regexBun.test(title));
+
             sos.forEach((so) => {
               tempBunList.push({
                 so,
                 customer: parsedCust.name || '-',
                 vehicle: task.assignedVehicle?.name || task.vehicleName || task.plat || '-',
-                items: task.listProduct
-                  .filter((p) => p.title?.toUpperCase().includes('BUN'))
-                  .map((p) => p.title),
+                items: allItems,
+                hasNonBun,
               });
             });
           }
@@ -688,7 +691,7 @@ export default function DeliveryPage() {
               <SearchBar
                 disabled={isLoading || isDownloading}
                 onChange={setSearchQuery}
-                placeholder={t('delivery.search_placeholder')}
+                placeholder={t('delivery.delivery_placeholder')}
                 value={searchQuery}
                 width="w-full xs:w-40!"
               />
@@ -902,7 +905,7 @@ export default function DeliveryPage() {
           if (e) e.preventDefault();
           let excludeList = [];
           if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.map((b) => b.so);
+            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
           }
           runPartialDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
@@ -911,7 +914,7 @@ export default function DeliveryPage() {
           if (e) e.preventDefault();
           let excludeList = [];
           if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.map((b) => b.so);
+            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
           }
           runFullDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
