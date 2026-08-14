@@ -337,11 +337,14 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           missingDataCustomers: [],
         };
         stats.totalOutlet += 1;
-        if (FAILED_STATUSES.includes(statusLabel)) stats.failedCount += 1;
+        const isOngoingTask = statusLabel === 'ONGOING' || taskStatus === 'ONGOING';
+        if (FAILED_STATUSES.includes(statusLabel) || isOngoingTask) {
+          stats.failedCount += 1;
+        }
 
         const startDateOnly = startTime ? startTime.split(/[T\s]/)[0] : null;
-        const doneDateOnly = doneTime ? doneTime.split(/[T\s]/)[0] : null;
-        if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly) {
+        const doneDateOnly = doneTime && doneTime !== '-' ? doneTime.split(/[T\s]/)[0] : null;
+        if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly && !isOngoingTask) {
           const parts = doneDateOnly.split('-');
           stats.mismatchCustomers.push({
             name: customerName,

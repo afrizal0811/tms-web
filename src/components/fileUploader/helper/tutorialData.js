@@ -23,7 +23,7 @@ export const tutorialData = (t) => ({
       text: t('report.manual.delivery_guide.step_1'),
     },
     {
-      image: '/images/tutorial/task/task-2.png',
+      image: '/images/tutorial/task/task-2.1.png',
       text: t('report.manual.delivery_guide.step_2'),
     },
     {

@@ -284,18 +284,18 @@ export const dictionary = {
         upload_title: 'Tekan untuk unggah atau seret berkas di sini',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
         routing_guide: {
-          step_1: 'Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
-          step_2: 'Saring data berdasarkan tanggal dilakukannya ruting.',
-          step_3: 'Pilih hasil ruting yang sudah ditugaskan.',
+          step_1: '1. Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
+          step_2: '2. Saring data berdasarkan tanggal dilakukannya ruting.',
+          step_3: '3. Pilih hasil ruting yang sudah ditugaskan.',
           step_4:
-            'Tekan tombol Ekspor untuk mengunduh berkas. Lakukan hal ini untuk semua hasil ruting.',
+            '4. Tekan tombol Ekspor untuk mengunduh berkas. Lakukan hal ini untuk semua hasil ruting.',
         },
         delivery_guide: {
-          step_1: 'Masuk ke MileApp, lalu buka menu Tugas di bilah sisi kiri.',
-          step_2: 'Saring data berdasarkan status dan tanggal pengiriman.',
-          step_3: 'Tekan tombol Ekspor, lalu tekan Ekspor Tugas.',
-          step_4: 'Buka menu Impor & Ekspor di bilah sisi kiri. Pilih submenu Ekspor Data.',
-          step_5: 'Tekan ikon unduh di kolom Aksi untuk mengunduh berkas.',
+          step_1: '1. Masuk ke MileApp, lalu buka menu Tugas di bilah sisi kiri.',
+          step_2: '2. Saring data berdasarkan status dan tanggal pengiriman.',
+          step_3: '3. Tekan tombol Ekspor, lalu tekan Ekspor Tugas.',
+          step_4: '4. Buka menu Impor & Ekspor di bilah sisi kiri. Pilih submenu Ekspor Data.',
+          step_5: '5. Tekan ikon unduh di kolom Aksi untuk mengunduh berkas.',
         },
       },
       tc_detail: {
@@ -970,19 +970,19 @@ export const dictionary = {
         upload_subtitle: 'Only .xlsx and .xls file formats are supported',
         routing_guide: {
           step_1:
-            'Log in to MileApp, then open the Routing menu from the left sidebar. Select the Result submenu.',
-          step_2: 'Filter the data by the routing date.',
-          step_3: 'Select the routing result that has already been dispatched.',
+            '1. Log in to MileApp, then open the Routing menu from the left sidebar. Select the Result submenu.',
+          step_2: '2. Filter the data by the routing date.',
+          step_3: '3. Select the routing result that has already been dispatched.',
           step_4:
-            'Click the Export button to download the file. Repeat this step for all routing results.',
+            '4. Click the Export button to download the file. Repeat this step for all routing results.',
         },
         delivery_guide: {
-          step_1: 'Log in to MileApp, then open the Tasks menu from the left sidebar.',
-          step_2: 'Filter the data by delivery status and delivery date.',
-          step_3: 'Click the Export button, then select Export Tasks.',
+          step_1: '1. Log in to MileApp, then open the Tasks menu from the left sidebar.',
+          step_2: '2. Filter the data by delivery status and delivery date.',
+          step_3: '3. Click the Export button, then select Export Tasks.',
           step_4:
-            'Open the Import & Export menu from the left sidebar. Select the Data Export submenu.',
-          step_5: 'Click the download icon in the Action column to download the file.',
+            '4. Open the Import & Export menu from the left sidebar. Select the Data Export submenu.',
+          step_5: '5. Click the download icon in the Action column to download the file.',
         },
       },
       tc_detail: {
