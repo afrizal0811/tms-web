@@ -7,6 +7,7 @@ export const fields = {
     'dispatchStatus',
     'dispatchMessage',
     'user',
+    'summary',
   ],
   tasks: [
     'flow',
@@ -39,7 +40,9 @@ export const fields = {
     'doneCoordinate',
     'doneTime',
     'gpsSesuai',
+    'klikLokasiClient',
     'klikJikaSudahSampai',
+    'alasan',
     'page1DoneTime',
     'page2DoneTime',
     'page3DoneTime',

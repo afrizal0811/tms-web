@@ -1008,6 +1008,7 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
         timeBy: 'startTime',
+        isNeedFields: false,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
@@ -1061,6 +1062,7 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
       timeBy: 'startTime',
+      isNeedFields: false,
     });
 
     const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
