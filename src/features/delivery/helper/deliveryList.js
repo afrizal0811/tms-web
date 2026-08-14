@@ -5,6 +5,7 @@ import {
   formatDateUniversal,
   isEmpty,
   parseCustomerString,
+  sortRows,
 } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
@@ -80,7 +81,7 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
         ? trip.warehouseName
         : parsedCust?.name || trip.visitName;
 
-    if (trip.isReDelivery && !isHub) baseOutletName = `[REDELIVERY] ${baseOutletName}`;
+    if (trip.isReDelivery && !isHub) baseOutletName = `[R] ${baseOutletName}`;
 
     const custId = isHub ? '' : parsedCust?.id || '-';
     const locId = isHub ? '' : parsedCust?.location || '-';
@@ -354,8 +355,10 @@ export const handlePartialDeliveryListDownload = async ({
     for (const routing of sortedRoutingResults) {
       const status = routing.status || routing.dispatchStatus || '';
       if (String(status).toLowerCase() !== 'done') continue;
-      const routes = routing.result?.routing || [];
+      const routes = [...(routing.result?.routing || [])];
       if (routes.length === 0) continue;
+
+      sortRows(routes, 'vehicleName', 'vehicleName');
 
       const cleanRoutingName = sanitizeName(routing.name || routing._id || 'Routing').trim();
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;

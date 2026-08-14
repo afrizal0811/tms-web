@@ -21,6 +21,7 @@ import {
   parseCustomerString,
   toApiDateString,
   tomorrowDate,
+  sortRows,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
@@ -479,13 +480,7 @@ export default function DeliveryPage() {
           }
         );
 
-        finalRoutes.sort((a, b) => {
-          const etdA = a.trips?.find((t) => t.isHub)?.etd || null;
-          const etdB = b.trips?.find((t) => t.isHub)?.etd || null;
-          if (!etdA && etdB) return 1;
-          if (etdA && !etdB) return -1;
-          return (etdA || '').localeCompare(etdB || '');
-        });
+        sortRows(finalRoutes, 'vehicleName', 'vehicleName');
 
         const badPlates = new Set();
         finalRoutes.forEach((r) => {
@@ -643,11 +638,7 @@ export default function DeliveryPage() {
       );
     });
 
-    return [...routes].sort((a, b) =>
-      (a.trips?.find((t) => t.isHub)?.etd || '').localeCompare(
-        b.trips?.find((t) => t.isHub)?.etd || ''
-      )
-    );
+    return sortRows([...routes], 'vehicleName', 'vehicleName');
   }, [searchQuery, enrichedRoutes, driverData, storageFilter]);
 
   useEffect(() => {
