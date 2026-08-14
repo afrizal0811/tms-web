@@ -62,7 +62,12 @@ export function routingActual({ tasks, drivers, dateStr }) {
     if (t.status !== 'ONGOING' && flow !== 'Pickup') statusLabel = statusLabel || '-';
 
     const rawCustStr = t.customerOrder || t.customerName || '';
-    const { name: cName, id: cId, location: cLoc } = parseCustomerString(rawCustStr);
+    const {
+      name: cName,
+      id: cId,
+      location: cLoc,
+      fullCustomerName,
+    } = parseCustomerString(rawCustStr);
 
     const isGrOrPickup = flow.toUpperCase().includes('GR') || flow.toUpperCase().includes('PICKUP');
     const actualArr = isGrOrPickup
@@ -93,7 +98,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
       roSequence: t.routePlannedOrder || 0,
       statusLabel,
       flow,
-      customerName: cName || t.customerName,
+      customerName: fullCustomerName || cName || t.customerName,
       originalCustomerString: rawCustStr,
       customerId: cId,
       locationId: cLoc,

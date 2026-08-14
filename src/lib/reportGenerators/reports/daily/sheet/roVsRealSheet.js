@@ -2,12 +2,7 @@ import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { STYLES } from './shared';
 
-export function buildRoVsRealSheet(
-  wb,
-  allTaskDataForSequence,
-  hubTimesMap,
-  t
-) {
+export function buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, t) {
   const headers = [
     t('common.flow'),
     t('common.license_number'),
@@ -77,7 +72,7 @@ export function buildRoVsRealSheet(
     tasks
       .sort((a, b) => (a.roSequence || 0) - (b.roSequence || 0))
       .forEach((task) => {
-        const cData = `${task.customerName} - ${task.customerId} - ${task.locationId}`;
+        const cData = task.customerName;
         const ro = task.roSequence || '-';
         const real = task.realSequence || '-';
         const isMatch = isEmpty(real)
