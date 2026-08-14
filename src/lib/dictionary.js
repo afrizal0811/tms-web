@@ -226,7 +226,7 @@ export const dictionary = {
             unassigned: 'Jumlah tugas yang belum ditugaskan',
           },
         },
-        routingreal: {
+        routing_actual: {
           is_match: 'Sesuai?',
           search_placeholder: 'Cari plat, sopir, atau pelanggan',
           show_map: 'Lihat Peta',
@@ -347,11 +347,8 @@ export const dictionary = {
           total_delivery: 'Total Pengiriman',
           total_visit: 'Total Kunjungan',
         },
-        ro_real: {
-          delivery_status: 'Status Pengiriman',
-          is_match: 'Sesuai?',
-          is_within_hours: 'Dalam Jam Buka?',
-          sheet_name: 'Hasil RO vs Aktual',
+        routing_actual: {
+          sheet_name: 'Ruting vs Aktual',
         },
         truck_usage: {
           count_dry: 'Jumlah (Dry)',
@@ -914,7 +911,7 @@ export const dictionary = {
             unassigned: 'Number of tasks that have not been assigned',
           },
         },
-        routingreal: {
+        routing_actual: {
           is_match: 'Is Match?',
           search_placeholder: 'Search plate, driver, or customer',
           show_map: 'View Map',
@@ -1036,11 +1033,8 @@ export const dictionary = {
           total_delivery: 'Total Deliveries',
           total_visit: 'Total Visits',
         },
-        ro_real: {
-          delivery_status: 'Delivery Status',
-          is_match: 'Match?',
-          is_within_hours: 'Within Operating Hours?',
-          sheet_name: 'RO vs Actual Results',
+        routing_actual: {
+          sheet_name: 'Routing vs Actual',
         },
         truck_usage: {
           count_dry: 'Count (Dry)',
