@@ -226,9 +226,9 @@ export const dictionary = {
             unassigned: 'Jumlah tugas yang belum ditugaskan',
           },
         },
-        routingreal: {
+        routing_actual: {
           is_match: 'Sesuai?',
-          search_placeholder: 'Cari Nomor Kendaraan, Driver, atau Customer',
+          search_placeholder: 'Cari plat, sopir, atau pelanggan',
           show_map: 'Lihat Peta',
           status: 'Status',
           is_within_hours: 'Dalam Jam Buka?',
@@ -249,7 +249,7 @@ export const dictionary = {
         pickup: 'Pickup',
         plan: 'Urutan Rencana',
         real: 'Urutan Aktual',
-        select_driver: 'Silakan pilih driver terlebih dahulu.',
+        select_driver: 'Silakan pilih sopir terlebih dahulu.',
         subtitle: 'Bandingkan jalur Rencana vs Aktual',
         title: 'Peta Perbandingan Rute',
         status: {
@@ -284,18 +284,18 @@ export const dictionary = {
         upload_title: 'Tekan untuk unggah atau seret berkas di sini',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
         routing_guide: {
-          step_1: 'Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
-          step_2: 'Saring data berdasarkan tanggal dilakukannya ruting.',
-          step_3: 'Pilih hasil ruting yang sudah ditugaskan.',
+          step_1: '1. Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
+          step_2: '2. Saring data berdasarkan tanggal dilakukannya ruting.',
+          step_3: '3. Pilih hasil ruting yang sudah ditugaskan.',
           step_4:
-            'Tekan tombol Ekspor untuk mengunduh berkas. Lakukan hal ini untuk semua hasil ruting.',
+            '4. Tekan tombol Ekspor untuk mengunduh berkas. Lakukan hal ini untuk semua hasil ruting.',
         },
         delivery_guide: {
-          step_1: 'Masuk ke MileApp, lalu buka menu Tugas di bilah sisi kiri.',
-          step_2: 'Saring data berdasarkan status dan tanggal pengiriman.',
-          step_3: 'Tekan tombol Ekspor, lalu tekan Ekspor Tugas.',
-          step_4: 'Buka menu Impor & Ekspor di bilah sisi kiri. Pilih submenu Ekspor Data.',
-          step_5: 'Tekan ikon unduh di kolom Aksi untuk mengunduh berkas.',
+          step_1: '1. Masuk ke MileApp, lalu buka menu Tugas di bilah sisi kiri.',
+          step_2: '2. Saring data berdasarkan status dan tanggal pengiriman.',
+          step_3: '3. Tekan tombol Ekspor, lalu tekan Ekspor Tugas.',
+          step_4: '4. Buka menu Impor & Ekspor di bilah sisi kiri. Pilih submenu Ekspor Data.',
+          step_5: '5. Tekan ikon unduh di kolom Aksi untuk mengunduh berkas.',
         },
       },
       tc_detail: {
@@ -347,11 +347,8 @@ export const dictionary = {
           total_delivery: 'Total Pengiriman',
           total_visit: 'Total Kunjungan',
         },
-        ro_real: {
-          delivery_status: 'Status Pengiriman',
-          is_match: 'Sesuai?',
-          is_within_hours: 'Dalam Jam Buka?',
-          sheet_name: 'Hasil RO vs Aktual',
+        routing_actual: {
+          sheet_name: 'Ruting vs Aktual',
         },
         truck_usage: {
           count_dry: 'Jumlah (Dry)',
@@ -407,7 +404,7 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Cari Data Kendaraan',
+      search_placeholder: 'Cari plat, sopir, atau tipe kendaraan',
       subtitle: 'Manajemen daftar',
       subtitle_highlight: 'kendaraan',
       title: 'Data Kendaraan',
@@ -451,7 +448,8 @@ export const dictionary = {
       no_bun: 'Tanpa BUN',
       no_bun_info: 'Kecualikan faktur dengan barang "BUN"',
       partial: 'Sebagian',
-      search_placeholder: 'Cari plat, pelanggan, atau nomor faktur',
+      bun_placeholder: 'Cari plat, pelanggan, nomor faktur, atau barang',
+      delivery_placeholder: 'Cari plat, pelanggan, atau nomor faktur',
       spit_multitrip: 'Pisah Multi Perjalanan',
       spit_multitrip_info: 'Pisahkan tugas untuk tiap perjalanan',
       subtitle: 'Monitoring',
@@ -913,9 +911,9 @@ export const dictionary = {
             unassigned: 'Number of tasks that have not been assigned',
           },
         },
-        routingreal: {
+        routing_actual: {
           is_match: 'Is Match?',
-          search_placeholder: 'Search Plate, Driver, or Customer',
+          search_placeholder: 'Search plate, driver, or customer',
           show_map: 'View Map',
           status: 'Status',
           is_within_hours: 'Is Within Hours?',
@@ -972,19 +970,19 @@ export const dictionary = {
         upload_subtitle: 'Only .xlsx and .xls file formats are supported',
         routing_guide: {
           step_1:
-            'Log in to MileApp, then open the Routing menu from the left sidebar. Select the Result submenu.',
-          step_2: 'Filter the data by the routing date.',
-          step_3: 'Select the routing result that has already been dispatched.',
+            '1. Log in to MileApp, then open the Routing menu from the left sidebar. Select the Result submenu.',
+          step_2: '2. Filter the data by the routing date.',
+          step_3: '3. Select the routing result that has already been dispatched.',
           step_4:
-            'Click the Export button to download the file. Repeat this step for all routing results.',
+            '4. Click the Export button to download the file. Repeat this step for all routing results.',
         },
         delivery_guide: {
-          step_1: 'Log in to MileApp, then open the Tasks menu from the left sidebar.',
-          step_2: 'Filter the data by delivery status and delivery date.',
-          step_3: 'Click the Export button, then select Export Tasks.',
+          step_1: '1. Log in to MileApp, then open the Tasks menu from the left sidebar.',
+          step_2: '2. Filter the data by delivery status and delivery date.',
+          step_3: '3. Click the Export button, then select Export Tasks.',
           step_4:
-            'Open the Import & Export menu from the left sidebar. Select the Data Export submenu.',
-          step_5: 'Click the download icon in the Action column to download the file.',
+            '4. Open the Import & Export menu from the left sidebar. Select the Data Export submenu.',
+          step_5: '5. Click the download icon in the Action column to download the file.',
         },
       },
       tc_detail: {
@@ -1035,11 +1033,8 @@ export const dictionary = {
           total_delivery: 'Total Deliveries',
           total_visit: 'Total Visits',
         },
-        ro_real: {
-          delivery_status: 'Delivery Status',
-          is_match: 'Match?',
-          is_within_hours: 'Within Operating Hours?',
-          sheet_name: 'RO vs Actual Results',
+        routing_actual: {
+          sheet_name: 'Routing vs Actual',
         },
         truck_usage: {
           count_dry: 'Count (Dry)',
@@ -1094,7 +1089,7 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Search Vehicle Data',
+      search_placeholder: 'Search plate, driver, or vehicle type',
       subtitle: 'Manage the list of',
       subtitle_highlight: 'vehicles',
       title: 'Vehicle Data',
@@ -1137,7 +1132,8 @@ export const dictionary = {
       no_bun: 'No Bun',
       no_bun_info: 'Exclude invoices with "BUN" Items',
       partial: 'Partial',
-      search_placeholder: 'Search Plate, Customer, or Invoice Number',
+      bun_placeholder: 'Search plate, customer, invoice number, or items',
+      delivery_placeholder: 'Search plate, customer, or invoice number',
       spit_multitrip: 'Spit Multi Trip',
       spit_multitrip_info: 'Split tasks for each trip',
       subtitle: 'Monitoring of',

@@ -19,7 +19,9 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
   const filteredBunList = bunSoList.filter(
     (b) =>
       b.so.toLowerCase().includes(bunSearch.toLowerCase()) ||
-      b.customer.toLowerCase().includes(bunSearch.toLowerCase())
+      b.customer.toLowerCase().includes(bunSearch.toLowerCase()) ||
+      (b.vehicle && b.vehicle.toLowerCase().includes(bunSearch.toLowerCase())) ||
+      (b.items && b.items.some((item) => item.toLowerCase().includes(bunSearch.toLowerCase())))
   );
 
   const handleDownload = () => {
@@ -45,7 +47,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
         <SearchBar
           value={bunSearch}
           onChange={setBunSearch}
-          placeholder={t('delivery.search_placeholder')}
+          placeholder={t('delivery.bun_placeholder')}
           width="w-full"
           className="px-1 py-0.5"
         />

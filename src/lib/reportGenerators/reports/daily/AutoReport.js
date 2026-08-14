@@ -1,3 +1,4 @@
+import { processRoutingVsActualData, routingActualSheet } from '@/lib/routingActual';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { parseDeliveryData, parseRoutingData } from './parsers';
@@ -6,7 +7,6 @@ import {
   buildHelpSheet,
   buildPendingSOSheet,
   buildRoutingDateSheet,
-  buildRoVsRealSheet,
   buildTimeDriverSheet,
   buildTruckDetailSheet,
   buildTruckUsageSheet,
@@ -37,19 +37,26 @@ export async function generateAutoReportWorkbook({
     selectedDateString
   );
 
-  const { deliveryMap, hubTimesMap, allTaskDataForSequence, updateLonglatData, pendingSOData } =
-    parseDeliveryData(
-      allTasks || [],
-      driverData,
-      filteredResults,
-      hasPendingGR,
-      selectedDateString
-    );
+  const { deliveryMap, updateLonglatData, pendingSOData } = parseDeliveryData(
+    allTasks || [],
+    driverData,
+    filteredResults,
+    hasPendingGR,
+    selectedDateString
+  );
+
+  const roVsRealData = processRoutingVsActualData({
+    tasks: allTasks || [],
+    results: filteredResults || [],
+    drivers: driverData,
+    searchQuery: '',
+    date: selectedDateString,
+  });
 
   buildRoutingDateSheet(wb, targetRoutingStr, t);
   buildTimeDriverSheet(wb, timeData, t, driverData);
   buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t);
-  buildRoVsRealSheet(wb, allTaskDataForSequence, hubTimesMap, t);
+  routingActualSheet(wb, roVsRealData, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);

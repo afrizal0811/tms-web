@@ -76,7 +76,7 @@ const ActionCell = ({ text, className, onClick }) => {
   );
 };
 
-const SOCell = ({ text, content, className, isError, errorMessage }) => {
+const SOCell = ({ text, content, className, isError, errorMessage, translate }) => {
   if (!text) return <td className={className}></td>;
 
   const refs = content
@@ -103,9 +103,9 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
     try {
       const copyText = String(firstRef).replace(/\s*\(\+\d+\)$/, '');
       await navigator.clipboard.writeText(copyText);
-      toastSuccess(`Copied: ${copyText}`);
+      toastSuccess(`${translate('common.copied')}: ${copyText}`);
     } catch (err) {
-      toastError(`Error: ${err.message}`);
+      toastError(`${err.message}`);
     }
   };
 
@@ -114,7 +114,9 @@ const SOCell = ({ text, content, className, isError, errorMessage }) => {
       className={`${className} cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative group`}
       onClick={handleCopy}
     >
-      <Tooltip tooltipContent={refs.length > 0 || isError ? tooltipText : ''}>
+      <Tooltip
+        tooltipContent={refs.length > 0 || isError ? tooltipText : translate('common.no_data')}
+      >
         <span className={textStyle}>{text}</span>
       </Tooltip>
     </td>
@@ -129,9 +131,7 @@ export default function PendingReasonsTab({
   translate,
   onUpdatePendingDetail,
 }) {
-  const shouldShowPendingGR = hasPendingGR;
   const [modalData, setModalData] = useState(null);
-
   const getCustId = (name) => {
     if (!name) return '-';
     const match = name.match(/C0\d+/);
@@ -154,7 +154,7 @@ export default function PendingReasonsTab({
     translate('common.status.cancel'),
     translate('common.status.partial'),
     translate('common.status.pending'),
-    ...(shouldShowPendingGR ? [translate('common.status.pending_gr')] : []),
+    ...(hasPendingGR ? [translate('common.status.pending_gr')] : []),
     translate('summary.tabs.pending_reasons.reason'),
     translate('summary.tabs.pending_reasons.category'),
     translate('summary.tabs.pending_reasons.detail_reason'),
@@ -198,8 +198,8 @@ export default function PendingReasonsTab({
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
             {data.map((item, idx) => {
-              const { name: customerName } = parseCustomerString(
-                item.customerName || item.customerOrder
+              const { name: customerName, invoiceNumber } = parseCustomerString(
+                item.customerOrder || item.customerName
               );
               const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
               const borderBottomClass = isLastInDate
@@ -207,7 +207,7 @@ export default function PendingReasonsTab({
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
               const tdClass = `${baseTdClass} ${borderBottomClass}`;
 
-              const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+              const isWrongGR = !hasPendingGR && item.status === 'PENDING GR';
               const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
 
               const textBatal = item.status === 'BATAL' ? customerName : '';
@@ -237,17 +237,17 @@ export default function PendingReasonsTab({
                 { type: 'text', val: item.dateStr },
                 { type: 'text', val: getBasePlate(item.licensePlate) },
                 { type: 'text', val: item.driverName, cls: 'text-left' },
-                { type: 'so', val: textBatal, content: item.content },
-                { type: 'so', val: textParsial, content: item.content },
+                { type: 'so', val: textBatal, content: invoiceNumber },
+                { type: 'so', val: textParsial, content: invoiceNumber },
                 {
                   type: 'so',
                   val: textPending,
-                  content: item.content,
+                  content: invoiceNumber,
                   isError: isWrongGR,
                   errorMsg,
                 },
-                ...(shouldShowPendingGR
-                  ? [{ type: 'so', val: textPendingGR, content: item.content }]
+                ...(hasPendingGR
+                  ? [{ type: 'so', val: textPendingGR, content: invoiceNumber }]
                   : []),
                 { type: 'reason', val: item.alasan },
                 { type: 'action', val: pd.internalExternal, cls: actionCellClass },
@@ -289,6 +289,7 @@ export default function PendingReasonsTab({
                           className={cellClass}
                           isError={cell.isError}
                           errorMessage={cell.errorMsg}
+                          translate={translate}
                         />
                       );
                     }

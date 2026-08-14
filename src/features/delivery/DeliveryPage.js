@@ -19,6 +19,7 @@ import {
   isEmpty,
   normalizeEmail,
   parseCustomerString,
+  sortRows,
   toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
@@ -203,7 +204,7 @@ export default function DeliveryPage() {
 
       let excludeList = [];
       if (type === 'routeTransaction' && isNoBun) {
-        excludeList = bunSoList.map((b) => b.so);
+        excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
       }
 
       if (activeHub?.hasPartialRouting) {
@@ -320,23 +321,26 @@ export default function DeliveryPage() {
 
         const tempBunList = [];
         filteredTasks.forEach((task) => {
-          const hasBun = (task.listProduct || []).some(
-            (p) => p.title && p.title.toUpperCase().includes('BUN')
-          );
+          const regexBun = /\bbun\b/i;
+          const allItems = (task.listProduct || []).map((p) => p.title || '');
+          const hasBun = allItems.some((title) => regexBun.test(title));
+
           if (hasBun && task.customerOrder) {
             const parsedCust = parseCustomerString(task.customerOrder);
             const sos = (parsedCust.invoiceNumber || task.orderId || '')
               .split(',')
               .map((s) => s.trim())
               .filter(Boolean);
+
+            const hasNonBun = allItems.some((title) => !regexBun.test(title));
+
             sos.forEach((so) => {
               tempBunList.push({
                 so,
                 customer: parsedCust.name || '-',
                 vehicle: task.assignedVehicle?.name || task.vehicleName || task.plat || '-',
-                items: task.listProduct
-                  .filter((p) => p.title?.toUpperCase().includes('BUN'))
-                  .map((p) => p.title),
+                items: allItems,
+                hasNonBun,
               });
             });
           }
@@ -479,13 +483,7 @@ export default function DeliveryPage() {
           }
         );
 
-        finalRoutes.sort((a, b) => {
-          const etdA = a.trips?.find((t) => t.isHub)?.etd || null;
-          const etdB = b.trips?.find((t) => t.isHub)?.etd || null;
-          if (!etdA && etdB) return 1;
-          if (etdA && !etdB) return -1;
-          return (etdA || '').localeCompare(etdB || '');
-        });
+        sortRows(finalRoutes, 'vehicleName', 'vehicleName');
 
         const badPlates = new Set();
         finalRoutes.forEach((r) => {
@@ -643,11 +641,7 @@ export default function DeliveryPage() {
       );
     });
 
-    return [...routes].sort((a, b) =>
-      (a.trips?.find((t) => t.isHub)?.etd || '').localeCompare(
-        b.trips?.find((t) => t.isHub)?.etd || ''
-      )
-    );
+    return sortRows([...routes], 'vehicleName', 'vehicleName');
   }, [searchQuery, enrichedRoutes, driverData, storageFilter]);
 
   useEffect(() => {
@@ -697,7 +691,7 @@ export default function DeliveryPage() {
               <SearchBar
                 disabled={isLoading || isDownloading}
                 onChange={setSearchQuery}
-                placeholder={t('delivery.search_placeholder')}
+                placeholder={t('delivery.delivery_placeholder')}
                 value={searchQuery}
                 width="w-full xs:w-40!"
               />
@@ -911,7 +905,7 @@ export default function DeliveryPage() {
           if (e) e.preventDefault();
           let excludeList = [];
           if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.map((b) => b.so);
+            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
           }
           runPartialDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
@@ -920,7 +914,7 @@ export default function DeliveryPage() {
           if (e) e.preventDefault();
           let excludeList = [];
           if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.map((b) => b.so);
+            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
           }
           runFullDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
           setIsRoutingModalOpen(false);
