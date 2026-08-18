@@ -729,6 +729,7 @@ export default function useSummaryData() {
       setDriverData(driversRes || []);
 
       let hasPendingGRValue = false;
+      let hubCoordsString = null;
 
       try {
         const [vTypesObj, mapsDB, hubsDB] = await Promise.all([
@@ -768,6 +769,7 @@ export default function useSummaryData() {
         hasPendingGRValue = activeHub?.hasPendingGR || false;
 
         if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {
+          hubCoordsString = `${activeHub.lat},${activeHub.lng || activeHub.lon}`;
           setActiveHubLocation({
             lat: parseFloat(activeHub.lat),
             lng: parseFloat(activeHub.lng || activeHub.lon),
@@ -796,7 +798,8 @@ export default function useSummaryData() {
         startStr,
         endStr,
         selectedLocation,
-        localeCode
+        localeCode,
+        hubCoordsString
       );
       setReportPreview(preview);
 
