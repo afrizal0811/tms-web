@@ -155,7 +155,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       getStyle: (m) => {
         if (!m || m.outlets <= 0) return {};
         const hex = heatMap(percentage(m.delivered, m.outlets));
-        return hex ? { backgroundColor: `#${hex}` } : {};
+        return hex ? { backgroundColor: `#${hex}`, color: '#334155' } : {};
       },
       text: translate('summary.tabs.truck_detail.delivered'),
       hasManualTooltip: false,
@@ -256,10 +256,11 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                   <Fragment key={`${d.day}-${i}-header`}>
                     {displayData.map(({ key, border, text }) => {
                       const isTotalDelivery = key === 'total_delivery';
-                      const totalDeliveryTooltip = isTotalDelivery
+                      const isNeedInfo = !isHoliday && isTotalDelivery;
+                      const totalDeliveryTooltip = isNeedInfo
                         ? translate('summary.tabs.truck_detail.tooltip.pct_info')
                         : '';
-                      const totalDeliveryClass = isTotalDelivery
+                      const totalDeliveryClass = isNeedInfo
                         ? 'cursor-help border-b-2 border-dotted pb-0.5'
                         : '';
                       return (
