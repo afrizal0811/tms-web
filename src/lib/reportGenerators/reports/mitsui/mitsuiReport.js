@@ -1,4 +1,9 @@
-import { formatDateUniversal, formatUTC7, getDistance, normalizeEmail } from '@/lib/utils';
+import {
+  calculateReturnHubDistance,
+  formatDateUniversal,
+  formatUTC7,
+  normalizeEmail,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { isTripInShift } from '../../helper';
 
@@ -230,8 +235,6 @@ export const generateTaskDetailWorkbook = (
       });
 
       const firstTask = driverTasks[0];
-      const lastTask = driverTasks[driverTasks.length - 1];
-
       let driverEmail = '';
       if (firstTask.assignee) {
         driverEmail = Array.isArray(firstTask.assignee)
@@ -243,14 +246,10 @@ export const generateTaskDetailWorkbook = (
       const timeData = timeMap.get(normalizedDriverEmail);
       const routeInfo = routingMap[normalizedDriverEmail];
 
-      const doneCoord = lastTask?.doneCoordinate;
       let returnHubDistanceMeters = '-';
-
-      if (doneCoord && hubCoordsStr) {
-        const rawDistance = getDistance(doneCoord, hubCoordsStr);
-        if (rawDistance !== null) {
-          returnHubDistanceMeters = Math.round(rawDistance * 1.3);
-        }
+      if (hubCoordsStr && driverTasks.length > 0) {
+        const dist = calculateReturnHubDistance(driverTasks, hubCoordsStr);
+        if (dist > 0) returnHubDistanceMeters = dist;
       }
 
       const hubStartRow = taskDetailHeaders.map(() => null);

@@ -1,10 +1,10 @@
 import {
+  calculateReturnHubDistance,
   formatDateUniversal,
   formatMinutesToHHMM,
   formatUTC7,
   getBasePlate,
   getDeliveryDateFromRouting,
-  getDistance,
   getStorageType,
   heatMap,
   isEmpty,
@@ -437,15 +437,11 @@ export function calculateTruckDetailData(
         });
 
         if (activeHubCoords && entry.taskList.length > 0) {
-          const lastTask = entry.taskList[entry.taskList.length - 1];
-          const doneCoord = lastTask.expectedCoord;
-          if (doneCoord) {
-            const rawDistance = getDistance(doneCoord, activeHubCoords);
-            if (rawDistance !== null) {
-              const returnHubDistanceMeters = Math.round(rawDistance * 1.3);
-              entry.taskDist += returnHubDistanceMeters;
-            }
-          }
+          const returnHubDistanceMeters = calculateReturnHubDistance(
+            entry.taskList,
+            activeHubCoords
+          );
+          entry.taskDist += returnHubDistanceMeters;
         }
       }
     });
