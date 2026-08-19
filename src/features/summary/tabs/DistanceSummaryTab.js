@@ -23,7 +23,7 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
-    const validDetails = (details || []).filter((d) => d.visit > 0);
+    const validDetails = details || [];
 
     if (validDetails.length > 0) {
       setModalData(validDetails);
@@ -96,6 +96,18 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
           isOpen={openDropdown === dateVal}
           onToggle={() => setOpenDropdown(openDropdown === dateVal ? null : dateVal)}
         />
+      );
+    } else if (
+      (!row.routingNames || row.routingNames.length === 0) &&
+      (row.dryCount > 0 || row.frozenCount > 0) &&
+      !row.isSunday
+    ) {
+      return (
+        <Tooltip tooltipContent="Tidak ditemukan data routing">
+          <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
+            {formatLongDate(row.dateStr || row.date, localeCode)}
+          </span>
+        </Tooltip>
       );
     } else {
       return <span>{formatLongDate(row.dateStr || row.date, localeCode)}</span>;

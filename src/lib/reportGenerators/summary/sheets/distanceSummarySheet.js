@@ -1,5 +1,7 @@
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
+  calculateReturnHubDistance,
   formatDateUniversal,
   formatLongDate,
   formatUTC7,
@@ -88,68 +90,96 @@ export function calculateDistanceSummaryData(
   const { emailMap, platMap } = createDriverMap(driverData);
   const dateMap = initializeDateMap(startDateStr, endDateStr);
 
-  if (resultsData && Array.isArray(resultsData)) {
-    const usedVehiclesPerDay = new Map();
+  let hubCoordsStr = null;
+  if (typeof window !== 'undefined') {
+    const { storedLocation } = getLocalStorage();
+    const hubsList = getCachedHubs() || [];
+    const activeHub = hubsList.find(
+      (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
+    );
+    if (activeHub && activeHub.lat && activeHub.lng) {
+      hubCoordsStr = `${activeHub.lat},${activeHub.lng}`;
+    }
+  }
 
+  const usedVehiclesPerDay = new Map();
+
+  if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((res) => {
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
-      if (!res.result?.routing) return;
-
       const dateKey = getDeliveryDateFromRouting(res.createdTime);
-      if (!dateKey || !dateMap[dateKey]) return;
+      if (dateKey && dateMap[dateKey] && res.name) {
+        dateMap[dateKey].routingNames.add(res.name);
+      }
+    });
+  }
 
-      if (res.name) dateMap[dateKey].routingNames.add(res.name);
+  if (taskData && Array.isArray(taskData)) {
+    taskData.forEach((task) => {
+      if (task.isDeleted) return;
+      const dateKey =
+        formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+      if (!dateKey || !dateMap[dateKey]) return;
 
       if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
       const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
-      res.result.routing.forEach((route) => {
-        const validTrips = (route.trips || []).filter((t) => !t.isHub);
-        if (validTrips.length === 0) return;
+      let rawEmail = null;
+      if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
+      else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+      else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
+      else if (task.doneBy) rawEmail = task.doneBy;
 
-        const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
-        const vehiclePlatNorm = route.vehicleName
-          ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
-          : '';
-        const driverInfo = emailMap.get(assigneeEmail) || platMap.get(vehiclePlatNorm);
-        const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
+      const emailClean = (rawEmail || '').toLowerCase().trim();
+      const rawPlate =
+        task.vehicleName ||
+        task.assignedVehicle?.name ||
+        task.assignedVehicle?.plat ||
+        task.plat ||
+        '';
+      const plateNorm = rawPlate.replace(/\s+/g, '').toLowerCase();
 
-        if (!driverName) return;
+      const driverInfo = emailMap.get(emailClean) || platMap.get(plateNorm);
+      const driverName = driverInfo ? driverInfo.name : rawEmail || rawPlate;
 
-        let generalType = 'DRY';
-        if (route.vehicleTags && route.vehicleTags.length > 0) {
-          generalType = String(route.vehicleTags[0]).split('-')[0].toUpperCase();
-        } else if (driverInfo && driverInfo.type) {
-          generalType = String(driverInfo.type).split('-')[0].toUpperCase();
-        }
-        if (!['DRY', 'FROZEN'].includes(generalType)) generalType = 'DRY';
+      if (!driverName) return;
 
-        const type = generalType === 'FROZEN' ? 'Frozen' : 'Dry';
+      let generalType = 'DRY';
+      if (driverInfo && driverInfo.type) {
+        generalType = String(driverInfo.type).split('-')[0].toUpperCase();
+      } else if ((task.typeStorage || '').toUpperCase() === 'FROZEN') {
+        generalType = 'FROZEN';
+      }
 
-        const manualDistMeters = (route.trips || []).reduce(
-          (acc, t) => acc + (Number(t.distance) || 0),
-          0
-        );
-        const distMeters = manualDistMeters || route.totalDistance || 0;
+      const upperName = driverName.toUpperCase();
+      if (upperName.includes('FRZ')) generalType = 'FROZEN';
+      if (upperName.includes('DRY')) generalType = 'DRY';
 
-        if (!dailyVehicles.has(driverName)) {
-          dailyVehicles.set(driverName, {
-            storageType: type,
-            plate: driverInfo?.plat || route.vehicleName || '',
-            driverName,
-            distanceMeters: distMeters,
-            visits: validTrips.length,
-          });
-        } else {
-          const existing = dailyVehicles.get(driverName);
-          existing.distanceMeters += distMeters;
-          existing.visits += validTrips.length;
-        }
-      });
+      const type = generalType === 'FROZEN' ? 'Frozen' : 'Dry';
+      const distMeters = Number(task.distance) || Number(task.travelDistance) || 0;
+
+      if (!dailyVehicles.has(driverName)) {
+        dailyVehicles.set(driverName, {
+          storageType: type,
+          plate: driverInfo?.plat || rawPlate,
+          driverName,
+          distanceMeters: distMeters,
+          visits: 1,
+          tasks: [task],
+        });
+      } else {
+        const existing = dailyVehicles.get(driverName);
+        existing.distanceMeters += distMeters;
+        existing.visits += 1;
+        existing.tasks.push(task);
+      }
     });
 
     usedVehiclesPerDay.forEach((dailyVehicles, dateKey) => {
       dailyVehicles.forEach((vh, canonicalPlate) => {
+        if (hubCoordsStr && vh.tasks && vh.tasks.length > 0) {
+          vh.distanceMeters += calculateReturnHubDistance(vh.tasks, hubCoordsStr);
+        }
         dateMap[dateKey].vehicles.set(canonicalPlate, vh);
       });
     });
@@ -310,6 +340,19 @@ export function calculateDistanceSummaryData(
           }
         });
 
+        vehiclesMap.forEach((estVh, estDriverName) => {
+          if (!actVehiclesMap.has(estDriverName)) {
+            actVehiclesMap.set(estDriverName, {
+              storageType: estVh.storageType,
+              plate: estVh.plate,
+              driverName: estVh.driverName,
+              distanceKm: 0,
+              visit: 0,
+              isMissing: true,
+            });
+          }
+        });
+
         if (actVehiclesMap.size > 0) {
           actVehiclesMap.forEach((vh) => {
             const detailItem = {
@@ -317,13 +360,14 @@ export function calculateDistanceSummaryData(
               driverName: vh.driverName,
               distance: vh.distanceKm,
               visit: vh.visit,
+              isMissing: vh.isMissing || false,
             };
             if (vh.storageType === 'Frozen') {
-              rowData.actFrozenCount++;
+              if (!vh.isMissing) rowData.actFrozenCount++;
               rowData.actFrozenKm += vh.distanceKm;
               rowData.actFrozenDetails.push(detailItem);
             } else {
-              rowData.actDryCount++;
+              if (!vh.isMissing) rowData.actDryCount++;
               rowData.actDryKm += vh.distanceKm;
               rowData.actDryDetails.push(detailItem);
             }
