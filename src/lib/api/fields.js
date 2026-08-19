@@ -37,6 +37,7 @@ export const fields = {
     'label',
     'listProduct',
     'longlat',
+    'maksimumVehicleType',
     'openTime',
     'orderId',
     'page1DoneTime',

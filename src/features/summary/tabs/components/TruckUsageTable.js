@@ -535,6 +535,18 @@ export default function TruckUsageTable({
                     onToggle={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
                   />
                 );
+              } else if (
+                (!d.routingNames || d.routingNames.length === 0) &&
+                dateMap[d.str]?.OTV > 0 &&
+                !isHoliday
+              ) {
+                headerContent = (
+                  <Tooltip tooltipContent="Tidak ditemukan data routing">
+                    <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
+                      {formatDateUniversal(d.str, 'DD-MM-YYYY')}
+                    </span>
+                  </Tooltip>
+                );
               } else {
                 headerContent = <span>{formatDateUniversal(d.str, 'DD-MM-YYYY')}</span>;
               }
