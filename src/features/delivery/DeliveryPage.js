@@ -8,6 +8,7 @@ import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import VehicleTypeFilter from '@/components/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -16,6 +17,7 @@ import {
   formatDateUniversal,
   formatUTC7,
   getBasePlate,
+  getBaseVehicleType,
   isEmpty,
   normalizeEmail,
   parseCustomerString,
@@ -84,6 +86,8 @@ export default function DeliveryPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'asc' });
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [timeMap, setTimeMap] = useState(new Map());
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const downloadDropdownRef = useRef(null);
@@ -632,17 +636,26 @@ export default function DeliveryPage() {
     }
 
     routes = routes.filter((route) => {
-      if (storageFilter.length === 2) return true;
       if (storageFilter.length === 0) return false;
-      const dName = getDriverName(route, driverData);
-      return (
-        (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
-        (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"))
-      );
+      let keep = true;
+      if (storageFilter.length === 1) {
+        const dName = getDriverName(route, driverData);
+        keep = (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
+               (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
+      }
+      if (!keep) return false;
+
+      if (typeFilter && typeFilter !== 'all') {
+        const email = normalizeEmail(route.assignee);
+        const d = driverData[email];
+        if (!d) return false;
+        if (getBaseVehicleType(d.type, masterVehicleTypes) !== typeFilter) return false;
+      }
+      return true;
     });
 
     return sortRows([...routes], 'vehicleName', 'vehicleName');
-  }, [searchQuery, enrichedRoutes, driverData, storageFilter]);
+  }, [searchQuery, enrichedRoutes, driverData, storageFilter, typeFilter, masterVehicleTypes]);
 
   useEffect(() => {
     if (activeVehicleId && !filteredVehicleRoutes.some((r) => r.vehicleId === activeVehicleId)) {
@@ -705,6 +718,18 @@ export default function DeliveryPage() {
                 onApply={setStorageFilter}
                 disabled={isLoading || isDownloading}
                 className="w-full xl:w-30!"
+              />
+            ),
+          },
+          {
+            label: t('common.vehicle_type'),
+            component: (
+              <VehicleTypeFilter
+                data={Object.values(driverData)}
+                selectedType={typeFilter}
+                onApply={setTypeFilter}
+                onMasterTypesLoad={setMasterVehicleTypes}
+                disabled={isLoading || isDownloading}
               />
             ),
           },

@@ -5,10 +5,11 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import SearchBar from '@/components/SearchBar';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { isEmpty } from '@/lib/utils';
+import { getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getVehicleMappings } from '../../lib/api';
 import { toastError } from '../../lib/toast';
@@ -119,6 +120,8 @@ export default function VehicleData() {
   const [masterData, setMasterData] = useState([]);
   const [conditionalData, setConditionalData] = useState([]);
   const [templateData, setTemplateData] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -176,6 +179,16 @@ export default function VehicleData() {
     [storageFilter]
   );
 
+  const applyTypeFilter = useCallback(
+    (list) => {
+      if (!typeFilter || typeFilter === 'all') return list;
+      return list.filter(
+        (item) => getBaseVehicleType(item.type, masterVehicleTypes) === typeFilter
+      );
+    },
+    [typeFilter, masterVehicleTypes]
+  );
+
   const filteredData = useMemo(() => {
     let data = [];
     if (activeTab === 'master') data = masterData;
@@ -183,6 +196,7 @@ export default function VehicleData() {
     else if (activeTab === 'template') data = templateData;
 
     data = applyStorageFilter(data);
+    data = applyTypeFilter(data);
 
     if (!searchQuery) return data;
 
@@ -200,12 +214,20 @@ export default function VehicleData() {
         type.includes(lowerQuery)
       );
     });
-  }, [activeTab, masterData, conditionalData, templateData, searchQuery, applyStorageFilter]);
+  }, [
+    activeTab,
+    masterData,
+    conditionalData,
+    templateData,
+    searchQuery,
+    applyStorageFilter,
+    applyTypeFilter,
+  ]);
 
   const handleExcelDownload = () => {
-    const filteredMaster = applyStorageFilter(masterData);
-    const filteredConditional = applyStorageFilter(conditionalData);
-    const filteredTemplate = applyStorageFilter(templateData);
+    const filteredMaster = applyTypeFilter(applyStorageFilter(masterData));
+    const filteredConditional = applyTypeFilter(applyStorageFilter(conditionalData));
+    const filteredTemplate = applyTypeFilter(applyStorageFilter(templateData));
 
     let filePrefix = '';
     if (storageFilter.includes('DRY') && !storageFilter.includes('FROZEN')) filePrefix = 'DRY';
@@ -241,6 +263,19 @@ export default function VehicleData() {
         <StorageTypeFilter
           selectedTypes={storageFilter}
           onApply={setStorageFilter}
+          disabled={isLoading || isDownloading}
+        />
+      ),
+    },
+    {
+      label: t('common.vehicle_type'),
+      hideLabel: false,
+      component: (
+        <VehicleTypeFilter
+          data={templateData}
+          selectedType={typeFilter}
+          onApply={setTypeFilter}
+          onMasterTypesLoad={setMasterVehicleTypes}
           disabled={isLoading || isDownloading}
         />
       ),

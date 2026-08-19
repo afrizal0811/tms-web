@@ -4,13 +4,14 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import StorageTypeFilter from '@/components/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toast';
-import { isEmpty, normalizeEmail, toApiDateString, tomorrowDate } from '@/lib/utils';
+import { getBaseVehicleType, isEmpty, normalizeEmail, toApiDateString, tomorrowDate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
@@ -20,6 +21,8 @@ export default function Dashboard({ driverData }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
@@ -285,27 +288,32 @@ export default function Dashboard({ driverData }) {
     return map;
   }, [driverData]);
 
-  const filteredDailyTasks = useMemo(() => {
-    if (isEmpty(rawData.tasks)) return [];
+  const applyFilters = useCallback((tasks) => {
+    if (isEmpty(tasks)) return [];
+    let filtered = tasks;
     if (storageFilter.length === 0) return [];
-    if (storageFilter.length === 2) return rawData.tasks;
+    if (storageFilter.length === 1) {
+      filtered = filtered.filter((t) => storageFilter.includes((t.typeStorage || '').toUpperCase()));
+    }
+    if (typeFilter && typeFilter !== 'all') {
+      filtered = filtered.filter((t) => {
+        let email = Array.isArray(t.assignee) ? t.assignee[0] : (t.assignee || t.assignedTo?.email || t.doneBy);
+        email = normalizeEmail(email);
+        const plat = t.assignedVehicle?.name || t.assignedVehicle?.plat || t.vehicleName || t.plat;
+        const platNorm = (plat || '').replace(/\s+/g, '').toLowerCase();
+        const d = driverData?.find(dr => 
+          normalizeEmail(dr.email) === email || 
+          (dr.plat && dr.plat.replace(/\s+/g, '').toLowerCase() === platNorm)
+        );
+        if (!d) return false;
+        return getBaseVehicleType(d.type, masterVehicleTypes) === typeFilter;
+      });
+    }
+    return filtered;
+  }, [storageFilter, typeFilter, driverData, masterVehicleTypes]);
 
-    return rawData.tasks.filter((t) => {
-      const type = (t.typeStorage || '').toUpperCase();
-      return storageFilter.includes(type);
-    });
-  }, [rawData.tasks, storageFilter]);
-
-  const filteredYearlyTasks = useMemo(() => {
-    if (isEmpty(yearlyTasks)) return [];
-    if (storageFilter.length === 0) return [];
-    if (storageFilter.length === 2) return yearlyTasks;
-
-    return yearlyTasks.filter((t) => {
-      const type = (t.typeStorage || '').toUpperCase();
-      return storageFilter.includes(type);
-    });
-  }, [yearlyTasks, storageFilter]);
+  const filteredDailyTasks = useMemo(() => applyFilters(rawData.tasks), [applyFilters, rawData.tasks]);
+  const filteredYearlyTasks = useMemo(() => applyFilters(yearlyTasks), [applyFilters, yearlyTasks]);
 
   const summaryData = useMemo(() => {
     return calculateDashboard(filteredDailyTasks, driverMap, isIndonesian, hasPendingGR);
@@ -367,6 +375,19 @@ export default function Dashboard({ driverData }) {
       label: t('common.storage_type'),
       component: storageFilterComponent,
       hideLabel: false,
+    },
+    {
+      label: t('common.vehicle_type'),
+      hideLabel: false,
+      component: (
+        <VehicleTypeFilter
+          data={driverData}
+          selectedType={typeFilter}
+          onApply={setTypeFilter}
+          onMasterTypesLoad={setMasterVehicleTypes}
+          disabled={isLoadingSelected}
+        />
+      ),
     },
     {
       label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),

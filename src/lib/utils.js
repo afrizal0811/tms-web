@@ -528,3 +528,18 @@ export function calculateReturnHubDistance(taskList, hubCoordsStr) {
 
   return 0;
 }
+
+export const getBaseVehicleType = (typeStr, knownTypes = []) => {
+  if (!typeStr) return '';
+  const upperStr = typeStr.toUpperCase();
+  const sortedKnown = [...knownTypes].sort((a, b) => b.length - a.length);
+  const match = sortedKnown.find((k) => upperStr.includes(k.toUpperCase()));
+  if (match) return match.toUpperCase();
+
+  const parts = upperStr.split('-');
+  const typeParts = parts.filter((p) => !['FROZEN', 'DRY'].includes(p));
+  if (typeParts.length === 0) return typeStr;
+  let base = typeParts[0];
+  if (typeParts.length > 1 && typeParts[1] === 'LONG') base = `${base}-LONG`;
+  return base;
+};
