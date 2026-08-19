@@ -51,7 +51,7 @@ export default function VehicleTypeFilter({
   const isDisabled = disabled || masterTypes.length === 0;
 
   return (
-    <div className="relative w-full min-w-[160px]" ref={dropdownRef}>
+    <div className="relative w-full min-w-40" ref={dropdownRef}>
       <div
         onClick={() => !isDisabled && setIsOpen(!isOpen)}
         className={`w-full h-[42px] pl-4 pr-10 flex items-center bg-white dark:bg-slate-800 border ${isOpen ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-gray-300 dark:border-slate-600'} rounded-lg shadow-sm text-slate-700 dark:text-slate-200 text-sm font-medium hover:border-sky-400 dark:hover:border-sky-500 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900/50' : 'cursor-pointer'}`}

@@ -1,141 +1,84 @@
-// File: src/components/StorageTypeFilter.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
 
 export default function StorageTypeFilter({
-  selectedTypes,
+  selectedTypes = [],
   onApply,
   disabled = false,
   className = 'w-full xl:w-40',
 }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [tempSelected, setTempSelected] = useState(selectedTypes);
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    setTempSelected(selectedTypes);
-  }, [selectedTypes]);
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
-        setTempSelected(selectedTypes);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [selectedTypes]);
+  }, []);
 
-  const handleCheckboxChange = (type) => {
-    setTempSelected((prev) => {
-      if (prev.includes(type)) {
-        return prev.filter((t) => t !== type);
-      } else {
-        return [...prev, type];
-      }
-    });
-  };
-
-  const handleApply = () => {
-    if (tempSelected.length === 0) return;
-    onApply(tempSelected);
+  const handleSelect = (val) => {
+    if (val === 'ALL') onApply(['DRY', 'FROZEN']);
+    else if (val === 'DRY') onApply(['DRY']);
+    else if (val === 'FROZEN') onApply(['FROZEN']);
     setIsOpen(false);
   };
 
   const getLabel = () => {
-    if (selectedTypes.length === 0) return 'None Selected';
-
-    if (selectedTypes.includes('DRY') && selectedTypes.includes('FROZEN')) {
-      return t('common.all');
-    }
-
-    const displayNames = selectedTypes.map((type) => {
-      if (type === 'DRY') return 'Dry';
-      if (type === 'FROZEN') return 'Frozen';
-      return type;
-    });
-
-    return displayNames.join(', ');
+    if (selectedTypes.includes('DRY') && selectedTypes.includes('FROZEN')) return t('common.all');
+    if (selectedTypes.includes('DRY')) return 'Dry';
+    if (selectedTypes.includes('FROZEN')) return 'Frozen';
+    return t('common.all');
   };
 
-  const areArraysEqual = (arr1, arr2) => {
-    if (arr1.length !== arr2.length) return false;
-    const sorted1 = [...arr1].sort();
-    const sorted2 = [...arr2].sort();
-    return sorted1.every((value, index) => value === sorted2[index]);
-  };
-
-  const isSelectionEmpty = tempSelected.length === 0;
-  const isUnchanged = areArraysEqual(tempSelected, selectedTypes);
-  const isApplyDisabled = isSelectionEmpty || isUnchanged;
+  const isAll = selectedTypes.includes('DRY') && selectedTypes.includes('FROZEN');
+  const isDry = selectedTypes.includes('DRY') && !selectedTypes.includes('FROZEN');
+  const isFrozen = selectedTypes.includes('FROZEN') && !selectedTypes.includes('DRY');
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
-      <button
+    <div className={`relative min-w-40 ${className}`} ref={dropdownRef}>
+      <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`flex items-center justify-between gap-2 px-3 h-[42px] rounded-lg shadow-sm border transition-all text-sm font-medium w-full outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500
-          ${
-            disabled
-              ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700 cursor-not-allowed'
-              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer'
-          }
-        `}
+        className={`w-full h-[42px] pl-4 pr-10 flex items-center bg-white dark:bg-slate-800 border ${isOpen ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-gray-300 dark:border-slate-600'} rounded-lg shadow-sm text-slate-700 dark:text-slate-200 text-sm font-medium hover:border-sky-400 dark:hover:border-sky-500 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900/50' : 'cursor-pointer'}`}
       >
-        <span className="truncate">{getLabel()}</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-        </svg>
-      </button>
+        <span className="truncate block">{getLabel()}</span>
+        <div className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 dark:text-slate-400 pointer-events-none">
+          <svg
+            className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
 
       {isOpen && !disabled && (
-        <div className="absolute right-0 mt-2 w-full min-w-[150px] bg-white dark:bg-slate-800 rounded-lg shadow-xl ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-10 dark:border dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
-          <div className="p-3 flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 rounded transition-colors select-none">
-              <input
-                type="checkbox"
-                checked={tempSelected.includes('DRY')}
-                onChange={() => handleCheckboxChange('DRY')}
-                className="rounded text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 w-4 h-4 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer"
-              />
-              Dry
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 rounded transition-colors select-none">
-              <input
-                type="checkbox"
-                checked={tempSelected.includes('FROZEN')}
-                onChange={() => handleCheckboxChange('FROZEN')}
-                className="rounded text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 w-4 h-4 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer"
-              />
-              Frozen
-            </label>
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden py-1 max-h-60 overflow-y-auto">
+          <div
+            onClick={() => handleSelect('ALL')}
+            className={`px-4 py-2 text-sm cursor-pointer transition-colors ${isAll ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+          >
+            {t('common.all')}
           </div>
-          <div className="bg-gray-50 dark:bg-slate-800/80 p-2 border-t border-gray-100 dark:border-slate-700 transition-colors">
-            <button
-              onClick={handleApply}
-              disabled={isApplyDisabled}
-              className={`
-                w-full text-white text-xs font-bold px-3 py-2 rounded transition-all capitalize
-                ${
-                  isApplyDisabled
-                    ? 'bg-gray-400 dark:bg-slate-700 dark:text-slate-400 cursor-not-allowed opacity-70'
-                    : 'bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600 cursor-pointer shadow-sm hover:shadow'
-                }
-              `}
-            >
-              {t('common.save')}
-            </button>
+          <div
+            onClick={() => handleSelect('DRY')}
+            className={`px-4 py-2 text-sm cursor-pointer transition-colors ${isDry ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+          >
+            Dry
+          </div>
+          <div
+            onClick={() => handleSelect('FROZEN')}
+            className={`px-4 py-2 text-sm cursor-pointer transition-colors ${isFrozen ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-bold' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+          >
+            Frozen
           </div>
         </div>
       )}
