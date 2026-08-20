@@ -489,22 +489,6 @@ export function calculateReturnHubDistance(taskList, hubCoordsStr) {
   if (!hubCoordsStr || !taskList || taskList.length === 0) return 0;
 
   const sortedTasks = [...taskList].sort((a, b) => {
-    const timeA =
-      a.arrivalTimestamp && a.arrivalTimestamp !== 9999999999999
-        ? a.arrivalTimestamp
-        : a.doneTime
-          ? new Date(a.doneTime).getTime()
-          : 0;
-
-    const timeB =
-      b.arrivalTimestamp && b.arrivalTimestamp !== 9999999999999
-        ? b.arrivalTimestamp
-        : b.doneTime
-          ? new Date(b.doneTime).getTime()
-          : 0;
-
-    if (timeA !== timeB) return timeA - timeB;
-
     const roA = a.roSequence ?? a.routePlannedOrder ?? 9999;
     const roB = b.roSequence ?? b.routePlannedOrder ?? 9999;
     return roA - roB;

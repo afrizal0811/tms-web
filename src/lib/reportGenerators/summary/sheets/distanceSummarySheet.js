@@ -156,27 +156,48 @@ export function calculateDistanceSummaryData(
       if (upperName.includes('DRY')) generalType = 'DRY';
 
       const type = generalType === 'FROZEN' ? 'Frozen' : 'Dry';
-      const distMeters = Number(task.distance) || Number(task.travelDistance) || 0;
+      const actualPlate = rawPlate || driverInfo?.plat || '';
+      if (!actualPlate || actualPlate === '-') return;
+
+      const tTime = new Date(task.startTime || task.doneTime || 0).getTime();
 
       if (!dailyVehicles.has(driverName)) {
         dailyVehicles.set(driverName, {
           storageType: type,
-          plate: driverInfo?.plat || rawPlate,
+          plate: actualPlate,
           driverName,
-          distanceMeters: distMeters,
+          distanceMeters: 0,
           visits: 1,
           tasks: [task],
+          lastTime: tTime,
         });
       } else {
         const existing = dailyVehicles.get(driverName);
-        existing.distanceMeters += distMeters;
         existing.visits += 1;
         existing.tasks.push(task);
+        if (tTime > (existing.lastTime || 0)) {
+          existing.lastTime = tTime;
+          existing.plate = actualPlate;
+        }
       }
     });
 
     usedVehiclesPerDay.forEach((dailyVehicles, dateKey) => {
       dailyVehicles.forEach((vh, canonicalPlate) => {
+        const seenCust = new Set();
+        const dupCust = new Set();
+
+        vh.tasks.forEach((t) => {
+          if (seenCust.has(t.customerName)) dupCust.add(t.customerName);
+          seenCust.add(t.customerName);
+        });
+
+        vh.tasks.forEach((t) => {
+          let dist = Number(t.distance) || 0;
+          if (dist === 0 && !dupCust.has(t.customerName)) dist = Number(t.travelDistance) || 0;
+          vh.distanceMeters += dist;
+        });
+
         if (hubCoordsStr && vh.tasks && vh.tasks.length > 0) {
           vh.distanceMeters += calculateReturnHubDistance(vh.tasks, hubCoordsStr);
         }
@@ -315,9 +336,20 @@ export function calculateDistanceSummaryData(
           const plat = (tData.plat || '').replace(/\s+/g, '').toLowerCase();
           const dInfo = emailMap.get(email) || platMap.get(plat);
 
-          const type = dInfo && String(dInfo.type).toUpperCase() === 'FROZEN' ? 'Frozen' : 'Dry';
+          let generalType = 'DRY';
+          if (dInfo && dInfo.type) {
+            generalType = String(dInfo.type).split('-')[0].toUpperCase();
+          }
+          const upperName = (tData.driver || '').toUpperCase();
+          if (upperName.includes('FRZ')) generalType = 'FROZEN';
+          if (upperName.includes('DRY')) generalType = 'DRY';
 
+          const type = generalType === 'FROZEN' ? 'Frozen' : 'Dry';
           const distKm = tData.totalDistance;
+
+          const actualPlate = tData.plat || dInfo?.plat || '';
+          const mapKey = tData.driver;
+          const tTime = new Date(tData.finishTimeFmt || tData.startTimeFmt || 0).getTime();
 
           const actVisits = dailyTasks.filter((t) => {
             const tEmail = Array.isArray(t.assignee)
@@ -326,23 +358,29 @@ export function calculateDistanceSummaryData(
             return String(tEmail).toLowerCase().trim() === email;
           }).length;
 
-          if (!actVehiclesMap.has(tData.driver)) {
-            actVehiclesMap.set(tData.driver, {
+          if (!actVehiclesMap.has(mapKey)) {
+            actVehiclesMap.set(mapKey, {
               storageType: type,
-              plate: tData.plat || '',
+              plate: actualPlate,
               driverName: tData.driver,
               distanceKm: distKm,
               visit: actVisits,
+              lastTime: tTime,
             });
           } else {
-            const existing = actVehiclesMap.get(tData.driver);
+            const existing = actVehiclesMap.get(mapKey);
             existing.distanceKm += distKm;
+            existing.visit = actVisits;
+            if (tTime > (existing.lastTime || 0)) {
+              existing.lastTime = tTime;
+              existing.plate = actualPlate;
+            }
           }
         });
 
-        vehiclesMap.forEach((estVh, estDriverName) => {
-          if (!actVehiclesMap.has(estDriverName)) {
-            actVehiclesMap.set(estDriverName, {
+        vehiclesMap.forEach((estVh, estKey) => {
+          if (!actVehiclesMap.has(estKey)) {
+            actVehiclesMap.set(estKey, {
               storageType: estVh.storageType,
               plate: estVh.plate,
               driverName: estVh.driverName,
