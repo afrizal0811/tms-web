@@ -383,9 +383,9 @@ export async function calculateTruckUsageData(
           if (found) driverInfo = found;
         }
 
-        const firstTag =
-          driverInfo?.masterTag || (route.vehicleTags?.[0] ? String(route.vehicleTags[0]) : '');
-        let isFrozen = firstTag === 'Frozen';
+        const firstTag = driverInfo?.masterTag || task.typeStorage || '';
+        let isFrozen =
+          firstTag === 'Frozen' || (task.typeStorage || '').toUpperCase().includes('FROZEN');
         if (
           driverInfo &&
           ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
