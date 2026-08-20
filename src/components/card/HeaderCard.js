@@ -7,7 +7,7 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
 
   return (
     <div
-      className={`flex flex-col ${itemsLength < 5 ? 'lg:flex-row' : ''} justify-between items-start lg:items-center bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 gap-4 transition-colors duration-200`}
+      className={`relative z-50 flex flex-col ${itemsLength < 5 ? 'lg:flex-row' : ''} justify-between items-start lg:items-center bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 gap-4 transition-colors duration-200`}
     >
       {(title || subtitle) && (
         <div
@@ -41,14 +41,8 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
         </div>
       )}
 
-      <div
-        className={`w-full xl:w-auto grid transition-all duration-300 ease-in-out ${
-          itemsLength > 1 && !isOpen
-            ? 'grid-rows-[0fr] opacity-0 md:grid-rows-[1fr] md:opacity-100'
-            : 'grid-rows-[1fr] opacity-100'
-        }`}
-      >
-        <div className="overflow-hidden">
+      <div className={`w-full xl:w-auto ${itemsLength > 1 && !isOpen ? 'hidden md:grid' : 'grid'}`}>
+        <div>
           <div
             className={`grid grid-cols-1 ${itemsLength > 1 ? 'md:grid-cols-2' : ''} xl:flex xl:flex-row gap-3 w-full xl:w-auto items-end xl:items-center mt-2 md:mt-0 pb-1`}
           >
