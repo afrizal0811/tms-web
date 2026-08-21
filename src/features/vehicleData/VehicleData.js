@@ -11,7 +11,6 @@ import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getVehicleMappings } from '../../lib/api';
 import { toastError } from '../../lib/toast';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
@@ -24,12 +23,7 @@ const sortData = (a, b) => {
   return (a.email || '').localeCompare(b.email || '');
 };
 
-const processVehicleData = (rawDriversData, mappingsDB) => {
-  const mappingsObj = mappingsDB.reduce((acc, curr) => {
-    acc[curr.plat] = curr.mappedType;
-    return acc;
-  }, {});
-
+const processVehicleData = (rawDriversData) => {
   const processedData = rawDriversData.map((v) => {
     let parsedTags = [];
     if (v.tags) {
@@ -42,18 +36,11 @@ const processVehicleData = (rawDriversData, mappingsDB) => {
       parsedTags = [v.type];
     }
 
-    let mappedTypeStr = v.type;
-    if (v.plat && mappingsObj[v.plat]) {
-      const mappedType = mappingsObj[v.plat];
-      mappedTypeStr = v.storage ? `${v.storage}-${mappedType}` : mappedType;
-    }
-
-    const isIncomplete = !v.email || !mappedTypeStr;
+    const isIncomplete = !v.email || !v.type;
 
     return {
       ...v,
       parsedTags,
-      type: mappedTypeStr,
       isIncomplete,
     };
   });
@@ -134,10 +121,7 @@ export default function VehicleData() {
           throw new Error(t('common.toast.error', { err: 'Location not found' }));
         }
 
-        const [rawDriversData, mappingsDB] = await Promise.all([
-          getDriverData(storedLocation),
-          getVehicleMappings(),
-        ]);
+        const rawDriversData = await getDriverData(storedLocation);
 
         if (!rawDriversData || isEmpty(rawDriversData)) {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
@@ -147,7 +131,7 @@ export default function VehicleData() {
           templateData: temp,
           masterData: master,
           conditionalData: cond,
-        } = processVehicleData(rawDriversData, mappingsDB);
+        } = processVehicleData(rawDriversData);
 
         if (!isMounted) return;
 
