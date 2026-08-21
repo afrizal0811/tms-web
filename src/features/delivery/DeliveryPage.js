@@ -715,10 +715,11 @@ export default function DeliveryPage() {
       component: (
         <VehicleTypeFilter
           data={Object.values(driverData)}
-          selectedType={typeFilter}
+          disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
-          disabled={isLoading || isDownloading}
+          selectedType={typeFilter}
+          t={t}
         />
       ),
     },

@@ -274,10 +274,11 @@ export default function VehicleData() {
       component: (
         <VehicleTypeFilter
           data={templateData}
-          selectedType={typeFilter}
+          disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
-          disabled={isLoading || isDownloading}
+          selectedType={typeFilter}
+          t={t}
         />
       ),
     },

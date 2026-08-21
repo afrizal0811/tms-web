@@ -372,10 +372,11 @@ export default function Dashboard({ driverData }) {
       component: (
         <VehicleTypeFilter
           data={driverData}
-          selectedType={typeFilter}
+          disabled={isLoadingSelected}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
-          disabled={isLoadingSelected}
+          selectedType={typeFilter}
+          t={t}
         />
       ),
     },

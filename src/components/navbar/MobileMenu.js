@@ -200,10 +200,7 @@ export default function MobileMenu({
                     </span>
                   </div>
                 </div>
-
-                <div className="shrink-0 w-32">
-                  <LocationSwitcher />
-                </div>
+                <LocationSwitcher />
               </div>
               <Divider />
               <MobileNavGroup

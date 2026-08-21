@@ -13,6 +13,7 @@ export default function VehicleTypeFilter({
   onMasterTypesLoad,
   disabled = false,
   className = 'w-full',
+  t,
 }) {
   const [masterTypes, setMasterTypes] = useState([]);
 
@@ -35,15 +36,15 @@ export default function VehicleTypeFilter({
   }, [data, typeKey, masterTypes]);
 
   const options = useMemo(() => {
-    const opts = [{ label: 'Semua Tipe', value: 'all' }];
+    const opts = [{ label: t('common.all'), value: 'all' }];
     uniqueTypes.forEach((type) => {
       opts.push({ label: type, value: type });
     });
     return opts;
-  }, [uniqueTypes]);
+  }, [uniqueTypes, t]);
 
   const getLabel = (val) => {
-    return val === 'all' || !val ? 'Semua Tipe' : val;
+    return val === 'all' || !val ? t('common.all') : val;
   };
 
   const isDisabled = disabled || masterTypes.length === 0;

@@ -14,13 +14,13 @@ import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
 
 export default function UserDropdown({ isDarkMode }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false); 
+
   const { t } = useLanguage();
   const { setTheme } = useTheme();
   const dropdownRef = useRef(null);
   const pathname = usePathname();
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false); // State untuk mencegah hydration error
 
   const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
@@ -39,7 +39,6 @@ export default function UserDropdown({ isDarkMode }) {
     return '';
   });
 
-  // Mencegah hydration mismatch error
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
@@ -115,20 +114,19 @@ export default function UserDropdown({ isDarkMode }) {
                 className="text-sm px-4"
               />
 
-              {/* Menggunakan LanguageToggle baru */}
               <LanguageToggle showLabel={true} className="text-sm px-4" />
 
               <Link
                 href="/setting"
                 onClick={() => setIsOpen(false)}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
               >
                 {t('navbar.setting')}
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"
               >
                 {t('navbar.logout')}
               </button>

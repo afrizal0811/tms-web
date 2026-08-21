@@ -11,17 +11,17 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
     >
       {(title || subtitle) && (
         <div
-          className={`flex flex-col w-full lg:w-auto text-left ${itemsLength >= 2 ? 'md:text-center' : ''} ${itemsLength < 5 ? 'lg:text-left' : 'lg:text-center'} min-w-xs`}
+          className={`flex flex-col w-full lg:w-auto text-left ${itemsLength >= 2 ? 'md:text-center' : ''} ${itemsLength < 5 ? 'lg:text-left' : 'lg:text-center'} `}
         >
           {title && (
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">{title}</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">{title}</h1>
           )}
-          {subtitle && <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>}
+          {subtitle && <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>}
 
           {itemsLength > 1 && (
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden mt-4 p-2 w-full flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+              className="md:hidden mt-4 p-2 w-full max-w-full min-w- flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
             >
               <svg
                 className={`w-5 h-5 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
