@@ -40,7 +40,7 @@ const applyRowColorsAndLegend = (ws, rawData, t) => {
 
   ws[XLSX.utils.encode_cell({ r: legendStartRow, c: 0 })] = {
     t: 's',
-    v: t('vehicle.tabs.color_exp'),
+    v: t('common.color_exp'),
     s: { font: { bold: true } },
   };
 

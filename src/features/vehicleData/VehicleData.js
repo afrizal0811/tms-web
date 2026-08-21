@@ -97,6 +97,17 @@ const processVehicleData = (rawDriversData) => {
   };
 };
 
+const colorLegends = [
+  {
+    name: 'duplicate_driver',
+    colors: 'text-white bg-yellow-100 dark:bg-yellow-400/30',
+  },
+  {
+    name: 'incomplete_data',
+    colors: 'text-white bg-red-100 dark:bg-red-400/30',
+  },
+];
+
 export default function VehicleData() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('master');
@@ -313,13 +324,28 @@ export default function VehicleData() {
         onTabClick={setActiveTab}
         tabs={tabs}
       >
-        <div className="flex-1 flex flex-col m-0 rounded-b-xl overflow-auto">
+        <div className="flex-1 flex flex-col m-0 overflow-auto">
           {(activeTab === 'master' || activeTab === 'conditional') && (
             <VehicleTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
           )}
           {activeTab === 'template' && (
             <TemplateTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
           )}
+        </div>
+        <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
+          <h4 className="text-xs font-bold mb-3 text-slate-700 dark:text-slate-200">
+            {t('common.color_exp')}
+          </h4>
+          <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">
+            {colorLegends.map((color, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span
+                  className={`w-4 h-4 border border-gray-400 dark:border-slate-600 rounded-sm ${color.colors}`}
+                />
+                <span>{t(`vehicle.tabs.${color.name}`)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </BodyCard>
     </div>

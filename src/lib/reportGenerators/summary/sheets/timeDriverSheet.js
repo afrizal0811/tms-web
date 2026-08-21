@@ -332,7 +332,7 @@ export function generateTimeDriverSheet(
   });
 
   excelData.push([]);
-  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push([translate('common.color_exp')]);
   excelData.push(['', translate('summary.tabs.time_driver.out_radius')]);
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);

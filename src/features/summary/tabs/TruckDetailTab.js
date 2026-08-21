@@ -513,7 +513,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
               })}
             </div>
             <h4 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-200">
-              {translate('summary.tabs.truck_detail.color_exp')}
+              {translate('common.color_exp')}
             </h4>
           </div>
           <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">

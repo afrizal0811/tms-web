@@ -560,7 +560,7 @@ export function generateTruckDetailSheet(
 
   excelData.push([]);
   const legendStartRow = excelData.length;
-  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push([translate('common.color_exp')]);
   excelData.push(['', translate('summary.tabs.truck_detail.orange')]);
   excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
   excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
