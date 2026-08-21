@@ -10,16 +10,16 @@ export default function TruckUsageSummaryTable({
   if (!summaryData) return null;
   
   const thClass =
-  'border border-gray-300 dark:border-slate-600 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-violet-300 dark:bg-violet-900/30';
+  'border border-gray-300 dark:border-slate-600 px-2 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-violet-300 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30';
   const thClassTooltip = `${thClass} cursor-help`;
   const tdClass =
   'border border-gray-200 dark:border-slate-700 px-2 py-1 text-center text-xs text-slate-700 dark:text-slate-300';
   
-  const dryBg = 'bg-[#fae2d5] dark:bg-orange-900/30';
-  const frzBg = 'bg-[#dbe9f7] dark:bg-blue-900/30';
-  const dryTotBg = 'bg-[#f9cb9c] dark:bg-orange-900/50';
-  const frzTotBg = 'bg-[#c9daf8] dark:bg-blue-900/50';
-  const otvBg = 'bg-[#d9f2d0]! dark:bg-green-900/30!';
+  const dryBg = 'bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/30 dark:to-orange-900/30';
+  const frzBg = 'bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/30 dark:to-blue-900/30';
+  const dryTotBg = 'bg-[#f9cb9c] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/50 dark:to-orange-900/50';
+  const frzTotBg = 'bg-[#c9daf8] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/50 dark:to-blue-900/50';
+  const otvBg = 'bg-[#d9f2d0]! dark:bg-slate-800! dark:bg-gradient-to-t! dark:from-green-900/30! dark:to-green-900/30!';
 
   const headerTooltip = (tootltip, text, className = '', addClass = '') => {
     return (
@@ -37,9 +37,9 @@ export default function TruckUsageSummaryTable({
 
   const getPctClass = (val) => {
     if (val > 1) return 'bg-[#ff0000] dark:bg-red-700 text-white font-bold';
-    if (val >= 0.75) return 'bg-[#b7e1cd] dark:bg-emerald-900/50';
-    if (val >= 0.5) return 'bg-[#f1c232] dark:bg-yellow-900/50';
-    return 'bg-[#f4cccc] dark:bg-red-900/40';
+    if (val >= 0.75) return 'bg-[#b7e1cd] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-emerald-900/50 dark:to-emerald-900/50';
+    if (val >= 0.5) return 'bg-[#f1c232] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-yellow-900/50 dark:to-yellow-900/50';
+    return 'bg-[#f4cccc] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/40 dark:to-red-900/40';
   };
 
   const renderRows = (cat, bgColor, totalBg) => {

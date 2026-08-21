@@ -9,11 +9,11 @@ import DistanceSummaryModal from './modals/DistanceSummaryModal';
 export default function DistanceSummaryTab({ data, monthTotals, translate, localeCode }) {
   const defaultClass =
     'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
-  const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-violet-900/30`;
-  const greenHeaderClass = `${defaultClass} bg-green-200 dark:bg-green-900/40 font-bold`;
-  const orangeHeaderClass = `${defaultClass} bg-orange-200 dark:bg-orange-900/40 font-bold`;
+  const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30`;
+  const greenHeaderClass = `${defaultClass} bg-green-200 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-green-900/40 dark:to-green-900/40 font-bold`;
+  const orangeHeaderClass = `${defaultClass} bg-orange-200 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/40 dark:to-orange-900/40 font-bold`;
   const wrapVioletClass =
-    'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-normal break-words max-w-[120px] bg-violet-300 dark:bg-violet-900/30 font-bold';
+    'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-normal break-words max-w-[120px] bg-violet-300 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30 font-bold';
   const separatorClass = 'border-r-4 border-r-gray-400 dark:border-r-slate-500';
   const bodyCellClass =
     'border border-gray-300 dark:border-slate-700 px-4 py-2 text-center whitespace-nowrap';
@@ -52,11 +52,11 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
     const hasTypeDist = typeDist > 0;
     const isDry = title === 'Dry';
     const normalColorClass = isDry
-      ? 'bg-red-100 dark:bg-red-900/30'
-      : 'bg-blue-100 dark:bg-blue-900/30';
+      ? 'bg-red-100 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/30 dark:to-red-900/30'
+      : 'bg-blue-100 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/30 dark:to-blue-900/30';
     const hoverColorClass = isDry
-      ? `hover:bg-red-200 dark:hover:bg-red-900/50`
-      : `hover:bg-blue-200 dark:hover:bg-blue-900/50`;
+      ? `hover:bg-red-200 dark:hover:from-red-900/50 dark:hover:to-red-900/50`
+      : `hover:bg-blue-200 dark:hover:from-blue-900/50 dark:hover:to-blue-900/50`;
 
     return (
       <td
