@@ -12,6 +12,7 @@ export default function VehicleTypeFilter({
   onApply,
   onMasterTypesLoad,
   disabled = false,
+  className = 'w-full',
 }) {
   const [masterTypes, setMasterTypes] = useState([]);
 
@@ -54,7 +55,7 @@ export default function VehicleTypeFilter({
       onChange={onApply}
       getLabel={getLabel}
       disabled={isDisabled}
-      className="w-full xl:w-40"
+      className={className}
     />
   );
 }

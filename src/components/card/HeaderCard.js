@@ -54,7 +54,7 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
               >
                 <label
                   className={`block text-xs mb-1 ml-1 font-medium select-none ${
-                    item.hideLabel ? 'text-transparent -mt-3' : 'text-gray-400 dark:text-slate-400'
+                    item.hideLabel ? 'text-transparent ' : 'text-gray-400 dark:text-slate-400'
                   } `}
                 >
                   {item.label || 'Label'}

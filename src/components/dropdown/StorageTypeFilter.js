@@ -1,16 +1,14 @@
 'use client';
 
 import Dropdown from '@/components/Dropdown';
-import { useLanguage } from '@/context/LanguageContext';
 
 export default function StorageTypeFilter({
   selectedTypes = [],
   onApply,
   disabled = false,
-  className = 'w-full xl:w-40',
+  className = 'w-full',
+  t,
 }) {
-  const { t } = useLanguage();
-
   const handleSelect = (val) => {
     if (val === 'ALL') onApply(['DRY', 'FROZEN']);
     else if (val === 'DRY') onApply(['DRY']);

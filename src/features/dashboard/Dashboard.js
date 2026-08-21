@@ -353,38 +353,17 @@ export default function Dashboard({ driverData }) {
     isCardEmpty = !loading && noOngoingAndDone;
   }
 
-  const subtitle = (
-    <>
-      {t('dashboard.subtitle')}{' '}
-      <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
-    </>
-  );
-
-  const datePicker = (
-    <CustomDatePicker
-      selected={selectedDate}
-      onChange={handleDateChange}
-      isLoading={isDiagramTab ? isYearlyLoading : loading}
-      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-      showYearPicker={isDiagramTab}
-      className="custom-year-picker"
-      maxDate={isDiagramTab ? new Date() : tomorrowDate()}
-      disableSunday={!isDiagramTab}
-    />
-  );
-
-  const storageFilterComponent = (
-    <StorageTypeFilter
-      selectedTypes={storageFilter}
-      onApply={setStorageFilter}
-      disabled={isLoadingSelected}
-    />
-  );
-
   const headerItems = [
     {
       label: t('common.storage_type'),
-      component: storageFilterComponent,
+      component: (
+        <StorageTypeFilter
+          disabled={isLoadingSelected}
+          onApply={setStorageFilter}
+          selectedTypes={storageFilter}
+          t={t}
+        />
+      ),
       hideLabel: false,
     },
     {
@@ -402,7 +381,18 @@ export default function Dashboard({ driverData }) {
     },
     {
       label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
-      component: datePicker,
+      component: (
+        <CustomDatePicker
+          selected={selectedDate}
+          onChange={handleDateChange}
+          isLoading={isDiagramTab ? isYearlyLoading : loading}
+          dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
+          showYearPicker={isDiagramTab}
+          className="custom-year-picker"
+          maxDate={isDiagramTab ? new Date() : tomorrowDate()}
+          disableSunday={!isDiagramTab}
+        />
+      ),
       hideLabel: false,
     },
   ];
@@ -419,7 +409,16 @@ export default function Dashboard({ driverData }) {
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
+      <HeaderCard
+        title="Dashboard"
+        subtitle={
+          <>
+            {t('dashboard.subtitle')}{' '}
+            <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
+          </>
+        }
+        items={headerItems}
+      />
       <BodyCard
         tabs={cardTabs}
         activeTabId={activeTab}

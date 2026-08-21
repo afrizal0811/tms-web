@@ -261,9 +261,10 @@ export default function VehicleData() {
       hideLabel: false,
       component: (
         <StorageTypeFilter
-          selectedTypes={storageFilter}
-          onApply={setStorageFilter}
           disabled={isLoading || isDownloading}
+          onApply={setStorageFilter}
+          selectedTypes={storageFilter}
+          t={t}
         />
       ),
     },

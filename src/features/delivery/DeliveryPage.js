@@ -685,6 +685,181 @@ export default function DeliveryPage() {
         return 'Download Options';
     }
   };
+  const headerItems = [
+    {
+      label: t('common.delivery_date'),
+      component: (
+        <CustomDatePicker
+          id="estimasiDate"
+          isLoading={isLoading || isDownloading}
+          onChange={(d) => d && setSelectedDate(formatDateUniversal(d, 'YYYY-MM-DD'))}
+          selected={selectedDate ? new Date(selectedDate) : new Date()}
+          maxDate={tomorrowDate(false)}
+          className="w-full"
+        />
+      ),
+    },
+    {
+      label: t('common.storage_type'),
+      component: (
+        <StorageTypeFilter
+          disabled={isLoading || isDownloading}
+          onApply={setStorageFilter}
+          selectedTypes={storageFilter}
+          t={t}
+        />
+      ),
+    },
+    {
+      label: t('common.vehicle_type'),
+      component: (
+        <VehicleTypeFilter
+          data={Object.values(driverData)}
+          selectedType={typeFilter}
+          onApply={setTypeFilter}
+          onMasterTypesLoad={setMasterVehicleTypes}
+          disabled={isLoading || isDownloading}
+        />
+      ),
+    },
+    {
+      label: 'Filter',
+      component: (
+        <SearchBar
+          disabled={isLoading || isDownloading}
+          onChange={setSearchQuery}
+          placeholder={t('delivery.delivery_placeholder')}
+          value={searchQuery}
+          width="w-full xl:w-70"
+        />
+      ),
+    },
+    {
+      label: t('delivery.view'),
+      component: (
+        <div className="flex w-full items-center rounded-lg border border-slate-200 bg-slate-100 p-1 h-[42px] dark:border-slate-700 dark:bg-slate-800">
+          {[
+            { isDetail: false, label: t('delivery.view_summary') },
+            { isDetail: true, label: t('delivery.view_detail') },
+          ].map((opt) => {
+            const active = isDetailView === opt.isDetail;
+
+            return (
+              <button
+                key={opt.label}
+                type="button"
+                onClick={() => handleToggleView(opt.isDetail)}
+                disabled={isLoading || isDownloading}
+                className={`h-full flex-1 rounded-md px-4 text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${active ? ' bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-400' : 'cursor-pointer text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      ),
+    },
+    {
+      label: 'Export',
+      hideLabel: true,
+      component: (
+        <div className="w-full z-50 relative" ref={downloadDropdownRef}>
+          <Button
+            disabled={isLoading || isDownloading || isEmpty(filteredVehicleRoutes)}
+            isLoading={isDownloading}
+            onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
+            text={t('common.download')}
+          />
+          {isDownloadDropdownOpen && (
+            <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-100 py-1.5 w-max min-w-[260px] flex flex-col">
+              <div className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <button
+                  onClick={() => handleDownloadTrigger('routeTransaction')}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
+                >
+                  Route Transaction
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRouteSettingsOpen(!isRouteSettingsOpen);
+                  }}
+                  className="px-3 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-transform"
+                >
+                  <svg
+                    className="w-4 h-4 transition-transform duration-200"
+                    style={{
+                      transform: isRouteSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {isRouteSettingsOpen && (
+                <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5 animate-in slide-in-from-top-1 duration-200">
+                  <div className="flex flex-col gap-2 pr-3 py-1">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                          checked={isNoBun}
+                          onChange={(e) => handleToggleNoBun(e.target.checked)}
+                        />
+                        {t('delivery.no_bun')}
+                        <Information infoText={t('delivery.no_bun_info')} size="3.5" />
+                      </label>
+                      <button
+                        onClick={() => {
+                          setIsDownloadDropdownOpen(false);
+                          setIsBunModalOpen(true);
+                        }}
+                        className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
+                      >
+                        More
+                      </button>
+                    </div>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                        checked={isSplitMultitrip}
+                        onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
+                      />
+                      {t('delivery.spit_multitrip')}
+                      <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                    </label>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => handleDownloadTrigger('deliveryList')}
+                className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
+              >
+                Delivery List
+              </button>
+              <button
+                onClick={() => handleDownloadTrigger('deliveryForm')}
+                className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
+              >
+                Delivery Form
+              </button>
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   if (!isClient) return null;
 
@@ -698,176 +873,7 @@ export default function DeliveryPage() {
             <span className="font-semibold text-sky-600">{t('delivery.subtitle_highlight')}</span>
           </>
         }
-        items={[
-          {
-            label: 'Filter',
-            component: (
-              <SearchBar
-                disabled={isLoading || isDownloading}
-                onChange={setSearchQuery}
-                placeholder={t('delivery.delivery_placeholder')}
-                value={searchQuery}
-                width="w-full xs:w-40!"
-              />
-            ),
-          },
-          {
-            label: t('common.storage_type'),
-            component: (
-              <StorageTypeFilter
-                selectedTypes={storageFilter}
-                onApply={setStorageFilter}
-                disabled={isLoading || isDownloading}
-                className="w-full xl:w-30!"
-              />
-            ),
-          },
-          {
-            label: t('common.vehicle_type'),
-            component: (
-              <VehicleTypeFilter
-                data={Object.values(driverData)}
-                selectedType={typeFilter}
-                onApply={setTypeFilter}
-                onMasterTypesLoad={setMasterVehicleTypes}
-                disabled={isLoading || isDownloading}
-              />
-            ),
-          },
-          {
-            label: t('common.delivery_date'),
-            component: (
-              <CustomDatePicker
-                id="estimasiDate"
-                isLoading={isLoading || isDownloading}
-                onChange={(d) => d && setSelectedDate(formatDateUniversal(d, 'YYYY-MM-DD'))}
-                selected={selectedDate ? new Date(selectedDate) : new Date()}
-                maxDate={tomorrowDate(false)}
-                className="w-full xl:w-40!"
-              />
-            ),
-          },
-          {
-            label: t('delivery.view'),
-            component: (
-              <div className="flex items-center w-full xl:w-auto gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 h-[42px] dark:bg-slate-800 dark:border-slate-700">
-                {[
-                  { isDetail: false, label: t('delivery.view_summary') },
-                  { isDetail: true, label: t('delivery.view_detail') },
-                ].map((opt) => (
-                  <button
-                    key={opt.label}
-                    onClick={() => handleToggleView(opt.isDetail)}
-                    disabled={isLoading || isDownloading}
-                    className={`flex-1 xl:flex-none px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${isDetailView === opt.isDetail ? 'bg-white shadow-sm border text-sky-700 dark:bg-sky-600 dark:border-sky-700 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer'} disabled:opacity-50`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            ),
-          },
-          {
-            label: 'Export',
-            hideLabel: true,
-            component: (
-              <div className="w-full z-50 relative" ref={downloadDropdownRef}>
-                <Button
-                  disabled={isLoading || isDownloading || isEmpty(filteredVehicleRoutes)}
-                  isLoading={isDownloading}
-                  onClick={() => setIsDownloadDropdownOpen((prev) => !prev)}
-                  text={t('common.download')}
-                />
-                {isDownloadDropdownOpen && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-700 rounded-md shadow-xl border border-gray-200 dark:border-slate-600 z-100 py-1.5 w-max min-w-[260px] flex flex-col">
-                    <div className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <button
-                        onClick={() => handleDownloadTrigger('routeTransaction')}
-                        className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
-                      >
-                        Route Transaction
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsRouteSettingsOpen(!isRouteSettingsOpen);
-                        }}
-                        className="px-3 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-transform"
-                      >
-                        <svg
-                          className="w-4 h-4 transition-transform duration-200"
-                          style={{
-                            transform: isRouteSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                          }}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {isRouteSettingsOpen && (
-                      <div className="ml-3 pl-3 border-l-2 border-slate-200 dark:border-slate-600 mb-1.5 animate-in slide-in-from-top-1 duration-200">
-                        <div className="flex flex-col gap-2 pr-3 py-1">
-                          <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
-                                checked={isNoBun}
-                                onChange={(e) => handleToggleNoBun(e.target.checked)}
-                              />
-                              {t('delivery.no_bun')}
-                              <Information infoText={t('delivery.no_bun_info')} size="3.5" />
-                            </label>
-                            <button
-                              onClick={() => {
-                                setIsDownloadDropdownOpen(false);
-                                setIsBunModalOpen(true);
-                              }}
-                              className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
-                            >
-                              More
-                            </button>
-                          </div>
-                          <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
-                              checked={isSplitMultitrip}
-                              onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
-                            />
-                            {t('delivery.spit_multitrip')}
-                            <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleDownloadTrigger('deliveryList')}
-                      className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
-                    >
-                      Delivery List
-                    </button>
-                    <button
-                      onClick={() => handleDownloadTrigger('deliveryForm')}
-                      className="w-full text-left px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors border-t border-gray-100 dark:border-slate-600"
-                    >
-                      Delivery Form
-                    </button>
-                  </div>
-                )}
-              </div>
-            ),
-          },
-        ]}
+        items={headerItems}
       />
 
       <BodyCard
