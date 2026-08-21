@@ -28,18 +28,20 @@ export default function DistanceSummaryModal({
     {
       key: 'visit',
       label: translate('summary.tabs.dist_summary.modal.total_visit'),
-      render: (item) => item.visit || '-',
+      render: (item) => (item.isMissing ? '-' : item.visit || '0'),
     },
     {
       key: 'distance',
       label: translate('common.distance'),
       render: (item) =>
-        item.distance
-          ? item.distance.toLocaleString(localeCode, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })
-          : '0',
+        item.isMissing
+          ? '-'
+          : item.distance
+            ? item.distance.toLocaleString(localeCode, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : '0',
     },
   ];
 
@@ -65,14 +67,16 @@ export default function DistanceSummaryModal({
                   key={idx}
                   className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
+                  <td
+                    className={`px-4 py-2 text-center ${item.isMissing ? 'text-red-500 font-bold' : 'text-slate-700 dark:text-slate-300'}`}
+                  >
                     {idx + 1}
                   </td>
 
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className="px-4 py-2 text-center text-slate-700 dark:text-slate-300"
+                      className={`px-4 py-2 text-center ${item.isMissing ? 'text-red-500 font-bold' : 'text-slate-700 dark:text-slate-300'}`}
                     >
                       {col.render(item)}
                     </td>

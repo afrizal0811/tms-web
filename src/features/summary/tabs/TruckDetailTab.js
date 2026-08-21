@@ -155,7 +155,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
       getStyle: (m) => {
         if (!m || m.outlets <= 0) return {};
         const hex = heatMap(percentage(m.delivered, m.outlets));
-        return hex ? { backgroundColor: `#${hex}` } : {};
+        return hex ? { backgroundColor: `#${hex}`, color: '#334155' } : {};
       },
       text: translate('summary.tabs.truck_detail.delivered'),
       hasManualTooltip: false,
@@ -252,25 +252,48 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
               {dateKeys.map((d, i) => {
                 const { isHoliday } = checkHolidayStatus(d.str);
                 const metricColor = isHoliday ? holidayColor : titleColor;
+
+                const hasFallback = driverEmails.some(
+                  (email) => dataMatrix[d.str]?.[email]?.isDistFallback
+                );
+
                 return (
                   <Fragment key={`${d.day}-${i}-header`}>
                     {displayData.map(({ key, border, text }) => {
                       const isTotalDelivery = key === 'total_delivery';
-                      const totalDeliveryTooltip = isTotalDelivery
-                        ? translate('summary.tabs.truck_detail.tooltip.pct_info')
-                        : '';
-                      const totalDeliveryClass = isTotalDelivery
-                        ? 'cursor-help border-b-2 border-dotted pb-0.5'
-                        : '';
+                      const isDistance = key === 'distance';
+
+                      let tooltipText = '';
+                      let showDotted = false;
+
+                      if (!isHoliday) {
+                        if (isTotalDelivery) {
+                          tooltipText = translate('summary.tabs.truck_detail.tooltip.pct_info');
+                          showDotted = true;
+                        } else if (isDistance && hasFallback) {
+                          tooltipText =
+                            'Sebagian/seluruh jarak menggunakan data Task (Routing kosong)';
+                          showDotted = true;
+                        }
+                      }
+
                       return (
-                        <Tooltip tooltipContent={totalDeliveryTooltip} key={key}>
+                        <Tooltip tooltipContent={tooltipText} key={key}>
                           <th
                             key={key}
                             className={`${thMetricClass} ${metricColor} ${
                               border ? 'border-l-2 border-l-gray-400 dark:border-l-slate-600' : ''
                             }`}
                           >
-                            <span className={totalDeliveryClass}>{text}</span>
+                            <span
+                              className={
+                                showDotted
+                                  ? 'cursor-help border-b-2 border-dotted border-gray-400 dark:border-slate-500 pb-0.5'
+                                  : ''
+                              }
+                            >
+                              {text}
+                            </span>
                           </th>
                         </Tooltip>
                       );
@@ -329,11 +352,11 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                     let cellBg = isHoliday ? holidayColor : '';
                     const emptyBg = isHoliday ? holidayColor : 'bg-gray-50 dark:bg-slate-800';
                     if (metrics && outletData > 0) {
-                      if (metrics.hasManualError && metrics.hasBedaHariError)
+                      if (metrics.hasManualError && metrics.hasDateDiffError)
                         cellBg = errorColor.find((item) => item.name === 'indigo')?.colors;
                       else if (metrics.hasManualError)
                         cellBg = errorColor.find((item) => item.name === 'blue')?.colors;
-                      else if (metrics.hasBedaHariError)
+                      else if (metrics.hasDateDiffError)
                         cellBg = errorColor.find((item) => item.name === 'magenta')?.colors;
                     }
 
@@ -490,7 +513,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
               })}
             </div>
             <h4 className="text-xs font-bold mb-2 text-slate-700 dark:text-slate-200">
-              {translate('summary.tabs.truck_detail.color_exp')}
+              {translate('common.color_exp')}
             </h4>
           </div>
           <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">

@@ -233,7 +233,7 @@ export function buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t
     ws,
     [
       [],
-      [t('excel.reports.truck_detail.color_exp')],
+      [t('common.color_exp')],
       ['', t('excel.reports.truck_detail.orange')],
       ['', t('excel.reports.truck_detail.blue')],
       ['', t('excel.reports.truck_detail.magenta')],
@@ -245,7 +245,7 @@ export function buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t
 
   ws[XLSX.utils.encode_cell({ r: dataCount + 1, c: 0 })] = {
     t: 's',
-    v: t('excel.reports.truck_detail.color_exp'),
+    v: t('common.color_exp'),
     s: { font: { bold: true, underline: true } },
   };
   ws[XLSX.utils.encode_cell({ r: dataCount + 2, c: 0 })] = {

@@ -1,6 +1,7 @@
 // File: src/lib/reportGenerators/rangkumanReport.js
 'use client';
 
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { getLocalStorage } from '../../localStorageHandler';
@@ -18,7 +19,6 @@ import {
   generateTruckDetailSheet,
   generateTruckUsageSheet,
 } from './sheets';
-
 export async function generateSummaryDataPreview(
   driverData,
   taskData,
@@ -27,7 +27,8 @@ export async function generateSummaryDataPreview(
   startDateStr,
   endDateStr,
   hubId,
-  localeCode
+  localeCode,
+  activeHubCoords
 ) {
   const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
@@ -52,7 +53,9 @@ export async function generateSummaryDataPreview(
     resultsData,
     taskData,
     startDateStr,
-    endDateStr
+    endDateStr,
+    localeCode,
+    activeHubCoords
   );
 
   const timeDriverRaw = calculateTimeDriverData(
@@ -96,9 +99,12 @@ export async function generateSummaryWorkbook(
   translate,
   localeCode,
   hasPendingGR,
-  pendingDetails // <-- Parameter Baru
+  pendingDetails
 ) {
   const wb = XLSX.utils.book_new();
+  const hubsList = getCachedHubs() || [];
+  const activeHub = hubsList.find((h) => h._id === hubId || h.id === hubId);
+  activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
   generateRoutingTimeSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
   generateTaskSummarySheet(
     wb,
@@ -140,7 +146,7 @@ export async function generateSummaryWorkbook(
     startDateStr,
     endDateStr,
     translate,
-    localeCode
+    localeCode,
   );
 
   await generateTruckUsageSheet(

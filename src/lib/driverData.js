@@ -120,33 +120,49 @@ export async function getDriverData(selectedLocation) {
   if (!driversCache[selectedLocation]) {
     driversCache[selectedLocation] = (async () => {
       try {
-        const driversFromDB = await getDrivers(selectedLocation);
-        const parsed = driversFromDB.map((d) => ({
-          _id: d.id,
-          email: d.email,
-          name: d.name,
-          plat: d.plat,
-          type: d.type,
-          _rawType: d.type,
-          tags: d.tags,
-          minWeight: d.minWeight,
-          maxWeight: d.maxWeight,
-          minVolume: d.minVolume,
-          maxVolume: d.maxVolume,
-          storage: d.storage,
-          oddEven: d.oddEven,
-          speed: d.speed,
-          costFactor: d.costFactor,
-          workingTime: {
-            startTime: d.startTime,
-            endTime: d.endTime,
-            multiday: d.multiday,
-          },
-          breakTime: {
-            startTime: d.startBreakTime,
-            endTime: d.endBreakTime,
-          },
-        }));
+        const [driversFromDB, mappingsDB] = await Promise.all([
+          getDrivers(selectedLocation),
+          getVehicleMappings(), 
+        ]);
+
+        const mappingsObj = mappingsDB.reduce((acc, curr) => {
+          acc[curr.plat] = curr.mappedType;
+          return acc;
+        }, {});
+
+        const parsed = driversFromDB.map((d) => {
+          let mappedTypeStr = d.type;
+          if (d.plat && mappingsObj[d.plat]) {
+            mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
+          }
+
+          return {
+            _id: d.id,
+            email: d.email,
+            name: d.name,
+            plat: d.plat,
+            type: mappedTypeStr,
+            _rawType: d.type,
+            tags: d.tags,
+            minWeight: d.minWeight,
+            maxWeight: d.maxWeight,
+            minVolume: d.minVolume,
+            maxVolume: d.maxVolume,
+            storage: d.storage,
+            oddEven: d.oddEven,
+            speed: d.speed,
+            costFactor: d.costFactor,
+            workingTime: {
+              startTime: d.startTime,
+              endTime: d.endTime,
+              multiday: d.multiday,
+            },
+            breakTime: {
+              startTime: d.startBreakTime,
+              endTime: d.endBreakTime,
+            },
+          };
+        });
 
         return syncConditionalTags(parsed);
       } catch (err) {

@@ -483,3 +483,47 @@ export function sortRows(rows, platKey, driverKey) {
     return (a[driverKey] || '').localeCompare(b[driverKey] || '');
   });
 }
+
+// Hitung manual jarak customer akhir ke hub
+export function calculateReturnHubDistance(taskList, hubCoordsStr) {
+  if (!hubCoordsStr || !taskList || taskList.length === 0) return 0;
+
+  const sortedTasks = [...taskList].sort((a, b) => {
+    const roA = a.roSequence ?? a.routePlannedOrder ?? 9999;
+    const roB = b.roSequence ?? b.routePlannedOrder ?? 9999;
+    return roA - roB;
+  });
+
+  const lastTask = sortedTasks[sortedTasks.length - 1];
+
+  const targetCoord =
+    lastTask.expectedCoordinate ||
+    lastTask.expectedCoord ||
+    lastTask.doneCoordinate ||
+    lastTask.doneCoord ||
+    null;
+
+  if (targetCoord) {
+    const rawDistance = getDistance(targetCoord, hubCoordsStr);
+    if (rawDistance !== null) {
+      return Math.round(rawDistance * 1.3);
+    }
+  }
+
+  return 0;
+}
+
+export const getBaseVehicleType = (typeStr, knownTypes = []) => {
+  if (!typeStr) return '';
+  const upperStr = typeStr.toUpperCase();
+  const sortedKnown = [...knownTypes].sort((a, b) => b.length - a.length);
+  const match = sortedKnown.find((k) => upperStr.includes(k.toUpperCase()));
+  if (match) return match.toUpperCase();
+
+  const parts = upperStr.split('-');
+  const typeParts = parts.filter((p) => !['FROZEN', 'DRY'].includes(p));
+  if (typeParts.length === 0) return typeStr;
+  let base = typeParts[0];
+  if (typeParts.length > 1 && typeParts[1] === 'LONG') base = `${base}-LONG`;
+  return base;
+};

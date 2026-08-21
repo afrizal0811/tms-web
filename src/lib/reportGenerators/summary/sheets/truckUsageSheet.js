@@ -38,6 +38,19 @@ function getVehicleType(rawTag, vehiclePlate, mappingsObj, vehicleTypes) {
   return specificType;
 }
 
+function buildUsageStat(tms, manual, vehicleCount, workingDays) {
+  const V = vehicleCount || 0;
+  const TV = V * workingDays;
+  const TVU = tms + manual;
+  const PctTVU = TV > 0 ? TVU / TV : 0;
+  const PctTMS = TV > 0 ? tms / TV : 0;
+  const PctManual = TV > 0 ? manual / TV : 0;
+  const VU = Math.ceil(PctTVU * V);
+  const IV = Math.max(0, V - VU);
+  const PctIV = V > 0 ? IV / V : 0;
+  return { TMS: tms, Manual: manual, TVU, TV, PctTVU, PctTMS, PctManual, PctIV, V, VU, IV };
+}
+
 export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes) {
   const summary = { Dry: { types: {}, total: {} }, Frozen: { types: {}, total: {} }, OTV: {} };
 
@@ -60,27 +73,9 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
         totalManual += dateMap[d.str][`${cat}Manual`][type]?.count || 0;
       });
 
-      const TVU = totalTMS + totalManual;
       const V_Type = hubMasterData?.[cat]?.[type] || 0;
-      const TV = V_Type * workingDays;
-      const PctTVU = TV > 0 ? TVU / TV : 0;
-      const VU = Math.ceil(PctTVU * V_Type);
-      const IV = Math.max(0, V_Type - VU);
-      const PctIV = V_Type > 0 ? IV / V_Type : 0;
 
-      summary[cat].types[type] = {
-        TMS: totalTMS,
-        Manual: totalManual,
-        TVU,
-        TV,
-        PctTVU,
-        PctTMS: TV > 0 ? totalTMS / TV : 0,
-        PctManual: TV > 0 ? totalManual / TV : 0,
-        PctIV,
-        V: V_Type,
-        VU,
-        IV,
-      };
+      summary[cat].types[type] = buildUsageStat(totalTMS, totalManual, V_Type, workingDays);
       grpTMS += totalTMS;
       grpManual += totalManual;
     });
@@ -95,28 +90,8 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
     const netTMS = grpTMS - interbranchTMS;
     const netManual = grpManual - interbranchManual;
     const V_Total = hubMasterData?.[cat]?.Total || 0;
-    const TV_Total = V_Total * workingDays;
-    const TVU_Total = netTMS + netManual;
-    const PctTVU_Total = TV_Total > 0 ? TVU_Total / TV_Total : 0;
-    const PctTMS_Total = TV_Total > 0 ? netTMS / TV_Total : 0;
-    const PctManual_Total = TV_Total > 0 ? netManual / TV_Total : 0;
-    const VU_Total = Math.ceil(PctTVU_Total * V_Total);
-    const IV_Total = Math.max(0, V_Total - VU_Total);
-    const PctIV_Total = V_Total > 0 ? IV_Total / V_Total : 0;
 
-    summary[cat].total = {
-      TMS: netTMS,
-      Manual: netManual,
-      TVU: TVU_Total,
-      TV: TV_Total,
-      PctTVU: PctTVU_Total,
-      PctTMS: PctTMS_Total,
-      PctManual: PctManual_Total,
-      PctIV: PctIV_Total,
-      V: V_Total,
-      VU: VU_Total,
-      IV: IV_Total,
-    };
+    summary[cat].total = buildUsageStat(netTMS, netManual, V_Total, workingDays);
   });
 
   let otvTMS = 0;
@@ -127,30 +102,23 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
   });
 
   const V_OTV = (hubMasterData?.Dry?.Total || 0) + (hubMasterData?.Frozen?.Total || 0);
-  const TV_OTV = V_OTV * workingDays;
-  const TVU_OTV = otvTMS + otvManual;
-  const PctTVU_OTV = TV_OTV > 0 ? TVU_OTV / TV_OTV : 0;
-  const PctTMS_OTV = TV_OTV > 0 ? otvTMS / TV_OTV : 0;
-  const PctManual_OTV = TV_OTV > 0 ? otvManual / TV_OTV : 0;
-  const VU_OTV = Math.ceil(PctTVU_OTV * V_OTV);
-  const IV_OTV = Math.max(0, V_OTV - VU_OTV);
-  const PctIV_OTV = V_OTV > 0 ? IV_OTV / V_OTV : 0;
-
-  summary.OTV = {
-    TMS: otvTMS,
-    Manual: otvManual,
-    TVU: TVU_OTV,
-    TV: TV_OTV,
-    PctTVU: PctTVU_OTV,
-    PctTMS: PctTMS_OTV,
-    PctManual: PctManual_OTV,
-    PctIV: PctIV_OTV,
-    V: V_OTV,
-    VU: VU_OTV,
-    IV: IV_OTV,
-  };
+  summary.OTV = buildUsageStat(otvTMS, otvManual, V_OTV, workingDays);
 
   return summary;
+}
+
+function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
+  const platMatch = masterDriversDB.find(
+    (d) => d.plat && normalizePlate(d.plat) === canonicalPlate
+  );
+  if (!platMatch) return undefined;
+  return {
+    name: platMatch.name,
+    storage: (platMatch.storage || 'DRY').toUpperCase(),
+    masterTag: getStorageType(platMatch.tags || platMatch.vehicleTags || platMatch.userTags),
+    rawType: platMatch.type,
+    plat: platMatch.plat,
+  };
 }
 
 async function getTruckUsageData(hubId, startDate, endDate) {
@@ -176,7 +144,7 @@ export async function calculateTruckUsageData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
+      const d = formatUTC7(t.startTime, 'YYYY-MM-DD');
       if (d) taskPresence[d] = true;
     });
   }
@@ -376,91 +344,159 @@ export async function calculateTruckUsageData(
 
     resultsData.forEach((res) => {
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
-      if (!res.result?.routing) return;
-
       const dateKey = getDeliveryDateFromRouting(res.createdTime);
-      if (!dateKey || !dateMap[dateKey]) return;
-
-      if (res.name) {
+      if (dateKey && dateMap[dateKey] && res.name) {
         dateMap[dateKey].routingNames.add(res.name);
       }
+    });
 
-      if (!usedVehiclesPerDay.has(dateKey)) {
-        usedVehiclesPerDay.set(dateKey, new Map());
-      }
-      const dailyVehicles = usedVehiclesPerDay.get(dateKey);
+    if (taskData && Array.isArray(taskData)) {
+      taskData.forEach((task) => {
+        const dateKey = formatUTC7(task.startTime, 'YYYY-MM-DD');
+        if (!dateKey || !dateMap[dateKey]) return;
 
-      res.result.routing.forEach((route) => {
-        const validTrips = (route.trips || []).filter((t) => !t.isHub);
-        if (validTrips.length === 0) return;
+        if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
+        const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
-        const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-        const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
+        let rawEmail = null;
+        if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
+        else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+        else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
+        else if (task.doneBy) rawEmail = task.doneBy;
 
+        const rawPlate =
+          task.vehicleName ||
+          task.assignedVehicle?.name ||
+          task.assignedVehicle?.plat ||
+          task.plat ||
+          '';
         const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 
         const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        const canonicalPlate = normalizePlate(strictBasePlate) || `unknown-${Math.random()}`;
+        const canonicalPlate =
+          normalizePlate(strictBasePlate) || rawEmail || `unknown-${Math.random()}`;
 
         let driverInfo = driverMapHash.get(rawEmail);
         if (!driverInfo && rawPlate) {
-          const platMatch = masterDriversDB.find(
-            (d) => d.plat && normalizePlate(d.plat) === canonicalPlate
-          );
-          if (platMatch) {
-            const mTag = getStorageType(
-              platMatch.tags || platMatch.vehicleTags || platMatch.userTags
-            );
-            driverInfo = {
-              name: platMatch.name,
-              storage: (platMatch.storage || 'DRY').toUpperCase(),
-              masterTag: mTag,
-              rawType: platMatch.type,
-            };
-          }
+          const found = findDriverInfoByPlate(masterDriversDB, canonicalPlate);
+          if (found) driverInfo = found;
         }
 
-        const routingTag =
-          route.vehicleTags && route.vehicleTags.length > 0 ? String(route.vehicleTags[0]) : '';
-        const firstTag = driverInfo && driverInfo.masterTag ? driverInfo.masterTag : routingTag;
-
-        let isFrozen = firstTag === 'Frozen';
+        const firstTag = driverInfo?.masterTag || task.typeStorage || '';
+        let isFrozen =
+          firstTag === 'Frozen' || (task.typeStorage || '').toUpperCase().includes('FROZEN');
         if (
           driverInfo &&
           ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
             (driverInfo.plat || '').toUpperCase().includes('FRZ') ||
             (driverInfo.rawType || '').toUpperCase().includes('FRZ'))
-        ) {
+        )
           isFrozen = true;
-        }
-
-        const type = isFrozen ? 'Frozen' : 'Dry';
 
         if (!dailyVehicles.has(canonicalPlate)) {
           dailyVehicles.set(canonicalPlate, {
-            storageType: type,
+            storageType: isFrozen ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || firstTag,
-            plate: strictBasePlate,
-            driverName: route.assignee || driverInfo?.name || '-',
+            plate: strictBasePlate || driverInfo?.plat || '-',
+            driverName: driverInfo?.name || rawEmail || '-',
           });
         }
       });
-    });
+    }
+
+    if (taskData && Array.isArray(taskData)) {
+      taskData.forEach((task) => {
+        const dateKey = formatUTC7(task.startTime, 'YYYY-MM-DD');
+        if (!dateKey || !dateMap[dateKey]) return;
+        if (usedVehiclesPerDay.has(dateKey) && usedVehiclesPerDay.get(dateKey).size > 0) return;
+
+        if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
+        const dailyVehicles = usedVehiclesPerDay.get(dateKey);
+
+        let rawEmail = null;
+        if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
+        else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+        else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
+        else if (task.doneBy) rawEmail = task.doneBy;
+
+        const emailClean = (rawEmail || '').toLowerCase().trim();
+        const rawPlate =
+          task.vehicleName ||
+          task.assignedVehicle?.name ||
+          task.assignedVehicle?.plat ||
+          task.plat ||
+          '';
+        const rawCanonical = normalizePlate(rawPlate);
+        if (conditionalPlates.has(rawCanonical)) return;
+
+        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+        let driverInfo = driverMapHash.get(emailClean);
+
+        let plateForCanonical = strictBasePlate;
+        if (!plateForCanonical && driverInfo && driverInfo.plat) {
+          plateForCanonical = driverInfo.plat;
+        }
+
+        const canonicalPlate =
+          normalizePlate(plateForCanonical) || emailClean || `unknown-task-${Math.random()}`;
+
+        if (!driverInfo && rawPlate) {
+          const found = findDriverInfoByPlate(masterDriversDB, canonicalPlate);
+          if (found) driverInfo = found;
+        }
+
+        const firstTag = driverInfo?.masterTag || task.typeStorage || '';
+        let isFrozen =
+          firstTag === 'Frozen' || (task.typeStorage || '').toUpperCase().includes('FROZEN');
+        if (
+          driverInfo &&
+          ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
+            (driverInfo.rawType || '').toUpperCase().includes('FRZ'))
+        )
+          isFrozen = true;
+
+        if (!dailyVehicles.has(canonicalPlate)) {
+          dailyVehicles.set(canonicalPlate, {
+            storageType: isFrozen ? 'Frozen' : 'Dry',
+            firstTag: driverInfo?.rawType || firstTag,
+            plate: strictBasePlate || driverInfo?.plat || '-',
+            driverName: driverInfo?.name || emailClean || '-',
+          });
+        } else {
+          const existing = dailyVehicles.get(canonicalPlate);
+          if (!existing.plate || existing.plate === '-') {
+            existing.plate = strictBasePlate || driverInfo?.plat || '-';
+          }
+          if (!existing.driverName || existing.driverName === '-') {
+            existing.driverName = driverInfo?.name || emailClean || '-';
+          }
+        }
+      });
+    }
 
     usedVehiclesPerDay.forEach((dailyVehicles, dateKey) => {
       dailyVehicles.forEach((vh) => {
         const type = getVehicleType(vh.firstTag, vh.plate, mappingsObj, vehicleTypes);
         const storage = vh.storageType;
         if (dateMap[dateKey][storage][type] !== undefined) {
-          dateMap[dateKey][storage][type]++;
-          dateMap[dateKey][`${storage}Total`]++;
-          dateMap[dateKey].OTV++;
-          dateMap[dateKey][storage][`${type}_details`].push({
-            plate: vh.plate,
-            driver: vh.driverName,
-            type: type,
-          });
+          const detailsList = dateMap[dateKey][storage][`${type}_details`];
+          const isExist = detailsList.some(
+            (d) =>
+              (d.plate || '').toLowerCase().trim() === (vh.plate || '').toLowerCase().trim() &&
+              (d.driver || '').toLowerCase().trim() === (vh.driverName || '').toLowerCase().trim()
+          );
+
+          if (!isExist) {
+            dateMap[dateKey][storage][type]++;
+            dateMap[dateKey][`${storage}Total`]++;
+            dateMap[dateKey].OTV++;
+            detailsList.push({
+              plate: vh.plate,
+              driver: vh.driverName,
+              type: type,
+            });
+          }
         }
       });
     });

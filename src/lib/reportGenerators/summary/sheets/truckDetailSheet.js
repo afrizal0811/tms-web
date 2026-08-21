@@ -1,7 +1,9 @@
 import {
+  calculateReturnHubDistance,
   formatDateUniversal,
   formatMinutesToHHMM,
   formatUTC7,
+  getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
   heatMap,
@@ -52,7 +54,8 @@ export function calculateTruckDetailData(
   allTasks,
   startDateStr,
   endDateStr,
-  localeCode
+  localeCode,
+  activeHubCoords
 ) {
   const driverMap = new Map();
   const driverEmails = [];
@@ -126,9 +129,11 @@ export function calculateTruckDetailData(
               dataMatrix[dateKey][email] = {
                 delivered: 0,
                 dist: 0,
+                taskDist: 0,
                 duration: 0,
-                hasBedaHariError: false,
+                hasDateDiffError: false,
                 hasManualError: false,
+                isDistFallback: false,
                 maxWeight: driverMasterInfo?.maxWeight || route.vehicleMaxWeight || 0,
                 maxVolume: driverMasterInfo?.maxVolume || route.vehicleMaxVolume || 0,
                 outlets: 0,
@@ -144,7 +149,8 @@ export function calculateTruckDetailData(
 
             let manualTravel = 0,
               manualVisit = 0,
-              manualWait = 0;
+              manualWait = 0,
+              manualDistance = 0;
             if (Array.isArray(route.trips)) {
               const hubTrips = route.trips.filter((t) => t.isHub);
               manualWait = hubTrips.length
@@ -157,18 +163,17 @@ export function calculateTruckDetailData(
                   manualWait += trip.waitingTime || 0;
                 }
                 manualTravel += trip.travelTime || 0;
+                manualDistance += Number(trip.distance) || 0;
               });
             }
             const manualSum = manualTravel + manualVisit + manualWait;
             let durationVal = manualSum || Number(route.totalSpentTime) || 0;
-            let manualD = 0;
-
-            let distVal = manualD || Number(route.totalDistance) || 0;
+            let distVal = manualDistance || Number(route.totalDistance) || 0;
 
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
             entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
-            entry.dist = Math.max(entry.dist, distVal);
             entry.duration = Math.max(entry.duration, durationVal);
+            entry.dist = Math.max(entry.dist, distVal);
           });
         }
       }
@@ -214,10 +219,12 @@ export function calculateTruckDetailData(
         dataMatrix[dateKey][email] = {
           delivered: 0,
           dist: 0,
+          taskDist: 0,
           duration: 0,
-          hasBedaHariError: false,
+          hasDateDiffError: false,
           hasManualError: false,
           hasSplitTask: false,
+          isDistFallback: false,
           maxVolume: masterDriver?.maxVolume || 0,
           maxWeight: masterDriver?.maxWeight || 0,
           outlets: 0,
@@ -268,14 +275,16 @@ export function calculateTruckDetailData(
       }
       const taskWeight = Math.abs(Number(task.weightKg || task.weight)) || 0;
       const taskVolume = Math.abs(Number(task.volumeCbm || task.volume)) || 0;
+      const taskDist = Number(task.distance) || 0;
 
       entry.weight += taskWeight;
       entry.volume += taskVolume;
+      entry.taskDist += taskDist;
       if (!isManual) {
         entry.realWeight += taskWeight;
         entry.realVolume += taskVolume;
       }
-      if (isDateDiff) entry.hasBedaHariError = true;
+      if (isDateDiff) entry.hasDateDiffError = true;
 
       const isGR = flow.toUpperCase().includes('GR');
       let arrivalSource;
@@ -320,6 +329,16 @@ export function calculateTruckDetailData(
     }
   });
 
+  Object.keys(dataMatrix).forEach((dateKey) => {
+    Object.keys(dataMatrix[dateKey]).forEach((email) => {
+      const entry = dataMatrix[dateKey][email];
+      if (entry && (!entry.dist || entry.dist === 0) && entry.taskDist > 0) {
+        entry.dist = entry.taskDist;
+        entry.isDistFallback = true;
+      }
+    });
+  });
+
   const LOOKBACK_LIMIT = 3;
 
   dateKeys.forEach(({ str: currDateKey }) => {
@@ -328,7 +347,7 @@ export function calculateTruckDetailData(
       if (!currData) return;
 
       const hasTasks = currData.outlets > 0;
-      const hasRouting = currData.dist > 0 || currData.weight > 0 || currData.volume > 0;
+      const hasRouting = currData.duration > 0 || currData.maxWeight > 0 || currData.maxVolume > 0;
 
       if (hasTasks && !hasRouting) {
         let foundRouting = false;
@@ -345,6 +364,7 @@ export function calculateTruckDetailData(
             const prevHasTasks = (prevData.outlets || 0) > 0;
 
             if (prevHasRouting && !prevHasTasks) {
+              currData.dist = prevData.dist;
               currData.weight = prevData.weight;
               currData.realWeight = prevData.realWeight;
               currData.maxWeight = prevData.maxWeight;
@@ -353,7 +373,7 @@ export function calculateTruckDetailData(
               currData.maxVolume = prevData.maxVolume;
               currData.dist = prevData.dist;
               currData.duration = prevData.duration;
-
+              prevData.dist = 0;
               prevData.weight = 0;
               prevData.realWeight = 0;
               prevData.maxWeight = 0;
@@ -380,7 +400,7 @@ export function calculateTruckDetailData(
           currData.delivered = 0;
           currData.taskList = [];
           currData.hasManualError = false;
-          currData.hasBedaHariError = false;
+          currData.hasDateDiffError = false;
           currData.hasSplitTask = false;
         }
       }
@@ -415,6 +435,14 @@ export function calculateTruckDetailData(
           if (roA !== roB) return roA - roB;
           return (a.realSequence || 0) - (b.realSequence || 0);
         });
+
+        if (activeHubCoords && entry.taskList.length > 0) {
+          const returnHubDistanceMeters = calculateReturnHubDistance(
+            entry.taskList,
+            activeHubCoords
+          );
+          entry.taskDist += returnHubDistanceMeters;
+        }
       }
     });
   });
@@ -447,7 +475,8 @@ export function generateTruckDetailSheet(
   startDateStr,
   endDateStr,
   translate,
-  localeCode
+  localeCode,
+  activeHubCoords
 ) {
   const { driverMap, driverEmails, dateKeys, dataMatrix } = calculateTruckDetailData(
     driverData,
@@ -455,7 +484,8 @@ export function generateTruckDetailSheet(
     allTasks,
     startDateStr,
     endDateStr,
-    localeCode
+    localeCode,
+    activeHubCoords
   );
 
   const isDayEmpty = (dateStr) => {
@@ -497,7 +527,7 @@ export function generateTruckDetailSheet(
   const excelData = [row1, row2];
   driverEmails.forEach((email, rowIndex) => {
     const driver = driverMap.get(email);
-    const row = [driver.type, driver.plat, driver.name];
+    const row = [driver.type, getBasePlate(driver.plat), driver.name];
     dateKeys.forEach((d) => {
       const metrics = dataMatrix[d.str][email];
       const isSun = new Date(d.str).getDay() === 0;
@@ -530,7 +560,7 @@ export function generateTruckDetailSheet(
 
   excelData.push([]);
   const legendStartRow = excelData.length;
-  excelData.push([translate('summary.tabs.truck_detail.color_exp')]);
+  excelData.push([translate('common.color_exp')]);
   excelData.push(['', translate('summary.tabs.truck_detail.orange')]);
   excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
   excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
@@ -648,10 +678,10 @@ export function generateTruckDetailSheet(
 
               if (metrics && metrics.outlets > 0) {
                 let errStyle = null;
-                if (metrics.hasManualError && metrics.hasBedaHariError)
+                if (metrics.hasManualError && metrics.hasDateDiffError)
                   errStyle = ERROR_STYLES.both;
                 else if (metrics.hasManualError) errStyle = ERROR_STYLES.manual;
-                else if (metrics.hasBedaHariError) errStyle = ERROR_STYLES.date;
+                else if (metrics.hasDateDiffError) errStyle = ERROR_STYLES.date;
                 if (errStyle) {
                   cellFill = errStyle.fill;
                   currentFontStyle = errStyle.font;

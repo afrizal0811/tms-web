@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
-import LocationSwitcher from './LocationSwitcher';
+import { LocationSwitcher } from '../dropdown/LocationDropdown';
 
 function MobileNavLink({ href, children, target = '', rel = '' }) {
   const pathname = usePathname();
@@ -200,10 +200,7 @@ export default function MobileMenu({
                     </span>
                   </div>
                 </div>
-
-                <div className="shrink-0 w-32">
-                  <LocationSwitcher />
-                </div>
+                <LocationSwitcher />
               </div>
               <Divider />
               <MobileNavGroup

@@ -72,16 +72,25 @@ export default function TruckUsageModal({
   const tmsDetailsList = useMemo(() => {
     if (!data?.isTms) return [];
 
-    let details = (data.tmsDetails || []).map((vh) => {
-      const emailToMatch = (vh.driver || '').toLowerCase();
-      const matchedDriver = (driverData || []).find(
-        (d) => (d.email || '').toLowerCase() === emailToMatch
-      );
-      return {
-        ...vh,
-        driverName: matchedDriver?.name ? matchedDriver.name : vh.driver,
-      };
+    const driverLookup = new Map();
+    (driverData || []).forEach((d) => {
+      if (d.email) driverLookup.set(d.email.toLowerCase().trim(), d.name);
     });
+
+    const seenCombos = new Set();
+
+    let details = (data.tmsDetails || []).reduce((acc, vh) => {
+      const emailToMatch = (vh.driver || '').toLowerCase().trim();
+      const driverName = driverLookup.get(emailToMatch) || vh.driver;
+      const plateRaw = vh.plate || vh.plat || '';
+
+      const comboKey = `${emailToMatch}_${plateRaw}`;
+      if (!seenCombos.has(comboKey)) {
+        seenCombos.add(comboKey);
+        acc.push({ ...vh, driverName, plate: plateRaw });
+      }
+      return acc;
+    }, []);
 
     if (showAll && masterVehicleList) {
       const masterCat = masterVehicleList[data.storage]?.[data.type] || [];

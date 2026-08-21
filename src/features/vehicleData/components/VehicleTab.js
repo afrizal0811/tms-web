@@ -3,27 +3,22 @@
 import HighlightText from '@/components/HighlightText';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import Tooltip from '@/components/Tooltip';
 import { Fragment } from 'react';
 
-const getRowStyleAndTooltip = (v, t) => {
+const getRowStyle = (v) => {
   if (v.isIncomplete) {
     return {
-      rowClass:
-        'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15 cursor-help',
-      tooltipMsg: t('vehicle.tabs.incomplete_data'),
+      rowClass: 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15',
     };
   }
   if (v.isDuplicateDriver) {
     return {
       rowClass:
-        'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15 cursor-help',
-      tooltipMsg: t('vehicle.tabs.duplicate_driver'),
+        'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15',
     };
   }
   return {
     rowClass: 'hover:bg-gray-50 dark:hover:bg-slate-700/10',
-    tooltipMsg: '',
   };
 };
 export default function VehicleTab({ paginatedData, searchQuery, t }) {
@@ -41,8 +36,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
         </thead>
         <tbody>
           {paginatedData.map((v, index) => {
-            const { rowClass, tooltipMsg } = getRowStyleAndTooltip(v, t);
-
+            const { rowClass } = getRowStyle(v);
             const rowData = (
               <tr className={rowClass}>
                 <Td>{index + 1}</Td>
@@ -61,11 +55,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
               </tr>
             );
 
-            return (
-              <Fragment key={`${v.id}-${v.plat}`}>
-                {tooltipMsg ? <Tooltip tooltipContent={tooltipMsg}>{rowData}</Tooltip> : rowData}
-              </Fragment>
-            );
+            return <Fragment key={`${v.id}-${v.plat}`}>{rowData}</Fragment>;
           })}
         </tbody>
       </table>

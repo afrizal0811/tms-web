@@ -17,6 +17,7 @@ export const dictionary = {
       click_for_detail: 'Klik untuk detail',
       click_for_detail_param: 'Klik {parameter} untuk detail',
       close_time: 'Waktu Tutup',
+      color_exp: 'Keterangan Warna',
       copied: 'Tersalin',
       created_by: 'Dibuat oleh',
       created_at: 'Dibuat pada',
@@ -284,7 +285,8 @@ export const dictionary = {
         upload_title: 'Tekan untuk unggah atau seret berkas di sini',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
         routing_guide: {
-          step_1: '1. Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
+          step_1:
+            '1. Masuk ke MileApp, lalu buka menu Rute di bilah sisi kiri. Pilih submenu Hasil.',
           step_2: '2. Saring data berdasarkan tanggal dilakukannya ruting.',
           step_3: '3. Pilih hasil ruting yang sudah ditugaskan.',
           step_4:
@@ -332,7 +334,6 @@ export const dictionary = {
         },
         truck_detail: {
           blue: 'Ada task yang ditugaskan tanpa ruting (penugasan manual)',
-          color_exp: 'Keterangan Warna',
           delivered: 'Terkirim',
           eta_first: 'ETA Toko Pertama',
           etd_hub: 'ETD Hub',
@@ -409,7 +410,6 @@ export const dictionary = {
       subtitle_highlight: 'kendaraan',
       title: 'Data Kendaraan',
       tabs: {
-        color_exp: 'Keterangan Warna',
         conditional_title: 'Kendaraan Khusus',
         duplicate_driver: 'Kendaraan dengan sopir yang sama',
         email: 'Surel',
@@ -532,7 +532,6 @@ export const dictionary = {
             'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
         },
         time_driver: {
-          color_exp: 'Keterangan Warna',
           duration: 'Durasi',
           title: 'Waktu Sopir',
           out_radius: 'Sopir mulai/akhiri perjalanan di luar radius',
@@ -553,7 +552,6 @@ export const dictionary = {
         },
         truck_detail: {
           blue: 'Ada tugas yang ditugaskan tanpa ruting (penugasan manual)',
-          color_exp: 'Keterangan Warna',
           delivered: 'Terkirim',
           indigo: 'Ada penugasan manual dan beda tanggal Mulai-Selesai',
           magenta: 'Ada tugas yang tanggal Mulai dan Selesai berbeda',
@@ -701,6 +699,7 @@ export const dictionary = {
       click_for_detail: 'Click for details',
       click_for_detail_param: 'Click {parameter} for details',
       close_time: 'Closing Time',
+      color_exp: 'Color Legend',
       copied: 'Copied',
       created_by: 'Created By',
       created_at: 'Created At',
@@ -1018,7 +1017,6 @@ export const dictionary = {
         },
         truck_detail: {
           blue: 'Has manually assigned tasks (without routing)',
-          color_exp: 'Color Legend',
           delivered: 'Delivered',
           eta_first: 'First Store ETA',
           etd_hub: 'Hub ETD',
@@ -1094,7 +1092,6 @@ export const dictionary = {
       subtitle_highlight: 'vehicles',
       title: 'Vehicle Data',
       tabs: {
-        color_exp: 'Color Legend',
         conditional_title: 'Conditional Vehicles',
         duplicate_driver: 'Vehicles with the same driver',
         email: 'Email',
@@ -1215,7 +1212,6 @@ export const dictionary = {
             'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },
         time_driver: {
-          color_exp: 'Color Legend',
           duration: 'Duration',
           title: 'Time Driver',
           out_radius: 'Driver started/end trip outside radius',
@@ -1235,7 +1231,6 @@ export const dictionary = {
         },
         truck_detail: {
           blue: 'Has manually assigned tasks (without routing)',
-          color_exp: 'Color Legend',
           delivered: 'Delivered',
           indigo: 'Has manual assign and different Start–Done dates',
           magenta: 'Start and Done dates are different',

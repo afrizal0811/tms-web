@@ -3,14 +3,21 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import StorageTypeFilter from '@/components/StorageTypeFilter';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResultsSummary, getTasks } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toast';
-import { isEmpty, normalizeEmail, toApiDateString, tomorrowDate } from '@/lib/utils';
+import {
+  getBaseVehicleType,
+  isEmpty,
+  normalizeEmail,
+  toApiDateString,
+  tomorrowDate,
+} from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
 import DiagramTab from './tab/DiagramTab';
@@ -20,7 +27,8 @@ export default function Dashboard({ driverData }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
   const [yearlyTasks, setYearlyTasks] = useState([]);
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
@@ -55,16 +63,6 @@ export default function Dashboard({ driverData }) {
     };
     fetchHubSettings();
   }, [hubId, driverData]);
-
-  const handleApplyFilter = (newSelectedTypes) => {
-    fetchStartTimeRef.current = Date.now();
-    setIsFiltering(true);
-
-    setTimeout(() => {
-      setStorageFilter(newSelectedTypes);
-      setIsFiltering(false);
-    }, 200);
-  };
 
   const handleDateChange = (date) => {
     if (!date) return;
@@ -285,27 +283,44 @@ export default function Dashboard({ driverData }) {
     return map;
   }, [driverData]);
 
-  const filteredDailyTasks = useMemo(() => {
-    if (isEmpty(rawData.tasks)) return [];
-    if (storageFilter.length === 0) return [];
-    if (storageFilter.length === 2) return rawData.tasks;
+  const applyFilters = useCallback(
+    (tasks) => {
+      if (isEmpty(tasks)) return [];
+      let filtered = tasks;
+      if (storageFilter.length === 0) return [];
+      if (storageFilter.length === 1) {
+        filtered = filtered.filter((t) =>
+          storageFilter.includes((t.typeStorage || '').toUpperCase())
+        );
+      }
+      if (typeFilter && typeFilter !== 'all') {
+        filtered = filtered.filter((t) => {
+          let email = Array.isArray(t.assignee)
+            ? t.assignee[0]
+            : t.assignee || t.assignedTo?.email || t.doneBy;
+          email = normalizeEmail(email);
+          const plat =
+            t.assignedVehicle?.name || t.assignedVehicle?.plat || t.vehicleName || t.plat;
+          const platNorm = (plat || '').replace(/\s+/g, '').toLowerCase();
+          const d = driverData?.find(
+            (dr) =>
+              normalizeEmail(dr.email) === email ||
+              (dr.plat && dr.plat.replace(/\s+/g, '').toLowerCase() === platNorm)
+          );
+          if (!d) return false;
+          return getBaseVehicleType(d.type, masterVehicleTypes) === typeFilter;
+        });
+      }
+      return filtered;
+    },
+    [storageFilter, typeFilter, driverData, masterVehicleTypes]
+  );
 
-    return rawData.tasks.filter((t) => {
-      const type = (t.typeStorage || '').toUpperCase();
-      return storageFilter.includes(type);
-    });
-  }, [rawData.tasks, storageFilter]);
-
-  const filteredYearlyTasks = useMemo(() => {
-    if (isEmpty(yearlyTasks)) return [];
-    if (storageFilter.length === 0) return [];
-    if (storageFilter.length === 2) return yearlyTasks;
-
-    return yearlyTasks.filter((t) => {
-      const type = (t.typeStorage || '').toUpperCase();
-      return storageFilter.includes(type);
-    });
-  }, [yearlyTasks, storageFilter]);
+  const filteredDailyTasks = useMemo(
+    () => applyFilters(rawData.tasks),
+    [applyFilters, rawData.tasks]
+  );
+  const filteredYearlyTasks = useMemo(() => applyFilters(yearlyTasks), [applyFilters, yearlyTasks]);
 
   const summaryData = useMemo(() => {
     return calculateDashboard(filteredDailyTasks, driverMap, isIndonesian, hasPendingGR);
@@ -313,7 +328,7 @@ export default function Dashboard({ driverData }) {
 
   const isDiagramTab = activeTab === 'Diagram';
 
-  const isLoadingSelected = (isDiagramTab ? isYearlyLoading : loading) || isFiltering;
+  const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
 
   const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
@@ -338,39 +353,47 @@ export default function Dashboard({ driverData }) {
     isCardEmpty = !loading && noOngoingAndDone;
   }
 
-  const subtitle = (
-    <>
-      {t('dashboard.subtitle')}{' '}
-      <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
-    </>
-  );
-
-  const datePicker = (
-    <CustomDatePicker
-      selected={selectedDate}
-      onChange={handleDateChange}
-      isLoading={isDiagramTab ? isYearlyLoading : loading}
-      dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-      showYearPicker={isDiagramTab}
-      className="custom-year-picker"
-      maxDate={isDiagramTab ? new Date() : tomorrowDate()}
-      disableSunday={!isDiagramTab}
-    />
-  );
-
-  const storageFilterComponent = (
-    <StorageTypeFilter selectedTypes={storageFilter} onApply={handleApplyFilter} />
-  );
-
   const headerItems = [
     {
       label: t('common.storage_type'),
-      component: storageFilterComponent,
+      component: (
+        <StorageTypeFilter
+          disabled={isLoadingSelected}
+          onApply={setStorageFilter}
+          selectedTypes={storageFilter}
+          t={t}
+        />
+      ),
       hideLabel: false,
     },
     {
+      label: t('common.vehicle_type'),
+      hideLabel: false,
+      component: (
+        <VehicleTypeFilter
+          data={driverData}
+          disabled={isLoadingSelected}
+          onApply={setTypeFilter}
+          onMasterTypesLoad={setMasterVehicleTypes}
+          selectedType={typeFilter}
+          t={t}
+        />
+      ),
+    },
+    {
       label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
-      component: datePicker,
+      component: (
+        <CustomDatePicker
+          selected={selectedDate}
+          onChange={handleDateChange}
+          isLoading={isDiagramTab ? isYearlyLoading : loading}
+          dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
+          showYearPicker={isDiagramTab}
+          className="custom-year-picker"
+          maxDate={isDiagramTab ? new Date() : tomorrowDate()}
+          disableSunday={!isDiagramTab}
+        />
+      ),
       hideLabel: false,
     },
   ];
@@ -387,7 +410,16 @@ export default function Dashboard({ driverData }) {
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      <HeaderCard title="Dashboard" subtitle={subtitle} items={headerItems} />
+      <HeaderCard
+        title="Dashboard"
+        subtitle={
+          <>
+            {t('dashboard.subtitle')}{' '}
+            <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
+          </>
+        }
+        items={headerItems}
+      />
       <BodyCard
         tabs={cardTabs}
         activeTabId={activeTab}

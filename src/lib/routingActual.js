@@ -306,7 +306,7 @@ export const getRoutingActualColumns = (t) => {
       align: 'center',
       excelWidth: 15,
       highlight: true,
-      getValue: (row) => row.plat || '-',
+      getValue: (row) => getBasePlate(row.plat) || '-',
     },
     {
       id: 'driver',
