@@ -1,6 +1,6 @@
 'use client';
 
-import LocationDropdown from '@/components/LocationDropdown';
+import Dropdown from '@/components/Dropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs } from '@/lib/api';
@@ -15,7 +15,56 @@ import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
-export default function LocationSwitcher() {
+export default function LocationSelector({
+  className = '',
+  disabled = false,
+  hubsToShow = [],
+  onChange,
+  placeholder = '-- Pilih Lokasi --',
+  value,
+}) {
+  const data = Array.isArray(hubsToShow) ? hubsToShow : [];
+
+  const handleChange = (id) => {
+    const option = data.find((d) => String(d._id) === String(id));
+    const label = option ? (option.name ?? '') : '';
+    onChange?.(id, label);
+  };
+
+  const getOptions = () => {
+    let opts = [];
+    if (placeholder) opts.push({ label: placeholder, value: '' });
+    if (isEmpty(data)) opts.push({ label: '-- Tidak ada lokasi --', value: '' });
+
+    const dataOpts = data.map((hub) => {
+      const val = String(hub._id ?? hub.id ?? '');
+      const label = hub.name ?? String(val);
+      return { label, value: val };
+    });
+
+    return [...opts, ...dataOpts];
+  };
+
+  const options = getOptions();
+
+  const getLabel = (val) => {
+    const opt = options.find((o) => String(o.value) === String(val));
+    return opt ? opt.label : placeholder || '';
+  };
+
+  return (
+    <Dropdown
+      options={options}
+      value={value ?? ''}
+      onChange={handleChange}
+      getLabel={getLabel}
+      disabled={disabled}
+      className={className}
+    />
+  );
+}
+
+export function LocationSwitcher() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentLocationName, setCurrentLocationName] = useState('');
   const [currentLocationId, setCurrentLocationId] = useState('');
@@ -65,11 +114,14 @@ export default function LocationSwitcher() {
     return () => clearTimeout(timer);
   }, [t]);
 
-  const handleLocationChange = (id, name) => {
-    const updateLocationAndReload = () => {
-      const selectedHub = allowedHubs.find((h) => h._id === id);
-      const acronym = selectedHub?.acronym || '';
+  const handleLocationChange = (id) => {
+    const selectedHub = allowedHubs.find((h) => h._id === id);
+    if (!selectedHub) return;
 
+    const name = selectedHub.name;
+    const acronym = selectedHub.acronym || '';
+
+    const updateLocationAndReload = () => {
       updateActiveHub(id, name, acronym);
       window.location.reload();
     };
@@ -79,6 +131,13 @@ export default function LocationSwitcher() {
     } catch (err) {
       updateLocationAndReload();
     }
+  };
+
+  const options = allowedHubs.map((h) => ({ label: h.name, value: h._id }));
+
+  const getLabel = (val) => {
+    const hub = allowedHubs.find((h) => h._id === val);
+    return hub ? hub.name : currentLocationName;
   };
 
   if (!currentUser) return null;
@@ -93,14 +152,12 @@ export default function LocationSwitcher() {
 
   return (
     <>
-      <LocationDropdown
-        className="w-full sm:w-auto text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white! dark:bg-slate-800! border border-slate-300 dark:border-slate-600 rounded-lg! focus:ring-2! focus:ring-sky-500/50! py-2! px-3! cursor-pointer transition-all"
-        compact={true}
-        hubsToShow={allowedHubs}
-        onChange={handleLocationChange}
-        showPlaceholder={false}
+      <Dropdown
+        options={options}
         value={currentLocationId || ''}
-        translate={t}
+        onChange={handleLocationChange}
+        getLabel={getLabel}
+        className="w-30"
       />
       {showModal && (
         <VehicleTagMappingModal

@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
-import LocationSwitcher from './LocationSwitcher';
+import { LocationSwitcher } from '../dropdown/LocationDropdown';
 import MobileMenu from './MobileMenu';
 import NavDropdown from './NavDropdown';
 import UserDropdown from './UserDropdown';

@@ -3,8 +3,8 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import StorageTypeFilter from '@/components/StorageTypeFilter';
-import VehicleTypeFilter from '@/components/VehicleTypeFilter';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';

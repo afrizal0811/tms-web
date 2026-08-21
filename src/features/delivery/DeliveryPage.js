@@ -4,11 +4,11 @@ import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Information from '@/components/Information';
 import SearchBar from '@/components/SearchBar';
-import StorageTypeFilter from '@/components/StorageTypeFilter';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
-import VehicleTypeFilter from '@/components/VehicleTypeFilter';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -640,8 +640,9 @@ export default function DeliveryPage() {
       let keep = true;
       if (storageFilter.length === 1) {
         const dName = getDriverName(route, driverData);
-        keep = (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
-               (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
+        keep =
+          (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
+          (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
       }
       if (!keep) return false;
 

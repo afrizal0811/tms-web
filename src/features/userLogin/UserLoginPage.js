@@ -1,6 +1,6 @@
 'use client';
 
-import LocationDropdown from '@/components/LocationDropdown';
+import LocationSelector from '@/components/dropdown/LocationDropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
@@ -259,14 +259,13 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
             {t('home.select_branch')}
           </label>
           <div className="flex gap-2">
-            <LocationDropdown
-              value={tempSelectedLocation}
-              onChange={handleLocationChange}
-              hubsToShow={currentHubListView || allHubsList}
-              className="flex-1 p-2 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm disabled:opacity-35 disabled:pointer-events-none"
-              placeholder={`-- ${t('common.select')} ${t('common.branch')}--`}
-              translate={t}
+            <LocationSelector
+              className="flex-1 text-sm disabled:opacity-35 disabled:pointer-events-none"
               disabled={!!selectedLocation}
+              hubsToShow={currentHubListView || allHubsList}
+              onChange={handleLocationChange}
+              placeholder={`-- ${t('common.select')} ${t('common.branch')}--`}
+              value={tempSelectedLocation}
             />
             {!selectedLocation ? (
               <button

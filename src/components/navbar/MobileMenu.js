@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import LanguageToggle from '../LanguageToggle';
 import ThemeToggle from '../ThemeToggle';
-import LocationSwitcher from './LocationSwitcher';
+import { LocationSwitcher } from '../dropdown/LocationDropdown';
 
 function MobileNavLink({ href, children, target = '', rel = '' }) {
   const pathname = usePathname();
