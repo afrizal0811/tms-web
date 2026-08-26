@@ -31,6 +31,8 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
     handleClose();
   };
 
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}, ${t('common.items')}`;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -47,7 +49,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
         <SearchBar
           value={bunSearch}
           onChange={setBunSearch}
-          placeholder={t('delivery.bun_placeholder')}
+          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           width="w-full"
           className="px-1 py-0.5"
         />

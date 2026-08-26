@@ -59,6 +59,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   };
 
   const columns = getRoutingActualColumns(t);
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.driver')}, ${t('common.customer_name')}`;
 
   return (
     <div className="flex-1 flex flex-col h-full space-y-4">
@@ -67,7 +68,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
           <SearchBar
             disabled={loading || isDownloading}
             onChange={(val) => setSearchQuery(val)}
-            placeholder={t('dashboard.tab.routing_actual.search_placeholder')}
+            placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
             value={searchQuery}
           />
         </div>

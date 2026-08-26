@@ -230,7 +230,6 @@ export const dictionary = {
         },
         routing_actual: {
           is_match: 'Sesuai?',
-          search_placeholder: 'Cari plat, sopir, atau pelanggan',
           show_map: 'Lihat Peta',
           status: 'Status',
           is_within_hours: 'Dalam Jam Buka?',
@@ -406,7 +405,6 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Cari plat, sopir, atau tipe kendaraan',
       subtitle: 'Manajemen daftar',
       subtitle_highlight: 'kendaraan',
       title: 'Data Kendaraan',
@@ -449,8 +447,6 @@ export const dictionary = {
       no_bun: 'Tanpa BUN',
       no_bun_info: 'Kecualikan faktur dengan barang "BUN"',
       partial: 'Sebagian',
-      bun_placeholder: 'Cari plat, pelanggan, nomor faktur, atau barang',
-      delivery_placeholder: 'Cari plat, pelanggan, atau nomor faktur',
       spit_multitrip: 'Pisah Multi Perjalanan',
       spit_multitrip_info: 'Pisahkan tugas untuk tiap perjalanan',
       subtitle: 'Monitoring',
@@ -636,7 +632,6 @@ export const dictionary = {
       last_update: 'Terakhir diperbarui: {date}',
       module: 'Modul {category}',
       notice: 'Semua informasi dalam Bahasa Indonesia',
-      placeholder: 'Cari',
       planner_guide: 'Panduan Perencana',
       subtitle:
         'Dokumentasi teknis terpadu untuk membantu Perencana dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
@@ -915,7 +910,6 @@ export const dictionary = {
         },
         routing_actual: {
           is_match: 'Is Match?',
-          search_placeholder: 'Search plate, driver, or customer',
           show_map: 'View Map',
           status: 'Status',
           is_within_hours: 'Is Within Hours?',
@@ -1090,7 +1084,6 @@ export const dictionary = {
       },
     },
     vehicle: {
-      search_placeholder: 'Search plate, driver, or vehicle type',
       subtitle: 'Manage the list of',
       subtitle_highlight: 'vehicles',
       title: 'Vehicle Data',
@@ -1132,8 +1125,6 @@ export const dictionary = {
       no_bun: 'No Bun',
       no_bun_info: 'Exclude invoices with "BUN" Items',
       partial: 'Partial',
-      bun_placeholder: 'Search plate, customer, invoice number, or items',
-      delivery_placeholder: 'Search plate, customer, or invoice number',
       spit_multitrip: 'Spit Multi Trip',
       spit_multitrip_info: 'Split tasks for each trip',
       subtitle: 'Monitoring of',
@@ -1317,7 +1308,6 @@ export const dictionary = {
       last_update: 'Last Updated: {date}',
       module: '{category} Module',
       notice: 'All information in Indonesian',
-      placeholder: 'Search',
       planner_guide: 'Planner Guide',
       subtitle:
         'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',

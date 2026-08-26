@@ -685,6 +685,7 @@ export default function DeliveryPage() {
         return 'Download Options';
     }
   };
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}}`;
   const headerItems = [
     {
       label: t('common.delivery_date'),
@@ -729,7 +730,7 @@ export default function DeliveryPage() {
         <SearchBar
           disabled={isLoading || isDownloading}
           onChange={setSearchQuery}
-          placeholder={t('delivery.delivery_placeholder')}
+          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           value={searchQuery}
           width="w-full xl:w-70"
         />

@@ -296,7 +296,7 @@ export default function HelpPage() {
                 <SearchBar
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder={t('help.placeholder')}
+                  placeholder={t('help.search')}
                   width="w-full"
                   className="shadow-sm"
                 />

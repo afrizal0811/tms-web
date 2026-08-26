@@ -200,14 +200,8 @@ export default function VehicleData() {
       const plat = (v.plat || '').toLowerCase();
       const name = (v.name || '').toLowerCase();
       const email = (v.email || '').toLowerCase();
-      const type = (v.type || '').toLowerCase();
 
-      return (
-        plat.includes(lowerQuery) ||
-        name.includes(lowerQuery) ||
-        email.includes(lowerQuery) ||
-        type.includes(lowerQuery)
-      );
+      return plat.includes(lowerQuery) || name.includes(lowerQuery) || email.includes(lowerQuery);
     });
   }, [
     activeTab,
@@ -238,6 +232,7 @@ export default function VehicleData() {
       fileNamePrefix: filePrefix,
     });
   };
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.driver')}}`;
 
   const headerItems = [
     {
@@ -246,7 +241,7 @@ export default function VehicleData() {
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder={t('vehicle.search_placeholder')}
+          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           disabled={isLoading}
         />
       ),
