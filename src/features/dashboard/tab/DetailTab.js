@@ -1,12 +1,14 @@
 'use client';
 
+import Dropdown from '@/components/Dropdown';
+import HighlightText from '@/components/HighlightText';
+import SearchBar from '@/components/SearchBar';
 import Spinner from '@/components/Spinner';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 
 const StatCard = forwardRef(function StatCard(
   { title, value, isLoading, className = '', valueClassName = '', tooltipContent },
@@ -37,33 +39,14 @@ const StatCard = forwardRef(function StatCard(
 });
 StatCard.displayName = 'StatCard';
 
-const TableData = ({ title, data, headers, renderRow, loading }) => {
-  const { t, isIndonesian } = useLanguage();
-
-  const handleCopy = (task) => {
-    const copyText = isIndonesian
-      ? `${t('dashboard.copy')} ${t('common.invoice_number')}`
-      : `${t('common.invoice_number')} ${t('dashboard.copy')}`;
-
-    if (!task.soNumber) {
-      toastWarning(t('common.no_data'));
-      return;
-    }
-    navigator.clipboard.writeText(task.soNumber).then(
-      () => {
-        toastSuccess(copyText);
-      },
-      (err) => {
-        toastError(t('dashboard.unable_copy'), err);
-      }
-    );
-  };
+const TableData = ({ data, headers, renderRow, loading, headerFilters }) => {
+  const { t } = useLanguage();
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-64 dark:border-slate-700 dark:bg-slate-800/75 shadow-md dark:shadow-slate-700/40">
-      <h3 className="text-sm font-bold text-gray-700 bg-gray-100 p-3 border-b dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
-        {title}
-      </h3>
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-[768px] dark:border-slate-700 dark:bg-slate-800/75 shadow-md dark:shadow-slate-700/40">
+      <div className="bg-gray-100 p-3 border-b dark:bg-slate-900 dark:border-slate-700 flex justify-between items-center ">
+        {headerFilters}
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center grow">
@@ -78,6 +61,7 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
                   <Th
                     key={index}
                     className="p-3 text-left text-xs font-semibold text-gray-600 uppercase"
+                    widthClass="w-[5%]"
                   >
                     {headerItem}
                   </Th>
@@ -87,14 +71,9 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700!">
               {data.map((tItem, i) => (
-                <Tooltip key={i} tooltipContent={tItem.truncateSoNumber}>
-                  <tr
-                    className="hover:bg-gray-100 dark:hover:bg-slate-700/10! cursor-copy "
-                    onClick={() => handleCopy(tItem)}
-                  >
-                    {renderRow(tItem)}
-                  </tr>
-                </Tooltip>
+                <tr key={i} className="hover:bg-gray-100 dark:hover:bg-slate-700/10!">
+                  {renderRow(tItem)}
+                </tr>
               ))}
             </tbody>
           </table>
@@ -110,12 +89,165 @@ const TableData = ({ title, data, headers, renderRow, loading }) => {
 
 export default function DetailTab({ loading, summaryData }) {
   const { t } = useLanguage();
+  const [activeTable, setActiveTable] = useState('unassigned');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const totalDry = summaryData?.totalDry ?? 0;
   const totalFrozen = summaryData?.totalFrozen ?? 0;
   const assignedDry = summaryData?.assignedDry ?? 0;
   const assignedFrozen = summaryData?.assignedFrozen ?? 0;
 
+  const tableOptions = [
+    { label: t('dashboard.tab.detail.unassigned'), value: 'unassigned' },
+    { label: t('common.status.manual_assign'), value: 'manual' },
+    { label: t('dashboard.tab.detail.diff_day'), value: 'diff_day' },
+    { label: t('common.status.success'), value: 'success' },
+    { label: t('common.status.partial'), value: 'partial' },
+    { label: t('common.status.pending'), value: 'pending' },
+    { label: t('common.status.cancel'), value: 'cancel' },
+    { label: t('common.status.pending_gr'), value: 'pending_gr' },
+  ];
+
+  const baseHeaders = [
+    t('common.flow'),
+    t('common.customer_name'),
+    t('common.invoice_number'),
+    t('common.driver'),
+  ];
+
+  const unassignedRenderRow = (item) => (
+    <>
+      <Td className="p-3 text-xs">{item.flow}</Td>
+      <Td className="p-3 text-xs">
+        <HighlightText text={item.customer} highlight={searchQuery} />
+      </Td>
+      <Td className="p-3 text-xs">
+        <Tooltip tooltipContent={item.soNumber}>
+          <span className="cursor-help block">
+            <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
+          </span>
+        </Tooltip>
+      </Td>
+    </>
+  );
+
+  const baseRenderRow = (item) => (
+    <>
+      <Td className="p-3 text-xs">{item.flow}</Td>
+      <Td className="p-3 text-xs">
+        <HighlightText text={item.customer} highlight={searchQuery} />
+      </Td>
+      <Td className="p-3 text-xs">
+        <Tooltip tooltipContent={item.soNumber}>
+          <span className="cursor-help block">
+            <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
+          </span>
+        </Tooltip>
+      </Td>
+      <Td className="p-3 text-xs">
+        <HighlightText text={item.driver} highlight={searchQuery} />
+      </Td>
+    </>
+  );
+
+  const diffDayRenderRow = (item) => (
+    <>
+      <Td className="p-3 text-xs">{item.flow}</Td>
+      <Td className="p-3 text-xs">
+        <HighlightText text={item.customer} highlight={searchQuery} />
+      </Td>
+      <Td className="p-3 text-xs">
+        <Tooltip tooltipContent={item.soNumber}>
+          <span className="cursor-help block">
+            <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
+          </span>
+        </Tooltip>
+      </Td>
+      <Td className="p-3 text-xs">
+        <HighlightText text={item.driver} highlight={searchQuery} />
+      </Td>
+      <Td className="p-3 text-xs text-red-500">{item.doneDateDisplay}</Td>
+    </>
+  );
+
+  const tableConfig = {
+    unassigned: {
+      data: summaryData?.unassignedList,
+      headers: baseHeaders.slice(0, -1),
+      renderRow: unassignedRenderRow,
+    },
+    manual: {
+      data: summaryData?.manualAssignList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+    diff_day: {
+      data: summaryData?.diffDayList,
+      headers: [...baseHeaders, t('dashboard.tab.detail.done_date')],
+      renderRow: diffDayRenderRow,
+    },
+    success: {
+      data: summaryData?.successList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+    partial: {
+      data: summaryData?.partialList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+    pending: {
+      data: summaryData?.pendingList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+    cancel: {
+      data: summaryData?.cancelList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+    pending_gr: {
+      data: summaryData?.pendingGrList,
+      headers: baseHeaders,
+      renderRow: baseRenderRow,
+    },
+  };
+
+  const {
+    data: currentData,
+    headers: currentHeaders,
+    renderRow,
+  } = tableConfig[activeTable] || tableConfig.unassigned;
+
+  const filteredData = (currentData || []).filter((item) => {
+    if (!searchQuery) return true;
+    const lowerQ = searchQuery.toLowerCase();
+    const matchCust = (item.customer || '').toLowerCase().includes(lowerQ);
+    const matchSo = (item.soNumber || '').toLowerCase().includes(lowerQ);
+    const matchDriver = (item.driver || '').toLowerCase().includes(lowerQ);
+    return matchCust || matchSo || matchDriver;
+  });
+
+  const headerFilters = (
+    <div className="w-full flex justify-between items-center">
+      <Dropdown
+        options={tableOptions}
+        value={activeTable}
+        onChange={(val) => {
+          setActiveTable(val);
+          setSearchQuery('');
+        }}
+        getLabel={(val) => tableOptions.find((o) => o.value === val)?.label}
+        className="w-full lg:w-45"
+      />
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder={t('common.search')}
+        width="w-full lg:w-[200px]"
+      />
+    </div>
+  );
   return (
     <div className="space-y-10 animate-in fade-in duration-300 h-full flex flex-col flex-1 overflow-auto pb-2 dark:bg-slate-800">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -150,102 +282,93 @@ export default function DetailTab({ loading, summaryData }) {
           />
         </div>
 
-        <div className="lg:col-span-2 lg:order-1 grid grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
-          <StatCard
-            title={t('dashboard.tab.detail.unassigned')}
-            value={summaryData?.unassigned}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.unassigned')}
-          />
-          <StatCard
-            title={t('common.status.ongoing')}
-            value={summaryData?.ongoing}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
-          />
-          <StatCard
-            title={t('common.status.done')}
-            value={summaryData?.done}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.done')}
-          />
-          <StatCard
-            title={t('common.status.manual_assign')}
-            value={summaryData?.manualAssignList?.length}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
-          />
-          <StatCard
-            title={t('dashboard.tab.detail.diff_day')}
-            value={summaryData?.crossDayTasks?.length}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.diff_day')}
-          />
-          <StatCard
-            title={t('dashboard.tab.detail.delivery')}
-            value={summaryData?.flowDelivery}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.delivery')}
-          />
-          <StatCard
-            title={t('dashboard.tab.detail.redelivery')}
-            value={summaryData?.flowReDelivery}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.redelivery')}
-          />
-          <StatCard
-            title={t('dashboard.tab.detail.pending_gr')}
-            value={summaryData?.flowPendingGR}
-            isLoading={loading}
-            tooltipContent={t('dashboard.tab.detail.tooltip.pending_gr')}
-          />
+        <div className="lg:col-span-2 lg:order-1 flex flex-col gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
+            <StatCard
+              title={t('dashboard.tab.detail.unassigned')}
+              value={summaryData?.unassigned}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.unassigned')}
+            />
+            <StatCard
+              title={t('common.status.ongoing')}
+              value={summaryData?.ongoing}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
+            />
+            <StatCard
+              title={t('common.status.done')}
+              value={summaryData?.done}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.done')}
+            />
+            <StatCard
+              title={t('common.status.success')}
+              value={summaryData?.success}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.success')}
+            />
+            <StatCard
+              title={t('common.status.partial')}
+              value={summaryData?.partial}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.partial')}
+            />
+            <StatCard
+              title={t('common.status.pending')}
+              value={summaryData?.pending}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.pending')}
+            />
+            <StatCard
+              title={t('common.status.cancel')}
+              value={summaryData?.cancel}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.cancel')}
+            />
+            <StatCard
+              title={t('common.status.pending_gr')}
+              value={summaryData?.pendingGr}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.pending_gr')}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min">
+            <StatCard
+              title={t('common.status.manual_assign')}
+              value={summaryData?.manualAssignList?.length}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
+            />
+            <StatCard
+              title={t('dashboard.tab.detail.diff_day')}
+              value={summaryData?.diffDayList?.length}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.diff_day')}
+            />
+            <StatCard
+              title={t('dashboard.tab.detail.delivery')}
+              value={summaryData?.flowDelivery}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.delivery')}
+            />
+            <StatCard
+              title={t('dashboard.tab.detail.redelivery')}
+              value={summaryData?.flowReDelivery}
+              isLoading={loading}
+              tooltipContent={t('dashboard.tab.detail.tooltip.redelivery')}
+            />
+          </div>
         </div>
 
         <div className="lg:col-span-2 lg:order-3 flex flex-col gap-6">
           <TableData
-            title={t('dashboard.tab.detail.unassigned_list')}
-            data={summaryData?.unassignedList}
+            data={filteredData}
             loading={loading}
-            headers={[t('common.flow'), t('common.customer_name'), t('common.invoice_number')]}
-            renderRow={(item) => (
-              <>
-                <Td className="p-3 text-xs">{item.flow}</Td>
-                <Td className="p-3 text-xs">{item.customer}</Td>
-                <Td className="p-3 text-xs">{item.truncateSoNumber}</Td>
-              </>
-            )}
-          />
-
-          <TableData
-            title={t('dashboard.tab.detail.manual_list')}
-            data={summaryData?.manualAssignList}
-            loading={loading}
-            headers={[t('common.flow'), t('common.customer_name'), t('common.driver')]}
-            renderRow={(item) => (
-              <>
-                <Td className="p-3 text-xs">{item.flow}</Td>
-                <Td className="p-3 text-xs">{item.customer}</Td>
-                <Td className="p-3 text-xs">{item.driver}</Td>
-              </>
-            )}
-          />
-
-          <TableData
-            title={t('dashboard.tab.detail.diff_day_list')}
-            data={summaryData?.crossDayTasks}
-            loading={loading}
-            headers={[
-              t('common.customer_name'),
-              t('dashboard.tab.detail.done_date'),
-              t('common.driver'),
-            ]}
-            renderRow={(item) => (
-              <>
-                <Td className="p-3 text-xs">{item.customer}</Td>
-                <Td className="p-3 text-xs text-red-500">{item.doneDateDisplay}</Td>
-                <Td className="p-3 text-xs">{item.driver}</Td>
-              </>
-            )}
+            headers={currentHeaders}
+            renderRow={renderRow}
+            headerFilters={headerFilters}
           />
         </div>
       </div>

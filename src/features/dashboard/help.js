@@ -405,40 +405,57 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       unassigned: 0,
       manualAssignList: [],
       unassignedList: [],
+      diffDayList: [],
       done: 0,
       ongoing: 0,
       assignedTasks: 0,
       flowDelivery: 0,
       flowReDelivery: 0,
-      flowPendingGR: 0,
-      crossDayTasks: [],
       totalDry: 0,
       totalFrozen: 0,
       assignedDry: 0,
       assignedFrozen: 0,
+      success: 0,
+      partial: 0,
+      cancel: 0,
+      pending: 0,
+      pendingGr: 0,
     };
   }
 
   let manualAssignList = [];
-  let crossDayTasks = [];
+  let diffDayList = [];
   let unassignedList = [];
+  let successList = [];
+  let partialList = [];
+  let pendingList = [];
+  let cancelList = [];
+  let pendingGrList = [];
   let done = 0;
   let ongoing = 0;
   let unassigned = 0;
   let flowDelivery = 0;
   let flowReDelivery = 0;
-  let flowPendingGR = 0;
   let totalDry = 0;
   let totalFrozen = 0;
   let assignedDry = 0;
   let assignedFrozen = 0;
+  let success = 0;
+  let partial = 0;
+  let cancel = 0;
+  let pending = 0;
+  let pendingGr = 0;
 
   for (const task of tasksArray) {
-    const customerName = parseCustomerString(task.customerName || task.customerOrder).name || 'N/A';
+    const { name: customerName, invoiceNumber } = parseCustomerString(task.customerOrder) || 'N/A';
+    const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
+    let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+    if (finalAssignee === 'N/A') finalAssignee = '-';
+
     const flow = task.flow || 'N/A';
     let displayOrderId = '-';
-    if (task.orderId) {
-      const orderParts = task.orderId.split(',').filter(Boolean);
+    if (invoiceNumber) {
+      const orderParts = invoiceNumber.split(',').filter(Boolean);
       if (orderParts.length > 1) {
         displayOrderId = `${orderParts[0].trim()} (+${orderParts.length - 1})`;
       } else if (orderParts.length === 1) {
@@ -452,17 +469,36 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
 
     if (isDry) totalDry++;
     if (isFrozen) totalFrozen++;
-
-    if (task.status === 'DONE') done++;
-    else if (task.status === 'ONGOING') ongoing++;
+    const baseData = {
+      customer: customerName,
+      flow,
+      soNumber: invoiceNumber || '-',
+      truncateSoNumber: displayOrderId,
+      driver: finalAssignee,
+    };
+    if (task.status === 'DONE') {
+      done++;
+      const statusDelivery = task.statusDelivery[0].toLowerCase();
+      if (statusDelivery === 'sukses') {
+        successList.push(baseData);
+        success++;
+      } else if (statusDelivery === 'terima sebagian') {
+        partialList.push(baseData);
+        partial++;
+      } else if (statusDelivery === 'batal') {
+        cancelList.push(baseData);
+        cancel++;
+      } else if (statusDelivery === 'pending') {
+        pendingList.push(baseData);
+        pending++;
+      } else if (statusDelivery === 'pending gr') {
+        pendingGrList.push(baseData);
+        pendingGr++;
+      }
+    } else if (task.status === 'ONGOING') ongoing++;
     else if (task.status === 'UNASSIGNED') {
       unassigned++;
-      unassignedList.push({
-        customer: customerName,
-        flow,
-        soNumber: task.orderId || '-',
-        truncateSoNumber: displayOrderId,
-      });
+      unassignedList.push(baseData);
     }
 
     const isAssigned = task.status !== 'UNASSIGNED';
@@ -474,22 +510,11 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
 
     const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
     if (manualCategory && isAssigned) {
-      const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-      let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-      if (finalAssignee === 'N/A') finalAssignee = '-';
-
-      manualAssignList.push({
-        customer: customerName,
-        driver: finalAssignee,
-        flow,
-        soNumber: task.orderId || '-',
-        truncateSoNumber: displayOrderId,
-      });
+      manualAssignList.push(baseData);
     }
 
     if (flow === 'Delivery') flowDelivery++;
     else if (flow.includes('Re Delivery')) flowReDelivery++;
-    else if (flow.includes('Pending GR')) flowPendingGR++;
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
       const startDateWIB = formatDateUniversal(task.startTime, 'DD-MM-YYYY');
@@ -501,14 +526,9 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
         const diffInMs = doneDate.getTime() - startDate.getTime();
         const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
         const datePlusText = isIndonesian ? 'H+' : 'D+';
-        const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-        const driverName = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
-        crossDayTasks.push({
-          customer: customerName,
+        diffDayList.push({
+          ...baseData,
           doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
-          driver: driverName,
-          soNumber: task.orderId || '-',
-          truncateSoNumber: displayOrderId,
         });
       }
     }
@@ -516,24 +536,38 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
 
   unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
   manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-  crossDayTasks.sort((a, b) => a.driver.localeCompare(b.driver));
+  diffDayList.sort((a, b) => a.driver.localeCompare(b.driver));
+  successList.sort((a, b) => a.driver.localeCompare(b.driver));
+  partialList.sort((a, b) => a.driver.localeCompare(b.driver));
+  cancelList.sort((a, b) => a.driver.localeCompare(b.driver));
+  pendingList.sort((a, b) => a.driver.localeCompare(b.driver));
+  pendingGrList.sort((a, b) => a.driver.localeCompare(b.driver));
 
   return {
     totalTasks: tasksArray.length,
     unassigned,
     manualAssignList,
     unassignedList,
+    diffDayList,
+    successList,
+    partialList,
+    cancelList,
+    pendingList,
+    pendingGrList,
     done,
     ongoing,
     assignedTasks: done + ongoing,
     flowDelivery,
     flowReDelivery,
-    flowPendingGR,
-    crossDayTasks,
     totalDry,
     totalFrozen,
     assignedDry,
     assignedFrozen,
+    success,
+    partial,
+    cancel,
+    pending,
+    pendingGr,
   };
 };
 
