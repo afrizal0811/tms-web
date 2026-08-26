@@ -229,7 +229,7 @@ export default function DetailTab({ loading, summaryData }) {
   });
 
   const headerFilters = (
-    <div className="w-full flex justify-between items-center">
+    <div className="flex flex-col sm:flex-row gap-3 w-full justify-between">
       <Dropdown
         options={tableOptions}
         value={activeTable}
@@ -238,13 +238,13 @@ export default function DetailTab({ loading, summaryData }) {
           setSearchQuery('');
         }}
         getLabel={(val) => tableOptions.find((o) => o.value === val)?.label}
-        className="w-full lg:w-45"
+        className="w-full sm:w-[200px] shrink-0"
       />
       <SearchBar
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder={t('common.search')}
-        width="w-full lg:w-[200px]"
+        width="w-full sm:flex-1 sm:max-w-[300px]"
       />
     </div>
   );
