@@ -36,7 +36,12 @@ const REPORT_LINKS = [
   { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
   { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
-  { href: '/report/custom', labelKey: 'navbar.custom_report', superadminOnly: true },
+  {
+    href: '/report/custom',
+    labelKey: 'navbar.custom_report',
+    superadminOnly: true,
+    adminAllowed: true,
+  },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
 ];
 
@@ -54,7 +59,7 @@ export default function Navbar() {
   const userName = storedUser ? JSON.parse(storedUser).name : '';
   const userEmail = storedUser ? JSON.parse(storedUser).email : 'email@example.com';
 
-  const { isSuperadmin } = useSuperadmin();
+  const { isSuperadmin, isAdmin } = useSuperadmin();
 
   const handleLogout = () => {
     removeLocalStorage('data');
@@ -100,7 +105,12 @@ export default function Navbar() {
 
   const LoggedInComps = (
     <>
-      <NavDropdown label={t('navbar.report')} links={REPORT_LINKS} isSuperadmin={isSuperadmin} />
+      <NavDropdown
+        label={t('navbar.report')}
+        links={REPORT_LINKS}
+        isSuperadmin={isSuperadmin}
+        isAdmin={isAdmin}
+      />
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
@@ -128,6 +138,7 @@ export default function Navbar() {
       userName={userName}
       userEmail={userEmail}
       isSuperadmin={isSuperadmin}
+      isAdmin={isAdmin}
       handleLogout={handleLogout}
       reportLinks={REPORT_LINKS}
     />

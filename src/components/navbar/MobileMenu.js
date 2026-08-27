@@ -34,10 +34,12 @@ function MobileNavLink({ href, children, target = '', rel = '' }) {
   );
 }
 
-function MobileNavGroup({ label, links, isSuperadmin }) {
+function MobileNavGroup({ label, links, isSuperadmin, isAdmin }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const filteredLinks = (links || []).filter((link) => !link.superadminOnly || isSuperadmin);
+  const filteredLinks = (links || []).filter(
+    (link) => !link.superadminOnly || isSuperadmin || (link.adminAllowed && isAdmin)
+  );
 
   if (filteredLinks.length === 0) return null;
 
@@ -86,6 +88,7 @@ export default function MobileMenu({
   userName,
   userEmail,
   isSuperadmin,
+  isAdmin,
   handleLogout,
   reportLinks,
 }) {
@@ -207,6 +210,7 @@ export default function MobileMenu({
                 label={t('navbar.report')}
                 links={reportLinks}
                 isSuperadmin={isSuperadmin}
+                isAdmin={isAdmin}
               />
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">

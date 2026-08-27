@@ -21,10 +21,13 @@ export default function SessionGuard({ children }) {
   if (isSecret) publicPaths.push('/setting');
   const isPublicPage = publicPaths.includes(pathname);
 
-  const superadminPaths = ['/custom', '/report/counter', '/summary'];
-  const isSuperadminPage = superadminPaths.some((p) => pathname.startsWith(p));
+  const superadminPaths = ['/report/counter', '/summary'];
+  const adminPaths = ['/report/custom'];
 
-  const { isSuperadmin, isChecking } = useSuperadmin('/');
+  const isSuperadminPage = superadminPaths.some((p) => pathname.startsWith(p));
+  const isAdminPage = adminPaths.some((p) => pathname.startsWith(p));
+
+  const { isSuperadmin, isAdmin, isChecking } = useSuperadmin();
 
   useEffect(() => {
     if (isPublicPage) return;
@@ -50,9 +53,28 @@ export default function SessionGuard({ children }) {
     }
   }, [pathname, router, t, isPublicPage]);
 
+  useEffect(() => {
+    if (isPublicPage || isChecking || !isVerified) return;
+
+    if (isSuperadminPage && !isSuperadmin) {
+      router.replace('/');
+    } else if (isAdminPage && !isSuperadmin && !isAdmin) {
+      router.replace('/');
+    }
+  }, [
+    isPublicPage,
+    isChecking,
+    isVerified,
+    isSuperadminPage,
+    isSuperadmin,
+    isAdminPage,
+    isAdmin,
+    router,
+  ]);
+
   if (isPublicPage) return <>{children}</>;
 
-  if (!isVerified || (isSuperadminPage && isChecking)) {
+  if (!isVerified || ((isSuperadminPage || isAdminPage) && isChecking)) {
     return (
       <SelectionLayout>
         <Spinner />
@@ -61,6 +83,7 @@ export default function SessionGuard({ children }) {
   }
 
   if (isSuperadminPage && !isSuperadmin) return null;
+  if (isAdminPage && !isSuperadmin && !isAdmin) return null;
 
   return <>{children}</>;
 }
