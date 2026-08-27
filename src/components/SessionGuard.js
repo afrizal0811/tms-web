@@ -21,7 +21,7 @@ export default function SessionGuard({ children }) {
   if (isSecret) publicPaths.push('/setting');
   const isPublicPage = publicPaths.includes(pathname);
 
-  const superadminPaths = ['/mitsui', '/report/counter', '/summary'];
+  const superadminPaths = ['/custom', '/report/counter', '/summary'];
   const isSuperadminPage = superadminPaths.some((p) => pathname.startsWith(p));
 
   const { isSuperadmin, isChecking } = useSuperadmin('/');

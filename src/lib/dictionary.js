@@ -159,7 +159,7 @@ export const dictionary = {
       setting: 'Pengaturan',
       summary: 'Rangkuman',
       task_counter_report: 'Laporan Jumlah Tugas',
-      mitsui_report: 'Laporan Mitsui',
+      custom_report: 'Laporan Kustom',
       update: 'Perbarui',
     },
     dashboard: {
@@ -279,7 +279,8 @@ export const dictionary = {
       task_counter_report: 'Laporan Jumlah Tugas',
       task_routing: 'Tugas Ruting',
       task_manual: 'Tugas Manual',
-      mitsui_report: 'Laporan Mitsui',
+      task_date: 'Tanggal Tugas',
+      custom_report: 'Laporan Kustom',
       manual: {
         upload_title: 'Tekan untuk unggah atau seret berkas di sini',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
@@ -320,6 +321,7 @@ export const dictionary = {
         info_delivery: 'Ruting otomatis H-1',
         task_routing_info: 'Laporan tugas yang memiliki data ruting',
         task_manual_info: 'Laporan tugas yang memiliki informasi penugasan manual',
+        task_date_info: 'Laporan tanggal pembuataan, penugasan, dan penyelesaian tugas',
       },
     },
     excel: {
@@ -836,7 +838,7 @@ export const dictionary = {
       setting: 'Setting',
       summary: 'Summary',
       task_counter_report: 'Task Counter Report',
-      mitsui_report: 'Mitsui Report',
+      custom_report: 'Custom Report',
       update: 'Update',
     },
     dashboard: {
@@ -958,7 +960,8 @@ export const dictionary = {
       task_counter_report: 'Task Counter Report',
       task_routing: 'Task Routing',
       task_manual: 'Task Manual',
-      mitsui_report: 'Mitsui Report',
+      task_date: 'Task Date',
+      custom_report: 'Custom Report',
       manual: {
         upload_title: 'Click to upload or drag files here',
         upload_subtitle: 'Only .xlsx and .xls file formats are supported',
@@ -999,6 +1002,7 @@ export const dictionary = {
         info_delivery: 'Auto D-1 routing',
         task_routing_info: 'Task report with routing data',
         task_manual_info: 'Task report with manual assign information',
+        task_date_info: 'Report of task creation, assignment, and completion dates',
       },
     },
     excel: {

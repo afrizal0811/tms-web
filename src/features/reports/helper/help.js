@@ -24,13 +24,23 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import {
   calculateStartFinishDates,
   formatDateUniversal,
+  formatUTC7,
+  getBasePlate,
   isDateSunday,
   isEmpty,
+  normalizeEmail,
+  parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
-import { taskHeaders, taskKeyMapping, taskManualHeaders, taskManualKeyMapping } from './constants';
+import {
+  taskDateHeaders,
+  taskHeaders,
+  taskKeyMapping,
+  taskManualHeaders,
+  taskManualKeyMapping,
+} from './constants';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -964,7 +974,7 @@ export const handleKpiDownload = async ({
 };
 
 /* ============================================================
- * Mitsui section
+ * Custom section
  * ============================================================ */
 
 const getReportDates = (start, end) => {
@@ -1050,7 +1060,7 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
   return generatedFiles;
 };
 
-export const processManualTaskReport = async (storedLocation, datesToProcess, locationName, t) => {
+export const processTaskManualReport = async (storedLocation, datesToProcess, locationName, t) => {
   const generatedFiles = [];
 
   for (const date of datesToProcess) {
@@ -1146,6 +1156,118 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
     const fileName = `${t('report.task_manual')} - ${dateStr} - ${locationName}.xlsx`;
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+    generatedFiles.push({ fileName, wb, wbout });
+  }
+
+  return generatedFiles;
+};
+
+export const processTaskDateReport = async (storedLocation, datesToProcess, locationName, t) => {
+  const generatedFiles = [];
+  const drivers = await getDriverData(storedLocation);
+
+  const driverMap = new Map();
+  drivers.forEach((d) => {
+    if (d.email) {
+      driverMap.set(normalizeEmail(d.email), { name: d.name || '-', plat: d.plat || '-' });
+    }
+  });
+
+  for (const date of datesToProcess) {
+    const { timeFromUtc, timeToUtc } = getReportDates(date, date);
+
+    const tasks = await getTasks({
+      hubId: storedLocation,
+      status: 'DONE,ONGOING',
+      timeFrom: timeFromUtc,
+      timeTo: timeToUtc,
+      timeBy: 'startTime',
+      isNeedFields: false,
+    });
+
+    const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
+    if (isEmpty(tasksData)) continue;
+
+    const sheetData = [taskDateHeaders];
+
+    const parsedRows = tasksData.map((task) => {
+      const { name, id, location, invoiceNumber } = parseCustomerString(task.customerOrder);
+
+      const created = task.createdTime ? formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm') : '-';
+      const start = task.startTime ? formatUTC7(task.startTime, 'DD/MM/YYYY HH:mm') : '-';
+      const assigned = task.assignedTime ? formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') : '-';
+      const completed = task.doneTime ? formatUTC7(task.doneTime, 'DD/MM/YYYY HH:mm') : '-';
+
+      let driverName = '-';
+      let licenseNumber = '-';
+
+      const assigneeArray = task.assignee || [];
+      const assigneeEmail = Array.isArray(assigneeArray) ? assigneeArray[0] : assigneeArray;
+
+      if (assigneeEmail) {
+        const d = driverMap.get(normalizeEmail(assigneeEmail));
+        if (d) {
+          driverName = d.name;
+          licenseNumber = getBasePlate(d.plat);
+        }
+      }
+
+      return {
+        row: [
+          driverName,
+          licenseNumber,
+          name || '-',
+          id || '-',
+          location || '-',
+          invoiceNumber || '-',
+          created,
+          assigned,
+          start,
+          completed,
+        ],
+        driverName,
+        rawCompleted: task.doneTime || '',
+      };
+    });
+
+    parsedRows.sort((a, b) => {
+      const driverCmp = a.driverName.localeCompare(b.driverName);
+      if (driverCmp !== 0) return driverCmp;
+      return a.rawCompleted.localeCompare(b.rawCompleted);
+    });
+    parsedRows.forEach((item) => sheetData.push(item.row));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 0; R <= range.e.r; ++R) {
+      for (let C = 0; C <= range.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (ws[cell_address]) {
+          if (R === 0) {
+            ws[cell_address].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { patternType: 'solid', fgColor: { rgb: '0369A1' } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+            };
+          } else {
+            const isLeft = C === 0 || C === 2 || C === 5;
+            ws[cell_address].s = {
+              alignment: { horizontal: isLeft ? 'left' : 'center', vertical: 'center' },
+            };
+          }
+        }
+      }
+    }
+    ws['!cols'] = taskDateHeaders.map(() => ({ wch: 20 }));
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Task Date');
+
+    const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
+    const fileName = `${t('report.task_date')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

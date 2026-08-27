@@ -36,7 +36,7 @@ const REPORT_LINKS = [
   { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
   { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
   { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
-  { href: '/report/mitsui', labelKey: 'navbar.mitsui_report', superadminOnly: true },
+  { href: '/report/custom', labelKey: 'navbar.custom_report', superadminOnly: true },
   { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
 ];
 

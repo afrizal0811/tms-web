@@ -1,12 +1,12 @@
 'use client';
 
 import AppLayout from '@/components/AppLayout';
-import MitsuiReport from '@/features/reports/MitsuiReport';
+import CustomReport from '@/features/reports/CustomReport';
 
-export default function MitsuiReportPage() {
+export default function CustomReportPage() {
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
-      <MitsuiReport />
+      <CustomReport />
     </AppLayout>
   );
 }

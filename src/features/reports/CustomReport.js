@@ -11,9 +11,14 @@ import { formatDateUniversal, isEmpty, tomorrowDate } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
-import { getDatesInRange, processManualTaskReport, processTaskRoutingReport } from './helper/help';
+import {
+  getDatesInRange,
+  processTaskDateReport,
+  processTaskManualReport,
+  processTaskRoutingReport,
+} from './helper/help';
 
-export default function MitsuiReport() {
+export default function CustomReport() {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [reportType, setReportType] = useState('detail');
@@ -32,6 +37,11 @@ export default function MitsuiReport() {
       label: t('report.task_manual'),
       tooltip: t('report.tooltip.task_manual_info'),
     },
+    {
+      id: 'task_date',
+      label: t('report.task_date'),
+      tooltip: t('report.tooltip.task_date_info'),
+    },
   ];
 
   const executeProcess = async () => {
@@ -42,17 +52,38 @@ export default function MitsuiReport() {
       const datesToProcess = getDatesInRange(startDate, endDate || startDate);
       const locationName = storedLocationAcronym || storedLocationName;
 
-      const generatedFiles =
-        reportType === 'detail'
-          ? await processTaskRoutingReport(storedLocation, datesToProcess, locationName, t)
-          : await processManualTaskReport(storedLocation, datesToProcess, locationName, t);
+      let generatedFiles = [];
+      let reportTitleName = '';
+
+      if (reportType === 'detail') {
+        generatedFiles = await processTaskRoutingReport(
+          storedLocation,
+          datesToProcess,
+          locationName,
+          t
+        );
+        reportTitleName = t('report.task_routing');
+      } else if (reportType === 'manual') {
+        generatedFiles = await processTaskManualReport(
+          storedLocation,
+          datesToProcess,
+          locationName,
+          t
+        );
+        reportTitleName = t('report.task_manual');
+      } else if (reportType === 'task_date') {
+        generatedFiles = await processTaskDateReport(
+          storedLocation,
+          datesToProcess,
+          locationName,
+          t
+        );
+        reportTitleName = t('report.task_date');
+      }
 
       if (generatedFiles.length === 0) {
         throw new Error(t('common.no_data'));
       }
-
-      const reportTitleName =
-        reportType === 'detail' ? t('report.task_routing') : t('report.task_manual');
 
       if (generatedFiles.length === 1) {
         XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
@@ -116,7 +147,7 @@ export default function MitsuiReport() {
   return (
     <div className="flex flex-col items-center w-full max-w-6xl p-4">
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
-        {t('report.mitsui_report')}
+        {t('report.custom_report')}
       </h1>
 
       <div className="flex justify-center mb-6 w-full">
