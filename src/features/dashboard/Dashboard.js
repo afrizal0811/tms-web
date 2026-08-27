@@ -432,7 +432,11 @@ export default function Dashboard({ driverData }) {
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (
-            <DetailTab loading={loading} summaryData={summaryData} hasPendingGR={hasPendingGR} />
+            <DetailTab
+              loading={loading}
+              summaryData={summaryData}
+              driverData={driverData}
+            />
           )}
 
           {activeTab === 'RoutingVsActual' && (

@@ -420,6 +420,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       cancel: 0,
       pending: 0,
       pendingGr: 0,
+      taskId: null,
     };
   }
 
@@ -447,22 +448,17 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
   let pendingGr = 0;
 
   for (const task of tasksArray) {
-    const { name: customerName, invoiceNumber } = parseCustomerString(task.customerOrder) || 'N/A';
+    const {
+      name: customerName,
+      invoiceNumber,
+      truncateInvoice,
+      isTruncated,
+    } = parseCustomerString(task.customerOrder) || 'N/A';
     const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
     let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
     if (finalAssignee === 'N/A') finalAssignee = '-';
-
+    const taskId = task._id || '-';
     const flow = task.flow || 'N/A';
-    let displayOrderId = '-';
-    if (invoiceNumber) {
-      const orderParts = invoiceNumber.split(',').filter(Boolean);
-      if (orderParts.length > 1) {
-        displayOrderId = `${orderParts[0].trim()} (+${orderParts.length - 1})`;
-      } else if (orderParts.length === 1) {
-        displayOrderId = orderParts[0].trim();
-      }
-    }
-
     const typeStorage = (task.typeStorage || '').toUpperCase();
     const isDry = typeStorage === 'DRY';
     const isFrozen = typeStorage === 'FROZEN';
@@ -473,8 +469,10 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       customer: customerName,
       flow,
       soNumber: invoiceNumber || '-',
-      truncateSoNumber: displayOrderId,
+      truncateSoNumber: truncateInvoice,
+      isTruncated,
       driver: finalAssignee,
+      taskId,
     };
     if (task.status === 'DONE') {
       done++;

@@ -7,6 +7,7 @@ import Spinner from '@/components/Spinner';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import Tooltip from '@/components/Tooltip';
+import TaskModal from '@/components/modal/TaskModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { forwardRef, useState } from 'react';
 
@@ -39,13 +40,13 @@ const StatCard = forwardRef(function StatCard(
 });
 StatCard.displayName = 'StatCard';
 
-const TableData = ({ data, headers, renderRow, loading, headerFilters }) => {
+const TableData = ({ data, headers, renderRow, loading, headerFilters, onRowClick }) => {
   const { t } = useLanguage();
 
   return (
     <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-[768px] dark:border-slate-700 dark:bg-slate-800/75 shadow-md dark:shadow-slate-700/40">
-      <div className="bg-gray-100 p-3 border-b dark:bg-slate-900 dark:border-slate-700 flex justify-between items-center ">
-        {headerFilters}
+      <div className="bg-gray-100 p-3 border-b dark:bg-slate-900 dark:border-slate-700 flex justify-end">
+        {headerFilters && <div className="w-full">{headerFilters}</div>}
       </div>
 
       {loading ? (
@@ -71,7 +72,11 @@ const TableData = ({ data, headers, renderRow, loading, headerFilters }) => {
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700!">
               {data.map((tItem, i) => (
-                <tr key={i} className="hover:bg-gray-100 dark:hover:bg-slate-700/10!">
+                <tr
+                  key={i}
+                  onClick={() => onRowClick && onRowClick(tItem.taskId)}
+                  className="hover:bg-gray-100 dark:hover:bg-slate-700/10! cursor-pointer"
+                >
                   {renderRow(tItem)}
                 </tr>
               ))}
@@ -87,10 +92,18 @@ const TableData = ({ data, headers, renderRow, loading, headerFilters }) => {
   );
 };
 
-export default function DetailTab({ loading, summaryData }) {
+export default function DetailTab({ loading, summaryData, driverData }) {
   const { t } = useLanguage();
   const [activeTable, setActiveTable] = useState('unassigned');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
+  };
 
   const totalDry = summaryData?.totalDry ?? 0;
   const totalFrozen = summaryData?.totalFrozen ?? 0;
@@ -122,8 +135,8 @@ export default function DetailTab({ loading, summaryData }) {
         <HighlightText text={item.customer} highlight={searchQuery} />
       </Td>
       <Td className="p-3 text-xs">
-        <Tooltip tooltipContent={item.soNumber}>
-          <span className="cursor-help block">
+        <Tooltip tooltipContent={item.isTruncated && item.soNumber}>
+          <span className={`${item.isTruncated ? 'cursor-help' : ''}  block`}>
             <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
           </span>
         </Tooltip>
@@ -138,8 +151,8 @@ export default function DetailTab({ loading, summaryData }) {
         <HighlightText text={item.customer} highlight={searchQuery} />
       </Td>
       <Td className="p-3 text-xs">
-        <Tooltip tooltipContent={item.soNumber}>
-          <span className="cursor-help block">
+        <Tooltip tooltipContent={item.isTruncated && item.soNumber}>
+          <span className={`${item.isTruncated ? 'cursor-help' : ''}  block`}>
             <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
           </span>
         </Tooltip>
@@ -157,8 +170,8 @@ export default function DetailTab({ loading, summaryData }) {
         <HighlightText text={item.customer} highlight={searchQuery} />
       </Td>
       <Td className="p-3 text-xs">
-        <Tooltip tooltipContent={item.soNumber}>
-          <span className="cursor-help block">
+        <Tooltip tooltipContent={item.isTruncated && item.soNumber}>
+          <span className={`${item.isTruncated ? 'cursor-help' : ''}  block`}>
             <HighlightText text={item.truncateSoNumber} highlight={searchQuery} />
           </span>
         </Tooltip>
@@ -229,7 +242,13 @@ export default function DetailTab({ loading, summaryData }) {
   });
 
   const headerFilters = (
-    <div className="flex flex-col sm:flex-row gap-3 w-full justify-between">
+    <div className="flex flex-col sm:flex-row gap-3 w-full justify-end">
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder={t('common.search')}
+        width="w-full sm:flex-1 sm:max-w-[300px]"
+      />
       <Dropdown
         options={tableOptions}
         value={activeTable}
@@ -239,12 +258,6 @@ export default function DetailTab({ loading, summaryData }) {
         }}
         getLabel={(val) => tableOptions.find((o) => o.value === val)?.label}
         className="w-full sm:w-[200px] shrink-0"
-      />
-      <SearchBar
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder={t('common.search')}
-        width="w-full sm:flex-1 sm:max-w-[300px]"
       />
     </div>
   );
@@ -369,9 +382,17 @@ export default function DetailTab({ loading, summaryData }) {
             headers={currentHeaders}
             renderRow={renderRow}
             headerFilters={headerFilters}
+            onRowClick={handleRowClick}
           />
         </div>
       </div>
+
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        taskId={selectedTaskId}
+        driverData={driverData}
+      />
     </div>
   );
 }
