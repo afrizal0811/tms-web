@@ -163,11 +163,10 @@ export const dictionary = {
       update: 'Perbarui',
     },
     dashboard: {
-      copy: 'Salin',
       subtitle: 'Overview performa',
       subtitle_highlight: 'harian & tahunan',
+      table_data: 'Data Tabel',
       title: 'Dashboard',
-      unable_copy: 'Gagal salin',
       year_performance: 'Tahun Performa',
       toast: {
         partial_warning: 'Gagal memuat sebagian data tahunan: {err}',
@@ -841,11 +840,10 @@ export const dictionary = {
       update: 'Update',
     },
     dashboard: {
-      copy: 'Copied',
       subtitle: 'Performance overview',
       subtitle_highlight: 'daily & yearly',
+      table_data: 'Table Data',
       title: 'Dashboard',
-      unable_copy: 'Unable to copy',
       year_performance: 'Performance Year',
       toast: {
         partial_warning: 'Partial yearly fetch failed: {err}',

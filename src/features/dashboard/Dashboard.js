@@ -432,11 +432,7 @@ export default function Dashboard({ driverData }) {
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (
-            <DetailTab
-              loading={loading}
-              summaryData={summaryData}
-              driverData={driverData}
-            />
+            <DetailTab loading={loading} summaryData={summaryData} driverData={driverData} />
           )}
 
           {activeTab === 'RoutingVsActual' && (
@@ -460,6 +456,16 @@ export default function Dashboard({ driverData }) {
             />
           )}
         </div>
+        {activeTab === 'Detail' && (
+          <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
+            <span className="italic text-xs">
+              *{' '}
+              {t('common.click_for_detail_param', {
+                parameter: t('dashboard.table_data').toLowerCase(),
+              })}
+            </span>
+          </div>
+        )}
       </BodyCard>
     </div>
   );

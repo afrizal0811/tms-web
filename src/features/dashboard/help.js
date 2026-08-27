@@ -406,6 +406,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       manualAssignList: [],
       unassignedList: [],
       diffDayList: [],
+      ongoingList: [],
       done: 0,
       ongoing: 0,
       assignedTasks: 0,
@@ -424,6 +425,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     };
   }
 
+  let ongoingList = [];
   let manualAssignList = [];
   let diffDayList = [];
   let unassignedList = [];
@@ -493,8 +495,10 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
         pendingGrList.push(baseData);
         pendingGr++;
       }
-    } else if (task.status === 'ONGOING') ongoing++;
-    else if (task.status === 'UNASSIGNED') {
+    } else if (task.status === 'ONGOING') {
+      ongoingList.push(baseData);
+      ongoing++;
+    } else if (task.status === 'UNASSIGNED') {
       unassigned++;
       unassignedList.push(baseData);
     }
@@ -533,6 +537,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
   }
 
   unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+  ongoingList.sort((a, b) => a.driver.localeCompare(b.driver));
   manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
   diffDayList.sort((a, b) => a.driver.localeCompare(b.driver));
   successList.sort((a, b) => a.driver.localeCompare(b.driver));
@@ -544,6 +549,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
   return {
     totalTasks: tasksArray.length,
     unassigned,
+    ongoingList,
     manualAssignList,
     unassignedList,
     diffDayList,
