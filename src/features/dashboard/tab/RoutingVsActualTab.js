@@ -3,6 +3,7 @@
 
 import Button from '@/components/Button';
 import HighlightText from '@/components/HighlightText';
+import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
@@ -22,7 +23,16 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   const date = formatDateUniversal(selectedDate);
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
+  };
 
   const processedData = useMemo(() => {
     if (loading) return [];
@@ -161,7 +171,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 return (
                   <td
                     key={colIndex}
-                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass}`}
+                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass} cursor-pointer`}
+                    onClick={() => handleRowClick && handleRowClick(row._id)}
                   >
                     {finalUI}
                   </td>
@@ -192,6 +203,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
         data={processedData}
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
+      />
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        taskId={selectedTaskId}
+        driverData={drivers}
       />
     </div>
   );

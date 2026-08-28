@@ -19,6 +19,7 @@ export default function TableData({
   isDetailView,
   sortConfig,
   setSortConfig,
+  onRowClick,
 }) {
   const hasManualTaskInRoute = useMemo(
     () => activeRoute.trips.some((trip) => trip.isManual),
@@ -194,9 +195,10 @@ export default function TableData({
               const hasPartner = trip.hasPartner;
               const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
               const isMisplacedMiddleHub = trip.isMiddleHub && !isDefaultSort;
+              const taskId = trip.visitId;
 
               const textClass = isHub ? 'text-red-600 dark:text-red-300 font-semibold' : '';
-              const rowClass = `transition-colors border-b border-gray-100 dark:border-slate-700/80 ${
+              const rowClass = `transition-colors border-b border-gray-100 dark:border-slate-700/80 ${onRowClick && 'cursor-pointer'} ${
                 isMisplacedMiddleHub
                   ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60'
                   : isManual
@@ -214,7 +216,7 @@ export default function TableData({
                 tooltipMsg = t('delivery.tooltip.inaccurate_hub');
               }
 
-              const rowKey = `${trip.visitId}-${idx}`;
+              const rowKey = `${taskId}-${idx}`;
 
               const handleRowClick = () => {
                 if (hasPartner && setSearchQuery) {
@@ -222,7 +224,7 @@ export default function TableData({
                     ? trip.displaySo
                     : trip.partnerSOs?.[0] || trip.orderId?.split(',')[0].trim();
                   if (target) setSearchQuery(target);
-                }
+                } else onRowClick(taskId);
               };
 
               const RowContent = (

@@ -9,6 +9,7 @@ import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
+import TaskModal from '@/components/modal/TaskModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -90,8 +91,12 @@ export default function DeliveryPage() {
   const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [timeMap, setTimeMap] = useState(new Map());
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
+  const driversArray = driverData ? Object.values(driverData) : null;
 
   useEffect(() => {
     setIsClient(true);
@@ -145,6 +150,12 @@ export default function DeliveryPage() {
   const handleToggleSplitMultitrip = (isActive) => {
     setIsSplitMultitrip(isActive);
     persistDeliveryPageSetting('isSplitMultitrip', isActive);
+  };
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
   };
 
   const runPartialDownload = (type, fileNamePrefix, excludeSoList = []) => {
@@ -925,6 +936,7 @@ export default function DeliveryPage() {
                 t={t}
                 sortConfig={sortConfig}
                 setSortConfig={setSortConfig}
+                onRowClick={handleRowClick}
               />
             )}
           </div>
@@ -962,6 +974,13 @@ export default function DeliveryPage() {
         bunSoList={bunSoList}
         onDownload={handleDownloadBunSpecific}
         t={t}
+      />
+
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        taskId={selectedTaskId}
+        driverData={driversArray}
       />
     </div>
   );

@@ -344,8 +344,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Field label="Task ID" value={taskData._id} />
                 <Field label="Route ID" value={taskData.routingResultId} />
-                <Field label="Travel Distance" value={taskData.travelDistance} />
-                <Field label="Travel Duration" value={taskData.travelDuration} />
+                <Field label="Travel Distance" value={renderFloatData(taskData.travelDistance)} />
+                <Field label="Travel Duration" value={renderFloatData(taskData.travelDuration)} />
               </div>
             )}
           </div>
