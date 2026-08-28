@@ -1221,6 +1221,7 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
       const arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
       const doneSource = task.page3DoneTime || task.doneTime;
       const flow = task.flow || '-';
+      const statusDelivery = task.statusDelivery || task.label || '-';
       const created = task.createdTime ? formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm') : '-';
       const arrived = arrivalSource ? formatUTC7(arrivalSource, 'DD/MM/YYYY HH:mm') : '-';
       const assigned = task.assignedTime ? formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') : '-';
@@ -1267,6 +1268,7 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
           id || '-',
           location || '-',
           invoiceNumber || '-',
+          statusDelivery || '-',
           created,
           assigned,
           startTrip,
@@ -1301,7 +1303,7 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
               alignment: { horizontal: 'center', vertical: 'center' },
             };
 
-            if (C === 12) {
+            if (C === 13) {
               ws[cell_address].c = [{ a: 'System', t: 'Completed Time - Created Time' }];
             }
           } else {

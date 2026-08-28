@@ -229,6 +229,7 @@ export const taskDateHeaders = [
   'Customer ID',
   'Location ID',
   'Invoice Number',
+  'Status Delivery',
   'Created Time',
   'Assigned Time',
   'Started Trip Time',
