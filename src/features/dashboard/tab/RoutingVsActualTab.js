@@ -74,28 +74,28 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   return (
     <div className="flex-1 flex flex-col h-full space-y-4">
       <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
-        <div className="w-full md:w-64 order-1">
-          <SearchBar
-            disabled={loading || isDownloading}
-            onChange={(val) => setSearchQuery(val)}
-            placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
-            value={searchQuery}
-          />
-        </div>
-        <div className="w-full md:w-auto order-2">
-          <Button
-            disabled={loading || isDownloading || isEmpty(processedData)}
-            onClick={handleOpenMap}
-            text={t('dashboard.tab.routing_actual.show_map')}
-          />
-        </div>
-        <div className="w-full md:w-auto order-3">
-          <Button
-            disabled={loading || isDownloading || isEmpty(processedData)}
-            onClick={handleDownload}
-            text={t('common.download')}
-          />
-        </div>
+        <SearchBar
+          disabled={loading || isDownloading}
+          onChange={(val) => setSearchQuery(val)}
+          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
+          value={searchQuery}
+          width={'w-full md:w-auto'}
+          size="md"
+        />
+        <Button
+          disabled={loading || isDownloading || isEmpty(processedData)}
+          onClick={handleOpenMap}
+          text={t('dashboard.tab.routing_actual.show_map')}
+          size="sm"
+          width={'w-full md:w-auto'}
+        />
+        <Button
+          disabled={loading || isDownloading || isEmpty(processedData)}
+          onClick={handleDownload}
+          text={t('common.download')}
+          size="sm"
+          width={'w-full md:w-auto'}
+        />
       </div>
 
       <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white dark:border-slate-700 dark:bg-slate-800">

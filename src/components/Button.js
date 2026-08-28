@@ -14,12 +14,19 @@ export default function Button({
   type = 'button',
   className = '',
   options = [],
+  size = 'lg',
   ...rest
 }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [prevLoading, setPrevLoading] = useState(isLoading);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const sizeClasses = {
+    sm: 'px-3 text-xs',
+    md: 'px-4 text-sm',
+    lg: 'px-6 text-base',
+  };
 
   if (isLoading !== prevLoading) {
     setPrevLoading(isLoading);
@@ -57,7 +64,7 @@ export default function Button({
       onClick={onClick}
       disabled={isDisabled}
       {...rest}
-      className={`${width} cursor-pointer px-6 h-[42px] flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold shadow-sm transition-all bg-sky-600 text-white border border-sky-800/60 hover:bg-sky-700 dark:bg-sky-500 dark:border-sky-400/40 dark:hover:bg-sky-400 dark:shadow-sky-950/40 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${className}`}
+      className={`${width} cursor-pointer py-2 ${sizeClasses[size]} flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold shadow-sm transition-all bg-sky-600 text-white border border-sky-800/60 hover:bg-sky-700 dark:bg-sky-500 dark:border-sky-400/40 dark:hover:bg-sky-400 dark:shadow-sky-950/40 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${className}`}
     >
       {isLoading ? (
         <>
