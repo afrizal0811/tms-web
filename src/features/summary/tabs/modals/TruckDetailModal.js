@@ -252,7 +252,7 @@ export default function TruckDetailModal({
                         <span
                           className={`cursor-help text-[10px] font-bold px-2 py-1 rounded shadow-sm ${ERROR_COLORS.DATE_DIFF}`}
                         >
-                          {`${translate('summary.tabs.truck_detail.modal.diff_day').toUpperCase()} (+${task.dayDiff})`}
+                          {`${translate('common.status.diff_day').toUpperCase()} (+${task.dayDiff})`}
                         </span>
                       </Tooltip>
                     )}

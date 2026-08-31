@@ -971,6 +971,7 @@ export default function DeliveryPage() {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driversArray}
+        translate={t}
       />
     </div>
   );

@@ -15,8 +15,8 @@ export function buildTruckDetailSheet(wb, driverData, routingMap, deliveryMap, t
     t('excel.reports.truck_detail.delivered'),
     t('excel.reports.truck_detail.eta_first'),
     t('excel.reports.truck_detail.etd_hub'),
-    t('excel.reports.truck_detail.info_manual'),
-    t('excel.reports.truck_detail.info_diff_day'),
+    t('common.status.manual_assign'),
+    t('common.status.diff_day'),
   ];
 
   const allVehicleGroups = new Map();

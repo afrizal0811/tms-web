@@ -54,7 +54,7 @@ export default function RoutingInfo({ resultsData }) {
                 <th className="px-4 py-3 text-center">#</th>
                 <th className="px-4 py-3">{t('common.routing_name')}</th>
                 <th className="px-4 py-3">{t('common.created_by')}</th>
-                <th className="px-4 py-3 text-center">{t('common.created_at')}</th>
+                <th className="px-4 py-3 text-center">{t('common.created_time')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">

@@ -43,21 +43,21 @@ export default function TaskPage() {
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
   const statusOptions = [
-    { label: 'Semua Status', value: 'ALL' },
-    { label: 'Sukses', value: 'SUKSES' },
-    { label: 'Terima Sebagian', value: 'TERIMA SEBAGIAN' },
-    { label: 'Pending', value: 'PENDING' },
-    { label: 'Batal', value: 'BATAL' },
-    { label: 'Pending GR', value: 'PENDING GR' },
+    { label: t('common.all'), value: t('common.all') },
+    { label: t('common.status.success'), value: t('common.status.success') },
+    { label: t('common.status.partial'), value: t('common.status.partial') },
+    { label: t('common.status.pending'), value: t('common.status.pending') },
+    { label: t('common.status.cancel'), value: t('common.status.cancel') },
+    { label: t('common.status.pending_gr'), value: t('common.status.pending_gr') },
   ];
 
   const statusTaskOptions = [
-    { label: 'Semua Status', value: 'ALL' },
-    { label: 'Done', value: 'DONE' },
-    { label: 'Unassigned', value: 'UNASSIGNED' },
-    { label: 'Ongoing', value: 'ONGOING' },
-    { label: 'Manual Assign', value: 'MANUAL_ASSIGN' },
-    { label: 'Different Day', value: 'DIFFERENT_DAY' },
+    { label: t('common.all'), value: t('common.all') },
+    { label: t('common.status.done'), value: t('common.status.done') },
+    { label: t('common.status.unassigned'), value: t('common.status.unassigned') },
+    { label: t('common.status.ongoing'), value: t('common.status.ongoing') },
+    { label: t('common.status.manual_assign'), value: t('common.status.manual_assign') },
+    { label: t('common.status.diff_day'), value: t('common.status.diff_day') },
   ];
 
   useEffect(() => {
@@ -173,15 +173,17 @@ export default function TaskPage() {
 
     if (statusTaskFilter !== 'ALL') {
       result = result.filter((task) => {
-        if (statusTaskFilter === 'DONE') return !!task.statusDelivery?.[0];
-        if (statusTaskFilter === 'UNASSIGNED') return !task.assignee || task.assignee.length === 0;
-        if (statusTaskFilter === 'ONGOING') return task.status?.toLowerCase() === 'ongoing';
-        if (statusTaskFilter === 'MANUAL_ASSIGN')
+        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery?.[0];
+        if (statusTaskFilter === t('common.status.unassigned'))
+          return !task.assignee || task.assignee.length === 0;
+        if (statusTaskFilter === t('common.status.ongoing'))
+          return task.status?.toLowerCase() === 'ongoing';
+        if (statusTaskFilter === t('common.status.manual_assign'))
           return (
             task.assignee?.length > 0 &&
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
-        if (statusTaskFilter === 'DIFFERENT_DAY') {
+        if (statusTaskFilter === t('common.status.diff_day')) {
           const startFormat = formatUTC7(task.startTime, 'DD/MM/YYYY');
           const doneFormat = formatUTC7(task.doneTime, 'DD/MM/YYYY');
           return startFormat && doneFormat && startFormat !== doneFormat;
@@ -207,7 +209,7 @@ export default function TaskPage() {
     });
 
     return result;
-  }, [tasks, driverMap, hubMap, searchQuery, statusFilter, isAllHub, statusTaskFilter]);
+  }, [tasks, driverMap, hubMap, searchQuery, statusFilter, isAllHub, statusTaskFilter, t]);
 
   const paginatedTasks = useMemo(() => {
     if (limit === 'all') return processedData;
@@ -321,9 +323,11 @@ export default function TaskPage() {
     );
   };
 
+  const searchPlaceholder = `${t('common.customer_name')}, ${t('common.customer_id')}, ${t('common.invoice_number')} ${t('common.driver')} ${isAllHub ? `, ${t('common.branch')}` : ''}`;
+
   const headerItems = [
     {
-      label: 'Date Range',
+      label: t('common.range_delivery'),
       component: (
         <CustomDatePicker
           disabled={loading}
@@ -338,18 +342,18 @@ export default function TaskPage() {
       ),
     },
     {
-      label: 'Search',
+      label: t('common.search'),
       component: (
         <SearchBar
           disabled={loading}
           onChange={setSearchQuery}
-          placeholder="Customer, ID, Inv, Driver"
+          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           value={searchQuery}
         />
       ),
     },
     {
-      label: 'Status Delivery',
+      label: t('common.status.delivery_status'),
       component: (
         <Dropdown
           className="w-full xl:w-40!"
@@ -361,7 +365,7 @@ export default function TaskPage() {
       ),
     },
     {
-      label: 'Status Task',
+      label: t('common.status.task_status'),
       component: (
         <Dropdown
           className="w-full xl:w-40!"
@@ -375,7 +379,7 @@ export default function TaskPage() {
     ...(isSuperadmin
       ? [
           {
-            label: 'Hub',
+            label: t('common.branch'),
             component: (
               <ToggleButton
                 className="w-full xl:w-40!"
@@ -396,8 +400,15 @@ export default function TaskPage() {
   return (
     <div className="w-full px-4 sm:px-6 h-[calc(100vh-100px)] flex flex-col">
       <HeaderCard
-        title="Task Data"
-        subtitle="Data seluruh task yang tersedia"
+        title={t('task_detail.title')}
+        subtitle={
+          <>
+            <span className="font-semibold text-sky-600">
+              {t('task_detail.subtitle_highlight')}{' '}
+            </span>
+            {t('task_detail.subtitle')}
+          </>
+        }
         items={headerItems}
       />
       <BodyCard isLoading={loading} isEmpty={paginatedTasks.length === 0}>
@@ -413,68 +424,68 @@ export default function TaskPage() {
                     className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                     style={{ width: cw.hub }}
                   >
-                    Hub
+                    {t('common.branch')}
                   </div>
                 )}
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.flow }}
                 >
-                  Flow
+                  {t('common.flow')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.name }}
                 >
-                  Customer Name
+                  {t('common.customer_name')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.id }}
                 >
-                  Customer ID
+                  {t('common.customer_id')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.loc }}
                 >
-                  Location ID
+                  {t('common.location_id')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.inv }}
                 >
-                  Invoice Number
+                  {t('common.invoice_number')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.stat }}
                 >
-                  Status
+                  {t('common.status.delivery_status')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.assign }}
                 >
-                  Assigned Time
+                  {t('common.assigned_time')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.start }}
                 >
-                  Start Time
+                  {t('common.start_time')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.done }}
                 >
-                  Done Time
+                  {t('common.done_time')}
                 </div>
                 <div
                   className="p-3 text-left text-xs font-semibold text-gray-600 uppercase flex-none"
                   style={{ width: cw.assignee }}
                 >
-                  Assignee
+                  {t('common.driver')}
                 </div>
               </div>
               <div className="flex flex-col w-full">{paginatedTasks.map(renderRow)}</div>
@@ -483,7 +494,6 @@ export default function TaskPage() {
 
           <div className="p-4 flex justify-between items-center bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shrink-0">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <span>Show:</span>
               <select
                 value={limit}
                 onChange={(e) => {
@@ -506,7 +516,7 @@ export default function TaskPage() {
                   disabled={page === 1}
                   className="px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50 disabled:cursor-default cursor-pointer"
                 >
-                  Prev
+                  &lt;
                 </button>
                 <span className="text-sm text-gray-600 dark:text-gray-300 px-2">
                   Page {page} of {totalPages}
@@ -516,7 +526,7 @@ export default function TaskPage() {
                   disabled={page === totalPages}
                   className="px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50 disabled:cursor-default cursor-pointer"
                 >
-                  Next
+                  &gt;
                 </button>
               </div>
             )}
@@ -539,6 +549,7 @@ export default function TaskPage() {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driverData}
+        translate={t}
       />
     </div>
   );

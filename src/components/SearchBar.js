@@ -1,5 +1,6 @@
 // File: src/components/SearchBar.js
 'use client';
+import Tooltip from './Tooltip';
 
 export default function SearchBar({
   value,
@@ -9,6 +10,7 @@ export default function SearchBar({
   disabled = false,
   width = 'w-full xl:w-[250px]!',
   size = 'lg',
+  isTooltip = true,
 }) {
   const sizeClasses = {
     sm: { icon: 'h-3 w-3', input: 'text-xs h-[30px]' },
@@ -32,15 +34,16 @@ export default function SearchBar({
           />
         </svg>
       </div>
-
-      <input
-        type="text"
-        className={`w-full pl-10 pr-10 ${sizeClasses[size].input} border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800/50 disabled:text-gray-400 dark:disabled:text-slate-500`}
-        placeholder={placeholder}
-        disabled={disabled}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <Tooltip tooltipContent={isTooltip ? placeholder : ''}>
+        <input
+          type="text"
+          className={`w-full pl-10 pr-10 ${sizeClasses[size].input} border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800/50 disabled:text-gray-400 dark:disabled:text-slate-500`}
+          placeholder={placeholder}
+          disabled={disabled}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </Tooltip>
 
       {value && (
         <button

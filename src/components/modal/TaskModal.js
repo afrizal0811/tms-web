@@ -5,6 +5,7 @@ import Spinner from '@/components/Spinner';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
 import { getResult, getTask, getUsers } from '@/lib/api';
+import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import Modal from '../Modal';
@@ -21,10 +22,9 @@ const Field = ({ label, value, tooltip }) => (
   </div>
 );
 
-export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) {
+export default function TaskModal({ isOpen, onClose, taskId, driverData = [], translate }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
   const [createdBy, setCreatedBy] = useState(null);
   const [updatedBy, setUpdatedBy] = useState(null);
@@ -40,7 +40,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
 
     const loadData = async () => {
       setLoading(true);
-      setError(null);
       try {
         const response = await getTask(taskId);
         const task = response?.task || response;
@@ -63,19 +62,19 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
             : task?.updatedBy
         );
         setResultData(
-          resultRes.status === 'fulfilled' && !resultRes.value?.data
+          resultRes.status === 'fulfilled' && resultRes.value?.data
             ? resultRes.value?.data || resultRes.value
             : null
         );
       } catch (err) {
-        setError(err.message);
+        toastError(translate('common.toast.error', { err: err.message }));
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [isOpen, taskId]);
+  }, [isOpen, taskId, translate]);
 
   const renderDate = (val) => {
     if (!val) return '-';
@@ -109,12 +108,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
       );
     }
 
-    if (error) {
-      return <div className="text-red-500 p-4 text-center">{error}</div>;
-    }
-
     if (!taskData) {
-      return <div className="p-4 text-center text-gray-500">Data tidak ditemukan.</div>;
+      return <div className="p-4 text-center text-gray-500">{translate('common.no_data')}</div>;
     }
 
     const custInfo = parseCustomerString(taskData.customerOrder);
@@ -136,65 +131,80 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    const tabs = ['Data', 'Routing', 'List Product', 'History', 'Other'];
+    const tabs = [
+      'Data',
+      translate('common.routing'),
+      translate('task_detail.modal.list_product'),
+      translate('task_detail.modal.history'),
+      translate('common.others'),
+    ];
 
     return (
       <div className="space-y-6">
         {/* Section 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/50">
-          <Field label="Customer Name" value={custInfo.fullCustomerName} />
-          <Field label="Address" value={taskData.address} />
+          <Field label={translate('common.customer_name')} value={custInfo.fullCustomerName} />
+          <Field label={translate('common.address')} value={taskData.address} />
           <Field
-            label="Invoice Number"
+            label={translate('common.invoice_number')}
             value={custInfo.truncateInvoice || custInfo.invoiceNumber}
             tooltip={custInfo.isTruncated ? custInfo.invoiceNumber : null}
           />
-          <Field label="Type Storage" value={taskData.typeStorage} />
-          <Field label="Maximum Vehicle" value={maxVehicle} />
+          <Field label={translate('common.storage_type')} value={taskData.typeStorage} />
+          <Field label={translate('common.vehicle_type')} value={maxVehicle} />
           <Field
-            label="Updated By"
+            label={translate('common.updated_by')}
             value={driver.name || updatedBy || taskData.updatedBy}
             tooltip={taskData.updatedBy}
           />
-          <Field label="Updated Time" value={renderDate(taskData.updatedTime)} />
+          <Field label={translate('common.updated_at')} value={renderDate(taskData.updatedTime)} />
         </div>
 
         {/* Section 2 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
             <h3 className="font-bold text-sky-600 dark:text-sky-400 border-b border-gray-200 dark:border-slate-700 pb-2 mb-4">
-              Creation
+              {translate('task_detail.modal.creation')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <Field
-                label="Created By"
+                label={translate('common.created_by')}
                 value={createdBy}
                 tooltip={taskData.createdFrom === 'Automation' ? null : taskData.createdBy}
               />
-              <Field label="Created Time" value={renderDate(taskData.createdTime)} />
-              <Field label="Created From" value={taskData.createdFrom} />
-              <Field label="Start Time" value={renderDate(taskData.startTime)} />
+              <Field
+                label={translate('common.created_time')}
+                value={renderDate(taskData.createdTime)}
+              />
+              <Field label={translate('common.created_from')} value={taskData.createdFrom} />
+              <Field
+                label={translate('common.start_time')}
+                value={renderDate(taskData.startTime)}
+              />
             </div>
           </div>
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
             <h3 className="font-bold text-sky-600 dark:text-sky-400 border-b border-gray-200 dark:border-slate-700 pb-2 mb-4">
-              Assignment
+              {translate('task_detail.modal.assigment')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <Field
-                label="Assignee"
+                label={translate('common.driver')}
                 value={assigneeName}
                 tooltip={assigneeName === assigneeEmail ? null : assigneeEmail}
               />
-              <Field label="License Number" value={licenseNumber} />
-              <Field label="Assigned Time" value={renderDate(taskData.assignedTime)} />
-              <Field label="Done Time" value={renderDate(taskData.doneTime)} />
+              <Field label={translate('common.license_number')} value={licenseNumber} />
+              <Field
+                label={translate('common.assigned_time')}
+                value={renderDate(taskData.assignedTime)}
+              />
+              <Field label={translate('common.done_time')} value={renderDate(taskData.doneTime)} />
             </div>
           </div>
         </div>
 
         {/* Section 3 */}
-        <Accordion title="Mode Details" defaultOpen={false}>
+        <Accordion title={translate('task_detail.modal.more_detail')} defaultOpen={false}>
           <div className="flex overflow-x-auto space-x-6 border-b border-gray-200 dark:border-slate-700 mb-4 px-2">
             {tabs.map((tab) => (
               <button
@@ -214,22 +224,48 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
           <div className="p-2 min-h-[200px]">
             {activeTab === 'Data' && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Field label="Waktu Tiba" value={renderDate(taskData.klikJikaSudahSampai)} />
-                <Field label="Open Time" value={taskData.openTime} />
-                <Field label="Close Time" value={taskData.closeTime} />
-                <Field label="Visit Time" value={taskData.visitTime} />
-                <Field label="Volume" value={renderFloatData(taskData.volumeCbm)} />
-                <Field label="Weight" value={renderFloatData(taskData.weightKg)} />
-                <Field label="Expected Coordinate" value={renderCoordinate(taskData.longlat)} />
-                <Field label="Done Coordinate" value={renderCoordinate(taskData.doneCoordinate)} />
-                <Field label="GPS Sesuai" value={taskData.gpsSesuai?.join(', ')} />
-                <Field label="Lokasi Baru" value={renderCoordinate(taskData.klikLokasiClient)} />
-                <Field label="Total SO" value={taskData.totalSo} />
-                <Field label="Priority" value={taskData.priority} />
+                <Field
+                  label={translate('common.actual_arrival')}
+                  value={renderDate(taskData.klikJikaSudahSampai)}
+                />
+                <Field label={translate('common.open_time')} value={taskData.openTime} />
+                <Field label={translate('common.close_time')} value={taskData.closeTime} />
+                <Field label={translate('common.visit_plan')} value={taskData.visitTime} />
+                <Field
+                  label={translate('common.volume')}
+                  value={renderFloatData(taskData.volumeCbm)}
+                />
+                <Field
+                  label={translate('common.weight')}
+                  value={renderFloatData(taskData.weightKg)}
+                />
+                <Field
+                  label={translate('task_detail.modal.expected_coord')}
+                  value={renderCoordinate(taskData.longlat)}
+                />
+                <Field
+                  label={translate('task_detail.modal.done_coord')}
+                  value={renderCoordinate(taskData.doneCoordinate)}
+                />
+                <Field
+                  label={translate('task_detail.modal.correct_coord')}
+                  value={taskData.gpsSesuai?.join(', ')}
+                />
+                {taskData.gpsSesuai?.join(', ') === 'TIDAK' && (
+                  <Field
+                    label={translate('task_detail.modal.new_coord')}
+                    value={renderCoordinate(taskData.klikLokasiClient)}
+                  />
+                )}
+
+                <Field
+                  label={`Total ${translate('common.invoice_number')}`}
+                  value={taskData.totalSo}
+                />
               </div>
             )}
 
-            {activeTab === 'Routing' &&
+            {activeTab === translate('common.routing') &&
               (() => {
                 let rTravelTime = '-';
                 let rWaitingTime = '-';
@@ -254,44 +290,49 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Field label="Routing Name" value={rName} />
-                    <Field label="Route Planned Order" value={taskData.routePlannedOrder} />
-                    <Field label="ETA" value={taskData.eta} />
-                    <Field label="ETD" value={taskData.etd} />
-                    <Field label="Distance" value={taskData.distance} />
-                    <Field label="Visit Time" value={rVisitTime} />
-                    <Field label="Travel Time" value={rTravelTime} />
-                    <Field label="Waiting Time" value={rWaitingTime} />
+                    <Field label={translate('common.ro_seq')} value={taskData.routePlannedOrder} />
+                    <Field label={translate('common.eta')} value={taskData.eta} />
+                    <Field label={translate('common.etd')} value={taskData.etd} />
+                    <Field label={translate('common.distance')} value={taskData.distance} />
+                    <Field label={translate('common.travel_time')} value={rTravelTime} />
+                    <Field
+                      label={translate('task_detail.modal.waiting_time')}
+                      value={rWaitingTime}
+                    />
                   </div>
                 );
               })()}
 
-            {activeTab === 'List Product' && (
+            {activeTab === translate('task_detail.modal.list_product') && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
-                  <Field label="Total Produk" value={uniqueProducts} />
-                  <Field label="Total Barang" value={totalItems} />
+                  <Field
+                    label={translate('task_detail.modal.total_product')}
+                    value={uniqueProducts}
+                  />
+                  <Field label={translate('task_detail.modal.total_item')} value={totalItems} />
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
                   <table className="min-w-full">
                     <thead className="bg-gray-50 dark:bg-slate-900/50">
                       <tr>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Invoice Number
+                          {translate('common.invoice_number')}
                         </Th>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Item
+                          {translate('common.items')}
                         </Th>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Quantity
+                          {translate('common.quantity')}
                         </Th>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
                           UOM
                         </Th>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Volume
+                          {translate('common.volume')}
                         </Th>
                         <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Weight
+                          {translate('common.weight')}
                         </Th>
                       </tr>
                     </thead>
@@ -312,7 +353,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                       ) : (
                         <tr>
                           <Td colSpan={6} className="p-4 text-center text-xs text-gray-500">
-                            Tidak ada produk.
+                            {translate('common.no_data')}
                           </Td>
                         </tr>
                       )}
@@ -322,7 +363,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               </div>
             )}
 
-            {activeTab === 'History' && (
+            {activeTab === translate('task_detail.modal.history') && (
               <div className="py-2">
                 {histories.length > 0 ? (
                   <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
@@ -338,7 +379,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                           </span>
                         </div>
                         <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
-                          By: {h.changedBy || '-'}
+                          {h.changedBy || '-'}
                         </div>
                         <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
                           {h.notes || '-'}
@@ -352,12 +393,18 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               </div>
             )}
 
-            {activeTab === 'Other' && (
+            {activeTab === translate('common.others') && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Field label="Task ID" value={taskData._id} />
-                <Field label="Route ID" value={taskData.routingResultId} />
-                <Field label="Travel Distance" value={renderFloatData(taskData.travelDistance)} />
-                <Field label="Travel Duration" value={renderFloatData(taskData.travelDuration)} />
+                <Field label={translate('common.task_id')} value={taskData._id} />
+                <Field label={translate('common.routing_id')} value={taskData.routingResultId} />
+                <Field
+                  label={translate('common.travel_distance')}
+                  value={renderFloatData(taskData.travelDistance)}
+                />
+                <Field
+                  label={translate('common.travel_duration')}
+                  value={renderFloatData(taskData.travelDuration)}
+                />
               </div>
             )}
           </div>
@@ -370,7 +417,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Detail Task"
+      title={translate('task_detail.modal.title')}
       subtitle={getSubtitle()}
       maxWidth="max-w-5xl lg:max-w-6xl"
       bodyClassName="p-6 overflow-y-auto"

@@ -114,7 +114,7 @@ export default function DetailTab({ loading, summaryData, driverData }) {
     { label: t('dashboard.tab.detail.unassigned'), value: 'unassigned' },
     { label: t('common.status.ongoing'), value: 'ongoing' },
     { label: t('common.status.manual_assign'), value: 'manual' },
-    { label: t('dashboard.tab.detail.diff_day'), value: 'diff_day' },
+    { label: t('common.status.diff_day'), value: 'diff_day' },
     { label: t('common.status.success'), value: 'success' },
     { label: t('common.status.partial'), value: 'partial' },
     { label: t('common.status.pending'), value: 'pending' },
@@ -435,6 +435,7 @@ export default function DetailTab({ loading, summaryData, driverData }) {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driverData}
+        translate={t}
       />
     </div>
   );
