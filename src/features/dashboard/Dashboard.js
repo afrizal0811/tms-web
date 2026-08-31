@@ -456,7 +456,7 @@ export default function Dashboard({ driverData }) {
             />
           )}
         </div>
-        {(activeTab === 'Detail' || activeTab === 'RoutingVsActual') && (
+        {activeTab === 'RoutingVsActual' && (
           <div className="py-1 px-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
             <span className="italic text-xs">
               *{' '}
