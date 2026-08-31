@@ -4,6 +4,7 @@ import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Information from '@/components/Information';
 import SearchBar from '@/components/SearchBar';
+import ToggleButton from '@/components/ToggleButton';
 import Tooltip from '@/components/Tooltip';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
@@ -750,26 +751,15 @@ export default function DeliveryPage() {
     {
       label: t('delivery.view'),
       component: (
-        <div className="flex w-full items-center rounded-lg border border-slate-200 bg-slate-100 p-1 h-[42px] dark:border-slate-700 dark:bg-slate-800">
-          {[
-            { isDetail: false, label: t('delivery.view_summary') },
-            { isDetail: true, label: t('delivery.view_detail') },
-          ].map((opt) => {
-            const active = isDetailView === opt.isDetail;
-
-            return (
-              <button
-                key={opt.label}
-                type="button"
-                onClick={() => handleToggleView(opt.isDetail)}
-                disabled={isLoading || isDownloading}
-                className={`h-full flex-1 rounded-md px-4 text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${active ? ' bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-400' : 'cursor-pointer text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
+        <ToggleButton
+          options={[
+            { label: t('delivery.view_summary'), value: false },
+            { label: t('delivery.view_detail'), value: true },
+          ]}
+          value={isDetailView}
+          onChange={handleToggleView}
+          disabled={isLoading || isDownloading}
+        />
       ),
     },
     {

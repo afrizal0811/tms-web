@@ -13,7 +13,7 @@ export async function GET(request) {
     const limit = searchParams.get('limit') || 1000;
     const fields = searchParams.get('fields');
 
-    if (!hubId || !timeFrom || !timeTo || !status || !timeBy) {
+    if (!timeFrom || !timeTo || !status || !timeBy) {
       return NextResponse.json({ error: 'Missing required query parameters' }, { status: 400 });
     }
 
@@ -26,7 +26,9 @@ export async function GET(request) {
 
     const fetchTasksPage = async (pageNumber) => {
       const externalUrl = new URL(`${apiUrl}/tasks`);
-      externalUrl.searchParams.append('hubId', hubId);
+      if (hubId) {
+        externalUrl.searchParams.append('hubId', hubId);
+      }
       externalUrl.searchParams.append('timeFrom', timeFrom);
       externalUrl.searchParams.append('timeTo', timeTo);
       externalUrl.searchParams.append('status', status);

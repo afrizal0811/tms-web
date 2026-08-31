@@ -31,6 +31,7 @@ export const fields = {
     'expectedCoordinate',
     'flow',
     'gpsSesuai',
+    'hubId',
     'isSplitTask',
     'klikJikaSudahSampai',
     'klikLokasiClient',

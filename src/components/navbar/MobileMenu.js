@@ -212,6 +212,7 @@ export default function MobileMenu({
                 isSuperadmin={isSuperadmin}
                 isAdmin={isAdmin}
               />
+              <MobileNavLink href="/tasks">{t('navbar.task')}</MobileNavLink>
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}

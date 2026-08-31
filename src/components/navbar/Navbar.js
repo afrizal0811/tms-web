@@ -111,6 +111,7 @@ export default function Navbar() {
         isSuperadmin={isSuperadmin}
         isAdmin={isAdmin}
       />
+      <NavLink href="/task">{t('navbar.task')}</NavLink>
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}

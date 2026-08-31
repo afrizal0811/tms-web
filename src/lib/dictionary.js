@@ -148,6 +148,7 @@ export const dictionary = {
     navbar: {
       bread_report: 'Laporan Barang Roti',
       coordinate: 'Longlat',
+      custom_report: 'Laporan Kustom',
       daily_report: 'Laporan Harian',
       delivery: 'Pengiriman',
       driver_guide: 'Panduan - Sopir',
@@ -158,8 +159,8 @@ export const dictionary = {
       report: 'Laporan',
       setting: 'Pengaturan',
       summary: 'Rangkuman',
+      task: 'Tugas',
       task_counter_report: 'Laporan Jumlah Tugas',
-      custom_report: 'Laporan Kustom',
       update: 'Perbarui',
     },
     dashboard: {
@@ -827,6 +828,7 @@ export const dictionary = {
     navbar: {
       bread_report: 'Bread Item Report',
       coordinate: 'Coordinates',
+      custom_report: 'Custom Report',
       daily_report: 'Daily Report',
       delivery: 'Delivery',
       driver_guide: 'Guide - Driver',
@@ -837,8 +839,8 @@ export const dictionary = {
       report: 'Reports',
       setting: 'Setting',
       summary: 'Summary',
+      task: 'Task',
       task_counter_report: 'Task Counter Report',
-      custom_report: 'Custom Report',
       update: 'Update',
     },
     dashboard: {
