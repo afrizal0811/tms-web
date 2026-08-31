@@ -4,7 +4,7 @@ import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
 import Td from '@/components/table/Td';
 import Th from '@/components/table/Th';
-import { getResult, getTask, getUser } from '@/lib/api';
+import { getResult, getTask, getUsers } from '@/lib/api';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import Modal from '../Modal';
@@ -47,19 +47,23 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         setTaskData(task);
 
         const [createdRes, updatedRes, resultRes] = await Promise.allSettled([
-          task?.createdBy ? getUser(task.createdBy) : Promise.resolve(null),
-          task?.updatedBy ? getUser(task.updatedBy) : Promise.resolve(null),
+          task?.createdBy ? getUsers(task.hubId, task.createdBy) : Promise.resolve(null),
+          task?.updatedBy ? getUsers(task.hubId, task.updatedBy) : Promise.resolve(null),
           task?.routingResultId ? getResult(task.routingResultId) : Promise.resolve(null),
         ]);
 
         setCreatedBy(
-          createdRes.status === 'fulfilled' && createdRes.value ? createdRes.value[0]?.name : null
+          createdRes.status === 'fulfilled' && !createdRes.value?.data
+            ? createdRes.value[0]?.name
+            : task?.createdBy
         );
         setUpdatedBy(
-          updatedRes.status === 'fulfilled' && updatedRes.value ? updatedRes.value[0]?.name : null
+          updatedRes.status === 'fulfilled' && !updatedRes.value?.data
+            ? updatedRes.value[0]?.name
+            : task?.updatedBy
         );
         setResultData(
-          resultRes.status === 'fulfilled' && resultRes.value
+          resultRes.status === 'fulfilled' && !resultRes.value?.data
             ? resultRes.value?.data || resultRes.value
             : null
         );
@@ -121,7 +125,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
       ) || {};
 
     const maxVehicle = driver.type || taskData?.maksimumVehicleType || '-';
-    const assigneeName = driver.name || '-';
+    const assigneeName = driver.name || assigneeEmail || '-';
     const licenseNumber = getBasePlate(driver.plat) || '-';
 
     const products = taskData.listProduct || [];
@@ -162,7 +166,11 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               Creation
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Created By" value={createdBy} tooltip={taskData.createdBy} />
+              <Field
+                label="Created By"
+                value={createdBy}
+                tooltip={taskData.createdFrom === 'Automation' ? null : taskData.createdBy}
+              />
               <Field label="Created Time" value={renderDate(taskData.createdTime)} />
               <Field label="Created From" value={taskData.createdFrom} />
               <Field label="Start Time" value={renderDate(taskData.startTime)} />
@@ -173,7 +181,11 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               Assignment
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Assignee" value={assigneeName} tooltip={taskData.assignee} />
+              <Field
+                label="Assignee"
+                value={assigneeName}
+                tooltip={assigneeName === assigneeEmail ? null : assigneeEmail}
+              />
               <Field label="License Number" value={licenseNumber} />
               <Field label="Assigned Time" value={renderDate(taskData.assignedTime)} />
               <Field label="Done Time" value={renderDate(taskData.doneTime)} />

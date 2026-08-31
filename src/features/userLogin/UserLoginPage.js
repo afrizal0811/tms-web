@@ -4,7 +4,7 @@ import LocationSelector from '@/components/dropdown/LocationDropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import { getRoles, getUser } from '@/lib/api';
+import { getRoles, getUsers } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -107,7 +107,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     }
     setLoading(true);
     try {
-      const response = await getUser(emailInput, selectedLocation);
+      const response = await getUsers(selectedLocation, emailInput);
       let usersArray = [];
       if (Array.isArray(response)) {
         usersArray = response;

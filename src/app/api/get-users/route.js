@@ -3,21 +3,9 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const q = searchParams.get('q');
     const hubId = searchParams.get('hubId');
+    const q = searchParams.get('q');
     const roleId = searchParams.get('roleId');
-    const status = searchParams.get('status');
-
-    if (!status || (!q && !hubId)) {
-      return NextResponse.json(
-        {
-          error: 'Parameter tidak lengkap. Harap sertakan status DAN (q atau hubId).',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const apiToken = process.env.API_TOKEN;
@@ -38,7 +26,7 @@ export async function GET(request) {
     if (q) externalUrl.searchParams.append('q', q);
     if (hubId) externalUrl.searchParams.append('hubId', hubId);
     if (roleId) externalUrl.searchParams.append('roleId', roleId);
-    if (status) externalUrl.searchParams.append('status', status);
+    externalUrl.searchParams.append('status', 'active');
 
     const externalResponse = await fetch(externalUrl.toString(), {
       headers: {

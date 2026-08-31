@@ -62,11 +62,11 @@ export default function TaskPage() {
 
   useEffect(() => {
     const fetchDriverData = async () => {
-      const data = await getDriverData(hubId);
+      const data = await getDriverData();
       setDriverData(data);
     };
     fetchDriverData();
-  }, [hubId]);
+  }, []);
 
   useEffect(() => {
     if (isSuperadmin) {
@@ -81,7 +81,7 @@ export default function TaskPage() {
       };
       fetchHubs();
     }
-  }, [isSuperadmin]);
+  }, [isSuperadmin, hubId]);
 
   const fetchTasksData = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -395,7 +395,11 @@ export default function TaskPage() {
 
   return (
     <div className="w-full px-4 sm:px-6 h-[calc(100vh-100px)] flex flex-col">
-      <HeaderCard title="Task Data" items={headerItems} />
+      <HeaderCard
+        title="Task Data"
+        subtitle="Data seluruh task yang tersedia"
+        items={headerItems}
+      />
       <BodyCard isLoading={loading} isEmpty={paginatedTasks.length === 0}>
         <div className="flex flex-col flex-1 h-full min-h-0">
           <div className="flex-1 overflow-auto bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
