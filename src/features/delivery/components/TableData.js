@@ -261,7 +261,7 @@ export default function TableData({
       key: 'so',
       width: 'w-[15%]',
       sortable: true,
-      align: 'center',
+      align: isDetailView ? 'center' : 'left',
       label: t('common.invoice_number'),
       render: (row) => {
         if (row.isHub) return <div className="text-center w-full"></div>;

@@ -737,7 +737,7 @@ export default function DeliveryPage() {
       ),
     },
     {
-      label: 'Filter',
+      label: t('common.search'),
       component: (
         <SearchBar
           disabled={isLoading || isDownloading}

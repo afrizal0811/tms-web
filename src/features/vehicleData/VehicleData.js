@@ -236,7 +236,7 @@ export default function VehicleData() {
 
   const headerItems = [
     {
-      label: 'Filter',
+      label: t('common.search'),
       component: (
         <SearchBar
           disabled={isLoading}
