@@ -165,10 +165,13 @@ export default function TableData({
 
   const getRowTooltip = (row) => {
     const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
-    if (row.isMiddleHub && !isDefaultSort) return t('delivery.tooltip.inaccurate_hub');
-    if (row.hasPartner) return t('delivery.tooltip.find_invoice');
-    if (row.isManual) return t('delivery.tooltip.manual_assign');
-    return '';
+    const tooltips = [];
+    if (row.isMiddleHub && !isDefaultSort) tooltips.push(t('delivery.tooltip.inaccurate_hub'));
+    if (row.hasPartner) tooltips.push(t('delivery.tooltip.find_invoice'));
+    if (row.isManual) tooltips.push(t('common.status.manual_assign'));
+    if (row.isInvalidSo) tooltips.push(t('delivery.tooltip.invalid_invoice'));
+    const tooltip = tooltips.join(', ');
+    return tooltip.charAt(0).toUpperCase() + tooltip.slice(1).toLowerCase();
   };
 
   const columns = [
@@ -263,11 +266,9 @@ export default function TableData({
       render: (row) => {
         if (row.isHub) return <div className="text-center w-full"></div>;
         const content = row.isInvalidSo ? (
-          <Tooltip tooltipContent={t('delivery.tooltip.invalid_invoice')}>
-            <span className="text-red-600 dark:text-red-400 font-bold cursor-help border-b border-dashed border-red-400">
-              <HighlightText text={row.displaySo} highlight={searchQuery} />
-            </span>
-          </Tooltip>
+          <span className="text-red-600 dark:text-red-400 font-bold border-b border-dashed border-red-400">
+            <HighlightText text={row.displaySo} highlight={searchQuery} />
+          </span>
         ) : (
           <HighlightText text={row.displaySo} highlight={searchQuery} />
         );

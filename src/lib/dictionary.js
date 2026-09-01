@@ -473,7 +473,6 @@ export const dictionary = {
         hub_eta: 'Terdapat tugas yang ditugaskan secara manual. Estimasi menjadi tidak akurat',
         inaccurate_hub: 'Urutan hub tambahan tidak valid karena urutan data berubah',
         invalid_invoice: 'Nomor faktur tidak valid',
-        manual_assign: 'Penugasan Manual',
       },
       modal: {
         bun_list: 'Daftar faktur dengan barang "BUN"',
@@ -1181,7 +1180,6 @@ export const dictionary = {
         find_invoice: 'Click to filter by invoice number',
         hub_eta: 'There are manually assigned tasks. The estimation is not accurate',
         inaccurate_hub: 'Invalid additional hub order due to changed data sequence',
-        manual_assign: 'Manual Assign',
         invalid_invoice: 'Invalid invoice number',
       },
       modal: {

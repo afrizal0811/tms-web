@@ -6,16 +6,24 @@ import { useMemo, useState } from 'react';
 
 const getRowClassName = (v) => {
   if (v.isIncomplete) {
-    return 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15 transition-colors';
+    return 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15 transition-colors cursor-help';
   }
   if (v.isDuplicateDriver) {
-    return 'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15 transition-colors';
+    return 'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15 transition-colors cursor-help';
   }
   return 'hover:bg-gray-50 dark:hover:bg-slate-700/10 transition-colors';
 };
 
 export default function VehicleTab({ paginatedData, searchQuery, t }) {
   const [sortConfig, setSortConfig] = useState({ key: 'type', direction: 'asc' });
+
+  const getRowTooltip = (row) => {
+    const tooltips = [];
+    if (row.isIncomplete) tooltips.push(t('vehicle.tabs.incomplete_data'));
+    if (row.isDuplicateDriver) tooltips.push(t('vehicle.tabs.duplicate_driver'));
+    const tooltip = tooltips.join(', ');
+    return tooltip.charAt(0).toUpperCase() + tooltip.slice(1).toLowerCase();
+  };
 
   const dataWithNo = useMemo(() => {
     return paginatedData.map((item, index) => ({
@@ -29,6 +37,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
       key: 'no',
       width: 'w-[5%]',
       sortable: true,
+      align: 'center',
       label: 'No',
       render: (row) => <div className="text-center w-full">{row.no}</div>,
     },
@@ -86,7 +95,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
         externalSortConfig={sortConfig}
         onExternalSort={setSortConfig}
         rowClassName={getRowClassName}
-        emptyMessage={t('common.no_data')}
+        rowTooltip={getRowTooltip}
       />
     </div>
   );
