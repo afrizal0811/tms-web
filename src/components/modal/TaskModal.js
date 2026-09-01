@@ -2,7 +2,7 @@
 
 import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { getResult, getTask, getUsers } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';

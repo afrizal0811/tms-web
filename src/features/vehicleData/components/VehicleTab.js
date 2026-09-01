@@ -1,7 +1,7 @@
 'use client';
 
 import HighlightText from '@/components/HighlightText';
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { useMemo, useState } from 'react';
 
 const getRowClassName = (v) => {

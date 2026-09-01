@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/Modal';
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';

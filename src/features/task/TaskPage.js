@@ -8,7 +8,7 @@ import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
-import TableData from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import ToggleButton from '@/components/ToggleButton';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
@@ -39,6 +39,7 @@ export default function TaskPage() {
   const [hubsData, setHubsData] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState({ key: '_startFmt', direction: 'asc' });
 
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
@@ -427,10 +428,11 @@ export default function TaskPage() {
         items={headerItems}
       />
       <BodyCard isLoading={false} isEmpty={false}>
-        <TableData
+        <CustomTable
           columns={columns}
           data={processedData}
-          defaultSort={isAllHub ? ['_hubName', '_driverName'] : ['_startFmt', '_driverName']}
+          externalSortConfig={sortConfig}
+          onExternalSort={setSortConfig}
           isLoading={loading}
           paginate={true}
           onRowClick={(row) => {

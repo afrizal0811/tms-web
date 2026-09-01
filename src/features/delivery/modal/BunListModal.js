@@ -4,7 +4,7 @@
 import Button from '@/components/Button';
 import Modal from '@/components/Modal';
 import SearchBar from '@/components/SearchBar';
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { useState } from 'react';
 
 export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t }) {
@@ -49,9 +49,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
               if (e.target.checked) setCheckedBunSo(filteredBunList.map((b) => b.so));
               else setCheckedBunSo([]);
             }}
-            checked={
-              filteredBunList.length > 0 && checkedBunSo.length === filteredBunList.length
-            }
+            checked={filteredBunList.length > 0 && checkedBunSo.length === filteredBunList.length}
           />
         </div>
       ),
@@ -97,9 +95,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
       sortable: true,
       label: t('common.customer_name'),
       render: (row) => (
-        <div className="align-top text-slate-500 dark:text-slate-300 w-full">
-          {row.customer}
-        </div>
+        <div className="align-top text-slate-500 dark:text-slate-300 w-full">{row.customer}</div>
       ),
     },
     {

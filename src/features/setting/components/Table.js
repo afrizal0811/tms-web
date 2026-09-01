@@ -1,6 +1,6 @@
 'use client';
 
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { useEffect, useRef, useState } from 'react';
 
 const EditIcon = () => (

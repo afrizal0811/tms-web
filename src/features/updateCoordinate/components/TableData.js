@@ -1,6 +1,6 @@
 'use client';
 
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 

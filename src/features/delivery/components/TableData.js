@@ -1,6 +1,6 @@
 import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
-import CustomTable from '@/components/table/TableData';
+import CustomTable from '@/components/table/CustomTable';
 import {
   checkInvalidSo,
   checkInvalidSoList,

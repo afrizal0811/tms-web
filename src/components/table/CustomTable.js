@@ -18,7 +18,6 @@ const compareValues = (aVal, bVal) =>
 export default function TableData({
   columns = [],
   data = [],
-  defaultSort = [],
   onRowClick,
   isLoading = false,
   paginate = false,
@@ -71,17 +70,9 @@ export default function TableData({
           return sortConfig.direction === 'asc' ? cmp : -cmp;
         });
       }
-    } else if (defaultSort && defaultSort.length > 0) {
-      sortableItems.sort((a, b) => {
-        for (let key of defaultSort) {
-          const cmp = compareValues(a[key] ?? '', b[key] ?? '');
-          if (cmp !== 0) return cmp;
-        }
-        return 0;
-      });
     }
     return sortableItems;
-  }, [data, sortConfig, defaultSort, customSort]);
+  }, [data, sortConfig, customSort]);
 
   const paginatedData = useMemo(() => {
     if (!paginate || limit === 'all') return sortedData;
