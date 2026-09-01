@@ -136,7 +136,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       <div className="flex flex-col gap-4">
         <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0">
           <Map bounds={bounds}>
-            {({ Marker, Tooltip: LeafletTooltip, Circle }, icons) => (
+            {({ Marker, Tooltip: LeafletTooltip, Circle }, L, icons) => (
               <>
                 {activeHubLocation && (
                   <>
