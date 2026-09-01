@@ -1,10 +1,11 @@
 'use client';
 
+import Map from '@/components/Map';
 import Modal from '@/components/modal/Modal';
 import CustomTable from '@/components/table/CustomTable';
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 
 const parseDurationToMinutes = (str) => {
   if (!str) return 0;
@@ -13,118 +14,7 @@ const parseDurationToMinutes = (str) => {
 };
 
 export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const hasMultipleData = data && data.entries.length > 1;
-
-  useEffect(() => {
-    if (!isOpen || !data || !mapContainerRef.current) return;
-
-    let isMounted = true;
-
-    (async () => {
-      const L = (await import('leaflet')).default;
-      await import('leaflet/dist/leaflet.css');
-
-      if (!isMounted) return;
-
-      if (!mapInstanceRef.current) {
-        mapInstanceRef.current = L.map(mapContainerRef.current);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(
-          mapInstanceRef.current
-        );
-      }
-
-      const map = mapInstanceRef.current;
-
-      map.eachLayer((layer) => {
-        if (layer instanceof L.Marker || layer instanceof L.Circle || layer instanceof L.Tooltip) {
-          map.removeLayer(layer);
-        }
-      });
-
-      const bounds = [];
-      const activeHubLocation = data.activeHubLocation;
-
-      // Render Hub & Radius
-      if (activeHubLocation) {
-        bounds.push([activeHubLocation.lat, activeHubLocation.lng]);
-        L.circle([activeHubLocation.lat, activeHubLocation.lng], {
-          radius: 500,
-          color: '#22c55e',
-          fillColor: '#22c55e',
-          fillOpacity: 0.2,
-          weight: 1,
-        }).addTo(map);
-
-        const hubIcon = L.divIcon({
-          className: 'bg-transparent border-none',
-          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 bg-green-500 border-2 border-white shadow-md">HUB</div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-        });
-        L.marker([activeHubLocation.lat, activeHubLocation.lng], { icon: hubIcon }).addTo(map);
-      }
-
-      // Helper for repetitive marker creation
-      const addMarker = (lat, lon, labelText, isOut, tooltipContent, hasDayDiff = false) => {
-        bounds.push([lat, lon]);
-        const bgColor = isOut ? 'bg-red-500' : 'bg-sky-500';
-        const dayDiffBorder = hasDayDiff ? 'border-red-500' : 'border-white';
-        const icon = L.divIcon({
-          className: 'bg-transparent border-none',
-          html: `<div class="flex items-center justify-center rounded-full text-white font-bold text-[10px] w-8 h-8 ${bgColor} border-2 ${dayDiffBorder} shadow-md">${labelText}</div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-        });
-        L.marker([lat, lon], { icon })
-          .bindTooltip(tooltipContent, { direction: 'top', offset: [0, -10] })
-          .addTo(map);
-      };
-
-      // Render Start / Finish markers
-      data.entries.forEach((entry, idx) => {
-        const sText = data.entries.length > 1 ? `S${idx + 1}` : 'S';
-        const fText = data.entries.length > 1 ? `F${idx + 1}` : 'F';
-        const hasDayDiff = entry.dayDiff > 0;
-        if (entry.startLat && entry.startLon) {
-          const tooltipContent = `<b>${translate('summary.tabs.time_driver.modal.start_time')}</b><br>${formatDateUniversal(entry.startTime, 'DD/MM/YYYY HH:mm')}`;
-          addMarker(entry.startLat, entry.startLon, sText, entry.isStartOutRadius, tooltipContent);
-        }
-
-        if (entry.finishLat && entry.finishLon) {
-          const tooltipContent = `<b>${translate('summary.tabs.time_driver.modal.finish_time')}</b><br>${formatDateUniversal(entry.finishTime, 'DD/MM/YYYY HH:mm')} <span class="text-red-500">${hasDayDiff ? `(+${entry.dayDiff})` : ''}</span>`;
-          addMarker(
-            entry.finishLat,
-            entry.finishLon,
-            fText,
-            entry.isFinishOutRadius,
-            tooltipContent,
-            hasDayDiff
-          );
-        }
-      });
-
-      if (bounds.length > 0) {
-        map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 16 });
-      }
-
-      setTimeout(() => {
-        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
-      }, 100);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, data, translate]);
-
-  useEffect(() => {
-    if (!isOpen && mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-  }, [isOpen]);
+  const hasMultipleData = data && data.entries && data.entries.length > 1;
 
   const tableEntries = useMemo(() => {
     if (!data || !data.entries) return [];
@@ -136,7 +26,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
 
   if (!data) return null;
 
-  const { driverName, dateStr, entries } = data;
+  const { driverName, dateStr, entries, activeHubLocation } = data;
 
   const totalMinutes = entries.reduce(
     (acc, curr) => acc + parseDurationToMinutes(curr.durationDisplay),
@@ -234,32 +124,105 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
     },
   ];
 
-  const tableData = (
-    <>
-      <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
-        <CustomTable columns={columns} data={tableEntries} />
-        <div className="flex bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
-          <div className="w-[70%] px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
-            Total
-          </div>
-          <div className="w-[30%] text-sm px-4 py-3 text-center text-slate-800 dark:text-slate-200">
-            {totalDurationFormatted}
-          </div>
-        </div>
-      </div>
-      <div className="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400 italic">
-        {translate('summary.tabs.time_driver.modal.footer_note')}
-      </div>
-    </>
-  );
+  const bounds = [];
+  if (activeHubLocation) bounds.push([activeHubLocation.lat, activeHubLocation.lng]);
+  entries.forEach((entry) => {
+    if (entry.startLat && entry.startLon) bounds.push([entry.startLat, entry.startLon]);
+    if (entry.finishLat && entry.finishLon) bounds.push([entry.finishLat, entry.finishLon]);
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={driverName} subtitle={dateStr}>
       <div className="flex flex-col gap-4">
         <div className="h-[450px] w-full rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 relative z-0">
-          <div ref={mapContainerRef} className="w-full h-full" />
+          <Map bounds={bounds}>
+            {({ Marker, Tooltip: LeafletTooltip, Circle }, icons) => (
+              <>
+                {activeHubLocation && (
+                  <>
+                    <Circle
+                      center={[activeHubLocation.lat, activeHubLocation.lng]}
+                      radius={500}
+                      pathOptions={{
+                        color: '#22c55e',
+                        fillColor: '#22c55e',
+                        fillOpacity: 0.2,
+                        weight: 1,
+                      }}
+                    />
+                    <Marker
+                      position={[activeHubLocation.lat, activeHubLocation.lng]}
+                      icon={icons.circle('HUB', 'bg-green-500', 'text-[10px]')}
+                    />
+                  </>
+                )}
+                {entries.map((entry, idx) => {
+                  const sText = entries.length > 1 ? `S${idx + 1}` : 'S';
+                  const fText = entries.length > 1 ? `F${idx + 1}` : 'F';
+                  const hasDayDiff = entry.dayDiff > 0;
+                  return (
+                    <div key={idx}>
+                      {entry.startLat && entry.startLon && (
+                        <Marker
+                          position={[entry.startLat, entry.startLon]}
+                          icon={icons.circle(
+                            sText,
+                            entry.isStartOutRadius ? 'bg-red-500' : 'bg-sky-500'
+                          )}
+                        >
+                          <LeafletTooltip direction="top" offset={[0, -10]}>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: `<b>${translate('summary.tabs.time_driver.modal.start_time')}</b><br>${formatDateUniversal(entry.startTime, 'DD/MM/YYYY HH:mm')}`,
+                              }}
+                            />
+                          </LeafletTooltip>
+                        </Marker>
+                      )}
+                      {entry.finishLat && entry.finishLon && (
+                        <Marker
+                          position={[entry.finishLat, entry.finishLon]}
+                          icon={icons.circle(
+                            fText,
+                            entry.isFinishOutRadius ? 'bg-red-500' : 'bg-sky-500',
+                            'text-xs',
+                            hasDayDiff ? 'border-red-500' : 'border-white'
+                          )}
+                        >
+                          <LeafletTooltip direction="top" offset={[0, -10]}>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: `<b>${translate('summary.tabs.time_driver.modal.finish_time')}</b><br>${formatDateUniversal(entry.finishTime, 'DD/MM/YYYY HH:mm')} <span class="text-red-500">${hasDayDiff ? `(+${entry.dayDiff})` : ''}</span>`,
+                              }}
+                            />
+                          </LeafletTooltip>
+                        </Marker>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </Map>
         </div>
-        {hasMultipleData && tableData}
+        {hasMultipleData && (
+          <>
+            <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
+              <CustomTable columns={columns} data={tableEntries} paginate={false} />
+              <div className="flex bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
+                <div className="w-[70%] px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
+                  Total
+                </div>
+                <div className="w-[30%] text-sm px-4 py-3 text-center text-slate-800 dark:text-slate-200">
+                  {totalDurationFormatted}
+                </div>
+              </div>
+            </div>
+            <div className="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400 italic">
+              {translate('summary.tabs.time_driver.modal.footer_note')}
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   );

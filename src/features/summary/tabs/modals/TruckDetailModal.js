@@ -1,4 +1,6 @@
-// File: src/features/summary/tabs/modals/TruckDetailModal.js
+'use client';
+
+import Map from '@/components/Map';
 import Modal from '@/components/modal/Modal';
 import Tooltip from '@/components/Tooltip';
 import {
@@ -8,93 +10,7 @@ import {
   parseCoordinates,
   parseCustomerString,
 } from '@/lib/utils';
-import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
-
-const TaskMap = dynamic(
-  async () => {
-    const reactLeaflet = await import('react-leaflet');
-    const leaflet = await import('leaflet');
-    const L = leaflet.default || leaflet;
-    const { MapContainer, TileLayer, Marker, Tooltip: LeafletTooltip, useMap } = reactLeaflet;
-
-    const createIcon = (initial, bgColor) =>
-      L.divIcon({
-        className: 'bg-transparent border-0',
-        html: `<div style="background-color: ${bgColor}; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); font-size: 14px;">${initial}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
-
-    function BoundsUpdater({ d, e }) {
-      const map = useMap();
-      useEffect(() => {
-        const bounds = L.latLngBounds();
-        let hasPoint = false;
-        if (d) {
-          bounds.extend([d.lat, d.lon]);
-          hasPoint = true;
-        }
-        if (e) {
-          bounds.extend([e.lat, e.lon]);
-          hasPoint = true;
-        }
-        if (hasPoint) {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-        }
-      }, [d, e, map]);
-      return null;
-    }
-
-    return function MapView({ doneCoord, expectedCoord, translate, isIndonesian }) {
-      const dPos = parseCoordinates(doneCoord);
-      const ePos = parseCoordinates(expectedCoord);
-
-      if (!dPos && !ePos) {
-        return (
-          <div className="w-full h-full flex items-center justify-center text-slate-500 bg-gray-100 dark:bg-slate-800">
-            {translate('common.no_data')}
-          </div>
-        );
-      }
-
-      return (
-        <MapContainer
-          center={dPos || ePos}
-          zoom={13}
-          style={{ height: '100%', width: '100%', zIndex: 10 }}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <BoundsUpdater d={dPos} e={ePos} />
-          {dPos && (
-            <Marker
-              position={[dPos.lat, dPos.lon]}
-              icon={createIcon(isIndonesian ? 'S' : 'D', '#16a34a')}
-            >
-              <LeafletTooltip direction="top" offset={[0, -14]} opacity={1}>
-                {translate('summary.tabs.truck_detail.modal.done_point')}
-              </LeafletTooltip>
-            </Marker>
-          )}
-          {ePos && (
-            <Marker
-              position={[ePos.lat, ePos.lon]}
-              icon={createIcon(isIndonesian ? 'P' : 'C', '#2563eb')}
-            >
-              <LeafletTooltip direction="top" offset={[0, -14]} opacity={1}>
-                {translate('summary.tabs.truck_detail.modal.customer_point')}
-              </LeafletTooltip>
-            </Marker>
-          )}
-        </MapContainer>
-      );
-    };
-  },
-  {
-    ssr: false,
-    loading: () => <div className="w-full h-full bg-gray-100 dark:bg-slate-800 animate-pulse" />,
-  }
-);
+import { useState } from 'react';
 
 export default function TruckDetailModal({
   isOpen,
@@ -158,6 +74,10 @@ export default function TruckDetailModal({
     onClose();
   };
 
+  const dPos = selectedTask ? parseCoordinates(selectedTask.doneCoord) : null;
+  const ePos = selectedTask ? parseCoordinates(selectedTask.expectedCoord) : null;
+  const bounds = [dPos, ePos].filter(Boolean).map((p) => [p.lat, p.lon]);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -177,9 +97,7 @@ export default function TruckDetailModal({
     >
       <div className={`flex ${selectedTask ? 'flex-row' : 'flex-col'} h-[70vh]`}>
         <div
-          className={`w-full ${
-            selectedTask ? 'md:w-1/2 border-r border-gray-200 dark:border-slate-700' : ''
-          } h-full overflow-y-auto divide-y divide-gray-200 dark:divide-slate-700`}
+          className={`w-full ${selectedTask ? 'md:w-1/2 border-r border-gray-200 dark:border-slate-700' : ''} h-full overflow-y-auto divide-y divide-gray-200 dark:divide-slate-700`}
         >
           {tasks && tasks.length > 0 ? (
             tasks.map((task, idx) => {
@@ -192,11 +110,7 @@ export default function TruckDetailModal({
                 <div
                   key={idx}
                   onClick={() => setSelectedTask(task)}
-                  className={`px-6 py-4 cursor-pointer transition-colors ${
-                    isSelected
-                      ? 'bg-blue-50 dark:bg-slate-700/80'
-                      : 'bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50'
-                  }`}
+                  className={`px-6 py-4 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 dark:bg-slate-700/80' : 'bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex flex-col gap-1 max-w-[70%]">
@@ -218,10 +132,7 @@ export default function TruckDetailModal({
                       }
                     >
                       <div
-                        className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(
-                          displayRO,
-                          task.realSequence
-                        )}`}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm whitespace-nowrap cursor-help ${getSeqColor(displayRO, task.realSequence)}`}
                       >
                         {isEmpty(displayRO) ? '-' : `#${displayRO}`} &rarr;{' '}
                         {isEmpty(task.realSequence) ? '-' : `#${displayReal}`}
@@ -276,18 +187,16 @@ export default function TruckDetailModal({
 
         {selectedTask && (
           <div className="w-1/2 h-full relative bg-gray-100 dark:bg-slate-800">
-            {/* PERBAIKAN 2: Container absolut (overlay) untuk menahan elemen di atas peta */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedTask(null);
               }}
-              className="absolute top-4 right-4 z-999 pointer-events-auto cursor-pointer bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-gray-200 dark:border-slate-700"
-              aria-label="Tutup Map"
+              className="absolute top-4 right-4 z-50 pointer-events-auto cursor-pointer bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-gray-200 dark:border-slate-700"
             >
               &times;
             </button>
-            <div className="absolute bottom-4 left-4 z-999 pointer-events-auto bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-lg rounded-lg p-3 border border-gray-200 dark:border-slate-700 min-w-[130px]">
+            <div className="absolute bottom-4 left-4 z-50 pointer-events-auto bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-lg rounded-lg p-3 border border-gray-200 dark:border-slate-700 min-w-[130px]">
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                   {translate('common.weight')}
@@ -306,12 +215,39 @@ export default function TruckDetailModal({
                 </span>
               </div>
             </div>
-            <TaskMap
-              doneCoord={selectedTask.doneCoord}
-              expectedCoord={selectedTask.expectedCoord}
-              translate={translate}
-              isIndonesian={isIndonesian}
-            />
+
+            {bounds.length > 0 ? (
+              <Map bounds={bounds}>
+                {({ Marker, Tooltip: LeafletTooltip }, L, icons) => (
+                  <>
+                    {dPos && (
+                      <Marker
+                        position={[dPos.lat, dPos.lon]}
+                        icon={icons.circle(isIndonesian ? 'S' : 'D', 'bg-[#16a34a]', 'text-[14px]')}
+                      >
+                        <LeafletTooltip direction="top" offset={[0, -14]} opacity={1}>
+                          {translate('summary.tabs.truck_detail.modal.done_point')}
+                        </LeafletTooltip>
+                      </Marker>
+                    )}
+                    {ePos && (
+                      <Marker
+                        position={[ePos.lat, ePos.lon]}
+                        icon={icons.circle(isIndonesian ? 'P' : 'C', 'bg-[#2563eb]', 'text-[14px]')}
+                      >
+                        <LeafletTooltip direction="top" offset={[0, -14]} opacity={1}>
+                          {translate('summary.tabs.truck_detail.modal.customer_point')}
+                        </LeafletTooltip>
+                      </Marker>
+                    )}
+                  </>
+                )}
+              </Map>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-500 bg-gray-100 dark:bg-slate-800">
+                {translate('common.no_data')}
+              </div>
+            )}
           </div>
         )}
       </div>

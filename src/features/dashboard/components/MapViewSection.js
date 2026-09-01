@@ -1,20 +1,10 @@
 'use client';
 
+import Map from '@/components/Map';
 import { useLanguage } from '@/context/LanguageContext';
 import { isEmpty, parseCoordinates } from '@/lib/utils';
-import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
-import { useMap } from 'react-leaflet';
+import { useMemo } from 'react';
 import InfoCard from './InfoCard';
-
-const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), {
-  ssr: false,
-});
-const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), {
-  ssr: false,
-});
-const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
-const Polyline = dynamic(() => import('react-leaflet').then((mod) => mod.Polyline), { ssr: false });
 
 const getAngle = (lat1, lng1, lat2, lng2) => {
   const dy = lat2 - lat1;
@@ -22,47 +12,6 @@ const getAngle = (lat1, lng1, lat2, lng2) => {
   let theta = Math.atan2(dy, dx);
   theta *= 180 / Math.PI;
   return theta;
-};
-
-const createArrowIcon = (L, angle, color, isHighlight = false) => {
-  const size = isHighlight ? 24 : 16;
-  const fontSize = isHighlight ? '20px' : '14px';
-
-  return new L.DivIcon({
-    className: 'arrow-icon',
-    html: `
-      <div style="
-        transform: rotate(${-angle}deg); 
-        color: ${color}; 
-        font-size: ${fontSize}; 
-        font-weight: 900;
-        filter: drop-shadow(1px 1px 0px white);
-        display: flex; justify-content: center; align-items: center;
-        width: 100%; height: 100%;
-      ">
-        ➤
-      </div>
-    `,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-};
-
-const createNumberedIcon = (L, content, bgClassName) => {
-  let fontSize = 'text-xs';
-  if (isEmpty(content) || content === '?') fontSize = 'text-lg';
-  if (content === 'HUB') fontSize = 'text-[8px] tracking-tighter';
-
-  return new L.DivIcon({
-    className: 'custom-div-icon',
-    html: ` 
-      <div class="${bgClassName} w-7 h-7 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white font-bold ${fontSize} z-50 relative box-border overflow-hidden">
-        ${content}
-      </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
 };
 
 const applyJitter = (tasks) => {
@@ -84,8 +33,8 @@ const applyJitter = (tasks) => {
   });
 };
 
-const ArrowPolyline = ({ L, segments, defaultColor }) => {
-  if (!segments || isEmpty(segments) || !L) return null;
+const ArrowPolyline = ({ Marker, Polyline, icons, segments, defaultColor }) => {
+  if (!segments || isEmpty(segments)) return null;
   return (
     <>
       {segments.map((seg, i) => {
@@ -114,19 +63,19 @@ const ArrowPolyline = ({ L, segments, defaultColor }) => {
             />
             <Marker
               position={[startArrowLat, startArrowLng]}
-              icon={createArrowIcon(L, angle, color, isHighlight)}
+              icon={icons.arrow(angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
             <Marker
               position={[midLat, midLng]}
-              icon={createArrowIcon(L, angle, color, isHighlight)}
+              icon={icons.arrow(angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
             <Marker
               position={[endLat, endLng]}
-              icon={createArrowIcon(L, angle, color, isHighlight)}
+              icon={icons.arrow(angle, color, isHighlight)}
               zIndexOffset={arrowZIndex}
               interactive={false}
             />
@@ -137,32 +86,6 @@ const ArrowPolyline = ({ L, segments, defaultColor }) => {
   );
 };
 
-function MapRef({ setMap }) {
-  const map = useMap();
-  useEffect(() => {
-    setMap(map);
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 400);
-    return () => {
-      setMap(null);
-      clearTimeout(timer);
-    };
-  }, [map, setMap]);
-  return null;
-}
-
-function FitBounds({ L, coords }) {
-  const map = useMap();
-  useEffect(() => {
-    if (coords && coords.length > 0 && L) {
-      const bounds = L.latLngBounds(coords.map((c) => [c.lat, c.lng]));
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [coords, map, L]);
-  return null;
-}
-
 const LegendItem = ({ color, label }) => (
   <div className="flex items-center gap-1.5">
     <span className={`w-3 h-3 rounded-full ${color}`}></span>
@@ -170,7 +93,7 @@ const LegendItem = ({ color, label }) => (
   </div>
 );
 
-const MapViewSection = ({
+export default function MapViewSection({
   title,
   tasks,
   sequenceKey,
@@ -183,17 +106,8 @@ const MapViewSection = ({
   onCloseCard,
   isActualMap = false,
   resolveDisplayName,
-}) => {
+}) {
   const { t } = useLanguage();
-  const [LeafletLib, setLeafletLib] = useState(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      import('leaflet').then((module) => {
-        setLeafletLib(module.default);
-      });
-    }
-  }, []);
 
   const sortedTasks = useMemo(() => {
     const valid = tasks
@@ -284,15 +198,7 @@ const MapViewSection = ({
     });
   }, [selectedCustomer, sortedTasks, resolveDisplayName]);
 
-  const coordsForZoom = sortedTasks.map((t) => ({ lat: t.lat, lng: t.lng }));
-
-  if (!LeafletLib) {
-    return (
-      <div className="flex flex-col flex-1 bg-white border rounded-lg overflow-hidden shadow-sm min-h-0 items-center justify-center">
-        <span className="text-sm text-gray-400">Loading Map...</span>
-      </div>
-    );
-  }
+  const coordsForZoom = sortedTasks.map((t) => [t.lat, t.lng]);
 
   return (
     <div className="flex flex-col flex-1 bg-white border rounded-lg overflow-hidden shadow-sm relative min-h-0">
@@ -327,78 +233,76 @@ const MapViewSection = ({
       <div className="flex-1 w-full relative z-0 min-h-0 bg-slate-50">
         {sortedTasks.length > 0 ? (
           <div className="absolute inset-0 w-full h-full">
-            <MapContainer
-              center={[-6.2, 106.8]}
-              zoom={10}
-              className="w-full h-full"
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                attribution="&copy; OpenStreetMap"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapRef setMap={setMap} />
-
-              <FitBounds L={LeafletLib} coords={coordsForZoom} />
-              <ArrowPolyline L={LeafletLib} segments={pathSegments} defaultColor={lineColor} />
-
-              {sortedTasks.map((task, idx) => {
-                const seqNum = task[sequenceKey] ?? '?';
-                let finalContent = seqNum;
-                let markerBgClass = 'bg-[#2563EB]';
-
-                const isHub = task.type === 'HUB_START' || task.type === 'HUB_END';
-                const flow = (task.flow || '').toLowerCase();
-                const isCompleted = !isEmpty(task.realSequence);
-
-                if (isHub) {
-                  markerBgClass = 'bg-[#000000]';
-                  finalContent = 'HUB';
-                } else if (isCompleted) {
-                  if (flow.includes('pickup')) {
-                    const allPickupDone = pickupCount > 0 && completedPickupCount === pickupCount;
-                    if (allPickupDone) {
-                      markerBgClass = isActualMap ? 'bg-[#16A34A]' : 'bg-[#0D9488]';
-                    } else {
-                      markerBgClass = 'bg-[#9333EA]';
-                    }
-                  } else {
-                    if (isActualMap) {
-                      markerBgClass = 'bg-[#16A34A]';
-                    } else {
-                      markerBgClass = 'bg-[#0D9488]';
-                    }
-                  }
-                } else {
-                  if (task.isManualAssign) {
-                    markerBgClass = 'bg-[#64748B]';
-                    finalContent = isActualMap ? seqNum : '-';
-                  } else if (flow.includes('pickup')) {
-                    markerBgClass = 'bg-[#9333EA]';
-                  } else if (flow.includes('re delivery')) {
-                    markerBgClass = 'bg-[#F97316]';
-                  } else if (flow.includes('pending gr')) {
-                    markerBgClass = 'bg-[#FFDE21]';
-                  } else {
-                    markerBgClass = 'bg-[#2563EB]';
-                  }
-                }
-
-                return (
-                  <Marker
-                    key={`${sequenceKey}-${idx}`}
-                    position={[task.lat, task.lng]}
-                    icon={createNumberedIcon(LeafletLib, finalContent, markerBgClass)}
-                    zIndexOffset={isHub ? 200 : 100}
-                    eventHandlers={{
-                      click: () => {
-                        if (onMarkerClick) onMarkerClick(task);
-                      },
-                    }}
+            <Map bounds={coordsForZoom} onMapReady={setMap}>
+              {({ Marker, Polyline }, L, icons) => (
+                <>
+                  <ArrowPolyline
+                    Marker={Marker}
+                    Polyline={Polyline}
+                    icons={icons}
+                    segments={pathSegments}
+                    defaultColor={lineColor}
                   />
-                );
-              })}
-            </MapContainer>
+                  {sortedTasks.map((task, idx) => {
+                    const seqNum = task[sequenceKey] ?? '?';
+                    let finalContent = seqNum;
+                    let markerBgClass = 'bg-[#2563EB]';
+                    let textSizeClass = 'text-xs';
+
+                    const isHub = task.type === 'HUB_START' || task.type === 'HUB_END';
+                    const flow = (task.flow || '').toLowerCase();
+                    const isCompleted = !isEmpty(task.realSequence);
+
+                    if (isHub) {
+                      markerBgClass = 'bg-[#000000]';
+                      finalContent = 'HUB';
+                      textSizeClass = 'text-[8px] tracking-tighter';
+                    } else if (isCompleted) {
+                      if (flow.includes('pickup')) {
+                        const allPickupDone =
+                          pickupCount > 0 && completedPickupCount === pickupCount;
+                        markerBgClass = allPickupDone
+                          ? isActualMap
+                            ? 'bg-[#16A34A]'
+                            : 'bg-[#0D9488]'
+                          : 'bg-[#9333EA]';
+                      } else {
+                        markerBgClass = isActualMap ? 'bg-[#16A34A]' : 'bg-[#0D9488]';
+                      }
+                    } else {
+                      if (task.isManualAssign) {
+                        markerBgClass = 'bg-[#64748B]';
+                        finalContent = isActualMap ? seqNum : '-';
+                      } else if (flow.includes('pickup')) {
+                        markerBgClass = 'bg-[#9333EA]';
+                      } else if (flow.includes('re delivery')) {
+                        markerBgClass = 'bg-[#F97316]';
+                      } else if (flow.includes('pending gr')) {
+                        markerBgClass = 'bg-[#FFDE21]';
+                      } else {
+                        markerBgClass = 'bg-[#2563EB]';
+                      }
+                    }
+
+                    if (isEmpty(finalContent) || finalContent === '?') textSizeClass = 'text-lg';
+
+                    return (
+                      <Marker
+                        key={`${sequenceKey}-${idx}`}
+                        position={[task.lat, task.lng]}
+                        icon={icons.circle(finalContent, markerBgClass, textSizeClass)}
+                        zIndexOffset={isHub ? 200 : 100}
+                        eventHandlers={{
+                          click: () => {
+                            if (onMarkerClick) onMarkerClick(task);
+                          },
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </Map>
           </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400 text-sm">
@@ -407,7 +311,7 @@ const MapViewSection = ({
         )}
       </div>
 
-      <div className="hidden md:flex flex-wrap px-4 py-2 bg-gray-50 border-t  gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
+      <div className="hidden md:flex flex-wrap px-4 py-2 bg-gray-50 border-t gap-x-4 gap-y-2 text-[10px] text-gray-600 font-medium z-10 shrink-0">
         {!isActualMap ? (
           <LegendItem
             color="bg-[#0D9488]"
@@ -428,6 +332,4 @@ const MapViewSection = ({
       </div>
     </div>
   );
-};
-
-export default MapViewSection;
+}
