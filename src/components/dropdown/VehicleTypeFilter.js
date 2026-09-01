@@ -1,6 +1,6 @@
 'use client';
 
-import Dropdown from '@/components/Dropdown';
+import Dropdown from '@/components/dropdown/Dropdown';
 import { getVehicleTypes } from '@/lib/api';
 import { getBaseVehicleType } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import CustomTable from '@/components/table/CustomTable';
 import { getBasePlate } from '@/lib/utils';
 import { useMemo, useState } from 'react';

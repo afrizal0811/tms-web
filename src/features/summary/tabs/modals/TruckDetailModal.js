@@ -1,5 +1,5 @@
 // File: src/features/summary/tabs/modals/TruckDetailModal.js
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import Tooltip from '@/components/Tooltip';
 import {
   formatDateUniversal,

@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import CustomTable from '@/components/table/CustomTable';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';

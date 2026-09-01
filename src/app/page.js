@@ -1,8 +1,8 @@
 'use client';
 
-import AppLayout from '@/components/AppLayout';
-import ErrorPage from '@/components/ErrorPage';
-import SelectionLayout from '@/components/SelectionLayout';
+import AppLayout from '@/components/page/AppLayout';
+import ErrorPage from '@/components/page/ErrorPage';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';

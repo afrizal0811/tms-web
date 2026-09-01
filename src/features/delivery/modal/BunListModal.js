@@ -1,8 +1,8 @@
 // File: src/features/delivery/modal/BunListModal.js
 'use client';
 
-import Button from '@/components/Button';
-import Modal from '@/components/Modal';
+import Button from '@/components/button/Button';
+import Modal from '@/components/modal/Modal';
 import SearchBar from '@/components/SearchBar';
 import CustomTable from '@/components/table/CustomTable';
 import { useState } from 'react';

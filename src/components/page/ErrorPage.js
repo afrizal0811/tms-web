@@ -5,7 +5,6 @@ export default function ErrorPage() {
   return (
     <SelectionLayout>
       <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center animate-in fade-in zoom-in-95 duration-300">
-        {/* --- Icon Error --- */}
         <div className="relative mb-6">
           <div className="absolute -inset-4 bg-red-100 rounded-full animate-pulse opacity-50"></div>
           <div className="bg-white p-4 rounded-full shadow-sm border border-red-100 relative">
@@ -24,7 +23,6 @@ export default function ErrorPage() {
               />
             </svg>
           </div>
-          {/* Dekorasi silang kecil */}
           <div className="absolute -right-1 -top-1 bg-red-600 text-white rounded-full p-1 shadow-md">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -41,16 +39,13 @@ export default function ErrorPage() {
           </div>
         </div>
 
-        {/* --- Headline --- */}
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Gagal Memuat Aplikasi</h2>
 
-        {/* --- Deskripsi & Pesan Error Teknis --- */}
         <p className="text-slate-500 mb-6 leading-relaxed">
           Terjadi kendala saat menghubungi server atau koneksi Anda terputus. Silakan coba muat
           ulang halaman.
         </p>
 
-        {/* --- Tombol Aksi --- */}
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             onClick={() => window.location.reload()}

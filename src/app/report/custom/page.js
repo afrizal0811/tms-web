@@ -1,6 +1,6 @@
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import CustomReport from '@/features/reports/CustomReport';
 
 export default function CustomReportPage() {

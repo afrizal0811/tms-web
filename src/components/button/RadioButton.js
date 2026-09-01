@@ -1,8 +1,8 @@
 'use client';
 
-import Tooltip from './Tooltip';
+import Tooltip from '../Tooltip';
 
-export default function RadioCard({ options, selected, onChange, disabled }) {
+export default function RadioButton({ options, selected, onChange, disabled }) {
   return (
     <div className="flex flex-wrap justify-center gap-3 w-full max-w-3xl">
       {options.map((opt) => {

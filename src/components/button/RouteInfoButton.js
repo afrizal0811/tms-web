@@ -1,11 +1,12 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import CustomTable from '@/components/table/CustomTable';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
-export default function RoutingInfo({ resultsData }) {
+
+export default function RouteInfoButton({ resultsData }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
   const validResults = resultsData

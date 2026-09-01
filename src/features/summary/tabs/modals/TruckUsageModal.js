@@ -1,5 +1,5 @@
-import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import Modal from '@/components/modal/Modal';
 import { deleteTruckUsage, postTruckUsage } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';

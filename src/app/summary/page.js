@@ -1,5 +1,5 @@
 // File: src/app/summary/page.js
-import AppLayout from '@/components/AppLayout'; // Import AppLayout
+import AppLayout from '@/components/page/AppLayout'; // Import AppLayout
 import SummaryPage from '@/features/summary/SummaryPage';
 
 export default function Page() {

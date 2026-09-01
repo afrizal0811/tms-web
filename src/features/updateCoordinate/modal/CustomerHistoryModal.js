@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';

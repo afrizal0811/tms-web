@@ -1,7 +1,7 @@
 // File: src/app/not-found.js
 'use client';
 
-import Footer from '@/components/Footer';
+import Footer from '@/components/page/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import Link from 'next/link';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getBasePlate, isEmpty, parseCoordinates, parseCustomerString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';

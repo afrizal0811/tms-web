@@ -1,7 +1,7 @@
 // File: src/features/dashboard/tab/RoutingVsActualTab.js
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
 import HighlightText from '@/components/HighlightText';
 import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';

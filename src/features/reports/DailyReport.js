@@ -2,8 +2,8 @@
 
 import CustomDatePicker from '@/components/CustomDatePicker';
 import FileUploader from '@/components/fileUploader/FileUploader';
-import Modal from '@/components/Modal';
-import Report from '@/components/Report';
+import Modal from '@/components/modal/Modal';
+import Report from '@/components/page/Report';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isDateSunday, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';

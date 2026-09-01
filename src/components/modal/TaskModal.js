@@ -8,9 +8,9 @@ import { getResult, getTask, getUsers } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import Copy from '../icon/Copy';
-import Modal from '../Modal';
+import CopyButton from '../button/CopyButton';
 import Tooltip from '../Tooltip';
+import Modal from './Modal';
 const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated }) => (
   <div className="mb-3">
     <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
@@ -19,7 +19,7 @@ const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated }) => (
         className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'}`}
       >
         {isEmpty(value) ? '-' : String(value)}{' '}
-        {!isEmpty(value) && isCopy && <Copy text={copyValue || value} />}
+        {!isEmpty(value) && isCopy && <CopyButton text={copyValue || value} />}
       </div>
     </Tooltip>
   </div>

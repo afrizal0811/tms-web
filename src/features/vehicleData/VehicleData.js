@@ -1,6 +1,6 @@
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';

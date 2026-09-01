@@ -2,7 +2,7 @@
 
 import { formatTimer } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import Spinner from './Spinner';
+import Spinner from '../Spinner';
 
 export default function Button({
   onClick,

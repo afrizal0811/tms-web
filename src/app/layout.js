@@ -1,4 +1,4 @@
-import SessionGuard from '@/components/SessionGuard';
+import SessionGuard from '@/components/page/SessionGuard';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import { LanguageProvider } from '@/context/LanguageContext';

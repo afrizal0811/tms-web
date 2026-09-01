@@ -2,7 +2,7 @@
 'use client';
 
 // Impor layout utama
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import VehicleData from '@/features/vehicleData/VehicleData';
 
 export default function VehiclesPage() {

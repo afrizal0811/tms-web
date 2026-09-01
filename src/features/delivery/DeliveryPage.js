@@ -1,15 +1,15 @@
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
+import InformationButton from '@/components/button/InformationButton';
+import ToggleButton from '@/components/button/ToggleButton';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
-import Information from '@/components/icon/Information';
 import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
-import ToggleButton from '@/components/ToggleButton';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
@@ -821,7 +821,7 @@ export default function DeliveryPage() {
                           onChange={(e) => handleToggleNoBun(e.target.checked)}
                         />
                         {t('delivery.no_bun')}
-                        <Information infoText={t('delivery.no_bun_info')} size="3.5" />
+                        <InformationButton infoText={t('delivery.no_bun_info')} size="3.5" />
                       </label>
                       <button
                         onClick={() => {
@@ -841,7 +841,7 @@ export default function DeliveryPage() {
                         onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
                       />
                       {t('delivery.spit_multitrip')}
-                      <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                      <InformationButton infoText={t('delivery.spit_multitrip_info')} size="3.5" />
                     </label>
                   </div>
                 </div>

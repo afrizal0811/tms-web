@@ -1,6 +1,6 @@
 'use client';
 
-import Dropdown from '@/components/Dropdown';
+import Dropdown from '@/components/dropdown/Dropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs } from '@/lib/api';

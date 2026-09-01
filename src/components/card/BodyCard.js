@@ -6,7 +6,7 @@ import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatTimer } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import RoutingInfo from '../RoutingInfo';
+import RouteInfoButton from '../button/RouteInfoButton';
 
 const LoadingState = ({ elapsed, text }) => (
   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-800 dark:border-slate-700 space-y-4 animate-in fade-in duration-200">
@@ -225,7 +225,7 @@ export default function BodyCard({
           </div>
         )}
       </div>
-      {routingData && <RoutingInfo resultsData={routingData} />}
+      {routingData && <RouteInfoButton resultsData={routingData} />}
     </div>
   );
 }

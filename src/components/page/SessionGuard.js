@@ -1,6 +1,6 @@
 'use client';
 
-import SelectionLayout from '@/components/SelectionLayout';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';

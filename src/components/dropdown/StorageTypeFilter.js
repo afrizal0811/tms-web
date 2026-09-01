@@ -1,6 +1,6 @@
 'use client';
 
-import Dropdown from '@/components/Dropdown';
+import Dropdown from '@/components/dropdown/Dropdown';
 
 export default function StorageTypeFilter({
   selectedTypes = [],

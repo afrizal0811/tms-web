@@ -1,5 +1,5 @@
 // File: src/app/task/page.js
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import TaskPage from '@/features/task/TaskPage';
 
 export default function Page() {

@@ -1,7 +1,7 @@
 'use client';
 
-import Button from '@/components/Button';
-import Modal from '@/components/Modal';
+import Button from '@/components/button/Button';
+import Modal from '@/components/modal/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';

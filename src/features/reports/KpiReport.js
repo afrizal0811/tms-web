@@ -1,8 +1,8 @@
 'use client';
 
 import FileUploader from '@/components/fileUploader/FileUploader';
-import Modal from '@/components/Modal';
-import Report from '@/components/Report';
+import Modal from '@/components/modal/Modal';
+import Report from '@/components/page/Report';
 import { useLanguage } from '@/context/LanguageContext';
 import { handleKpiDownload } from '@/features/reports/helper/help';
 import { getDriverData } from '@/lib/driverData';

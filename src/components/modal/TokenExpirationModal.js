@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import { useLanguage } from '@/context/LanguageContext';
 import { toastError } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';

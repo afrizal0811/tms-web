@@ -5,8 +5,8 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import LanguageToggle from '../LanguageToggle';
-import ThemeToggle from '../ThemeToggle';
+import LanguageToggle from '../button/LanguageToggle';
+import ThemeToggle from '../button/ThemeToggle';
 import { LocationSwitcher } from '../dropdown/LocationDropdown';
 
 function MobileNavLink({ href, children, target = '', rel = '' }) {

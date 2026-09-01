@@ -1,8 +1,8 @@
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
+import InformationButton from '@/components/button/InformationButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/icon/Information';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
@@ -115,7 +115,7 @@ export default function Report({
         <label className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full">
           {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}
           {showInfoDate && !isCustomRouting && (
-            <Information infoText={t('report.tooltip.info_delivery')} />
+            <InformationButton infoText={t('report.tooltip.info_delivery')} />
           )}
         </label>
         {isBulkMode ? (
@@ -161,7 +161,7 @@ export default function Report({
                 >
                   <ModeRadioInput checked={mode.checked} disabled={isLoading} />
                   <span className="text-sm select-none w-full">{mode.label}</span>
-                  {mode.info && <Information infoText={mode.info} />}
+                  {mode.info && <InformationButton infoText={mode.info} />}
                 </div>
               );
             })}

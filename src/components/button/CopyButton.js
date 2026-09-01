@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function Copy({ text }) {
+export default function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {

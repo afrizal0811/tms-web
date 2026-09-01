@@ -1,7 +1,7 @@
 'use client';
 
-import RadioCard from '@/components/RadioCard';
-import Report from '@/components/Report';
+import RadioButton from '@/components/button/RadioButton';
+import Report from '@/components/page/Report';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -144,7 +144,7 @@ export default function CustomReport() {
           <span className="text-lg mb-3 text-gray-500 dark:text-slate-400 font-medium text-center select-none">
             {t('common.type')}
           </span>
-          <RadioCard
+          <RadioButton
             options={reportOptions}
             selected={reportType}
             onChange={setReportType}
