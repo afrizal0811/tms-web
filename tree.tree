@@ -63,6 +63,8 @@
 │   │   └── page.js
 │   ├── summary
 │   │   └── page.js
+│   ├── task
+│   │   └── page.js
 │   └── vehicles
 │       └── page.js
 ├── components
@@ -103,6 +105,7 @@
 │   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
 │   ├── RadioCard.js
+│   ├── Report.js
 │   ├── RoutingInfo.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
@@ -110,9 +113,11 @@
 │   ├── Spinner.js
 │   ├── table
 │   │   ├── TabButton.js
+│   │   ├── TableData.js
 │   │   ├── Td.js
 │   │   └── Th.js
 │   ├── ThemeToggle.js
+│   ├── ToggleButton.js
 │   └── Tooltip.js
 ├── context
 │   ├── LanguageContext.js
@@ -215,6 +220,8 @@
 │   │       ├── TimeDriverTab.js
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
+│   ├── task
+│   │   └── TaskPage.js
 │   ├── updateCoordinate
 │   │   ├── components
 │   │   │   ├── MapLocation.js

@@ -1,6 +1,6 @@
 'use client';
 
-import Spinner from '@/components/Spinner';
+import CustomTable from '@/components/table/TableData';
 import { useEffect, useRef, useState } from 'react';
 
 const EditIcon = () => (
@@ -49,14 +49,13 @@ const SaveIcon = () => (
   </svg>
 );
 
-export default function EditableTable({
+export default function Table({
   data,
   columns,
   isReadOnly,
   onSave,
   onDelete,
   isLoading,
-  emptyMessage = 'Tidak ada data',
   keyField = 'id',
   containerHeight = 'h-[352px]',
   rowClassName,
@@ -118,110 +117,98 @@ export default function EditableTable({
     });
   };
 
+  const customColumns = [
+    ...columns.map((col) => ({
+      key: col.field || col.header,
+      width: col.headerClassName,
+      sortable: false,
+      align: col.align || 'left',
+      label: col.header,
+      render: (item) => {
+        const id = item[keyField] || item._id;
+        const isEditing = editId === id;
+
+        return (
+          <div className={`${col.cellClassName || ''} w-full`}>
+            {isEditing && col.renderEdit
+              ? col.renderEdit(
+                  editValues[col.field] ?? '',
+                  (val) => handleValueChange(col.field, val),
+                  () => handleSaveClick(item),
+                  item
+                )
+              : col.render(item)}
+          </div>
+        );
+      },
+    })),
+  ];
+
+  console.log('customColumns :', customColumns);
+  if (!isReadOnly) {
+    customColumns.push({
+      key: 'actions',
+      width: 'w-20',
+      sortable: false,
+      align: 'center',
+      label: translate('common.action'),
+      render: (item) => {
+        const id = item[keyField] || item._id;
+        const isEditing = editId === id;
+
+        return (
+          <div className="flex items-center justify-center gap-1.5 md:gap-2 w-full">
+            {isEditing ? (
+              <button
+                onClick={() => handleSaveClick(item)}
+                disabled={isSaving || isUnchanged(item)}
+                className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60 rounded transition-colors disabled:opacity-50 cursor-pointer"
+                title={translate('common.button.btn_save')}
+              >
+                <SaveIcon />
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleEditClick(item)}
+                  className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
+                  title={translate('common.button.btn_edit')}
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  onClick={() => onDelete(item)}
+                  disabled={disableDelete ? disableDelete(item) : false}
+                  className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors disabled:opacity-50 cursor-pointer"
+                  title={translate('common.button.btn_delete')}
+                >
+                  <DeleteIcon />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      },
+    });
+  }
+
+  const getRowClassName = (item) => {
+    return rowClassName
+      ? rowClassName(item)
+      : 'hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group';
+  };
+
   return (
     <div
-      className={`overflow-y-auto ${containerHeight} border border-gray-200 dark:border-slate-700 rounded-lg`}
+      className={`overflow-hidden flex flex-col ${containerHeight} border border-gray-200 dark:border-slate-700 rounded-lg`}
+      ref={editRef}
     >
-      {isLoading ? (
-        <div className="py-8 flex justify-center items-center h-full">
-          <Spinner />
-        </div>
-      ) : (
-        <table className="min-w-full text-left border-collapse whitespace-nowrap">
-          <thead className="sticky top-0 bg-gray-100 dark:bg-slate-900 z-10 border-b border-gray-200 dark:border-slate-700">
-            <tr>
-              {columns.map((col, idx) => (
-                <th
-                  key={idx}
-                  className={`px-4 py-3 text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-400 ${col.headerClassName || ''}`}
-                >
-                  {col.header}
-                </th>
-              ))}
-              {!isReadOnly && (
-                <th className="px-4 py-3 text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-400 w-20 text-center">
-                  {translate('common.action')}
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
-            {data.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (isReadOnly ? 0 : 1)}
-                  className="text-center text-slate-500 text-sm py-4 italic"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            ) : (
-              data.map((item, idx) => {
-                const id = item[keyField] || item._id;
-                const isEditing = editId === id;
-                const trClass = rowClassName
-                  ? rowClassName(item)
-                  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50';
-
-                return (
-                  <tr
-                    key={id || idx}
-                    ref={isEditing ? editRef : null}
-                    className={`group transition-colors ${trClass}`}
-                  >
-                    {columns.map((col, cIdx) => (
-                      <td key={cIdx} className={`px-4 py-2 ${col.cellClassName || ''}`}>
-                        {isEditing && col.renderEdit
-                          ? col.renderEdit(
-                              editValues[col.field] ?? '',
-                              (val) => handleValueChange(col.field, val),
-                              () => handleSaveClick(item),
-                              item
-                            )
-                          : col.render(item)}
-                      </td>
-                    ))}
-                    {!isReadOnly && (
-                      <td className="px-4 py-2 text-center">
-                        <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                          {isEditing ? (
-                            <button
-                              onClick={() => handleSaveClick(item)}
-                              disabled={isSaving || isUnchanged(item)}
-                              className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60 rounded transition-colors disabled:opacity-50 cursor-pointer"
-                              title={translate('common.button.btn_save')}
-                            >
-                              <SaveIcon />
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleEditClick(item)}
-                                className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
-                                title={translate('common.button.btn_edit')}
-                              >
-                                <EditIcon />
-                              </button>
-                              <button
-                                onClick={() => onDelete(item)}
-                                disabled={disableDelete ? disableDelete(item) : false}
-                                className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors  disabled:opacity-50 cursor-pointer"
-                                title={translate('common.button.btn_delete')}
-                              >
-                                <DeleteIcon />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      )}
+      <CustomTable
+        columns={customColumns}
+        data={data}
+        isLoading={isLoading}
+        rowClassName={getRowClassName}
+      />
     </div>
   );
 }

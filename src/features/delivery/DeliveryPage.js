@@ -697,7 +697,7 @@ export default function DeliveryPage() {
         return 'Download Options';
     }
   };
-  const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}}`;
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}`;
   const headerItems = [
     {
       label: t('common.delivery_date'),

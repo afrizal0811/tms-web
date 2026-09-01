@@ -78,6 +78,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
     {
       header: 'Pending GR',
       field: 'hasPendingGR',
+      align: 'center',
       headerClassName: 'w-24 md:w-28 text-center',
       cellClassName: 'text-center',
       render: (item) => (

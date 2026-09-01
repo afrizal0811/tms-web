@@ -1,9 +1,10 @@
 'use client';
 
 import Modal from '@/components/Modal';
+import CustomTable from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 const parseDurationToMinutes = (str) => {
   if (!str) return 0;
@@ -125,6 +126,14 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
     }
   }, [isOpen]);
 
+  const tableEntries = useMemo(() => {
+    if (!data || !data.entries) return [];
+    return data.entries.map((entry, index) => ({
+      ...entry,
+      no: index + 1,
+    }));
+  }, [data]);
+
   if (!data) return null;
 
   const { driverName, dateStr, entries } = data;
@@ -137,86 +146,109 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
   const remainingMinutes = totalMinutes % 60;
   const totalDurationFormatted = `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
 
+  const columns = [
+    {
+      key: 'no',
+      width: 'w-[10%]',
+      sortable: false,
+      label: '#',
+      align: 'center', 
+      render: (row) => (
+        <div className="text-center text-gray-500 dark:text-slate-400 font-medium w-full">
+          {row.no}
+        </div>
+      ),
+    },
+    {
+      key: 'start',
+      width: 'w-[30%]',
+      sortable: false,
+      align: 'center',
+      label: translate('summary.tabs.time_driver.modal.start_time'),
+      render: (row) => {
+        const hasOutStart = row.isStartOutRadius;
+        const content = (
+          <div
+            className={`w-full text-center px-2 py-1 rounded ${hasOutStart ? 'bg-red-100 dark:bg-red-900/40 text-slate-700 dark:text-slate-300' : 'text-slate-700 dark:text-slate-300'}`}
+          >
+            {row.startDisplay}
+          </div>
+        );
+        return hasOutStart ? (
+          <Tooltip tooltipContent={translate('summary.tabs.time_driver.tooltip.out_start')}>
+            {content}
+          </Tooltip>
+        ) : (
+          content
+        );
+      },
+    },
+    {
+      key: 'finish',
+      width: 'w-[30%]',
+      sortable: false,
+      align: 'center',
+      label: translate('summary.tabs.time_driver.modal.finish_time'),
+      render: (row) => {
+        const hasOutFinish = row.isFinishOutRadius;
+        const diffDay = row.dayDiff;
+        const hasDiffDay = !isEmpty(diffDay);
+        const diffDayTooltip = hasDiffDay
+          ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
+          : '';
+        const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
+
+        const content = (
+          <div
+            className={`w-full text-center px-2 py-1 rounded ${hasOutFinish ? 'bg-red-100 dark:bg-red-900/40 text-slate-700 dark:text-slate-300' : 'text-slate-700 dark:text-slate-300'}`}
+          >
+            {row.finishDisplay}
+            {row.dayDiff > 0 && (
+              <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
+                (+{row.dayDiff})
+              </span>
+            )}
+          </div>
+        );
+
+        return hasOutFinish || hasDiffDay ? (
+          <Tooltip tooltipContent={hasOutFinish ? outFinishTooltip : diffDayTooltip}>
+            {content}
+          </Tooltip>
+        ) : (
+          content
+        );
+      },
+    },
+    {
+      key: 'duration',
+      width: 'w-[30%]',
+      sortable: false,
+      align: 'center',
+      label: translate('summary.tabs.time_driver.modal.duration'),
+      render: (row) => (
+        <div className="text-center font-medium text-slate-700 dark:text-slate-200 w-full">
+          {row.durationDisplay}
+        </div>
+      ),
+    },
+  ];
+
   const tableData = (
     <>
-      <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg">
-        <table className="min-w-full text-sm text-left">
-          <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
-            <tr>
-              <th className="px-4 py-3 text-center">#</th>
-              <th className="px-4 py-3 text-center">
-                {translate('summary.tabs.time_driver.modal.start_time')}
-              </th>
-              <th className="px-4 py-3 text-center">
-                {translate('summary.tabs.time_driver.modal.finish_time')}
-              </th>
-              <th className="px-4 py-3 text-center">
-                {translate('summary.tabs.time_driver.modal.duration')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
-            {entries.map((entry, idx) => {
-              const hasOutStart = entry.isStartOutRadius;
-              const hasOutFinish = entry.isFinishOutRadius;
-              const diffDay = entry.dayDiff;
-              const hasDiffDay = !isEmpty(diffDay);
-
-              const diffDayTooltip = hasDiffDay
-                ? `${hasOutFinish ? '\n- ' : ''}${translate('summary.tabs.time_driver.tooltip.diff_day', { days: diffDay })} `
-                : '';
-              const outFinishTooltip = `${hasDiffDay ? '- ' : ''}${translate('summary.tabs.time_driver.tooltip.out_finish')} ${diffDayTooltip}`;
-              return (
-                <tr
-                  key={idx}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <td className="px-4 py-2 text-center text-gray-500 dark:text-slate-400 font-medium">
-                    {idx + 1}
-                  </td>
-                  <Tooltip
-                    tooltipContent={
-                      hasOutStart ? translate('summary.tabs.time_driver.tooltip.out_start') : ''
-                    }
-                  >
-                    <td
-                      className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutStart ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
-                    >
-                      {entry.startDisplay}
-                    </td>
-                  </Tooltip>
-                  <Tooltip tooltipContent={hasOutFinish ? outFinishTooltip : diffDayTooltip}>
-                    <td
-                      className={`px-4 py-2 text-center dark:text-slate-300 ${hasOutFinish ? 'bg-red-100 dark:bg-red-900/40' : ''}`}
-                    >
-                      {entry.finishDisplay}
-                      {entry.dayDiff > 0 && (
-                        <span className="text-red-600 dark:text-red-400 text-xs ml-1 font-bold">
-                          (+{entry.dayDiff})
-                        </span>
-                      )}
-                    </td>
-                  </Tooltip>
-                  <td className="px-4 py-2 text-center font-medium text-slate-700 dark:text-slate-200">
-                    {entry.durationDisplay}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot className="bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
-            <tr>
-              <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
-                Total
-              </td>
-              <td></td>
-              <td></td>
-              <td className="px-4 py-3 text-center text-slate-800 dark:text-slate-200">
-                {totalDurationFormatted}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+      <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
+        <CustomTable
+          columns={columns}
+          data={tableEntries}
+        />
+        <div className="flex bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
+          <div className="w-[70%] px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
+            Total
+          </div>
+          <div className="w-[30%] text-sm px-4 py-3 text-center text-slate-800 dark:text-slate-200">
+            {totalDurationFormatted}
+          </div>
+        </div>
       </div>
       <div className="mt-1 mb-2 text-xs text-slate-500 dark:text-slate-400 italic">
         {translate('summary.tabs.time_driver.modal.footer_note')}

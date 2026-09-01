@@ -1,15 +1,53 @@
 'use client';
 
 import Modal from '@/components/Modal';
+import CustomTable from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
+import { useMemo, useState } from 'react';
 
 export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
   const { localeCode } = useLanguage();
+  const [sortConfig, setSortConfig] = useState({ key: 'driverName', direction: 'asc' });
+
+  const vehicleEntries = useMemo(() => {
+    if (!data || !data.vehicles) return [];
+    return data.vehicles.map((item, index) => ({
+      ...item,
+      no: index + 1,
+    }));
+  }, [data]);
 
   if (!isOpen || !data) return null;
 
   const { title, dateObj, tasks, vehicles } = data;
+
+  const vehicleColumns = [
+    {
+      key: 'no',
+      width: 'w-[15%]',
+      sortable: false,
+      label: '#',
+      align: 'center',
+      render: (row) => <div className="text-center w-full">{row.no}</div>,
+    },
+    {
+      key: 'plate',
+      width: 'w-[40%]',
+      sortable: true,
+      align: 'center',
+      label: translate('common.license_number'),
+      render: (row) => <div className="text-center w-full">{getBasePlate(row.plate) || '-'}</div>,
+    },
+    {
+      key: 'driverName',
+      width: 'w-[45%]',
+      sortable: true,
+      align: 'center',
+      label: translate('common.driver'),
+      render: (row) => <div className="text-center w-full">{row.driverName || '-'}</div>,
+    },
+  ];
 
   const emptyDataContent = (
     <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center">
@@ -42,28 +80,13 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       {vehicles ? (
         vehicles.length > 0 ? (
           <div className="p-5 dark:bg-slate-800">
-            <div className="overflow-x-auto border border-gray-200 rounded-lg dark:bg-slate-800 dark:border-slate-600">
-              <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-100 dark:bg-slate-900 text-gray-700 dark:text-slate-100 font-bold border-b border-gray-200 dark:border-slate-600">
-                  <tr>
-                    <th className="px-4 py-3 text-center">#</th>
-                    <th className="px-4 py-3 text-center">{translate('common.license_number')}</th>
-                    <th className="px-4 py-3 text-center">{translate('common.driver')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-600">
-                  {vehicles.map((item, idx) => (
-                    <tr
-                      key={idx}
-                      className="hover:bg-gray-50 dark:hover:bg-slate-700/10 text-slate-700 dark:text-slate-200 text-center "
-                    >
-                      <td className="px-4 py-2">{idx + 1}</td>
-                      <td className="px-4 py-2">{getBasePlate(item.plate) || '-'}</td>
-                      <td className="px-4 py-2">{item.driverName || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-hidden border border-gray-200 rounded-lg dark:bg-slate-800 dark:border-slate-600 flex flex-col max-h-[60vh]">
+              <CustomTable
+                columns={vehicleColumns}
+                data={vehicleEntries}
+                externalSortConfig={sortConfig}
+                onExternalSort={setSortConfig}
+              />
             </div>
           </div>
         ) : (

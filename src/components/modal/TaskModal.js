@@ -2,8 +2,7 @@
 
 import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
-import Td from '@/components/table/Td';
-import Th from '@/components/table/Th';
+import CustomTable from '@/components/table/TableData';
 import { getResult, getTask, getUsers } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
@@ -139,6 +138,49 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
       translate('common.others'),
     ];
 
+    const productColumns = [
+      {
+        key: 'caption',
+        sortable: true,
+        label: translate('common.invoice_number'),
+        render: (row) => row.caption || '-',
+      },
+      {
+        key: 'title',
+        sortable: true,
+        label: translate('common.items'),
+        render: (row) => (
+          <div className="max-w-xs truncate" title={row.title}>
+            {row.title || '-'}
+          </div>
+        ),
+      },
+      {
+        key: 'qtyProcessed',
+        sortable: true,
+        label: translate('common.quantity'),
+        render: (row) => row.qtyProcessed ?? '-',
+      },
+      {
+        key: 'content',
+        sortable: true,
+        label: 'UOM',
+        render: (row) => row.content || '-',
+      },
+      {
+        key: 'volume',
+        sortable: true,
+        label: translate('common.volume'),
+        render: (row) => renderFloatData(row.volume) ?? '-',
+      },
+      {
+        key: 'weight',
+        sortable: true,
+        label: translate('common.weight'),
+        render: (row) => renderFloatData(row.weight) ?? '-',
+      },
+    ];
+
     return (
       <div className="space-y-6">
         {/* Section 1 */}
@@ -269,7 +311,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
               (() => {
                 let rTravelTime = '-';
                 let rWaitingTime = '-';
-                let rVisitTime = '-';
                 const rName = resultData?.name || '-';
 
                 if (resultData?.result?.routing && assigneeEmail) {
@@ -282,7 +323,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
                     if (tripMatch) {
                       rTravelTime = tripMatch.travelTime;
                       rWaitingTime = tripMatch.waitingTime;
-                      rVisitTime = tripMatch.visitTime;
                     }
                   }
                 }
@@ -312,53 +352,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
                   />
                   <Field label={translate('task_detail.modal.total_item')} value={totalItems} />
                 </div>
-                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-                  <table className="min-w-full">
-                    <thead className="bg-gray-50 dark:bg-slate-900/50">
-                      <tr>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          {translate('common.invoice_number')}
-                        </Th>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          {translate('common.items')}
-                        </Th>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          {translate('common.quantity')}
-                        </Th>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          UOM
-                        </Th>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          {translate('common.volume')}
-                        </Th>
-                        <Th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                          {translate('common.weight')}
-                        </Th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {products.length > 0 ? (
-                        products.map((p, i) => (
-                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-800">
-                            <Td className="p-3 text-xs">{p.caption || '-'}</Td>
-                            <Td className="p-3 text-xs max-w-xs truncate" title={p.title}>
-                              {p.title || '-'}
-                            </Td>
-                            <Td className="p-3 text-xs">{p.qtyProcessed ?? '-'}</Td>
-                            <Td className="p-3 text-xs">{p.content || '-'}</Td>
-                            <Td className="p-3 text-xs">{p.volume ?? '-'}</Td>
-                            <Td className="p-3 text-xs">{p.weight ?? '-'}</Td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <Td colSpan={6} className="p-4 text-center text-xs text-gray-500">
-                            {translate('common.no_data')}
-                          </Td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col max-h-[60vh]">
+                  <CustomTable
+                    columns={productColumns}
+                    data={products}
+                    emptyMessage={translate('common.no_data')}
+                  />
                 </div>
               </div>
             )}

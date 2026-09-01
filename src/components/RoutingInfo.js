@@ -1,9 +1,10 @@
 'use client';
 
 import Modal from '@/components/Modal';
+import CustomTable from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 export default function RoutingInfo({ resultsData }) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
@@ -15,6 +16,49 @@ export default function RoutingInfo({ resultsData }) {
       return timeA - timeB;
     });
   const isResultDataEmpty = isEmpty(resultsData) || isEmpty(validResults);
+
+  const tableData = useMemo(() => {
+    return validResults.map((item, index) => ({
+      ...item,
+      no: index + 1,
+    }));
+  }, [validResults]);
+
+  const columns = [
+    {
+      key: 'no',
+      width: 'w-[10%]',
+      sortable: false,
+      align: 'center',
+      label: '#',
+      render: (row) => <div className="text-center w-full">{row.no}</div>,
+    },
+    {
+      key: 'name',
+      width: 'w-[40%]',
+      sortable: false,
+      label: t('common.routing_name'),
+      render: (row) => <div className="font-medium text-left w-full">{row.name || '-'}</div>,
+    },
+    {
+      key: 'user',
+      width: 'w-[25%]',
+      sortable: false,
+      label: t('common.created_by'),
+      render: (row) => <div className="text-left w-full">{row.user?.name || '-'}</div>,
+    },
+    {
+      key: 'createdTime',
+      width: 'w-[25%]',
+      sortable: false,
+      label: t('common.created_time'),
+      render: (row) => (
+        <div className=" w-full">
+          {row.createdTime ? formatDateUniversal(row.createdTime, 'DD/MM/YYYY HH:mm:ss') : '-'}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -47,40 +91,8 @@ export default function RoutingInfo({ resultsData }) {
         title={t('routing_info.title')}
         maxWidth="max-w-3xl"
       >
-        <div className="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-lg mt-2">
-          <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 font-bold border-b border-gray-200 dark:border-slate-700">
-              <tr>
-                <th className="px-4 py-3 text-center">#</th>
-                <th className="px-4 py-3">{t('common.routing_name')}</th>
-                <th className="px-4 py-3">{t('common.created_by')}</th>
-                <th className="px-4 py-3 text-center">{t('common.created_time')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
-              {validResults.map((item, idx) => (
-                <tr
-                  key={item._id || idx}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
-                    {idx + 1}
-                  </td>
-                  <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">
-                    {item.name || '-'}
-                  </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                    {item.user?.name || '-'}
-                  </td>
-                  <td className="px-4 py-2 text-center text-slate-700 dark:text-slate-300">
-                    {item.createdTime
-                      ? formatDateUniversal(item.createdTime, 'DD/MM/YYYY HH:mm:ss')
-                      : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg mt-2 max-h-[60vh] flex flex-col">
+          <CustomTable columns={columns} data={tableData} />
         </div>
       </Modal>
     </>

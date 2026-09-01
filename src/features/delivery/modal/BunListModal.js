@@ -4,11 +4,13 @@
 import Button from '@/components/Button';
 import Modal from '@/components/Modal';
 import SearchBar from '@/components/SearchBar';
+import CustomTable from '@/components/table/TableData';
 import { useState } from 'react';
 
 export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t }) {
   const [bunSearch, setBunSearch] = useState('');
   const [checkedBunSo, setCheckedBunSo] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: 'vehicle', direction: 'asc' });
 
   const handleClose = () => {
     setBunSearch('');
@@ -33,12 +35,97 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
 
   const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}, ${t('common.items')}`;
 
+  const columns = [
+    {
+      key: 'checkbox',
+      width: 'w-10',
+      sortable: false,
+      label: (
+        <div className="flex justify-center w-full">
+          <input
+            type="checkbox"
+            className="cursor-pointer"
+            onChange={(e) => {
+              if (e.target.checked) setCheckedBunSo(filteredBunList.map((b) => b.so));
+              else setCheckedBunSo([]);
+            }}
+            checked={
+              filteredBunList.length > 0 && checkedBunSo.length === filteredBunList.length
+            }
+          />
+        </div>
+      ),
+      render: (row) => (
+        <div className="flex justify-center w-full">
+          <input
+            type="checkbox"
+            className="cursor-pointer"
+            checked={checkedBunSo.includes(row.so)}
+            onChange={(e) => {
+              if (e.target.checked) setCheckedBunSo((prev) => [...prev, row.so]);
+              else setCheckedBunSo((prev) => prev.filter((so) => so !== row.so));
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'vehicle',
+      width: 'w-[15%]',
+      sortable: true,
+      label: t('common.license_number'),
+      render: (row) => (
+        <div className="text-xs align-top text-slate-500 dark:text-slate-300 w-full">
+          {row.vehicle}
+        </div>
+      ),
+    },
+    {
+      key: 'so',
+      width: 'w-[20%]',
+      sortable: true,
+      label: t('common.invoice_number'),
+      render: (row) => (
+        <div className="font-medium align-top whitespace-nowrap text-slate-500 dark:text-slate-300 w-full">
+          {row.so}
+        </div>
+      ),
+    },
+    {
+      key: 'customer',
+      width: 'w-[20%]',
+      sortable: true,
+      label: t('common.customer_name'),
+      render: (row) => (
+        <div className="align-top text-slate-500 dark:text-slate-300 w-full">
+          {row.customer}
+        </div>
+      ),
+    },
+    {
+      key: 'items',
+      width: 'w-[45%]',
+      sortable: false,
+      label: t('common.items'),
+      render: (row) => (
+        <div className="text-xs text-slate-500 dark:text-slate-300 align-top w-full">
+          <ul className="list-outside list-disc pl-3">
+            {row.items.map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={t('delivery.modal.bun_list')}
       subtitle={t('delivery.modal.bun_list_desc')}
+      maxWidth="max-w-5xl lg:max-w-6xl"
       footer={
         <div className="flex justify-end w-full">
           <Button onClick={handleDownload} text={t('common.download')} width="w-full sm:w-auto" />
@@ -76,71 +163,13 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
           </span>
         </div>
 
-        <div className="max-h-[60vh] overflow-auto border border-gray-200 dark:border-slate-700 rounded-lg">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 dark:bg-slate-900 sticky top-0">
-              <tr>
-                <th className="p-3 w-10 text-center">
-                  <input
-                    type="checkbox"
-                    className="cursor-pointer"
-                    onChange={(e) => {
-                      if (e.target.checked) setCheckedBunSo(filteredBunList.map((b) => b.so));
-                      else setCheckedBunSo([]);
-                    }}
-                    checked={
-                      filteredBunList.length > 0 && checkedBunSo.length === filteredBunList.length
-                    }
-                  />
-                </th>
-                <th className="p-3">{t('common.license_number')}</th>
-                <th className="p-3">{t('common.invoice_number')}</th>
-                <th className="p-3">{t('common.customer_name')}</th>
-                <th className="p-3">{t('common.items')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {filteredBunList.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center text-slate-500 italic">
-                    {t('common.no_data')}
-                  </td>
-                </tr>
-              ) : (
-                filteredBunList.map((b, i) => (
-                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                    <td className="p-3 text-center align-top">
-                      <input
-                        type="checkbox"
-                        className="cursor-pointer"
-                        checked={checkedBunSo.includes(b.so)}
-                        onChange={(e) => {
-                          if (e.target.checked) setCheckedBunSo((prev) => [...prev, b.so]);
-                          else setCheckedBunSo((prev) => prev.filter((so) => so !== b.so));
-                        }}
-                      />
-                    </td>
-                    <td className="p-3 text-xs align-top text-slate-500 dark:text-slate-300">
-                      {b.vehicle}
-                    </td>
-                    <td className="p-3 font-medium align-top whitespace-nowrap text-slate-500 dark:text-slate-300">
-                      {b.so}
-                    </td>
-                    <td className="p-3 align-top text-slate-500 dark:text-slate-300">
-                      {b.customer}
-                    </td>
-                    <td className="p-3 text-xs text-slate-500 dark:text-slate-300 align-top">
-                      <ul className="list-outside list-disc pl-3">
-                        {b.items.map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="max-h-[60vh] overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
+          <CustomTable
+            columns={columns}
+            data={filteredBunList}
+            externalSortConfig={sortConfig}
+            onExternalSort={setSortConfig}
+          />
         </div>
       </div>
     </Modal>

@@ -1,6 +1,6 @@
 'use client';
 
-import { isEmpty } from '@/lib/utils';
+import CustomTable from '@/components/table/TableData';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
@@ -18,78 +18,101 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
     setSelectedRow(null);
   };
 
+  const [sortConfig, setSortConfig] = useState({ key: 'distanceDiff', direction: 'asc' });
+
   const currentHistory = selectedRow ? historyMap.get(selectedRow.customerData) || [] : [];
+
+  const getRowClassName = (row) => {
+    return row.isIncomplete
+      ? 'bg-red-100 hover:bg-red-200 cursor-pointer dark:bg-red-900/40 dark:hover:bg-red-900/60 transition-colors'
+      : 'hover:bg-gray-50 cursor-pointer dark:hover:bg-slate-700/10 transition-colors';
+  };
+
+  const columns = [
+    {
+      key: 'no',
+      width: 'w-[5%]',
+      sortable: false,
+      label: 'No',
+      render: (row) => <div className="text-center w-full">{data.indexOf(row) + 1}</div>,
+    },
+    {
+      key: 'soNumber',
+      width: 'w-[15%]',
+      sortable: true,
+      label: t('common.invoice_number'),
+      render: (row) => <div className="text-left w-full">{row.soNumber}</div>,
+    },
+    {
+      key: 'customerName',
+      width: 'w-[15%]',
+      sortable: true,
+      label: t('common.customer_name'),
+      render: (row) => <div className="text-left w-full">{row.customerName}</div>,
+    },
+    {
+      key: 'customerId',
+      width: 'w-[10%]',
+      sortable: true,
+      label: t('common.customer_id'),
+      render: (row) => (
+        <div className="text-center w-full">{row.isIncomplete ? '-' : row.customerId || '-'}</div>
+      ),
+    },
+    {
+      key: 'locationId',
+      width: 'w-[10%]',
+      sortable: true,
+      label: t('common.location_id'),
+      render: (row) => (
+        <div className="text-center w-full">{row.isIncomplete ? '-' : row.locationId || '-'}</div>
+      ),
+    },
+    {
+      key: 'newLonglat',
+      width: 'w-[15%]',
+      sortable: false,
+      label: t('longlat.table.new_longlat'),
+      render: (row) => <div className="font-mono text-center w-full">{row.newLonglat}</div>,
+    },
+    {
+      key: 'distanceDiff',
+      width: 'w-[8%]',
+      sortable: true,
+      label: t('common.dist_diff'),
+      render: (row) => (
+        <div className="text-center w-full">{row.distanceDiff?.toLocaleString(localeCode)}</div>
+      ),
+    },
+    {
+      key: 'driverName',
+      width: 'w-[15%]',
+      sortable: true,
+      label: t('common.driver'),
+      render: (row) => <div className="text-left w-full">{row.driverName}</div>,
+    },
+    {
+      key: 'updateTime',
+      width: 'w-[15%]',
+      sortable: true,
+      label: t('longlat.table.update_time'),
+      render: (row) => <div className="text-center w-full">{row.updateTime}</div>,
+    },
+  ];
 
   return (
     <>
       <div className="flex flex-col h-full space-y-4">
-        {isEmpty(data) ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400 border rounded-lg bg-gray-50">
-            <p>{t('common.no_data')}</p>
-          </div>
-        ) : (
-          <div className="overflow-auto h-full rounded-lg bg-white dark:bg-slate-800">
-            <table className="min-w-full text-xs text-left">
-              <thead className="bg-gray-100 font-bold text-gray-700 sticky top-0 z-10 shadow-sm dark:bg-slate-900">
-                <tr className="dark:text-slate-300 text-center">
-                  <th className="px-4 py-3 w-[5%]">No</th>
-                  <th className="px-4 py-3 w-[20%]">{t('common.invoice_number')}</th>
-                  <th className="px-4 py-3 w-[20%]">{t('common.customer_name')}</th>
-                  <th className="px-4 py-3 w-[10%]">{t('common.customer_id')}</th>
-                  <th className="px-4 py-3 w-[10%]">{t('common.location_id')}</th>
-                  <th className="px-4 py-3 w-[20%]">{t('longlat.table.new_longlat')}</th>
-                  <th className="px-4 py-3 w-[5%]">{t('common.dist_diff')}</th>
-                  <th className="px-4 py-3 w-[15%]">{t('common.driver')}</th>
-                  <th className="px-4 py-3 w-[10%]">{t('longlat.table.update_time')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.map((row, index) => {
-                  const displayCustId = row.isIncomplete ? '-' : row.customerId || '-';
-                  const displayLocId = row.isIncomplete ? '-' : row.locationId || '-';
-
-                  const rowClass = row.isIncomplete
-                    ? 'bg-red-100 hover:bg-red-200 cursor-pointer'
-                    : 'hover:bg-gray-50 cursor-pointer dark:hover:bg-slate-700/10';
-
-                  return (
-                    <tr
-                      className={`${rowClass} border-b border-gray-100 transition-colors dark:border-slate-800/70 text-center`}
-                      onClick={() => handleRowClick(row)}
-                      key={`${row.customerData}-${index}`}
-                    >
-                      <td className="px-4 py-2 text-gray-600 dark:text-slate-300">{index + 1}</td>
-                      <td className="px-4 py-2 text-gray-600 truncate text-left max-w-[200px] dark:text-slate-300">
-                        {row.soNumber}
-                      </td>
-                      <td className="px-4 py-2 truncate text-left max-w-[200px] dark:text-slate-300">
-                        {row.customerName}
-                      </td>
-                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                        {displayCustId}
-                      </td>
-                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                        {displayLocId}
-                      </td>
-                      <td className="px-4 py-2 font-mono text-slate-700 dark:text-slate-300">
-                        {row.newLonglat}
-                      </td>
-                      <td className="px-4 py-2 dark:text-slate-300">
-                        {row.distanceDiff?.toLocaleString(localeCode)}
-                      </td>
-                      <td className="px-4 py-2 text-left text-slate-700 dark:text-slate-300">
-                        {row.driverName}
-                      </td>
-                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                        {row.updateTime}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="overflow-hidden h-full rounded-lg bg-white dark:bg-slate-800">
+          <CustomTable
+            columns={columns}
+            data={data}
+            onRowClick={handleRowClick}
+            externalSortConfig={sortConfig}
+            onExternalSort={setSortConfig}
+            rowClassName={getRowClassName}
+          />
+        </div>
       </div>
       {isModalOpen && (
         <CustomerHistoryModal
