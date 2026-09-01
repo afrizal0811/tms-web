@@ -403,8 +403,8 @@ export default function TaskPage() {
                 disabled={loading}
                 onChange={(val) => setIsAllHub(val === 'ALL')}
                 options={[
-                  { label: 'One', value: 'ONE' },
-                  { label: 'All', value: 'ALL' },
+                  { label: t('task_detail.modal.one'), value: 'ONE' },
+                  { label: t('common.all'), value: 'ALL' },
                 ]}
                 value={isAllHub ? 'ALL' : 'ONE'}
               />
