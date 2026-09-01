@@ -77,10 +77,11 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
         <SearchBar
           disabled={loading || isDownloading}
           onChange={(val) => setSearchQuery(val)}
-          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
+          placeholder={t('common.search')}
+          size="md"
+          tooltip={searchPlaceholder}
           value={searchQuery}
           width={'w-full md:w-auto'}
-          size="md"
         />
         <Button
           disabled={loading || isDownloading || isEmpty(processedData)}

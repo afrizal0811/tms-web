@@ -135,7 +135,6 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
           placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           width="w-full"
           className="px-1 py-0.5"
-          isTooltip={false}
         />
 
         <div className="flex justify-between items-center px-1 -my-2">

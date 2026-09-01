@@ -363,7 +363,8 @@ export default function TaskPage() {
         <SearchBar
           disabled={loading}
           onChange={setSearchQuery}
-          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
           value={searchQuery}
         />
       ),

@@ -239,10 +239,11 @@ export default function VehicleData() {
       label: 'Filter',
       component: (
         <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
           disabled={isLoading}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
+          value={searchQuery}
         />
       ),
     },

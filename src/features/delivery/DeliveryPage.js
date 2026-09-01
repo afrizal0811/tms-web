@@ -742,7 +742,8 @@ export default function DeliveryPage() {
         <SearchBar
           disabled={isLoading || isDownloading}
           onChange={setSearchQuery}
-          placeholder={`${t('common.search')} ${searchPlaceholder.toLocaleLowerCase()}`}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
           value={searchQuery}
           width="w-full xl:w-70"
         />
