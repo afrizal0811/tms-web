@@ -55,5 +55,5 @@ export const fields = {
     'volumeCbm',
     'weightKg',
   ],
-  locations: ['totalDistance', 'email', 'finish', 'startTime', 'trackedTime'],
+  locations: ['totalDistance', 'email', 'finish', 'startTime', 'trackedTime', 'lat', 'lon'],
 };
