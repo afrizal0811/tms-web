@@ -1,16 +1,16 @@
 'use client';
 
 import Button from '@/components/Button';
+import BodyCard from '@/components/card/BodyCard';
+import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/Information';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
+import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
+import Information from '@/components/icon/Information';
+import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
 import ToggleButton from '@/components/ToggleButton';
 import Tooltip from '@/components/Tooltip';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
-import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
-import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
-import TaskModal from '@/components/modal/TaskModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -972,7 +972,6 @@ export default function DeliveryPage() {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driversArray}
-        translate={t}
       />
     </div>
   );

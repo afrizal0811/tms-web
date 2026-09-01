@@ -458,7 +458,6 @@ export default function TaskPage() {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driverData}
-        translate={t}
       />
     </div>
   );

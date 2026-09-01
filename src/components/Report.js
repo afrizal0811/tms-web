@@ -2,7 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/Information';
+import Information from '@/components/icon/Information';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useRef, useState } from 'react';

@@ -2,8 +2,7 @@
 
 import Button from '@/components/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/Information';
-import Tooltip from '@/components/Tooltip';
+import Information from '@/components/icon/Information';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks, getTrash } from '@/lib/api';
 import { getCachedHubs } from '@/lib/localStorageHandler';

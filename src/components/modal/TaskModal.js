@@ -3,32 +3,36 @@
 import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
 import CustomTable from '@/components/table/CustomTable';
+import { useLanguage } from '@/context/LanguageContext';
 import { getResult, getTask, getUsers } from '@/lib/api';
 import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import Copy from '../icon/Copy';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
-
-const Field = ({ label, value, tooltip }) => (
+const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated }) => (
   <div className="mb-3">
     <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
     <Tooltip tooltipContent={tooltip}>
-      <div className="text-sm font-medium text-slate-800 dark:text-slate-200">
-        {isEmpty(value) ? '-' : String(value)}
+      <div
+        className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'}`}
+      >
+        {isEmpty(value) ? '-' : String(value)}{' '}
+        {!isEmpty(value) && isCopy && <Copy text={copyValue || value} />}
       </div>
     </Tooltip>
   </div>
 );
 
-export default function TaskModal({ isOpen, onClose, taskId, driverData = [], translate }) {
+export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
   const [createdBy, setCreatedBy] = useState(null);
   const [updatedBy, setUpdatedBy] = useState(null);
   const [resultData, setResultData] = useState(null);
-
+  const { t: translate, isIndonesian } = useLanguage();
   useEffect(() => {
     if (!isOpen || !taskId || taskId === '-') {
       setTaskData(null);
@@ -180,17 +184,34 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
         render: (row) => renderFloatData(row.weight) ?? '-',
       },
     ];
+    const isAutomation = taskData.createdFrom === 'Automation' || taskData.createdBy === 'system';
+    const CorrectCord =
+      {
+        YA: isIndonesian ? 'Ya' : 'Yes',
+        TIDAK: isIndonesian ? 'Tidak' : 'No',
+      }[taskData.gpsSesuai?.[0]] ?? '-';
 
     return (
       <div className="space-y-6">
         {/* Section 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/50">
-          <Field label={translate('common.customer_name')} value={custInfo.fullCustomerName} />
-          <Field label={translate('common.address')} value={taskData.address} />
+          <Field
+            label={translate('common.customer_name')}
+            value={custInfo.fullCustomerName}
+            isCopy={true}
+          />
+          <Field
+            label={translate('common.address')}
+            value={taskData.address}
+            isTruncated={true}
+            tooltip={taskData.address}
+          />
           <Field
             label={translate('common.invoice_number')}
             value={custInfo.truncateInvoice || custInfo.invoiceNumber}
             tooltip={custInfo.isTruncated ? custInfo.invoiceNumber : null}
+            isCopy={true}
+            copyValue={custInfo.invoiceNumber}
           />
           <Field label={translate('common.storage_type')} value={taskData.typeStorage} />
           <Field label={translate('common.vehicle_type')} value={maxVehicle} />
@@ -198,6 +219,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
             label={translate('common.updated_by')}
             value={driver.name || updatedBy || taskData.updatedBy}
             tooltip={taskData.updatedBy}
+            isCopy={true}
+            copyValue={taskData.updatedBy}
           />
           <Field label={translate('common.updated_at')} value={renderDate(taskData.updatedTime)} />
         </div>
@@ -212,7 +235,9 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
               <Field
                 label={translate('common.created_by')}
                 value={createdBy}
-                tooltip={taskData.createdFrom === 'Automation' ? null : taskData.createdBy}
+                tooltip={isAutomation ? null : taskData.createdBy}
+                isCopy={isAutomation ? false : true}
+                copyValue={isAutomation ? null : taskData.createdBy}
               />
               <Field
                 label={translate('common.created_time')}
@@ -234,6 +259,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
                 label={translate('common.driver')}
                 value={assigneeName}
                 tooltip={assigneeName === assigneeEmail ? null : assigneeEmail}
+                isCopy={true}
+                copyValue={assigneeEmail}
               />
               <Field label={translate('common.license_number')} value={licenseNumber} />
               <Field
@@ -284,26 +311,28 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
                 <Field
                   label={translate('task_detail.modal.expected_coord')}
                   value={renderCoordinate(taskData.longlat)}
+                  isCopy={true}
                 />
                 <Field
                   label={translate('task_detail.modal.done_coord')}
                   value={renderCoordinate(taskData.doneCoordinate)}
+                  isCopy={true}
                 />
-                <Field
-                  label={translate('task_detail.modal.correct_coord')}
-                  value={taskData.gpsSesuai?.join(', ')}
-                />
-                {taskData.gpsSesuai?.join(', ') === 'TIDAK' && (
+                <Field label={translate('task_detail.modal.correct_coord')} value={CorrectCord} />
+                {(CorrectCord === 'Tidak' || CorrectCord === 'No') && (
                   <Field
                     label={translate('task_detail.modal.new_coord')}
                     value={renderCoordinate(taskData.klikLokasiClient)}
+                    isCopy={true}
                   />
                 )}
-
-                <Field
-                  label={`Total ${translate('common.invoice_number')}`}
-                  value={taskData.totalSo}
-                />
+                {taskData.alasan && (
+                  <Field
+                    label={translate('task_detail.modal.reason')}
+                    value={taskData.alasan}
+                    isTruncated={true}
+                  />
+                )}
               </div>
             )}
 
@@ -329,7 +358,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Field label="Routing Name" value={rName} />
+                    <Field
+                      label={translate('common.routing_name')}
+                      value={rName}
+                      isCopy={true}
+                      isTruncated={true}
+                    />
                     <Field label={translate('common.ro_seq')} value={taskData.routePlannedOrder} />
                     <Field label={translate('common.eta')} value={taskData.eta} />
                     <Field label={translate('common.etd')} value={taskData.etd} />
@@ -394,8 +428,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], tr
 
             {activeTab === translate('common.others') && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Field label={translate('common.task_id')} value={taskData._id} />
-                <Field label={translate('common.routing_id')} value={taskData.routingResultId} />
+                <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
+                <Field
+                  label={translate('common.routing_id')}
+                  value={taskData.routingResultId}
+                  isCopy={true}
+                />
                 <Field
                   label={translate('common.travel_distance')}
                   value={renderFloatData(taskData.travelDistance)}

@@ -34,6 +34,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       width: 'w-[5%]',
       sortable: false,
       label: 'No',
+      align: 'center',
       render: (row) => <div className="text-center w-full">{data.indexOf(row) + 1}</div>,
     },
     {
@@ -54,6 +55,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       key: 'customerId',
       width: 'w-[10%]',
       sortable: true,
+      align: 'center',
       label: t('common.customer_id'),
       render: (row) => (
         <div className="text-center w-full">{row.isIncomplete ? '-' : row.customerId || '-'}</div>
@@ -63,6 +65,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       key: 'locationId',
       width: 'w-[10%]',
       sortable: true,
+      align: 'center',
       label: t('common.location_id'),
       render: (row) => (
         <div className="text-center w-full">{row.isIncomplete ? '-' : row.locationId || '-'}</div>
@@ -72,6 +75,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       key: 'newLonglat',
       width: 'w-[15%]',
       sortable: false,
+      align: 'center',
       label: t('longlat.table.new_longlat'),
       render: (row) => <div className="font-mono text-center w-full">{row.newLonglat}</div>,
     },
@@ -79,6 +83,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       key: 'distanceDiff',
       width: 'w-[8%]',
       sortable: true,
+      align: 'center',
       label: t('common.dist_diff'),
       render: (row) => (
         <div className="text-center w-full">{row.distanceDiff?.toLocaleString(localeCode)}</div>
@@ -95,6 +100,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
       key: 'updateTime',
       width: 'w-[15%]',
       sortable: true,
+      align: 'center',
       label: t('longlat.table.update_time'),
       render: (row) => <div className="text-center w-full">{row.updateTime}</div>,
     },
