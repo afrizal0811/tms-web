@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { useMemo, useState } from 'react';
+import Dropdown from '../dropdown/Dropdown';
 import Spinner from '../Spinner';
 import Tooltip from '../Tooltip';
 import Td from './Td';
@@ -128,7 +129,7 @@ export default function TableData({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {paginatedData.map((row, rowIndex) => {
                 const tooltipMsg = rowTooltip ? rowTooltip(row) : null;
                 const trContent = (
@@ -136,7 +137,7 @@ export default function TableData({
                     key={row._id || rowIndex}
                     onClick={() => onRowClick && onRowClick(row)}
                     className={`${onRowClick ? 'cursor-pointer' : ''} ${
-                      rowClassName?.(row) || 'hover:bg-gray-50 dark:hover:bg-slate-800'
+                      rowClassName?.(row) || 'hover:bg-gray-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     {columns.map((col, colIndex) => (
@@ -162,19 +163,21 @@ export default function TableData({
       {paginate && (
         <div className="p-4 flex justify-between items-center bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shrink-0">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <select
+            <Dropdown
               value={limit}
-              onChange={(e) => {
-                setLimit(e.target.value);
+              onChange={(val) => {
+                setLimit(val);
                 setPage(1);
               }}
-              className="border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded p-1 outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-              <option value="all">All</option>
-            </select>
+              options={[
+                { label: '50', value: 50 },
+                { label: '100', value: 100 },
+                { label: '200', value: 200 },
+                { label: 'All', value: 'all' },
+              ]}
+              placement="top"
+              className="w-[90px] min-w-[90px]!"
+            />
             <span className="ml-4">Total data: {sortedData.length}</span>
           </div>
           {limit !== 'all' && totalPages > 1 && (
@@ -182,7 +185,7 @@ export default function TableData({
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50"
+                className={`px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50 ${page !== 1 ? 'cursor-pointer' : ''}`}
               >
                 &lt;
               </button>
@@ -192,7 +195,7 @@ export default function TableData({
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50"
+                className={`px-3 py-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded text-sm disabled:opacity-50 ${page !== totalPages ? 'cursor-pointer' : ''}`}
               >
                 &gt;
               </button>
