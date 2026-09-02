@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/modal/Modal';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
 import { useMemo, useState } from 'react';
@@ -81,7 +81,7 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
         vehicles.length > 0 ? (
           <div className="p-5 dark:bg-slate-800">
             <div className="overflow-hidden border border-gray-200 rounded-lg dark:bg-slate-800 dark:border-slate-600 flex flex-col max-h-[60vh]">
-              <CustomTable
+              <TableData
                 columns={vehicleColumns}
                 data={vehicleEntries}
                 externalSortConfig={sortConfig}

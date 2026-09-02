@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/modal/Modal';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { getBasePlate } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 
@@ -92,7 +92,7 @@ export default function DistanceSummaryModal({
     <Modal isOpen={isOpen} onClose={onClose} title={title} subtitle={subtitle} maxWidth="max-w-3xl">
       <div className="p-0">
         <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col max-h-[60vh]">
-          <CustomTable
+          <TableData
             columns={columns}
             data={tableEntries}
             externalSortConfig={sortConfig}

@@ -2,7 +2,7 @@
 
 import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { getResult, getTask, getUsers } from '@/lib/api';
 import { toastError } from '@/lib/toast';
@@ -387,7 +387,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                   <Field label={translate('task_detail.modal.total_item')} value={totalItems} />
                 </div>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col max-h-[60vh]">
-                  <CustomTable
+                  <TableData
                     columns={productColumns}
                     data={products}
                     emptyMessage={translate('common.no_data')}

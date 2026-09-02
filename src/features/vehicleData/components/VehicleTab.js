@@ -1,7 +1,7 @@
 'use client';
 
 import HighlightText from '@/components/HighlightText';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useMemo, useState } from 'react';
 
 const getRowClassName = (v) => {
@@ -89,7 +89,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
 
   return (
     <div className="overflow-hidden flex-1 h-full rounded-b-lg">
-      <CustomTable
+      <TableData
         columns={columns}
         data={dataWithNo}
         externalSortConfig={sortConfig}

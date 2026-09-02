@@ -5,7 +5,7 @@ import { patchHubs } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
-import Table from './Table';
+import CustomTable from './CustomTable';
 
 export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }) {
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
@@ -170,7 +170,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         </p>
       </div>
 
-      <Table
+      <CustomTable
         data={hubs}
         columns={columns}
         isReadOnly={isReadOnly}

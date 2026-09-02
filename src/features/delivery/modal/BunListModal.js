@@ -4,7 +4,7 @@
 import Button from '@/components/button/Button';
 import Modal from '@/components/modal/Modal';
 import SearchBar from '@/components/SearchBar';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useState } from 'react';
 
 export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t }) {
@@ -159,7 +159,7 @@ export default function BunListModal({ isOpen, onClose, bunSoList, onDownload, t
         </div>
 
         <div className="max-h-[60vh] overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
-          <CustomTable
+          <TableData
             columns={columns}
             data={filteredBunList}
             externalSortConfig={sortConfig}

@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/modal/Modal';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
@@ -93,7 +93,7 @@ export default function RouteInfoButton({ resultsData }) {
         maxWidth="max-w-3xl"
       >
         <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg mt-2 max-h-[60vh] flex flex-col">
-          <CustomTable columns={columns} data={tableData} />
+          <TableData columns={columns} data={tableData} />
         </div>
       </Modal>
     </>

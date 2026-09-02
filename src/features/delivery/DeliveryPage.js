@@ -31,7 +31,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
 import { toastError, toastWarning } from '../../lib/toast';
-import TableData from './components/TableData';
+import CustomTable from './components/CustomTable';
 import {
   getDriverName,
   handleFullDeliveryFormDownload,
@@ -919,7 +919,7 @@ export default function DeliveryPage() {
         <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors">
           <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
             {!isLoading && activeRoute && (
-              <TableData
+              <CustomTable
                 activeRoute={activeRoute}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}

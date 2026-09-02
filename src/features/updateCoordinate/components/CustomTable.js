@@ -1,10 +1,10 @@
 'use client';
 
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
-export default function TableData({ data, historyMap, selectedDate, t, localeCode }) {
+export default function CustomTable({ data, historyMap, selectedDate, t, localeCode }) {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -110,7 +110,7 @@ export default function TableData({ data, historyMap, selectedDate, t, localeCod
     <>
       <div className="flex flex-col h-full space-y-4">
         <div className="overflow-hidden h-full rounded-lg bg-white dark:bg-slate-800">
-          <CustomTable
+          <TableData
             columns={columns}
             data={data}
             onRowClick={handleRowClick}

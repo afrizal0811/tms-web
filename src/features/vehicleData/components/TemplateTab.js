@@ -1,7 +1,7 @@
 'use client';
 
 import HighlightText from '@/components/HighlightText';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { isEmpty } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -190,7 +190,7 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
 
   return (
     <div className="overflow-hidden flex-1 h-full rounded-b-lg">
-      <CustomTable
+      <TableData
         columns={columns}
         data={dataWithNo}
         rowClassName={getRowClassName}

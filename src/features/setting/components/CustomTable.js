@@ -1,6 +1,6 @@
 'use client';
 
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import { useEffect, useRef, useState } from 'react';
 
 const EditIcon = () => (
@@ -203,7 +203,7 @@ export default function Table({
       className={`overflow-hidden flex flex-col ${containerHeight} border border-gray-200 dark:border-slate-700 rounded-lg`}
       ref={editRef}
     >
-      <CustomTable
+      <TableData
         columns={customColumns}
         data={data}
         isLoading={isLoading}

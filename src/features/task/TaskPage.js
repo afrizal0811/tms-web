@@ -9,7 +9,7 @@ import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks } from '@/lib/api';
@@ -429,7 +429,7 @@ export default function TaskPage() {
         items={headerItems}
       />
       <BodyCard isLoading={false} isEmpty={false}>
-        <CustomTable
+        <TableData
           columns={columns}
           data={processedData}
           externalSortConfig={sortConfig}

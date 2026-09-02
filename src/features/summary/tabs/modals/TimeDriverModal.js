@@ -2,7 +2,7 @@
 
 import Map from '@/components/Map';
 import Modal from '@/components/modal/Modal';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -208,7 +208,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
         {hasMultipleData && (
           <>
             <div className="overflow-hidden border border-gray-200 dark:border-slate-700 rounded-lg flex flex-col">
-              <CustomTable columns={columns} data={tableEntries} paginate={false} />
+              <TableData columns={columns} data={tableEntries} paginate={false} />
               <div className="flex bg-gray-50 dark:bg-slate-800/50 font-bold border-t-2 border-gray-200 dark:border-slate-700">
                 <div className="w-[70%] px-4 py-3 text-center text-gray-600 dark:text-slate-400 uppercase text-[10px] tracking-wider">
                   Total

@@ -1410,7 +1410,7 @@ export const dictionary = {
         list_product: 'Product List',
         more_detail: 'More Details',
         new_coord: 'New Coordinates',
-        one_branch: 'One',
+        one: 'One',
         reason: 'Rejection Reason',
         title: 'Task Details',
         total_item: 'Total Items',

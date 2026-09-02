@@ -20,7 +20,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import TableData from './components/TableData';
+import CustomTable from './components/CustomTable';
 import { handleDownloadExcel } from './help';
 
 export default function UpdateCoordinatePage() {
@@ -225,7 +225,7 @@ export default function UpdateCoordinatePage() {
         isLoading={loading}
       >
         <div className="p-0 h-full overflow-y-auto">
-          <TableData
+          <CustomTable
             data={processedData}
             historyMap={historyMap}
             selectedDate={selectedDate}

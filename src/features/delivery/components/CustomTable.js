@@ -1,6 +1,6 @@
 import HighlightText from '@/components/HighlightText';
 import Tooltip from '@/components/Tooltip';
-import CustomTable from '@/components/table/CustomTable';
+import TableData from '@/components/table/TableData';
 import {
   checkInvalidSo,
   checkInvalidSoList,
@@ -10,7 +10,7 @@ import {
 } from '@/lib/utils';
 import { useCallback, useMemo } from 'react';
 
-export default function TableData({
+export default function CustomTable({
   activeRoute,
   searchQuery,
   setSearchQuery,
@@ -350,7 +350,7 @@ export default function TableData({
   ];
 
   return (
-    <CustomTable
+    <TableData
       columns={columns}
       data={processedTrips}
       onRowClick={handleTableRowClick}

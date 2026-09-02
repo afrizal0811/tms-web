@@ -232,7 +232,7 @@ export default function VehicleData() {
       fileNamePrefix: filePrefix,
     });
   };
-  const searchPlaceholder = `${t('common.license_number')}, ${t('common.driver')}}`;
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.driver')}`;
 
   const headerItems = [
     {
