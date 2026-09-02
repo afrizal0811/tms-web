@@ -72,6 +72,7 @@ export default function Button({
             addClass="inline-block"
             border="border-2 border-sky-200 border-t-white"
             size="w-5 h-5"
+            showTimer={false}
           />
           <span>{formatTimer(elapsedTime)}</span>
         </>

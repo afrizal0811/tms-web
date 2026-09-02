@@ -1,16 +1,16 @@
 'use client';
 
 import Modal from '@/components/modal/Modal';
+import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
 const MapLoader = () => {
-  const { t } = useLanguage();
   return (
-    <div className="h-full w-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 font-medium">
-      {t('common.loading')}...
+    <div className="h-full w-full flex items-center justify-center font-medium">
+      <Spinner />
     </div>
   );
 };

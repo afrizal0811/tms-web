@@ -212,7 +212,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     return (
       <div className="flex flex-col items-center">
         <Spinner />
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -294,9 +293,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           {loading ? (
             <div className="flex flex-col items-center py-4">
               <Spinner />
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-                {t('common.loading')}
-              </p>
             </div>
           ) : (
             <form onSubmit={handleSearchUser} className="flex flex-col gap-4">

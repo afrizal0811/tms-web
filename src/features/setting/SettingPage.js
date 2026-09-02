@@ -99,7 +99,6 @@ export default function SettingPage() {
     return (
       <div className="p-8 text-center text-slate-500 flex flex-col justify-center items-center h-full gap-4">
         <Spinner />
-        {t('common.loading')}
       </div>
     );
   }

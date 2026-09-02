@@ -6,6 +6,7 @@ import Spinner from '../Spinner';
 import Tooltip from '../Tooltip';
 import Td from './Td';
 import Th from './Th';
+
 const compareValues = (aVal, bVal) =>
   typeof aVal === 'string' && typeof bVal === 'string'
     ? aVal.localeCompare(bVal)
