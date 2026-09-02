@@ -830,7 +830,7 @@ export default function DeliveryPage() {
                         }}
                         className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
                       >
-                        More
+                        {t('common.more')}
                       </button>
                     </div>
                     <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">

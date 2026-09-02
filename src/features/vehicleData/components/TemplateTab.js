@@ -144,7 +144,7 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
           <div className="w-full cursor-help">
             <Tooltip tooltipContent={remainingTags.join('\n')}>
               <span>
-                {firstTag}; (+{remainingCount} {t('vehicle.tabs.template.more')})
+                {firstTag}; (+{remainingCount} {t('common.others')})
               </span>
             </Tooltip>
           </div>

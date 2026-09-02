@@ -273,7 +273,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         </div>
 
         {/* Section 3 */}
-        <Accordion title={translate('task_detail.modal.more_detail')} defaultOpen={false}>
+        <Accordion title={translate('common.more')} defaultOpen={false}>
           <div className="flex overflow-x-auto space-x-6 border-b border-gray-200 dark:border-slate-700 mb-4 px-2">
             {tabs.map((tab) => (
               <button
