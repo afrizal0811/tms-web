@@ -1,7 +1,7 @@
 'use client';
 
+import CopyButton from '@/components/button/CopyButton';
 import Tooltip from '@/components/Tooltip';
-import { toastError, toastSuccess } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatLongDate,
@@ -55,17 +55,6 @@ const isValidRoutingTimeWIB = (utcString) => {
   }
 };
 
-const formatInvoice = (invoiceString) => {
-  if (!invoiceString) return '';
-
-  const invoices = invoiceString
-    .split(',')
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-  return invoices.length > 1 ? `${invoices[0]} (+${invoices.length - 1})` : invoices[0];
-};
-
 export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
@@ -114,11 +103,13 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         const targetRow = dataMap[targetKey];
 
         if (targetRow) {
-          const { name: taskName, invoiceNumber: rawSoNumber } =
-            parseCustomerString(task.customerOrder) ||
-            parseCustomerString(task.customerName) ||
-            '-';
-          const soNumber = formatInvoice(rawSoNumber);
+          const {
+            name: taskName,
+            invoiceNumber,
+            truncateInvoice,
+          } = parseCustomerString(task.customerOrder) ||
+          parseCustomerString(task.customerName) ||
+          '-';
 
           if (
             !targetRow.startData.time ||
@@ -126,7 +117,8 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
           ) {
             targetRow.startData.time = task.createdTime;
             targetRow.startData.name = taskName;
-            targetRow.startData.soNumber = soNumber;
+            targetRow.startData.soNumber = invoiceNumber;
+            targetRow.startData.truncateInvoice = truncateInvoice;
           }
 
           if (
@@ -140,7 +132,8 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             ) {
               targetRow.endData.time = task.assignedTime;
               targetRow.endData.name = taskName;
-              targetRow.endData.soNumber = soNumber;
+              targetRow.endData.soNumber = invoiceNumber;
+              targetRow.endData.truncateInvoice = truncateInvoice;
             }
           }
         }
@@ -151,17 +144,6 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
       .sort()
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr, localeCode]);
-
-  const copySoNumber = async (soNumber) => {
-    if (!soNumber) return;
-    try {
-      const copyText = String(soNumber).replace(/\s*\(\+\d+\)$/, '');
-      await navigator.clipboard.writeText(copyText);
-      toastSuccess(`${translate('common.copied')}: ${copyText}`);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
-  };
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 shadow-sm p-0 overflow-auto">
@@ -236,40 +218,44 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
                   <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
-                    <Tooltip
-                      tooltipContent={
-                        isStartMissing
-                          ? translate('summary.tabs.routing_time.tooltip.start_time_error')
-                          : hasStart
-                            ? `${row.startData.name}\n${row.startData.soNumber}`
-                            : ''
-                      }
-                    >
-                      <span
-                        className={`${isStartMissing ? 'cursor-help w-full inline-block' : hasStart ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
-                        onClick={() => (hasStart ? copySoNumber(row.startData.soNumber) : {})}
+                    <div className="flex items-center justify-center gap-1">
+                      <Tooltip
+                        tooltipContent={
+                          isStartMissing
+                            ? translate('summary.tabs.routing_time.tooltip.start_time_error')
+                            : hasStart
+                              ? `${row.startData.name}\n${row.startData.truncateInvoice}`
+                              : ''
+                        }
                       >
-                        {startDisplay}
-                      </span>
-                    </Tooltip>
+                        <span
+                          className={`${isStartMissing ? 'cursor-help w-full inline-block' : hasStart ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
+                        >
+                          {startDisplay}
+                        </span>
+                      </Tooltip>
+                      {hasStart && <CopyButton text={row.startData.soNumber} />}
+                    </div>
                   </td>
                   <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
-                    <Tooltip
-                      tooltipContent={
-                        isEndMissing
-                          ? translate('summary.tabs.routing_time.tooltip.finish_time_error')
-                          : hasEnd
-                            ? `${row.endData.name}\n${row.endData.soNumber}`
-                            : ''
-                      }
-                    >
-                      <span
-                        className={`${isEndMissing ? 'cursor-help w-full inline-block' : hasEnd ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
-                        onClick={() => (hasEnd ? copySoNumber(row.endData.soNumber) : {})}
+                    <div className="flex items-center justify-center gap-1">
+                      <Tooltip
+                        tooltipContent={
+                          isEndMissing
+                            ? translate('summary.tabs.routing_time.tooltip.finish_time_error')
+                            : hasEnd
+                              ? `${row.endData.name}\n${row.endData.truncateInvoice}`
+                              : ''
+                        }
                       >
-                        {endDisplay}
-                      </span>
-                    </Tooltip>
+                        <span
+                          className={`${isEndMissing ? 'cursor-help w-full inline-block' : hasEnd ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
+                        >
+                          {endDisplay}
+                        </span>
+                      </Tooltip>
+                      {hasEnd && <CopyButton text={row.endData.soNumber} />}
+                    </div>
                   </td>
                 </tr>
               );

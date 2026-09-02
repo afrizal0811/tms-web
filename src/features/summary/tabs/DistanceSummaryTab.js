@@ -103,7 +103,9 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
       !row.isSunday
     ) {
       return (
-        <Tooltip tooltipContent="Tidak ditemukan data routing">
+        <Tooltip
+          tooltipContent={`${translate('common.no_data')} ${translate('common.routing').toLowerCase()}`}
+        >
           <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
             {formatLongDate(row.dateStr || row.date, localeCode)}
           </span>

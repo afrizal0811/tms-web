@@ -1,9 +1,8 @@
+import TaskModal from '@/components/modal/TaskModal';
 import Tooltip from '@/components/Tooltip';
-import { toastSuccess } from '@/lib/toast';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
-
 const ReasonCell = ({ text, className }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const textRef = useRef(null);
@@ -64,7 +63,7 @@ const ActionCell = ({ text, className, onClick }) => {
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
           {isHovered ? (
-            <span className="inline-block font-bold text-lg leading-none text-sky-600 dark:text-sky-400 transform scale-125 transition-transform duration-200">
+            <span className="relative text-slate-600/30 dark:text-slate-400/30 text-xl font-bold">
               +
             </span>
           ) : (
@@ -76,49 +75,19 @@ const ActionCell = ({ text, className, onClick }) => {
   );
 };
 
-const SOCell = ({ text, content, className, isError, errorMessage, translate }) => {
+const SOCell = ({ text, className, isError, onClick }) => {
   if (!text) return <td className={className}></td>;
-
-  const refs = content
-    ? content
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-  const firstRef = refs[0] || '';
-  const count = refs.length > 1 ? refs.length - 1 : 0;
-
-  let tooltipText = count > 0 ? `${firstRef} (+${count})` : firstRef;
-
-  if (isError && errorMessage) {
-    tooltipText = errorMessage;
-  }
 
   const textStyle = isError
     ? 'text-[#FF0000] dark:text-red-400 font-bold border-b border-dotted border-red-500'
     : 'inline-block border-b-2 border-dotted pb-0.5';
 
-  const handleCopy = async () => {
-    if (!firstRef) return;
-    try {
-      const copyText = String(firstRef).replace(/\s*\(\+\d+\)$/, '');
-      await navigator.clipboard.writeText(copyText);
-      toastSuccess(`${translate('common.copied')}: ${copyText}`);
-    } catch (err) {
-      toastError(`${err.message}`);
-    }
-  };
-
   return (
     <td
-      className={`${className} cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative group`}
-      onClick={handleCopy}
+      className={`${className} hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative group cursor-pointer`}
+      onClick={onClick}
     >
-      <Tooltip
-        tooltipContent={refs.length > 0 || isError ? tooltipText : translate('common.no_data')}
-      >
-        <span className={textStyle}>{text}</span>
-      </Tooltip>
+      <span className={textStyle}>{text}</span>
     </td>
   );
 };
@@ -130,12 +99,16 @@ export default function PendingReasonsTab({
   hasPendingGR,
   translate,
   onUpdatePendingDetail,
+  driverData,
 }) {
   const [modalData, setModalData] = useState(null);
-  const getCustId = (name) => {
-    if (!name) return '-';
-    const match = name.match(/C0\d+/);
-    return match ? match[0] : '-';
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
   };
 
   const thClass =
@@ -186,6 +159,13 @@ export default function PendingReasonsTab({
           translate={translate}
         />
 
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          taskId={selectedTaskId}
+          driverData={driverData}
+        />
+
         <table className="border-collapse w-full text-sm">
           <thead className="sticky top-0 z-20">
             <tr>
@@ -198,9 +178,11 @@ export default function PendingReasonsTab({
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
             {data.map((item, idx) => {
-              const { name: customerName, invoiceNumber } = parseCustomerString(
-                item.customerOrder || item.customerName
-              );
+              const {
+                name: customerName,
+                id: customerId,
+                invoiceNumber,
+              } = parseCustomerString(item.customerOrder || item.customerName);
               const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
               const borderBottomClass = isLastInDate
                 ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
@@ -219,8 +201,6 @@ export default function PendingReasonsTab({
               }
 
               const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
-
-              // Cari data detail dari props
               const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
               const isAllEmpty =
                 !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
@@ -237,17 +217,18 @@ export default function PendingReasonsTab({
                 { type: 'text', val: item.dateStr },
                 { type: 'text', val: getBasePlate(item.licensePlate) },
                 { type: 'text', val: item.driverName, cls: 'text-left' },
-                { type: 'so', val: textBatal, content: invoiceNumber },
-                { type: 'so', val: textParsial, content: invoiceNumber },
+                { type: 'so', val: textBatal, content: invoiceNumber, id: item._id },
+                { type: 'so', val: textParsial, content: invoiceNumber, id: item._id },
                 {
                   type: 'so',
                   val: textPending,
                   content: invoiceNumber,
                   isError: isWrongGR,
                   errorMsg,
+                  id: item._id,
                 },
                 ...(hasPendingGR
-                  ? [{ type: 'so', val: textPendingGR, content: invoiceNumber }]
+                  ? [{ type: 'so', val: textPendingGR, content: invoiceNumber, id: item._id }]
                   : []),
                 { type: 'reason', val: item.alasan },
                 { type: 'action', val: pd.internalExternal, cls: actionCellClass },
@@ -266,7 +247,7 @@ export default function PendingReasonsTab({
                   val: item.actualVisitMins,
                   cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
                 },
-                { type: 'text', val: getCustId(item.customerName) },
+                { type: 'text', val: customerId },
                 { type: 'redEmpty', val: item.routePlannedOrder },
                 { type: 'text', val: item.realSequence },
                 { type: 'text', val: item.temp },
@@ -285,11 +266,9 @@ export default function PendingReasonsTab({
                         <SOCell
                           key={cIdx}
                           text={cell.val}
-                          content={cell.content}
                           className={cellClass}
                           isError={cell.isError}
-                          errorMessage={cell.errorMsg}
-                          translate={translate}
+                          onClick={() => handleRowClick(cell.id)}
                         />
                       );
                     }

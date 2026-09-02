@@ -1,3 +1,4 @@
+import CopyButton from '@/components/button/CopyButton';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useEffect, useRef } from 'react';
 
@@ -23,19 +24,6 @@ export default function RoutingDropdown({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onToggle]);
-
-  const handleCopy = async (name) => {
-    if (!name) return;
-    try {
-      await navigator.clipboard.writeText(name);
-      toastSuccess(`${translate('common.copied')}: ${name}`);
-      setTimeout(() => {
-        if (onToggle) onToggle();
-      }, 1500);
-    } catch (err) {
-      toastError(`${translate('common.toast.error')}: ${err.message}`);
-    }
-  };
 
   const positionClasses = {
     bottom: 'top-full mt-2 left-1/2 -translate-x-1/2',
@@ -69,12 +57,10 @@ export default function RoutingDropdown({
           {routingNames.map((rName, rIdx) => (
             <div
               key={rIdx}
-              onClick={() => handleCopy(rName)}
-              className="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 cursor-pointer border-b last:border-0 border-gray-100 dark:border-slate-700/50 flex justify-center items-center relative group "
+              className="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 border-b last:border-0 border-gray-100 dark:border-slate-700/50 flex justify-between items-center relative group max-w-[220px]"
             >
-              <span className="truncate pr-2" title={rName}>
-                {rName}
-              </span>
+              <span className="truncate pr-2">{rName}</span>
+              <CopyButton text={rName} />
             </div>
           ))}
         </div>

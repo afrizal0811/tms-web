@@ -320,6 +320,7 @@ export default function SummaryPage() {
           onUpdatePendingDetail: handleUpdatePendingDetail,
           hasPendingGR: hasPendingGR,
           translate: t,
+          driverData: driverData,
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {
@@ -434,8 +435,6 @@ export default function SummaryPage() {
           data: colorLegend,
           isColorLegend: true,
         };
-      case 'Pending Reasons':
-        return null;
       default:
         return {
           text: t('common.click_for_detail_param', { parameter: t('summary.underline') }),
