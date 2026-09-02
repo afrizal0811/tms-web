@@ -164,7 +164,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-b-xl shadow-sm p-0 overflow-auto">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
         <table className="min-w-full text-sm text-left border-collapse">
           <thead className="text-xs text-slate-900 dark:text-slate-200 uppercase sticky top-0 z-10 bg-purple-200 dark:bg-[#34205c]">
@@ -276,14 +276,6 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             })}
           </tbody>
         </table>
-      </div>
-      <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-b-lg border-t border-gray-200 dark:border-slate-700 text-sm shrink-0">
-        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *
-          {translate('common.click_for_detail_param', {
-            parameter: translate('summary.underline'),
-          })}
-        </div>
       </div>
     </div>
   );

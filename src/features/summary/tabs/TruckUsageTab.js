@@ -114,15 +114,6 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
           </div>
         ))}
       </div>
-
-      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0 z-10">
-        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *
-          {translate('common.click_for_detail_param', {
-            parameter: translate('summary.underline'),
-          })}
-        </div>
-      </div>
     </div>
   );
 }

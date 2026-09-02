@@ -88,10 +88,7 @@ export default function TruckDetailModal({
       bodyClassName="p-0 bg-gray-50 dark:bg-slate-900 overflow-hidden"
       footer={
         <span className="text-sm text-slate-400 italic">
-          *
-          {translate('common.click_for_detail_param', {
-            parameter: translate('common.task').toLowerCase(),
-          })}
+          *{translate('common.click_for_detail')}
         </span>
       }
     >

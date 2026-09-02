@@ -21,6 +21,29 @@ import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 
+const colorLegend = [
+  {
+    name: 'orange',
+    colors: 'bg-orange-400 text-white dark:bg-orange-600',
+    text: 'summary.tabs.truck_detail.orange',
+  },
+  {
+    name: 'blue',
+    colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
+    text: 'summary.tabs.truck_detail.blue',
+  },
+  {
+    name: 'magenta',
+    colors: 'bg-[#C85D86] text-white dark:bg-[#964263]',
+    text: 'summary.tabs.truck_detail.magenta',
+  },
+  {
+    name: 'indigo',
+    colors: 'bg-[#5C5FB2] text-white dark:bg-[#45488c]',
+    text: 'summary.tabs.truck_detail.indigo',
+  },
+];
+
 export default function SummaryPage() {
   const { t, localeCode, isIndonesian } = useLanguage();
   const {
@@ -42,7 +65,6 @@ export default function SummaryPage() {
     setDismissedDots,
     activeHubLocation,
   } = useSummaryData();
-
   const [activeTab, setActiveTab] = useState('Routing Time');
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
@@ -259,6 +281,7 @@ export default function SummaryPage() {
         return false;
     }
   };
+
   const renderContent = () => {
     const renderTab = (Component, props) => (
       <div className="w-full h-full flex flex-col">
@@ -311,6 +334,7 @@ export default function SummaryPage() {
           translate: t,
           localeCode: localeCode,
           isIndonesian: isIndonesian,
+          colorLegend: colorLegend,
         });
       case 'Truck Usage':
         return renderTab(TruckUsageTab, {
@@ -388,12 +412,36 @@ export default function SummaryPage() {
     { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
     { id: 'Distance Summary', label: t('summary.tabs.dist_summary.title') },
   ];
+
   const longLoading = pendingEndpoints.length > 0 && (
     <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-md text-sm animate-pulse shadow-sm">
       <p>{t('summary.long_message')}</p>
       <p className="font-semibold text-center">{pendingEndpoints.join(', ')}</p>
     </div>
   );
+
+  const getFooterConfig = () => {
+    switch (activeTab) {
+      case 'Truck Detail':
+        return {
+          text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
+          data: colorLegend,
+          isColorLegend: true,
+        };
+      case 'Time Driver':
+        return {
+          text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
+          data: colorLegend,
+          isColorLegend: true,
+        };
+      case 'Pending Reasons':
+        return null;
+      default:
+        return {
+          text: t('common.click_for_detail_param', { parameter: t('summary.underline') }),
+        };
+    }
+  };
 
   return (
     <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
@@ -420,6 +468,7 @@ export default function SummaryPage() {
         }))}
         longLoadingContent={longLoading}
         routingData={rawData.results}
+        footer={getFooterConfig()}
       >
         {!isLoading && renderContent()}
       </BodyCard>

@@ -181,7 +181,6 @@ export const dictionary = {
     dashboard: {
       subtitle: 'Overview performa',
       subtitle_highlight: 'harian & tahunan',
-      table_data: 'Data Tabel',
       title: 'Dashboard',
       year_performance: 'Tahun Performa',
       toast: {
@@ -892,7 +891,6 @@ export const dictionary = {
     dashboard: {
       subtitle: 'Performance overview',
       subtitle_highlight: 'daily & yearly',
-      table_data: 'Table Data',
       title: 'Dashboard',
       year_performance: 'Performance Year',
       toast: {

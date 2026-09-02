@@ -223,6 +223,9 @@ export default function UpdateCoordinatePage() {
         isEmpty={!loading && isEmpty(processedData)}
         emptyMessage={emptyMessage}
         isLoading={loading}
+        footer={{
+          text: t('common.click_for_detail'),
+        }}
       >
         <div className="p-0 h-full overflow-y-auto">
           <CustomTable
@@ -234,9 +237,6 @@ export default function UpdateCoordinatePage() {
           />
         </div>
       </BodyCard>
-      <span className="mt-2 block text-xs text-amber-600 text-right italic">
-        {t('longlat.table_detail')}
-      </span>
     </div>
   );
 }

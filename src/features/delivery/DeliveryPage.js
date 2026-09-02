@@ -865,8 +865,32 @@ export default function DeliveryPage() {
     },
   ];
 
-  if (!isClient) return null;
+  const tabData = filteredVehicleRoutes.map((r) => {
+    const dName = getDriverName(r, driverData);
+    const isManual = r.hasManual;
+    const hasMT = r.trips?.some((t) => t.isMiddleHub);
+    const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
 
+    return {
+      id: r.vehicleId,
+      label: (
+        <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
+          <span
+            className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
+          >
+            {r.vehicleName}{' '}
+            {hasMT && (
+              <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">[MT]</span>
+            )}
+            {r.isRedelivery && (
+              <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+            )}
+          </span>
+        </Tooltip>
+      ),
+    };
+  });
+  if (!isClient) return null;
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard
@@ -888,36 +912,13 @@ export default function DeliveryPage() {
         onTabClick={setActiveVehicleId}
         emptyMessage={emptyMessage}
         routingData={routingResults}
-        tabs={filteredVehicleRoutes.map((r) => {
-          const dName = getDriverName(r, driverData);
-          const isManual = r.hasManual;
-          const hasMT = r.trips?.some((t) => t.isMiddleHub);
-          const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
-
-          return {
-            id: r.vehicleId,
-            label: (
-              <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
-                <span
-                  className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
-                >
-                  {r.vehicleName}{' '}
-                  {hasMT && (
-                    <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">
-                      [MT]
-                    </span>
-                  )}
-                  {r.isRedelivery && (
-                    <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
-                  )}
-                </span>
-              </Tooltip>
-            ),
-          };
-        })}
+        tabs={tabData}
+        footer={{
+          text: t('common.click_for_detail'),
+        }}
       >
-        <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors">
-          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
+        <div className="bg-white dark:bg-slate-800 h-full flex flex-col border-none transition-colors">
+          <div className="overflow-y-auto grow h-full m-0 ">
             {!isLoading && activeRoute && (
               <CustomTable
                 activeRoute={activeRoute}
