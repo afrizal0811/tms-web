@@ -9,17 +9,24 @@ import { toastError } from '@/lib/toast';
 import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import CopyButton from '../button/CopyButton';
+import Map from '../Map';
 import Tooltip from '../Tooltip';
 import Modal from './Modal';
-const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated }) => (
+
+const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated, onValueClick }) => (
   <div className="mb-3">
     <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
     <Tooltip tooltipContent={tooltip}>
       <div
-        className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'}`}
+        className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${onValueClick ? ' cursor-pointer underline decoration-dotted decoration-2 underline-offset-5' : ''} ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'}`}
+        onClick={onValueClick}
       >
         {isEmpty(value) ? '-' : String(value)}{' '}
-        {!isEmpty(value) && isCopy && <CopyButton text={copyValue || value} />}
+        {!isEmpty(value) && isCopy && (
+          <span onClick={(e) => e.stopPropagation()}>
+            <CopyButton text={copyValue || value} />
+          </span>
+        )}
       </div>
     </Tooltip>
   </div>
@@ -134,8 +141,10 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+    const hasMap = !!taskData.doneCoordinate;
     const tabs = [
       'Data',
+      ...(hasMap ? [translate('task_detail.modal.map')] : []),
       translate('common.routing'),
       translate('task_detail.modal.list_product'),
       translate('task_detail.modal.history'),
@@ -190,7 +199,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         YA: isIndonesian ? 'Ya' : 'Yes',
         TIDAK: isIndonesian ? 'Tidak' : 'No',
       }[taskData.gpsSesuai?.[0]] ?? '-';
-
+    const iconText = {};
     return (
       <div className="space-y-6">
         {/* Section 1 */}
@@ -312,11 +321,17 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                   label={translate('task_detail.modal.expected_coord')}
                   value={renderCoordinate(taskData.longlat)}
                   isCopy={true}
+                  onValueClick={
+                    hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
+                  }
                 />
                 <Field
                   label={translate('task_detail.modal.done_coord')}
                   value={renderCoordinate(taskData.doneCoordinate)}
                   isCopy={true}
+                  onValueClick={
+                    hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
+                  }
                 />
                 <Field label={translate('task_detail.modal.correct_coord')} value={CorrectCord} />
                 {(CorrectCord === 'Tidak' || CorrectCord === 'No') && (
@@ -324,6 +339,9 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                     label={translate('task_detail.modal.new_coord')}
                     value={renderCoordinate(taskData.klikLokasiClient)}
                     isCopy={true}
+                    onValueClick={
+                      hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
+                    }
                   />
                 )}
                 {taskData.alasan && (
@@ -335,6 +353,78 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                 )}
               </div>
             )}
+
+            {activeTab === translate('task_detail.modal.map') &&
+              hasMap &&
+              (() => {
+                const parseCoord = (coordStr) => {
+                  if (!coordStr) return null;
+                  const [lat, lng] = coordStr.split(',').map(Number);
+                  if (isNaN(lat) || isNaN(lng)) return null;
+                  return [lat, lng];
+                };
+                const expectedCoord = parseCoord(taskData.longlat);
+                const doneCoord = parseCoord(taskData.doneCoordinate);
+                const newCoord = parseCoord(taskData.klikLokasiClient);
+                const mapBounds = [expectedCoord, doneCoord, newCoord].filter(Boolean);
+
+                return (
+                  <div className="w-full h-[50vh] relative z-0 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                    <Map
+                      bounds={mapBounds}
+                      onMapReady={(map) => {
+                        map.dragging.disable();
+                        setTimeout(() => {
+                          map.setMinZoom(map.getZoom());
+                        }, 500);
+                      }}
+                    >
+                      {(rl, L, icons) => (
+                        <>
+                          {expectedCoord && (
+                            <rl.Marker
+                              position={expectedCoord}
+                              icon={icons.circle('E', 'bg-blue-500', 'text-xs')}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.expected_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                          {doneCoord && (
+                            <rl.Marker
+                              position={doneCoord}
+                              icon={icons.circle(
+                                isIndonesian ? 'S' : 'D',
+                                'bg-green-500',
+                                'text-xs'
+                              )}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.done_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                          {newCoord && (
+                            <rl.Marker
+                              position={newCoord}
+                              icon={icons.circle(
+                                isIndonesian ? 'B' : 'N',
+                                'bg-orange-500',
+                                'text-xs'
+                              )}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.new_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                        </>
+                      )}
+                    </Map>
+                  </div>
+                );
+              })()}
 
             {activeTab === translate('common.routing') &&
               (() => {
@@ -421,7 +511,9 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-sm text-gray-500 p-4">Tidak ada history.</div>
+                  <div className="text-center text-sm text-gray-500 p-4">
+                    {translate('common.no_data')}
+                  </div>
                 )}
               </div>
             )}
