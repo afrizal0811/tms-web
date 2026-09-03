@@ -428,7 +428,13 @@ export default function TaskPage() {
         }
         items={headerItems}
       />
-      <BodyCard isLoading={false} isEmpty={false}>
+      <BodyCard
+        isLoading={false}
+        isEmpty={false}
+        footer={{
+          text: t('common.click_for_detail'),
+        }}
+      >
         <TableData
           columns={columns}
           data={processedData}
