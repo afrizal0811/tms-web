@@ -1,0 +1,52 @@
+{
+  "353742370609943": {
+    "company_id": 2386,
+    "event_time": 1788429367773,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 8493 NH",
+        "hull_no": "FRZ",
+        "imei": "353742370609943",
+        "driver": "Usman",
+        "latitude": -7.3192167,
+        "longitude": 112.63382,
+        "speed": 57,
+        "direction": 182,
+        "engine_on": true,
+        "last_packet": "2026-09-03 09:56:03 +0000",
+        "last_receive": "2026-09-03 09:56:07 +0000",
+        "last_motion": "2026-09-03 09:56:03 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370606550": {
+    "company_id": 2386,
+    "event_time": 1788429369549,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8319 PV",
+        "hull_no": "FRZ",
+        "imei": "353742370606550",
+        "driver": "Muhammad Ali Mashuri",
+        "latitude": -7.242367,
+        "longitude": 112.69036,
+        "speed": 57,
+        "direction": 102,
+        "engine_on": true,
+        "last_packet": "2026-09-03 09:55:43 +0000",
+        "last_receive": "2026-09-03 09:56:09 +0000",
+        "last_motion": "2026-09-03 09:55:43 +0000",
+        "motion_status": "M"
+      }
+    }
+  }
+}

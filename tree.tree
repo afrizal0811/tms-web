@@ -30,6 +30,8 @@
 │   │   │   └── route.js
 │   │   ├── reasons
 │   │   │   └── route.js
+│   │   ├── tracking
+│   │   │   └── route.js
 │   │   ├── truck-usage
 │   │   │   └── route.js
 │   │   ├── vehicle-mappings
@@ -65,59 +67,65 @@
 │   │   └── page.js
 │   ├── task
 │   │   └── page.js
+│   ├── tracking
+│   │   └── page.js
 │   └── vehicles
 │       └── page.js
 ├── components
 │   ├── Accordion.js
-│   ├── AppLayout.js
-│   ├── Button.js
+│   ├── button
+│   │   ├── Button.js
+│   │   ├── CopyButton.js
+│   │   ├── InformationButton.js
+│   │   ├── LanguageToggle.js
+│   │   ├── RadioButton.js
+│   │   ├── RouteInfoButton.js
+│   │   ├── ThemeToggle.js
+│   │   └── ToggleButton.js
 │   ├── card
 │   │   ├── BodyCard.js
 │   │   └── HeaderCard.js
 │   ├── Carousel.js
 │   ├── CustomDatePicker.js
 │   ├── dropdown
+│   │   ├── Dropdown.js
 │   │   ├── LocationDropdown.js
 │   │   ├── StorageTypeFilter.js
 │   │   └── VehicleTypeFilter.js
-│   ├── Dropdown.js
-│   ├── ErrorPage.js
 │   ├── fileUploader
 │   │   ├── FileUploader.js
 │   │   ├── helper
 │   │   │   ├── tutorialData.js
 │   │   │   └── validator.js
 │   │   └── UploadArea.js
-│   ├── Footer.js
 │   ├── HighlightText.js
-│   ├── Information.js
-│   ├── LanguageToggle.js
+│   ├── Map.js
 │   ├── modal
 │   │   ├── ConfirmModal.js
+│   │   ├── Modal.js
 │   │   ├── SystemUpdateModal.js
 │   │   ├── TaskModal.js
 │   │   ├── TokenExpirationModal.js
 │   │   └── VehicleTagMappingModal.js
-│   ├── Modal.js
 │   ├── navbar
 │   │   ├── MobileMenu.js
 │   │   ├── Navbar.js
 │   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
-│   ├── RadioCard.js
-│   ├── Report.js
-│   ├── RoutingInfo.js
+│   ├── page
+│   │   ├── AppLayout.js
+│   │   ├── ErrorPage.js
+│   │   ├── Footer.js
+│   │   ├── Report.js
+│   │   ├── SelectionLayout.js
+│   │   └── SessionGuard.js
 │   ├── SearchBar.js
-│   ├── SelectionLayout.js
-│   ├── SessionGuard.js
 │   ├── Spinner.js
 │   ├── table
 │   │   ├── TabButton.js
 │   │   ├── TableData.js
 │   │   ├── Td.js
 │   │   └── Th.js
-│   ├── ThemeToggle.js
-│   ├── ToggleButton.js
 │   └── Tooltip.js
 ├── context
 │   ├── LanguageContext.js
@@ -144,8 +152,8 @@
 │   │       └── RoutingVsActualTab.js
 │   ├── delivery
 │   │   ├── components
-│   │   │   ├── DeliveryForm.js
-│   │   │   └── TableData.js
+│   │   │   ├── CustomTable.js
+│   │   │   └── DeliveryForm.js
 │   │   ├── DeliveryPage.js
 │   │   ├── helper
 │   │   │   ├── deliveryForm.js
@@ -189,9 +197,9 @@
 │   │   ├── components
 │   │   │   ├── BranchManager.js
 │   │   │   ├── Card.js
+│   │   │   ├── CustomTable.js
 │   │   │   ├── ReasonManager.js
-│   │   │   ├── StandardType.js
-│   │   │   ├── Table.js
+│   │   │   ├── StandardTypeManager.js
 │   │   │   └── VehicleMappingManager.js
 │   │   ├── helper
 │   │   │   └── constants.js
@@ -222,10 +230,12 @@
 │   │       └── TruckUsageTab.js
 │   ├── task
 │   │   └── TaskPage.js
+│   ├── tracking
+│   │   └── TrackingPage.js
 │   ├── updateCoordinate
 │   │   ├── components
-│   │   │   ├── MapLocation.js
-│   │   │   └── TableData.js
+│   │   │   ├── CustomTable.js
+│   │   │   └── MapLocation.js
 │   │   ├── help.js
 │   │   ├── modal
 │   │   │   └── CustomerHistoryModal.js

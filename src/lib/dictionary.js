@@ -176,6 +176,7 @@ export const dictionary = {
       summary: 'Rangkuman',
       task: 'Tugas',
       task_counter_report: 'Laporan Jumlah Tugas',
+      tracking: 'Pelacakan',
       update: 'Perbarui',
     },
     dashboard: {
@@ -884,6 +885,7 @@ export const dictionary = {
       summary: 'Summary',
       task: 'Task',
       task_counter_report: 'Task Counter Report',
+      tracking: 'Tracking',
       update: 'Update',
     },
     dashboard: {

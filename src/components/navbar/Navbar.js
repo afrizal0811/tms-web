@@ -6,7 +6,7 @@ import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import LanguageToggle from '../button/LanguageToggle';
 import ThemeToggle from '../button/ThemeToggle';
 import { LocationSwitcher } from '../dropdown/LocationDropdown';
@@ -60,14 +60,16 @@ function DynamicNavMenu({ children, moreLabel = 'More' }) {
       items.forEach((item) => (item.style.display = 'flex'));
 
       const containerWidth = container.clientWidth;
-      const moreBtnWidth = 90; 
+      const moreBtnWidth = 90;
       let currentWidth = 0;
       let count = 0;
 
       for (let i = 0; i < items.length; i++) {
         const itemWidth = items[i].offsetWidth;
         const requiredWidth =
-          i === items.length - 1 ? currentWidth + itemWidth : currentWidth + itemWidth + moreBtnWidth;
+          i === items.length - 1
+            ? currentWidth + itemWidth
+            : currentWidth + itemWidth + moreBtnWidth;
 
         if (requiredWidth > containerWidth) break;
 
@@ -133,7 +135,12 @@ function DynamicNavMenu({ children, moreLabel = 'More' }) {
                 fill="none"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 8l4 4 4-4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 8l4 4 4-4"
+                />
               </svg>
             </button>
 
@@ -228,6 +235,7 @@ export default function Navbar() {
         isAdmin={isAdmin}
       />
       <NavLink href="/task">{t('navbar.task')}</NavLink>
+      <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
         <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
