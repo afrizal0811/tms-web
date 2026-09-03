@@ -10,8 +10,9 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export function useSuperadmin(redirectPath = null) {
+export function useSuperadmin() {
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
 
@@ -23,35 +24,58 @@ export function useSuperadmin(redirectPath = null) {
         const { storedUser } = getLocalStorage();
         if (!storedUser) {
           if (isMounted) setIsSuperadmin(false);
-          if (redirectPath) router.replace(redirectPath);
           return;
         }
 
         const user = JSON.parse(storedUser);
+        const currentId = String(user.roleId);
         const superadminId = getSuperadminRoleId();
+        const adminIdsStr = localStorage.getItem('adminRoleIds');
 
-        if (superadminId && user.roleId === superadminId) {
-          if (isMounted) setIsSuperadmin(true);
+        let isCachedSuper = false;
+        let isCachedAdmin = false;
+
+        if (superadminId && currentId === String(superadminId)) {
+          isCachedSuper = true;
+        } else if (adminIdsStr && adminIdsStr.split(',').includes(currentId)) {
+          isCachedAdmin = true;
+        }
+
+        if (isCachedSuper || isCachedAdmin) {
+          if (isMounted) {
+            setIsSuperadmin(isCachedSuper);
+            setIsAdmin(isCachedAdmin);
+          }
           return;
         }
 
         const roles = await getRoles();
-        const validRoles = roles.filter(
-          (r) => r.name.toLowerCase() === 'superadmin' || r.name.toLowerCase() === 'owner'
+        const superRoles = roles.filter((r) =>
+          ['superadmin', 'owner'].includes(String(r.name).toLowerCase().trim())
         );
-        const validIds = validRoles.map((r) => r._id);
+        const adminRoles = roles.filter((r) =>
+          ['admin', 'admin planer'].includes(String(r.name).toLowerCase().trim())
+        );
 
-        const superRole = validRoles.find((r) => r.name.toLowerCase() === 'superadmin');
-        if (superRole) setSuperadminRoleId(superRole._id);
+        const superIds = superRoles.map((r) => String(r._id));
+        const adminIds = adminRoles.map((r) => String(r._id));
 
-        const isSuper = validIds.includes(user.roleId);
+        const superRole = superRoles.find(
+          (r) => String(r.name).toLowerCase().trim() === 'superadmin'
+        );
+
+        if (superRole) setSuperadminRoleId(String(superRole._id));
+        if (adminIds.length > 0) localStorage.setItem('adminRoleIds', adminIds.join(','));
+
         if (isMounted) {
-          setIsSuperadmin(isSuper);
-          if (!isSuper && redirectPath) router.replace(redirectPath);
+          setIsSuperadmin(superIds.includes(currentId));
+          setIsAdmin(adminIds.includes(currentId));
         }
       } catch (e) {
-        if (isMounted) setIsSuperadmin(false);
-        if (redirectPath) router.replace(redirectPath);
+        if (isMounted) {
+          setIsSuperadmin(false);
+          setIsAdmin(false);
+        }
       } finally {
         if (isMounted) setIsChecking(false);
       }
@@ -61,7 +85,7 @@ export function useSuperadmin(redirectPath = null) {
     return () => {
       isMounted = false;
     };
-  }, [router, redirectPath]);
+  }, [router]);
 
-  return { isSuperadmin, isChecking };
+  return { isSuperadmin, isAdmin, isChecking };
 }

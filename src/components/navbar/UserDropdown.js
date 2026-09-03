@@ -10,12 +10,12 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import LanguageToggle from '../LanguageToggle';
-import ThemeToggle from '../ThemeToggle';
+import LanguageToggle from '../button/LanguageToggle';
+import ThemeToggle from '../button/ThemeToggle';
 
 export default function UserDropdown({ isDarkMode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false); 
+  const [mounted, setMounted] = useState(false);
 
   const { t } = useLanguage();
   const { setTheme } = useTheme();

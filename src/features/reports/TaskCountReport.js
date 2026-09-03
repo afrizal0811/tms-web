@@ -1,9 +1,8 @@
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
+import InformationButton from '@/components/button/InformationButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/Information';
-import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks, getTrash } from '@/lib/api';
 import { getCachedHubs } from '@/lib/localStorageHandler';
@@ -227,7 +226,7 @@ export default function TaskCountReport() {
               <strong className="text-slate-700 dark:text-slate-300">
                 {formatLongDate(endHelp, localeCode)} 08:34 WIB
               </strong>
-              <Information infoText={t('report.tooltip.cut_off')} />
+              <InformationButton infoText={t('report.tooltip.cut_off')} />
             </p>
           </div>
         ) : (

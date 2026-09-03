@@ -103,7 +103,9 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
       !row.isSunday
     ) {
       return (
-        <Tooltip tooltipContent="Tidak ditemukan data routing">
+        <Tooltip
+          tooltipContent={`${translate('common.no_data')} ${translate('common.routing').toLowerCase()}`}
+        >
           <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
             {formatLongDate(row.dateStr || row.date, localeCode)}
           </span>
@@ -284,15 +286,6 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-      <div className="mt-0.5 px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 rounded-b-lg shadow-sm shrink-0 z-10 relative">
-        <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-          *
-          {translate('common.click_for_detail_param', {
-            parameter: translate('summary.underline'),
-          })}
         </div>
       </div>
     </div>

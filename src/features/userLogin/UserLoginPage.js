@@ -4,7 +4,7 @@ import LocationSelector from '@/components/dropdown/LocationDropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import { getRoles, getUser } from '@/lib/api';
+import { getRoles, getUsers } from '@/lib/api';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -107,7 +107,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     }
     setLoading(true);
     try {
-      const response = await getUser(emailInput, selectedLocation);
+      const response = await getUsers(selectedLocation, emailInput);
       let usersArray = [];
       if (Array.isArray(response)) {
         usersArray = response;
@@ -212,7 +212,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     return (
       <div className="flex flex-col items-center">
         <Spinner />
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -294,9 +293,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           {loading ? (
             <div className="flex flex-col items-center py-4">
               <Spinner />
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-                {t('common.loading')}
-              </p>
             </div>
           ) : (
             <form onSubmit={handleSearchUser} className="flex flex-col gap-4">

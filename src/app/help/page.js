@@ -1,7 +1,7 @@
 // File: src/app/help/page.js
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import HelpPage from '@/features/help/HelpPage';
 
 export default function Page() {

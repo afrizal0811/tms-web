@@ -122,6 +122,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
       reason: t.alasan || '',
       orderId: t.orderId || '',
       temperature: getStorageType(driverName),
+      _id: t._id,
       rawTask: t,
     });
   }

@@ -1,7 +1,7 @@
 'use client';
 
-import Modal from '@/components/Modal';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import Modal from '@/components/modal/Modal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';

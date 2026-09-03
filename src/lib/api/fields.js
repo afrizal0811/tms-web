@@ -31,6 +31,7 @@ export const fields = {
     'expectedCoordinate',
     'flow',
     'gpsSesuai',
+    'hubId',
     'isSplitTask',
     'klikJikaSudahSampai',
     'klikLokasiClient',
@@ -54,5 +55,5 @@ export const fields = {
     'volumeCbm',
     'weightKg',
   ],
-  locations: ['totalDistance', 'email', 'finish', 'startTime', 'trackedTime'],
+  locations: ['totalDistance', 'email', 'finish', 'startTime', 'trackedTime', 'lat', 'lon'],
 };

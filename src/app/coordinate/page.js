@@ -1,6 +1,5 @@
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import UpdateCoordinatePage from '@/features/updateCoordinate/UpdateCoordinatePage';
-
 
 export default function Page() {
   return (

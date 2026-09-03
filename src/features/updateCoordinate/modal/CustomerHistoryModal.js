@@ -1,16 +1,16 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
+import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatLongDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
 const MapLoader = () => {
-  const { t } = useLanguage();
   return (
-    <div className="h-full w-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 font-medium">
-      {t('common.loading')}...
+    <div className="h-full w-full flex items-center justify-center font-medium">
+      <Spinner />
     </div>
   );
 };
@@ -27,7 +27,7 @@ export default function CustomerHistoryModal({
   customerData,
   selectedDate,
 }) {
-  const { t, localeCode } = useLanguage();
+  const { t, localeCode, isIndonesian } = useLanguage();
 
   const mapData = useMemo(() => {
     if (!data) return [];
@@ -49,7 +49,7 @@ export default function CustomerHistoryModal({
       <div className="w-full h-full bg-slate-50 dark:bg-slate-900 relative shrink-0">
         {mapData.length > 0 ? (
           <div className="absolute inset-0 p-4">
-            <MapLocation data={mapData} t={t} localeCode={localeCode} />
+            <MapLocation data={mapData} t={t} isIndonesian={isIndonesian} />
             <div
               className="absolute bottom-6 left-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 rounded shadow text-[10px] border border-gray-200 dark:border-slate-700 dark:text-slate-200"
               style={{ zIndex: 1000 }}

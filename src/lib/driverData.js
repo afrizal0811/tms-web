@@ -116,13 +116,13 @@ export async function checkUnmappedVehicles(hubId) {
 }
 
 export async function getDriverData(selectedLocation) {
-  if (!selectedLocation) throw new Error('Lokasi Hub tidak ditemukan.');
-  if (!driversCache[selectedLocation]) {
-    driversCache[selectedLocation] = (async () => {
+  const locationKey = selectedLocation || 'ALL_LOCATIONS';
+  if (!driversCache[locationKey]) {
+    driversCache[locationKey] = (async () => {
       try {
         const [driversFromDB, mappingsDB] = await Promise.all([
-          getDrivers(selectedLocation),
-          getVehicleMappings(), 
+          getDrivers(selectedLocation || undefined),
+          getVehicleMappings(),
         ]);
 
         const mappingsObj = mappingsDB.reduce((acc, curr) => {
@@ -166,15 +166,14 @@ export async function getDriverData(selectedLocation) {
 
         return syncConditionalTags(parsed);
       } catch (err) {
-        delete driversCache[selectedLocation];
+        delete driversCache[locationKey];
         throw err;
       }
     })();
   }
 
-  return driversCache[selectedLocation];
+  return driversCache[locationKey];
 }
-
 export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
   const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 

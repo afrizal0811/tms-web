@@ -5,7 +5,7 @@ import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/a
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';
-import Table from './Table';
+import CustomTable from './CustomTable';
 
 export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, translate }) {
   const [newTypeName, setNewTypeName] = useState('');
@@ -118,7 +118,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
         </div>
       )}
 
-      <Table
+      <CustomTable
         data={vehicleTypes}
         columns={columns}
         isReadOnly={isReadOnly}

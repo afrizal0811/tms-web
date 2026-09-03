@@ -1,6 +1,6 @@
-import Tooltip from "./Tooltip";
+import Tooltip from '../Tooltip';
 
-export default function Information({ infoText = '', size = '4' }) {
+export default function InformationButton({ infoText = '', size = '4' }) {
   return (
     <Tooltip tooltipContent={infoText}>
       <span className="flex items-center">

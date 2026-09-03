@@ -6,7 +6,7 @@ import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
 import Card from './Card';
-import Table from './Table';
+import CustomTable from './CustomTable';
 
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
   const [activeHub, setActiveHub] = useState({ hubId: '', hubName: '' });
@@ -142,7 +142,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         </p>
       </div>
 
-      <Table
+      <CustomTable
         data={mappings}
         columns={columns}
         isReadOnly={isReadOnly}

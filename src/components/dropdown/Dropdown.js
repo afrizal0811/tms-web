@@ -9,6 +9,7 @@ export default function Dropdown({
   getLabel,
   disabled = false,
   className = 'w-full',
+  placement = 'bottom',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -31,7 +32,7 @@ export default function Dropdown({
   const displayValue = getLabel ? getLabel(value) : value;
 
   return (
-    <div className={`relative min-w-40 ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className.includes('min-w') ? '' : 'min-w-40'} ${className}`} ref={dropdownRef}>
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full h-[42px] pl-4 pr-10 flex items-center bg-white dark:bg-slate-800 border ${isOpen ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-gray-300 dark:border-slate-600'} rounded-lg shadow-sm text-slate-700 dark:text-slate-200 text-sm font-medium hover:border-sky-400 dark:hover:border-sky-500 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900/50' : 'cursor-pointer'}`}
@@ -50,7 +51,7 @@ export default function Dropdown({
       </div>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 max-h-60 overflow-y-auto">
+        <div className={`absolute z-50 w-full ${placement === 'top' ? 'bottom-full mb-1' : 'mt-1'} bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 max-h-60 overflow-y-auto`}>
           {options.map((opt) => {
             const isSelected =
               value === opt.value ||

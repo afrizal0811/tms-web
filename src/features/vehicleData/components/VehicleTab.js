@@ -1,64 +1,102 @@
 'use client';
 
 import HighlightText from '@/components/HighlightText';
-import Td from '@/components/table/Td';
-import Th from '@/components/table/Th';
-import { Fragment } from 'react';
+import TableData from '@/components/table/TableData';
+import { useMemo, useState } from 'react';
 
-const getRowStyle = (v) => {
+const getRowClassName = (v) => {
   if (v.isIncomplete) {
-    return {
-      rowClass: 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15',
-    };
+    return 'bg-red-50 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/15 transition-colors cursor-help';
   }
   if (v.isDuplicateDriver) {
-    return {
-      rowClass:
-        'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15',
-    };
+    return 'bg-yellow-50 dark:bg-yellow-500/10 hover:bg-yellow-100/80 dark:hover:bg-yellow-500/15 transition-colors cursor-help';
   }
-  return {
-    rowClass: 'hover:bg-gray-50 dark:hover:bg-slate-700/10',
-  };
+  return 'hover:bg-gray-50 dark:hover:bg-slate-700/10 transition-colors';
 };
-export default function VehicleTab({ paginatedData, searchQuery, t }) {
-  return (
-    <div className="overflow-auto flex-1">
-      <table className="w-full border-collapse min-w-4xl">
-        <thead className="sticky top-0 z-10">
-          <tr>
-            <Th>#</Th>
-            <Th>{t('common.license_number')}</Th>
-            <Th>{t('common.type')}</Th>
-            <Th>{t('vehicle.tabs.name')}</Th>
-            <Th>{t('vehicle.tabs.email')}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.map((v, index) => {
-            const { rowClass } = getRowStyle(v);
-            const rowData = (
-              <tr className={rowClass}>
-                <Td>{index + 1}</Td>
-                <Td>
-                  <HighlightText text={v.plat} highlight={searchQuery} />
-                </Td>
-                <Td>
-                  <HighlightText text={v.type || '-'} highlight={searchQuery} />
-                </Td>
-                <Td>
-                  <HighlightText text={v.name || '-'} highlight={searchQuery} />
-                </Td>
-                <Td>
-                  <HighlightText text={v.email || '-'} highlight={searchQuery} />
-                </Td>
-              </tr>
-            );
 
-            return <Fragment key={`${v.id}-${v.plat}`}>{rowData}</Fragment>;
-          })}
-        </tbody>
-      </table>
+export default function VehicleTab({ paginatedData, searchQuery, t }) {
+  const [sortConfig, setSortConfig] = useState({ key: 'type', direction: 'asc' });
+
+  const getRowTooltip = (row) => {
+    const tooltips = [];
+    if (row.isIncomplete) tooltips.push(t('vehicle.tabs.incomplete_data'));
+    if (row.isDuplicateDriver) tooltips.push(t('vehicle.tabs.duplicate_driver'));
+    const tooltip = tooltips.join(', ');
+    return tooltip.charAt(0).toUpperCase() + tooltip.slice(1).toLowerCase();
+  };
+
+  const dataWithNo = useMemo(() => {
+    return paginatedData.map((item, index) => ({
+      ...item,
+      no: index + 1,
+    }));
+  }, [paginatedData]);
+
+  const columns = [
+    {
+      key: 'no',
+      width: 'w-[5%]',
+      sortable: true,
+      align: 'center',
+      label: 'No',
+      render: (row) => <div className="text-center w-full">{row.no}</div>,
+    },
+    {
+      key: 'plat',
+      width: 'w-[20%]',
+      sortable: true,
+      label: t('common.license_number'),
+      render: (row) => (
+        <div className="text-left w-full">
+          <HighlightText text={row.plat} highlight={searchQuery} />
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      width: 'w-[20%]',
+      sortable: true,
+      label: t('common.type'),
+      render: (row) => (
+        <div className="text-left w-full">
+          <HighlightText text={row.type || '-'} highlight={searchQuery} />
+        </div>
+      ),
+    },
+    {
+      key: 'name',
+      width: 'w-[25%]',
+      sortable: true,
+      label: t('vehicle.tabs.name'),
+      render: (row) => (
+        <div className="text-left w-full">
+          <HighlightText text={row.name || '-'} highlight={searchQuery} />
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      width: 'w-[30%]',
+      sortable: true,
+      label: t('vehicle.tabs.email'),
+      render: (row) => (
+        <div className="text-left w-full">
+          <HighlightText text={row.email || '-'} highlight={searchQuery} />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="overflow-hidden flex-1 h-full rounded-b-lg">
+      <TableData
+        columns={columns}
+        data={dataWithNo}
+        externalSortConfig={sortConfig}
+        onExternalSort={setSortConfig}
+        rowClassName={getRowClassName}
+        rowTooltip={getRowTooltip}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import TaskCountReport from '@/features/reports/TaskCountReport';
 
 export default function LaporanJumlahTugasPage() {

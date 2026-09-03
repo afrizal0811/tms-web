@@ -1,7 +1,15 @@
 import { apiFetch } from './base';
 import { fields } from './fields';
 
-export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit = 10000, isNeedFields = true }) {
+export async function getTasks({
+  hubId,
+  status,
+  timeFrom,
+  timeTo,
+  timeBy,
+  limit = 10000,
+  isNeedFields = true,
+}) {
   const tasksFields = fields.tasks.join(',');
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -11,6 +19,22 @@ export async function getTasks({ hubId, status, timeFrom, timeTo, timeBy, limit 
   if (timeBy) params.append('timeBy', timeBy);
   if (limit) params.append('limit', limit);
   if (isNeedFields && tasksFields) params.append('fields', tasksFields);
-  
+
   return await apiFetch(`/api/get-tasks?${params.toString()}`, 'Gagal mengambil data tasks');
+}
+
+export async function getTask(id) {
+  if (!id) {
+    throw new Error('ID result harus disertakan');
+  }
+
+  const params = new URLSearchParams();
+  params.append('id', id);
+
+  const result = await apiFetch(
+    `/api/get-task?${params.toString()}`,
+    `Gagal mengambil data task dengan ID ${id}`
+  );
+
+  return result;
 }

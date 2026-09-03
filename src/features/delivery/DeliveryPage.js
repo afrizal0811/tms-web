@@ -1,14 +1,16 @@
 'use client';
 
-import Button from '@/components/Button';
-import CustomDatePicker from '@/components/CustomDatePicker';
-import Information from '@/components/Information';
-import SearchBar from '@/components/SearchBar';
-import Tooltip from '@/components/Tooltip';
+import Button from '@/components/button/Button';
+import InformationButton from '@/components/button/InformationButton';
+import ToggleButton from '@/components/button/ToggleButton';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
+import TaskModal from '@/components/modal/TaskModal';
+import SearchBar from '@/components/SearchBar';
+import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import {
@@ -29,7 +31,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
 import { toastError, toastWarning } from '../../lib/toast';
-import TableData from './components/TableData';
+import CustomTable from './components/CustomTable';
 import {
   getDriverName,
   handleFullDeliveryFormDownload,
@@ -90,8 +92,12 @@ export default function DeliveryPage() {
   const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [timeMap, setTimeMap] = useState(new Map());
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
+  const driversArray = driverData ? Object.values(driverData) : null;
 
   useEffect(() => {
     setIsClient(true);
@@ -145,6 +151,12 @@ export default function DeliveryPage() {
   const handleToggleSplitMultitrip = (isActive) => {
     setIsSplitMultitrip(isActive);
     persistDeliveryPageSetting('isSplitMultitrip', isActive);
+  };
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
   };
 
   const runPartialDownload = (type, fileNamePrefix, excludeSoList = []) => {
@@ -685,6 +697,7 @@ export default function DeliveryPage() {
         return 'Download Options';
     }
   };
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}`;
   const headerItems = [
     {
       label: t('common.delivery_date'),
@@ -695,7 +708,6 @@ export default function DeliveryPage() {
           onChange={(d) => d && setSelectedDate(formatDateUniversal(d, 'YYYY-MM-DD'))}
           selected={selectedDate ? new Date(selectedDate) : new Date()}
           maxDate={tomorrowDate(false)}
-          className="w-full"
         />
       ),
     },
@@ -724,12 +736,13 @@ export default function DeliveryPage() {
       ),
     },
     {
-      label: 'Filter',
+      label: t('common.search'),
       component: (
         <SearchBar
           disabled={isLoading || isDownloading}
           onChange={setSearchQuery}
-          placeholder={t('delivery.delivery_placeholder')}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
           value={searchQuery}
           width="w-full xl:w-70"
         />
@@ -738,26 +751,15 @@ export default function DeliveryPage() {
     {
       label: t('delivery.view'),
       component: (
-        <div className="flex w-full items-center rounded-lg border border-slate-200 bg-slate-100 p-1 h-[42px] dark:border-slate-700 dark:bg-slate-800">
-          {[
-            { isDetail: false, label: t('delivery.view_summary') },
-            { isDetail: true, label: t('delivery.view_detail') },
-          ].map((opt) => {
-            const active = isDetailView === opt.isDetail;
-
-            return (
-              <button
-                key={opt.label}
-                type="button"
-                onClick={() => handleToggleView(opt.isDetail)}
-                disabled={isLoading || isDownloading}
-                className={`h-full flex-1 rounded-md px-4 text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${active ? ' bg-white text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-400' : 'cursor-pointer text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
+        <ToggleButton
+          options={[
+            { label: t('delivery.view_summary'), value: false },
+            { label: t('delivery.view_detail'), value: true },
+          ]}
+          value={isDetailView}
+          onChange={handleToggleView}
+          disabled={isLoading || isDownloading}
+        />
       ),
     },
     {
@@ -818,7 +820,7 @@ export default function DeliveryPage() {
                           onChange={(e) => handleToggleNoBun(e.target.checked)}
                         />
                         {t('delivery.no_bun')}
-                        <Information infoText={t('delivery.no_bun_info')} size="3.5" />
+                        <InformationButton infoText={t('delivery.no_bun_info')} size="3.5" />
                       </label>
                       <button
                         onClick={() => {
@@ -827,7 +829,7 @@ export default function DeliveryPage() {
                         }}
                         className="text-[10px] text-sky-600 hover:underline cursor-pointer font-medium"
                       >
-                        More
+                        {t('common.more')}
                       </button>
                     </div>
                     <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
@@ -838,7 +840,7 @@ export default function DeliveryPage() {
                         onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
                       />
                       {t('delivery.spit_multitrip')}
-                      <Information infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                      <InformationButton infoText={t('delivery.spit_multitrip_info')} size="3.5" />
                     </label>
                   </div>
                 </div>
@@ -862,8 +864,32 @@ export default function DeliveryPage() {
     },
   ];
 
-  if (!isClient) return null;
+  const tabData = filteredVehicleRoutes.map((r) => {
+    const dName = getDriverName(r, driverData);
+    const isManual = r.hasManual;
+    const hasMT = r.trips?.some((t) => t.isMiddleHub);
+    const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
 
+    return {
+      id: r.vehicleId,
+      label: (
+        <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
+          <span
+            className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
+          >
+            {r.vehicleName}{' '}
+            {hasMT && (
+              <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">[MT]</span>
+            )}
+            {r.isRedelivery && (
+              <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+            )}
+          </span>
+        </Tooltip>
+      ),
+    };
+  });
+  if (!isClient) return null;
   return (
     <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
       <HeaderCard
@@ -885,38 +911,15 @@ export default function DeliveryPage() {
         onTabClick={setActiveVehicleId}
         emptyMessage={emptyMessage}
         routingData={routingResults}
-        tabs={filteredVehicleRoutes.map((r) => {
-          const dName = getDriverName(r, driverData);
-          const isManual = r.hasManual;
-          const hasMT = r.trips?.some((t) => t.isMiddleHub);
-          const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
-
-          return {
-            id: r.vehicleId,
-            label: (
-              <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
-                <span
-                  className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
-                >
-                  {r.vehicleName}{' '}
-                  {hasMT && (
-                    <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">
-                      [MT]
-                    </span>
-                  )}
-                  {r.isRedelivery && (
-                    <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
-                  )}
-                </span>
-              </Tooltip>
-            ),
-          };
-        })}
+        tabs={tabData}
+        footer={{
+          text: t('common.click_for_detail'),
+        }}
       >
-        <div className="bg-white dark:bg-slate-800 rounded-xl h-full flex flex-col border-none transition-colors">
-          <div className="overflow-y-auto grow h-full m-0 border border-gray-300 dark:border-slate-700 rounded-b-xl">
+        <div className="bg-white dark:bg-slate-800 h-full flex flex-col border-none transition-colors">
+          <div className="overflow-y-auto grow h-full m-0 ">
             {!isLoading && activeRoute && (
-              <TableData
+              <CustomTable
                 activeRoute={activeRoute}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -924,6 +927,7 @@ export default function DeliveryPage() {
                 t={t}
                 sortConfig={sortConfig}
                 setSortConfig={setSortConfig}
+                onRowClick={handleRowClick}
               />
             )}
           </div>
@@ -961,6 +965,13 @@ export default function DeliveryPage() {
         bunSoList={bunSoList}
         onDownload={handleDownloadBunSpecific}
         t={t}
+      />
+
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        taskId={selectedTaskId}
+        driverData={driversArray}
       />
     </div>
   );

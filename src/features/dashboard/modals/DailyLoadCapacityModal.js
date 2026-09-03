@@ -1,6 +1,6 @@
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import Tooltip from '@/components/Tooltip';
 import { toastError } from '@/lib/toast';
 import { getBasePlate, isEmpty } from '@/lib/utils';

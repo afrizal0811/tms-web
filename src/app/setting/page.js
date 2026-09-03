@@ -1,7 +1,7 @@
 // File: src/app/settings/page.js
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import SettingPage from '@/features/setting/SettingPage';
 
 export default function Page() {

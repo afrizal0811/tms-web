@@ -1,7 +1,7 @@
 // File: app/estimasi/page.js
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+import AppLayout from '@/components/page/AppLayout';
 import DeliveryPage from '@/features/delivery/DeliveryPage';
 
 export default function EstimasiPage() {

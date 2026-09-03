@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 const DROPDOWN_LINK_CLASS =
   'block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400';
 
-export default function NavDropdown({ label, links, isSuperadmin }) {
+export default function NavDropdown({ label, links, isSuperadmin, isAdmin }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -26,7 +26,9 @@ export default function NavDropdown({ label, links, isSuperadmin }) {
     };
   }, [isOpen]);
 
-  const filteredLinks = (links || []).filter((link) => !link.superadminOnly || isSuperadmin);
+  const filteredLinks = (links || []).filter(
+    (link) => !link.superadminOnly || isSuperadmin || (link.adminAllowed && isAdmin)
+  );
 
   if (filteredLinks.length === 0) return null;
 

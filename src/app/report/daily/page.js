@@ -1,7 +1,7 @@
 'use client';
 
-import AppLayout from '@/components/AppLayout';
-import SelectionLayout from '@/components/SelectionLayout';
+import AppLayout from '@/components/page/AppLayout';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DailyReport from '@/features/reports/DailyReport';

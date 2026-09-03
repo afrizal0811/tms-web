@@ -16,6 +16,8 @@
 │   │   │   └── route.js
 │   │   ├── get-roles
 │   │   │   └── route.js
+│   │   ├── get-task
+│   │   │   └── route.js
 │   │   ├── get-tasks
 │   │   │   └── route.js
 │   │   ├── get-trash
@@ -51,15 +53,17 @@
 │   │   │   └── page.js
 │   │   ├── counter
 │   │   │   └── page.js
+│   │   ├── custom
+│   │   │   └── page.js
 │   │   ├── daily
 │   │   │   └── page.js
-│   │   ├── kpi
-│   │   │   └── page.js
-│   │   └── mitsui
+│   │   └── kpi
 │   │       └── page.js
 │   ├── setting
 │   │   └── page.js
 │   ├── summary
+│   │   └── page.js
+│   ├── task
 │   │   └── page.js
 │   └── vehicles
 │       └── page.js
@@ -72,6 +76,11 @@
 │   │   └── HeaderCard.js
 │   ├── Carousel.js
 │   ├── CustomDatePicker.js
+│   ├── dropdown
+│   │   ├── LocationDropdown.js
+│   │   ├── StorageTypeFilter.js
+│   │   └── VehicleTypeFilter.js
+│   ├── Dropdown.js
 │   ├── ErrorPage.js
 │   ├── fileUploader
 │   │   ├── FileUploader.js
@@ -83,31 +92,32 @@
 │   ├── HighlightText.js
 │   ├── Information.js
 │   ├── LanguageToggle.js
-│   ├── LocationDropdown.js
 │   ├── modal
 │   │   ├── ConfirmModal.js
 │   │   ├── SystemUpdateModal.js
+│   │   ├── TaskModal.js
 │   │   ├── TokenExpirationModal.js
 │   │   └── VehicleTagMappingModal.js
 │   ├── Modal.js
 │   ├── navbar
-│   │   ├── LocationSwitcher.js
 │   │   ├── MobileMenu.js
 │   │   ├── Navbar.js
 │   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
 │   ├── RadioCard.js
+│   ├── Report.js
 │   ├── RoutingInfo.js
 │   ├── SearchBar.js
 │   ├── SelectionLayout.js
 │   ├── SessionGuard.js
 │   ├── Spinner.js
-│   ├── StorageTypeFilter.js
 │   ├── table
 │   │   ├── TabButton.js
+│   │   ├── TableData.js
 │   │   ├── Td.js
 │   │   └── Th.js
 │   ├── ThemeToggle.js
+│   ├── ToggleButton.js
 │   └── Tooltip.js
 ├── context
 │   ├── LanguageContext.js
@@ -168,12 +178,12 @@
 │   │   └── HelpPage.js
 │   ├── reports
 │   │   ├── BreadReport.js
+│   │   ├── CustomReport.js
 │   │   ├── DailyReport.js
 │   │   ├── helper
 │   │   │   ├── constants.js
 │   │   │   └── help.js
 │   │   ├── KpiReport.js
-│   │   ├── MitsuiReport.js
 │   │   └── TaskCountReport.js
 │   ├── setting
 │   │   ├── components
@@ -210,6 +220,8 @@
 │   │       ├── TimeDriverTab.js
 │   │       ├── TruckDetailTab.js
 │   │       └── TruckUsageTab.js
+│   ├── task
+│   │   └── TaskPage.js
 │   ├── updateCoordinate
 │   │   ├── components
 │   │   │   ├── MapLocation.js
@@ -260,6 +272,8 @@
     │   ├── reports
     │   │   ├── bread
     │   │   │   └── breadReport.js
+    │   │   ├── custom
+    │   │   │   └── customReport.js
     │   │   ├── daily
     │   │   │   ├── AutoReport.js
     │   │   │   ├── help.js
@@ -293,8 +307,6 @@
     │   │   │       ├── sheetPendingSO.js
     │   │   │       ├── sheetRouteReview.js
     │   │   │       └── sheetStartFinish.js
-    │   │   ├── mitsui
-    │   │   │   └── mitsuiReport.js
     │   │   └── taskCounter
     │   │       └── taskCountReport.js
     │   └── summary

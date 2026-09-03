@@ -294,11 +294,11 @@ export default function HelpPage() {
             <div className="sticky top-24 flex flex-col gap-4">
               <div className="w-full">
                 <SearchBar
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder={t('help.placeholder')}
-                  width="w-full"
                   className="shadow-sm"
+                  onChange={handleSearchChange}
+                  placeholder={t('common.search')}
+                  value={searchQuery}
+                  width="w-full"
                 />
               </div>
 

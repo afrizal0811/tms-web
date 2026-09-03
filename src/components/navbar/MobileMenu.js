@@ -5,8 +5,8 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import LanguageToggle from '../LanguageToggle';
-import ThemeToggle from '../ThemeToggle';
+import LanguageToggle from '../button/LanguageToggle';
+import ThemeToggle from '../button/ThemeToggle';
 import { LocationSwitcher } from '../dropdown/LocationDropdown';
 
 function MobileNavLink({ href, children, target = '', rel = '' }) {
@@ -34,10 +34,12 @@ function MobileNavLink({ href, children, target = '', rel = '' }) {
   );
 }
 
-function MobileNavGroup({ label, links, isSuperadmin }) {
+function MobileNavGroup({ label, links, isSuperadmin, isAdmin }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const filteredLinks = (links || []).filter((link) => !link.superadminOnly || isSuperadmin);
+  const filteredLinks = (links || []).filter(
+    (link) => !link.superadminOnly || isSuperadmin || (link.adminAllowed && isAdmin)
+  );
 
   if (filteredLinks.length === 0) return null;
 
@@ -86,6 +88,7 @@ export default function MobileMenu({
   userName,
   userEmail,
   isSuperadmin,
+  isAdmin,
   handleLogout,
   reportLinks,
 }) {
@@ -207,7 +210,9 @@ export default function MobileMenu({
                 label={t('navbar.report')}
                 links={reportLinks}
                 isSuperadmin={isSuperadmin}
+                isAdmin={isAdmin}
               />
+              <MobileNavLink href="/task">{t('navbar.task')}</MobileNavLink>
               {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
               <MobileNavLink href="/coordinate">
                 {t('navbar.update')} {t('navbar.coordinate')}

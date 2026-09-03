@@ -6,7 +6,7 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import { PIC_OPTIONS } from '../helper/constants';
 import Card from './Card';
-import Table from './Table';
+import CustomTable from './CustomTable';
 
 export default function ReasonManager({ reasons, onRefresh, isReadOnly, translate }) {
   const [newReason, setNewReason] = useState('');
@@ -163,7 +163,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
         </div>
       )}
 
-      <Table
+      <CustomTable
         data={reasons}
         columns={columns}
         isReadOnly={isReadOnly}

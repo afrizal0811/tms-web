@@ -111,7 +111,15 @@ export function calculateMinuteDifference(time1, time2) {
 // Memecah string data pelanggan menjadi Nama, ID, dan Lokasi berdasarkan pola pemisah tertentu
 export function parseCustomerString(fullString) {
   if (!fullString || typeof fullString !== 'string') {
-    return { name: '', id: null, location: null, fullCustomerName: '', invoiceNumber: '' };
+    return {
+      name: '',
+      id: null,
+      location: null,
+      fullCustomerName: '',
+      invoiceNumber: '',
+      truncateInvoice: '',
+      isTruncated: false,
+    };
   }
 
   const parts = fullString.split(/\s+-\s+/);
@@ -124,7 +132,8 @@ export function parseCustomerString(fullString) {
 
   let location = null;
   let invoiceNumber = '';
-
+  let truncateInvoice = '';
+  let isTruncated = false;
   if (parts.length > 2) {
     const rawLocation = parts[parts.length - 1];
     const commaSplit = rawLocation.split(',');
@@ -137,12 +146,22 @@ export function parseCustomerString(fullString) {
     id = commaSplit[0].trim();
     invoiceNumber = commaSplit.slice(1).join(', ').trim();
   }
+  if (invoiceNumber) {
+    const orderParts = invoiceNumber.split(',').filter(Boolean);
+    isTruncated = orderParts.length > 1;
+    if (isTruncated) {
+      truncateInvoice = `${orderParts[0].trim()} (+${orderParts.length - 1})`;
+    } else if (orderParts.length === 1) {
+      truncateInvoice = orderParts[0].trim();
+    }
+  }
+
   location = location !== null ? location : '';
 
   const name = parts[0] && parts[0] !== id ? parts[0] : '';
   const fullCustomerName = id !== '' || location !== '' ? `${name} - ${id} - ${location}` : name;
 
-  return { name, id, location, fullCustomerName, invoiceNumber };
+  return { name, id, location, fullCustomerName, invoiceNumber, isTruncated, truncateInvoice };
 }
 
 // Menentukan tipe penyimpanan

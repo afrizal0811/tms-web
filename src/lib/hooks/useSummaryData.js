@@ -186,11 +186,11 @@ export default function useSummaryData() {
         const visitId = tripRaw?.visitId || '';
 
         if (!visitId || !visitId.includes('-')) {
-          const rawName = tripRaw?.visitName || '';
+          const rawName = tripRaw?.visitName || tripRaw?.name || '';
           const parsed = parseCustomerString(rawName);
           return {
             customerOrder: rawName,
-            customerName: parsed.name || 'Tidak Diketahui',
+            customerName: parsed.name || t('common.no_data'),
             flow: 'DELIVERY',
           };
         }
@@ -204,11 +204,11 @@ export default function useSummaryData() {
         );
 
         if (!f) {
-          const rawName = tripRaw?.visitName || '';
+          const rawName = tripRaw?.visitName || tripRaw?.name || '';
           const parsed = parseCustomerString(rawName);
           return {
             customerOrder: rawName,
-            customerName: parsed.name || 'Tidak Diketahui',
+            customerName: parsed.name || t('common.no_data'),
             flow: 'DELIVERY',
           };
         }

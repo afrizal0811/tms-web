@@ -1,8 +1,9 @@
 // File: src/features/dashboard/tab/RoutingVsActualTab.js
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
 import HighlightText from '@/components/HighlightText';
+import TaskModal from '@/components/modal/TaskModal';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
@@ -22,7 +23,16 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   const date = formatDateUniversal(selectedDate);
+
+  const handleRowClick = (taskId) => {
+    if (!taskId || taskId === '-') return;
+    setSelectedTaskId(taskId);
+    setIsTaskModalOpen(true);
+  };
 
   const processedData = useMemo(() => {
     if (loading) return [];
@@ -59,32 +69,34 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
   };
 
   const columns = getRoutingActualColumns(t);
+  const searchPlaceholder = `${t('common.license_number')}, ${t('common.driver')}, ${t('common.customer_name')}`;
 
   return (
     <div className="flex-1 flex flex-col h-full space-y-4">
       <div className="flex flex-col md:flex-row w-full justify-end items-center gap-3 mb-2">
-        <div className="w-full md:w-64 order-1">
-          <SearchBar
-            disabled={loading || isDownloading}
-            onChange={(val) => setSearchQuery(val)}
-            placeholder={t('dashboard.tab.routing_actual.search_placeholder')}
-            value={searchQuery}
-          />
-        </div>
-        <div className="w-full md:w-auto order-2">
-          <Button
-            disabled={loading || isDownloading || isEmpty(processedData)}
-            onClick={handleOpenMap}
-            text={t('dashboard.tab.routing_actual.show_map')}
-          />
-        </div>
-        <div className="w-full md:w-auto order-3">
-          <Button
-            disabled={loading || isDownloading || isEmpty(processedData)}
-            onClick={handleDownload}
-            text={t('common.download')}
-          />
-        </div>
+        <SearchBar
+          disabled={loading || isDownloading}
+          onChange={(val) => setSearchQuery(val)}
+          placeholder={t('common.search')}
+          size="md"
+          tooltip={searchPlaceholder}
+          value={searchQuery}
+          width={'w-full md:w-auto'}
+        />
+        <Button
+          disabled={loading || isDownloading || isEmpty(processedData)}
+          onClick={handleOpenMap}
+          text={t('dashboard.tab.routing_actual.show_map')}
+          size="sm"
+          width={'w-full md:w-auto'}
+        />
+        <Button
+          disabled={loading || isDownloading || isEmpty(processedData)}
+          onClick={handleDownload}
+          text={t('common.download')}
+          size="sm"
+          width={'w-full md:w-auto'}
+        />
       </div>
 
       <div className="overflow-auto h-full border rounded-lg shadow-sm bg-white dark:border-slate-700 dark:bg-slate-800">
@@ -160,7 +172,8 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 return (
                   <td
                     key={colIndex}
-                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass}`}
+                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass} cursor-pointer`}
+                    onClick={() => handleRowClick && handleRowClick(row._id)}
                   >
                     {finalUI}
                   </td>
@@ -191,6 +204,12 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
         data={processedData}
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
+      />
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        taskId={selectedTaskId}
+        driverData={drivers}
       />
     </div>
   );

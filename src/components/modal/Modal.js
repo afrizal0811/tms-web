@@ -1,7 +1,6 @@
-// File: src/components/BaseModal.js
 'use client';
 
-export default function BaseModal({
+export default function Modal({
   bodyClassName = 'm-6 overflow-y-auto',
   children,
   contentClassName = '',

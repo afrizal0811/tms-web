@@ -3,10 +3,10 @@ import { STYLES } from './shared';
 
 export function buildHelpSheet(wb, filteredResults, t) {
   const headers = [
-    t('excel.reports.help.routing_id'),
+    t('common.routing_id'),
     t('common.routing_name'),
     t('common.created_by'),
-    t('common.created_at'),
+    t('common.created_time'),
     t('excel.reports.help.routing_result'),
   ];
   const rows = [];

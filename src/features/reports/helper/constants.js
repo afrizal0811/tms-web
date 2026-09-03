@@ -220,3 +220,20 @@ export const taskManualKeyMapping = {
   'Manual Type': 'manualType',
   Action: 'action',
 };
+
+export const taskDateHeaders = [
+  'Flow',
+  'Driver Name',
+  'License Number',
+  'Customer Name',
+  'Customer ID',
+  'Location ID',
+  'Invoice Number',
+  'Status Delivery',
+  'Created Time',
+  'Assigned Time',
+  'Started Trip Time',
+  'Arrived Time',
+  'Completed Time',
+  'Service Level',
+];

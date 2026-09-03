@@ -11,12 +11,16 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
     >
       {(title || subtitle) && (
         <div
-          className={`flex flex-col w-full lg:w-auto text-left ${itemsLength >= 2 ? 'md:text-center' : ''} ${itemsLength < 5 ? 'lg:text-left' : 'lg:text-center'} `}
+          className={`flex flex-col w-full lg:w-auto text-left ${itemsLength >= 2 ? 'md:text-center' : ''} ${itemsLength < 5 ? 'lg:text-left' : 'lg:text-center'} w-full md:min-w-xs`}
         >
           {title && (
-            <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">{title}</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
+              {title}
+            </h1>
           )}
-          {subtitle && <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400 mt-1">{subtitle}</p>
+          )}
 
           {itemsLength > 1 && (
             <button

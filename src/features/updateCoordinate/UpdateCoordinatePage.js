@@ -1,6 +1,6 @@
 'use client';
 
-import Button from '@/components/Button';
+import Button from '@/components/button/Button';
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
@@ -20,7 +20,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import TableData from './components/TableData';
+import CustomTable from './components/CustomTable';
 import { handleDownloadExcel } from './help';
 
 export default function UpdateCoordinatePage() {
@@ -223,9 +223,12 @@ export default function UpdateCoordinatePage() {
         isEmpty={!loading && isEmpty(processedData)}
         emptyMessage={emptyMessage}
         isLoading={loading}
+        footer={{
+          text: t('common.click_for_detail'),
+        }}
       >
         <div className="p-0 h-full overflow-y-auto">
-          <TableData
+          <CustomTable
             data={processedData}
             historyMap={historyMap}
             selectedDate={selectedDate}
@@ -234,9 +237,6 @@ export default function UpdateCoordinatePage() {
           />
         </div>
       </BodyCard>
-      <span className="mt-2 block text-xs text-amber-600 text-right italic">
-        {t('longlat.table_detail')}
-      </span>
     </div>
   );
 }

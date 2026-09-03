@@ -1,7 +1,7 @@
 'use client';
 
-import Footer from '@/components/Footer';
 import Navbar from '@/components/navbar/Navbar';
+import Footer from '@/components/page/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';

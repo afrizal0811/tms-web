@@ -22,15 +22,26 @@ import {
 } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import {
+  calculateMinuteDifference,
   calculateStartFinishDates,
   formatDateUniversal,
+  formatUTC7,
+  getBasePlate,
   isDateSunday,
   isEmpty,
+  normalizeEmail,
+  parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
-import { taskHeaders, taskKeyMapping, taskManualHeaders, taskManualKeyMapping } from './constants';
+import {
+  taskDateHeaders,
+  taskHeaders,
+  taskKeyMapping,
+  taskManualHeaders,
+  taskManualKeyMapping,
+} from './constants';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -262,7 +273,7 @@ export const handleSingleDownload = async ({
     });
 
     if (isEmpty(allTasks)) {
-      throw new Error(t('common.toast.error', { err: t('common.no_data') }));
+      throw new Error(t('common.no_data'));
     }
 
     let targetRoutingStr;
@@ -331,7 +342,7 @@ export const handleSingleDownload = async ({
     );
 
     if (isEmpty(filteredResults) && isEmpty(allTasks) && isEmpty(filteredTimeData)) {
-      throw new Error(t('common.toast.error', { err: t('common.no_data') }));
+      throw new Error(t('common.no_data'));
     }
 
     const activeHub = (hubsData || []).find(
@@ -964,7 +975,7 @@ export const handleKpiDownload = async ({
 };
 
 /* ============================================================
- * Mitsui section
+ * Custom section
  * ============================================================ */
 
 const getReportDates = (start, end) => {
@@ -1050,7 +1061,7 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
   return generatedFiles;
 };
 
-export const processManualTaskReport = async (storedLocation, datesToProcess, locationName, t) => {
+export const processTaskManualReport = async (storedLocation, datesToProcess, locationName, t) => {
   const generatedFiles = [];
 
   for (const date of datesToProcess) {
@@ -1146,6 +1157,170 @@ export const processManualTaskReport = async (storedLocation, datesToProcess, lo
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
     const fileName = `${t('report.task_manual')} - ${dateStr} - ${locationName}.xlsx`;
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+    generatedFiles.push({ fileName, wb, wbout });
+  }
+
+  return generatedFiles;
+};
+
+export const processTaskDateReport = async (storedLocation, datesToProcess, locationName, t) => {
+  const generatedFiles = [];
+  const drivers = await getDriverData(storedLocation);
+
+  const driverMap = new Map();
+  drivers.forEach((d) => {
+    if (d.email) {
+      driverMap.set(normalizeEmail(d.email), { name: d.name || '-', plat: d.plat || '-' });
+    }
+  });
+
+  for (const date of datesToProcess) {
+    const { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString } = getReportDates(
+      date,
+      date
+    );
+
+    const [tasks, locHistories] = await Promise.all([
+      getTasks({
+        hubId: storedLocation,
+        status: 'DONE,ONGOING',
+        timeFrom: timeFromUtc,
+        timeTo: timeToUtc,
+        timeBy: 'startTime',
+        isNeedFields: false,
+      }),
+      getLocationHistories({
+        timeFrom: locTimeFrom,
+        timeTo: locTimeTo,
+        startFinish: 'true',
+        timeBy: 'createdTime',
+      }),
+    ]);
+    const driverData = await getDriverData(storedLocation);
+    const allApiData = locHistories?.tasks?.data || [];
+    const { timeDataObjects } = convertLocationHistories(
+      allApiData || [],
+      driverData,
+      selectedDateString
+    );
+    const filteredTimeData = timeDataObjects.filter(
+      (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
+    );
+
+    const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
+    if (isEmpty(tasksData) && isEmpty(filteredTimeData)) {
+      throw new Error(t('common.no_data'));
+    }
+
+    const sheetData = [taskDateHeaders];
+
+    const parsedRows = tasksData.map((task) => {
+      const { name, id, location, invoiceNumber } = parseCustomerString(task.customerOrder);
+      const arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
+      const doneSource = task.page3DoneTime || task.doneTime;
+      const flow = task.flow || '-';
+      const statusDelivery = task.statusDelivery || task.label || '-';
+      const created = task.createdTime ? formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm') : '-';
+      const arrived = arrivalSource ? formatUTC7(arrivalSource, 'DD/MM/YYYY HH:mm') : '-';
+      const assigned = task.assignedTime ? formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') : '-';
+      const completed = doneSource ? formatUTC7(doneSource, 'DD/MM/YYYY HH:mm') : '-';
+      let serviceLevel = '-';
+      let startTrip = null;
+      let driverName = '-';
+      let licenseNumber = '-';
+      if (task.createdTime && doneSource) {
+        const diff = calculateMinuteDifference(task.createdTime, doneSource);
+        if (diff !== null) {
+          const days = Math.ceil(diff / 1440) || 1;
+          serviceLevel = `${days}`;
+        }
+      }
+
+      const assigneeArray = task.assignee || [];
+      const assigneeEmail = Array.isArray(assigneeArray) ? assigneeArray[0] : assigneeArray;
+
+      if (assigneeEmail) {
+        const driverHistory = filteredTimeData.find((item) => item.email === assigneeEmail);
+        const timeDriver =
+          driverHistory?.startDate && driverHistory?.startTimeFmt
+            ? `${driverHistory.startDate} ${driverHistory.startTimeFmt}`
+            : '-';
+
+        startTrip = !isEmpty(timeDriver)
+          ? formatDateUniversal(timeDriver.replace(/-/g, '/'), 'DD/MM/YYYY HH:mm')
+          : '-';
+
+        const d = driverMap.get(normalizeEmail(assigneeEmail));
+        if (d) {
+          driverName = d.name;
+          licenseNumber = getBasePlate(d.plat);
+        }
+      }
+
+      return {
+        row: [
+          flow,
+          driverName,
+          licenseNumber,
+          name || '-',
+          id || '-',
+          location || '-',
+          invoiceNumber || '-',
+          statusDelivery || '-',
+          created,
+          assigned,
+          startTrip,
+          arrived,
+          completed,
+          serviceLevel,
+        ],
+        driverName,
+        rawCompleted: task.doneTime || '',
+      };
+    });
+
+    parsedRows.sort((a, b) => {
+      const driverCmp = a.driverName.localeCompare(b.driverName);
+      if (driverCmp !== 0) return driverCmp;
+      return a.rawCompleted.localeCompare(b.rawCompleted);
+    });
+    parsedRows.forEach((item) => sheetData.push(item.row));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 0; R <= range.e.r; ++R) {
+      for (let C = 0; C <= range.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (ws[cell_address]) {
+          if (R === 0) {
+            ws[cell_address].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { patternType: 'solid', fgColor: { rgb: '0369A1' } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+            };
+
+            if (C === 13) {
+              ws[cell_address].c = [{ a: 'System', t: 'Completed Time - Created Time' }];
+            }
+          } else {
+            const isLeft = C === 1 || C === 3 || C === 6;
+            ws[cell_address].s = {
+              alignment: { horizontal: isLeft ? 'left' : 'center', vertical: 'center' },
+            };
+          }
+        }
+      }
+    }
+    ws['!cols'] = taskDateHeaders.map(() => ({ wch: 20 }));
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Task Date');
+
+    const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
+    const fileName = `${t('report.task_date')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

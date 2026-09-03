@@ -1,5 +1,6 @@
 // File: src/components/SearchBar.js
 'use client';
+import Tooltip from './Tooltip';
 
 export default function SearchBar({
   value,
@@ -7,13 +8,20 @@ export default function SearchBar({
   placeholder = 'Search...',
   className = 'w-full',
   disabled = false,
-  width = 'w-full xl:w-[250px]! ',
+  width = 'w-full xl:w-[250px]!',
+  size = 'lg',
+  tooltip
 }) {
+  const sizeClasses = {
+    sm: { icon: 'h-3 w-3', input: 'text-xs h-[30px]' },
+    md: { icon: 'h-4 w-4', input: 'text-sm h-[34px]' },
+    lg: { icon: 'h-5 w-5', input: 'text-base h-[42px]' },
+  };
   return (
     <div className={`relative shrink-0 ${className} ${width}`}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <svg
-          className="h-5 w-5 text-gray-400 dark:text-slate-500"
+          className={`${sizeClasses[size].icon} text-gray-400 dark:text-slate-500`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -26,15 +34,16 @@ export default function SearchBar({
           />
         </svg>
       </div>
-
-      <input
-        type="text"
-        className="w-full pl-10 pr-10 h-[42px] border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800/50 disabled:text-gray-400 dark:disabled:text-slate-500"
-        placeholder={placeholder}
-        disabled={disabled}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <Tooltip tooltipContent={tooltip ? tooltip : ''}>
+        <input
+          type="text"
+          className={`w-full pl-10 pr-10 ${sizeClasses[size].input} border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800/50 disabled:text-gray-400 dark:disabled:text-slate-500`}
+          placeholder={placeholder}
+          disabled={disabled}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </Tooltip>
 
       {value && (
         <button

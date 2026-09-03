@@ -1,7 +1,7 @@
 // File: src/features/dashboard/modals/DailySequenceAccuracyModal.js
 'use client';
 
-import Modal from '@/components/Modal';
+import Modal from '@/components/modal/Modal';
 import Spinner from '@/components/Spinner';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';

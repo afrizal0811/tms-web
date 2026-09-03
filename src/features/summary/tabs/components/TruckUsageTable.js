@@ -14,18 +14,28 @@ export default function TruckUsageTable({
 }) {
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  const bgHeader = 'bg-[#d9d2e9] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30';
-  const bgDry = 'bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/30 dark:to-orange-900/30';
-  const bgDryTotal = 'bg-[#f9cb9c] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/50 dark:to-orange-900/50';
-  const bgFrozen = 'bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/30 dark:to-blue-900/30';
-  const bgFrozenTotal = 'bg-[#c9daf8] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/50 dark:to-blue-900/50';
-  const bgOTV = 'bg-[#d9f2d0] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-green-900/30 dark:to-green-900/30';
-  const bgHoliday = 'bg-[#ffc7ce] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/40 dark:to-red-900/40';
+  const bgHeader =
+    'bg-[#d9d2e9] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30';
+  const bgDry =
+    'bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/30 dark:to-orange-900/30';
+  const bgDryTotal =
+    'bg-[#f9cb9c] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/50 dark:to-orange-900/50';
+  const bgFrozen =
+    'bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/30 dark:to-blue-900/30';
+  const bgFrozenTotal =
+    'bg-[#c9daf8] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-blue-900/50 dark:to-blue-900/50';
+  const bgOTV =
+    'bg-[#d9f2d0] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-green-900/30 dark:to-green-900/30';
+  const bgHoliday =
+    'bg-[#ffc7ce] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/40 dark:to-red-900/40';
 
   const bgAlert = 'bg-[#FF0000] dark:bg-red-700 text-white font-bold';
-  const bgPctLow = 'bg-[#f4cccc] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/40 dark:to-red-900/40';
-  const bgPctMid = 'bg-[#f1c232] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-yellow-900/50 dark:to-yellow-900/50';
-  const bgPctHigh = 'bg-[#b7e1cd] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-emerald-900/50 dark:to-emerald-900/50';
+  const bgPctLow =
+    'bg-[#f4cccc] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-red-900/40 dark:to-red-900/40';
+  const bgPctMid =
+    'bg-[#f1c232] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-yellow-900/50 dark:to-yellow-900/50';
+  const bgPctHigh =
+    'bg-[#b7e1cd] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-emerald-900/50 dark:to-emerald-900/50';
   const bgPctOver = 'bg-[#ff0000] dark:bg-red-700 text-white font-bold';
 
   const thClass =
@@ -434,7 +444,6 @@ export default function TruckUsageTable({
                 >
                   {isClickableManual && !hasDataManual && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-10">
-                      <div className="absolute inset-0 bg-white/20 dark:bg-white/10"></div>
                       <span className="relative text-slate-600/30 dark:text-slate-400/30 text-xl font-bold">
                         +
                       </span>
@@ -541,7 +550,9 @@ export default function TruckUsageTable({
                 !isHoliday
               ) {
                 headerContent = (
-                  <Tooltip tooltipContent="Tidak ditemukan data routing">
+                  <Tooltip
+                    tooltipContent={`${translate('common.no_data')} ${translate('common.routing').toLowerCase()}`}
+                  >
                     <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
                       {formatDateUniversal(d.str, 'DD-MM-YYYY')}
                     </span>

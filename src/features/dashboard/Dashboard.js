@@ -407,7 +407,6 @@ export default function Dashboard({ driverData }) {
       extraContent: getPingDot('RoutingVsActual'),
     },
   ];
-
   return (
     <div className="w-full max-w-none px-4 sm:px-6 pb-2">
       <HeaderCard
@@ -429,10 +428,15 @@ export default function Dashboard({ driverData }) {
         isEmpty={isCardEmpty}
         emptyMessage={emptyMessage}
         routingData={rawData.results}
+        footer={
+          activeTab === 'RoutingVsActual' && {
+            text: t('common.click_for_detail'),
+          }
+        }
       >
         <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
           {activeTab === 'Detail' && (
-            <DetailTab loading={loading} summaryData={summaryData} hasPendingGR={hasPendingGR} />
+            <DetailTab loading={loading} summaryData={summaryData} driverData={driverData} />
           )}
 
           {activeTab === 'RoutingVsActual' && (
