@@ -39,15 +39,14 @@ export default function SettingPage() {
         getReasons(),
       ]);
 
+      const { storedLocation } = getLocalStorage();
       let maxDriverDate = null;
-      dStatus.forEach((d) => {
-        if (d._max && d._max.updatedAt) {
-          const dateObj = new Date(d._max.updatedAt);
-          if (!maxDriverDate || dateObj > maxDriverDate) {
-            maxDriverDate = dateObj;
-          }
-        }
-      });
+
+      const activeHubData = dStatus.find((d) => d.hubId === storedLocation);
+      if (activeHubData && activeHubData._max && activeHubData._max.updatedAt) {
+        maxDriverDate = new Date(activeHubData._max.updatedAt);
+      }
+
       const latestDriverSync = maxDriverDate
         ? formatDateUniversal(maxDriverDate, 'DD/MM/YYYY HH:mm:ss')
         : '-';
