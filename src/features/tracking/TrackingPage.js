@@ -6,9 +6,10 @@ import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import Map from '@/components/Map';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
-import { getMCEasyData, getTrackingData } from '@/lib/api';
+import { getTrackingData } from '@/lib/api';
+import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import { getDistance, getStorageType } from '@/lib/utils';
+import { getBasePlate, getDistance, getStorageType } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 const parseCoords = (v) => [parseFloat(v.latitude), parseFloat(v.longitude)];
@@ -18,77 +19,46 @@ export default function TrackingPage() {
   const [liveDataMap, setLiveDataMap] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
   const [focusedPlate, setFocusedPlate] = useState(null);
-  const [imeiToGroupsMap, setImeiToGroupsMap] = useState({});
   const [allVehiclesMaster, setAllVehiclesMaster] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedStorageTypes, setSelectedStorageTypes] = useState(['DRY', 'FROZEN']);
-  const { storedLocationName } = getLocalStorage();
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { storedLocation } = getLocalStorage();
   const [recentlyUpdated, setRecentlyUpdated] = useState({});
   const [isHubHovered, setIsHubHovered] = useState(false);
-
+  const [hubCoord, setHubCoord] = useState({ lat: null, lng: null });
   const { t } = useLanguage();
   const hasFetched = useRef(false);
   const prevPositionsRef = useRef({});
   const updateTimeoutsRef = useRef({});
   const hasFittedBounds = useRef(false);
 
-  const activeGroupFilter = storedLocationName === 'GIIC' ? 'Cikarang' : storedLocationName;
-  const cachedHubs = getCachedHubs() || [];
-  const activeHubData = cachedHubs.find((h) => h.name === storedLocationName);
-  const hubCoords =
-    activeHubData?.lat && activeHubData?.lng
-      ? { lat: activeHubData.lat, lng: activeHubData.lng }
-      : null;
-  const hubCoordsString = hubCoords ? `${hubCoords.lat},${hubCoords.lng}` : null;
-
   useEffect(() => {
-    const fetchInitialMapping = async () => {
+    const fetchMasterData = async () => {
       if (hasFetched.current) return;
       hasFetched.current = true;
 
       try {
-        const cachedStatus = localStorage.getItem('mceasy_statuses');
-        const cacheTime = localStorage.getItem('mceasy_statuses_time');
-        const isCacheValid = cacheTime && Date.now() - parseInt(cacheTime) < 12 * 60 * 60 * 1000;
-
-        let vehiclesArray = cachedStatus && isCacheValid ? JSON.parse(cachedStatus) : null;
-
-        if (!vehiclesArray || vehiclesArray.length === 0) {
-          try {
-            const response = await getMCEasyData('/vehicles/statuses');
-            vehiclesArray = Array.isArray(response) ? response : response?.data || [];
-
-            localStorage.setItem('mceasy_statuses', JSON.stringify(vehiclesArray));
-            localStorage.setItem('mceasy_statuses_time', Date.now().toString());
-          } catch (apiError) {
-            if (apiError.status === 429 && cachedStatus) {
-              vehiclesArray = JSON.parse(cachedStatus);
-            } else {
-              throw apiError;
-            }
-          }
+        const drivers = await getDriverData(storedLocation);
+        if (drivers && Array.isArray(drivers)) {
+          setAllVehiclesMaster(drivers);
         }
-
-        if (vehiclesArray && Array.isArray(vehiclesArray)) {
-          const mapping = {};
-          vehiclesArray.forEach((vehicle) => {
-            if (vehicle.imei) {
-              mapping[vehicle.imei] = vehicle.vehicleGroups || [];
-            }
-          });
-          setImeiToGroupsMap(mapping);
-          setAllVehiclesMaster(vehiclesArray);
+        const cachedHubs = getCachedHubs() || [];
+        const activeHubData = cachedHubs.find((h) => h._id === storedLocation);
+        if (activeHubData) {
+          setHubCoord({ lat: activeHubData.lat, lng: activeHubData.lng });
+        } else {
+          setHubCoord({ lat: null, lng: null });
         }
       } catch (error) {
+        console.error('Gagal mengambil data master driver:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInitialMapping();
-  }, []);
+    fetchMasterData();
+  }, [storedLocation]);
 
   useEffect(() => {
     const fetchWebhookData = async () => {
@@ -103,33 +73,34 @@ export default function TrackingPage() {
           const updated = { ...prev };
           entries.forEach((entry) => {
             const vd = entry.event.data;
-            if (vd && vd.imei) {
-              const prevPos = prevPositionsRef.current[vd.imei];
+            if (vd && vd.license_plate) {
+              const stdPlate = getBasePlate(vd.license_plate);
+              const prevPos = prevPositionsRef.current[stdPlate];
               const newLat = parseFloat(vd.latitude);
               const newLng = parseFloat(vd.longitude);
               const changed = !prevPos || prevPos.lat !== newLat || prevPos.lng !== newLng;
 
               if (changed) {
-                prevPositionsRef.current[vd.imei] = { lat: newLat, lng: newLng };
+                prevPositionsRef.current[stdPlate] = { lat: newLat, lng: newLng };
 
                 setRecentlyUpdated((r) => ({
                   ...r,
-                  [vd.imei]: Date.now(),
+                  [stdPlate]: Date.now(),
                 }));
 
-                if (updateTimeoutsRef.current[vd.imei]) {
-                  clearTimeout(updateTimeoutsRef.current[vd.imei]);
+                if (updateTimeoutsRef.current[stdPlate]) {
+                  clearTimeout(updateTimeoutsRef.current[stdPlate]);
                 }
-                updateTimeoutsRef.current[vd.imei] = setTimeout(() => {
+                updateTimeoutsRef.current[stdPlate] = setTimeout(() => {
                   setRecentlyUpdated((r) => {
                     const copy = { ...r };
-                    delete copy[vd.imei];
+                    delete copy[stdPlate];
                     return copy;
                   });
                 }, 5000);
               }
 
-              updated[vd.imei] = vd;
+              updated[stdPlate] = vd;
             }
           });
           return updated;
@@ -142,7 +113,8 @@ export default function TrackingPage() {
   }, []);
 
   const mergedVehicles = allVehiclesMaster.map((v) => {
-    const live = liveDataMap[v.imei];
+    const stdPlate = getBasePlate(v.plat);
+    const live = liveDataMap[stdPlate];
     if (live) {
       return {
         ...v,
@@ -151,28 +123,25 @@ export default function TrackingPage() {
         speed: live.speed,
         direction: live.direction,
         engineOn: live.engine_on,
-        driver1: { ...v.driver1, fullname: live.driver || v.driver1?.fullname },
-        hullNo: live.hull_no || v.hullNo,
-        licensePlate: live.license_plate || v.licensePlate,
+        driverName: live.driver || v.name,
       };
     }
-    return v;
+    return { ...v, driverName: v.name };
   });
 
   const vehicles = mergedVehicles.filter((v) => {
-    const groups = v.vehicleGroups || imeiToGroupsMap[v.imei] || [];
-    if (activeGroupFilter && !groups.includes(activeGroupFilter)) return false;
+    if (!v.latitude || !v.longitude) return false;
 
-    const storage = getStorageType(v.hullNo || '');
+    const storage = getStorageType(v.type || v.storage || '');
 
     if (selectedStorageTypes.length === 1) {
       if (selectedStorageTypes.includes('DRY') && storage !== 'Dry') return false;
       if (selectedStorageTypes.includes('FROZEN') && storage !== 'Frozen') return false;
     }
 
-    if (hubCoordsString && v.latitude && v.longitude && statusFilter !== 'All') {
+    if (statusFilter !== 'All') {
       const vCoordsString = `${v.latitude},${v.longitude}`;
-      const distance = getDistance(vCoordsString, hubCoordsString);
+      const distance = getDistance(vCoordsString, `${hubCoord.lat},${hubCoord.lng}`);
       const isInsideHub = distance !== null && distance <= 500;
 
       if (statusFilter === t('common.status.ongoing') && isInsideHub) return false;
@@ -187,23 +156,17 @@ export default function TrackingPage() {
       ? vehicles
           .filter((v) => {
             const q = searchQuery.toLowerCase();
-            return (
-              v.licensePlate?.toLowerCase().includes(q) ||
-              v.driver1?.fullname?.toLowerCase().includes(q)
-            );
+            return v.plat?.toLowerCase().includes(q) || v.driverName?.toLowerCase().includes(q);
           })
           .slice(0, 8)
       : [];
 
   const handleSelectSuggestion = (v) => {
-    setFocusedPlate(v.licensePlate);
-    setSearchQuery(v.licensePlate);
-    setShowSuggestions(false);
+    setFocusedPlate(v.plat);
+    setSearchQuery(v.plat);
   };
 
-  const targetVehicleFocus = focusedPlate
-    ? vehicles.find((v) => v.licensePlate === focusedPlate)
-    : null;
+  const targetVehicleFocus = focusedPlate ? vehicles.find((v) => v.plat === focusedPlate) : null;
   const targetLat = targetVehicleFocus ? parseFloat(targetVehicleFocus.latitude) : null;
   const targetLng = targetVehicleFocus ? parseFloat(targetVehicleFocus.longitude) : null;
 
@@ -231,39 +194,27 @@ export default function TrackingPage() {
     }
   }, [mapInstance, vehicles]);
 
-  const focusedVehicleData = vehicles.find((v) => v.licensePlate === focusedPlate);
+  const focusedVehicleData = vehicles.find((v) => v.plat === focusedPlate);
   const defaultCenter = [-6.2, 106.8];
 
   const headerItems = [
     {
       label: t('common.search'),
       component: (
-        <div className="relative w-full xl:w-64" onFocusCapture={() => setShowSuggestions(true)}>
-          <SearchBar
-            value={searchQuery}
-            onChange={(val) => {
-              setSearchQuery(val);
-              setShowSuggestions(true);
-            }}
-            placeholder={t('common.search')}
-            tooltip={`${t('common.license_number')}, ${t('common.driver')}`}
-            className="w-full"
-            width="w-full"
-          />
-          {showSuggestions && searchSuggestions.length > 0 && (
-            <ul className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 rounded shadow-md z-50 max-h-48 overflow-y-auto text-xs text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-slate-700">
-              {searchSuggestions.map((v) => (
-                <li
-                  key={v.imei || v.licensePlate}
-                  className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
-                  onClick={() => handleSelectSuggestion(v)}
-                >
-                  {v.licensePlate} - {v.driver1?.fullname || '-'}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={`${t('common.license_number')}, ${t('common.driver')}`}
+          className="w-full"
+          width="w-full xl:w-64"
+          suggestions={searchSuggestions.map((v) => ({
+            key: v._id || v.plat,
+            label: `${v.plat} - ${v.driverName || '-'}`,
+            raw: v,
+          }))}
+          onSelectSuggestion={handleSelectSuggestion}
+        />
       ),
     },
     {
@@ -310,9 +261,9 @@ export default function TrackingPage() {
           {focusedVehicleData && (
             <div className="absolute bottom-4 right-4 z-400 bg-white/95 backdrop-blur px-3 py-2 rounded shadow-md border border-gray-200 w-65 h-auto pointer-events-none text-xs">
               <h3 className="text-[15px] font-bold text-gray-800 border-b pb-1 mb-1.5">
-                {focusedVehicleData.licensePlate}
+                {focusedVehicleData.plat}
               </h3>
-              <div className="space-y-1 flex justify-between">
+              <div className="space-y-1 flex justify-between gap-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-gray-500">{t('common.driver')}</span>
                   <span className="text-gray-500">{t('common.storage_type')}</span>
@@ -321,9 +272,11 @@ export default function TrackingPage() {
                 </div>
                 <div className="flex flex-col gap-2 text-right">
                   <span className="font-semibold truncate ">
-                    {focusedVehicleData.driver1?.fullname || '-'}
+                    {focusedVehicleData.driverName || '-'}
                   </span>
-                  <span className="font-semibold truncate">{focusedVehicleData.hullNo || '-'}</span>
+                  <span className="font-semibold truncate">
+                    {focusedVehicleData.storage || '-'}
+                  </span>
                   <span
                     className={`font-semibold ${focusedVehicleData.engineOn ? 'text-green-600' : 'text-red-600'}`}
                   >
@@ -338,10 +291,10 @@ export default function TrackingPage() {
           <Map center={defaultCenter} zoom={14} onMapReady={setMapInstance}>
             {(rl, L, icons) => (
               <>
-                {hubCoords && (
+                {hubCoord && (
                   <>
                     <rl.Marker
-                      position={[hubCoords.lat, hubCoords.lng]}
+                      position={[hubCoord.lat, hubCoord.lng]}
                       icon={icons.circle('🏢', 'bg-black', 'text-sm', 'border-white')}
                       eventHandlers={{
                         mouseover: () => setIsHubHovered(true),
@@ -359,7 +312,7 @@ export default function TrackingPage() {
                     </rl.Marker>
                     {isHubHovered && (
                       <rl.Circle
-                        center={[hubCoords.lat, hubCoords.lng]}
+                        center={[hubCoord.lat, hubCoord.lng]}
                         radius={500}
                         pathOptions={{
                           color: 'black',
@@ -375,20 +328,21 @@ export default function TrackingPage() {
                   const [lat, lng] = parseCoords(v);
                   if (isNaN(lat) || isNaN(lng)) return null;
 
-                  const isThisFocused = focusedPlate === v.licensePlate;
-                  const isUpdated = !!recentlyUpdated[v.imei];
+                  const isThisFocused = focusedPlate === v.plat;
+                  const stdPlate = getBasePlate(v.plat);
+                  const isUpdated = !!recentlyUpdated[stdPlate];
 
                   const dir = v.direction || 0;
                   const isEast = dir > 0 && dir < 180;
                   const flip = isEast ? -1 : 1;
                   const rot = isEast ? dir - 90 : dir - 270;
 
-                  const storage = getStorageType(v.hullNo || '');
+                  const storage = getStorageType(v.type || v.storage || '');
                   const baseColor = storage === 'Dry' ? 'bg-orange-500' : 'bg-blue-600';
 
                   return (
                     <rl.Marker
-                      key={v.imei || v.licensePlate}
+                      key={v._id || v.plat}
                       position={[lat, lng]}
                       icon={icons.circle(
                         `<div style="transform: rotate(${rot}deg) scaleX(${flip}); display: inline-block; transition: transform 0.3s ease;">🚚</div>`,
@@ -402,9 +356,7 @@ export default function TrackingPage() {
                       )}
                       eventHandlers={{
                         click: () => {
-                          setFocusedPlate((prev) =>
-                            prev === v.licensePlate ? null : v.licensePlate
-                          );
+                          setFocusedPlate((prev) => (prev === v.plat ? null : v.plat));
                         },
                       }}
                     >
@@ -414,7 +366,7 @@ export default function TrackingPage() {
                         offset={[0, -15]}
                         className="font-bold text-xs"
                       >
-                        {v.licensePlate}
+                        {v.plat}
                       </rl.Tooltip>
                     </rl.Marker>
                   );
