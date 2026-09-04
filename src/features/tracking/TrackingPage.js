@@ -8,8 +8,10 @@ import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getMCEasyData, getTrackingData } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import { getDistance } from '@/lib/utils';
+import { getDistance, getStorageType } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
+
+const parseCoords = (v) => [parseFloat(v.latitude), parseFloat(v.longitude)];
 
 export default function TrackingPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +82,6 @@ export default function TrackingPage() {
           setAllVehiclesMaster(vehiclesArray);
         }
       } catch (error) {
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -133,9 +134,7 @@ export default function TrackingPage() {
           });
           return updated;
         });
-      } catch (error) {
-        console.error(error);
-      }
+      } catch (error) {}
     };
     fetchWebhookData();
     const interval = setInterval(fetchWebhookData, 5000);
@@ -164,13 +163,11 @@ export default function TrackingPage() {
     const groups = v.vehicleGroups || imeiToGroupsMap[v.imei] || [];
     if (activeGroupFilter && !groups.includes(activeGroupFilter)) return false;
 
-    const sType = v.hullNo ? v.hullNo.toUpperCase() : '';
-    const isDry = sType.includes('DRY');
-    const isFrozen = sType.includes('FRZ') || sType.includes('FROZEN');
+    const storage = getStorageType(v.hullNo || '');
 
     if (selectedStorageTypes.length === 1) {
-      if (selectedStorageTypes.includes('DRY') && !isDry) return false;
-      if (selectedStorageTypes.includes('FROZEN') && !isFrozen) return false;
+      if (selectedStorageTypes.includes('DRY') && storage !== 'Dry') return false;
+      if (selectedStorageTypes.includes('FROZEN') && storage !== 'Frozen') return false;
     }
 
     if (hubCoordsString && v.latitude && v.longitude && statusFilter !== 'All') {
@@ -225,9 +222,7 @@ export default function TrackingPage() {
 
   useEffect(() => {
     if (mapInstance && vehicles.length > 0 && !hasFittedBounds.current) {
-      const latlngs = vehicles
-        .map((v) => [parseFloat(v.latitude), parseFloat(v.longitude)])
-        .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
+      const latlngs = vehicles.map(parseCoords).filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
 
       if (latlngs.length > 0) {
         mapInstance.fitBounds(latlngs, { padding: [50, 50], maxZoom: 16 });
@@ -272,7 +267,7 @@ export default function TrackingPage() {
       ),
     },
     {
-      label: 'Status',
+      label: t('common.status.delivery_status'),
       component: (
         <Dropdown
           options={[
@@ -377,8 +372,7 @@ export default function TrackingPage() {
                   </>
                 )}
                 {vehicles.map((v) => {
-                  const lat = parseFloat(v.latitude);
-                  const lng = parseFloat(v.longitude);
+                  const [lat, lng] = parseCoords(v);
                   if (isNaN(lat) || isNaN(lng)) return null;
 
                   const isThisFocused = focusedPlate === v.licensePlate;
@@ -389,9 +383,8 @@ export default function TrackingPage() {
                   const flip = isEast ? -1 : 1;
                   const rot = isEast ? dir - 90 : dir - 270;
 
-                  const sType = v.hullNo ? v.hullNo.toUpperCase() : '';
-                  const isDry = sType.includes('DRY');
-                  const baseColor = isDry ? 'bg-orange-500' : 'bg-blue-600';
+                  const storage = getStorageType(v.hullNo || '');
+                  const baseColor = storage === 'Dry' ? 'bg-orange-500' : 'bg-blue-600';
 
                   return (
                     <rl.Marker
