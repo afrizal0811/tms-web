@@ -1,0 +1,402 @@
+{
+  "353691841352759": {
+    "company_id": 2386,
+    "event_time": 1788493238439,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 8189 NJ",
+        "hull_no": "DRY",
+        "imei": "353691841352759",
+        "driver": "Sutikno",
+        "latitude": -7.358597,
+        "longitude": 112.68519,
+        "speed": 9,
+        "direction": 297,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:40:34 +0000",
+        "last_receive": "2026-09-04 03:40:38 +0000",
+        "last_motion": "2026-09-04 03:40:34 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691847711131": {
+    "company_id": 2386,
+    "event_time": 1788493491280,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 9094 PD",
+        "hull_no": "FRZ",
+        "imei": "353691847711131",
+        "driver": "Siswanto OS",
+        "latitude": -7.300195,
+        "longitude": 112.77126,
+        "speed": 8,
+        "direction": 301,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:48 +0000",
+        "last_receive": "2026-09-04 03:44:51 +0000",
+        "last_motion": "2026-09-04 03:44:48 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370526261": {
+    "company_id": 2386,
+    "event_time": 1788493487668,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 9277 BI",
+        "hull_no": "DRY",
+        "imei": "353742370526261",
+        "driver": "Roy Ardiansyah",
+        "latitude": -7.46978,
+        "longitude": 112.73313,
+        "speed": 20,
+        "direction": 6,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:43 +0000",
+        "last_receive": "2026-09-04 03:44:47 +0000",
+        "last_motion": "2026-09-04 03:44:43 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691845012490": {
+    "company_id": 2386,
+    "event_time": 1788493474177,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8261 QA",
+        "hull_no": "DRY",
+        "imei": "353691845012490",
+        "driver": "Agung Setiawan",
+        "latitude": -7.3170834,
+        "longitude": 112.78124,
+        "speed": 7,
+        "direction": 131,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:27 +0000",
+        "last_receive": "2026-09-04 03:44:34 +0000",
+        "last_motion": "2026-09-04 03:44:27 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691848919253": {
+    "company_id": 2386,
+    "event_time": 1788493412525,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 8750 NJ",
+        "hull_no": "DRY",
+        "imei": "353691848919253",
+        "driver": "Dodi Andriyan",
+        "latitude": -7.209855,
+        "longitude": 112.73301,
+        "speed": 1,
+        "direction": 208,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:43:26 +0000",
+        "last_receive": "2026-09-04 03:43:32 +0000",
+        "last_motion": "2026-09-04 03:43:26 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691844786805": {
+    "company_id": 2386,
+    "event_time": 1788493059326,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 9093 PD",
+        "hull_no": "DRY",
+        "imei": "353691844786805",
+        "driver": "Sugianto",
+        "latitude": -7.287705,
+        "longitude": 112.67477,
+        "speed": 16,
+        "direction": 158,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:37:16 +0000",
+        "last_receive": "2026-09-04 03:37:39 +0000",
+        "last_motion": "2026-09-04 03:37:16 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370608853": {
+    "company_id": 2386,
+    "event_time": 1788493457123,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8958 PQ",
+        "hull_no": "FRZ",
+        "imei": "353742370608853",
+        "driver": "Nurdin Alamsyah",
+        "latitude": -7.548022,
+        "longitude": 112.69772,
+        "speed": 6,
+        "direction": 311,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:13 +0000",
+        "last_receive": "2026-09-04 03:44:17 +0000",
+        "last_motion": "2026-09-04 03:44:13 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370608812": {
+    "company_id": 2386,
+    "event_time": 1788493198096,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 8491 NH",
+        "hull_no": "FRZ",
+        "imei": "353742370608812",
+        "driver": "Dirgantara Dharma",
+        "latitude": -7.367305,
+        "longitude": 112.7277,
+        "speed": 11,
+        "direction": 63,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:39:53 +0000",
+        "last_receive": "2026-09-04 03:39:58 +0000",
+        "last_motion": "2026-09-04 03:39:53 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691847144630": {
+    "company_id": 2386,
+    "event_time": 1788493487518,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8262 QA",
+        "hull_no": "DRY",
+        "imei": "353691847144630",
+        "driver": "Mohamad Suud",
+        "latitude": -7.2870135,
+        "longitude": 112.64737,
+        "speed": 44,
+        "direction": 347,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:42 +0000",
+        "last_receive": "2026-09-04 03:44:47 +0000",
+        "last_motion": "2026-09-04 03:44:42 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691845081867": {
+    "company_id": 2386,
+    "event_time": 1788493210023,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8933 PC",
+        "hull_no": "DRY",
+        "imei": "353691845081867",
+        "driver": "Machwal Anam",
+        "latitude": -7.4544015,
+        "longitude": 112.71723,
+        "speed": 5,
+        "direction": 259,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:40:01 +0000",
+        "last_receive": "2026-09-04 03:40:10 +0000",
+        "last_motion": "2026-09-04 03:40:01 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691847341558": {
+    "company_id": 2386,
+    "event_time": 1788493489353,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8259 QA",
+        "hull_no": "DRY",
+        "imei": "353691847341558",
+        "driver": "Yohanif Mahfutro",
+        "latitude": -7.491925,
+        "longitude": 112.434975,
+        "speed": 36,
+        "direction": 93,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:44 +0000",
+        "last_receive": "2026-09-04 03:44:49 +0000",
+        "last_motion": "2026-09-04 03:44:44 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370606550": {
+    "company_id": 2386,
+    "event_time": 1788493313566,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8319 PV",
+        "hull_no": "FRZ",
+        "imei": "353742370606550",
+        "driver": "Muhammad Ali Mashuri",
+        "latitude": -7.31987,
+        "longitude": 112.74753,
+        "speed": 5,
+        "direction": 59,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:41:48 +0000",
+        "last_receive": "2026-09-04 03:41:53 +0000",
+        "last_motion": "2026-09-04 03:41:48 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691845082055": {
+    "company_id": 2386,
+    "event_time": 1788493099887,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8060 QE",
+        "hull_no": "Dry",
+        "imei": "353691845082055",
+        "driver": "Khoirul Musawimin",
+        "latitude": -7.295005,
+        "longitude": 112.72584,
+        "speed": 8,
+        "direction": 133,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:38:15 +0000",
+        "last_receive": "2026-09-04 03:38:19 +0000",
+        "last_motion": "2026-09-04 03:38:15 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691848607379": {
+    "company_id": 2386,
+    "event_time": 1788493488429,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8061 QE",
+        "hull_no": "Dry",
+        "imei": "353691848607379",
+        "driver": "M.Bagus Fitroni Bashori",
+        "latitude": -7.27189,
+        "longitude": 112.74282,
+        "speed": 40,
+        "direction": 202,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:44 +0000",
+        "last_receive": "2026-09-04 03:44:48 +0000",
+        "last_motion": "2026-09-04 03:44:44 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353691848044169": {
+    "company_id": 2386,
+    "event_time": 1788493491630,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "W 8062 QE",
+        "hull_no": "Dry",
+        "imei": "353691848044169",
+        "driver": "Mulyo Agustiawan",
+        "latitude": -7.394318,
+        "longitude": 112.58319,
+        "speed": 28,
+        "direction": 173,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:48 +0000",
+        "last_receive": "2026-09-04 03:44:51 +0000",
+        "last_motion": "2026-09-04 03:44:48 +0000",
+        "motion_status": "M"
+      }
+    }
+  },
+  "353742370609943": {
+    "company_id": 2386,
+    "event_time": 1788493483260,
+    "event_id": 1,
+    "event_name": "Location",
+    "event_type": "Data Update",
+    "event_code": "DVC-DU1/L1",
+    "event": {
+      "data": {
+        "license_plate": "L 8493 NH",
+        "hull_no": "FRZ",
+        "imei": "353742370609943",
+        "driver": "Usman",
+        "latitude": -7.31022,
+        "longitude": 112.733734,
+        "speed": 5,
+        "direction": 130,
+        "engine_on": true,
+        "last_packet": "2026-09-04 03:44:40 +0000",
+        "last_receive": "2026-09-04 03:44:43 +0000",
+        "last_motion": "2026-09-04 03:44:40 +0000",
+        "motion_status": "M"
+      }
+    }
+  }
+}

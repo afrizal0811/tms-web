@@ -1,1778 +1,782 @@
-{
-  "current_page": 1,
-  "data": [
-    {
-      "name": "B 9087 FFY",
-      "assignee": "kendaraan.plck05@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [],
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "2003"
-        },
-        "volume": {
-          "min": 0,
-          "max": "7.0"
-        }
-      },
-      "oddEven": null,
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-26T12:27:14.477000Z",
-      "createdTime": "2026-06-26T12:27:14.477000Z",
-      "_id": "6a3e702241ae5f33ff0eb4e9",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
+[
+  {
+    "_id": "670640a5cf1e7062ec06b2ed-W9093PD",
+    "email": "kendaraan.plsda23@panganlestari.com",
+    "name": "'DRY' Sugianto",
+    "plat": "W 9093 PD",
+    "type": "DRY-CDE-ROTI",
+    "_rawType": "DRY-CDE-ROTI",
+    "tags": "[\"DRY-CDE-ROTI\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 7.895394,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
     },
-    {
-      "name": "B 9082 FFY",
-      "assignee": "kendaraan.plck01@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [],
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "2003"
-        },
-        "volume": {
-          "min": 0,
-          "max": "7.0"
-        }
-      },
-      "oddEven": null,
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-26T12:27:11.089000Z",
-      "createdTime": "2026-06-26T12:27:11.089000Z",
-      "_id": "6a3e701f41ae5f33ff0eb4e8",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B SEWA DRY 1",
-      "assignee": null,
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD", "DRY-CDD-LONG-5000", "DRY-FUSO-1000"],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "4800"
-        },
-        "volume": {
-          "min": 0,
-          "max": "11.83896"
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-06T05:15:48.700000Z",
-      "createdTime": "2026-05-02T05:31:09.658000Z",
-      "_id": "69f58c1d66ef29cde10ab027",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9246 FXW",
-      "assignee": "kendaraan.plck36@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-L300-1500",
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "CILEGON"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 1350
-        },
-        "volume": {
-          "min": 0,
-          "max": 4.957208
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-09T13:14:40.320000Z",
-      "createdTime": "2026-05-02T05:31:07.284000Z",
-      "_id": "69f58c1b66ef29cde10ab026",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9207 FCM",
-      "assignee": "kendaraan.plck35@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD", "DRY-FUSO-10000", "DRY-HAVI"],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 10800
-        },
-        "volume": {
-          "min": 0,
-          "max": 32
-        }
-      },
-      "workingTime": {
-        "startTime": "08:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:31:04.836000Z",
-      "createdTime": "2026-05-02T05:31:04.836000Z",
-      "_id": "69f58c1866ef29cde10ab025",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9244 FXW",
-      "assignee": "kendaraan.plck34@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "DRY-CDE-2000",
-        "BEKASI"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.2207808
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-24T11:13:33.906000Z",
-      "createdTime": "2026-05-02T05:31:02.559000Z",
-      "_id": "69f58c1666ef29cde10ab024",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9243 FXW",
-      "assignee": "kendaraan.plck33@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "PUNCAK",
-        "DRY-CDE-2000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.2207808
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:45:10.358000Z",
-      "createdTime": "2026-05-02T05:31:00.257000Z",
-      "_id": "69f58c1466ef29cde10ab023",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9576 FXU",
-      "assignee": "kendaraan.plck32@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "CILEGON",
-        "DRY-CDE-2000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "2500"
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.2207808
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-25T11:46:25.220000Z",
-      "createdTime": "2026-05-02T05:30:57.870000Z",
-      "_id": "69f58c1166ef29cde10ab022",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9567 FXU",
-      "assignee": "kendaraan.plck31@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "DRY-CDE-2000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.2207808
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:45:16.107000Z",
-      "createdTime": "2026-05-02T05:30:55.498000Z",
-      "_id": "69f58c0f66ef29cde10ab021",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9208 BCX",
-      "assignee": "kendaraan.plck30@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "DRY-CDE-2000"
-      ],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.2207808
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:45:31.226000Z",
-      "createdTime": "2026-05-02T05:30:53.138000Z",
-      "_id": "69f58c0d66ef29cde10ab020",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9307 FCG",
-      "assignee": "kendaraan.plck29@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "DRY-CDE-2000",
-        "BEKASI"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.552816
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:45:35.444000Z",
-      "createdTime": "2026-05-02T05:30:50.716000Z",
-      "_id": "69f58c0a66ef29cde10ab01f",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9846 FXX",
-      "assignee": "kendaraan.plck28@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "BEKASI"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.322048
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-25T12:34:21.732000Z",
-      "createdTime": "2026-05-02T05:30:48.297000Z",
-      "_id": "69f58c0866ef29cde10ab01e",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9845 FXX",
-      "assignee": "kendaraan.plck27@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "TANGERANG"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 8.322048
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-25T12:34:30.787000Z",
-      "createdTime": "2026-05-02T05:30:46.050000Z",
-      "_id": "69f58c0666ef29cde10ab01d",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9481 FCD",
-      "assignee": "kendaraan.plck26@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.47649
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:44:21.667000Z",
-      "createdTime": "2026-05-02T05:30:43.738000Z",
-      "_id": "69f58c0366ef29cde10ab01c",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9587 FCC",
-      "assignee": "kendaraan.plck25@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "BEKASI"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.47649
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-25T12:34:56.425000Z",
-      "createdTime": "2026-05-02T05:30:41.281000Z",
-      "_id": "69f58c0166ef29cde10ab01b",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9464 FXU",
-      "assignee": "kendaraan.plck24@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000",
-        "BEKASI"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.47649
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:45:57.665000Z",
-      "createdTime": "2026-05-02T05:30:38.923000Z",
-      "_id": "69f58bfe66ef29cde10ab01a",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9179 FCC",
-      "assignee": "kendaraan.plck23@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.47649
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-09T13:14:32.552000Z",
-      "createdTime": "2026-05-02T05:30:36.500000Z",
-      "_id": "69f58bfc66ef29cde10ab019",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9177 FCC",
-      "assignee": "kendaraan.plck22@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.47649
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-26T12:01:24.201000Z",
-      "createdTime": "2026-05-02T05:30:34.048000Z",
-      "_id": "69f58bfa66ef29cde10ab018",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9723 FCB",
-      "assignee": "kendaraan.plck21@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.549012
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:46:11.023000Z",
-      "createdTime": "2026-05-02T05:30:31.727000Z",
-      "_id": "69f58bf766ef29cde10ab017",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9565 FCB",
-      "assignee": "kendaraan.plck20@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.549012
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-04T12:46:16.295000Z",
-      "createdTime": "2026-05-02T05:30:29.317000Z",
-      "_id": "69f58bf566ef29cde10ab016",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9511 DO",
-      "assignee": "kendaraan.plck19@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "DRY-CDE-2000",
-        "DRY-CDE-LONG-2500",
-        "DRY-CDD-5000",
-        "DRY-CDD-LONG-5000",
-        "DRY-FUSO-10000"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2500
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.549012
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-24T11:13:17.446000Z",
-      "createdTime": "2026-05-02T05:30:26.987000Z",
-      "_id": "69f58bf266ef29cde10ab015",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9205 FCM",
-      "assignee": "kendaraan.plck18@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD-LONG", "DRY-CDD-5000", "DRY-FUSO-10000"],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 4800
-        },
-        "volume": {
-          "min": 0,
-          "max": 15.1748576
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-09T13:14:11.374000Z",
-      "createdTime": "2026-05-02T05:30:24.599000Z",
-      "_id": "69f58bf066ef29cde10ab014",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9125 FFX",
-      "assignee": "kendaraan.plck17@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD", "DRY-CDD-LONG-5000", "DRY-FUSO-10000"],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 4800
-        },
-        "volume": {
-          "min": 0,
-          "max": 11.41614
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:22.362000Z",
-      "createdTime": "2026-05-02T05:30:22.362000Z",
-      "_id": "69f58bee66ef29cde10ab013",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9508 FCI",
-      "assignee": "kendaraan.plck16@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD", "DRY-CDD-LONG-5000", "DRY-FUSO-10000"],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 4800
-        },
-        "volume": {
-          "min": 0,
-          "max": 13.107545
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:20.085000Z",
-      "createdTime": "2026-05-02T05:30:20.085000Z",
-      "_id": "69f58bec66ef29cde10ab012",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9732 FCC",
-      "assignee": "kendaraan.plck15@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD-LONG-5000", "DRY-FUSO-10000", "DRY-CDD-5000"],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 4800
-        },
-        "volume": {
-          "min": 0,
-          "max": 12.051936
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-25T12:35:42.965000Z",
-      "createdTime": "2026-05-02T05:30:17.699000Z",
-      "_id": "69f58be966ef29cde10ab011",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9402 FCA",
-      "assignee": "kendaraan.plck14@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD-LONG-5000", "DRY-FUSO-10000", "DRY-CDD-5000"],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "4800"
-        },
-        "volume": {
-          "min": 0,
-          "max": "11.83896"
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "19:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-23T12:53:59.084000Z",
-      "createdTime": "2026-05-02T05:30:15.282000Z",
-      "_id": "69f58be766ef29cde10ab010",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9201 FFX",
-      "assignee": "kendaraan.plck13@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "2000"
-        },
-        "volume": {
-          "min": 0,
-          "max": 7
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-20T03:28:37.262000Z",
-      "createdTime": "2026-05-02T05:30:12.907000Z",
-      "_id": "69f58be466ef29cde10ab00f",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9172 FFX",
-      "assignee": "kendaraan.plck12@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000",
-        "CILEGON"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 7
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:10.546000Z",
-      "createdTime": "2026-05-02T05:30:10.546000Z",
-      "_id": "69f58be266ef29cde10ab00e",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9171 FFX",
-      "assignee": "kendaraan.plck11@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 7
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:08.205000Z",
-      "createdTime": "2026-05-02T05:30:08.205000Z",
-      "_id": "69f58be066ef29cde10ab00d",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9170 FFX",
-      "assignee": "kendaraan.plck10@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000",
-        "TANGERANG"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 7
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:05.914000Z",
-      "createdTime": "2026-05-02T05:30:05.914000Z",
-      "_id": "69f58bdd66ef29cde10ab00c",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9793 FXW",
-      "assignee": "kendaraan.plck09@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-LONG",
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "CILEGON"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2520
-        },
-        "volume": {
-          "min": 0,
-          "max": 9
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:03.553000Z",
-      "createdTime": "2026-05-02T05:30:03.553000Z",
-      "_id": "69f58bdb66ef29cde10ab00b",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9793 FXW SOUR SALLY",
-      "assignee": "kendaraan.plck09@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["FROZEN-CDD"],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2520
-        },
-        "volume": {
-          "min": 0,
-          "max": 9.925722
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:30:01.347000Z",
-      "createdTime": "2026-05-02T05:30:01.347000Z",
-      "_id": "69f58bd966ef29cde10ab00a",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9802 FXW",
-      "assignee": "kendaraan.plck08@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000",
-        "FROZEN-9802",
-        "PUNCAK",
-        "FROZEN-CDE-2000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2520
-        },
-        "volume": {
-          "min": 0,
-          "max": 9
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-15T01:48:30.418000Z",
-      "createdTime": "2026-05-02T05:29:59.033000Z",
-      "_id": "69f58bd766ef29cde10ab009",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9624 FCG",
-      "assignee": "kendaraan.plck07@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["FROZEN-FUSO-10000", "FROZEN-KFC"],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 10800
-        },
-        "volume": {
-          "min": 0,
-          "max": 32
-        }
-      },
-      "workingTime": {
-        "startTime": "08:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:56.667000Z",
-      "createdTime": "2026-05-02T05:29:56.667000Z",
-      "_id": "69f58bd466ef29cde10ab008",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9021 FCJ",
-      "assignee": "kendaraan.plck06@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000",
-        "FROZEN-9021",
-        "PUNCAK"
-      ],
-      "oddEven": "odd",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 6.5
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:54.356000Z",
-      "createdTime": "2026-05-02T05:29:54.356000Z",
-      "_id": "69f58bd266ef29cde10ab007",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9384 FCE",
-      "assignee": "kendaraan.plck05@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000"
-      ],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 5
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:52.070000Z",
-      "createdTime": "2026-05-02T05:29:52.070000Z",
-      "_id": "69f58bd066ef29cde10ab006",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B SEWA DRY 2",
-      "assignee": null,
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["DRY-CDD", "DRY-CDD-LONG-5000", "DRY-FUSO-1000"],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": "4800"
-        },
-        "volume": {
-          "min": 0,
-          "max": "11.83896"
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-06T05:16:08.485000Z",
-      "createdTime": "2026-05-02T05:29:49.749000Z",
-      "_id": "69f58bcd66ef29cde10ab005",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9382 FCE",
-      "assignee": "kendaraan.plck04@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000",
-        "BEKASI"
-      ],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 6
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:47.373000Z",
-      "createdTime": "2026-05-02T05:29:47.373000Z",
-      "_id": "69f58bcb66ef29cde10ab004",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9953 FXU",
-      "assignee": "kendaraan.plck03@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000"
-      ],
-      "oddEven": null,
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 5
-        }
-      },
-      "workingTime": {
-        "startTime": "06:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:45.023000Z",
-      "createdTime": "2026-05-02T05:29:45.023000Z",
-      "_id": "69f58bc966ef29cde10ab003",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9598 FCD",
-      "assignee": "kendaraan.plck02@panganlestari.com",
-      "speed": null,
-      "fixedCost": 0,
-      "tags": [
-        "FROZEN-CDE-2000",
-        "FROZEN-CDE-LONG-2500",
-        "FROZEN-CDD-5000",
-        "FROZEN-CDD-LONG-5000",
-        "FROZEN-FUSO-10000"
-      ],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 5
-        }
-      },
-      "workingTime": {
-        "startTime": "06:30",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-05-02T05:29:42.591000Z",
-      "createdTime": "2026-05-02T05:29:42.591000Z",
-      "_id": "69f58bc666ef29cde10ab002",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
-    },
-    {
-      "name": "B 9588 FCC",
-      "assignee": null,
-      "speed": null,
-      "fixedCost": 0,
-      "tags": ["FROZEN-CDE-2000", "FROZEN-CDE-LONG-2500", "FROZEN-CDD-5000"],
-      "oddEven": "even",
-      "capacity": {
-        "weight": {
-          "min": 0,
-          "max": 2003
-        },
-        "volume": {
-          "min": 0,
-          "max": 5
-        }
-      },
-      "workingTime": {
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "multiday": 0
-      },
-      "breakTime": {
-        "startTime": null,
-        "endTime": null
-      },
-      "hubId": "69f2dd4a11cc773f0e0c3e8b",
-      "isOddEven": true,
-      "organizationId": "6703410af6be892f3208ecda",
-      "updatedTime": "2026-06-06T05:23:17.836000Z",
-      "createdTime": "2026-05-02T05:29:40.257000Z",
-      "_id": "69f58bc466ef29cde10ab001",
-      "hubs": {
-        "name": "Hub GIIC",
-        "address": "Jl. GIIC Boulevard Block AF/3, Kota Deltamas Desa.Nagasari, Kec. Serang Baru, Cikarang Pusat",
-        "_id": "69f2dd4a11cc773f0e0c3e8b"
-      }
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
     }
-  ],
-  "first_page_url": "https://apiweb.mile.app/api/v3/vehicles?hubId=69f2dd4a11cc773f0e0c3e8b&limit=500&page=1",
-  "from": 1,
-  "last_page": 1,
-  "last_page_url": "https://apiweb.mile.app/api/v3/vehicles?hubId=69f2dd4a11cc773f0e0c3e8b&limit=500&page=1",
-  "links": [
-    {
-      "url": null,
-      "label": "&laquo; Previous",
-      "page": null,
-      "active": false
+  },
+  {
+    "_id": "670640a5cf1e7062ec06b2eb-W8934PC",
+    "email": "kendaraan.plsda22@panganlestari.com",
+    "name": "'DRY' Rachmat Fahsy",
+    "plat": "W 8934 PC",
+    "type": "DRY-CDD-LONG-5000",
+    "_rawType": "DRY-CDD-LONG-5000",
+    "tags": "[\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 16.941375,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
     },
-    {
-      "url": "https://apiweb.mile.app/api/v3/vehicles?hubId=69f2dd4a11cc773f0e0c3e8b&limit=500&page=1",
-      "label": "1",
-      "page": 1,
-      "active": true
-    },
-    {
-      "url": null,
-      "label": "Next &raquo;",
-      "page": null,
-      "active": false
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
     }
-  ],
-  "next_page_url": null,
-  "path": "https://apiweb.mile.app/api/v3/vehicles?hubId=69f2dd4a11cc773f0e0c3e8b&limit=500",
-  "per_page": 500,
-  "prev_page_url": null,
-  "to": 41,
-  "total": 41
-}
+  },
+  {
+    "_id": "670640a5cf1e7062ec06b2e9-W8933PC",
+    "email": "kendaraan.plsda21@panganlestari.com",
+    "name": "'DRY' Machwal Anam",
+    "plat": "W 8933 PC",
+    "type": "DRY-CDE-LONG-2000",
+    "_rawType": "DRY-CDE-LONG-2000",
+    "tags": "[\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 9.144576,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a5cf1e7062ec06b2e7-W8262QA",
+    "email": "kendaraan.plsda20@panganlestari.com",
+    "name": "'DRY' Mohamad Suud",
+    "plat": "W 8262 QA",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 7.742249999999999,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a1cf1e7062ec06b2cd-W8212QH",
+    "email": "kendaraan.plsda07@panganlestari.com",
+    "name": "'FRZ' Sutomo",
+    "plat": "W 8212 QH",
+    "type": "FROZEN-CDE-LONG-2000",
+    "_rawType": "FROZEN-CDE-LONG-2000",
+    "tags": "[\"FROZEN-CDE-LONG-2000\",\"FROZEN-CDE-LONG-2500\",\"FROZEN-CDE-LONG-5000\",\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.968025000000001,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a4cf1e7062ec06b2e3-W8319PV",
+    "email": "kendaraan.plsda18@panganlestari.com",
+    "name": "'FRZ' Muhammad Ali Mashuri",
+    "plat": "W 8319 PV",
+    "type": "FROZEN-CDD-LONG-5000",
+    "_rawType": "FROZEN-CDD-LONG-5000",
+    "tags": "[\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 15.56775,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a4cf1e7062ec06b2e1-L9277BI",
+    "email": "kendaraan.plsda17@panganlestari.com",
+    "name": "'DRY' Roy Ardiansyah",
+    "plat": "L 9277 BI",
+    "type": "DRY-CDD-5000",
+    "_rawType": "DRY-CDD-5000",
+    "tags": "[\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 12.06576,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a4cf1e7062ec06b2df-W8262PV",
+    "email": "kendaraan.plsda16@panganlestari.com",
+    "name": "'FRZ' M Hilmi",
+    "plat": "W 8262 PV",
+    "type": "FROZEN-FUSO-10000",
+    "_rawType": "FROZEN-FUSO-10000",
+    "tags": "[\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 10800,
+    "minVolume": 0,
+    "maxVolume": 37.6488,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a3cf1e7062ec06b2dd-W8153PV",
+    "email": "kendaraan.plsda15@panganlestari.com",
+    "name": "'DRY' Arief Wahyu Pambudi",
+    "plat": "W 8153 PV",
+    "type": "DRY-L300-1000",
+    "_rawType": "DRY-L300-1000",
+    "tags": "[\"DRY-L300-1000\",\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 900,
+    "minVolume": 0,
+    "maxVolume": 5.04504,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a3cf1e7062ec06b2db-W8944PC",
+    "email": "kendaraan.plsda14@panganlestari.com",
+    "name": "'FRZ' Slamet Kasiono",
+    "plat": "W 8944 PC",
+    "type": "FROZEN-CDE-LONG-2000",
+    "_rawType": "FROZEN-CDE-LONG-2000",
+    "tags": "[\"FROZEN-CDE-LONG-2000\",\"FROZEN-CDE-LONG-2500\",\"FROZEN-CDE-LONG-5000\",\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 7.012980000000001,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a3cf1e7062ec06b2d7-W8236QA",
+    "email": "kendaraan.plsda12@panganlestari.com",
+    "name": "'DRY' Junaidi Abdillah",
+    "plat": "W 8236 QA",
+    "type": "DRY-FUSO",
+    "_rawType": "DRY-HAVI",
+    "tags": "[\"DRY-HAVI\"]",
+    "minWeight": 0,
+    "maxWeight": 10800,
+    "minVolume": 0,
+    "maxVolume": 37.6488,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a6cf1e7062ec06b2f1-W8062QE",
+    "email": "kendaraan.plsda25@panganlestari.com",
+    "name": "'DRY' Mulyo Agustiawan",
+    "plat": "W 8062 QE",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a3cf1e7062ec06b2d9-W8061QE",
+    "email": "kendaraan.plsda13@panganlestari.com",
+    "name": "'DRY' M.Bagus Fitroni Bashori",
+    "plat": "W 8061 QE",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a2cf1e7062ec06b2d5-W8312PV",
+    "email": "kendaraan.plsda11@panganlestari.com",
+    "name": "'DRY' Arik Siswanto OS",
+    "plat": "W 8312 PV",
+    "type": "DRY-CDD-LONG-5000",
+    "_rawType": "DRY-CDD-LONG-5000",
+    "tags": "[\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 18.03195,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a2cf1e7062ec06b2d3-L9276BI",
+    "email": "kendaraan.plsda10@panganlestari.com",
+    "name": "'DRY' Mohamad Arif Saputra",
+    "plat": "L 9276 BI",
+    "type": "DRY-CDD-5000",
+    "_rawType": "DRY-CDD-5000",
+    "tags": "[\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 12.06576,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a0cf1e7062ec06b2c3-W8060QE",
+    "email": "kendaraan.plsda02@panganlestari.com",
+    "name": "'DRY' Khoirul Musawimin",
+    "plat": "W 8060 QE",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a7cf1e7062ec06b2fd-W8081QH",
+    "email": "kendaraan.plsda31@panganlestari.com",
+    "name": "'DRY' Mochammad Choirul Ni'am",
+    "plat": "W 8081 QH",
+    "type": "DRY-CDE-LONG-2000",
+    "_rawType": "DRY-CDE-LONG-2000",
+    "tags": "[\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 10.118196,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "67064afb992fe762080e1eba-W9971PF",
+    "email": "kendaraan.plsda30@panganlestari.com",
+    "name": "'DRY' Nasikin Efendi",
+    "plat": "W 9971 PF",
+    "type": "DRY-CDE-LONG-2500",
+    "_rawType": "DRY-CDE-LONG-2500",
+    "tags": "[\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 2250,
+    "minVolume": 0,
+    "maxVolume": 12.0128778,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a6cf1e7062ec06b2f7-W8059QH",
+    "email": "kendaraan.plsda28@panganlestari.com",
+    "name": "'DRY' Moch Kariyo Slamet",
+    "plat": "W 8059 QH",
+    "type": "DRY-CDD-LONG-5000",
+    "_rawType": "DRY-CDD-LONG-5000",
+    "tags": "[\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 17.461494,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a6cf1e7062ec06b2f5-W9335PG",
+    "email": "kendaraan.plsda27@panganlestari.com",
+    "name": "'DRY' Riadi",
+    "plat": "W 9335 PG",
+    "type": "DRY-CDD-LONG-5000",
+    "_rawType": "DRY-CDD-LONG-5000",
+    "tags": "[\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 16.941375,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a6cf1e7062ec06b2f3-W9094PD",
+    "email": "kendaraan.plsda26@panganlestari.com",
+    "name": "'FRZ' Siswanto OS",
+    "plat": "W 9094 PD",
+    "type": "FROZEN-CDE-LONG-2000",
+    "_rawType": "FROZEN-CDE-LONG-2000",
+    "tags": "[\"FROZEN-CDE-LONG-2000\",\"FROZEN-CDE-LONG-2500\",\"FROZEN-CDE-LONG-5000\",\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.968025000000001,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a6cf1e7062ec06b2ef-W8958PQ",
+    "email": "kendaraan.plsda24@panganlestari.com",
+    "name": "'FRZ' Nurdin Alamsyah",
+    "plat": "W 8958 PQ",
+    "type": "FROZEN-CDD-LONG-5000",
+    "_rawType": "FROZEN-CDD-LONG-5000",
+    "tags": "[\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 11.405439,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a2cf1e7062ec06b2d1-L8189NJ",
+    "email": "kendaraan.plsda09@panganlestari.com",
+    "name": "'DRY' Sutikno",
+    "plat": "L 8189 NJ",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.0331923,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a2cf1e7062ec06b2cf-L8750NJ",
+    "email": "kendaraan.plsda08@panganlestari.com",
+    "name": "'DRY' Dodi Andriyan",
+    "plat": "L 8750 NJ",
+    "type": "DRY-CDD-5000",
+    "_rawType": "DRY-CDD-5000",
+    "tags": "[\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 10.872792,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a4cf1e7062ec06b2e5-L8493NH",
+    "email": "kendaraan.plsda19@panganlestari.com",
+    "name": "'FRZ' Usman",
+    "plat": "L 8493 NH",
+    "type": "FROZEN-CDE-2000",
+    "_rawType": "FROZEN-CDE-2000",
+    "tags": "[\"FROZEN-CDE-2000\",\"FROZEN-CDE-LONG-2000\",\"FROZEN-CDE-LONG-2500\",\"FROZEN-CDE-LONG-5000\",\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 4.81545,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a1cf1e7062ec06b2cb-L8491NH",
+    "email": "kendaraan.plsda06@panganlestari.com",
+    "name": "'FRZ' Dirgantara Dharma",
+    "plat": "L 8491 NH",
+    "type": "FROZEN-CDE-2000",
+    "_rawType": "FROZEN-CDE-2000",
+    "tags": "[\"FROZEN-CDE-2000\",\"FROZEN-CDE-LONG-2000\",\"FROZEN-CDE-LONG-2500\",\"FROZEN-CDE-LONG-5000\",\"FROZEN-CDD-LONG-5000\",\"FROZEN-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 4.81545,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a1cf1e7062ec06b2c9-W8137PI",
+    "email": "kendaraan.plsda05@panganlestari.com",
+    "name": "'FRZ' Buckhori Muslim",
+    "plat": "W 8137 PI",
+    "type": "FROZEN-CDE-LONG",
+    "_rawType": "FROZEN-KFC",
+    "tags": "[\"FROZEN-KFC\",\"DRY-KFC\"]",
+    "minWeight": 0,
+    "maxWeight": 4500,
+    "minVolume": 0,
+    "maxVolume": 9.8499384,
+    "storage": "FROZEN",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "19:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a1cf1e7062ec06b2c7-W8260QA",
+    "email": "kendaraan.plsda04@panganlestari.com",
+    "name": "'DRY' Mochammad Bagus Pratama",
+    "plat": "W 8260 QA",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a0cf1e7062ec06b2c5-W8259QA",
+    "email": "kendaraan.plsda03@panganlestari.com",
+    "name": "'DRY' Yohanif Mahfutro",
+    "plat": "W 8259 QA",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  },
+  {
+    "_id": "670640a0cf1e7062ec06b2c1-W8261QA",
+    "email": "kendaraan.plsda01@panganlestari.com",
+    "name": "'DRY' Agung Setiawan",
+    "plat": "W 8261 QA",
+    "type": "DRY-CDE-2000",
+    "_rawType": "DRY-CDE-2000",
+    "tags": "[\"DRY-CDE-2000\",\"DRY-CDE-LONG-2000\",\"DRY-CDE-LONG-2500\",\"DRY-CDD-5000\",\"DRY-CDD-LONG-5000\",\"DRY-FUSO-8000\",\"DRY-FUSO-10000\"]",
+    "minWeight": 0,
+    "maxWeight": 1800,
+    "minVolume": 0,
+    "maxVolume": 6.806205,
+    "storage": "DRY",
+    "oddEven": null,
+    "speed": null,
+    "costFactor": null,
+    "workingTime": {
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "multiday": 0
+    },
+    "breakTime": {
+      "startTime": null,
+      "endTime": null
+    }
+  }
+]

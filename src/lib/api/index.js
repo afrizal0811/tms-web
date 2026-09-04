@@ -5,6 +5,7 @@ export * from './reasons';
 export * from './results';
 export * from './roles';
 export * from './tasks';
+export * from './tracking';
 export * from './trash';
 export * from './truckUsage';
 export * from './users';

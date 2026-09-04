@@ -1,21 +1,22 @@
-import { NextResponse } from 'next/server';
 import fs from 'fs';
+import { NextResponse } from 'next/server';
 import path from 'path';
 
 const EXPIRY_MS = 10 * 60 * 1000;
+const FILE_PATH = path.join(process.cwd(), 'tracking-data.json');
 
 export async function POST(request) {
   try {
     const data = await request.json();
-
-    const filePath = path.join(process.cwd(), 'public', 'webhook-result.json');
-
     let existing = {};
-    try {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      existing = JSON.parse(raw);
-    } catch (e) {
-      existing = {};
+
+    if (fs.existsSync(FILE_PATH)) {
+      try {
+        const raw = fs.readFileSync(FILE_PATH, 'utf-8');
+        existing = JSON.parse(raw);
+      } catch (e) {
+        existing = {};
+      }
     }
 
     const imei = data?.event?.data?.imei;
@@ -31,9 +32,22 @@ export async function POST(request) {
       }
     });
 
-    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+    fs.writeFileSync(FILE_PATH, JSON.stringify(existing, null, 2));
 
     return NextResponse.json({ message: 'Data diterima' }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    let data = {};
+    if (fs.existsSync(FILE_PATH)) {
+      const raw = fs.readFileSync(FILE_PATH, 'utf-8');
+      data = JSON.parse(raw);
+    }
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

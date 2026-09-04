@@ -4,12 +4,12 @@ import HeaderCard from '@/components/card/HeaderCard';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Map from '@/components/Map';
 import SearchBar from '@/components/SearchBar';
+import { getMCEasyData, getTrackingData } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { getDistance } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-
 export default function WebhookDashboard() {
-  const [webhookData, setWebhookData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [liveDataMap, setLiveDataMap] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
   const [focusedPlate, setFocusedPlate] = useState(null);
@@ -17,8 +17,7 @@ export default function WebhookDashboard() {
   const [allVehiclesMaster, setAllVehiclesMaster] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-
-  const { storedLocationName } = getLocalStorage();
+  const { storedLocationName, storedLocation } = getLocalStorage();
   const activeGroupFilter = storedLocationName === 'GIIC' ? 'Cikarang' : storedLocationName;
   const cachedHubs = getCachedHubs() || [];
   const activeHubData = cachedHubs.find((h) => h.name === storedLocationName);
@@ -29,9 +28,11 @@ export default function WebhookDashboard() {
   const hubCoordsString = hubCoords ? `${hubCoords.lat},${hubCoords.lng}` : null;
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentlyUpdated, setRecentlyUpdated] = useState({});
+  const [isHubHovered, setIsHubHovered] = useState(false);
   const hasFetched = useRef(false);
   const prevPositionsRef = useRef({});
   const updateTimeoutsRef = useRef({});
+  const hasFittedBounds = useRef(false);
 
   useEffect(() => {
     const fetchInitialMapping = async () => {
@@ -39,39 +40,42 @@ export default function WebhookDashboard() {
       hasFetched.current = true;
 
       try {
-        const cachedStatus = sessionStorage.getItem('mceasy_statuses');
-        let jsonStatus = cachedStatus ? JSON.parse(cachedStatus) : null;
+        const cachedStatus = localStorage.getItem('mceasy_statuses');
+        const cacheTime = localStorage.getItem('mceasy_statuses_time');
+        const isCacheValid = cacheTime && Date.now() - parseInt(cacheTime) < 12 * 60 * 60 * 1000;
 
-        const fetchOptions = {
-          headers: {
-            Authorization:
-              'Bearer bzN0sF5410bwaH5C2P7SXrg96dUki49Q1vr47TBKa5Ja4QN1Dw969baW3S9xCRSU1TY3WGBbJ61bXDd2Ud8dYi3tzSHJVL4daAsJddTHff5uNe00oveafNKox97e6uCqdOLH0H913Qda5e0GJb68tfsKoS1y2Dy',
-          },
-        };
+        let vehiclesArray = cachedStatus && isCacheValid ? JSON.parse(cachedStatus) : null;
 
-        if (!jsonStatus) {
-          const resStatus = await fetch(
-            'https://vsms-v2-public.mceasy.com/v1/vehicles/statuses',
-            fetchOptions
-          );
-          if (resStatus.ok) {
-            jsonStatus = await resStatus.json();
-            sessionStorage.setItem('mceasy_statuses', JSON.stringify(jsonStatus));
+        if (!vehiclesArray || vehiclesArray.length === 0) {
+          try {
+            const response = await getMCEasyData('/vehicles/statuses');
+            vehiclesArray = Array.isArray(response) ? response : response?.data || [];
+
+            localStorage.setItem('mceasy_statuses', JSON.stringify(vehiclesArray));
+            localStorage.setItem('mceasy_statuses_time', Date.now().toString());
+          } catch (apiError) {
+            if (apiError.status === 429 && cachedStatus) {
+              vehiclesArray = JSON.parse(cachedStatus);
+            } else {
+              throw apiError;
+            }
           }
         }
 
-        if (jsonStatus?.data) {
+        if (vehiclesArray && Array.isArray(vehiclesArray)) {
           const mapping = {};
-          jsonStatus.data.forEach((vehicle) => {
+          vehiclesArray.forEach((vehicle) => {
             if (vehicle.imei) {
               mapping[vehicle.imei] = vehicle.vehicleGroups || [];
             }
           });
           setImeiToGroupsMap(mapping);
-          setAllVehiclesMaster(jsonStatus.data);
+          setAllVehiclesMaster(vehiclesArray);
         }
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -81,9 +85,7 @@ export default function WebhookDashboard() {
   useEffect(() => {
     const fetchWebhookData = async () => {
       try {
-        const res = await fetch(`/webhook-result.json?t=${Date.now()}`);
-        const jsonData = await res.json();
-        setWebhookData(jsonData);
+        const jsonData = await getTrackingData();
 
         const entries = Object.values(jsonData).filter(
           (entry) => entry && entry.event && entry.event.data
@@ -210,14 +212,21 @@ export default function WebhookDashboard() {
     }
   }, [focusedPlate, mapInstance, targetLat, targetLng]);
 
-  if (allVehiclesMaster.length === 0)
-    return <div className="p-8 text-center text-gray-500">Memuat data armada...</div>;
+  useEffect(() => {
+    if (mapInstance && vehicles.length > 0 && !hasFittedBounds.current) {
+      const latlngs = vehicles
+        .map((v) => [parseFloat(v.latitude), parseFloat(v.longitude)])
+        .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
+
+      if (latlngs.length > 0) {
+        mapInstance.fitBounds(latlngs, { padding: [50, 50], maxZoom: 16 });
+        hasFittedBounds.current = true;
+      }
+    }
+  }, [mapInstance, vehicles]);
 
   const focusedVehicleData = vehicles.find((v) => v.licensePlate === focusedPlate);
-  const defaultCenter =
-    vehicles.length > 0 && !isNaN(parseFloat(vehicles[0].latitude))
-      ? [parseFloat(vehicles[0].latitude), parseFloat(vehicles[0].longitude)]
-      : [-6.2, 106.8];
+  const defaultCenter = [-6.2, 106.8];
 
   const headerItems = [
     {
@@ -279,61 +288,65 @@ export default function WebhookDashboard() {
         subtitle="Pembaruan otomatis dari Webhook"
         items={headerItems}
       />
-      <BodyCard isLoading={false} isEmpty={false}>
-        {vehicles.length > 0 ? (
-          <div className="h-full w-full relative z-0">
-            {focusedVehicleData && (
-              <div className="absolute bottom-4 right-4 z-400 bg-white/95 backdrop-blur px-3 py-2 rounded shadow-md border border-gray-200 w-52 pointer-events-none text-xs">
-                <h3 className="font-bold text-gray-800 border-b pb-1 mb-1.5">
-                  Info: {focusedVehicleData.licensePlate}
-                </h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Storage:</span>{' '}
-                    <span className="font-semibold truncate ml-2">
-                      {focusedVehicleData.hullNo || '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Sopir:</span>{' '}
-                    <span className="font-semibold truncate ml-2">
-                      {focusedVehicleData.driver1?.fullname || '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Status:</span>{' '}
-                    <span
-                      className={`font-semibold ${focusedVehicleData.engineOn ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {focusedVehicleData.engineOn ? 'Menyala' : 'Mati'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Speed:</span>{' '}
-                    <span className="font-semibold">{focusedVehicleData.speed || 0} km/h</span>
-                  </div>
+      <BodyCard isLoading={isLoading} isEmpty={vehicles.length === 0}>
+        <div className="h-full w-full relative z-0">
+          {focusedVehicleData && (
+            <div className="absolute bottom-4 right-4 z-400 bg-white/95 backdrop-blur px-3 py-2 rounded shadow-md border border-gray-200 w-52 pointer-events-none text-xs">
+              <h3 className="font-bold text-gray-800 border-b pb-1 mb-1.5">
+                Info: {focusedVehicleData.licensePlate}
+              </h3>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Storage:</span>{' '}
+                  <span className="font-semibold truncate ml-2">
+                    {focusedVehicleData.hullNo || '-'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Sopir:</span>{' '}
+                  <span className="font-semibold truncate ml-2">
+                    {focusedVehicleData.driver1?.fullname || '-'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Status:</span>{' '}
+                  <span
+                    className={`font-semibold ${focusedVehicleData.engineOn ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {focusedVehicleData.engineOn ? 'Menyala' : 'Mati'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Speed:</span>{' '}
+                  <span className="font-semibold">{focusedVehicleData.speed || 0} km/h</span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <Map center={defaultCenter} zoom={14} onMapReady={setMapInstance}>
-              {(rl, L, icons) => (
-                <>
-                  {hubCoords && (
-                    <>
-                      <rl.Marker
-                        position={[hubCoords.lat, hubCoords.lng]}
-                        icon={icons.circle('🏢', 'bg-black', 'text-sm', 'border-white')}
+          <Map center={defaultCenter} zoom={14} onMapReady={setMapInstance}>
+            {(rl, L, icons) => (
+              <>
+                {hubCoords && (
+                  <>
+                    <rl.Marker
+                      position={[hubCoords.lat, hubCoords.lng]}
+                      icon={icons.circle('🏢', 'bg-black', 'text-sm', 'border-white')}
+                      eventHandlers={{
+                        mouseover: () => setIsHubHovered(true),
+                        mouseout: () => setIsHubHovered(false),
+                      }}
+                    >
+                      <rl.Tooltip
+                        permanent={false}
+                        direction="top"
+                        offset={[0, -15]}
+                        className="font-bold text-xs"
                       >
-                        <rl.Tooltip
-                          permanent
-                          direction="top"
-                          offset={[0, -15]}
-                          className="font-bold text-xs"
-                        >
-                          {storedLocationName}
-                        </rl.Tooltip>
-                      </rl.Marker>
+                        Hub
+                      </rl.Tooltip>
+                    </rl.Marker>
+                    {isHubHovered && (
                       <rl.Circle
                         center={[hubCoords.lat, hubCoords.lng]}
                         radius={500}
@@ -344,60 +357,54 @@ export default function WebhookDashboard() {
                           dashArray: '5, 10',
                         }}
                       />
-                    </>
-                  )}
-                  {vehicles.map((v) => {
-                    const lat = parseFloat(v.latitude);
-                    const lng = parseFloat(v.longitude);
-                    if (isNaN(lat) || isNaN(lng)) return null;
+                    )}
+                  </>
+                )}
+                {vehicles.map((v) => {
+                  const lat = parseFloat(v.latitude);
+                  const lng = parseFloat(v.longitude);
+                  if (isNaN(lat) || isNaN(lng)) return null;
 
-                    const isThisFocused = focusedPlate === v.licensePlate;
-                    const isUpdated = !!recentlyUpdated[v.imei];
+                  const isThisFocused = focusedPlate === v.licensePlate;
+                  const isUpdated = !!recentlyUpdated[v.imei];
 
-                    return (
-                      <rl.Marker
-                        key={v.imei || v.licensePlate}
-                        position={[lat, lng]}
-                        icon={icons.circle(
-                          '🚚',
-                          isThisFocused ? 'bg-red-600' : isUpdated ? 'bg-green-500' : 'bg-blue-600',
-                          'text-sm',
-                          isThisFocused
-                            ? 'border-red-200'
-                            : isUpdated
-                              ? 'border-green-200'
-                              : 'border-white'
-                        )}
-                        eventHandlers={{
-                          click: () => {
-                            setFocusedPlate((prev) =>
-                              prev === v.licensePlate ? null : v.licensePlate
-                            );
-                          },
-                        }}
+                  return (
+                    <rl.Marker
+                      key={v.imei || v.licensePlate}
+                      position={[lat, lng]}
+                      icon={icons.circle(
+                        '🚚',
+                        isThisFocused ? 'bg-red-600' : isUpdated ? 'bg-green-500' : 'bg-blue-600',
+                        'text-sm',
+                        isThisFocused
+                          ? 'border-red-200'
+                          : isUpdated
+                            ? 'border-green-200'
+                            : 'border-white'
+                      )}
+                      eventHandlers={{
+                        click: () => {
+                          setFocusedPlate((prev) =>
+                            prev === v.licensePlate ? null : v.licensePlate
+                          );
+                        },
+                      }}
+                    >
+                      <rl.Tooltip
+                        permanent={isThisFocused}
+                        direction="top"
+                        offset={[0, -15]}
+                        className="font-bold text-xs"
                       >
-                        {isThisFocused && (
-                          <rl.Tooltip
-                            permanent
-                            direction="top"
-                            offset={[0, -15]}
-                            className="font-bold text-xs"
-                          >
-                            {v.licensePlate}
-                          </rl.Tooltip>
-                        )}
-                      </rl.Marker>
-                    );
-                  })}
-                </>
-              )}
-            </Map>
-          </div>
-        ) : (
-          <div className="h-full w-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
-            <span className="text-gray-500">Tidak ada kendaraan di cabang ini</span>
-          </div>
-        )}
+                        {v.licensePlate}
+                      </rl.Tooltip>
+                    </rl.Marker>
+                  );
+                })}
+              </>
+            )}
+          </Map>
+        </div>
       </BodyCard>
     </div>
   );
