@@ -718,7 +718,6 @@ export default function DeliveryPage() {
           disabled={isLoading || isDownloading}
           onApply={setStorageFilter}
           selectedTypes={storageFilter}
-          t={t}
         />
       ),
     },
@@ -731,7 +730,6 @@ export default function DeliveryPage() {
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
-          t={t}
         />
       ),
     },

@@ -18,6 +18,7 @@ export default function BodyCard({
   longLoadingContent = null,
   routingData = null,
   footer = null,
+  isScroll = true,
 }) {
   const { t } = useLanguage();
   const [showScrollHint, setShowScrollHint] = useState(false);
@@ -174,7 +175,7 @@ export default function BodyCard({
           )}
         </div>
 
-        {!isLoading && !isEmpty && showScrollHint && (
+        {!isLoading && !isEmpty && showScrollHint && isScroll && (
           <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 flex flex-col justify-end items-center pb-4 rounded-b-xl transition-opacity duration-300 animate-in fade-in">
             <div className="flex flex-col items-center animate-bounce">
               <span className="text-[10px] uppercase font-bold tracking-widest text-sky-600 dark:text-sky-400 mb-1 bg-white/50 dark:bg-slate-800/80 px-2 rounded backdrop-blur-sm">

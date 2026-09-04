@@ -263,7 +263,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
               disabled={!!selectedLocation}
               hubsToShow={currentHubListView || allHubsList}
               onChange={handleLocationChange}
-              placeholder={`-- ${t('common.select')} ${t('common.branch')}--`}
               value={tempSelectedLocation}
             />
             {!selectedLocation ? (

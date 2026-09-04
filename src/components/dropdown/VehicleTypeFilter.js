@@ -1,6 +1,7 @@
 'use client';
 
 import Dropdown from '@/components/dropdown/Dropdown';
+import { useLanguage } from '@/context/LanguageContext';
 import { getVehicleTypes } from '@/lib/api';
 import { getBaseVehicleType } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -13,8 +14,8 @@ export default function VehicleTypeFilter({
   onMasterTypesLoad,
   disabled = false,
   className = 'w-full',
-  t,
 }) {
+  const { t } = useLanguage();
   const [masterTypes, setMasterTypes] = useState([]);
 
   useEffect(() => {

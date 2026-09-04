@@ -101,12 +101,12 @@ const colorLegend = [
   {
     name: 'duplicate_driver',
     colors: 'text-white bg-yellow-100 dark:bg-yellow-400/30',
-    text: 'vehicle.tabs.duplicate_driver'
+    text: 'vehicle.tabs.duplicate_driver',
   },
   {
     name: 'incomplete_data',
     colors: 'text-white bg-red-100 dark:bg-red-400/30',
-    text: 'vehicle.tabs.incomplete_data'
+    text: 'vehicle.tabs.incomplete_data',
   },
 ];
 
@@ -257,7 +257,6 @@ export default function VehicleData() {
           disabled={isLoading || isDownloading}
           onApply={setStorageFilter}
           selectedTypes={storageFilter}
-          t={t}
         />
       ),
     },
@@ -271,7 +270,6 @@ export default function VehicleData() {
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
-          t={t}
         />
       ),
     },

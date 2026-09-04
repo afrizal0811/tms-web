@@ -361,7 +361,6 @@ export default function Dashboard({ driverData }) {
           disabled={isLoadingSelected}
           onApply={setStorageFilter}
           selectedTypes={storageFilter}
-          t={t}
         />
       ),
       hideLabel: false,
@@ -376,7 +375,6 @@ export default function Dashboard({ driverData }) {
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
-          t={t}
         />
       ),
     },

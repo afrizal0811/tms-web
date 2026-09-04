@@ -71,6 +71,7 @@ export const dictionary = {
       scroll_down: 'Scroll ke bawah',
       search: 'Cari',
       select: 'Pilih',
+      speed: 'Kecepatan',
       start_time: 'Waktu Mulai',
       storage_type: 'Tipe Penyimpanan',
       task: 'Tugas',
@@ -437,7 +438,6 @@ export const dictionary = {
           multiday: 'Multiday',
           name: 'Nama',
           odd_even: 'Ganjil Genap',
-          speed: 'Kecepatan',
           vehicle_tags: 'Tag Kendaraan',
           volume_min: 'Volume Min',
           weight_min: 'Berat Min',
@@ -709,6 +709,13 @@ export const dictionary = {
         waiting_time: 'Waktu Tunggu',
       },
     },
+    tracking: {
+      title: 'Pelacakan Kendaraan',
+      subtitle: 'Melacak lokasi kendaraan secara',
+      subtitle_highlight: 'langsung',
+      engine_status: 'Status Mesin',
+    
+    }
   },
   en: {
     common: {
@@ -780,6 +787,7 @@ export const dictionary = {
       scroll_down: 'Scroll down',
       search: 'Search',
       select: 'Select',
+      speed: 'Speed',
       start_time: 'Start Time',
       storage_type: 'Storage Type',
       task: 'Task',

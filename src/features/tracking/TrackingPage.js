@@ -10,9 +10,8 @@ import { getMCEasyData, getTrackingData } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { getDistance } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-export default function WebhookDashboard() {
-  const { t } = useLanguage();
 
+export default function TrackingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [liveDataMap, setLiveDataMap] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
@@ -23,6 +22,16 @@ export default function WebhookDashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedStorageTypes, setSelectedStorageTypes] = useState(['DRY', 'FROZEN']);
   const { storedLocationName } = getLocalStorage();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentlyUpdated, setRecentlyUpdated] = useState({});
+  const [isHubHovered, setIsHubHovered] = useState(false);
+
+  const { t } = useLanguage();
+  const hasFetched = useRef(false);
+  const prevPositionsRef = useRef({});
+  const updateTimeoutsRef = useRef({});
+  const hasFittedBounds = useRef(false);
+
   const activeGroupFilter = storedLocationName === 'GIIC' ? 'Cikarang' : storedLocationName;
   const cachedHubs = getCachedHubs() || [];
   const activeHubData = cachedHubs.find((h) => h.name === storedLocationName);
@@ -31,13 +40,6 @@ export default function WebhookDashboard() {
       ? { lat: activeHubData.lat, lng: activeHubData.lng }
       : null;
   const hubCoordsString = hubCoords ? `${hubCoords.lat},${hubCoords.lng}` : null;
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [recentlyUpdated, setRecentlyUpdated] = useState({});
-  const [isHubHovered, setIsHubHovered] = useState(false);
-  const hasFetched = useRef(false);
-  const prevPositionsRef = useRef({});
-  const updateTimeoutsRef = useRef({});
-  const hasFittedBounds = useRef(false);
 
   useEffect(() => {
     const fetchInitialMapping = async () => {
@@ -176,8 +178,8 @@ export default function WebhookDashboard() {
       const distance = getDistance(vCoordsString, hubCoordsString);
       const isInsideHub = distance !== null && distance <= 500;
 
-      if (statusFilter === 'Ongoing' && isInsideHub) return false;
-      if (statusFilter === 'Done' && !isInsideHub) return false;
+      if (statusFilter === t('common.status.ongoing') && isInsideHub) return false;
+      if (statusFilter === t('common.status.done') && !isInsideHub) return false;
     }
 
     return true;
@@ -200,12 +202,6 @@ export default function WebhookDashboard() {
     setFocusedPlate(v.licensePlate);
     setSearchQuery(v.licensePlate);
     setShowSuggestions(false);
-  };
-
-  const handleSearchKeyDown = (e) => {
-    if (e.key === 'Enter' && searchSuggestions.length > 0) {
-      handleSelectSuggestion(searchSuggestions[0]);
-    }
   };
 
   const targetVehicleFocus = focusedPlate
@@ -245,21 +241,17 @@ export default function WebhookDashboard() {
 
   const headerItems = [
     {
-      label: 'Cari Kendaraan',
+      label: t('common.search'),
       component: (
-        <div
-          className="relative w-full xl:w-64"
-          onKeyDown={handleSearchKeyDown}
-          onFocusCapture={() => setShowSuggestions(true)}
-        >
+        <div className="relative w-full xl:w-64" onFocusCapture={() => setShowSuggestions(true)}>
           <SearchBar
             value={searchQuery}
             onChange={(val) => {
               setSearchQuery(val);
               setShowSuggestions(true);
             }}
-            placeholder="Cari driver / plat nomor"
-            tooltip="Cari driver / plat nomor"
+            placeholder={t('common.search')}
+            tooltip={`${t('common.license_number')}, ${t('common.driver')}`}
             className="w-full"
             width="w-full"
           />
@@ -284,9 +276,9 @@ export default function WebhookDashboard() {
       component: (
         <Dropdown
           options={[
-            { label: 'Semua (All)', value: 'All' },
-            { label: 'Ongoing (Luar Hub)', value: 'Ongoing' },
-            { label: 'Done (Dalam Hub)', value: 'Done' },
+            { label: t('common.all'), value: t('common.all') },
+            { label: t('common.status.ongoing'), value: t('common.status.ongoing') },
+            { label: t('common.status.done'), value: t('common.status.done') },
           ]}
           value={statusFilter}
           onChange={setStatusFilter}
@@ -295,12 +287,11 @@ export default function WebhookDashboard() {
       ),
     },
     {
-      label: 'Tipe Storage',
+      label: t('common.storage_type'),
       component: (
         <StorageTypeFilter
           selectedTypes={selectedStorageTypes}
           onApply={setSelectedStorageTypes}
-          t={t}
           className="w-full xl:w-48!"
         />
       ),
@@ -310,40 +301,39 @@ export default function WebhookDashboard() {
   return (
     <div className="w-full px-4 sm:px-6 h-[calc(100vh-100px)] flex flex-col">
       <HeaderCard
-        title="Status Lokasi Armada"
-        subtitle="Pembaruan otomatis dari Webhook"
+        title={t('tracking.title')}
+        subtitle={
+          <>
+            {t('tracking.subtitle')}{' '}
+            <span className="font-semibold text-sky-600">{t('tracking.subtitle_highlight')}</span>
+          </>
+        }
         items={headerItems}
       />
-      <BodyCard isLoading={isLoading} isEmpty={vehicles.length === 0}>
+      <BodyCard isLoading={isLoading} isEmpty={vehicles.length === 0} isScroll={false}>
         <div className="h-full w-full relative z-0">
           {focusedVehicleData && (
-            <div className="absolute bottom-4 right-4 z-400 bg-white/95 backdrop-blur px-3 py-2 rounded shadow-md border border-gray-200 w-52 pointer-events-none text-xs">
-              <h3 className="font-bold text-gray-800 border-b pb-1 mb-1.5">
-                Info: {focusedVehicleData.licensePlate}
+            <div className="absolute bottom-4 right-4 z-400 bg-white/95 backdrop-blur px-3 py-2 rounded shadow-md border border-gray-200 w-65 h-auto pointer-events-none text-xs">
+              <h3 className="text-[15px] font-bold text-gray-800 border-b pb-1 mb-1.5">
+                {focusedVehicleData.licensePlate}
               </h3>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Storage:</span>{' '}
-                  <span className="font-semibold truncate ml-2">
-                    {focusedVehicleData.hullNo || '-'}
-                  </span>
+              <div className="space-y-1 flex justify-between">
+                <div className="flex flex-col gap-2">
+                  <span className="text-gray-500">{t('common.driver')}</span>
+                  <span className="text-gray-500">{t('common.storage_type')}</span>
+                  <span className="text-gray-500">{t('tracking.engine_status')}</span>
+                  <span className="text-gray-500">{t('common.speed')}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Sopir:</span>{' '}
-                  <span className="font-semibold truncate ml-2">
+                <div className="flex flex-col gap-2 text-right">
+                  <span className="font-semibold truncate ">
                     {focusedVehicleData.driver1?.fullname || '-'}
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Status:</span>{' '}
+                  <span className="font-semibold truncate">{focusedVehicleData.hullNo || '-'}</span>
                   <span
                     className={`font-semibold ${focusedVehicleData.engineOn ? 'text-green-600' : 'text-red-600'}`}
                   >
-                    {focusedVehicleData.engineOn ? 'Menyala' : 'Mati'}
+                    {focusedVehicleData.engineOn ? 'ON' : 'OFF'}
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Speed:</span>{' '}
                   <span className="font-semibold">{focusedVehicleData.speed || 0} km/h</span>
                 </div>
               </div>
