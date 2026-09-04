@@ -1,7 +1,7 @@
 import { apiFetch } from './base';
 
 export const getTrackingData = () => {
-  return apiFetch(`/api/tracking?t=${Date.now()}`, 'Gagal mengambil data tracking');
+  return apiFetch(`/api/mceasy/tracking?t=${Date.now()}`, 'Gagal mengambil data tracking webhook');
 };
 
 export const getMCEasyData = (endpoint, params = {}) => {
