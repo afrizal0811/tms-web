@@ -2,13 +2,17 @@
 import BodyCard from '@/components/card/BodyCard';
 import HeaderCard from '@/components/card/HeaderCard';
 import Dropdown from '@/components/dropdown/Dropdown';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import Map from '@/components/Map';
 import SearchBar from '@/components/SearchBar';
+import { useLanguage } from '@/context/LanguageContext';
 import { getMCEasyData, getTrackingData } from '@/lib/api';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { getDistance } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 export default function WebhookDashboard() {
+  const { t } = useLanguage();
+
   const [isLoading, setIsLoading] = useState(true);
   const [liveDataMap, setLiveDataMap] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
@@ -17,7 +21,8 @@ export default function WebhookDashboard() {
   const [allVehiclesMaster, setAllVehiclesMaster] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const { storedLocationName, storedLocation } = getLocalStorage();
+  const [selectedStorageTypes, setSelectedStorageTypes] = useState(['DRY', 'FROZEN']);
+  const { storedLocationName } = getLocalStorage();
   const activeGroupFilter = storedLocationName === 'GIIC' ? 'Cikarang' : storedLocationName;
   const cachedHubs = getCachedHubs() || [];
   const activeHubData = cachedHubs.find((h) => h.name === storedLocationName);
@@ -143,6 +148,7 @@ export default function WebhookDashboard() {
         latitude: live.latitude,
         longitude: live.longitude,
         speed: live.speed,
+        direction: live.direction,
         engineOn: live.engine_on,
         driver1: { ...v.driver1, fullname: live.driver || v.driver1?.fullname },
         hullNo: live.hull_no || v.hullNo,
@@ -155,6 +161,15 @@ export default function WebhookDashboard() {
   const vehicles = mergedVehicles.filter((v) => {
     const groups = v.vehicleGroups || imeiToGroupsMap[v.imei] || [];
     if (activeGroupFilter && !groups.includes(activeGroupFilter)) return false;
+
+    const sType = v.hullNo ? v.hullNo.toUpperCase() : '';
+    const isDry = sType.includes('DRY');
+    const isFrozen = sType.includes('FRZ') || sType.includes('FROZEN');
+
+    if (selectedStorageTypes.length === 1) {
+      if (selectedStorageTypes.includes('DRY') && !isDry) return false;
+      if (selectedStorageTypes.includes('FROZEN') && !isFrozen) return false;
+    }
 
     if (hubCoordsString && v.latitude && v.longitude && statusFilter !== 'All') {
       const vCoordsString = `${v.latitude},${v.longitude}`;
@@ -279,6 +294,17 @@ export default function WebhookDashboard() {
         />
       ),
     },
+    {
+      label: 'Tipe Storage',
+      component: (
+        <StorageTypeFilter
+          selectedTypes={selectedStorageTypes}
+          onApply={setSelectedStorageTypes}
+          t={t}
+          className="w-full xl:w-48!"
+        />
+      ),
+    },
   ];
 
   return (
@@ -368,13 +394,22 @@ export default function WebhookDashboard() {
                   const isThisFocused = focusedPlate === v.licensePlate;
                   const isUpdated = !!recentlyUpdated[v.imei];
 
+                  const dir = v.direction || 0;
+                  const isEast = dir > 0 && dir < 180;
+                  const flip = isEast ? -1 : 1;
+                  const rot = isEast ? dir - 90 : dir - 270;
+
+                  const sType = v.hullNo ? v.hullNo.toUpperCase() : '';
+                  const isDry = sType.includes('DRY');
+                  const baseColor = isDry ? 'bg-orange-500' : 'bg-blue-600';
+
                   return (
                     <rl.Marker
                       key={v.imei || v.licensePlate}
                       position={[lat, lng]}
                       icon={icons.circle(
-                        '🚚',
-                        isThisFocused ? 'bg-red-600' : isUpdated ? 'bg-green-500' : 'bg-blue-600',
+                        `<div style="transform: rotate(${rot}deg) scaleX(${flip}); display: inline-block; transition: transform 0.3s ease;">🚚</div>`,
+                        isThisFocused ? 'bg-red-600' : isUpdated ? 'bg-green-500' : baseColor,
                         'text-sm',
                         isThisFocused
                           ? 'border-red-200'
