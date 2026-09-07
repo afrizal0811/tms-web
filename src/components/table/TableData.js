@@ -19,6 +19,7 @@ const compareValues = (aVal, bVal) =>
 
 export default function TableData({
   columns = [],
+  subHeaders = false,
   data = [],
   onRowClick,
   isLoading = false,
@@ -100,49 +101,101 @@ export default function TableData({
           <table className="w-full table-auto" style={{ minWidth: '100%' }}>
             <thead className="bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
               <tr>
-                {columns.map((col, index) => (
-                  <Th
-                    key={index}
-                    widthClass={col.width}
-                    className={
-                      col.sortable
-                        ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 select-none'
-                        : ''
-                    }
-                  >
-                    <div
-                      className={`flex items-center gap-1 text-center ${col.align === 'center' ? 'justify-center' : ''}`}
-                      onClick={() => col.sortable && handleSort(col.key)}
+                {columns.map((col, index) => {
+                  const hasSub = subHeaders && col.subColumns?.length > 0;
+                  return (
+                    <Th
+                      key={index}
+                      widthClass={col.width}
+                      className={
+                        col.sortable
+                          ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 select-none'
+                          : ''
+                      }
+                      rowSpan={subHeaders && !hasSub ? 2 : 1}
+                      colSpan={hasSub ? col.subColumns.length : 1}
                     >
-                      {col.label}
-                      {col.sortable && (
-                        <span className="text-[10px] text-gray-400">
-                          {sortConfig?.key === col.key
-                            ? sortConfig.direction === 'asc'
-                              ? '▲'
-                              : '▼'
-                            : '↕'}
-                        </span>
-                      )}
-                    </div>
-                  </Th>
-                ))}
+                      <div
+                        className={`flex items-center gap-1 text-center ${col.align === 'center' || hasSub ? 'justify-center' : ''}`}
+                        onClick={() => col.sortable && handleSort(col.key)}
+                      >
+                        {col.label}
+                        {col.sortable && (
+                          <span className="text-[10px] text-gray-400">
+                            {sortConfig?.key === col.key
+                              ? sortConfig.direction === 'asc'
+                                ? '▲'
+                                : '▼'
+                              : '↕'}
+                          </span>
+                        )}
+                      </div>
+                    </Th>
+                  );
+                })}
               </tr>
+              {subHeaders && (
+                <tr>
+                  {columns.map((col) => {
+                    if (col.subColumns?.length > 0) {
+                      return col.subColumns.map((subCol, subIndex) => (
+                        <Th
+                          key={`${col.key}-sub-${subIndex}`}
+                          widthClass={subCol.width}
+                          className={
+                            subCol.sortable
+                              ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 select-none'
+                              : ''
+                          }
+                        >
+                          <div
+                            className={`flex items-center gap-1 text-center ${subCol.align === 'center' ? 'justify-center' : ''}`}
+                            onClick={() => subCol.sortable && handleSort(subCol.key)}
+                          >
+                            {subCol.label}
+                            {subCol.sortable && (
+                              <span className="text-[10px] text-gray-400">
+                                {sortConfig?.key === subCol.key
+                                  ? sortConfig.direction === 'asc'
+                                    ? '▲'
+                                    : '▼'
+                                  : '↕'}
+                              </span>
+                            )}
+                          </div>
+                        </Th>
+                      ));
+                    }
+                    return null;
+                  })}
+                </tr>
+              )}
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {paginatedData.map((row, rowIndex) => {
                 const tooltipMsg = rowTooltip ? rowTooltip(row) : null;
+                const absoluteIndex =
+                  paginate && limit !== 'all' ? (page - 1) * Number(limit) + rowIndex : rowIndex;
+
+                const dataColumns = subHeaders
+                  ? columns.reduce(
+                      (acc, col) =>
+                        col.subColumns?.length > 0 ? [...acc, ...col.subColumns] : [...acc, col],
+                      []
+                    )
+                  : columns;
+
                 const trContent = (
                   <tr
                     key={row._id || rowIndex}
                     onClick={() => onRowClick && onRowClick(row)}
                     className={`${onRowClick ? 'cursor-pointer' : ''} ${
-                      rowClassName?.(row) || 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                      rowClassName?.(row) || 'hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
-                    {columns.map((col, colIndex) => (
+                    {dataColumns.map((col, colIndex) => (
                       <Td key={colIndex} className="text-[13px]!">
-                        {col.render ? col.render(row) : row[col.key]}
+                        {col.render ? col.render(row, absoluteIndex) : row[col.key]}
                       </Td>
                     ))}
                   </tr>

@@ -26,11 +26,13 @@
 │   │   │   └── route.js
 │   │   ├── get-vehicles
 │   │   │   └── route.js
+│   │   ├── mceasy
+│   │   │   ├── route.js
+│   │   │   └── tracking
+│   │   │       └── route.js
 │   │   ├── pending-details
 │   │   │   └── route.js
 │   │   ├── reasons
-│   │   │   └── route.js
-│   │   ├── tracking
 │   │   │   └── route.js
 │   │   ├── truck-usage
 │   │   │   └── route.js
@@ -255,6 +257,7 @@
     │   ├── fields.js
     │   ├── hubs.js
     │   ├── index.js
+    │   ├── mceasy.js
     │   ├── pendingDetails.js
     │   ├── reasons.js
     │   ├── results.js

@@ -203,3 +203,31 @@ export async function POST(request) {
     );
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const body = await request.json();
+    const { updates } = body;
+
+    if (!updates || !Array.isArray(updates)) {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    const transactions = updates.map((u) =>
+      prisma.driver.update({
+        where: { id: u.id },
+        data: {
+          imei: u.imei ? String(u.imei) : null,
+          vms_id: u.vms_id ? String(u.vms_id) : null,
+          vms_driver_id: u.vms_driver_id ? String(u.vms_driver_id) : null,
+        },
+      })
+    );
+
+    await prisma.$transaction(transactions);
+    return NextResponse.json({ message: 'Update MCEasy Berhasil' }, { status: 200 });
+  } catch (error) {
+    console.error('Error Patch Driver:', error);
+    return NextResponse.json({ error: 'Gagal update MCEasy' }, { status: 500 });
+  }
+}

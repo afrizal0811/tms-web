@@ -138,6 +138,9 @@ export async function getDriverData(selectedLocation) {
 
           return {
             _id: d.id,
+            vmsVehicleId: d.vms_id,
+            imei: d.imei,
+            vmsDriverId: d.vms_driver_id,
             email: d.email,
             name: d.name,
             plat: d.plat,
