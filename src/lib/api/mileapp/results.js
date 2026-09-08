@@ -55,11 +55,8 @@ export async function getResult(id) {
     throw new Error('ID result harus disertakan');
   }
 
-  const params = new URLSearchParams();
-  params.append('id', id);
-
   const result = await apiFetch(
-    `/api/mileapp/result?${params.toString()}`,
+    `/api/mileapp/results/${id}`,
     `Gagal mengambil data result dengan ID ${id}`
   );
 
@@ -67,7 +64,7 @@ export async function getResult(id) {
 }
 
 export async function getResultHistories(resultIds) {
-  return await apiFetch('/api/mileapp/result-histories', 'Gagal mengambil data batch histories', {
+  return await apiFetch('/api/mileapp/results/histories', 'Gagal mengambil data batch histories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resultIds }),

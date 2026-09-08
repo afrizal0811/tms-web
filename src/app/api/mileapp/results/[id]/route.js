@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
 
     if (!id) {
       return NextResponse.json(

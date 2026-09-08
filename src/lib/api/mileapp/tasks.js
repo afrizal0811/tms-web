@@ -28,14 +28,11 @@ export async function getTasks({
 
 export async function getTask(id) {
   if (!id) {
-    throw new Error('ID result harus disertakan');
+    throw new Error('ID task harus disertakan');
   }
 
-  const params = new URLSearchParams();
-  params.append('id', id);
-
   const result = await apiFetch(
-    `/api/mileapp/task?${params.toString()}`,
+    `/api/mileapp/tasks/${id}`,
     `Gagal mengambil data task dengan ID ${id}`
   );
 

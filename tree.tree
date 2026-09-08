@@ -2,8 +2,15 @@
 │   ├── api
 │   │   ├── mceasy
 │   │   │   ├── route.js
-│   │   │   └── tracking
-│   │   │       └── route.js
+│   │   │   ├── tracking
+│   │   │   │   └── route.js
+│   │   │   ├── users
+│   │   │   │   └── route.js
+│   │   │   └── vehicles
+│   │   │       ├── statuses
+│   │   │       │   └── route.js
+│   │   │       └── [id]
+│   │   │           └── route.js
 │   │   └── mileapp
 │   │       ├── drivers
 │   │       │   ├── route.js
@@ -19,9 +26,9 @@
 │   │       │   └── route.js
 │   │       ├── result
 │   │       │   └── route.js
-│   │       ├── result-histories
-│   │       │   └── route.js
 │   │       ├── results
+│   │       │   ├── histories
+│   │       │   │   └── route.js
 │   │       │   └── route.js
 │   │       ├── roles
 │   │       │   └── route.js
@@ -203,6 +210,7 @@
 │   │   │   ├── CustomTable.js
 │   │   │   ├── ReasonManager.js
 │   │   │   ├── StandardTypeManager.js
+│   │   │   ├── SyncModal.js
 │   │   │   └── VehicleMappingManager.js
 │   │   ├── helper
 │   │   │   └── constants.js
@@ -256,7 +264,9 @@
     │   ├── base.js
     │   ├── mceasy
     │   │   ├── index.js
-    │   │   └── mceasy.js
+    │   │   ├── tracking.js
+    │   │   ├── users.js
+    │   │   └── vehicles.js
     │   └── mileapp
     │       ├── drivers.js
     │       ├── fields.js
