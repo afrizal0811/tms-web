@@ -116,7 +116,7 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
       width: 'w-[5%]',
       sortable: false,
       align: 'center',
-      label: t('vehicle.tabs.template.speed'),
+      label: t('common.speed'),
       render: (row) => <div className="text-center w-full">{row.speed}</div>,
     },
     {

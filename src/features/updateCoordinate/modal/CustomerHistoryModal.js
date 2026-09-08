@@ -56,11 +56,11 @@ export default function CustomerHistoryModal({
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                <span>{t('longlat.modal.new_loc')}</span>
+                <span>{t('common.coord_new')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 opacity-60"></span>
-                <span>{t('longlat.modal.old_loc')}</span>
+                <span>{t('common.coord_old')}</span>
               </div>
             </div>
           </div>

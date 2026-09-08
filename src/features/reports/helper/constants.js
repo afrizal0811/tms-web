@@ -221,7 +221,7 @@ export const taskManualKeyMapping = {
   Action: 'action',
 };
 
-export const taskDateHeaders = [
+export const serviceLevelHeaders = [
   'Flow',
   'Driver Name',
   'License Number',
@@ -236,4 +236,17 @@ export const taskDateHeaders = [
   'Arrived Time',
   'Completed Time',
   'Service Level',
+];
+
+export const tripActivityHeaders = [
+  'tripId',
+  'assignedVehicleId',
+  'username',
+  'assignedVehicle',
+  'startTrip',
+  'startTripCoordinate',
+  'endTrip',
+  'endTripCoordinate',
+  'totalDistance',
+  'totalDuration',
 ];

@@ -3,7 +3,7 @@
 import Dropdown from '@/components/dropdown/Dropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs } from '@/lib/api';
+import { getHubs } from '@/lib/api/mileapp';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import {
   getCachedHubs,
@@ -20,11 +20,11 @@ export default function LocationSelector({
   disabled = false,
   hubsToShow = [],
   onChange,
-  placeholder = '-- Pilih Lokasi --',
   value,
 }) {
+  const { t } = useLanguage();
   const data = Array.isArray(hubsToShow) ? hubsToShow : [];
-
+  const placeholder = `-- ${t('common.select')} ${t('common.branch')}--`;
   const handleChange = (id) => {
     const option = data.find((d) => String(d._id) === String(id));
     const label = option ? (option.name ?? '') : '';
@@ -34,7 +34,7 @@ export default function LocationSelector({
   const getOptions = () => {
     let opts = [];
     if (placeholder) opts.push({ label: placeholder, value: '' });
-    if (isEmpty(data)) opts.push({ label: '-- Tidak ada lokasi --', value: '' });
+    if (isEmpty(data)) opts.push({ label: t('common.no_data'), value: '' });
 
     const dataOpts = data.map((hub) => {
       const val = String(hub._id ?? hub.id ?? '');

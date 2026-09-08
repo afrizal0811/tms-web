@@ -7,7 +7,7 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
-import { getHubs } from '@/lib/api';
+import { getHubs } from '@/lib/api/mileapp';
 import {
   getCachedHubs,
   getLocalStorage,

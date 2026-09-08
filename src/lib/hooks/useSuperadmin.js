@@ -1,7 +1,7 @@
 // File: src/lib/hooks/useSuperadmin.js
 'use client';
 
-import { getRoles } from '@/lib/api';
+import { getRoles } from '@/lib/api/mileapp';
 import {
   getLocalStorage,
   getSuperadminRoleId,

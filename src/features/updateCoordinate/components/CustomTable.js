@@ -76,7 +76,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
       width: 'w-[15%]',
       sortable: false,
       align: 'center',
-      label: t('longlat.table.new_longlat'),
+      label: t('common.coord_new'),
       render: (row) => <div className="font-mono text-center w-full">{row.newLonglat}</div>,
     },
     {

@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api';
+import { createVehicleType, deleteVehicleType, updateVehicleType } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';

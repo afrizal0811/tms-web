@@ -1,18 +1,17 @@
 'use client';
 
 import ToggleButton from '@/components/button/ToggleButton';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Dropdown from '@/components/dropdown/Dropdown';
 import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
+import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getTasks } from '@/lib/api';
+import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -343,6 +342,19 @@ export default function TaskPage() {
 
   const headerItems = [
     {
+      label: t('common.search'),
+      component: (
+        <SearchBar
+          disabled={loading}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
+          value={searchQuery}
+          width="w-full"
+        />
+      ),
+    },
+    {
       label: t('common.range_delivery'),
       component: (
         <CustomDatePicker
@@ -354,18 +366,7 @@ export default function TaskPage() {
           useCustomRangeFormat={true}
           showApplyButton={true}
           onApply={handleApplyDate}
-        />
-      ),
-    },
-    {
-      label: t('common.search'),
-      component: (
-        <SearchBar
-          disabled={loading}
-          onChange={setSearchQuery}
-          placeholder={t('common.search')}
-          tooltip={searchPlaceholder}
-          value={searchQuery}
+          className="w-full"
         />
       ),
     },
@@ -373,7 +374,7 @@ export default function TaskPage() {
       label: t('common.status.delivery_status'),
       component: (
         <Dropdown
-          className="w-full xl:w-40!"
+          className="w-full"
           disabled={loading}
           onChange={setStatusFilter}
           options={statusOptions}
@@ -385,7 +386,7 @@ export default function TaskPage() {
       label: t('common.status.task_status'),
       component: (
         <Dropdown
-          className="w-full xl:w-40!"
+          className="w-full"
           disabled={loading}
           onChange={setStatusTaskFilter}
           options={statusTaskOptions}
@@ -399,7 +400,7 @@ export default function TaskPage() {
             label: t('common.branch'),
             component: (
               <ToggleButton
-                className="w-full xl:w-40!"
+                className="w-full"
                 disabled={loading}
                 onChange={(val) => setIsAllHub(val === 'ALL')}
                 options={[
@@ -415,8 +416,8 @@ export default function TaskPage() {
   ];
 
   return (
-    <div className="w-full px-4 sm:px-6 h-[calc(100vh-100px)] flex flex-col">
-      <HeaderCard
+    <>
+      <PageTemplate
         title={t('task_detail.title')}
         subtitle={
           <>
@@ -426,9 +427,7 @@ export default function TaskPage() {
             {t('task_detail.subtitle')}
           </>
         }
-        items={headerItems}
-      />
-      <BodyCard
+        headerItems={headerItems}
         isLoading={false}
         isEmpty={false}
         footer={{
@@ -447,7 +446,8 @@ export default function TaskPage() {
             setIsTaskModalOpen(true);
           }}
         />
-      </BodyCard>
+      </PageTemplate>
+
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
@@ -465,6 +465,6 @@ export default function TaskPage() {
         taskId={selectedTaskId}
         driverData={driverData}
       />
-    </div>
+    </>
   );
 }

@@ -1,30 +1,140 @@
 'use client';
 
-import { postHubs, postDrivers, postRoles } from '@/lib/api';
+import Button from '@/components/button/Button';
+import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
+import { patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
+import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Card from '../components/Card';
+import SyncModal from '../components/SyncModal';
 
 export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, translate }) {
-  const [syncLoading, setSyncLoading] = useState({});
+  const [syncLoading, setSyncLoading] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [mismatchedData, setMismatchedData] = useState([]);
+  const [matchedData, setMatchedData] = useState([]);
+  const [mcEasyDrivers, setMcEasyDrivers] = useState([]);
+  const [isDriverLoading, setIsDriverLoading] = useState(false);
+
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
+
+  const fetchMcEasyDrivers = useCallback(async () => {
+    setIsDriverLoading(true);
+    try {
+      const [res, mileappData] = await Promise.all([
+        getMceasyUsers({ 'position-name': 'Driver' }),
+        getDriverData(activeHubId),
+      ]);
+
+      const validEmails = new Set(
+        mileappData.map((m) => m.email?.toLowerCase().trim()).filter(Boolean)
+      );
+
+      const rawUsers = res.data || res;
+      const filteredDrivers = rawUsers.filter(
+        (driver) => driver.email && validEmails.has(driver.email.toLowerCase().trim())
+      );
+
+      const seenLabels = new Set();
+      const options = [];
+
+      filteredDrivers.forEach((d) => {
+        let label = d.fullname;
+        if (seenLabels.has(label)) label = `${label} (${d.email})`;
+        seenLabels.add(label);
+        options.push({ label, value: d.userId });
+      });
+
+      options.unshift({ label: translate('setting.tab.modal.blank_driver'), value: '-' });
+      setMcEasyDrivers(options);
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }));
+    } finally {
+      setIsDriverLoading(false);
+    }
+  }, [activeHubId, translate]);
+
+  useEffect(() => {
+    if (modalOpen) fetchMcEasyDrivers();
+  }, [modalOpen, fetchMcEasyDrivers]);
+
+  const handleMismatchedChange = (id, key, value) => {
+    setMismatchedData((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, [key]: value, isUpdated: true } : m))
+    );
+  };
+
+  const handleSaveMismatches = async () => {
+    setSyncLoading('drivers');
+    try {
+      const updates = mismatchedData.filter((m) => m.isUpdated);
+      for (const update of updates) {
+        if (!update.mcVehicleId) continue;
+
+        const payload = new URLSearchParams();
+        if (update.updatedDriverId !== undefined) {
+          payload.append(
+            'driver1Id',
+            update.updatedDriverId !== null ? update.updatedDriverId : ''
+          );
+        }
+        if (update.updatedPlat) {
+          payload.append('licensePlate', update.updatedPlat);
+        }
+
+        try {
+          await patchMceasyVehicle(update.mcVehicleId, payload.toString());
+        } catch (err) {
+          throw new Error(`[${update.mcPlat}] ${err.message}`);
+        }
+      }
+
+      await postDrivers([activeHubId]);
+      if (matchedData.length > 0) {
+        await patchDriverMceasy(activeHubId, storedLocationName, matchedData);
+      }
+
+      setModalOpen(false);
+      toastSuccess(translate('common.toast.success'));
+      await onRefresh();
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }));
+    } finally {
+      setSyncLoading(null);
+    }
+  };
 
   const executeSync = async (type) => {
     if (isReadOnly) return;
-
-    setSyncLoading({ [type]: true });
+    setSyncLoading(type);
     try {
       if (type === 'hubs') await postHubs();
       else if (type === 'roles') await postRoles();
-      else if (type === 'drivers') await postDrivers([activeHubId]);
+      else if (type === 'drivers') {
+        const result = await patchDriverMceasy(activeHubId, storedLocationName);
+
+        if (!result.success && result.mismatched?.length > 0) {
+          setMismatchedData(result.mismatched);
+          setMatchedData(result.matched || []);
+          setModalOpen(true);
+          setSyncLoading(null);
+          return;
+        }
+
+        await postDrivers([activeHubId]);
+        if (result.matched?.length > 0) {
+          await patchDriverMceasy(activeHubId, storedLocationName, result.matched);
+        }
+      }
+
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-      window.location.reload();
     } catch (error) {
       toastError(translate('common.toast.error', { err: error.message }));
     } finally {
-      setSyncLoading({ [type]: false });
+      setSyncLoading(null);
     }
   };
 
@@ -60,15 +170,13 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
           </div>
         </div>
         {!isReadOnly && (
-          <button
+          <Button
             onClick={() => executeSync(type)}
-            disabled={syncLoading[type]}
-            className="w-full mt-4 py-2.5 bg-slate-50 dark:bg-sky-100 text-sm font-medium text-slate-700 dark:text-sky-600 border border-slate-300 hover:border-sky-400 dark:hover:border-sky-600 disabled:border-slate-200 rounded-md shadow-none hover:bg-slate-100 dark:hover:bg-sky-200 hover:text-sky-700 dark:hover:text-sky-700 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed "
-          >
-            {syncLoading[type]
-              ? translate('setting.sync_loading')
-              : translate('setting.tab.button.btn_sync')}
-          </button>
+            isLoading={syncLoading === type}
+            disabled={syncLoading !== null}
+            text={translate('setting.tab.button.btn_sync')}
+            size="md"
+          />
         )}
       </div>
     );
@@ -95,6 +203,17 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
           ))}
         </div>
       </Card>
+
+      <SyncModal
+        isOpen={modalOpen}
+        mismatchedData={mismatchedData}
+        onMismatchedChange={handleMismatchedChange}
+        onSave={handleSaveMismatches}
+        mcEasyDrivers={mcEasyDrivers}
+        isDriverLoading={isDriverLoading}
+        isSaving={syncLoading === 'drivers'}
+        translate={translate}
+      />
     </div>
   );
 }

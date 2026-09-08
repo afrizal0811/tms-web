@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { patchHubs } from '@/lib/api';
+import { patchHubs } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import Card from './Card';

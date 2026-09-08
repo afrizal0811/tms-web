@@ -4,7 +4,7 @@ import Button from '@/components/button/Button';
 import InformationButton from '@/components/button/InformationButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import { useLanguage } from '@/context/LanguageContext';
-import { getTasks, getTrash } from '@/lib/api';
+import { getTasks, getTrash } from '@/lib/api/mileapp';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { generateTaskCountWorkbook } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';

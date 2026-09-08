@@ -19,9 +19,12 @@ export const dictionary = {
       click_for_detail_param: 'Klik {parameter} untuk detail',
       close_time: 'Waktu Tutup',
       color_exp: 'Keterangan Warna',
-      created_time: 'Dibuat pada',
+      coord_new: 'Koordinat Baru',
+      coord_old: 'Koordinat Lama',
+      coordinate: 'Koordinat',
       created_by: 'Dibuat oleh',
       created_from: 'Dibuat dari',
+      created_time: 'Dibuat pada',
       customer_id: 'ID Pelanggan',
       customer_name: 'Nama Pelanggan',
       dark_mode: 'Mode Gelap',
@@ -71,6 +74,7 @@ export const dictionary = {
       scroll_down: 'Scroll ke bawah',
       search: 'Cari',
       select: 'Pilih',
+      speed: 'Kecepatan',
       start_time: 'Waktu Mulai',
       storage_type: 'Tipe Penyimpanan',
       task: 'Tugas',
@@ -162,7 +166,7 @@ export const dictionary = {
     },
     navbar: {
       bread_report: 'Laporan Barang Roti',
-      coordinate: 'Longlat',
+      coordinate: 'Koordinat',
       custom_report: 'Laporan Kustom',
       daily_report: 'Laporan Harian',
       delivery: 'Pengiriman',
@@ -176,6 +180,7 @@ export const dictionary = {
       summary: 'Rangkuman',
       task: 'Tugas',
       task_counter_report: 'Laporan Jumlah Tugas',
+      tracking: 'Pelacakan',
       update: 'Perbarui',
     },
     dashboard: {
@@ -284,18 +289,19 @@ export const dictionary = {
       },
     },
     report: {
-      bulk_report: 'Laporan Massal',
       bread_report: 'Laporan Barang Roti',
+      bulk_report: 'Laporan Massal',
       change_date: 'Ubah Tanggal Ruting',
+      custom_report: 'Laporan Kustom',
       daily_report: 'Laporan Harian',
       kpi_report: 'Laporan KPI',
       note_diff_date: 'Tanggal Mulai dan Selesai berbeda',
       note_double_click: 'Sopir tekan Mulai-Selesai beberapa kali',
+      service_level: 'Perjanjian Tingkat Layanan',
       task_counter_report: 'Laporan Jumlah Tugas',
-      task_routing: 'Tugas Ruting',
       task_manual: 'Tugas Manual',
-      task_date: 'Tanggal Tugas',
-      custom_report: 'Laporan Kustom',
+      task_routing: 'Tugas Ruting',
+      trip_activity: 'Aktivitas Perjalanan',
       manual: {
         upload_title: 'Tekan untuk unggah atau seret berkas di sini',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
@@ -334,9 +340,10 @@ export const dictionary = {
         cut_off: 'Batas Waktu',
         info_change_time: 'Untuk ruting non H-1',
         info_delivery: 'Ruting otomatis H-1',
-        task_routing_info: 'Laporan tugas yang memiliki data ruting',
+        service_level_info: 'Laporan tanggal pembuataan, penugasan, dan penyelesaian tugas',
         task_manual_info: 'Laporan tugas yang memiliki informasi penugasan manual',
-        task_date_info: 'Laporan tanggal pembuataan, penugasan, dan penyelesaian tugas',
+        task_routing_info: 'Laporan tugas yang memiliki data ruting',
+        trip_activity_info: 'Laporan aktivitas sopir',
       },
     },
     excel: {
@@ -381,7 +388,6 @@ export const dictionary = {
           sheet_name: 'Hasil Pending SO',
         },
         update_coord: {
-          new_longlat: 'Longlat Baru',
           sheet_name: 'Perbarui Longlat',
         },
         help: {
@@ -401,14 +407,10 @@ export const dictionary = {
       table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
       table: {
-        new_longlat: 'Titik Lokasi Baru',
         update_time: 'Waktu Pembaruan',
       },
       modal: {
-        new_loc: 'Lokasi Baru',
-        new_longlat: 'Titik Lokasi Baru',
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
-        old_loc: 'Lokasi Lama',
         times: 'kali',
         title: 'Riwayat Pembaruan Lokasi',
         total_update: 'Total Pembaruan',
@@ -436,7 +438,6 @@ export const dictionary = {
           multiday: 'Multiday',
           name: 'Nama',
           odd_even: 'Ganjil Genap',
-          speed: 'Kecepatan',
           vehicle_tags: 'Tag Kendaraan',
           volume_min: 'Volume Min',
           weight_min: 'Berat Min',
@@ -646,7 +647,6 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Terakhir diperbarui:',
-      sync_loading: 'Menyelaraskan...',
       title: 'Pengaturan',
       tab: {
         general: {
@@ -674,6 +674,11 @@ export const dictionary = {
         },
         button: {
           btn_sync: 'Sinkronkan',
+        },
+        modal: {
+          blank_driver: 'Tanpa Sopir',
+          sync_subtitle:
+            'Terdapat perbedaan data MileApp dan McEasy untuk data kendaraan dan sopir',
         },
       },
     },
@@ -708,6 +713,12 @@ export const dictionary = {
         waiting_time: 'Waktu Tunggu',
       },
     },
+    tracking: {
+      title: 'Pelacakan Kendaraan',
+      subtitle: 'Melacak lokasi kendaraan secara',
+      subtitle_highlight: 'langsung',
+      engine_status: 'Status Mesin',
+    },
   },
   en: {
     common: {
@@ -727,9 +738,12 @@ export const dictionary = {
       click_for_detail_param: 'Click {parameter} for details',
       close_time: 'Close Time',
       color_exp: 'Color Legend',
-      created_time: 'Created Time',
+      coord_new: 'New Coordinate',
+      coord_old: 'Old Coordinate',
+      coordinate: 'Coordinate',
       created_by: 'Created By',
       created_from: 'Created From',
+      created_time: 'Created Time',
       customer_id: 'Customer ID',
       customer_name: 'Customer Name',
       dark_mode: 'Dark Mode',
@@ -779,6 +793,7 @@ export const dictionary = {
       scroll_down: 'Scroll down',
       search: 'Search',
       select: 'Select',
+      speed: 'Speed',
       start_time: 'Start Time',
       storage_type: 'Storage Type',
       task: 'Task',
@@ -884,6 +899,7 @@ export const dictionary = {
       summary: 'Summary',
       task: 'Task',
       task_counter_report: 'Task Counter Report',
+      tracking: 'Tracking',
       update: 'Update',
     },
     dashboard: {
@@ -993,18 +1009,19 @@ export const dictionary = {
       },
     },
     report: {
-      bulk_report: 'Bulk Report',
       bread_report: 'Bread Item Report',
+      bulk_report: 'Bulk Report',
       change_date: 'Change Routing Date',
+      custom_report: 'Custom Report',
       daily_report: 'Daily Report',
       kpi_report: 'KPI Report',
       note_diff_date: 'Start and Finish date are different',
       note_double_click: 'Driver press Start-Finish multiple times',
+      service_level: 'Service Level Agreement',
       task_counter_report: 'Task Counter Report',
-      task_routing: 'Task Routing',
       task_manual: 'Task Manual',
-      task_date: 'Task Date',
-      custom_report: 'Custom Report',
+      task_routing: 'Task Routing',
+      trip_activity: 'Trip Activity',
       manual: {
         upload_title: 'Click to upload or drag files here',
         upload_subtitle: 'Only .xlsx and .xls file formats are supported',
@@ -1043,9 +1060,10 @@ export const dictionary = {
         cut_off: 'Cut-off Time',
         info_change_time: 'For non D-1 routing',
         info_delivery: 'Auto D-1 routing',
-        task_routing_info: 'Task report with routing data',
+        service_level_info: 'Report of task creation, assignment, and completion dates',
         task_manual_info: 'Task report with manual assign information',
-        task_date_info: 'Report of task creation, assignment, and completion dates',
+        task_routing_info: 'Task report with routing data',
+        trip_activity_info: 'Report of driver trip activity',
       },
     },
     excel: {
@@ -1090,7 +1108,7 @@ export const dictionary = {
           sheet_name: 'Pending SO Results',
         },
         update_coord: {
-          new_longlat: 'New Coordinates',
+          new_coord: 'New Coordinates',
           sheet_name: 'Update Coordinates',
         },
         help: {
@@ -1110,13 +1128,9 @@ export const dictionary = {
       table_detail: '*Click to view map location',
       title: 'Update Coordinates',
       table: {
-        new_longlat: 'New Location Point',
         update_time: 'Update Time',
       },
       modal: {
-        new_loc: 'New Location',
-        new_longlat: 'New Location Point',
-        old_loc: 'Old Location',
         times: 'time(s)',
         title: 'Location Update History',
         total_update: 'Total Update(s)',
@@ -1351,7 +1365,6 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Last updated:',
-      sync_loading: 'Synchronizing...',
       title: 'Setting',
       tab: {
         general: {
@@ -1379,6 +1392,11 @@ export const dictionary = {
         },
         button: {
           btn_sync: 'Synchronize',
+        },
+        modal: {
+          blank_driver: 'No Driver',
+          sync_subtitle:
+            'There are differences between MileApp and McEasy data for vehicles and drivers',
         },
       },
     },

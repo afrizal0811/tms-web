@@ -144,7 +144,6 @@ export default function Table({
     })),
   ];
 
-  console.log('customColumns :', customColumns);
   if (!isReadOnly) {
     customColumns.push({
       key: 'actions',

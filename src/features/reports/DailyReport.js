@@ -3,11 +3,15 @@
 import CustomDatePicker from '@/components/CustomDatePicker';
 import FileUploader from '@/components/fileUploader/FileUploader';
 import Modal from '@/components/modal/Modal';
-import Report from '@/components/page/Report';
+import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isDateSunday, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';
-import { handleBulkDownload, handleManualDownload, handleSingleDownload } from './helper/help';
+import {
+  handleBulkDownload,
+  handleManualDownload,
+  handleSingleDownload,
+} from './helper/dailyHelper';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -147,7 +151,7 @@ export default function DailyReport({
   };
 
   return (
-    <Report
+    <ReportTemplate
       title={titleMenu}
       isBulkMode={isBulkMode}
       isManualMode={isManualMode}
@@ -232,6 +236,6 @@ export default function DailyReport({
           />
         </div>
       )}
-    </Report>
+    </ReportTemplate>
   );
 }

@@ -2,7 +2,7 @@
 
 import Button from '@/components/button/Button';
 import Modal from '@/components/modal/Modal';
-import { getVehicleTypes, postVehicleMappings } from '@/lib/api';
+import { getVehicleTypes, postVehicleMappings } from '@/lib/api/mileapp';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
 

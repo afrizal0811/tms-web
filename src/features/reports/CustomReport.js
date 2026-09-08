@@ -1,7 +1,7 @@
 'use client';
 
 import RadioButton from '@/components/button/RadioButton';
-import Report from '@/components/page/Report';
+import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -10,11 +10,12 @@ import JSZip from 'jszip';
 import { useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import {
-  getDatesInRange,
   processTaskDateReport,
   processTaskManualReport,
   processTaskRoutingReport,
-} from './helper/help';
+  processTripActivityReport,
+} from './helper/customHelper';
+import { getDatesInRange } from './helper/help';
 
 export default function CustomReport() {
   const [singleDate, setSingleDate] = useState(new Date());
@@ -38,9 +39,14 @@ export default function CustomReport() {
       tooltip: t('report.tooltip.task_manual_info'),
     },
     {
-      id: 'task_date',
-      label: t('report.task_date'),
-      tooltip: t('report.tooltip.task_date_info'),
+      id: 'service_level',
+      label: t('report.service_level'),
+      tooltip: t('report.tooltip.service_level_info'),
+    },
+    {
+      id: 'trip_activity',
+      label: t('report.trip_activity'),
+      tooltip: t('report.tooltip.trip_activity_info'),
     },
   ];
 
@@ -64,7 +70,8 @@ export default function CustomReport() {
       const reportTypeConfig = {
         detail: { process: processTaskRoutingReport, title: t('report.task_routing') },
         manual: { process: processTaskManualReport, title: t('report.task_manual') },
-        task_date: { process: processTaskDateReport, title: t('report.task_date') },
+        service_level: { process: processTaskDateReport, title: t('report.service_level') },
+        trip_activity: { process: processTripActivityReport, title: t('report.trip_activity') },
       };
 
       const config = reportTypeConfig[reportType];
@@ -125,7 +132,7 @@ export default function CustomReport() {
     : `${bulkText} ${t('report.custom_report')}`.trim();
 
   return (
-    <Report
+    <ReportTemplate
       title={titleMenu}
       isBulkMode={isBulkMode}
       onToggleMode={handleRadioToggle}

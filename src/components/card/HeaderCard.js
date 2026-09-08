@@ -7,7 +7,7 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
 
   return (
     <div
-      className={`relative z-50 flex flex-col ${itemsLength < 5 ? 'lg:flex-row' : ''} justify-between items-start lg:items-center bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 gap-4 transition-colors duration-200`}
+      className={`relative z-50 flex flex-col ${itemsLength < 5 ? 'lg:flex-row' : ''} justify-between items-start lg:items-center bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 mb-6 gap-4 lg:gap-6 transition-colors duration-200`}
     >
       {(title || subtitle) && (
         <div
@@ -45,28 +45,28 @@ export default function HeaderCard({ title = '', subtitle = '', items = [] }) {
         </div>
       )}
 
-      <div className={`w-full xl:w-auto ${itemsLength > 1 && !isOpen ? 'hidden md:grid' : 'grid'}`}>
-        <div>
-          <div
-            className={`grid grid-cols-1 ${itemsLength > 1 ? 'md:grid-cols-2' : ''} xl:flex xl:flex-row gap-3 w-full xl:w-auto items-end xl:items-center mt-2 md:mt-0 pb-1`}
-          >
-            {items.map((item, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-start w-full relative"
-                style={{ zIndex: 50 - index }}
+      <div
+        className={`w-full ${itemsLength < 5 ? 'lg:w-auto' : 'lg:w-full'} ${itemsLength > 1 && !isOpen ? 'hidden md:grid ' : 'grid'}`}
+      >
+        <div
+          className={`grid grid-cols-1 ${itemsLength > 1 ? 'md:grid-cols-2' : ''} xl:flex xl:flex-row gap-3 w-full xl:w-auto items-end xl:items-center mt-2 md:mt-0 pb-1`}
+        >
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-start w-full relative"
+              style={{ zIndex: 50 - index }}
+            >
+              <label
+                className={`block text-xs mb-1 ml-1 font-medium select-none ${
+                  item.hideLabel ? 'text-transparent ' : 'text-gray-400 dark:text-slate-400'
+                } `}
               >
-                <label
-                  className={`block text-xs mb-1 ml-1 font-medium select-none ${
-                    item.hideLabel ? 'text-transparent ' : 'text-gray-400 dark:text-slate-400'
-                  } `}
-                >
-                  {item.label || 'Label'}
-                </label>
-                {item.component}
-              </div>
-            ))}
-          </div>
+                {item.label || 'Label'}
+              </label>
+              {item.component}
+            </div>
+          ))}
         </div>
       </div>
     </div>
