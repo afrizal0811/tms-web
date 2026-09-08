@@ -1,9 +1,8 @@
 'use client';
 
 import Button from '@/components/button/Button';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
@@ -217,26 +216,26 @@ export default function UpdateCoordinatePage() {
   );
 
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      <HeaderCard title={t('longlat.title')} subtitle={subtitle} items={headerItems} />
-      <BodyCard
-        isEmpty={!loading && isEmpty(processedData)}
-        emptyMessage={emptyMessage}
-        isLoading={loading}
-        footer={{
-          text: t('common.click_for_detail'),
-        }}
-      >
-        <div className="p-0 h-full overflow-y-auto">
-          <CustomTable
-            data={processedData}
-            historyMap={historyMap}
-            selectedDate={selectedDate}
-            t={t}
-            localeCode={localeCode}
-          />
-        </div>
-      </BodyCard>
-    </div>
+    <PageTemplate
+      title={t('longlat.title')}
+      subtitle={subtitle}
+      headerItems={headerItems}
+      isEmpty={!loading && isEmpty(processedData)}
+      emptyMessage={emptyMessage}
+      isLoading={loading}
+      footer={{
+        text: t('common.click_for_detail'),
+      }}
+    >
+      <div className="p-0 h-full overflow-y-auto">
+        <CustomTable
+          data={processedData}
+          historyMap={historyMap}
+          selectedDate={selectedDate}
+          t={t}
+          localeCode={localeCode}
+        />
+      </div>
+    </PageTemplate>
   );
 }

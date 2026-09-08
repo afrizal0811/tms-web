@@ -1,10 +1,9 @@
 'use client';
 
 import Button from '@/components/button/Button';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api/mileapp';
 import useSummaryData from '@/lib/hooks/useSummaryData';
@@ -443,8 +442,8 @@ export default function SummaryPage() {
   };
 
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 space-y-6 mb-2">
-      <HeaderCard
+    <>
+      <PageTemplate
         title={t('summary.title')}
         subtitle={
           <>
@@ -452,25 +451,25 @@ export default function SummaryPage() {
             <span className="font-semibold text-sky-600">{t('summary.subtitle_highlight')} </span>
           </>
         }
-        items={headerItems}
-      />
-      <BodyCard
+        headerItems={headerItems}
         activeTabId={activeTab}
-        isEmpty={isTabEmpty()}
-        emptyMessage={emptyMessage}
-        isLoading={isLoading}
         onTabClick={handleTabClick}
         tabs={tabConfig.map((tab) => ({
           id: tab.id,
           label: tab.label,
           extraContent: getPingDot(tab.id),
         }))}
-        longLoadingContent={longLoading}
-        routingData={rawData.results}
+        isLoading={isLoading}
+        isEmpty={isTabEmpty()}
+        emptyMessage={emptyMessage}
         footer={getFooterConfig()}
+        bodyProps={{
+          longLoadingContent: longLoading,
+          routingData: rawData.results,
+        }}
       >
         {!isLoading && renderContent()}
-      </BodyCard>
+      </PageTemplate>
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
@@ -484,6 +483,6 @@ export default function SummaryPage() {
           setTempDateRange(dateRange);
         }}
       />
-    </div>
+    </>
   );
 }

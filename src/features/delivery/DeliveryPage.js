@@ -3,12 +3,11 @@
 import Button from '@/components/button/Button';
 import InformationButton from '@/components/button/InformationButton';
 import ToggleButton from '@/components/button/ToggleButton';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import TaskModal from '@/components/modal/TaskModal';
+import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
@@ -890,8 +889,8 @@ export default function DeliveryPage() {
   });
   if (!isClient) return null;
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 flex flex-col grow h-full">
-      <HeaderCard
+    <>
+      <PageTemplate
         title={t('delivery.title')}
         subtitle={
           <>
@@ -899,21 +898,15 @@ export default function DeliveryPage() {
             <span className="font-semibold text-sky-600">{t('delivery.subtitle_highlight')}</span>
           </>
         }
-        items={headerItems}
-      />
-
-      <BodyCard
+        headerItems={headerItems}
         activeTabId={activeVehicleId}
-        className="min-h-[400px]"
-        isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
-        isLoading={isLoading}
         onTabClick={setActiveVehicleId}
-        emptyMessage={emptyMessage}
-        routingData={routingResults}
         tabs={tabData}
-        footer={{
-          text: t('common.click_for_detail'),
-        }}
+        isLoading={isLoading}
+        isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
+        emptyMessage={emptyMessage}
+        footer={{ text: t('common.click_for_detail') }}
+        bodyProps={{ className: 'min-h-[400px]', routingData: routingResults }}
       >
         <div className="bg-white dark:bg-slate-800 h-full flex flex-col border-none transition-colors">
           <div className="overflow-y-auto grow h-full m-0 ">
@@ -931,7 +924,7 @@ export default function DeliveryPage() {
             )}
           </div>
         </div>
-      </BodyCard>
+      </PageTemplate>
 
       <PartialRoutingModal
         isOpen={isRoutingModalOpen}
@@ -972,6 +965,6 @@ export default function DeliveryPage() {
         taskId={selectedTaskId}
         driverData={driversArray}
       />
-    </div>
+    </>
   );
 }

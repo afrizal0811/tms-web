@@ -1,10 +1,9 @@
 'use client';
 
 import Button from '@/components/button/Button';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
+import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDriverData } from '@/lib/driverData';
@@ -306,34 +305,30 @@ export default function VehicleData() {
     isColorLegend: true,
   };
   return (
-    <div className="w-full max-w-none px-4 sm:px-6">
-      <HeaderCard
-        title={t('vehicle.title')}
-        subtitle={
-          <>
-            {t('vehicle.subtitle')}{' '}
-            <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
-          </>
-        }
-        items={headerItems}
-      />
-      <BodyCard
-        activeTabId={activeTab}
-        isEmpty={!isLoading && totalItems === 0}
-        isLoading={isLoading}
-        onTabClick={setActiveTab}
-        tabs={tabs}
-        footer={footerData}
-      >
-        <div className="flex-1 flex flex-col m-0 overflow-auto">
-          {(activeTab === 'master' || activeTab === 'conditional') && (
-            <VehicleTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
-          )}
-          {activeTab === 'template' && (
-            <TemplateTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
-          )}
-        </div>
-      </BodyCard>
-    </div>
+    <PageTemplate
+      title={t('vehicle.title')}
+      subtitle={
+        <>
+          {t('vehicle.subtitle')}{' '}
+          <span className="font-semibold text-sky-600">{t('vehicle.subtitle_highlight')}</span>
+        </>
+      }
+      headerItems={headerItems}
+      activeTabId={activeTab}
+      onTabClick={setActiveTab}
+      tabs={tabs}
+      isLoading={isLoading}
+      isEmpty={!isLoading && totalItems === 0}
+      footer={footerData}
+    >
+      <div className="flex-1 flex flex-col m-0 overflow-auto">
+        {(activeTab === 'master' || activeTab === 'conditional') && (
+          <VehicleTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
+        )}
+        {activeTab === 'template' && (
+          <TemplateTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
+        )}
+      </div>
+    </PageTemplate>
   );
 }

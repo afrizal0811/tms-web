@@ -1,10 +1,9 @@
 'use client';
 
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
+import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
@@ -406,59 +405,57 @@ export default function Dashboard({ driverData }) {
     },
   ];
   return (
-    <div className="w-full max-w-none px-4 sm:px-6 pb-2">
-      <HeaderCard
-        title="Dashboard"
-        subtitle={
-          <>
-            {t('dashboard.subtitle')}{' '}
-            <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
-          </>
+    <PageTemplate
+      title="Dashboard"
+      subtitle={
+        <>
+          {t('dashboard.subtitle')}{' '}
+          <span className="font-semibold text-sky-600">{t('dashboard.subtitle_highlight')}</span>
+        </>
+      }
+      headerItems={headerItems}
+      activeTabId={activeTab}
+      onTabClick={handleTabClick}
+      tabs={cardTabs}
+      isLoading={isLoadingSelected}
+      isEmpty={isCardEmpty}
+      emptyMessage={emptyMessage}
+      footer={
+        activeTab === 'RoutingVsActual' && {
+          text: t('common.click_for_detail'),
         }
-        items={headerItems}
-      />
-      <BodyCard
-        tabs={cardTabs}
-        activeTabId={activeTab}
-        onTabClick={handleTabClick}
-        isLoading={isLoadingSelected}
-        timerStartTime={fetchStartTimeRef.current}
-        isEmpty={isCardEmpty}
-        emptyMessage={emptyMessage}
-        routingData={rawData.results}
-        footer={
-          activeTab === 'RoutingVsActual' && {
-            text: t('common.click_for_detail'),
-          }
-        }
-      >
-        <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
-          {activeTab === 'Detail' && (
-            <DetailTab loading={loading} summaryData={summaryData} driverData={driverData} />
-          )}
+      }
+      bodyProps={{
+        timerStartTime: fetchStartTimeRef.current,
+        routingData: rawData.results,
+      }}
+    >
+      <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">
+        {activeTab === 'Detail' && (
+          <DetailTab loading={loading} summaryData={summaryData} driverData={driverData} />
+        )}
 
-          {activeTab === 'RoutingVsActual' && (
-            <RoutingVsActualTab
-              loading={loading}
-              tasks={filteredDailyTasks}
-              results={rawData.results}
-              drivers={driverData}
-              selectedDate={selectedDate}
-              hasPendingGR={hasPendingGR}
-            />
-          )}
+        {activeTab === 'RoutingVsActual' && (
+          <RoutingVsActualTab
+            loading={loading}
+            tasks={filteredDailyTasks}
+            results={rawData.results}
+            drivers={driverData}
+            selectedDate={selectedDate}
+            hasPendingGR={hasPendingGR}
+          />
+        )}
 
-          {activeTab === 'Diagram' && !isYearlyLoading && (
-            <DiagramTab
-              yearlyTasks={filteredYearlyTasks}
-              hubId={currentHubId}
-              driverData={driverData}
-              selectedDate={selectedDate}
-              hasPendingGR={hasPendingGR}
-            />
-          )}
-        </div>
-      </BodyCard>
-    </div>
+        {activeTab === 'Diagram' && !isYearlyLoading && (
+          <DiagramTab
+            yearlyTasks={filteredYearlyTasks}
+            hubId={currentHubId}
+            driverData={driverData}
+            selectedDate={selectedDate}
+            hasPendingGR={hasPendingGR}
+          />
+        )}
+      </div>
+    </PageTemplate>
   );
 }

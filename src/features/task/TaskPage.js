@@ -1,13 +1,12 @@
 'use client';
 
 import ToggleButton from '@/components/button/ToggleButton';
-import BodyCard from '@/components/card/BodyCard';
-import HeaderCard from '@/components/card/HeaderCard';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Dropdown from '@/components/dropdown/Dropdown';
 import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
+import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
@@ -417,8 +416,8 @@ export default function TaskPage() {
   ];
 
   return (
-    <div className="w-full px-4 sm:px-6 h-[calc(100vh-100px)] flex flex-col">
-      <HeaderCard
+    <>
+      <PageTemplate
         title={t('task_detail.title')}
         subtitle={
           <>
@@ -428,9 +427,7 @@ export default function TaskPage() {
             {t('task_detail.subtitle')}
           </>
         }
-        items={headerItems}
-      />
-      <BodyCard
+        headerItems={headerItems}
         isLoading={false}
         isEmpty={false}
         footer={{
@@ -449,7 +446,8 @@ export default function TaskPage() {
             setIsTaskModalOpen(true);
           }}
         />
-      </BodyCard>
+      </PageTemplate>
+
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
@@ -467,6 +465,6 @@ export default function TaskPage() {
         taskId={selectedTaskId}
         driverData={driverData}
       />
-    </div>
+    </>
   );
 }
