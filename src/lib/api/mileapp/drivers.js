@@ -1,6 +1,6 @@
 import { getBasePlate } from '../../utils';
 import { apiFetch } from '../base';
-import { getMceasyData } from '../mceasy/mceasy';
+import { getVehiclesStatuses } from '../mceasy';
 
 export async function getDrivers(hubId) {
   const params = new URLSearchParams();
@@ -36,7 +36,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
   const targetLocation =
     storedLocationName?.toUpperCase() === 'GIIC' ? 'Cikarang' : storedLocationName;
   const [mceasyData, dbDrivers] = await Promise.all([
-    getMceasyData('/vehicles/statuses', { location: targetLocation }),
+    getVehiclesStatuses({ location: targetLocation }),
     getDrivers(activeHubId),
   ]);
 

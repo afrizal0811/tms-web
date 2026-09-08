@@ -4,7 +4,7 @@ import Button from '@/components/button/Button';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Modal from '@/components/modal/Modal';
 import TableData from '@/components/table/TableData';
-import { getMceasyData } from '@/lib/api/mceasy';
+import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
 import { patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -27,12 +27,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     setIsDriverLoading(true);
     try {
       const [res, mileappData] = await Promise.all([
-        getMceasyData('/users', {
-          'position-name': 'Driver',
-          show: 10000,
-          'is-active': true,
-          'order-by': 'fullname:asc',
-        }),
+        getMceasyUsers({ 'position-name': 'Driver' }),
         getDriverData(activeHubId),
       ]);
 
@@ -86,22 +81,10 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
           payload.append('driver1Id', update.updatedDriverId || '');
         if (update.updatedPlat) payload.append('licensePlate', update.updatedPlat);
 
-        const res = await fetch(
-          `/api/mceasy?endpoint=${encodeURIComponent(`/vehicles/${update.mcVehicleId}`)}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: payload.toString(),
-          }
-        );
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          let errMsg = errData.detail || errData.message || `Gagal update kendaraan`;
-          if (typeof errMsg === 'string') {
-            errMsg = errMsg.replace(/Error:\s*\\?"?|\\?"?$/g, '').trim();
-          }
-          throw new Error(`[${update.mcPlat}] ${errMsg}`);
+        try {
+          await patchMceasyVehicle(update.mcVehicleId, payload.toString());
+        } catch (err) {
+          throw new Error(`[${update.mcPlat}] ${err.message}`);
         }
       }
 
