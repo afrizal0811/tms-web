@@ -11,10 +11,16 @@ export default function Dropdown({
   className = 'w-full',
   placement = 'bottom',
   isAutocomplete = false,
+  size = 'md',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
+
+  const sizeClasses = {
+    sm: 'h-8 pl-3 pr-8 text-xs rounded',
+    md: 'h-[42px] pl-4 pr-10 text-sm rounded-lg',
+  };
 
   const filteredOptions = isAutocomplete
     ? options.filter((opt) => opt.label.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -51,7 +57,7 @@ export default function Dropdown({
             if (isOpen) setSearchTerm('');
           }
         }}
-        className={`w-full h-[42px] pl-4 pr-10 flex items-center bg-white dark:bg-slate-800 border ${isOpen ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-gray-300 dark:border-slate-600'} rounded-lg shadow-sm text-slate-700 dark:text-slate-200 text-sm font-medium hover:border-sky-400 dark:hover:border-sky-500 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900/50' : 'cursor-pointer'}`}
+        className={`w-full ${sizeClasses[size] || sizeClasses.md} flex items-center bg-white dark:bg-slate-800 border ${isOpen ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-gray-300 dark:border-slate-600'} shadow-sm text-slate-700 dark:text-slate-200 font-medium hover:border-sky-400 dark:hover:border-sky-500 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900/50' : 'cursor-pointer'}`}
       >
         <span className="truncate block">{displayValue}</span>
         <div className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 dark:text-slate-400 pointer-events-none">

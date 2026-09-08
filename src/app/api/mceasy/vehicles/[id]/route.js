@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function PATCH(request, { params }) {
-  const { id } = params;
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   try {
     const apiUrl = process.env.NEXT_PUBLIC_MCEASY_API_URL;

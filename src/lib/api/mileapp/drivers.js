@@ -53,7 +53,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
     let mcMatch = null;
 
     if (ma.vms_id) {
-      mcMatch = mceasyData.find((mc) => String(mc.vehicleId) === String(ma.vms_id));
+      mcMatch = mceasyData.find((mc) => String(mc.vehicleId || mc.id) === String(ma.vms_id));
     }
 
     if (!mcMatch) {
@@ -82,7 +82,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
           maPlatBase: maBasePlat,
           mcName: mcMatch.driver1?.fullname || '-',
           mcPlat: mcMatch.licensePlate || '-',
-          mcVehicleId: mcMatch.vehicleId,
+          mcVehicleId: mcMatch.vehicleId || mcMatch.id,
           vmsDriverId: mcMatch.driverId,
           updatedPlat: isPlatMismatch ? ma.plat : undefined,
           isUpdated: isPlatMismatch,
@@ -91,7 +91,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
         matched.push({
           id: ma._id || ma.id,
           imei: mcMatch.imei,
-          vms_id: mcMatch.vehicleId,
+          vms_id: mcMatch.vehicleId || mcMatch.id,
           vms_driver_id: mcMatch.driverId,
         });
       }

@@ -645,7 +645,6 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Terakhir diperbarui:',
-      sync_loading: 'Menyelaraskan...',
       title: 'Pengaturan',
       tab: {
         general: {
@@ -673,6 +672,11 @@ export const dictionary = {
         },
         button: {
           btn_sync: 'Sinkronkan',
+        },
+        modal: {
+          blank_driver: 'Tanpa Sopir',
+          sync_subtitle:
+            'Terdapat perbedaan data MileApp dan McEasy untuk data kendaraan dan sopir',
         },
       },
     },
@@ -1357,7 +1361,6 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Last updated:',
-      sync_loading: 'Synchronizing...',
       title: 'Setting',
       tab: {
         general: {
@@ -1385,6 +1388,11 @@ export const dictionary = {
         },
         button: {
           btn_sync: 'Synchronize',
+        },
+        modal: {
+          blank_driver: 'No Driver',
+          sync_subtitle:
+            'There are differences between MileApp and McEasy data for vehicles and drivers',
         },
       },
     },

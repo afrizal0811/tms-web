@@ -1,20 +1,17 @@
 'use client';
 
 import Button from '@/components/button/Button';
-import Dropdown from '@/components/dropdown/Dropdown';
-import Modal from '@/components/modal/Modal';
-import TableData from '@/components/table/TableData';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
 import { patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { capitalizeText } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import Card from '../components/Card';
+import SyncModal from '../components/SyncModal';
 
 export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, translate }) {
-  const [syncLoading, setSyncLoading] = useState({});
+  const [syncLoading, setSyncLoading] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mismatchedData, setMismatchedData] = useState([]);
   const [matchedData, setMatchedData] = useState([]);
@@ -50,7 +47,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
         options.push({ label, value: d.userId });
       });
 
-      options.unshift({ label: 'Kosongkan', value: null });
+      options.unshift({ label: translate('setting.tab.modal.blank_driver'), value: '-' });
       setMcEasyDrivers(options);
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }));
@@ -70,16 +67,22 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
   };
 
   const handleSaveMismatches = async () => {
-    setSyncLoading({ drivers: true });
+    setSyncLoading('drivers');
     try {
       const updates = mismatchedData.filter((m) => m.isUpdated);
       for (const update of updates) {
         if (!update.mcVehicleId) continue;
 
         const payload = new URLSearchParams();
-        if (update.updatedDriverId !== undefined)
-          payload.append('driver1Id', update.updatedDriverId || '');
-        if (update.updatedPlat) payload.append('licensePlate', update.updatedPlat);
+        if (update.updatedDriverId !== undefined) {
+          payload.append(
+            'driver1Id',
+            update.updatedDriverId !== null ? update.updatedDriverId : ''
+          );
+        }
+        if (update.updatedPlat) {
+          payload.append('licensePlate', update.updatedPlat);
+        }
 
         try {
           await patchMceasyVehicle(update.mcVehicleId, payload.toString());
@@ -99,13 +102,13 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }));
     } finally {
-      setSyncLoading({ drivers: false });
+      setSyncLoading(null);
     }
   };
 
   const executeSync = async (type) => {
     if (isReadOnly) return;
-    setSyncLoading({ [type]: true });
+    setSyncLoading(type);
     try {
       if (type === 'hubs') await postHubs();
       else if (type === 'roles') await postRoles();
@@ -116,7 +119,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
           setMismatchedData(result.mismatched);
           setMatchedData(result.matched || []);
           setModalOpen(true);
-          setSyncLoading({ [type]: false });
+          setSyncLoading(null);
           return;
         }
 
@@ -131,7 +134,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     } catch (error) {
       toastError(translate('common.toast.error', { err: error.message }));
     } finally {
-      setSyncLoading({ [type]: false });
+      setSyncLoading(null);
     }
   };
 
@@ -167,15 +170,13 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
           </div>
         </div>
         {!isReadOnly && (
-          <button
+          <Button
             onClick={() => executeSync(type)}
-            disabled={syncLoading[type]}
-            className="w-full mt-4 py-2.5 bg-slate-50 dark:bg-sky-100 text-sm font-medium text-slate-700 dark:text-sky-600 border border-slate-300 hover:border-sky-400 dark:hover:border-sky-600 disabled:border-slate-200 rounded-md shadow-none hover:bg-slate-100 dark:hover:bg-sky-200 hover:text-sky-700 dark:hover:text-sky-700 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed "
-          >
-            {syncLoading[type]
-              ? translate('setting.sync_loading')
-              : translate('setting.tab.button.btn_sync')}
-          </button>
+            isLoading={syncLoading === type}
+            disabled={syncLoading !== null}
+            text={translate('setting.tab.button.btn_sync')}
+            size="md"
+          />
         )}
       </div>
     );
@@ -203,100 +204,16 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
         </div>
       </Card>
 
-      <Modal
+      <SyncModal
         isOpen={modalOpen}
-        noClose={true}
-        title="Perbedaan Data Kendaraan"
-        subtitle="Ditemukan ketidaksesuaian data antara MileApp dan McEasy. Silahkan perbaiki data pada source of truth (MileApp) terlebih dahulu."
-        maxWidth="max-w-6xl"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button
-              onClick={handleSaveMismatches}
-              isLoading={syncLoading.drivers}
-              disabled={!mismatchedData.some((m) => m.isUpdated)}
-              text="Save & Lanjutkan Update"
-              width="w-auto"
-            />
-          </div>
-        }
-      >
-        <div className="h-[60vh]">
-          <TableData
-            subHeaders={true}
-            columns={[
-              { label: 'No.', key: 'no', align: 'center', width: 'w-12', render: (_, i) => i + 1 },
-              {
-                label: 'MileApp',
-                subColumns: [
-                  {
-                    label: 'Driver',
-                    key: 'maNameClean',
-                    render: (row) => <span>{capitalizeText(row.maNameClean)}</span>,
-                  },
-                  { label: 'Plat', key: 'maPlat' },
-                ],
-              },
-              {
-                label: 'McEasy',
-                subColumns: [
-                  {
-                    label: 'Driver',
-                    key: 'mcName',
-                    render: (row) => {
-                      const isMismatch =
-                        row.mcName?.toLowerCase() !== row.maNameClean?.toLowerCase();
-                      if (!isMismatch) return <span>{row.mcName}</span>;
-                      return (
-                        <div className="min-w-40">
-                          <Dropdown
-                            options={mcEasyDrivers}
-                            value={
-                              row.updatedDriverId !== undefined
-                                ? row.updatedDriverId
-                                : row.vmsDriverId || null
-                            }
-                            onChange={(val) =>
-                              handleMismatchedChange(row.id, 'updatedDriverId', val)
-                            }
-                            isAutocomplete={true}
-                            disabled={isDriverLoading}
-                            getLabel={(val) =>
-                              mcEasyDrivers.find((opt) => opt.value === val)?.label || row.mcName
-                            }
-                          />
-                        </div>
-                      );
-                    },
-                  },
-                  {
-                    label: 'Plat',
-                    key: 'mcPlat',
-                    render: (row) => {
-                      const isMismatch =
-                        row.mcPlat?.replace(/\s+/g, '')?.toUpperCase() !==
-                        row.maPlatBase?.replace(/\s+/g, '')?.toUpperCase();
-                      if (!isMismatch) return <span>{row.mcPlat}</span>;
-                      return (
-                        <input
-                          type="text"
-                          className="w-full min-w-32 px-3 py-2 text-sm border border-red-300 dark:border-red-500/50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
-                          placeholder={row.mcPlat}
-                          value={row.updatedPlat !== undefined ? row.updatedPlat : ''}
-                          onChange={(e) =>
-                            handleMismatchedChange(row.id, 'updatedPlat', e.target.value)
-                          }
-                        />
-                      );
-                    },
-                  },
-                ],
-              },
-            ]}
-            data={mismatchedData.map((m, i) => ({ ...m, _id: i }))}
-          />
-        </div>
-      </Modal>
+        mismatchedData={mismatchedData}
+        onMismatchedChange={handleMismatchedChange}
+        onSave={handleSaveMismatches}
+        mcEasyDrivers={mcEasyDrivers}
+        isDriverLoading={isDriverLoading}
+        isSaving={syncLoading === 'drivers'}
+        translate={translate}
+      />
     </div>
   );
 }
