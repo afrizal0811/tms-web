@@ -333,6 +333,9 @@ export function formatLongDate(dateInput, language = 'id-ID', withDate = true) {
 // Mengecek nilai kosong
 export function isEmpty(value) {
   if (Array.isArray(value)) return value.length === 0;
+  if (value && typeof value === 'object') {
+    return Object.keys(value).length === 0;
+  }
   return (
     !value ||
     value === undefined ||

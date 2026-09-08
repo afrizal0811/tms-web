@@ -13,6 +13,7 @@ import {
   processTaskDateReport,
   processTaskManualReport,
   processTaskRoutingReport,
+  processTripActivityReport,
 } from './helper/customHelper';
 import { getDatesInRange } from './helper/help';
 
@@ -42,6 +43,11 @@ export default function CustomReport() {
       label: t('report.service_level'),
       tooltip: t('report.tooltip.service_level_info'),
     },
+    {
+      id: 'trip_activity',
+      label: t('report.trip_activity'),
+      tooltip: t('report.tooltip.trip_activity_info'),
+    },
   ];
 
   const handleRadioToggle = (mode) => {
@@ -65,6 +71,7 @@ export default function CustomReport() {
         detail: { process: processTaskRoutingReport, title: t('report.task_routing') },
         manual: { process: processTaskManualReport, title: t('report.task_manual') },
         service_level: { process: processTaskDateReport, title: t('report.service_level') },
+        trip_activity: { process: processTripActivityReport, title: t('report.trip_activity') },
       };
 
       const config = reportTypeConfig[reportType];

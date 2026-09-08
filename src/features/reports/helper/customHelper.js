@@ -27,6 +27,7 @@ import {
   taskKeyMapping,
   taskManualHeaders,
   taskManualKeyMapping,
+  tripActivityHeaders,
 } from './constants';
 
 const normalizeTasksData = (tasks) =>
@@ -375,6 +376,121 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
     const fileName = `${t('report.service_level')} - ${dateStr} - ${locationName}.xlsx`;
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+    generatedFiles.push({ fileName, wb, wbout });
+  }
+
+  return generatedFiles;
+};
+
+export const processTripActivityReport = async (
+  storedLocation,
+  datesToProcess,
+  locationName,
+  t
+) => {
+  const generatedFiles = [];
+  const drivers = await getDriverData(storedLocation);
+
+  const driverMap = new Map();
+  drivers.forEach((d) => {
+    if (d.email) {
+      driverMap.set(normalizeEmail(d.email), {
+        name: d.name || d.email,
+        plat: d.plat || '-',
+        vehicleId: d.vehicleId || d.vmsVehicleId || '-',
+      });
+    }
+  });
+
+  for (const date of datesToProcess) {
+    const { locTimeFrom, locTimeTo, selectedDateString } = getReportDates(date, date);
+
+    const locHistories = await getLocationHistories({
+      timeFrom: locTimeFrom,
+      timeTo: locTimeTo,
+      startFinish: 'true',
+      timeBy: 'createdTime',
+    });
+
+    const trips = locHistories?.tasks?.data || locHistories?.data || [];
+    if (isEmpty(trips)) continue;
+
+    const rows = [];
+
+    trips.forEach((trip) => {
+      const email = normalizeEmail(trip.email);
+      const d = driverMap.get(email) || {};
+      const start = trip.startTime ? formatUTC7(trip.startTime) : '-';
+
+      if (isEmpty(d) || start !== selectedDateString) return;
+
+      const assignedVehicleId = d.vehicleId || '-';
+      const username = d.name || '-';
+      const assignedVehicle = d.plat || '-';
+
+      const tripId = trip.tripActivityId || '-';
+      const startTrip = trip.startTime ? formatUTC7(trip.startTime, 'DD/MM/YYYY HH:mm:ss') : '-';
+      const startTripCoordinate = trip.lat && trip.lon ? `${trip.lat}, ${trip.lon}` : '-';
+
+      const endTrip = trip.finish?.finishTime
+        ? formatUTC7(trip.finish?.finishTime, 'DD/MM/YYYY HH:mm:ss')
+        : '-';
+      const endTripCoordinate =
+        trip.finish?.lat && trip.finish?.lon ? `${trip.finish.lat}, ${trip.finish.lon}` : '-';
+
+      const totalDistance = trip.finish?.totalDistance ?? '-';
+      const totalDuration = trip.finish?.totalDuration ?? '-';
+
+      rows.push({
+        rowData: [
+          tripId,
+          assignedVehicleId,
+          username,
+          assignedVehicle,
+          startTrip,
+          startTripCoordinate,
+          endTrip,
+          endTripCoordinate,
+          totalDistance,
+          totalDuration,
+        ],
+        username,
+        rawStartTime: trip.startTime || '',
+      });
+    });
+
+    rows.sort((a, b) => {
+      const userCmp = String(a.username).localeCompare(String(b.username));
+      if (userCmp !== 0) return userCmp;
+      return String(a.rawStartTime).localeCompare(String(b.rawStartTime));
+    });
+
+    const sheetData = [tripActivityHeaders, ...rows.map((r) => r.rowData)];
+
+    if (sheetData.length === 1) continue;
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = 0; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (ws[cell_address]) {
+        ws[cell_address].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { patternType: 'solid', fgColor: { rgb: '0369A1' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        };
+      }
+    }
+    ws['!cols'] = tripActivityHeaders.map(() => ({ wch: 20 }));
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Trip Activity');
+
+    const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
+    const fileName = `${t('report.trip_activity')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

@@ -76,7 +76,7 @@ export async function POST(request) {
         }
       });
 
-      const vehRes = await fetch(`${apiUrl}/vehicles?hubId=${hubId}&limit=1000`, {
+      const vehRes = await fetch(`${apiUrl}/vehicles?hubId=${hubId}&limit=10000`, {
         headers: { Authorization: `Bearer ${apiToken}` },
         cache: 'no-store',
       });
@@ -146,6 +146,7 @@ export async function POST(request) {
             minVolume: vMin,
             maxVolume: vMax,
             storage: storage,
+            vehicle_id: vehicle._id,
           };
 
           uniquePayloads.set(uniqueId, dataPayload);

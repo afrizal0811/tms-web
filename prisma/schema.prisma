@@ -26,6 +26,7 @@ model Hub {
 // Tambahkan model Driver baru ini di bawah
 model Driver {
   id             String   @id
+  vehicle_id     String? 
   vms_id         String?
   imei           String?
   vms_driver_id  String?

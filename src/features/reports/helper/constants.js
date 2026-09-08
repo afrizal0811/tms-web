@@ -237,3 +237,16 @@ export const serviceLevelHeaders = [
   'Completed Time',
   'Service Level',
 ];
+
+export const tripActivityHeaders = [
+  'tripId',
+  'assignedVehicleId',
+  'username',
+  'assignedVehicle',
+  'startTrip',
+  'startTripCoordinate',
+  'endTrip',
+  'endTripCoordinate',
+  'totalDistance',
+  'totalDuration',
+];
