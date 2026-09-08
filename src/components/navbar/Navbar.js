@@ -204,8 +204,7 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [storedUser]);
 
-  const primaryVehicle = isIndonesian ? 'Data' : t('common.vehicle');
-  const secondaryVehicle = isIndonesian ? t('common.vehicle') : 'Data';
+  const vehicle = isIndonesian ? `Data ${t('common.vehicle')}` : `${t('common.vehicle')} Data`;
 
   if (!mounted) {
     return (
@@ -238,12 +237,11 @@ export default function Navbar() {
       <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">
-        <span className={hiddenTextClassName}>{t('navbar.update')}</span> {t('navbar.coordinate')}
+      {`${t('navbar.update')} ${t('navbar.coordinate')}`}
       </NavLink>
       <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>
       <NavLink href="/vehicles">
-        <span className={isIndonesian ? hiddenTextClassName : ''}> {primaryVehicle} </span>
-        <span className={!isIndonesian ? hiddenTextClassName : ''}> {secondaryVehicle}</span>
+        <span> {vehicle} </span>
       </NavLink>
       <NavLink href="/help">{t('navbar.help')}</NavLink>
     </>

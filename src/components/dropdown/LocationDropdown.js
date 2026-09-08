@@ -3,7 +3,7 @@
 import Dropdown from '@/components/dropdown/Dropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs } from '@/lib/api';
+import { getHubs } from '@/lib/api/mileapp';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import {
   getCachedHubs,

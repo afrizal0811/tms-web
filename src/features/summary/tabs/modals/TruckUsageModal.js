@@ -1,6 +1,6 @@
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
-import { deleteTruckUsage, postTruckUsage } from '@/lib/api';
+import { deleteTruckUsage, postTruckUsage } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';

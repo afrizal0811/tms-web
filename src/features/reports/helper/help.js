@@ -2,11 +2,11 @@ import {
   getLocationHistories,
   getResult,
   getResultHistories,
-  getResultsSummary,
+  getResults,
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
-} from '@/lib/api';
+} from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
@@ -320,7 +320,7 @@ export const handleSingleDownload = async ({
     const { storedLocationAcronym } = getLocalStorage();
     const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes, mappingsObj }] =
       await Promise.all([
-        getResultsSummary(summaryPayload),
+        getResults(summaryPayload),
         getCachedHubs(),
         getLocationHistories({
           timeFrom: timeFromHistories,
@@ -475,7 +475,7 @@ export const handleBulkDownload = async ({
         calculateStartFinishDates(dateForFile);
 
       const [filteredResults, locationHistoriesRes] = await Promise.all([
-        getResultsSummary(summaryPayload),
+        getResults(summaryPayload),
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
@@ -697,7 +697,7 @@ const processSingleKpiDate = async (targetDateObj, drivers, selectedHub) => {
       timeTo,
       timeBy: 'startTime',
     }),
-    getResultsSummary({
+    getResults({
       routingDateObj: targetRoutingDateObj,
       deliveryDateObj: targetDateObj,
       hubId: selectedHub.id,

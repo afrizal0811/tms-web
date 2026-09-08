@@ -2,7 +2,7 @@
 
 import Report from '@/components/page/Report';
 import { useLanguage } from '@/context/LanguageContext';
-import { getTasks } from '@/lib/api';
+import { getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import {

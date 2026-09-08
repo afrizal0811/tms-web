@@ -3,11 +3,11 @@ import {
   getHubs,
   getLocationHistories,
   getResultHistories,
-  getResultsSummary,
+  getResults,
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
-} from '@/lib/api';
+} from '@/lib/api/mileapp';
 import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
@@ -694,7 +694,7 @@ export default function useSummaryData() {
       const pRouting = fetchWithTracker(async () => {
         const rawResults = [];
         for (const range of routingRanges) {
-          const res = await getResultsSummary({
+          const res = await getResults({
             hubId: selectedLocation,
             routingDateObj: new Date(range.from),
             deliveryDateObj: new Date(range.to),

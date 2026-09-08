@@ -1,4 +1,4 @@
-import { getDrivers, getVehicleMappings, getVehicleTypes } from './api';
+import { getDrivers, getVehicleMappings, getVehicleTypes } from './api/mileapp';
 import { formatUTC7, getBasePlate, isEmpty, normalizeEmail } from './utils';
 
 const driversCache = {};

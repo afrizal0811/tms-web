@@ -2,7 +2,7 @@
 
 import Dropdown from '@/components/dropdown/Dropdown';
 import { useLanguage } from '@/context/LanguageContext';
-import { getVehicleTypes } from '@/lib/api';
+import { getVehicleTypes } from '@/lib/api/mileapp';
 import { getBaseVehicleType } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 

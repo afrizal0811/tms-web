@@ -86,7 +86,7 @@ export default function MapLocation({ data, activeCoords, highlightTrigger, t, i
                 <LeafletTooltip direction="top" offset={[0, -10]}>
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: `<b>${t('longlat.modal.old_loc')}</b>`,
+                      __html: `<b>${t('common.coord_old')}</b>`,
                     }}
                   />
                 </LeafletTooltip>
@@ -113,7 +113,7 @@ export default function MapLocation({ data, activeCoords, highlightTrigger, t, i
               <LeafletTooltip direction="top" offset={[0, -10]}>
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: `<b>${t('longlat.modal.new_loc')}</b>`,
+                    __html: `<b>${t('common.coord_new')}</b>`,
                   }}
                 />
               </LeafletTooltip>

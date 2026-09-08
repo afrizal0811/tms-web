@@ -2,7 +2,7 @@
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
-import { deletePendingDetail, postPendingDetail } from '@/lib/api';
+import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';

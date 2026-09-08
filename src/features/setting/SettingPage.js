@@ -3,7 +3,7 @@
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDriverStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api';
+import { getDriverStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';

@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api';
+import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';

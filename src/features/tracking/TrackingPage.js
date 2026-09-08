@@ -6,7 +6,7 @@ import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import Map from '@/components/Map';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
-import { getTrackingData } from '@/lib/api';
+import { getTrackingData } from '@/lib/api/mceasy';
 import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { getBasePlate, getDistance, getStorageType } from '@/lib/utils';

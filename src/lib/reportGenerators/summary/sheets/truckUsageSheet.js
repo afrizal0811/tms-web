@@ -1,4 +1,4 @@
-import { getVehicleMappings, getVehicleTypes } from '@/lib/api';
+import { getVehicleMappings, getVehicleTypes } from '@/lib/api/mileapp';
 import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { toastError } from '@/lib/toast';
 import {
@@ -124,7 +124,7 @@ function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
 async function getTruckUsageData(hubId, startDate, endDate) {
   try {
     const res = await fetch(
-      `/api/truck-usage?hubId=${hubId}&startDate=${startDate}&endDate=${endDate}`
+      `/api/mileapp/truck-usage?hubId=${hubId}&startDate=${startDate}&endDate=${endDate}`
     );
     if (!res.ok) return [];
     return await res.json();

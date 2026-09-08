@@ -12,7 +12,7 @@ import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getTasks } from '@/lib/api';
+import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';

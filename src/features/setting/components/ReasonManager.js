@@ -1,7 +1,7 @@
 'use client';
 
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import { deleteReason, postReason, updateReason } from '@/lib/api';
+import { deleteReason, postReason, updateReason } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useState } from 'react';
 import { PIC_OPTIONS } from '../helper/constants';

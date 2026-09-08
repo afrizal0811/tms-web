@@ -6,7 +6,7 @@ export function buildUpdateLonglatSheet(wb, updateLonglatData, t) {
     t('common.customer_name'),
     t('common.customer_id'),
     t('common.location_id'),
-    t('excel.reports.update_coord.new_longlat'),
+    t('common.coord_new'),
     t('common.dist_diff'),
   ];
   updateLonglatData.sort((a, b) => (a.distanceDiff || Infinity) - (b.distanceDiff || Infinity));

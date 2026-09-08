@@ -28,7 +28,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getHubs, getLocationHistories, getResultsSummary, getTasks } from '../../lib/api';
+import { getHubs, getLocationHistories, getResults, getTasks } from '../../lib/api/mileapp';
 import { driverTimeStamps, getDriverData } from '../../lib/driverData';
 import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
@@ -308,7 +308,7 @@ export default function DeliveryPage() {
           calculateStartFinishDates(selectedDate);
 
         const [resultsData, historyData, tasksResponse] = await Promise.all([
-          getResultsSummary({
+          getResults({
             hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,

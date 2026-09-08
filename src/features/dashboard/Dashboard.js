@@ -8,7 +8,7 @@ import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
-import { getResultsSummary, getTasks } from '@/lib/api';
+import { getResults, getTasks } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastWarning } from '@/lib/toast';
 import {
@@ -154,7 +154,7 @@ export default function Dashboard({ driverData }) {
           timeTo,
           timeBy: 'startTime',
         }),
-        getResultsSummary({
+        getResults({
           routingDateObj: routingStart,
           deliveryDateObj: localStart,
           hubId: hubId,

@@ -4,7 +4,7 @@ import LocationSelector from '@/components/dropdown/LocationDropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
-import { getRoles, getUsers } from '@/lib/api';
+import { getRoles, getUsers } from '@/lib/api/mileapp';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';

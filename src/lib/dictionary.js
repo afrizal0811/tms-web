@@ -19,9 +19,12 @@ export const dictionary = {
       click_for_detail_param: 'Klik {parameter} untuk detail',
       close_time: 'Waktu Tutup',
       color_exp: 'Keterangan Warna',
-      created_time: 'Dibuat pada',
+      coord_new: 'Koordinat Baru',
+      coord_old: 'Koordinat Lama',
+      coordinate: 'Koordinat',
       created_by: 'Dibuat oleh',
       created_from: 'Dibuat dari',
+      created_time: 'Dibuat pada',
       customer_id: 'ID Pelanggan',
       customer_name: 'Nama Pelanggan',
       dark_mode: 'Mode Gelap',
@@ -163,7 +166,7 @@ export const dictionary = {
     },
     navbar: {
       bread_report: 'Laporan Barang Roti',
-      coordinate: 'Longlat',
+      coordinate: 'Koordinat',
       custom_report: 'Laporan Kustom',
       daily_report: 'Laporan Harian',
       delivery: 'Pengiriman',
@@ -383,7 +386,6 @@ export const dictionary = {
           sheet_name: 'Hasil Pending SO',
         },
         update_coord: {
-          new_longlat: 'Longlat Baru',
           sheet_name: 'Perbarui Longlat',
         },
         help: {
@@ -403,14 +405,10 @@ export const dictionary = {
       table_detail: '*Klik untuk melihat peta lokasi',
       title: 'Perbarui Longlat',
       table: {
-        new_longlat: 'Titik Lokasi Baru',
         update_time: 'Waktu Pembaruan',
       },
       modal: {
-        new_loc: 'Lokasi Baru',
-        new_longlat: 'Titik Lokasi Baru',
         no_coordinate: 'Tidak ada data koordinat untuk ditampilkan',
-        old_loc: 'Lokasi Lama',
         times: 'kali',
         title: 'Riwayat Pembaruan Lokasi',
         total_update: 'Total Pembaruan',
@@ -714,8 +712,7 @@ export const dictionary = {
       subtitle: 'Melacak lokasi kendaraan secara',
       subtitle_highlight: 'langsung',
       engine_status: 'Status Mesin',
-    
-    }
+    },
   },
   en: {
     common: {
@@ -735,9 +732,12 @@ export const dictionary = {
       click_for_detail_param: 'Click {parameter} for details',
       close_time: 'Close Time',
       color_exp: 'Color Legend',
-      created_time: 'Created Time',
+      coord_new: 'New Coordinate',
+      coord_old: 'Old Coordinate',
+      coordinate: 'Coordinate',
       created_by: 'Created By',
       created_from: 'Created From',
+      created_time: 'Created Time',
       customer_id: 'Customer ID',
       customer_name: 'Customer Name',
       dark_mode: 'Dark Mode',
@@ -1100,7 +1100,7 @@ export const dictionary = {
           sheet_name: 'Pending SO Results',
         },
         update_coord: {
-          new_longlat: 'New Coordinates',
+          new_coord: 'New Coordinates',
           sheet_name: 'Update Coordinates',
         },
         help: {
@@ -1120,13 +1120,9 @@ export const dictionary = {
       table_detail: '*Click to view map location',
       title: 'Update Coordinates',
       table: {
-        new_longlat: 'New Location Point',
         update_time: 'Update Time',
       },
       modal: {
-        new_loc: 'New Location',
-        new_longlat: 'New Location Point',
-        old_loc: 'Old Location',
         times: 'time(s)',
         title: 'Location Update History',
         total_update: 'Total Update(s)',
