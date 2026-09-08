@@ -1,6 +1,6 @@
 'use client';
 
-import Report from '@/components/page/Report';
+import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
@@ -110,7 +110,7 @@ export default function BreadReport() {
     : `${bulkText} ${t('report.bread_report')}`.trim();
 
   return (
-    <Report
+    <ReportTemplate
       title={titleMenu}
       isBulkMode={isBulkMode}
       onToggleMode={handleRadioToggle}

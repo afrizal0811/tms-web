@@ -1,7 +1,7 @@
 'use client';
 
 import RadioButton from '@/components/button/RadioButton';
-import Report from '@/components/page/Report';
+import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -125,7 +125,7 @@ export default function CustomReport() {
     : `${bulkText} ${t('report.custom_report')}`.trim();
 
   return (
-    <Report
+    <ReportTemplate
       title={titleMenu}
       isBulkMode={isBulkMode}
       onToggleMode={handleRadioToggle}

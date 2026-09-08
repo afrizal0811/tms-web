@@ -17,7 +17,7 @@ const ModeRadioInput = ({ checked, disabled }) => (
   />
 );
 
-export default function Report({
+export default function ReportTemplate({
   title,
   isBulkMode,
   isManualMode,

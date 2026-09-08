@@ -2,7 +2,7 @@
 
 import FileUploader from '@/components/fileUploader/FileUploader';
 import Modal from '@/components/modal/Modal';
-import Report from '@/components/page/Report';
+import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { handleKpiDownload } from '@/features/reports/helper/help';
 import { getDriverData } from '@/lib/driverData';
@@ -100,7 +100,7 @@ export default function KpiReport() {
   };
 
   return (
-    <Report
+    <ReportTemplate
       title={titleMenu}
       isBulkMode={isBulkMode}
       isManualMode={isManualMode}
