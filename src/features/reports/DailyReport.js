@@ -7,7 +7,11 @@ import ReportTemplate from '@/components/page/ReportTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDateUniversal, isDateSunday, isEmpty, tomorrowDate } from '@/lib/utils';
 import { useState } from 'react';
-import { handleBulkDownload, handleManualDownload, handleSingleDownload } from './helper/help';
+import {
+  handleBulkDownload,
+  handleManualDownload,
+  handleSingleDownload,
+} from './helper/dailyHelper';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 

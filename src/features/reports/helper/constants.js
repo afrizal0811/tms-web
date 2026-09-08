@@ -221,7 +221,7 @@ export const taskManualKeyMapping = {
   Action: 'action',
 };
 
-export const taskDateHeaders = [
+export const serviceLevelHeaders = [
   'Flow',
   'Driver Name',
   'License Number',
