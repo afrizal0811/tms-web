@@ -343,6 +343,19 @@ export default function TaskPage() {
 
   const headerItems = [
     {
+      label: t('common.search'),
+      component: (
+        <SearchBar
+          disabled={loading}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
+          value={searchQuery}
+          width="w-full"
+        />
+      ),
+    },
+    {
       label: t('common.range_delivery'),
       component: (
         <CustomDatePicker
@@ -354,18 +367,7 @@ export default function TaskPage() {
           useCustomRangeFormat={true}
           showApplyButton={true}
           onApply={handleApplyDate}
-        />
-      ),
-    },
-    {
-      label: t('common.search'),
-      component: (
-        <SearchBar
-          disabled={loading}
-          onChange={setSearchQuery}
-          placeholder={t('common.search')}
-          tooltip={searchPlaceholder}
-          value={searchQuery}
+          className="w-full"
         />
       ),
     },
@@ -373,7 +375,7 @@ export default function TaskPage() {
       label: t('common.status.delivery_status'),
       component: (
         <Dropdown
-          className="w-full xl:w-40!"
+          className="w-full"
           disabled={loading}
           onChange={setStatusFilter}
           options={statusOptions}
@@ -385,7 +387,7 @@ export default function TaskPage() {
       label: t('common.status.task_status'),
       component: (
         <Dropdown
-          className="w-full xl:w-40!"
+          className="w-full"
           disabled={loading}
           onChange={setStatusTaskFilter}
           options={statusTaskOptions}
@@ -399,7 +401,7 @@ export default function TaskPage() {
             label: t('common.branch'),
             component: (
               <ToggleButton
-                className="w-full xl:w-40!"
+                className="w-full"
                 disabled={loading}
                 onChange={(val) => setIsAllHub(val === 'ALL')}
                 options={[

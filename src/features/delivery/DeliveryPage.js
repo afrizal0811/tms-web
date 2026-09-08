@@ -708,6 +708,7 @@ export default function DeliveryPage() {
           onChange={(d) => d && setSelectedDate(formatDateUniversal(d, 'YYYY-MM-DD'))}
           selected={selectedDate ? new Date(selectedDate) : new Date()}
           maxDate={tomorrowDate(false)}
+          className="w-full"
         />
       ),
     },
