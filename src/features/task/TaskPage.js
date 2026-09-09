@@ -29,8 +29,8 @@ export default function TaskPage() {
   const [tempDateRange, setTempDateRange] = useState([new Date(), new Date()]);
   const [tempStart, tempEnd] = tempDateRange;
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [statusTaskFilter, setStatusTaskFilter] = useState('ALL');
+  const [statusDeliveryFilter, setStatusDeliveryFilter] = useState(t('common.all'));
+  const [statusTaskFilter, setStatusTaskFilter] = useState(t('common.all'));
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isAllHub, setIsAllHub] = useState(false);
@@ -147,6 +147,15 @@ export default function TaskPage() {
   }, [hubsData]);
 
   const processedData = useMemo(() => {
+    const statusMap = {
+      SUKSES: t('common.status.success'),
+      'TERIMA SEBAGIAN': t('common.status.partial'),
+      PENDING: t('common.status.pending'),
+      CANCEL: t('common.status.cancel'),
+      BATAL: t('common.status.cancel'),
+      'PENDING GR': t('common.status.pending_gr'),
+    };
+
     let result = tasks.map((task) => {
       const custInfo = parseCustomerString(task.customerOrder);
       const assigneeEmail = task.assignee?.[0];
@@ -166,20 +175,25 @@ export default function TaskPage() {
         _invoiceNumber: custInfo.invoiceNumber || '-',
         _truncateInvoice: custInfo.truncateInvoice || '-',
         _isTruncated: custInfo.isTruncated,
-        _statusDel: task.statusDelivery?.[0] || '-',
+        _statusDel: task.statusDelivery?.[0]
+          ? statusMap[task.statusDelivery[0].toUpperCase()] || task.statusDelivery[0]
+          : '-',
         _startFmt: formatUTC7(task.startTime, 'DD/MM/YYYY HH:mm') || '-',
         _assignFmt: formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') || '-',
         _doneFmt: formatUTC7(task.doneTime, 'DD/MM/YYYY HH:mm') || '-',
       };
     });
 
-    if (statusFilter !== 'ALL') {
+    if (statusDeliveryFilter !== t('common.all')) {
+      const targetStatus =
+        statusMap[statusDeliveryFilter.toUpperCase()] || statusDeliveryFilter.toUpperCase();
+
       result = result.filter(
-        (task) => (task.statusDelivery?.[0] || '').toUpperCase() === statusFilter.toUpperCase()
+        (task) => (task._statusDel || '').toUpperCase() === targetStatus.toUpperCase()
       );
     }
 
-    if (statusTaskFilter !== 'ALL') {
+    if (statusTaskFilter !== t('common.all')) {
       result = result.filter((task) => {
         if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery?.[0];
         if (statusTaskFilter === t('common.status.unassigned'))
@@ -209,7 +223,7 @@ export default function TaskPage() {
     }
 
     return result;
-  }, [tasks, driverMap, hubMap, searchQuery, statusFilter, statusTaskFilter, t]);
+  }, [tasks, driverMap, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
 
   const handleApplyDate = () => {
     if (!tempStart) return;
@@ -376,9 +390,9 @@ export default function TaskPage() {
         <Dropdown
           className="w-full"
           disabled={loading}
-          onChange={setStatusFilter}
+          onChange={setStatusDeliveryFilter}
           options={statusOptions}
-          value={statusFilter}
+          value={statusDeliveryFilter}
         />
       ),
     },
