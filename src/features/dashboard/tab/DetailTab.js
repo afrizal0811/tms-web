@@ -47,7 +47,7 @@ export default function DetailTab({ loading, summaryData }) {
         <div className="flex flex-col gap-6 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <StatCard
-              title="Total Task"
+              title={t('common.total_task')}
               value={summaryData?.totalTasks}
               isLoading={loading}
               className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
@@ -61,7 +61,7 @@ export default function DetailTab({ loading, summaryData }) {
               }
             />
             <StatCard
-              title="Task Ter-assign"
+              title={t('dashboard.tab.detail.total_assigned')}
               value={summaryData?.assignedTasks}
               isLoading={loading}
               className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
