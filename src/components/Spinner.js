@@ -3,16 +3,13 @@
 import { formatTimer } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
-export default function Spinner({
-  size = 'w-16 h-16',
-  showTimer = true,
-}) {
+export default function Spinner({ size = 'w-16 h-16', showTimer = true, startTime }) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(null);
   useEffect(() => {
     if (!showTimer) return;
 
-    startRef.current = Date.now();
+    startRef.current = startTime || Date.now();
     setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
 
     const interval = setInterval(() => {
@@ -20,7 +17,7 @@ export default function Spinner({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [showTimer]);
+  }, [showTimer, startTime]);
 
   return (
     <div
