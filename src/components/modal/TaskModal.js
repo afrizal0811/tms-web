@@ -199,10 +199,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         YA: isIndonesian ? 'Ya' : 'Yes',
         TIDAK: isIndonesian ? 'Tidak' : 'No',
       }[taskData.gpsSesuai?.[0]] ?? '-';
-    const iconText = {};
     return (
       <div className="space-y-6">
-        {/* Section 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/50">
           <Field
             label={translate('common.customer_name')}
@@ -233,8 +231,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
           />
           <Field label={translate('common.updated_at')} value={renderDate(taskData.updatedTime)} />
         </div>
-
-        {/* Section 2 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
             <h3 className="font-bold text-sky-600 dark:text-sky-400 border-b border-gray-200 dark:border-slate-700 pb-2 mb-4">
@@ -280,8 +276,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
             </div>
           </div>
         </div>
-
-        {/* Section 3 */}
         <Accordion title={translate('common.more')} defaultOpen={false}>
           <div className="flex overflow-x-auto space-x-6 border-b border-gray-200 dark:border-slate-700 mb-4 px-2">
             {tabs.map((tab) => (
@@ -528,11 +522,11 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                 />
                 <Field
                   label={translate('common.travel_distance')}
-                  value={renderFloatData(taskData.travelDistance)}
+                  value={renderFloatData(taskData.travelDistance / 1000)}
                 />
                 <Field
                   label={translate('common.travel_duration')}
-                  value={renderFloatData(taskData.travelDuration)}
+                  value={renderFloatData(taskData?.travelDuration / 60)}
                 />
               </div>
             )}
