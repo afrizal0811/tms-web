@@ -29,6 +29,7 @@ export default function TableData({
   onExternalSort,
   rowClassName,
   rowTooltip,
+  tableLayout = 'table-auto',
 }) {
   const [internalSortConfig, setInternalSortConfig] = useState(null);
   const [page, setPage] = useState(1);
@@ -98,7 +99,7 @@ export default function TableData({
             {t('common.no_data')}
           </div>
         ) : (
-          <table className="w-full table-auto" style={{ minWidth: '100%' }}>
+          <table className={`w-full ${tableLayout}`} style={{ minWidth: '100%' }}>
             <thead className="bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
               <tr>
                 {columns.map((col, index) => {
