@@ -1430,5 +1430,11 @@ export const dictionary = {
         waiting_time: 'Waiting Time',
       },
     },
+    tracking: {
+      title: 'Vehicle Tracking',
+      subtitle: 'Track vehicle location in',
+      subtitle_highlight: 'real time',
+      engine_status: 'Engine Status',
+    },
   },
 };

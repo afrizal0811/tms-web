@@ -112,14 +112,7 @@ export default function Dashboard({ driverData }) {
   }, [isYearlyLoading]);
 
   const fetchData = useCallback(async () => {
-    if (isEmpty(driverData)) {
-      setLoading(false);
-      setRawData({ tasks: [], results: [] });
-      return;
-    }
-
-    if (selectedDate.getDay() === 0) {
-      setLoading(false);
+    if (isEmpty(driverData) || selectedDate.getDay() === 0) {
       setRawData({ tasks: [], results: [] });
       return;
     }
