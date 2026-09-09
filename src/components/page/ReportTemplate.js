@@ -108,9 +108,7 @@ export default function ReportTemplate({
       </h1>
 
       <div
-        className={`flex flex-col items-center w-full ${
-          isBulkMode ? 'sm:w-[320px]' : 'sm:w-[280px]'
-        }`}
+        className={`flex flex-col items-center w-full ${isBulkMode ? 'sm:w-[350px]' : 'sm:w-[280px]'}`}
       >
         <label className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full">
           {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}

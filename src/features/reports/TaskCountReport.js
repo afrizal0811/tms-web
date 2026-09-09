@@ -201,14 +201,14 @@ export default function TaskCountReport() {
               disabled={isLoading}
               className="w-4 h-4 rounded bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600 cursor-pointer"
             />
-            {t('report.tc_detail.custom_time')}
+            {t('report.task_count.custom_time')}
           </label>
         </div>
 
         {!isCustomMode ? (
           <div className="flex flex-col max-w-sm mx-auto w-full">
             <label className="text-sm font-semibold text-gray-600 dark:text-slate-300 mb-2">
-              {t('report.tc_detail.date_range')}
+              {t('report.task_count.date_range')}
             </label>
             <CustomDatePicker
               selected={selectedMonth}
@@ -263,7 +263,7 @@ export default function TaskCountReport() {
         <div className="flex flex-col border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden transition-colors mt-2">
           <div className="bg-gray-50 dark:bg-slate-700/50 p-4 border-b border-gray-300 dark:border-slate-600 flex justify-between items-center transition-colors">
             <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">
-              {t('report.tc_detail.choose_hub')}
+              {t('report.task_count.choose_hub')}
             </span>
             <label className="flex items-center gap-2 cursor-pointer text-sm font-bold select-none">
               <input

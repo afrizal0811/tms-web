@@ -580,7 +580,7 @@ export async function generateManualReportWorkbook({
   buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-  const excelFileName = `Manual ${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
+  const excelFileName = `Manual ${t('daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }

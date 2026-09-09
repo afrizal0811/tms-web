@@ -30,22 +30,22 @@ export default function CustomReport() {
   const reportOptions = [
     {
       id: 'detail',
-      label: t('report.task_routing'),
+      label: t('report.custom.task_routing'),
       tooltip: t('report.tooltip.task_routing_info'),
     },
     {
       id: 'manual',
-      label: t('report.task_manual'),
+      label: t('report.custom.task_manual'),
       tooltip: t('report.tooltip.task_manual_info'),
     },
     {
       id: 'service_level',
-      label: t('report.service_level'),
+      label: t('report.custom.service_level'),
       tooltip: t('report.tooltip.service_level_info'),
     },
     {
       id: 'trip_activity',
-      label: t('report.trip_activity'),
+      label: t('report.custom.trip_activity'),
       tooltip: t('report.tooltip.trip_activity_info'),
     },
   ];
@@ -68,10 +68,13 @@ export default function CustomReport() {
       let reportTitleName = '';
 
       const reportTypeConfig = {
-        detail: { process: processTaskRoutingReport, title: t('report.task_routing') },
-        manual: { process: processTaskManualReport, title: t('report.task_manual') },
-        service_level: { process: processTaskDateReport, title: t('report.service_level') },
-        trip_activity: { process: processTripActivityReport, title: t('report.trip_activity') },
+        detail: { process: processTaskRoutingReport, title: t('report.custom.task_routing') },
+        manual: { process: processTaskManualReport, title: t('report.custom.task_manual') },
+        service_level: { process: processTaskDateReport, title: t('report.custom.service_level') },
+        trip_activity: {
+          process: processTripActivityReport,
+          title: t('report.custom.trip_activity'),
+        },
       };
 
       const config = reportTypeConfig[reportType];
@@ -128,8 +131,8 @@ export default function CustomReport() {
 
   const bulkText = isBulkMode ? t('common.bulk') : '';
   const titleMenu = isIndonesian
-    ? `${t('report.custom_report')} ${bulkText}`.trim()
-    : `${bulkText} ${t('report.custom_report')}`.trim();
+    ? `${t('report.custom.title')} ${bulkText}`.trim()
+    : `${bulkText} ${t('report.custom.title')}`.trim();
 
   return (
     <ReportTemplate

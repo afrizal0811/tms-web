@@ -96,11 +96,11 @@ export default function UploadArea({
             </svg>
             <p className="font-semibold text-slate-900 dark:text-slate-100 flex flex-wrap justify-center gap-x-1">
               <span className="text-sky-700 dark:text-sky-400">
-                {t('report.manual.upload_title')}
+                {t('report.manual_input.upload_title')}
               </span>
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-500">
-              {t('report.manual.upload_subtitle')}
+              {t('report.manual_input.upload_subtitle')}
             </p>
           </label>
           <input

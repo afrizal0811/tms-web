@@ -64,7 +64,7 @@ export async function generateAutoReportWorkbook({
   buildHelpSheet(wb, filteredResults || [], t);
 
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
-  const excelFileName = `${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;
+  const excelFileName = `${t('report.daily.title')} - ${formattedDate} - ${hubLabel}.xlsx`;
 
   return { wb, excelFileName };
 }

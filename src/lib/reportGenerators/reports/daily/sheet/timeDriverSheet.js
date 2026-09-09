@@ -91,8 +91,8 @@ export function buildTimeDriverSheet(wb, timeDataObjects, t, driverData = []) {
     }),
     [],
     ['Note'],
-    [' ', t('report.note_diff_date')],
-    [' ', t('report.note_double_click')],
+    [' ', t('excel.reports.time_driver.note_diff_date')],
+    [' ', t('excel.reports.time_driver.note_double_click')],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);

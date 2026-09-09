@@ -358,7 +358,7 @@ export const handleKpiDownload = async ({
     startDate,
     endDate,
     driverData: drivers,
-    zipPrefix: 'Bulk KPI',
+    zipPrefix: `${t('report.kpi_report')} (${t('common.bulk')})`,
     setIsLoading,
     processDateCallback: async ({ dateObj }) => {
       const { wb, fileName, hasError } = await processSingleKpiDate(dateObj, drivers, selectedHub);

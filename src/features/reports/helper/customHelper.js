@@ -107,7 +107,7 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.task_routing')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.custom.task_routing')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });
@@ -211,7 +211,7 @@ export const processTaskManualReport = async (storedLocation, datesToProcess, lo
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.task_manual')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.custom.task_manual')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });
@@ -375,7 +375,7 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
     XLSX.utils.book_append_sheet(wb, ws, 'Task Date');
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.service_level')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.custom.service_level')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

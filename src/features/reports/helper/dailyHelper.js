@@ -273,7 +273,7 @@ export const handleBulkDownload = async ({
     startDate,
     endDate,
     driverData,
-    zipPrefix: `${t('report.bulk_report')}`,
+    zipPrefix: `${t('report.daily_report')} (${t('common.bulk')})`,
     setIsLoading,
     processDateCallback: async ({ dateForFile, hubId, hubName }) => {
       const deliveryDateObj = parseDate(dateForFile);
