@@ -234,7 +234,7 @@ export default function Navbar() {
         isAdmin={isAdmin}
       />
       <NavLink href="/task">{t('navbar.task')}</NavLink>
-      {isSuperadmin && <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>}
+      {/* {isSuperadmin && <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>} */}
       {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       <NavLink href="/coordinate">{`${t('navbar.update')} ${t('navbar.coordinate')}`}</NavLink>
       <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>
