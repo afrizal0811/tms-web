@@ -88,7 +88,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
   ];
 
   return (
-    <div className="overflow-hidden flex-1 h-full rounded-b-lg">
+    <div className="overflow-hidden flex-1 h-full">
       <TableData
         columns={columns}
         data={dataWithNo}

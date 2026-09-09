@@ -88,7 +88,7 @@ export default function TableData({
     !paginate || limit === 'all' ? 1 : Math.ceil(sortedData.length / Number(limit));
 
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+    <div className="flex flex-col flex-1 h-full min-h-0 bg-white dark:bg-slate-900 ">
       <div className="flex-1 overflow-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-full min-h-[300px]">

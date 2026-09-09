@@ -145,7 +145,7 @@ export default function BodyCard({
   return (
     <div>
       <div
-        className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col w-full h-[600px] relative group transition-colors duration-200 overflow-hidden`}
+        className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col w-full h-[600px] relative group transition-colors duration-200 overflow-hidden`}
       >
         {renderHeader()}
 
@@ -166,7 +166,7 @@ export default function BodyCard({
             </>
           ) : isEmpty ? (
             <div
-              className={`flex-1 flex items-center justify-center bg-gray-50 border border-gray-300 text-gray-400 m-0 dark:bg-slate-800 dark:border-slate-700 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
+              className={`flex-1 flex items-center justify-center bg-gray-50 text-gray-400 m-0 dark:bg-slate-800 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
             >
               <p>{message}</p>
             </div>
@@ -201,7 +201,7 @@ export default function BodyCard({
           </div>
         )}
         {!isLoading && footer && (
-          <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
+          <div className="px-4 py-3 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
             <div
               className={`${footer.text && footer.title ? 'flex flex-col justify-between gap-2 pb-1' : ''}`}
             >
