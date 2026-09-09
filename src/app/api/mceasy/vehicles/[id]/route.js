@@ -6,7 +6,7 @@ export async function PATCH(request, { params }) {
 
   try {
     const apiUrl = process.env.NEXT_PUBLIC_MCEASY_API_URL;
-    const apiToken = process.env.NEXT_PUBLIC_MCEASY_API_TOKEN;
+    const apiToken = process.env.MCEASY_API_TOKEN;
     const bodyText = await request.text();
 
     const res = await fetch(`${apiUrl}/vehicles/${id}`, {
