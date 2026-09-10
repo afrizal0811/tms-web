@@ -17,7 +17,7 @@ export const tutorialData = (t) => ({
       text: t('report.manual_input.routing_guide.step_4'),
     },
   ],
-  delivery: [
+  task: [
     {
       image: '/images/tutorial/task/task-1.png',
       text: t('report.manual_input.delivery_guide.step_1'),

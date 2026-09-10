@@ -1,5 +1,4 @@
 import { getLocationHistories, getResult, getResultHistories, getTasks } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
@@ -9,6 +8,7 @@ import {
   generateTaskManualDetailWorkbook,
   groupTasksByDriver,
 } from '@/lib/reportGenerators/reports';
+import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateMinuteDifference,
   calculateStartFinishDates,
@@ -20,6 +20,7 @@ import {
   parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
+import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import {
   serviceLevelHeaders,
@@ -29,6 +30,7 @@ import {
   taskManualKeyMapping,
   tripActivityHeaders,
 } from './constants';
+import { getDatesInRange } from './help';
 
 const normalizeTasksData = (tasks) =>
   !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
@@ -52,8 +54,96 @@ const getReportDates = (start, end) => {
   return { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString: startString };
 };
 
-export const processTaskRoutingReport = async (storedLocation, datesToProcess, locationName, t) => {
-  const driverData = await getDriverData(storedLocation);
+export const handleCustomDownload = async ({
+  isBulkMode,
+  startDate,
+  endDate,
+  singleDate,
+  driverData,
+  hubId,
+  hubAcronym,
+  hubName,
+  t,
+  setIsLoading,
+  reportType,
+}) => {
+  if (isEmpty(driverData)) {
+    toastError(t('common.no_driver'));
+    return;
+  }
+  setIsLoading(true);
+  try {
+    const datesToProcess = isBulkMode
+      ? getDatesInRange(startDate, endDate || startDate)
+      : [singleDate];
+    const locationName = hubAcronym || hubName;
+
+    let generatedFiles = [];
+    let reportTitleName = '';
+
+    const reportTypeConfig = {
+      detail: { process: processTaskRoutingReport, title: t('report.custom.task_routing') },
+      manual: { process: processTaskManualReport, title: t('report.custom.task_manual') },
+      service_level: { process: processTaskDateReport, title: t('report.custom.service_level') },
+      trip_activity: {
+        process: processTripActivityReport,
+        title: t('report.custom.trip_activity'),
+      },
+    };
+
+    const config = reportTypeConfig[reportType];
+    if (config) {
+      generatedFiles = await config.process({ hubId, datesToProcess, locationName, t, driverData });
+      reportTitleName = config.title;
+    }
+
+    if (generatedFiles.length === 0) {
+      throw new Error(t('common.no_data'));
+    }
+
+    if (generatedFiles.length === 1) {
+      XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
+    } else {
+      const zip = new JSZip();
+      generatedFiles.forEach((file) => {
+        zip.file(file.fileName, file.wbout);
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+
+      const startFormat = isBulkMode
+        ? formatDateUniversal(startDate, 'DD.MM.YYYY')
+        : formatDateUniversal(singleDate, 'DD.MM.YYYY');
+      const endFormat =
+        isBulkMode && endDate ? formatDateUniversal(endDate, 'DD.MM.YYYY') : startFormat;
+      const fileNameDate =
+        isBulkMode && startFormat !== endFormat ? `${startFormat} to ${endFormat}` : startFormat;
+
+      const zipUrl = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = zipUrl;
+      link.download = `${reportTitleName} - ${fileNameDate} - ${locationName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(zipUrl);
+    }
+
+    toastSuccess(t('common.toast.success'));
+  } catch (error) {
+    toastError(t('common.toast.error', { err: error.message }));
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+export const processTaskRoutingReport = async ({
+  hubId,
+  datesToProcess,
+  locationName,
+  t,
+  driverData,
+}) => {
   const hubsList = getCachedHubs() || [];
   const activeHub = hubsList.find((h) => h._id === storedLocation);
   const hubCoordsStr =
@@ -69,7 +159,7 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: storedLocation,
+        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
@@ -116,14 +206,14 @@ export const processTaskRoutingReport = async (storedLocation, datesToProcess, l
   return generatedFiles;
 };
 
-export const processTaskManualReport = async (storedLocation, datesToProcess, locationName, t) => {
+export const processTaskManualReport = async ({ hubId, datesToProcess, locationName, t }) => {
   const generatedFiles = [];
 
   for (const date of datesToProcess) {
     const { timeFromUtc, timeToUtc } = getReportDates(date, date);
 
     const tasks = await getTasks({
-      hubId: storedLocation,
+      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
@@ -220,12 +310,16 @@ export const processTaskManualReport = async (storedLocation, datesToProcess, lo
   return generatedFiles;
 };
 
-export const processTaskDateReport = async (storedLocation, datesToProcess, locationName, t) => {
+export const processTaskDateReport = async ({
+  hubId,
+  datesToProcess,
+  locationName,
+  t,
+  driverData,
+}) => {
   const generatedFiles = [];
-  const drivers = await getDriverData(storedLocation);
-
   const driverMap = new Map();
-  drivers.forEach((d) => {
+  driverData.forEach((d) => {
     if (d.email) {
       driverMap.set(normalizeEmail(d.email), { name: d.name || '-', plat: d.plat || '-' });
     }
@@ -239,7 +333,7 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: storedLocation,
+        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
@@ -253,7 +347,6 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
         timeBy: 'createdTime',
       }),
     ]);
-    const driverData = await getDriverData(storedLocation);
     const allApiData = locHistories?.tasks?.data || [];
     const { timeDataObjects } = convertLocationHistories(
       allApiData || [],
@@ -384,17 +477,16 @@ export const processTaskDateReport = async (storedLocation, datesToProcess, loca
   return generatedFiles;
 };
 
-export const processTripActivityReport = async (
-  storedLocation,
+export const processTripActivityReport = async ({
+  hubId,
   datesToProcess,
   locationName,
-  t
-) => {
+  t,
+  driverData,
+}) => {
   const generatedFiles = [];
-  const drivers = await getDriverData(storedLocation);
-
   const driverMap = new Map();
-  drivers.forEach((d) => {
+  driverData.forEach((d) => {
     if (d.email) {
       driverMap.set(normalizeEmail(d.email), {
         name: d.name || d.email,
@@ -490,7 +582,7 @@ export const processTripActivityReport = async (
     XLSX.utils.book_append_sheet(wb, ws, 'Trip Activity');
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');
-    const fileName = `${t('report.trip_activity')} - ${dateStr} - ${locationName}.xlsx`;
+    const fileName = `${t('report.custom.trip_activity')} - ${dateStr} - ${locationName}.xlsx`;
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
     generatedFiles.push({ fileName, wb, wbout });

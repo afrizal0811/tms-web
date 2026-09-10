@@ -107,14 +107,6 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
   }
 };
 
-const driversCheck = async (selectedLocation, t) => {
-  const drivers = await getDriverData(selectedLocation);
-  if (isEmpty(drivers)) {
-    throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
-  }
-  return drivers;
-};
-
 const fetchVehicleMetadata = async () => {
   const [vehicleTypesObj, mappingsDB] = await Promise.all([
     getVehicleTypes(),
@@ -129,23 +121,18 @@ const fetchVehicleMetadata = async () => {
 };
 
 export const handleSingleDownload = async ({
-  selectedLocation,
-  selectedLocationName,
+  hubId,
+  hubName,
   selectedDate,
   selectedDateString,
   isCustomRouting,
   routingDate,
   driverData,
   setIsLoading,
-  setIsAnyLoading,
-  setIsMapping,
   t,
 }) => {
   try {
     setIsLoading(true);
-    await driversCheck(selectedLocation, t);
-    if (setIsAnyLoading) setIsAnyLoading(true);
-    if (setIsMapping) setIsMapping(false);
 
     if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
@@ -156,7 +143,7 @@ export const handleSingleDownload = async ({
       calculateStartFinishDates(selectedDateString);
 
     const allTasks = await getTasks({
-      hubId: selectedLocation,
+      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
@@ -178,7 +165,7 @@ export const handleSingleDownload = async ({
     const summaryPayload = {
       dateFrom: `${targetRoutingStr} 00:00:00`,
       dateTo: `${targetRoutingStr} 23:59:59`,
-      hubId: selectedLocation,
+      hubId: hubId,
     };
 
     const { storedLocationAcronym } = getLocalStorage();
@@ -209,8 +196,8 @@ export const handleSingleDownload = async ({
       throw new Error(t('common.no_data'));
     }
 
-    const hasPendingGR = getHasPendingGR(hubsData, selectedLocation);
-    const hubLabel = storedLocationAcronym || selectedLocationName;
+    const hasPendingGR = getHasPendingGR(hubsData, hubId);
+    const hubLabel = storedLocationAcronym || hubName;
 
     const { wb, excelFileName } = await generateAutoReportWorkbook({
       driverData,
@@ -232,13 +219,10 @@ export const handleSingleDownload = async ({
     toastError(err.message || String(err));
   } finally {
     setIsLoading(false);
-    if (setIsAnyLoading) setIsAnyLoading(false);
-    if (setIsMapping) setIsMapping(false);
   }
 };
 
 export const handleBulkDownload = async ({
-  selectedLocation,
   startDate,
   endDate,
   driverData,
@@ -250,7 +234,6 @@ export const handleBulkDownload = async ({
   let hubsMap = {};
   try {
     setIsLoading(true);
-    await driversCheck(selectedLocation, t);
     const [{ vehicleTypes: vTypes, mappingsObj: mObj }, hubsDB] = await Promise.all([
       fetchVehicleMetadata(),
       getCachedHubs(),
@@ -348,8 +331,8 @@ export const handleBulkDownload = async ({
 };
 
 export const handleManualDownload = async ({
-  selectedLocation,
-  selectedLocationName,
+  hubId,
+  hubName,
   selectedDate,
   selectedDateString,
   isCustomRouting,
@@ -364,11 +347,10 @@ export const handleManualDownload = async ({
   t,
 }) => {
   try {
-    await driversCheck(selectedLocation, t);
     setIsLoading(true);
 
     const { storedLocationAcronym } = getLocalStorage();
-    const hubLabel = storedLocationAcronym || selectedLocationName;
+    const hubLabel = storedLocationAcronym || hubName;
 
     let targetRoutingDateObj;
     if (isCustomRouting) {
@@ -392,7 +374,7 @@ export const handleManualDownload = async ({
     const [{ vehicleTypes, mappingsObj }, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
-        getDriverData(selectedLocation),
+        getDriverData(hubId),
         getLocationHistories({
           timeFrom,
           timeTo,
@@ -408,7 +390,7 @@ export const handleManualDownload = async ({
       driverData,
       extractedStartDate
     );
-    const hasPendingGR = getHasPendingGR(hubsData, selectedLocation);
+    const hasPendingGR = getHasPendingGR(hubsData, hubId);
     const { wb, excelFileName } = await generateManualReportWorkbook({
       routingBuffers,
       deliveryBuffers,

@@ -188,7 +188,7 @@ export default function TaskCountReport() {
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-6 text-slate-900 dark:text-slate-100">
-        {t('report.task_counter_report')}
+        {t('report.task_count.title')}
       </h1>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex flex-col gap-6 transition-colors">

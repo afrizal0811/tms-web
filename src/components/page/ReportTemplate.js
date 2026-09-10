@@ -5,6 +5,7 @@ import InformationButton from '@/components/button/InformationButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
+import { tomorrowDate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 const ModeRadioInput = ({ checked, disabled }) => (
@@ -19,9 +20,7 @@ const ModeRadioInput = ({ checked, disabled }) => (
 
 export default function ReportTemplate({
   title,
-  isBulkMode,
-  isManualMode,
-  isCustomRouting,
+  selectedMode = {},
   onToggleMode,
   availableModes = [],
   singleDate,
@@ -29,15 +28,14 @@ export default function ReportTemplate({
   startDate,
   endDate,
   onDateRangeChange,
-  maxDate,
   isLoading,
   isActionDisabled,
   onAction,
   actionText,
-  children,
   extraContent,
   modals,
-  showInfoDate = false,
+  setRoutingDate,
+  ...props
 }) {
   const { t } = useLanguage();
   const settingsRef = useRef(null);
@@ -45,9 +43,14 @@ export default function ReportTemplate({
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
+  const { bulk: isBulkMode, manual: isManualMode, custom: isCustomRouting } = selectedMode;
+
   const isRangeInvalid =
     isBulkMode &&
-    (!startDate || !endDate || startDate > endDate || startDate.getTime() === endDate.getTime());
+    (!startDate ||
+      !endDate ||
+      new Date(startDate) > new Date(endDate) ||
+      new Date(startDate).getTime() === new Date(endDate).getTime());
 
   const modeItemStateClass = isLoading
     ? 'cursor-not-allowed text-slate-400 dark:text-slate-500'
@@ -76,7 +79,7 @@ export default function ReportTemplate({
   const executeWithCheck = () => {
     if (isBulkMode) {
       const validEndDate = endDate || startDate;
-      const diffTime = Math.abs(validEndDate - startDate);
+      const diffTime = Math.abs(new Date(validEndDate) - new Date(startDate));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays > 14) {
@@ -106,39 +109,56 @@ export default function ReportTemplate({
       <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-slate-100">
         {title}
       </h1>
-
-      <div
-        className={`flex flex-col items-center w-full ${isBulkMode ? 'sm:w-[350px]' : 'sm:w-[280px]'}`}
-      >
-        <label className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full">
-          {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}
-          {showInfoDate && !isCustomRouting && (
-            <InformationButton infoText={t('report.tooltip.info_delivery')} />
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-2 w-full ">
+        <div className={`w-full ${isBulkMode ? 'sm:w-[350px]' : 'sm:w-[280px]'}`}>
+          <label className="text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center select-none flex items-center justify-center gap-1 w-full">
+            {isBulkMode ? t('common.range_delivery') : t('common.delivery_date')}
+            {!isCustomRouting && <InformationButton infoText={t('report.tooltip.info_delivery')} />}
+          </label>
+          {isBulkMode ? (
+            <CustomDatePicker
+              selectsRange={true}
+              startDate={startDate}
+              endDate={endDate}
+              onChange={onDateRangeChange}
+              disabled={isLoading}
+              className="w-full block cursor-pointer"
+              wrapperClassName="w-full block"
+              maxDate={tomorrowDate()}
+            />
+          ) : (
+            <CustomDatePicker
+              disabled={isLoading}
+              selected={singleDate}
+              onChange={onSingleDateChange}
+              className="w-full block cursor-pointer"
+              wrapperClassName="w-full block"
+              maxDate={tomorrowDate()}
+            />
           )}
-        </label>
-        {isBulkMode ? (
-          <CustomDatePicker
-            selectsRange={true}
-            startDate={startDate}
-            endDate={endDate}
-            onChange={onDateRangeChange}
-            disabled={isLoading}
-            className="w-full block cursor-pointer"
-            wrapperClassName="w-full block"
-            maxDate={maxDate}
-          />
-        ) : (
-          <CustomDatePicker
-            disabled={isLoading}
-            selected={singleDate}
-            onChange={onSingleDateChange}
-            className="w-full block cursor-pointer"
-            wrapperClassName="w-full block"
-            maxDate={maxDate}
-          />
+        </div>
+        {isCustomRouting && (
+          <div className="w-full sm:w-[280px]">
+            <label
+              htmlFor="routingDate"
+              className="block text-lg mb-2 text-gray-500 dark:text-slate-400 font-medium text-center w-full"
+            >
+              {t('common.routing_date')}
+            </label>
+            <CustomDatePicker
+              disabled={isLoading}
+              id="routingDate"
+              maxDate={tomorrowDate()}
+              onChange={(date) => {
+                if (date) setRoutingDate(date);
+              }}
+              selected={props.routingDate}
+              className="w-full sm:w-[280px] block cursor-pointer"
+              wrapperClassName="w-full block"
+            />
+          </div>
         )}
       </div>
-
       <div className="relative mt-2 mb-4" ref={settingsRef}>
         <button
           onClick={() => setIsSettingsOpen(!isSettingsOpen)}
@@ -172,7 +192,7 @@ export default function ReportTemplate({
       <div className="flex flex-row flex-wrap gap-4 w-full justify-center">
         <Button
           onClick={executeWithCheck}
-          disabled={isLoading || isActionDisabled || isRangeInvalid}
+          disabled={isLoading || isRangeInvalid}
           isLoading={isLoading}
           text={actionText}
           width="w-full sm:w-auto min-w-[200px]"

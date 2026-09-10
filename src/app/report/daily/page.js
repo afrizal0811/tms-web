@@ -8,39 +8,34 @@ import DailyReport from '@/features/reports/DailyReport';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function LaporanPage() {
-  const router = useRouter();
-  const { t } = useLanguage();
-
+export default function DailyReportPage() {
   const [data, setData] = useState(null);
-  const [isAnyLoading, setIsAnyLoading] = useState(false);
-  const [isMapping, setIsMapping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { t, isIndonesian } = useLanguage();
 
   useEffect(() => {
-    async function loadLaporanData() {
+    async function fetchData() {
       try {
         const { storedLocation, storedLocationName } = getLocalStorage();
-
         const drivers = await getDriverData(storedLocation);
-
         setData({
-          selectedLocation: storedLocation,
-          selectedLocationName: storedLocationName,
+          storedLocation,
+          storedLocationName,
           driverData: drivers || [],
         });
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
-        router.push('/');
+        toastError(e.message);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    loadLaporanData();
-  }, [router, t]);
+    fetchData();
+  }, [t]);
 
-  if (!data) {
+  if (!data && isLoading) {
     return (
       <SelectionLayout>
         <Spinner />
@@ -51,13 +46,13 @@ export default function LaporanPage() {
   return (
     <AppLayout mainClassName="items-center justify-center px-4">
       <DailyReport
-        selectedLocation={data.selectedLocation}
-        selectedLocationName={data.selectedLocationName}
         driverData={data.driverData}
-        isAnyLoading={isAnyLoading}
-        setIsAnyLoading={setIsAnyLoading}
-        isMapping={isMapping}
-        setIsMapping={setIsMapping}
+        hubId={data.storedLocation}
+        hubName={data.storedLocationName}
+        isIndonesian={isIndonesian}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
+        t={t}
       />
     </AppLayout>
   );
