@@ -110,7 +110,6 @@ export default function TaskPage() {
         timeFrom: toApiDateString(localStart),
         timeTo: toApiDateString(localEnd),
         status: 'DONE,UNASSIGNED,ONGOING',
-        timeBy: 'startTime',
       });
 
       const dataArray = Array.isArray(res) ? res : res?.data || [];

@@ -91,7 +91,6 @@ const processSingleKpiDate = async (targetDateObj, drivers, hubId, hubAcronym, c
       status: 'DONE,ONGOING',
       timeFrom,
       timeTo,
-      timeBy: 'startTime',
     }),
     getResults({
       routingDateObj: targetRoutingDateObj,
@@ -101,8 +100,6 @@ const processSingleKpiDate = async (targetDateObj, drivers, hubId, hubAcronym, c
     getLocationHistories({
       timeFrom: histFrom,
       timeTo: histTo,
-      startFinish: 'true',
-      timeBy: 'createdTime',
     }),
   ]);
 
@@ -306,8 +303,6 @@ const executeManualKpiDownload = async ({
       (await getLocationHistories({
         timeFrom,
         timeTo,
-        startFinish: 'true',
-        timeBy: 'createdTime',
       })) || [];
   } catch {
     toastWarning('Gagal menarik data lokasi API, menggunakan data kosong.');

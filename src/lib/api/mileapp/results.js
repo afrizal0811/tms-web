@@ -19,7 +19,6 @@ export async function getResults({
   deliveryDateObj,
   hubId,
   hasPartialRouting = false,
-  limit = 10000,
 }) {
   let finalDateFrom = dateFrom;
   let finalDateTo = dateTo;
@@ -36,10 +35,10 @@ export async function getResults({
   }
   const resultsFields = fields.results.join(',');
   const params = new URLSearchParams();
+  params.append('limit', 10000);
   if (finalDateFrom) params.append('dateFrom', finalDateFrom);
   if (finalDateTo) params.append('dateTo', finalDateTo);
   if (hubId) params.append('hubId', hubId);
-  if (limit) params.append('limit', limit);
   if (resultsFields) params.append('fields', resultsFields);
 
   const results = await apiFetch(

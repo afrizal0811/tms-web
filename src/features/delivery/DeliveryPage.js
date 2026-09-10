@@ -316,14 +316,11 @@ export default function DeliveryPage() {
           getLocationHistories({
             timeFrom: historyFrom,
             timeTo: historyTo,
-            startFinish: 'true',
-            timeBy: 'createdTime',
           }),
           getTasks({
             hubId: storedLocation,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
-            timeBy: 'startTime',
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
         ]);

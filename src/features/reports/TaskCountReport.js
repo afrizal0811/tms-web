@@ -103,7 +103,6 @@ export default function TaskCountReport() {
           hubId: hubIdsStr,
           timeFrom,
           timeTo,
-          timeBy: 'startTime',
         });
 
         const chunkData = Array.isArray(response) ? response : response?.data || [];
@@ -113,7 +112,7 @@ export default function TaskCountReport() {
 
       let filteredTrashTasks = [];
       try {
-        const trashResponse = await getTrash(1000);
+        const trashResponse = await getTrash();
         const trashData = Array.isArray(trashResponse) ? trashResponse : trashResponse?.data || [];
 
         trashData.forEach((item) => {

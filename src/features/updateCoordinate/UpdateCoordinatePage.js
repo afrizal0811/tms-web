@@ -98,7 +98,6 @@ export default function UpdateCoordinatePage() {
             hubId,
             timeFrom,
             timeTo,
-            timeBy: 'startTime',
           }),
         ]);
 

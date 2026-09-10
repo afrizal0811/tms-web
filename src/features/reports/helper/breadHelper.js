@@ -53,7 +53,6 @@ export const handleBreadDownload = async ({
         status: 'DONE,ONGOING',
         timeFrom,
         timeTo,
-        timeBy: 'startTime',
       });
 
       const tasksData = !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];

@@ -682,7 +682,6 @@ export default function useSummaryData() {
           const res = await getTasks({
             hubId: selectedLocation,
             status: 'ONGOING,DONE',
-            timeBy: 'startTime',
             timeFrom: range.from,
             timeTo: range.to,
           });
@@ -709,8 +708,6 @@ export default function useSummaryData() {
         const rawResults = [];
         for (const range of historyRanges) {
           const res = await getLocationHistories({
-            startFinish: 'true',
-            timeBy: 'createdTime',
             timeFrom: range.from,
             timeTo: range.to,
           });

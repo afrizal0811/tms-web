@@ -163,14 +163,11 @@ export const processTaskRoutingReport = async ({
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
-        timeBy: 'startTime',
         isNeedFields: false,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
-        startFinish: 'true',
-        timeBy: 'createdTime',
       }),
     ]);
 
@@ -217,7 +214,6 @@ export const processTaskManualReport = async ({ hubId, datesToProcess, locationN
       status: 'DONE,ONGOING',
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
-      timeBy: 'startTime',
       isNeedFields: false,
     });
 
@@ -337,14 +333,11 @@ export const processTaskDateReport = async ({
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
-        timeBy: 'startTime',
         isNeedFields: false,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
-        startFinish: 'true',
-        timeBy: 'createdTime',
       }),
     ]);
     const allApiData = locHistories?.tasks?.data || [];
@@ -502,8 +495,6 @@ export const processTripActivityReport = async ({
     const locHistories = await getLocationHistories({
       timeFrom: locTimeFrom,
       timeTo: locTimeTo,
-      startFinish: 'true',
-      timeBy: 'createdTime',
     });
 
     const trips = locHistories?.tasks?.data || locHistories?.data || [];

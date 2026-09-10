@@ -144,7 +144,6 @@ export default function Dashboard({ driverData }) {
           hubId,
           timeFrom,
           timeTo,
-          timeBy: 'startTime',
         }),
         getResults({
           routingDateObj: routingStart,
@@ -193,7 +192,6 @@ export default function Dashboard({ driverData }) {
             status: 'DONE',
             timeFrom: range.start,
             timeTo: range.end,
-            timeBy: 'startTime',
           })
         );
 

@@ -147,7 +147,6 @@ export const handleSingleDownload = async ({
       status: 'DONE,ONGOING',
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
-      timeBy: 'startTime',
     });
 
     if (isEmpty(allTasks)) {
@@ -162,22 +161,18 @@ export const handleSingleDownload = async ({
       targetRoutingStr = detectRoutingDateFromTasks(allTasks, selectedDate);
     }
 
-    const summaryPayload = {
-      dateFrom: `${targetRoutingStr} 00:00:00`,
-      dateTo: `${targetRoutingStr} 23:59:59`,
-      hubId: hubId,
-    };
-
     const { storedLocationAcronym } = getLocalStorage();
     const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes, mappingsObj }] =
       await Promise.all([
-        getResults(summaryPayload),
+        getResults({
+          dateFrom: `${targetRoutingStr} 00:00:00`,
+          dateTo: `${targetRoutingStr} 23:59:59`,
+          hubId: hubId,
+        }),
         getCachedHubs(),
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
         fetchVehicleMetadata(),
       ]);
@@ -222,13 +217,7 @@ export const handleSingleDownload = async ({
   }
 };
 
-export const handleBulkDownload = async ({
-  startDate,
-  endDate,
-  driverData,
-  setIsLoading,
-  t,
-}) => {
+export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
   let mappingsObj = {};
   let vehicleTypes = [];
   let hubsMap = {};
@@ -273,7 +262,6 @@ export const handleBulkDownload = async ({
         status: 'DONE,ONGOING',
         timeFrom: timeFromTasks,
         timeTo: timeToTasks,
-        timeBy: 'startTime',
       });
 
       if (isEmpty(allTasks)) return null;
@@ -294,8 +282,6 @@ export const handleBulkDownload = async ({
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
       ]);
 
@@ -378,8 +364,6 @@ export const handleManualDownload = async ({
         getLocationHistories({
           timeFrom,
           timeTo,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
       ]),
     ]);
