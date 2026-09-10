@@ -32,10 +32,13 @@ export default function SystemUpdateModal() {
     sessionStorage.clear();
 
     if (storedSession) {
+      const userToSave = storedSession.user ? { ...storedSession.user } : null;
+      if (userToSave) delete userToSave.paths;
+
       setLocalStorage(
         'data',
         JSON.stringify({
-          user: storedSession.user || null,
+          user: userToSave,
           superadminRoleId: storedSession.superadminRoleId || null,
         })
       );

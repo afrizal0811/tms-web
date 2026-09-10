@@ -59,6 +59,7 @@ model Driver {
 model Role {
   id        String   @id
   name      String
+  paths     String[] @default([])
   updatedAt DateTime @updatedAt
 }
 

@@ -180,6 +180,15 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
         const { storedSession } = getLocalStorage();
         const currentData = storedSession || {};
 
+        let rolePaths = [];
+        try {
+          const roles = await getRoles();
+          const userRole = (roles || []).find(
+            (r) => String(r._id || r.id) === String(userToConfirm.roleId)
+          );
+          rolePaths = userRole?.paths || [];
+        } catch (e) {}
+
         const filteredUserSession = {
           _id: userToConfirm._id,
           email: userToConfirm.email,
@@ -187,6 +196,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           hubId: userToConfirm.hubId,
           roleId: userToConfirm.roleId,
           status: userToConfirm.status,
+          paths: rolePaths,
           activeHubId: selectedLocation,
           activeHubName: selectedLocationName,
           activeHubAcronym: selectedHubObj?.acronym || '',

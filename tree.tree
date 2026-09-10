@@ -24,18 +24,20 @@
 │   │       │   └── route.js
 │   │       ├── reasons
 │   │       │   └── route.js
-│   │       ├── result
-│   │       │   └── route.js
 │   │       ├── results
 │   │       │   ├── histories
 │   │       │   │   └── route.js
-│   │       │   └── route.js
+│   │       │   ├── route.js
+│   │       │   └── [id]
+│   │       │       └── route.js
 │   │       ├── roles
 │   │       │   └── route.js
 │   │       ├── task
 │   │       │   └── route.js
 │   │       ├── tasks
-│   │       │   └── route.js
+│   │       │   ├── route.js
+│   │       │   └── [id]
+│   │       │       └── route.js
 │   │       ├── trash
 │   │       │   └── route.js
 │   │       ├── truck-usage
@@ -112,6 +114,7 @@
 │   ├── Map.js
 │   ├── modal
 │   │   ├── ConfirmModal.js
+│   │   ├── ManualUploadModal.js
 │   │   ├── Modal.js
 │   │   ├── SystemUpdateModal.js
 │   │   ├── TaskModal.js
@@ -126,7 +129,8 @@
 │   │   ├── AppLayout.js
 │   │   ├── ErrorPage.js
 │   │   ├── Footer.js
-│   │   ├── Report.js
+│   │   ├── PageTemplate.js
+│   │   ├── ReportTemplate.js
 │   │   ├── SelectionLayout.js
 │   │   └── SessionGuard.js
 │   ├── SearchBar.js
@@ -199,8 +203,12 @@
 │   │   ├── CustomReport.js
 │   │   ├── DailyReport.js
 │   │   ├── helper
+│   │   │   ├── breadHelper.js
 │   │   │   ├── constants.js
-│   │   │   └── help.js
+│   │   │   ├── customHelper.js
+│   │   │   ├── dailyHelper.js
+│   │   │   ├── help.js
+│   │   │   └── kpiHelper.js
 │   │   ├── KpiReport.js
 │   │   └── TaskCountReport.js
 │   ├── setting

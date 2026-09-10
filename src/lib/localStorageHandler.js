@@ -179,3 +179,22 @@ export function updateActiveHub(id, name, acronym) {
     } catch (e) {}
   }
 }
+
+export function updateUserPaths(paths) {
+  if (typeof window === 'undefined') return;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+
+      if (parsed.user) {
+        parsed.user.paths = paths;
+      } else {
+        parsed.paths = paths;
+      }
+
+      setLocalStorage('data', parsed);
+    } catch (e) {}
+  }
+}

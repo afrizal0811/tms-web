@@ -10,11 +10,10 @@ import { toastError } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import GeneralTab from './tabs/GeneralTab';
+import PermissionTab from './tabs/PermissionTab';
 import SyncDataTab from './tabs/SyncDataTab';
 
 export default function SettingPage() {
-  const { t } = useLanguage();
-
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
@@ -22,13 +21,19 @@ export default function SettingPage() {
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
   const [reasons, setReasons] = useState([]);
+  const [rolesList, setRolesList] = useState([]);
 
+  const { t } = useLanguage();
   const { isSuperadmin, isChecking } = useSuperadmin();
 
   const isSecretMode = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
   const isReadOnlyGeneral = !isSuperadmin && !isSecretMode;
   const isReadOnlySync = !isSuperadmin && !isSecretMode;
-
+  const buttonData = [
+    { tab: 'general', label: t('setting.tab.general.title') },
+    ...(isSuperadmin ? [{ tab: 'permission', label: 'Permission' }] : []),
+    { tab: 'sync', label: t('setting.tab.sync_data.title') },
+  ];
   const fetchAllData = useCallback(async () => {
     try {
       const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
@@ -51,7 +56,10 @@ export default function SettingPage() {
         ? formatDateUniversal(maxDriverDate, 'DD/MM/YYYY HH:mm:ss')
         : '-';
 
+      const filteredRoles = (rolesDb || []).filter((r) => !r.name.toLowerCase().includes('driver'));
+
       setHubs(hubsDb);
+      setRolesList(filteredRoles);
       setLastUpdated({
         hubs:
           hubsDb.length > 0 && hubsDb[0].updatedAt
@@ -104,11 +112,6 @@ export default function SettingPage() {
 
   if (!isAuthorized) return null;
 
-  const buttonData = [
-    { tab: 'general', label: t('setting.tab.general.title') },
-    { tab: 'sync', label: t('setting.tab.sync_data.title') },
-  ];
-
   const renderTabContent = () => {
     const triggerRefresh = () => {
       fetchAllData();
@@ -121,6 +124,15 @@ export default function SettingPage() {
             vehicleTypes={vehicleTypes}
             hubs={hubs}
             reasons={reasons}
+            onRefresh={triggerRefresh}
+            isReadOnly={isReadOnlyGeneral}
+            translate={t}
+          />
+        );
+      case 'permission':
+        return (
+          <PermissionTab
+            roles={rolesList}
             onRefresh={triggerRefresh}
             isReadOnly={isReadOnlyGeneral}
             translate={t}

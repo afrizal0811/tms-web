@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
+import { isEmpty } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,14 +35,11 @@ function MobileNavLink({ href, children, target = '', rel = '' }) {
   );
 }
 
-function MobileNavGroup({ label, links, isSuperadmin, isAdmin }) {
+function MobileNavGroup({ label, links }) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const filteredLinks = (links || []).filter(
-    (link) => !link.superadminOnly || isSuperadmin || (link.adminAllowed && isAdmin)
-  );
 
-  if (filteredLinks.length === 0) return null;
+  if (!links || links.length === 0) return null;
 
   return (
     <div>
@@ -65,7 +63,7 @@ function MobileNavGroup({ label, links, isSuperadmin, isAdmin }) {
           isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        {filteredLinks.map((link) => (
+        {links.map((link) => (
           <MobileNavLink key={link.href} href={link.href}>
             {t(link.labelKey)}
           </MobileNavLink>
@@ -87,8 +85,7 @@ export default function MobileMenu({
   isLoggedIn,
   userName,
   userEmail,
-  isSuperadmin,
-  isAdmin,
+  userPaths,
   handleLogout,
   reportLinks,
 }) {
@@ -99,6 +96,7 @@ export default function MobileMenu({
   const [isSecret, setIsSecret] = useState(false);
   const pathname = usePathname();
   const menuRef = useRef(null);
+  const isAllPath = isEmpty(userPaths);
 
   useEffect(() => {
     const checkSecret = () => setIsSecret(window.SECRET_MODE_ACTIVE === true);
@@ -206,22 +204,27 @@ export default function MobileMenu({
                 <LocationSwitcher />
               </div>
               <Divider />
-              <MobileNavGroup
-                label={t('navbar.report')}
-                links={reportLinks}
-                isSuperadmin={isSuperadmin}
-                isAdmin={isAdmin}
-              />
-              <MobileNavLink href="/task">{t('navbar.task')}</MobileNavLink>
-              {/* {isSuperadmin && (
+              {reportLinks.length > 0 && (
+                <MobileNavGroup label={t('navbar.report')} links={reportLinks} />
+              )}
+              {(isAllPath || userPaths.some((p) => '/task'.startsWith(p))) && (
+                <MobileNavLink href="/task">{t('navbar.task')}</MobileNavLink>
+              )}
+              {(isAllPath || userPaths.some((p) => '/tracking'.startsWith(p))) && (
                 <MobileNavLink href="/tracking">{t('navbar.tracking')}</MobileNavLink>
-              )} */}
-              {isSuperadmin && <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>}
-              <MobileNavLink href="/coordinate">
-                {t('navbar.update')} {t('navbar.coordinate')}
-              </MobileNavLink>
-              <MobileNavLink href="/delivery">{t('navbar.delivery')}</MobileNavLink>
-              {mobileLinkVehicle}
+              )}
+              {(isAllPath || userPaths.some((p) => '/summary'.startsWith(p))) && (
+                <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>
+              )}
+              {(isAllPath || userPaths.some((p) => '/coordinate'.startsWith(p))) && (
+                <MobileNavLink href="/coordinate">
+                  {t('navbar.update')} {t('navbar.coordinate')}
+                </MobileNavLink>
+              )}
+              {(isAllPath || userPaths.some((p) => '/delivery'.startsWith(p))) && (
+                <MobileNavLink href="/delivery">{t('navbar.delivery')}</MobileNavLink>
+              )}
+              {(isAllPath || userPaths.some((p) => '/vehicles'.startsWith(p))) && mobileLinkVehicle}
               <Divider />
             </>
           ) : null}

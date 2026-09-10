@@ -3,8 +3,8 @@
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getRoles } from '@/lib/api/mileapp';
+import { getLocalStorage, updateUserPaths } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -17,73 +17,72 @@ export default function SessionGuard({ children }) {
   const [isVerified, setIsVerified] = useState(false);
 
   const isSecret = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
-  const publicPaths = ['/', '/help'];
+  const publicPaths = ['/', '/help', '/setting'];
   if (isSecret) publicPaths.push('/setting');
   const isPublicPage = publicPaths.includes(pathname);
-
-  const superadminPaths = ['/report/counter', '/summary', '/tracking'];
-  const adminPaths = ['/report/custom'];
-
-  const isSuperadminPage = superadminPaths.some((p) => pathname.startsWith(p));
-  const isAdminPage = adminPaths.some((p) => pathname.startsWith(p));
-
-  const { isSuperadmin, isAdmin, isChecking } = useSuperadmin();
 
   useEffect(() => {
     if (isPublicPage) return;
 
-    try {
-      const {
-        storedUser: user,
-        storedLocation: location,
-        storedLocationName: locationName,
-      } = getLocalStorage();
+    const checkAuthAndAccess = async () => {
+      try {
+        const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
 
-      if (!user || !location || !locationName) {
-        toastError(t('home.toast.no_session'));
+        if (!storedUser || !storedLocation || !storedLocationName) {
+          toastError(t('home.toast.no_session'));
+          router.push('/');
+          return;
+        }
+
+        const parsedUser = JSON.parse(storedUser);
+        let userPaths = parsedUser.paths || [];
+
+        await getRoles()
+          .then((roles) => {
+            const myRole = (roles || []).find(
+              (r) => String(r._id || r.id) === String(parsedUser.roleId)
+            );
+            const freshPaths = myRole?.paths || [];
+            if (JSON.stringify(userPaths) !== JSON.stringify(freshPaths)) {
+              updateUserPaths(freshPaths);
+              if (
+                !isSecret &&
+                freshPaths.length > 0 &&
+                !freshPaths.some((p) => pathname.startsWith(p))
+              ) {
+                window.location.href = '/';
+              }
+            }
+          })
+          .catch(() => {});
+
+        if (!isSecret && userPaths.length > 0) {
+          const hasAccess = userPaths.some((p) => pathname.startsWith(p));
+          if (!hasAccess) {
+            router.replace('/');
+            return;
+          }
+        }
+
+        setIsVerified(true);
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }));
         router.push('/');
-      } else {
-        setTimeout(() => {
-          setIsVerified(true);
-        }, 0);
       }
-    } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
-      router.push('/');
-    }
-  }, [pathname, router, t, isPublicPage]);
+    };
 
-  useEffect(() => {
-    if (isPublicPage || isChecking || !isVerified) return;
-
-    if (isSuperadminPage && !isSuperadmin) {
-      router.replace('/');
-    } else if (isAdminPage && !isSuperadmin && !isAdmin) {
-      router.replace('/');
-    }
-  }, [
-    isPublicPage,
-    isChecking,
-    isVerified,
-    isSuperadminPage,
-    isSuperadmin,
-    isAdminPage,
-    isAdmin,
-    router,
-  ]);
+    checkAuthAndAccess();
+  }, [pathname, router, t, isPublicPage, isSecret]);
 
   if (isPublicPage) return <>{children}</>;
 
-  if (!isVerified || ((isSuperadminPage || isAdminPage) && isChecking)) {
+  if (!isVerified) {
     return (
       <SelectionLayout>
         <Spinner />
       </SelectionLayout>
     );
   }
-
-  if (isSuperadminPage && !isSuperadmin) return null;
-  if (isAdminPage && !isSuperadmin && !isAdmin) return null;
 
   return <>{children}</>;
 }

@@ -9,3 +9,11 @@ export async function postRoles() {
     method: 'POST',
   });
 }
+
+export async function patchRolePaths(id, paths) {
+  return await apiFetch('/api/mileapp/roles', 'Gagal update hak akses role', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, paths }),
+  });
+}
