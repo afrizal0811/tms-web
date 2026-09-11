@@ -62,21 +62,22 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         ]);
 
         setCreatedBy(
-          createdRes.status === 'fulfilled' && !createdRes.value?.data
+          createdRes.status === 'fulfilled' && createdRes.value && !createdRes.value.data
             ? createdRes.value[0]?.name
             : task?.createdBy
         );
         setUpdatedBy(
-          updatedRes.status === 'fulfilled' && !updatedRes.value?.data
+          updatedRes.status === 'fulfilled' && updatedRes.value && !updatedRes.value.data
             ? updatedRes.value[0]?.name
             : task?.updatedBy
         );
         setResultData(
-          resultRes.status === 'fulfilled' && resultRes.value?.data
+          resultRes.status === 'fulfilled' && resultRes.value && resultRes.value?.data
             ? resultRes.value?.data || resultRes.value
             : null
         );
       } catch (err) {
+        console.error('err :', err);
         toastError(translate('common.toast.error', { err: err.message }));
       } finally {
         setLoading(false);
