@@ -301,7 +301,7 @@ export default function Navbar() {
         ) : (
           <div className="flex items-center gap-3 shrink-0">
             <ThemeToggle
-              isActive={isDarkMode}
+              isDarkMode={isDarkMode}
               onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
               className="text-md px-3 hidden lg:block"
               isLargeIcon={true}

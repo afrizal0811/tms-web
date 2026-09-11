@@ -229,10 +229,9 @@ export default function MobileMenu({
             </>
           ) : null}
           <ThemeToggle
-            isActive={isDarkMode}
+            label={isDarkMode ? t('common.dark_mode') : t('common.light_mode')}
+            isDarkMode={isDarkMode}
             onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
-            darkLabel={t('common.dark_mode')}
-            lightLabel={t('common.light_mode')}
             className="text-md px-3"
           />
           <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />

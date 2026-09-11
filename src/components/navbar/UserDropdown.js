@@ -104,18 +104,15 @@ export default function UserDropdown({ isDarkMode }) {
         </button>
 
         {isOpen && (
-          <div className="mt-2 rounded-md ring-1 ring-black dark:ring-slate-700 ring-opacity-5 dark:ring-opacity-100 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border overflow-hidden border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 lg:absolute lg:right-0 lg:w-56 lg:shadow-lg lg:border-none lg:bg-white lg:dark:bg-slate-800">
+          <div className="mt-2 rounded-md ring-1 ring-slate-100 dark:ring-slate-700 ring-opacity-50 dark:ring-opacity-100 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 relative w-full shadow-none border overflow-hidden border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 lg:absolute lg:right-0 lg:w-64 lg:shadow-lg lg:border-none lg:bg-white lg:dark:bg-slate-800">
             <div>
               <ThemeToggle
-                isActive={isDarkMode}
+                label={isDarkMode ? t('common.dark_mode') : t('common.light_mode')}
+                isDarkMode={isDarkMode}
                 onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
-                darkLabel={t('common.dark_mode')}
-                lightLabel={t('common.light_mode')}
                 className="text-sm px-4"
               />
-
               <LanguageToggle showLabel={true} className="text-sm px-4" />
-
               <Link
                 href="/setting"
                 onClick={() => setIsOpen(false)}
@@ -123,7 +120,6 @@ export default function UserDropdown({ isDarkMode }) {
               >
                 {t('navbar.setting')}
               </Link>
-
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer border-t border-gray-100 dark:border-slate-700/50"

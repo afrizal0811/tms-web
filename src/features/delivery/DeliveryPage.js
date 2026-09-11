@@ -754,6 +754,7 @@ export default function DeliveryPage() {
           value={isDetailView}
           onChange={handleToggleView}
           disabled={isLoading || isDownloading}
+          className="w-full"
         />
       ),
     },
