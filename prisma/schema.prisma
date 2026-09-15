@@ -10,20 +10,19 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-// Tambahkan baris relasi "drivers" ini ke dalam model Hub yang sudah ada
 model Hub {
   id           String   @id
   name         String
   acronym      String?
   hasPendingGR Boolean  @default(false)
   hasPartialRouting Boolean  @default(false)
-  lat          Float?   // Kolom latitude
-  lng          Float?   // Kolom longitude
+  has_vms      Boolean @default(false)
+  lat          Float?
+  lng          Float?  
   updatedAt    DateTime @updatedAt
   drivers      Driver[] 
 }
 
-// Tambahkan model Driver baru ini di bawah
 model Driver {
   id             String   @id
   vehicle_id     String? 
@@ -36,16 +35,16 @@ model Driver {
   type           String?
   startTime      String?
   endTime        String?
-  startBreakTime String?  // Kolom Baru
-  endBreakTime   String?  // Kolom Baru
+  startBreakTime String? 
+  endBreakTime   String?
   multiday       Int?
-  speed          Float?   // Kolom Baru
-  costFactor     Float?   // Kolom Baru
-  tags           String?  // Kolom Baru (Disimpan sebagai teks/string JSON)
-  oddEven        String?  // Kolom Baru
-  minWeight      Float?   // Kolom Baru
+  speed          Float? 
+  costFactor     Float? 
+  tags           String? 
+  oddEven        String? 
+  minWeight      Float?  
   maxWeight      Float?
-  minVolume      Float?   // Kolom Baru
+  minVolume      Float?
   maxVolume      Float?
   storage        String?
   updatedAt      DateTime @updatedAt
@@ -55,7 +54,6 @@ model Driver {
   @@map("drivers")
 }
 
-// Tabel untuk menyimpan data Role dari Vendor
 model Role {
   id        String   @id
   name      String
@@ -63,7 +61,6 @@ model Role {
   updatedAt DateTime @updatedAt
 }
 
-// Tabel untuk menyimpan Tipe Kendaraan dinamis
 model VehicleType {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -83,14 +80,13 @@ model VehicleMapping {
   @@map("vehicle_mappings")
 }
 
-// Tambahkan di bagian paling bawah file prisma/schema.prisma
 
 model TruckUsage {
   id          Int      @id @default(autoincrement())
   hubId       String
-  date        String   // Format: YYYY-MM-DD
-  storageType String   // Dry atau Frozen
-  vehicleType String   // L300, CDE, dll
+  date        String  
+  storageType String   
+  vehicleType String 
   count       Int      
   description String?  @db.Text
   createdAt   DateTime @default(now())
@@ -113,7 +109,7 @@ model Reason {
 model PendingDetail {
   id               String   @id @default(cuid())
   taskId           String   @unique
-  date             String   // Format YYYY-MM-DD
+  date             String  
   internalExternal String?
   detailReason     String?  @db.Text
   groupReason      String?

@@ -1,8 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
-import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs, getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -171,13 +170,13 @@ export default function Navbar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-  const { storedUser } = getLocalStorage();
+  const { storedUser, storedLocation } = getLocalStorage();
   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
   const userPaths = parsedUser?.paths || [];
   const userName = parsedUser?.name || '';
   const userEmail = storedUser ? JSON.parse(storedUser).email : 'email@example.com';
-
-  const { isSuperadmin, isAdmin } = useSuperadmin();
+  const hubs = getCachedHubs();
+  const hasVms = hubs ? hubs.find((h) => String(h._id) === String(storedLocation))?.hasVms : false;
 
   const handleLogout = () => {
     removeLocalStorage('data');
@@ -230,7 +229,9 @@ export default function Navbar() {
         <NavDropdown label={t('navbar.report')} links={filteredReportLinks} />
       )}
       {checkAccess('/task') && <NavLink href="/task">{t('navbar.task')}</NavLink>}
-      {checkAccess('/tracking') && <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>}
+      {hasVms && checkAccess('/tracking') && (
+        <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>
+      )}
       {checkAccess('/summary') && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
       {checkAccess('/coordinate') && (
         <NavLink href="/coordinate">{`${t('navbar.update')} ${t('navbar.coordinate')}`}</NavLink>

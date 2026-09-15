@@ -7,6 +7,28 @@ import { useState } from 'react';
 import Card from './Card';
 import CustomTable from './CustomTable';
 
+const RenderData = ({ item, translate }) => (
+  <div
+    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${item ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}
+  >
+    {item ? translate('common.button.btn_yes') : translate('common.button.btn_no')}
+  </div>
+);
+
+const RenderEdit = ({ value, onChange }) => (
+  <div className="flex justify-center">
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${value ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-700'}`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? 'translate-x-5' : 'translate-x-0'}`}
+      />
+    </button>
+  </div>
+);
+
 export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }) {
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
 
@@ -31,10 +53,14 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           ? Boolean(editValues.hasPartialRouting)
           : Boolean(currentHub.hasPartialRouting);
 
+      const safeVms =
+        editValues.hasVms !== undefined ? Boolean(editValues.hasVms) : Boolean(currentHub.hasVms);
+
       await patchHubs(id, {
         acronym: safeAcronym,
         hasPendingGR: safePendingGR,
         hasPartialRouting: safePartialRouting,
+        hasVms: safeVms,
       });
 
       toastSuccess(translate('common.toast.success'));
@@ -57,7 +83,6 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
     {
       header: translate('setting.tab.general.acronym_title'),
       field: 'acronym',
-      headerClassName: 'w-20 md:w-24',
       render: (item) => (
         <span
           className={`text-[10px] md:text-sm font-bold ${item.acronym ? 'text-sky-700 dark:text-sky-400' : 'text-red-500 dark:text-red-400'}`}
@@ -79,58 +104,25 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       header: 'Pending GR',
       field: 'hasPendingGR',
       align: 'center',
-      headerClassName: 'w-24 md:w-28 text-center',
       cellClassName: 'text-center',
-      render: (item) => (
-        <div
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${item.hasPendingGR ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}
-        >
-          {item.hasPendingGR
-            ? translate('common.button.btn_yes')
-            : translate('common.button.btn_no')}
-        </div>
-      ),
-      renderEdit: (value, onChange) => (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => onChange(!value)}
-            className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${value ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-700'}`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? 'translate-x-5' : 'translate-x-0'}`}
-            />
-          </button>
-        </div>
-      ),
+      render: (item) => <RenderData item={item.hasPendingGR} translate={translate} />,
+      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
     },
+    // {
+    //   header: translate('setting.tab.general.partial_routing_title'),
+    //   field: 'hasPartialRouting',
+    //   align: 'center',
+    //   cellClassName: 'text-center',
+    //   render: (item) => <RenderData item={item.hasPartialRouting} translate={translate} />,
+    //   renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
+    // },
     {
-      header: 'Partial Routing',
-      field: 'hasPartialRouting',
-      headerClassName: 'w-24 md:w-28 text-center',
+      header: translate('setting.tab.general.vms_data_title'),
+      field: 'hasVms',
+      align: 'center',
       cellClassName: 'text-center',
-      render: (item) => (
-        <div
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${item.hasPartialRouting ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}
-        >
-          {item.hasPartialRouting
-            ? translate('common.button.btn_yes')
-            : translate('common.button.btn_no')}
-        </div>
-      ),
-      renderEdit: (value, onChange) => (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => onChange(!value)}
-            className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${value ? 'bg-sky-600' : 'bg-gray-200 dark:bg-slate-700'}`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? 'translate-x-5' : 'translate-x-0'}`}
-            />
-          </button>
-        </div>
-      ),
+      render: (item) => <RenderData item={item.hasVms} translate={translate} />,
+      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
     },
   ];
 
@@ -146,6 +138,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
             acronym: '',
             hasPendingGR: false,
             hasPartialRouting: false,
+            hasVms: false,
           });
           setDeleteConfig({ isOpen: false, id: null, name: null });
         }}
