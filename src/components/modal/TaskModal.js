@@ -5,15 +5,33 @@ import Spinner from '@/components/Spinner';
 import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { getResult, getTask, getUsers } from '@/lib/api/mileapp';
+import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  formatUTC7,
+  getBasePlate,
+  isEmpty,
+  parseCustomerString,
+  ProperCaseText,
+} from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import CopyButton from '../button/CopyButton';
+import JsonTree from '../JsonTree';
 import Map from '../Map';
 import Tooltip from '../Tooltip';
 import Modal from './Modal';
 
-const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated, onValueClick }) => (
+const Field = ({
+  label,
+  value,
+  tooltip,
+  isCopy,
+  copyValue,
+  isTruncated,
+  onValueClick,
+  needEmpty = false,
+}) => (
   <div className="mb-3">
     <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
     <Tooltip tooltipContent={tooltip}>
@@ -21,25 +39,24 @@ const Field = ({ label, value, tooltip, isCopy, copyValue, isTruncated, onValueC
         className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${onValueClick ? ' cursor-pointer underline decoration-dotted decoration-2 underline-offset-5' : ''} ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'}`}
         onClick={onValueClick}
       >
-        {isEmpty(value) ? '-' : String(value)}{' '}
-        {!isEmpty(value) && isCopy && (
-          <span onClick={(e) => e.stopPropagation()}>
-            <CopyButton text={copyValue || value} />
-          </span>
-        )}
+        {!needEmpty && isEmpty(value) ? '-' : String(value)}{' '}
+        {!isEmpty(value) && isCopy && <CopyButton text={copyValue || value} />}
       </div>
     </Tooltip>
   </div>
 );
 
-export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) {
+export default function TaskModal({ isOpen, onClose, taskId, driverData = [], allTasks = [] }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
   const [createdBy, setCreatedBy] = useState(null);
   const [updatedBy, setUpdatedBy] = useState(null);
   const [resultData, setResultData] = useState(null);
+
   const { t: translate, isIndonesian } = useLanguage();
+  const { isSuperadmin } = useSuperadmin();
+
   useEffect(() => {
     if (!isOpen || !taskId || taskId === '-') {
       setTaskData(null);
@@ -77,7 +94,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
             : null
         );
       } catch (err) {
-        console.error('err :', err);
         toastError(translate('common.toast.error', { err: err.message }));
       } finally {
         setLoading(false);
@@ -98,7 +114,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
     return `${lat}, ${lng}`;
   };
   const renderFloatData = (val) => {
-    if (!val) return '-';
+    if (!val) return 0;
     return Number(val).toFixed(2);
   };
 
@@ -108,6 +124,66 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
     const statusDelivery = taskData.statusDelivery?.[0];
     const subtitleText = statusDelivery ? `${status} | ${statusDelivery}` : status;
     return subtitleText.toUpperCase();
+  };
+
+  const getActionStyle = (action) => {
+    const act = (action || '').toLowerCase();
+    switch (act) {
+      case 'create':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400';
+      case 'patch':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
+      case 'put':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
+      case 'assign':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400';
+      case 'unassign':
+        return 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400';
+      case 'complete':
+        return 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400';
+      default:
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    }
+  };
+
+  const extractPutDifferences = (historiesList) => {
+    if (!historiesList || historiesList.length === 0) return [];
+
+    const sorted = [...historiesList].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const isObjOrArray = (val) => val !== null && typeof val === 'object';
+    let currentState = {};
+    const differences = [];
+
+    sorted.forEach((history) => {
+      const isPut = history.action && history.action.toLowerCase() === 'put';
+      const cData = history.changeData || {};
+
+      if (isPut) {
+        const diffsForThisPut = [];
+
+        Object.keys(cData).forEach((key) => {
+          const newVal = cData[key];
+          const oldVal = currentState[key];
+
+          if (isObjOrArray(newVal) && isObjOrArray(oldVal)) {
+            if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+              diffsForThisPut.push({ key, oldVal, newVal });
+            }
+          } else if (newVal !== oldVal) {
+            diffsForThisPut.push({ key, oldVal, newVal });
+          }
+        });
+
+        differences.push({ id: history._id || history.createdAt, diffs: diffsForThisPut });
+      }
+
+      currentState = { ...currentState, ...cData };
+    });
+
+    return differences;
   };
 
   const renderContent = () => {
@@ -142,14 +218,19 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+    const putDiffs = extractPutDifferences(taskData.histories || []);
+
     const hasMap = !!taskData.doneCoordinate;
+    const goToMapTab = hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined;
     const tabs = [
       'Data',
-      ...(hasMap ? [translate('task_detail.modal.map')] : []),
       translate('common.routing'),
       translate('task_detail.modal.list_product'),
       translate('task_detail.modal.history'),
-      translate('common.others'),
+      ...(hasMap ? [translate('task_detail.modal.map')] : []),
+      ...(isSuperadmin
+        ? [`JSON ${translate('common.task')}`, `JSON ${translate('common.routing')}`]
+        : []),
     ];
 
     const productColumns = [
@@ -194,7 +275,9 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
         render: (row) => renderFloatData(row.weight) ?? '-',
       },
     ];
-    const isAutomation = taskData.createdFrom === 'Automation' || taskData.createdBy === 'system';
+    const isAutomation =
+      taskData.createdFrom.toLowerCase() === 'automation' ||
+      taskData.createdBy.toLowerCase() === 'system';
     const CorrectCord =
       {
         YA: isIndonesian ? 'Ya' : 'Yes',
@@ -295,59 +378,130 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
           </div>
 
           <div className="p-2 min-h-[200px]">
-            {activeTab === 'Data' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Field
-                  label={translate('common.actual_arrival')}
-                  value={renderDate(taskData.klikJikaSudahSampai)}
-                />
-                <Field label={translate('common.open_time')} value={taskData.openTime} />
-                <Field label={translate('common.close_time')} value={taskData.closeTime} />
-                <Field label={translate('common.visit_plan')} value={taskData.visitTime} />
-                <Field
-                  label={translate('common.volume')}
-                  value={renderFloatData(taskData.volumeCbm)}
-                />
-                <Field
-                  label={translate('common.weight')}
-                  value={renderFloatData(taskData.weightKg)}
-                />
-                <Field
-                  label={translate('task_detail.modal.expected_coord')}
-                  value={renderCoordinate(taskData.longlat)}
-                  isCopy={true}
-                  onValueClick={
-                    hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
+            {activeTab === 'Data' &&
+              (() => {
+                let arrivalSource, departureSource;
+                const isGrOrPickup =
+                  taskData.flow.toUpperCase().includes('GR') ||
+                  taskData.flow.toUpperCase().includes('PICKUP');
+                if (isGrOrPickup) {
+                  arrivalSource = taskData.page1DoneTime;
+                  departureSource = taskData.doneTime;
+                } else {
+                  arrivalSource = taskData.klikJikaSudahSampai || taskData.klikJikaAndaSudahSampai;
+                  departureSource = taskData.page3DoneTime;
+                }
+                const arrObj = renderDate(arrivalSource);
+                const depObj = renderDate(departureSource);
+                let actualVisitMins = 0;
+                if (arrivalSource && departureSource) {
+                  const tArr = new Date(arrObj);
+                  const tDep = new Date(depObj);
+                  tArr.setSeconds(0, 0);
+                  tDep.setSeconds(0, 0);
+                  const diff = tDep.getTime() - tArr.getTime();
+                  if (diff > 0) {
+                    actualVisitMins = Math.floor(diff / (1000 * 60));
+                  } else if (diff === 0) {
+                    actualVisitMins = 0;
+                  } else {
+                    actualVisitMins = 0;
                   }
-                />
-                <Field
-                  label={translate('task_detail.modal.done_coord')}
-                  value={renderCoordinate(taskData.doneCoordinate)}
-                  isCopy={true}
-                  onValueClick={
-                    hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
-                  }
-                />
-                <Field label={translate('task_detail.modal.correct_coord')} value={CorrectCord} />
-                {(CorrectCord === 'Tidak' || CorrectCord === 'No') && (
-                  <Field
-                    label={translate('task_detail.modal.new_coord')}
-                    value={renderCoordinate(taskData.klikLokasiClient)}
-                    isCopy={true}
-                    onValueClick={
-                      hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined
-                    }
-                  />
-                )}
-                {taskData.alasan && (
-                  <Field
-                    label={translate('task_detail.modal.reason')}
-                    value={taskData.alasan}
-                    isTruncated={true}
-                  />
-                )}
-              </div>
-            )}
+                } else actualVisitMins = '-';
+                let actualSeq = '-';
+                const statusDelivery = taskData.statusDelivery?.[0] || '-';
+
+                if (!isEmpty(statusDelivery))
+                  actualSeq =
+                    [...allTasks]
+                      .filter((t) => t.assignee?.[0] === taskData.assignee?.[0])
+                      .sort((a, b) => {
+                        const getDep = (x) => {
+                          const flow = (x.flow || '').toUpperCase();
+                          return flow.includes('GR') || flow.includes('PICKUP')
+                            ? x.doneTime
+                            : x.page3DoneTime;
+                        };
+                        return (
+                          new Date(getDep(a) || 0).getTime() - new Date(getDep(b) || 0).getTime()
+                        );
+                      })
+                      .findIndex((t) => t._id === taskData._id) + 1;
+
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
+                    <Field label={translate('common.open_time')} value={taskData.openTime} />
+                    <Field label={translate('common.close_time')} value={taskData.closeTime} />
+                    <Field
+                      label={translate('common.volume')}
+                      value={renderFloatData(taskData.volumeCbm)}
+                      needEmpty={true}
+                    />
+                    <Field
+                      label={translate('common.weight')}
+                      value={renderFloatData(taskData.weightKg)}
+                      needEmpty={true}
+                    />
+                    <Field
+                      label={translate('common.actual_arrival')}
+                      value={renderDate(arrivalSource)}
+                    />
+                    <Field
+                      label={translate('common.actual_departure')}
+                      value={renderDate(departureSource)}
+                    />
+                    <Field
+                      label={`${translate('common.visit_actual')} (${translate('common.minute')})`}
+                      value={actualVisitMins}
+                      needEmpty={true}
+                    />
+                    <Field
+                      label={translate('common.actual_seq')}
+                      value={actualSeq > 0 ? actualSeq : '-'}
+                    />
+                    <Field
+                      label={translate('task_detail.modal.expected_coord')}
+                      value={renderCoordinate(taskData.longlat)}
+                      isCopy={true}
+                      onValueClick={goToMapTab}
+                    />
+                    <Field
+                      label={translate('task_detail.modal.done_coord')}
+                      value={renderCoordinate(taskData.doneCoordinate)}
+                      isCopy={true}
+                      onValueClick={goToMapTab}
+                    />
+                    <Field
+                      label={translate('task_detail.modal.correct_coord')}
+                      value={CorrectCord}
+                    />
+                    {(CorrectCord === 'Tidak' || CorrectCord === 'No') && (
+                      <Field
+                        label={translate('task_detail.modal.new_coord')}
+                        value={renderCoordinate(taskData.klikLokasiClient)}
+                        isCopy={true}
+                        onValueClick={goToMapTab}
+                      />
+                    )}
+                    {taskData.alasan && (
+                      <Field
+                        label={translate('task_detail.modal.reason')}
+                        value={taskData.alasan}
+                        isTruncated={true}
+                      />
+                    )}
+                    <Field
+                      label={translate('common.travel_distance_actual')}
+                      value={renderFloatData(taskData.travelDistance / 1000)}
+                    />
+                    <Field
+                      label={translate('common.travel_duration_actual')}
+                      value={renderFloatData(taskData?.travelDuration / 60)}
+                    />
+                  </div>
+                );
+              })()}
 
             {activeTab === translate('task_detail.modal.map') &&
               hasMap &&
@@ -423,8 +577,9 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
 
             {activeTab === translate('common.routing') &&
               (() => {
-                let rTravelTime = '-';
-                let rWaitingTime = '-';
+                let rTravelTime = 0;
+                let rWaitingTime = 0;
+                let rVisitTime = 0;
                 const rName = resultData?.name || '-';
 
                 if (resultData?.result?.routing && assigneeEmail) {
@@ -437,6 +592,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                     if (tripMatch) {
                       rTravelTime = tripMatch.travelTime;
                       rWaitingTime = tripMatch.waitingTime;
+                      rVisitTime = tripMatch.visitTime;
                     }
                   }
                 }
@@ -444,19 +600,38 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Field
+                      label={translate('common.routing_id')}
+                      value={taskData.routingResultId}
+                      isCopy={true}
+                      isTruncated={true}
+                    />
+                    <Field
                       label={translate('common.routing_name')}
                       value={rName}
                       isCopy={true}
                       isTruncated={true}
                     />
-                    <Field label={translate('common.ro_seq')} value={taskData.routePlannedOrder} />
                     <Field label={translate('common.eta')} value={taskData.eta} />
                     <Field label={translate('common.etd')} value={taskData.etd} />
-                    <Field label={translate('common.distance')} value={taskData.distance} />
-                    <Field label={translate('common.travel_time')} value={rTravelTime} />
+                    <Field
+                      label={`${translate('common.visit_plan')} (${translate('common.minute')})`}
+                      value={rVisitTime}
+                    />
+                    <Field label={translate('common.ro_seq')} value={taskData.routePlannedOrder} />
+                    <Field
+                      label={translate('common.travel_distance_plan')}
+                      value={renderFloatData(taskData.distance / 1000)}
+                      needEmpty={true}
+                    />
+                    <Field
+                      label={translate('common.travel_duration_plan')}
+                      value={renderFloatData(rTravelTime / 60)}
+                      needEmpty={true}
+                    />
                     <Field
                       label={translate('task_detail.modal.waiting_time')}
-                      value={rWaitingTime}
+                      value={renderFloatData(rWaitingTime / 60)}
+                      needEmpty={true}
                     />
                   </div>
                 );
@@ -482,17 +657,19 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
             )}
 
             {activeTab === translate('task_detail.modal.history') && (
-              <div className="py-2">
+              <div className="py-2 max-h-[60vh] overflow-y-auto pr-2">
                 {histories.length > 0 ? (
                   <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
                     {histories.map((h, i) => (
                       <div key={i} className="relative pl-6">
                         <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-slate-800" />
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                          <span className="text-sm font-bold text-slate-800 dark:text-slate-100 capitalize">
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-md font-bold capitalize w-fit tracking-wide ${getActionStyle(h.action)}`}
+                          >
                             {h.action || '-'}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-slate-400">
+                          <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
                             {renderDate(h.createdAt)}
                           </span>
                         </div>
@@ -501,6 +678,56 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
                         </div>
                         <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
                           {h.notes || '-'}
+                          {h.action &&
+                            h.action.toLowerCase() === 'put' &&
+                            (() => {
+                              const diffMatch = putDiffs.find(
+                                (d) => d.id === (h._id || h.createdAt)
+                              );
+                              if (diffMatch && diffMatch.diffs.length > 0) {
+                                const formatVal = (v) => {
+                                  if (typeof v === 'object') return JSON.stringify(v);
+                                  const str = String(v);
+                                  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
+                                    return formatDateUniversal(str, 'DD-MM-YYYY HH:mm');
+                                  }
+                                  return str;
+                                };
+                                return (
+                                  <details className="mt-1.5 group">
+                                    <summary className="text-[11px] text-sky-600 dark:text-sky-400 cursor-pointer select-none font-medium hover:underline outline-none w-fit">
+                                      {translate('task_detail.modal.view_changes')} (
+                                      {diffMatch.diffs.length})
+                                    </summary>
+                                    <div className="mt-1.5 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5 max-h-[150px] overflow-y-auto">
+                                      {diffMatch.diffs.map((d, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded"
+                                        >
+                                          <div className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">
+                                            {ProperCaseText(d.key)}
+                                          </div>
+                                          <div
+                                            className="text-red-500 dark:text-red-400 truncate"
+                                            title={formatVal(d.oldVal)}
+                                          >
+                                            - {formatVal(d.oldVal)}
+                                          </div>
+                                          <div
+                                            className="text-emerald-600 dark:text-emerald-400 truncate"
+                                            title={formatVal(d.newVal)}
+                                          >
+                                            + {formatVal(d.newVal)}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                );
+                              }
+                              return null;
+                            })()}
                         </div>
                       </div>
                     ))}
@@ -513,22 +740,30 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [] }) 
               </div>
             )}
 
-            {activeTab === translate('common.others') && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
-                <Field
-                  label={translate('common.routing_id')}
-                  value={taskData.routingResultId}
-                  isCopy={true}
-                />
-                <Field
-                  label={translate('common.travel_distance')}
-                  value={renderFloatData(taskData.travelDistance / 1000)}
-                />
-                <Field
-                  label={translate('common.travel_duration')}
-                  value={renderFloatData(taskData?.travelDuration / 60)}
-                />
+            {activeTab === `JSON ${translate('common.task')}` && (
+              <div className="relative bg-slate-950 border border-slate-800 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                <div className="absolute top-2 right-2 z-10 bg-slate-900/80 rounded-md">
+                  <CopyButton
+                    text={JSON.stringify(taskData, null, 2)}
+                    className="text-white hover:text-sky-300"
+                  />
+                </div>
+                <div className="text-[13px] font-mono leading-relaxed">
+                  <JsonTree data={taskData} label={null} isLast={true} defaultOpen={true} />
+                </div>
+              </div>
+            )}
+            {activeTab === `JSON ${translate('common.routing')}` && (
+              <div className="relative bg-slate-950 border border-slate-800 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                <div className="absolute top-2 right-2 z-10 bg-slate-900/80 rounded-md">
+                  <CopyButton
+                    text={JSON.stringify(resultData, null, 2)}
+                    className="text-white hover:text-sky-300"
+                  />
+                </div>
+                <div className="text-[13px] font-mono leading-relaxed">
+                  <JsonTree data={resultData} label={null} isLast={true} expandAll={true} />
+                </div>
               </div>
             )}
           </div>

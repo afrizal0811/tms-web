@@ -210,6 +210,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={drivers}
+        allTasks={tasks}
       />
     </div>
   );

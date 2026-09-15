@@ -320,6 +320,7 @@ export default function SummaryPage() {
           hasPendingGR: hasPendingGR,
           translate: t,
           driverData: driverData,
+          tasks: rawData.tasks,
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {
