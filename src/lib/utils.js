@@ -555,3 +555,13 @@ export const getBaseVehicleType = (typeStr, knownTypes = []) => {
   if (typeParts.length > 1 && typeParts[1] === 'LONG') base = `${base}-LONG`;
   return base;
 };
+
+export function formatOdometer(value, locale = 'id-ID') {
+  if (isEmpty(value)) {
+    return '-';
+  }
+  return Number(value).toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

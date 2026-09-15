@@ -6,9 +6,10 @@ import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
+import { getOdometer } from '@/lib/api/mceasy/odometer';
 import { getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { getBaseVehicleType, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toastError } from '../../lib/toast';
 import TemplateTab from './components/TemplateTab';
@@ -22,8 +23,14 @@ const sortData = (a, b) => {
   return (a.email || '').localeCompare(b.email || '');
 };
 
-const processVehicleData = (rawDriversData) => {
+const processVehicleData = (rawDriversData, odometer) => {
   const processedData = rawDriversData.map((v) => {
+    let odoValue = '-';
+    if (v.vmsVehicleId && Array.isArray(odometer)) {
+      const match = odometer.find((o) => String(o.vehicleId) === String(v.vmsVehicleId));
+      if (match) odoValue = match.odometer;
+    }
+
     let parsedTags = [];
     if (v.tags) {
       try {
@@ -39,6 +46,7 @@ const processVehicleData = (rawDriversData) => {
 
     return {
       ...v,
+      odometer: odoValue,
       parsedTags,
       isIncomplete,
     };
@@ -110,7 +118,7 @@ const colorLegend = [
 ];
 
 export default function VehicleData() {
-  const { t } = useLanguage();
+  const { t, localeCode } = useLanguage();
   const [activeTab, setActiveTab] = useState('master');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,21 +137,18 @@ export default function VehicleData() {
       setIsLoading(true);
       try {
         const { storedLocation } = getLocalStorage();
-        if (!storedLocation) {
-          throw new Error(t('common.toast.error', { err: 'Location not found' }));
-        }
-
         const rawDriversData = await getDriverData(storedLocation);
 
         if (!rawDriversData || isEmpty(rawDriversData)) {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
         }
+        const odometer = await getOdometer({ date: formatDateUniversal(new Date()) });
 
         const {
           templateData: temp,
           masterData: master,
           conditionalData: cond,
-        } = processVehicleData(rawDriversData);
+        } = processVehicleData(rawDriversData, odometer);
 
         if (!isMounted) return;
 
@@ -323,7 +328,12 @@ export default function VehicleData() {
     >
       <div className="flex-1 flex flex-col m-0 overflow-auto">
         {(activeTab === 'master' || activeTab === 'conditional') && (
-          <VehicleTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
+          <VehicleTab
+            localeCode={localeCode}
+            paginatedData={filteredData}
+            searchQuery={searchQuery}
+            t={t}
+          />
         )}
         {activeTab === 'template' && (
           <TemplateTab paginatedData={filteredData} searchQuery={searchQuery} t={t} />
