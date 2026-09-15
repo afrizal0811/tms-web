@@ -122,7 +122,7 @@ export const bulkDownloader = async ({
     document.body.removeChild(link);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }), e);
   } finally {
     setIsLoading(false);
   }

@@ -522,7 +522,7 @@ export default function DeliveryPage() {
         setActiveVehicleId(finalRoutes.length > 0 ? finalRoutes[0].vehicleId : null);
         setTimeMap(driverTimeStamps(historyData, selectedDate));
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
       } finally {
         setIsLoading(false);
       }

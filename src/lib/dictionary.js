@@ -332,6 +332,7 @@ export const dictionary = {
         },
       },
       toast: {
+        duplicate_file: 'File sudah diunggah, silakan pilih file yang berbeda',
         failed_zip: 'Gagal membuat file zip',
         invalid_file: '{fileName} gagal diunggah. Gunakan berkas yang benar!',
         select_date: 'Pilih tanggal pengiriman',
@@ -446,9 +447,6 @@ export const dictionary = {
           volume_min: 'Volume Min',
           weight_min: 'Berat Min',
         },
-      },
-      toast: {
-        choose_one: 'Pilih setidaknya satu sheet untuk diunduh',
       },
     },
     delivery: {
@@ -1059,6 +1057,7 @@ export const dictionary = {
         },
       },
       toast: {
+        duplicate_file: 'File already uploaded, please select a different file',
         failed_zip: 'Failed to create ZIP file',
         invalid_file: '{fileName} failed to upload. Please use a valid file!',
         select_date: 'Select delivery date',
@@ -1173,9 +1172,6 @@ export const dictionary = {
           volume_min: 'Min Volume',
           weight_min: 'Min Weight',
         },
-      },
-      toast: {
-        choose_one: 'Select at least one sheet to download',
       },
     },
     delivery: {

@@ -25,8 +25,8 @@ export function useVehicleTagCheck() {
         } else {
           onSuccess();
         }
-      } catch (error) {
-        toastError(t('common.toast.error', { err: error.message }));
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
         onSuccess();
       }
     },

@@ -66,7 +66,7 @@ export default function SessionGuard({ children }) {
 
         setIsVerified(true);
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }), e);
         router.push('/');
       }
     };

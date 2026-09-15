@@ -50,7 +50,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
       options.unshift({ label: translate('setting.tab.modal.blank_driver'), value: '-' });
       setMcEasyDrivers(options);
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsDriverLoading(false);
     }
@@ -100,7 +100,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setSyncLoading(null);
     }
@@ -131,8 +131,8 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
 
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (error) {
-      toastError(translate('common.toast.error', { err: error.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setSyncLoading(null);
     }

@@ -157,7 +157,7 @@ export default function Dashboard({ driverData }) {
 
       setRawData({ tasks: tasksArray, results: resultsArray });
     } catch (err) {
-      toastError(t('common.toast.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setLoading(false);
     }
@@ -222,7 +222,7 @@ export default function Dashboard({ driverData }) {
         const cacheKey = `${hubId}:${year}`;
         yearlyCacheRef.current[cacheKey] = allTasks;
       } catch (err) {
-        toastError(t('common.toast.error'), { err: err.message });
+        toastError(t('common.toast.error', { err: err.message }), err);
       } finally {
         setIsYearlyLoading(false);
       }

@@ -1,5 +1,6 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api/mileapp';
 import { formatUTC7, getBasePlate, isEmpty, normalizeEmail } from './utils';
+import { toastError } from './toast';
 
 const driversCache = {};
 let vehicleTypesPromise = null;
@@ -110,7 +111,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     return unmappedList;
   } catch (error) {
-    console.error(error);
+    toastError(error.message, error);
     return [];
   }
 }

@@ -55,7 +55,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
       await new Promise((r) => setTimeout(r, 100));
       downloadRoutingActualExcel(processedData, t, selectedDate, hubLabel);
     } catch (e) {
-      toastError(t('common.toast.error', { err: e.message }));
+      toastError(t('common.toast.error', { err: e.message }), e);
     } finally {
       setIsDownloading(false);
     }

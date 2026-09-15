@@ -95,7 +95,7 @@ export function LocationSwitcher() {
         setAllowedHubs(allowed);
       } catch (e) {
         setAllowedHubs([]);
-        toastError(t('common.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }), e);
       }
     }
 

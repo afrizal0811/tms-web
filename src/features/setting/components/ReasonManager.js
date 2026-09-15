@@ -21,8 +21,8 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       setNewPic('');
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 
@@ -32,9 +32,9 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       await updateReason(id, editValues.reasons, editValues.pic);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
-      throw err;
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+      throw e;
     }
   };
 
@@ -51,8 +51,8 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       await deleteReason(targetId);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 

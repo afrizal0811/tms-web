@@ -83,7 +83,7 @@ export default function PendingReasonModal({
       onSuccess(res.data || res);
       onClose();
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export default function PendingReasonModal({
       onSuccess({ taskId: data._id, deleted: true });
       onClose();
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsLoading(false);
     }

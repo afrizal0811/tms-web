@@ -18,8 +18,8 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
       setNewTypeName('');
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 
@@ -29,9 +29,9 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
       await updateVehicleType(id, editValues.name);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
-      throw err;
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+      throw e;
     }
   };
 
@@ -43,8 +43,8 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
       await deleteVehicleType(targetId);
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 

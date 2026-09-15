@@ -387,8 +387,8 @@ export default function useSummaryData() {
             }
           });
         }
-      } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
       }
 
       const routingDateVehicles = {};
@@ -776,7 +776,7 @@ export default function useSummaryData() {
           setActiveHubLocation(null);
         }
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }), e);
         setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
       }
 
@@ -807,7 +807,7 @@ export default function useSummaryData() {
         hasPendingGRValue
       );
     } catch (e) {
-      toastError(e.message);
+      toastError(t('common.toast.error', { err: e.message }), e);
       setReportPreview(null);
     } finally {
       setIsLoading(false);

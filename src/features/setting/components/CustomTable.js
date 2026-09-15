@@ -105,7 +105,7 @@ export default function Table({
       await onSave(id, editValues, item);
       setEditId(null);
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsSaving(false);
     }

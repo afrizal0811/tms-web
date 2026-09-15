@@ -131,7 +131,7 @@ export const handleCustomDownload = async ({
 
     toastSuccess(t('common.toast.success'));
   } catch (error) {
-    toastError(t('common.toast.error', { err: error.message }));
+    toastError(t('common.toast.error', { err: error.message }), error);
   } finally {
     setIsLoading(false);
   }

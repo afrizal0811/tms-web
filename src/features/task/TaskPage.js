@@ -15,6 +15,7 @@ import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { getDriverData } from '@/lib/driverData';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
+import { toastError } from '@/lib/toast';
 import { formatUTC7, normalizeEmail, parseCustomerString, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -76,12 +77,12 @@ export default function TaskPage() {
           const data = Array.isArray(res) ? res : [];
           setHubsData(data);
         } catch (err) {
-          console.error(err);
+          toastError(t('common.toast.error', { err: err.message }), err);
         }
       };
       fetchHubs();
     }
-  }, [isSuperadmin, hubId]);
+  }, [isSuperadmin, hubId, t]);
 
   const fetchTasksData = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -117,11 +118,11 @@ export default function TaskPage() {
       cacheRef.current[mode] = dataArray;
       setTasks(dataArray);
     } catch (err) {
-      console.error(err);
+      toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, isAllHub, hubId, isSuperadmin]);
+  }, [startDate, endDate, isAllHub, hubId, isSuperadmin, t]);
 
   useEffect(() => {
     fetchTasksData();

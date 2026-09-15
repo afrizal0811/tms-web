@@ -157,7 +157,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
       setUserToConfirm(foundUser);
       setIsConfirmOpen(true);
     } catch (err) {
-      toastError(t('common.toast.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setLoading(false);
     }
@@ -211,7 +211,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
         handleUserSelect(filteredUserSession);
         toastSuccess(t('home.toast.login_success'));
       } catch (err) {
-        toastError(t('home.toast.login_failed', { err: err.message }));
+        toastError(t('home.toast.login_failed', { err: err.message }), err);
       }
     });
     setLoading(false);

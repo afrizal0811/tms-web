@@ -74,8 +74,8 @@ export default function SettingPage() {
 
       setVehicleTypes(vTypes);
       setReasons(reasonsDb || []);
-    } catch (error) {
-      toastError(t('common.toast.error', { err: error.message }));
+    } catch (e) {
+      toastError(t('common.toast.error', { err: e.message }), e);
     }
   }, [t]);
 
@@ -92,8 +92,8 @@ export default function SettingPage() {
 
         setIsAuthorized(true);
         await fetchAllData();
-      } catch (error) {
-        toastError(t('common.toast.error', { err: error.message }));
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
       } finally {
         setIsLoadingPage(false);
       }

@@ -130,8 +130,8 @@ export default function PermissionTab({ roles, onRefresh, isReadOnly, translate 
       toastSuccess(translate('common.toast.success') || 'Akses diperbarui');
       await onRefresh();
       setEditingId(null);
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsSaving(false);
     }
@@ -144,8 +144,8 @@ export default function PermissionTab({ roles, onRefresh, isReadOnly, translate 
       toastSuccess(translate('common.toast.success') || 'Akses direset');
       await onRefresh();
       setEditingId(null);
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsSaving(false);
     }

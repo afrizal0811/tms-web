@@ -29,7 +29,7 @@ export default function TaskCountReport() {
         setHubs(cached || []);
         setSelectedHubs((cached || []).map((h) => h._id));
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
       }
     };
     loadHubs();
@@ -130,7 +130,7 @@ export default function TaskCountReport() {
                 }
               }
             } catch (e) {
-              console.error('Trash parsing error:', e);
+              toastError(t('common.toast.error', { err: e.message }), e);
             }
           }
         });
@@ -173,7 +173,7 @@ export default function TaskCountReport() {
       XLSX.writeFile(wb, fileName);
       toastSuccess(t('common.toast.success'));
     } catch (err) {
-      toastError(t('common.toast.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setIsLoading(false);
     }

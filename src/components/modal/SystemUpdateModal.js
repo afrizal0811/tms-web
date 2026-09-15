@@ -53,7 +53,7 @@ export default function SystemUpdateModal() {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
       }
     }
 

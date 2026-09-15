@@ -133,7 +133,7 @@ export default function UpdateCoordinatePage() {
         setLoading(false);
       } catch (err) {
         if (mountedContext && !mountedContext.isMounted) return;
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
         setLoading(false);
       }
     },

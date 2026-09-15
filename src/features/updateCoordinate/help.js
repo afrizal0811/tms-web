@@ -91,7 +91,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }), e);
   } finally {
     setIsDownloading(false);
   }

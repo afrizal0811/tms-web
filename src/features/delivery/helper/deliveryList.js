@@ -319,7 +319,7 @@ export const handleFullDeliveryListDownload = async ({
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
   } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }), e);
   } finally {
     setIsDownloading(false);
   }
@@ -447,7 +447,7 @@ export const handlePartialDeliveryListDownload = async ({
     }
 
     if (!masterHasData) {
-      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      toastError(t('common.toast.error', { err: t('common.no_data') }));
       setIsDownloading(false);
       return;
     }
@@ -460,7 +460,7 @@ export const handlePartialDeliveryListDownload = async ({
     triggerDownload(masterContent, finalFileName);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
-    toastError(t('common.toast.error', { err: err.message }));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsDownloading(false);
   }

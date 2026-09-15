@@ -26,7 +26,7 @@ export default function DailyReportPage() {
           driverData: drivers || [],
         });
       } catch (e) {
-        toastError(e.message);
+        toastError(t('common.toast.error', { err: e.message }), e);
       } finally {
         setIsLoading(false);
       }

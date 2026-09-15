@@ -150,8 +150,8 @@ export default function VehicleData() {
         setTemplateData(temp);
         setMasterData(master);
         setConditionalData(cond);
-      } catch (err) {
-        if (isMounted) toastError(err.message);
+      } catch (e) {
+        if (isMounted) toastError(t('common.toast.error', { err: e.message }), e);
       } finally {
         if (isMounted) setIsLoading(false);
       }

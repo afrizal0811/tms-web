@@ -54,7 +54,7 @@ export default function UploadArea({
       });
 
       if (hasDuplicate) {
-        toastError('Tidak bisa upload file yang sama');
+        toastError(t('report.toast.duplicate_file'));
       }
 
       if (uniqueNewFiles.length > 0) {

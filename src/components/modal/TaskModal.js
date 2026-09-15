@@ -94,7 +94,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
             : null
         );
       } catch (err) {
-        toastError(translate('common.toast.error', { err: err.message }));
+        toastError(translate('common.toast.error', { err: err.message }), err);
       } finally {
         setLoading(false);
       }

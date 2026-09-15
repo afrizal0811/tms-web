@@ -33,7 +33,7 @@ export default function UserDropdown({ isDarkMode }) {
           return capitalizeText(user.name || '');
         }
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }), e);
       }
     }
     return '';

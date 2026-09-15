@@ -355,7 +355,7 @@ export const handleSingleDownload = async ({
     if (hasError) toastWarning('Terdapat data yang hilang. Periksa sheet Error Data!');
     toastSuccess(t('common.toast.success') || 'Data berhasil diunduh!');
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }
@@ -393,7 +393,7 @@ export const handleBulkDownload = async ({
       t,
     });
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   }
 };
 
@@ -423,7 +423,7 @@ export const handleManualDownload = async ({
     setSelectedRoutingFiles([]);
     setSelectedDeliveryFiles([]);
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }

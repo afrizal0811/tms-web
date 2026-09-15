@@ -65,8 +65,8 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
 
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 

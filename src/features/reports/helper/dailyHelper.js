@@ -211,7 +211,7 @@ export const handleSingleDownload = async ({
     XLSX.writeFile(wb, excelFileName);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }
@@ -234,7 +234,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
       return acc;
     }, {});
   } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }), e);
     setIsLoading(false);
     return;
   } finally {
@@ -395,7 +395,7 @@ export const handleManualDownload = async ({
     setSelectedRoutingFiles([]);
     setSelectedDeliveryFiles([]);
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }

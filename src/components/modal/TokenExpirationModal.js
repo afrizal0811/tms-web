@@ -35,7 +35,7 @@ export default function TokenExpirationModal() {
           setIsOpen(true);
         }
       } catch (error) {
-        toastError(t('common.toast.error', { err: error.message }));
+        toastError(t('common.toast.error', { err: error.message }), error);
       }
     };
 

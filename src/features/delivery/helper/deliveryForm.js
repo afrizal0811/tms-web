@@ -263,7 +263,7 @@ export const handleFullDeliveryFormDownload = async ({
     triggerDownload(content, `Delivery Form - ${dateForFilename} - ${locationName}.zip`);
     toastSuccess(t('common.toast.success', { length: generatedFiles.length }));
   } catch (error) {
-    toastError(t('common.toast.error', { err: error.message }));
+    toastError(t('common.toast.error', { err: error.message }), error);
   } finally {
     setIsDownloading(false);
   }
@@ -365,7 +365,7 @@ export const handlePartialDeliveryFormDownload = async ({
     }
 
     if (!masterHasData) {
-      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      toastError(t('common.toast.error', { err: t('common.no_data') }));
       setIsDownloading(false);
       return;
     }
@@ -374,7 +374,7 @@ export const handlePartialDeliveryFormDownload = async ({
     triggerDownload(masterContent, `Delivery Form - ${dateForFilename} - ${locationName}.zip`);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
-    toastError(t('common.toast.error', { err: err.message }));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsDownloading(false);
   }

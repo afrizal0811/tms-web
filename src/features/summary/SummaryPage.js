@@ -185,8 +185,8 @@ export default function SummaryPage() {
       );
       XLSX.writeFile(wb, excelFileName);
       toastSuccess(t('common.toast.success'));
-    } catch (err) {
-      toastError(t('common.toast.error', { err: err.message }));
+    } catch (e) {
+      toastError(t('common.toast.error', { err: e.message }), e);
     } finally {
       setIsDownload(false);
     }
