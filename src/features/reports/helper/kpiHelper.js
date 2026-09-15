@@ -74,7 +74,13 @@ const evaluateRoutingValidity = (results, taskMap) => {
     })
     .map((i) => i._id);
 };
-const processSingleKpiDate = async (targetDateObj, drivers, hubId, hubAcronym, customRoutingDateObj = null) => {
+const processSingleKpiDate = async (
+  targetDateObj,
+  drivers,
+  hubId,
+  hubAcronym,
+  customRoutingDateObj = null
+) => {
   const validDeliveryDate = new Date(targetDateObj);
   const dateString = formatDateUniversal(validDeliveryDate);
   const startObj = new Date(validDeliveryDate);
@@ -83,7 +89,9 @@ const processSingleKpiDate = async (targetDateObj, drivers, hubId, hubAcronym, c
   const timeTo = toApiDateString(new Date(startObj.setHours(23, 59, 59)));
   const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(dateString);
 
-  const targetRoutingDateObj = customRoutingDateObj ? new Date(customRoutingDateObj) : getPreviousRoutingDate(validDeliveryDate);
+  const targetRoutingDateObj = customRoutingDateObj
+    ? new Date(customRoutingDateObj)
+    : getPreviousRoutingDate(validDeliveryDate);
 
   const [tasks, rawResults, histories] = await Promise.all([
     getTasks({
@@ -297,16 +305,10 @@ const executeManualKpiDownload = async ({
   const formattedDate = formatDateUniversal(dateObj);
   const { timeFrom, timeTo } = calculateStartFinishDates(formattedDate);
 
-  let histories = [];
-  try {
-    histories =
-      (await getLocationHistories({
-        timeFrom,
-        timeTo,
-      })) || [];
-  } catch {
-    toastWarning('Gagal menarik data lokasi API, menggunakan data kosong.');
-  }
+  const histories = await getLocationHistories({
+    timeFrom,
+    timeTo,
+  });
 
   const { kpiHistories: historiesData } = convertLocationHistories(
     histories?.tasks?.data || [],
@@ -342,7 +344,7 @@ export const handleSingleDownload = async ({
   try {
     setIsLoading(true);
     if (!selectedDate) throw new Error(t('common.invalid_date'));
-    
+
     const { wb, fileName, hasError } = await processSingleKpiDate(
       selectedDate,
       driverData,
@@ -350,10 +352,10 @@ export const handleSingleDownload = async ({
       hubAcronym,
       isCustomRouting ? routingDate : null
     );
-    
+
     XLSX.writeFile(wb, fileName);
     if (hasError) toastWarning('Terdapat data yang hilang. Periksa sheet Error Data!');
-    toastSuccess(t('common.toast.success') || 'Data berhasil diunduh!');
+    toastSuccess(t('common.toast.success'));
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
@@ -371,7 +373,8 @@ export const handleBulkDownload = async ({
   t,
 }) => {
   try {
-    if (!startDate || !endDate) throw new Error(t('common.invalid_date') || 'Silahkan pilih rentang tanggal!');
+    if (!startDate || !endDate)
+      throw new Error(t('common.invalid_date') || 'Silahkan pilih rentang tanggal!');
     if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
 
     await bulkDownloader({
@@ -411,14 +414,14 @@ export const handleManualDownload = async ({
 }) => {
   try {
     setIsLoading(true);
-    await executeManualKpiDownload({ 
-      routingFiles: selectedRoutingFiles, 
-      taskFiles: selectedDeliveryFiles, 
-      hubId, 
-      hubAcronym, 
-      drivers: driverData 
+    await executeManualKpiDownload({
+      routingFiles: selectedRoutingFiles,
+      taskFiles: selectedDeliveryFiles,
+      hubId,
+      hubAcronym,
+      drivers: driverData,s
     });
-    
+
     setIsModalOpen(false);
     setSelectedRoutingFiles([]);
     setSelectedDeliveryFiles([]);

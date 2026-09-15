@@ -80,7 +80,6 @@ export default function UpdateCoordinatePage() {
       try {
         if (typeof window === 'undefined') return;
         const { storedLocation: hubId } = getLocalStorage();
-        if (!hubId) throw new Error(t('common.no_data'));
 
         const localStart = new Date(selectedDate);
         localStart.setHours(0, 0, 0, 0);

@@ -1,5 +1,5 @@
 import { getLocationHistories, getResult, getResultHistories, getTasks } from '@/lib/api/mileapp';
-import { getCachedHubs } from '@/lib/localStorageHandler';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   buildRoutingMap,
@@ -20,7 +20,6 @@ import {
   parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
-import JSZip from 'jszip';
 import * as XLSX from 'xlsx-js-style';
 import {
   serviceLevelHeaders,
@@ -30,7 +29,7 @@ import {
   taskManualKeyMapping,
   tripActivityHeaders,
 } from './constants';
-import { getDatesInRange } from './help';
+import { bulkDownloader } from './help';
 
 const normalizeTasksData = (tasks) =>
   !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
@@ -73,18 +72,15 @@ export const handleCustomDownload = async ({
   }
   setIsLoading(true);
   try {
-    const datesToProcess = isBulkMode
-      ? getDatesInRange(startDate, endDate || startDate)
-      : [singleDate];
     const locationName = hubAcronym || hubName;
-
-    let generatedFiles = [];
-    let reportTitleName = '';
 
     const reportTypeConfig = {
       detail: { process: processTaskRoutingReport, title: t('report.custom.task_routing') },
       manual: { process: processTaskManualReport, title: t('report.custom.task_manual') },
-      service_level: { process: processTaskDateReport, title: t('report.custom.service_level') },
+      service_level: {
+        process: processServiceLevelReport,
+        title: t('report.custom.service_level'),
+      },
       trip_activity: {
         process: processTripActivityReport,
         title: t('report.custom.trip_activity'),
@@ -92,48 +88,48 @@ export const handleCustomDownload = async ({
     };
 
     const config = reportTypeConfig[reportType];
-    if (config) {
-      generatedFiles = await config.process({ hubId, datesToProcess, locationName, t, driverData });
-      reportTitleName = config.title;
-    }
+    if (!config) throw new Error('Invalid report type');
 
-    if (generatedFiles.length === 0) {
-      throw new Error(t('common.no_data'));
-    }
+    if (isBulkMode) {
+      if (!startDate || !endDate) throw new Error(t('common.invalid_date'));
+      if (endDate < startDate)
+        throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
 
-    if (generatedFiles.length === 1) {
-      XLSX.writeFile(generatedFiles[0].wb, generatedFiles[0].fileName);
-    } else {
-      const zip = new JSZip();
-      generatedFiles.forEach((file) => {
-        zip.file(file.fileName, file.wbout);
+      await bulkDownloader({
+        startDate,
+        endDate,
+        driverData,
+        zipPrefix: `${config.title} (${t('common.bulk')})`,
+        setIsLoading,
+        processDateCallback: async ({ dateObj }) => {
+          const files = await config.process({
+            hubId,
+            datesToProcess: [dateObj],
+            locationName,
+            t,
+            driverData,
+          });
+          if (files.length === 0) return { error: true };
+          return { wb: files[0].wb, excelFileName: files[0].fileName };
+        },
+        t,
       });
-
-      const content = await zip.generateAsync({ type: 'blob' });
-
-      const startFormat = isBulkMode
-        ? formatDateUniversal(startDate, 'DD.MM.YYYY')
-        : formatDateUniversal(singleDate, 'DD.MM.YYYY');
-      const endFormat =
-        isBulkMode && endDate ? formatDateUniversal(endDate, 'DD.MM.YYYY') : startFormat;
-      const fileNameDate =
-        isBulkMode && startFormat !== endFormat ? `${startFormat} to ${endFormat}` : startFormat;
-
-      const zipUrl = URL.createObjectURL(content);
-      const link = document.createElement('a');
-      link.href = zipUrl;
-      link.download = `${reportTitleName} - ${fileNameDate} - ${locationName}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(zipUrl);
+    } else {
+      const files = await config.process({
+        hubId,
+        datesToProcess: [singleDate],
+        locationName,
+        t,
+        driverData,
+      });
+      if (files.length === 0) throw new Error(t('common.no_data'));
+      XLSX.writeFile(files[0].wb, files[0].fileName);
+      toastSuccess(t('common.toast.success'));
     }
-
-    toastSuccess(t('common.toast.success'));
   } catch (error) {
     toastError(t('common.toast.error', { err: error.message }), error);
   } finally {
-    setIsLoading(false);
+    if (!isBulkMode) setIsLoading(false);
   }
 };
 
@@ -144,6 +140,7 @@ export const processTaskRoutingReport = async ({
   t,
   driverData,
 }) => {
+  const { storedLocation } = getLocalStorage();
   const hubsList = getCachedHubs() || [];
   const activeHub = hubsList.find((h) => h._id === storedLocation);
   const hubCoordsStr =
@@ -306,7 +303,7 @@ export const processTaskManualReport = async ({ hubId, datesToProcess, locationN
   return generatedFiles;
 };
 
-export const processTaskDateReport = async ({
+export const processServiceLevelReport = async ({
   hubId,
   datesToProcess,
   locationName,
@@ -349,14 +346,8 @@ export const processTaskDateReport = async ({
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
-
     const tasksData = normalizeTasksData(tasks);
-    if (isEmpty(tasksData) && isEmpty(filteredTimeData)) {
-      throw new Error(t('common.no_data'));
-    }
-
     const sheetData = [serviceLevelHeaders];
-
     const parsedRows = tasksData.map((task) => {
       const { name, id, location, invoiceNumber } = parseCustomerString(task.customerOrder);
       const arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
