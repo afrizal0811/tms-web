@@ -111,7 +111,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     },
   ];
 
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -119,7 +119,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.delete_title', {
           text: translate('setting.tab.general.mapping_title'),
         })}
         message={

@@ -126,7 +126,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
     },
   ];
 
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.reset_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -142,7 +142,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           });
           setDeleteConfig({ isOpen: false, id: null, name: null });
         }}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.reset_title', {
           text: translate('setting.tab.general.branch_title'),
         })}
         message={

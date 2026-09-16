@@ -287,7 +287,7 @@ export default function TruckUsageModal({
     const isChanged = count !== initialCount || desc !== initialDesc;
     const isSaveDisabled = isLoading || count === '' || !desc.trim() || !isChanged;
 
-    const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+    const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
     return (
       <>
@@ -295,7 +295,7 @@ export default function TruckUsageModal({
           isOpen={isConfirmOpen}
           onCancel={() => setIsConfirmOpen(false)}
           onConfirm={handleDelete}
-          title={translate('common.modal.confirm_title', { text: 'data' })}
+          title={translate('common.modal.delete_title', { text: 'data' })}
           message={
             <span>
               {msgParts[0]}

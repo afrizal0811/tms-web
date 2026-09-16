@@ -8,6 +8,40 @@ import { capitalizeText } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { AVAILABLE_PATHS } from '../helper/constants';
 
+const EditIcon = () => (
+  <svg
+    className="w-3.5 h-3.5 md:w-4 md:h-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+    />
+  </svg>
+);
+
+const DeleteIcon = () => (
+  <svg
+    className="w-3.5 h-3.5 md:w-4 md:h-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+    />
+  </svg>
+);
+
 function groupPaths(paths) {
   const groups = new Map();
   for (const path of paths) {
@@ -162,15 +196,15 @@ export default function PermissionTab({ roles, onRefresh, isReadOnly, translate 
     });
   };
 
-  const title = translate('setting.tab.general.standard_title');
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const title = translate('setting.tab.permission.title');
+  const msgParts = translate('common.modal.reset_message', { text: '|||' }).split('|||');
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
       <ConfirmModal
         isOpen={deleteData.isOpen}
         onCancel={() => setDeleteData({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
-        title={translate('common.modal.confirm_title', { text: title })}
+        title={translate('common.modal.reset_title', { text: title })}
         message={
           <span>
             {msgParts[0]}
@@ -228,16 +262,16 @@ export default function PermissionTab({ roles, onRefresh, isReadOnly, translate 
                   {!isDefault && (
                     <button
                       onClick={() => handleDeleteClick(role)}
-                      className="text-xs px-3 py-1.5 font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded transition-colors cursor-pointer"
+                      className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60 rounded transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                      {translate('common.button.btn_delete')}
+                      <DeleteIcon />
                     </button>
                   )}
                   <button
                     onClick={() => handleEdit(role)}
-                    className="text-xs px-3 py-1.5 font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-400 dark:hover:bg-sky-900/50 rounded transition-colors cursor-pointer"
+                    className="p-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-900/60 rounded transition-colors cursor-pointer"
                   >
-                    {translate('common.button.btn_edit')}
+                    <EditIcon />
                   </button>
                 </div>
               )}

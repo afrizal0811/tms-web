@@ -116,7 +116,7 @@ export default function PendingReasonModal({
       data.pendingDetail.pic);
 
   const statusText = data.statusDelivery ? data.statusDelivery[0] : data.status;
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (
     <>
@@ -124,7 +124,7 @@ export default function PendingReasonModal({
         isOpen={isConfirmOpen}
         onCancel={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.delete_title', {
           text: translate('summary.tabs.pending_reasons.modal_title'),
         })}
         message={

@@ -130,10 +130,12 @@ export const dictionary = {
         success: 'Proses berhasil!',
       },
       modal: {
-        confirm_message: 'Apakah Anda yakin ingin menghapus {text}?',
-        confirm_title: 'Hapus {text}',
         data_load_message: `Rentang data lebih dari {days} hari. Proses dapat memakan waktu lebih lama. Tetap lanjutkan?`,
         data_load_title: 'Peringatan Beban Data',
+        delete_message: 'Apakah Anda yakin ingin menghapus {text}?',
+        delete_title: 'Hapus {text}',
+        reset_message: 'Apakah Anda yakin ingin mengatur ulang {text}?',
+        reset_title: 'Atur Ulang {text}',
       },
     },
     home: {
@@ -858,10 +860,12 @@ export const dictionary = {
         success: 'Process completed successfully!',
       },
       modal: {
-        confirm_message: 'Are you sure to delete {text}?',
-        confirm_title: 'Delete {text}',
-        data_load_title: 'Data Load Warning',
         data_load_message: `Data range exceeds {days} days. Processing may take longer. Do you want to continue?`,
+        data_load_title: 'Data Load Warning',
+        delete_message: 'Are you sure to delete {text}?',
+        delete_title: 'Delete {text}',
+        reset_message: 'Are you sure to reset {text}?',
+        reset_title: 'Reset {text}',
       },
     },
     home: {

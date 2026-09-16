@@ -100,7 +100,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
       ),
     },
   ];
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -108,7 +108,7 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, name: null })}
         onConfirm={confirmDeleteReason}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.delete_title', {
           text: translate('setting.tab.general.reasons_title'),
         })}
         message={
