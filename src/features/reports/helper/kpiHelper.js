@@ -9,7 +9,7 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkDownloader, getPreviousRoutingDate } from './help';
+import { bulkZipDownloader, getPreviousRoutingDate } from './help';
 
 const cleanStr = (str) => String(str || '').trim();
 const normalizeStr = (str) =>
@@ -377,7 +377,7 @@ export const handleBulkDownload = async ({
       throw new Error(t('common.invalid_date') || 'Silahkan pilih rentang tanggal!');
     if (endDate < startDate) throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
 
-    await bulkDownloader({
+    await bulkZipDownloader({
       startDate,
       endDate,
       driverData,
@@ -419,7 +419,8 @@ export const handleManualDownload = async ({
       taskFiles: selectedDeliveryFiles,
       hubId,
       hubAcronym,
-      drivers: driverData,s
+      drivers: driverData,
+      s,
     });
 
     setIsModalOpen(false);

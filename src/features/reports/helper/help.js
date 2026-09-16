@@ -23,7 +23,7 @@ export const getDatesInRange = (startDate, endDate) => {
   return dates;
 };
 
-export const bulkDownloader = async ({
+export const bulkZipDownloader = async ({
   startDate,
   endDate,
   driverData,
@@ -123,6 +123,72 @@ export const bulkDownloader = async ({
     toastSuccess(t('common.toast.success'));
   } catch (e) {
     toastError(t('common.toast.error', { err: e.message }), e);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+export const bulkExcelDownloader = async ({
+  startDate,
+  endDate,
+  locationName,
+  title,
+  setIsLoading,
+  fetchFilesCallback,
+  t,
+}) => {
+  setIsLoading(true);
+  try {
+    const files = await fetchFilesCallback();
+    if (!files || files.length === 0) throw new Error(t('common.no_data'));
+
+    const wb = XLSX.utils.book_new();
+    const sheetDataMap = {};
+    const sheetColsMap = {};
+
+    files.forEach((file) => {
+      file.wb.SheetNames.forEach((sheetName) => {
+        const sheet = file.wb.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        if (!sheetDataMap[sheetName]) {
+          sheetDataMap[sheetName] = [...json];
+          sheetColsMap[sheetName] = sheet['!cols'];
+        } else {
+          sheetDataMap[sheetName].push(...json.slice(1));
+        }
+      });
+    });
+
+    Object.keys(sheetDataMap).forEach((sheetName) => {
+      const ws = XLSX.utils.aoa_to_sheet(sheetDataMap[sheetName]);
+      ws['!cols'] = sheetColsMap[sheetName];
+
+      if (ws['!ref']) {
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let C = 0; C <= range.e.c; ++C) {
+          const cell = XLSX.utils.encode_cell({ r: 0, c: C });
+          if (ws[cell]) {
+            ws[cell].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { patternType: 'solid', fgColor: { rgb: '0369A1' } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+            };
+          }
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    const startStr = formatDateUniversal(startDate, 'DD.MM.YYYY');
+    const endStr = formatDateUniversal(endDate || startDate, 'DD.MM.YYYY');
+    const dateRangeStr = startStr !== endStr ? `${startStr} to ${endStr}` : startStr;
+    const finalName = `${title} - ${dateRangeStr} - ${locationName}.xlsx`;
+
+    XLSX.writeFile(wb, finalName);
+    toastSuccess(t('common.toast.success'));
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }

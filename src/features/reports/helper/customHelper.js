@@ -29,7 +29,7 @@ import {
   taskManualKeyMapping,
   tripActivityHeaders,
 } from './constants';
-import { bulkDownloader } from './help';
+import { bulkExcelDownloader, bulkZipDownloader, getDatesInRange } from './help';
 
 const normalizeTasksData = (tasks) =>
   !isEmpty(tasks) && Array.isArray(tasks) ? tasks : tasks?.data || [];
@@ -55,6 +55,7 @@ const getReportDates = (start, end) => {
 
 export const handleCustomDownload = async ({
   isBulkMode,
+  bulkFormat = 'zip',
   startDate,
   endDate,
   singleDate,
@@ -95,25 +96,40 @@ export const handleCustomDownload = async ({
       if (endDate < startDate)
         throw new Error('Tanggal akhir tidak boleh kurang dari tanggal awal.');
 
-      await bulkDownloader({
-        startDate,
-        endDate,
-        driverData,
-        zipPrefix: `${config.title} (${t('common.bulk')})`,
-        setIsLoading,
-        processDateCallback: async ({ dateObj }) => {
-          const files = await config.process({
-            hubId,
-            datesToProcess: [dateObj],
-            locationName,
-            t,
-            driverData,
-          });
-          if (files.length === 0) return { error: true };
-          return { wb: files[0].wb, excelFileName: files[0].fileName };
-        },
-        t,
-      });
+      if (bulkFormat === 'xls') {
+        await bulkExcelDownloader({
+          startDate,
+          endDate,
+          locationName,
+          title: config.title,
+          setIsLoading,
+          t,
+          fetchFilesCallback: async () => {
+            const datesToProcess = getDatesInRange(startDate, endDate || startDate);
+            return await config.process({ hubId, datesToProcess, locationName, t, driverData });
+          },
+        });
+      } else {
+        await bulkZipDownloader({
+          startDate,
+          endDate,
+          driverData,
+          zipPrefix: `${config.title} (${t('common.bulk')})`,
+          setIsLoading,
+          processDateCallback: async ({ dateObj }) => {
+            const files = await config.process({
+              hubId,
+              datesToProcess: [dateObj],
+              locationName,
+              t,
+              driverData,
+            });
+            if (files.length === 0) return { error: true };
+            return { wb: files[0].wb, excelFileName: files[0].fileName };
+          },
+          t,
+        });
+      }
     } else {
       const files = await config.process({
         hubId,

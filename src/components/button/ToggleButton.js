@@ -28,7 +28,7 @@ export default function ToggleButton({
 
   return (
     <div
-      className={`flex items-stretch rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800 ${containerSizes[size] || containerSizes.md} ${className}`}
+      className={`flex items-stretch rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900 ${containerSizes[size] || containerSizes.md} ${className}`}
     >
       {options.map((opt) => {
         const active = value === opt.value;

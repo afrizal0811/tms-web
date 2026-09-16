@@ -2,6 +2,7 @@
 
 import Button from '@/components/button/Button';
 import InformationButton from '@/components/button/InformationButton';
+import ToggleButton from '@/components/button/ToggleButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { useLanguage } from '@/context/LanguageContext';
@@ -180,6 +181,21 @@ export default function ReportTemplate({
                   <ModeRadioInput checked={mode.checked} disabled={isLoading} />
                   <span className="text-sm select-none w-full">{mode.label}</span>
                   {mode.info && <InformationButton infoText={mode.info} />}
+                  {modeId === 'bulk' && props.onBulkFormatChange && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ToggleButton
+                        options={[
+                          { label: 'ZIP', value: 'zip' },
+                          { label: 'XLS', value: 'xls' },
+                        ]}
+                        value={props.bulkFormat}
+                        onChange={props.onBulkFormatChange}
+                        disabled={isLoading}
+                        size="md"
+                        className="w-full"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

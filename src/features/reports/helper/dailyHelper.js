@@ -20,7 +20,7 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkDownloader, getPreviousRoutingDate } from './help';
+import { bulkZipDownloader, getPreviousRoutingDate } from './help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -241,7 +241,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
     setIsLoading(false);
   }
 
-  bulkDownloader({
+  bulkZipDownloader({
     startDate,
     endDate,
     driverData,

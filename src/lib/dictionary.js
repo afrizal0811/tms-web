@@ -133,7 +133,7 @@ export const dictionary = {
       modal: {
         confirm_message: 'Apakah Anda yakin ingin menghapus {text}?',
         confirm_title: 'Hapus {text}',
-        data_load_message: `Data yang diproses terlalu besar (lebih dari {days} hari). Tetap lanjutkan?`,
+        data_load_message: `Rentang data lebih dari {days} hari. Proses dapat memakan waktu lebih lama. Tetap lanjutkan?`,
         data_load_title: 'Peringatan Beban Data',
       },
     },
@@ -858,7 +858,7 @@ export const dictionary = {
         confirm_message: 'Are you sure to delete {text}?',
         confirm_title: 'Delete {text}',
         data_load_title: 'Data Load Warning',
-        data_load_message: `The data being processed is too large (more than {days} days). Do you want to continue?`,
+        data_load_message: `Data range exceeds {days} days. Processing may take longer. Do you want to continue?`,
       },
     },
     home: {

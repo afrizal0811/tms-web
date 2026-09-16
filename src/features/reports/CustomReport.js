@@ -25,6 +25,7 @@ export default function CustomReport({
   });
   const { bulk: isBulkMode } = selectedMode;
   const [reportType, setReportType] = useState('detail');
+  const [bulkFormat, setBulkFormat] = useState('zip');
 
   const reportOptions = [
     {
@@ -62,6 +63,7 @@ export default function CustomReport({
   const executeProcess = () => {
     handleCustomDownload({
       isBulkMode,
+      bulkFormat,
       startDate,
       endDate,
       singleDate,
@@ -99,6 +101,8 @@ export default function CustomReport({
       isLoading={isLoading}
       onAction={executeProcess}
       actionText={t('common.download')}
+      bulkFormat={bulkFormat}
+      onBulkFormatChange={setBulkFormat}
       extraContent={
         <div className="flex flex-col items-center mb-10 w-full">
           <span className="text-lg mb-3 text-gray-500 dark:text-slate-400 font-medium text-center select-none">
