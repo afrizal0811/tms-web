@@ -13,7 +13,7 @@ export default function RadioButton({ options, selected, onChange, disabled }) {
             onClick={() => !disabled && onChange(opt.id)}
             className={`relative flex items-center justify-between w-full sm:w-60 p-3 border rounded-lg cursor-pointer transition-all  ${
               isActive
-                ? 'bg-sky-50 dark:bg-slate-700 border-sky-400 dark:border-sky-600 text-sky-700 dark:text-sky-4  00 font-semibold shadow-sm'
+                ? 'bg-sky-50 dark:bg-slate-700 border-sky-400 dark:border-sky-600 text-sky-700 dark:text-sky-400 font-semibold shadow-sm'
                 : 'bg-slate-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300'
             }`}
           >
