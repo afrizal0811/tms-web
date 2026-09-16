@@ -1,5 +1,6 @@
 'use client';
 
+import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteReason, postReason, updateReason } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -86,17 +87,14 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
         </span>
       ),
       renderEdit: (value, onChange) => (
-        <select
+        <Dropdown
+          options={PIC_OPTIONS.map((opt) => ({ label: opt, value: opt }))}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full min-w-0 px-1 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none cursor-pointer"
-        >
-          {PIC_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+          onChange={onChange}
+          getLabel={(val) => val || '-'}
+          size="sm"
+          className="w-full min-w-0"
+        />
       ),
     },
   ];
@@ -138,20 +136,14 @@ export default function ReasonManager({ reasons, onRefresh, isReadOnly, translat
             placeholder={translate('setting.tab.general.add_placeholder')}
             className="flex-1 min-w-0 px-2 sm:px-3 py-2 text-[10px] sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800"
           />
-          <select
+          <Dropdown
+            options={PIC_OPTIONS.map((opt) => ({ label: opt, value: opt }))}
             value={newPic}
-            onChange={(e) => setNewPic(e.target.value)}
-            className="w-[85px] sm:w-28 md:w-48 min-w-0 shrink-0 px-1 sm:px-3 py-2 text-[10px] sm:text-sm text-slate-900 dark:text-slate-100 border border-gray-300 dark:border-slate-700 rounded-md outline-none focus:border-sky-500 dark:focus:border-slate-500 focus:ring-1 focus:ring-sky-500 dark:focus:ring-slate-500 bg-white dark:bg-slate-800 cursor-pointer"
-          >
-            <option disabled value="">
-              {translate('setting.tab.general.select_placeholder')}
-            </option>
-            {PIC_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
+            onChange={setNewPic}
+            getLabel={(val) => val || translate('setting.tab.general.select_placeholder')}
+            size="md"
+            className="w-[120px] sm:w-28 md:w-48 min-w-0 shrink-0"
+          />
           <button
             onClick={handleAddReason}
             disabled={!newReason.trim() || !newPic}
