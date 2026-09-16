@@ -53,7 +53,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
   const footerContent = (
     <div className="flex justify-end">
       <Button
-        text={t('common.save')}
+        text={t('common.button.btn_save')}
         onClick={handleSave}
         disabled={!isAllSelected || isLoading || isSaving}
         isLoading={isSaving}

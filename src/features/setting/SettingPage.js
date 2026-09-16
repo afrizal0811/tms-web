@@ -31,7 +31,7 @@ export default function SettingPage() {
   const isReadOnlySync = !isSuperadmin && !isSecretMode;
   const buttonData = [
     { tab: 'general', label: t('setting.tab.general.title') },
-    ...(isSuperadmin ? [{ tab: 'permission', label: 'Permission' }] : []),
+    ...(isSuperadmin ? [{ tab: 'permission', label: t('setting.tab.permission.title') }] : []),
     { tab: 'sync', label: t('setting.tab.sync_data.title') },
   ];
   const fetchAllData = useCallback(async () => {

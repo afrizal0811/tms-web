@@ -69,7 +69,6 @@ export const dictionary = {
       routing_date: 'Tanggal Ruting',
       routing_id: 'ID Ruting',
       routing_name: 'Nama Ruting',
-      save: 'Simpan',
       saving: 'Menyimpan...',
       scroll_down: 'Scroll ke bawah',
       search: 'Cari',
@@ -668,6 +667,11 @@ export const dictionary = {
           title: 'Umum',
           vms_data_title: 'Data VMS',
         },
+        permission: {
+          title: 'Hak Akses',
+          access: 'Akses',
+          unsave_changes: 'Perubahan belum disimpan',
+        },
         sync_data: {
           driver_vehicles: 'Data Sopir & Kendaraan',
           hubs: 'Data Cabang',
@@ -793,7 +797,6 @@ export const dictionary = {
       routing_date: 'Routing Date',
       routing_id: 'Routing ID',
       routing_name: 'Routing Name',
-      save: 'Save',
       saving: 'Saving...',
       scroll_down: 'Scroll down',
       search: 'Search',
@@ -1390,6 +1393,11 @@ export const dictionary = {
           standard_title: 'Standard Vehicle Types',
           title: 'General',
           vms_data_title: 'VMS Data',
+        },
+        permission: {
+          title: 'Permissions',
+          access: 'Access',
+          unsave_changes: 'Unsaved changes',
         },
         sync_data: {
           driver_vehicles: 'Driver & Vehicle Data',
