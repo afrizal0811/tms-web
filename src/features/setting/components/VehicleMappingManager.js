@@ -33,10 +33,8 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
       const data = await getVehicleMappings(activeHub.hubId);
       const sortedData = data.sort((a, b) => a.plat.localeCompare(b.plat));
       setMappings(sortedData);
-    } catch (error) {
-      toastError(
-        translate ? translate('common.toast.error', { err: error.message }) : error.message
-      );
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsLoading(false);
     }
@@ -52,9 +50,9 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
       await updateVehicleMapping(id, item.plat, editValues.mappedType);
       toastSuccess(translate('common.toast.success'));
       await loadMappings();
-    } catch (error) {
-      toastError(translate('common.toast.error', { err: error.message }));
-      throw error;
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+      throw e;
     }
   };
 
@@ -69,9 +67,9 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
       await deleteVehicleMapping(targetId, targetPlat);
       toastSuccess(translate('common.toast.success'));
       await loadMappings();
-    } catch (error) {
+    } catch (e) {
       setIsLoading(false);
-      toastError(translate('common.toast.error', { err: error.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     }
   };
 

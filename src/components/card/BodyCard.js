@@ -19,6 +19,7 @@ export default function BodyCard({
   routingData = null,
   footer = null,
   isScroll = true,
+  timerStartTime,
 }) {
   const { t } = useLanguage();
   const [showScrollHint, setShowScrollHint] = useState(false);
@@ -145,7 +146,7 @@ export default function BodyCard({
   return (
     <div>
       <div
-        className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col w-full h-[600px] relative group transition-colors duration-200 overflow-hidden`}
+        className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col w-full h-[600px] relative group transition-colors duration-200 overflow-hidden`}
       >
         {renderHeader()}
 
@@ -156,7 +157,7 @@ export default function BodyCard({
           {isLoading ? (
             <>
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-800 dark:border-slate-700 space-y-4 animate-in fade-in duration-200">
-                <Spinner />
+                <Spinner startTime={timerStartTime} />
               </div>
               {loading && longLoadingContent && (
                 <div className="absolute top-30 left-0 right-0 z-50 flex justify-center pointer-events-none">
@@ -166,7 +167,7 @@ export default function BodyCard({
             </>
           ) : isEmpty ? (
             <div
-              className={`flex-1 flex items-center justify-center bg-gray-50 border border-gray-300 text-gray-400 m-0 dark:bg-slate-800 dark:border-slate-700 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
+              className={`flex-1 flex items-center justify-center bg-gray-50 text-gray-400 m-0 dark:bg-slate-800 ${isHasTabs ? 'rounded-b-xl' : 'rounded-xl'}`}
             >
               <p>{message}</p>
             </div>

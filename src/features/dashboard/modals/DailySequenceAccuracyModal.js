@@ -20,7 +20,7 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isD
         const dateObj = new Date(year, month, day);
         dayName = dateObj.toLocaleDateString(localeCode, { weekday: 'long' });
       } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }));
+        toastError(t('common.toast.error', { err: e.message }), e);
       }
     }
 

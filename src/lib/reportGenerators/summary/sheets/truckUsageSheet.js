@@ -121,7 +121,7 @@ function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
   };
 }
 
-async function getTruckUsageData(hubId, startDate, endDate) {
+async function getTruckUsageData(hubId, startDate, endDate, translate) {
   try {
     const res = await fetch(
       `/api/mileapp/truck-usage?hubId=${hubId}&startDate=${startDate}&endDate=${endDate}`
@@ -129,7 +129,7 @@ async function getTruckUsageData(hubId, startDate, endDate) {
     if (!res.ok) return [];
     return await res.json();
   } catch (e) {
-    toastError(e.message);
+    toastError(translate('common.toast.error', { err: e.message }), e);
     return [];
   }
 }
@@ -139,7 +139,8 @@ export async function calculateTruckUsageData(
   startDateStr,
   endDateStr,
   hubId,
-  taskData
+  taskData,
+  translate
 ) {
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
@@ -152,7 +153,7 @@ export async function calculateTruckUsageData(
     getVehicleTypes(),
     getVehicleMappings(),
     getDriverData(hubId),
-    getTruckUsageData(hubId, startDateStr, endDateStr),
+    getTruckUsageData(hubId, startDateStr, endDateStr, translate),
   ]);
 
   let vehicleTypes = vehicleTypesObj.map((v) => v.name);
@@ -584,7 +585,14 @@ export async function generateTruckUsageSheet(
   taskData
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
-    await calculateTruckUsageData(resultsData, startDateStr, endDateStr, hubId, taskData);
+    await calculateTruckUsageData(
+      resultsData,
+      startDateStr,
+      endDateStr,
+      hubId,
+      taskData,
+      translate
+    );
 
   const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];

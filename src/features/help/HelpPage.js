@@ -220,7 +220,7 @@ export default function HelpPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      toastError(t('common.toast.error', { error }));
+      toastError(t('common.toast.error', { error }), error);
     } finally {
       toastSuccess(t('common.toast.success'));
       setIsGenerating(false);

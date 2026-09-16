@@ -93,7 +93,7 @@ export default function DeliveryPage() {
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-
+  const [tasksData, setTasksData] = useState({});
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
   const driversArray = driverData ? Object.values(driverData) : null;
@@ -316,20 +316,17 @@ export default function DeliveryPage() {
           getLocationHistories({
             timeFrom: historyFrom,
             timeTo: historyTo,
-            startFinish: 'true',
-            timeBy: 'createdTime',
           }),
           getTasks({
             hubId: storedLocation,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
-            timeBy: 'startTime',
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
         ]);
 
+        setTasksData(tasksResponse);
         setRoutingResults(resultsData || []);
-
         const filteredTasks = (Array.isArray(tasksResponse) ? tasksResponse : []).filter(
           (t) => Array.isArray(t?.assignee) && t.assignee.length > 0
         );
@@ -525,7 +522,7 @@ export default function DeliveryPage() {
         setActiveVehicleId(finalRoutes.length > 0 ? finalRoutes[0].vehicleId : null);
         setTimeMap(driverTimeStamps(historyData, selectedDate));
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
       } finally {
         setIsLoading(false);
       }
@@ -757,6 +754,7 @@ export default function DeliveryPage() {
           value={isDetailView}
           onChange={handleToggleView}
           disabled={isLoading || isDownloading}
+          className="w-full"
         />
       ),
     },
@@ -964,6 +962,7 @@ export default function DeliveryPage() {
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
         driverData={driversArray}
+        allTasks={tasksData}
       />
     </>
   );

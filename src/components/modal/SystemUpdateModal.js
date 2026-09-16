@@ -32,10 +32,13 @@ export default function SystemUpdateModal() {
     sessionStorage.clear();
 
     if (storedSession) {
+      const userToSave = storedSession.user ? { ...storedSession.user } : null;
+      if (userToSave) delete userToSave.paths;
+
       setLocalStorage(
         'data',
         JSON.stringify({
-          user: storedSession.user || null,
+          user: userToSave,
           superadminRoleId: storedSession.superadminRoleId || null,
         })
       );
@@ -50,7 +53,7 @@ export default function SystemUpdateModal() {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
       }
     }
 

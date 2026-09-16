@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -20,6 +19,7 @@ export async function GET() {
         lat: hub.lat,
         lng: hub.lng,
         updatedAt: hub.updatedAt,
+        hasVms: hub.has_vms || false,
       }));
 
     return NextResponse.json(formattedHubs, { status: 200 });
@@ -105,7 +105,7 @@ export async function POST() {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, acronym, hasPendingGR, hasPartialRouting } = body;
+    const { id, acronym, hasPendingGR, hasPartialRouting, hasVms } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
@@ -120,6 +120,9 @@ export async function PATCH(req) {
     }
     if (hasPartialRouting !== undefined && hasPartialRouting !== null) {
       updateData.hasPartialRouting = hasPartialRouting === true || hasPartialRouting === 'true';
+    }
+    if (hasVms !== undefined && hasVms !== null) {
+      updateData.has_vms = hasVms === true || hasVms === 'true';
     }
 
     const updatedHub = await prisma.hub.update({

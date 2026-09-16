@@ -20,7 +20,7 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkDownloader, getPreviousRoutingDate } from './help';
+import { bulkZipDownloader, getPreviousRoutingDate } from './help';
 
 const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
 
@@ -107,14 +107,6 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
   }
 };
 
-const driversCheck = async (selectedLocation, t) => {
-  const drivers = await getDriverData(selectedLocation);
-  if (isEmpty(drivers)) {
-    throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
-  }
-  return drivers;
-};
-
 const fetchVehicleMetadata = async () => {
   const [vehicleTypesObj, mappingsDB] = await Promise.all([
     getVehicleTypes(),
@@ -129,23 +121,18 @@ const fetchVehicleMetadata = async () => {
 };
 
 export const handleSingleDownload = async ({
-  selectedLocation,
-  selectedLocationName,
+  hubId,
+  hubName,
   selectedDate,
   selectedDateString,
   isCustomRouting,
   routingDate,
   driverData,
   setIsLoading,
-  setIsAnyLoading,
-  setIsMapping,
   t,
 }) => {
   try {
     setIsLoading(true);
-    await driversCheck(selectedLocation, t);
-    if (setIsAnyLoading) setIsAnyLoading(true);
-    if (setIsMapping) setIsMapping(false);
 
     if (!selectedDateString) throw new Error(t('common.invalid_date'));
 
@@ -156,11 +143,10 @@ export const handleSingleDownload = async ({
       calculateStartFinishDates(selectedDateString);
 
     const allTasks = await getTasks({
-      hubId: selectedLocation,
+      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
-      timeBy: 'startTime',
     });
 
     if (isEmpty(allTasks)) {
@@ -175,22 +161,18 @@ export const handleSingleDownload = async ({
       targetRoutingStr = detectRoutingDateFromTasks(allTasks, selectedDate);
     }
 
-    const summaryPayload = {
-      dateFrom: `${targetRoutingStr} 00:00:00`,
-      dateTo: `${targetRoutingStr} 23:59:59`,
-      hubId: selectedLocation,
-    };
-
     const { storedLocationAcronym } = getLocalStorage();
     const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes, mappingsObj }] =
       await Promise.all([
-        getResults(summaryPayload),
+        getResults({
+          dateFrom: `${targetRoutingStr} 00:00:00`,
+          dateTo: `${targetRoutingStr} 23:59:59`,
+          hubId: hubId,
+        }),
         getCachedHubs(),
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
         fetchVehicleMetadata(),
       ]);
@@ -209,8 +191,8 @@ export const handleSingleDownload = async ({
       throw new Error(t('common.no_data'));
     }
 
-    const hasPendingGR = getHasPendingGR(hubsData, selectedLocation);
-    const hubLabel = storedLocationAcronym || selectedLocationName;
+    const hasPendingGR = getHasPendingGR(hubsData, hubId);
+    const hubLabel = storedLocationAcronym || hubName;
 
     const { wb, excelFileName } = await generateAutoReportWorkbook({
       driverData,
@@ -229,28 +211,18 @@ export const handleSingleDownload = async ({
     XLSX.writeFile(wb, excelFileName);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
-    if (setIsAnyLoading) setIsAnyLoading(false);
-    if (setIsMapping) setIsMapping(false);
   }
 };
 
-export const handleBulkDownload = async ({
-  selectedLocation,
-  startDate,
-  endDate,
-  driverData,
-  setIsLoading,
-  t,
-}) => {
+export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
   let mappingsObj = {};
   let vehicleTypes = [];
   let hubsMap = {};
   try {
     setIsLoading(true);
-    await driversCheck(selectedLocation, t);
     const [{ vehicleTypes: vTypes, mappingsObj: mObj }, hubsDB] = await Promise.all([
       fetchVehicleMetadata(),
       getCachedHubs(),
@@ -262,18 +234,18 @@ export const handleBulkDownload = async ({
       return acc;
     }, {});
   } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }));
+    toastError(t('common.toast.error', { err: e.message }), e);
     setIsLoading(false);
     return;
   } finally {
     setIsLoading(false);
   }
 
-  bulkDownloader({
+  bulkZipDownloader({
     startDate,
     endDate,
     driverData,
-    zipPrefix: `${t('report.bulk_report')}`,
+    zipPrefix: `${t('report.daily_report')} (${t('common.bulk')})`,
     setIsLoading,
     processDateCallback: async ({ dateForFile, hubId, hubName }) => {
       const deliveryDateObj = parseDate(dateForFile);
@@ -290,7 +262,6 @@ export const handleBulkDownload = async ({
         status: 'DONE,ONGOING',
         timeFrom: timeFromTasks,
         timeTo: timeToTasks,
-        timeBy: 'startTime',
       });
 
       if (isEmpty(allTasks)) return null;
@@ -311,8 +282,6 @@ export const handleBulkDownload = async ({
         getLocationHistories({
           timeFrom: timeFromHistories,
           timeTo: timeToHistories,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
       ]);
 
@@ -348,8 +317,8 @@ export const handleBulkDownload = async ({
 };
 
 export const handleManualDownload = async ({
-  selectedLocation,
-  selectedLocationName,
+  hubId,
+  hubName,
   selectedDate,
   selectedDateString,
   isCustomRouting,
@@ -364,11 +333,10 @@ export const handleManualDownload = async ({
   t,
 }) => {
   try {
-    await driversCheck(selectedLocation, t);
     setIsLoading(true);
 
     const { storedLocationAcronym } = getLocalStorage();
-    const hubLabel = storedLocationAcronym || selectedLocationName;
+    const hubLabel = storedLocationAcronym || hubName;
 
     let targetRoutingDateObj;
     if (isCustomRouting) {
@@ -392,12 +360,10 @@ export const handleManualDownload = async ({
     const [{ vehicleTypes, mappingsObj }, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
-        getDriverData(selectedLocation),
+        getDriverData(hubId),
         getLocationHistories({
           timeFrom,
           timeTo,
-          startFinish: 'true',
-          timeBy: 'createdTime',
         }),
       ]),
     ]);
@@ -408,7 +374,7 @@ export const handleManualDownload = async ({
       driverData,
       extractedStartDate
     );
-    const hasPendingGR = getHasPendingGR(hubsData, selectedLocation);
+    const hasPendingGR = getHasPendingGR(hubsData, hubId);
     const { wb, excelFileName } = await generateManualReportWorkbook({
       routingBuffers,
       deliveryBuffers,
@@ -429,7 +395,7 @@ export const handleManualDownload = async ({
     setSelectedRoutingFiles([]);
     setSelectedDeliveryFiles([]);
   } catch (err) {
-    toastError(err.message || String(err));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }

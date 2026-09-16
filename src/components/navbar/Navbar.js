@@ -1,8 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
-import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs, getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -33,16 +32,11 @@ function NavLink({ href, children, className }) {
 }
 
 const REPORT_LINKS = [
-  { href: '/report/daily', labelKey: 'navbar.daily_report', superadminOnly: false },
-  { href: '/report/kpi', labelKey: 'navbar.kpi', superadminOnly: false },
-  { href: '/report/bread', labelKey: 'navbar.bread_report', superadminOnly: false },
-  {
-    href: '/report/custom',
-    labelKey: 'navbar.custom_report',
-    superadminOnly: true,
-    adminAllowed: true,
-  },
-  { href: '/report/counter', labelKey: 'navbar.task_counter_report', superadminOnly: true },
+  { href: '/report/daily', labelKey: 'navbar.daily_report' },
+  { href: '/report/kpi', labelKey: 'navbar.kpi' },
+  { href: '/report/bread', labelKey: 'navbar.bread_report' },
+  { href: '/report/custom', labelKey: 'navbar.custom_report' },
+  { href: '/report/counter', labelKey: 'navbar.task_counter_report' },
 ];
 
 function DynamicNavMenu({ children, moreLabel = 'More' }) {
@@ -176,13 +170,13 @@ export default function Navbar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-  const hiddenTextClassName = 'hidden [@media(min-width:1164px)]:inline';
-
-  const { storedUser } = getLocalStorage();
-  const userName = storedUser ? JSON.parse(storedUser).name : '';
+  const { storedUser, storedLocation } = getLocalStorage();
+  const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+  const userPaths = parsedUser?.paths || [];
+  const userName = parsedUser?.name || '';
   const userEmail = storedUser ? JSON.parse(storedUser).email : 'email@example.com';
-
-  const { isSuperadmin, isAdmin } = useSuperadmin();
+  const hubs = getCachedHubs();
+  const hasVms = hubs ? hubs.find((h) => String(h._id) === String(storedLocation))?.hasVms : false;
 
   const handleLogout = () => {
     removeLocalStorage('data');
@@ -224,23 +218,30 @@ export default function Navbar() {
       </nav>
     );
   }
+  userPaths;
+
+  const checkAccess = (href) => userPaths.length === 0 || userPaths.some((p) => href.startsWith(p));
+  const filteredReportLinks = REPORT_LINKS.filter((link) => checkAccess(link.href));
 
   const LoggedInComps = (
     <>
-      <NavDropdown
-        label={t('navbar.report')}
-        links={REPORT_LINKS}
-        isSuperadmin={isSuperadmin}
-        isAdmin={isAdmin}
-      />
-      <NavLink href="/task">{t('navbar.task')}</NavLink>
-      {/* {isSuperadmin && <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>} */}
-      {isSuperadmin && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
-      <NavLink href="/coordinate">{`${t('navbar.update')} ${t('navbar.coordinate')}`}</NavLink>
-      <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>
-      <NavLink href="/vehicles">
-        <span> {vehicle} </span>
-      </NavLink>
+      {filteredReportLinks.length > 0 && (
+        <NavDropdown label={t('navbar.report')} links={filteredReportLinks} />
+      )}
+      {checkAccess('/task') && <NavLink href="/task">{t('navbar.task')}</NavLink>}
+      {hasVms && checkAccess('/tracking') && (
+        <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>
+      )}
+      {checkAccess('/summary') && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
+      {checkAccess('/coordinate') && (
+        <NavLink href="/coordinate">{`${t('navbar.update')} ${t('navbar.coordinate')}`}</NavLink>
+      )}
+      {checkAccess('/delivery') && <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>}
+      {checkAccess('/vehicles') && (
+        <NavLink href="/vehicles">
+          <span> {vehicle} </span>
+        </NavLink>
+      )}
       <NavLink href="/help">{t('navbar.help')}</NavLink>
     </>
   );
@@ -258,10 +259,9 @@ export default function Navbar() {
       isLoggedIn={isLoggedIn}
       userName={userName}
       userEmail={userEmail}
-      isSuperadmin={isSuperadmin}
-      isAdmin={isAdmin}
+      userPaths={userPaths}
       handleLogout={handleLogout}
-      reportLinks={REPORT_LINKS}
+      reportLinks={filteredReportLinks}
     />
   );
 
@@ -302,7 +302,7 @@ export default function Navbar() {
         ) : (
           <div className="flex items-center gap-3 shrink-0">
             <ThemeToggle
-              isActive={isDarkMode}
+              isDarkMode={isDarkMode}
               onToggle={() => setTheme(isDarkMode ? 'light' : 'dark')}
               className="text-md px-3 hidden lg:block"
               isLargeIcon={true}

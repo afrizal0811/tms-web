@@ -2,6 +2,8 @@
 
 import HighlightText from '@/components/HighlightText';
 import TableData from '@/components/table/TableData';
+import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { formatOdometer } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 
 const getRowClassName = (v) => {
@@ -14,8 +16,12 @@ const getRowClassName = (v) => {
   return 'hover:bg-gray-50 dark:hover:bg-slate-700/10 transition-colors';
 };
 
-export default function VehicleTab({ paginatedData, searchQuery, t }) {
+export default function VehicleTab({ localeCode, paginatedData, searchQuery, t }) {
   const [sortConfig, setSortConfig] = useState({ key: 'type', direction: 'asc' });
+
+  const { storedLocation } = getLocalStorage();
+  const hubs = getCachedHubs();
+  const hasVms = hubs ? hubs.find((h) => String(h._id) === String(storedLocation))?.hasVms : false;
 
   const getRowTooltip = (row) => {
     const tooltips = [];
@@ -43,7 +49,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
     },
     {
       key: 'plat',
-      width: 'w-[20%]',
+      width: 'w-[15%]',
       sortable: true,
       label: t('common.license_number'),
       render: (row) => (
@@ -54,7 +60,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
     },
     {
       key: 'type',
-      width: 'w-[20%]',
+      width: 'w-[15%]',
       sortable: true,
       label: t('common.type'),
       render: (row) => (
@@ -76,7 +82,7 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
     },
     {
       key: 'email',
-      width: 'w-[30%]',
+      width: 'w-[25%]',
       sortable: true,
       label: t('vehicle.tabs.email'),
       render: (row) => (
@@ -85,10 +91,19 @@ export default function VehicleTab({ paginatedData, searchQuery, t }) {
         </div>
       ),
     },
+    hasVms && {
+      key: 'odometer',
+      width: 'w-[30%]',
+      sortable: true,
+      label: 'Odometer (km)',
+      render: (row) => (
+        <div className="text-left w-full">{formatOdometer(row.odometer, localeCode) ?? '-'}</div>
+      ),
+    },
   ];
 
   return (
-    <div className="overflow-hidden flex-1 h-full rounded-b-lg">
+    <div className="overflow-hidden flex-1 h-full">
       <TableData
         columns={columns}
         data={dataWithNo}

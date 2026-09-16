@@ -80,7 +80,6 @@ export default function UpdateCoordinatePage() {
       try {
         if (typeof window === 'undefined') return;
         const { storedLocation: hubId } = getLocalStorage();
-        if (!hubId) throw new Error(t('common.no_data'));
 
         const localStart = new Date(selectedDate);
         localStart.setHours(0, 0, 0, 0);
@@ -98,7 +97,6 @@ export default function UpdateCoordinatePage() {
             hubId,
             timeFrom,
             timeTo,
-            timeBy: 'startTime',
           }),
         ]);
 
@@ -134,7 +132,7 @@ export default function UpdateCoordinatePage() {
         setLoading(false);
       } catch (err) {
         if (mountedContext && !mountedContext.isMounted) return;
-        toastError(t('common.toast.error', { err: err.message }));
+        toastError(t('common.toast.error', { err: err.message }), err);
         setLoading(false);
       }
     },

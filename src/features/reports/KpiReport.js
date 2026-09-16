@@ -1,89 +1,106 @@
 'use client';
 
-import FileUploader from '@/components/fileUploader/FileUploader';
-import Modal from '@/components/modal/Modal';
+import ManualUploadModal from '@/components/modal/ManualUploadModal';
 import ReportTemplate from '@/components/page/ReportTemplate';
-import { useLanguage } from '@/context/LanguageContext';
-import { getDriverData } from '@/lib/driverData';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
-import { tomorrowDate } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import { handleKpiDownload } from './helper/kpiHelper';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
+import { useState } from 'react';
+import { handleBulkDownload, handleManualDownload, handleSingleDownload } from './helper/kpiHelper';
 
-export default function KpiReport() {
-  const [isManualMode, setIsManualMode] = useState(false);
-  const [isBulkMode, setIsBulkMode] = useState(false);
+export default function KpiReport({
+  driverData,
+  hubAcronym,
+  hubId,
+  isIndonesian,
+  isLoading,
+  setIsLoading,
+  t,
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [routingFiles, setRoutingFiles] = useState([]);
-  const [taskFiles, setTaskFiles] = useState([]);
-  const [singleDate, setSingleDate] = useState(new Date());
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [selectedHub, setSelectedHub] = useState({ id: '', name: '' });
+  const [selectedMode, setSelectedMode] = useState({
+    bulk: false,
+    manual: false,
+    custom: false,
+  });
+  const { bulk: isBulkMode, manual: isManualMode, custom: isCustomRouting } = selectedMode;
+  const [selectedRoutingFiles, setSelectedRoutingFiles] = useState([]);
+  const [selectedDeliveryFiles, setSelectedDeliveryFiles] = useState([]);
 
-  const { t, isIndonesian } = useLanguage();
-  const isEmptyUploadedFile = routingFiles.length === 0 || taskFiles.length === 0;
+  const initialDate = formatDateUniversal(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [routingDate, setRoutingDate] = useState(initialDate);
+  const [startDate, setStartDate] = useState(initialDate);
+  const [endDate, setEndDate] = useState(initialDate);
+  const [prevHubId, setPrevHubId] = useState(hubId);
 
-  useEffect(() => {
-    const { storedUser } = getLocalStorage();
-    const userData = JSON.parse(storedUser);
-    setSelectedHub({ id: userData.activeHubId, name: userData.activeHubAcronym });
-  }, []);
+  if (hubId !== prevHubId) {
+    setPrevHubId(hubId);
+    setSelectedRoutingFiles([]);
+    setSelectedDeliveryFiles([]);
+  }
 
-  useEffect(() => {
-    setRoutingFiles([]);
-    setTaskFiles([]);
-  }, [selectedHub]);
+  const triggerSingleDownload = () =>
+    handleSingleDownload({
+      hubId,
+      hubAcronym,
+      selectedDate,
+      isCustomRouting,
+      routingDate,
+      driverData,
+      setIsLoading,
+      t,
+    });
 
-  const modeToggleConfig = {
-    bulk: { current: isBulkMode, setCurrent: setIsBulkMode, others: [setIsManualMode] },
-    manual: { current: isManualMode, setCurrent: setIsManualMode, others: [setIsBulkMode] },
-  };
+  const triggerBulkDownload = () =>
+    handleBulkDownload({
+      hubId,
+      hubAcronym,
+      startDate,
+      endDate,
+      driverData,
+      setIsLoading,
+      t,
+    });
 
-  const handleRadioToggle = (mode) => {
-    if (loading) return;
-    const config = modeToggleConfig[mode];
-    if (!config) return;
-    const nextState = !config.current;
-    config.setCurrent(nextState);
-    if (nextState) config.others.forEach((setOther) => setOther(false));
-  };
+  const triggerManualDownload = () =>
+    handleManualDownload({
+      hubId,
+      hubAcronym,
+      selectedDate,
+      isCustomRouting,
+      routingDate,
+      selectedRoutingFiles,
+      selectedDeliveryFiles,
+      driverData,
+      setIsLoading,
+      setIsModalOpen,
+      setSelectedRoutingFiles,
+      setSelectedDeliveryFiles,
+      t,
+    });
 
-  const handleFetchData = async () => {
-    const drivers = await getDriverData(selectedHub.id);
-    if (drivers.length === 0) {
+  const handleAction = () => {
+    if (isEmpty(driverData)) {
       toastError(t('common.no_driver'));
       return;
     }
-    setLoading(true);
-    try {
-      await handleKpiDownload({
-        downloadMode: isBulkMode ? 'bulk' : 'single',
-        singleDate,
-        startDate,
-        endDate,
-        selectedHub,
-        drivers,
-        dataSource: isManualMode ? 'manual' : 'auto',
-        routingFiles,
-        taskFiles,
-      });
-      setIsModalOpen(false);
-    } catch (error) {
-      toastError(error.message);
-    } finally {
-      setLoading(false);
+    if (isManualMode) {
+      setIsModalOpen(true);
+    } else if (isBulkMode) {
+      triggerBulkDownload();
+    } else {
+      triggerSingleDownload();
     }
   };
 
-  const handleAction = () => {
-    if (isManualMode) {
-      setIsModalOpen(true);
-    } else {
-      handleFetchData();
-    }
+  const handleRadioToggle = (mode) => {
+    if (isLoading) return;
+    setSelectedMode((prev) => ({
+      bulk: false,
+      manual: false,
+      custom: false,
+      [mode]: !prev[mode],
+    }));
   };
 
   const manualText = isManualMode ? 'Manual' : '';
@@ -93,6 +110,12 @@ export default function KpiReport() {
     ? `${t('report.kpi_report')} ${prefixText}`.trim()
     : `${prefixText} ${t('report.kpi_report')}`.trim();
 
+  const handleSingleDateChange = (date) => {
+    if (date) {
+      setSelectedDate(date);
+      setRoutingDate(date);
+    }
+  };
   const handleDateRangeChange = (dates) => {
     const [start, end] = dates;
     setStartDate(start);
@@ -102,63 +125,30 @@ export default function KpiReport() {
   return (
     <ReportTemplate
       title={titleMenu}
-      isBulkMode={isBulkMode}
-      isManualMode={isManualMode}
+      selectedMode={selectedMode}
       onToggleMode={handleRadioToggle}
-      availableModes={['bulk', 'manual']}
-      singleDate={singleDate}
-      onSingleDateChange={setSingleDate}
+      availableModes={['bulk', 'manual', 'custom']}
+      singleDate={selectedDate}
+      onSingleDateChange={handleSingleDateChange}
       startDate={startDate}
       endDate={endDate}
       onDateRangeChange={handleDateRangeChange}
-      maxDate={tomorrowDate()}
-      isLoading={loading}
+      isLoading={isLoading}
       onAction={handleAction}
       actionText={isManualMode ? t('common.upload') : t('common.download')}
+      routingDate={routingDate}
+      setRoutingDate={setRoutingDate}
       modals={
-        <Modal
+        <ManualUploadModal
           isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setRoutingFiles([]);
-            setTaskFiles([]);
-          }}
-          title={t('common.upload')}
-          maxWidth="max-w-7xl w-[95%]"
-          footer={
-            <button
-              onClick={handleFetchData}
-              disabled={isEmptyUploadedFile || loading}
-              className={`w-full sm:w-auto min-w-[150px] ml-auto px-4 py-2 rounded-md font-medium text-white ${
-                isEmptyUploadedFile || loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-sky-600 hover:bg-sky-700'
-              }`}
-            >
-              {loading ? '...' : t('common.download')}
-            </button>
-          }
-        >
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative p-2">
-              <FileUploader
-                labelKey="routing"
-                files={routingFiles}
-                onUpdateFiles={setRoutingFiles}
-                inputId="routing-file-input"
-                tutorialKey="routing"
-              />
-              <div className="hidden md:block absolute top-0 bottom-0 left-1/2 border-l border-dashed border-slate-300 dark:border-slate-700 -translate-x-1/2" />
-              <FileUploader
-                labelKey="task"
-                files={taskFiles}
-                onUpdateFiles={setTaskFiles}
-                inputId="task-file-input"
-                tutorialKey="delivery"
-              />
-            </div>
-          </div>
-        </Modal>
+          onClose={() => setIsModalOpen(false)}
+          isLoading={isLoading}
+          onDownload={triggerManualDownload}
+          routingFiles={selectedRoutingFiles}
+          setRoutingFiles={setSelectedRoutingFiles}
+          deliveryFiles={selectedDeliveryFiles}
+          setDeliveryFiles={setSelectedDeliveryFiles}
+        />
       }
     />
   );

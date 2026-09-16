@@ -95,7 +95,11 @@ export const toastSuccess = (message) => {
   });
 };
 
-export const toastError = (message) => {
+export const toastError = (message, error = null) => {
+  if (error) {
+    console.error(error);
+  }
+
   toast.error((t) => <ToastContent message={message} toastId={t.id} type="error" />, {
     className: 'my-toast-error',
     duration: DURATIONS.error,

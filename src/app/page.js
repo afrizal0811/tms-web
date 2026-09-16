@@ -94,7 +94,7 @@ export default function Home() {
         }
       } catch (e) {
         setPageError(e.message);
-        toastError(e.message);
+        toastError(t('common.toast.error', { err: e.message }), e);
       } finally {
         setIsLoading(false);
       }
@@ -107,12 +107,12 @@ export default function Home() {
       try {
         const data = await getDriverData(selectedLocation);
         setDriverData({ data: data });
-      } catch (err) {
-        toastError(err);
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
       }
     }
     if (selectedLocation) fetchDriverData();
-  }, [selectedLocation]);
+  }, [selectedLocation, t]);
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);

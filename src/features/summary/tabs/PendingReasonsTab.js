@@ -1,6 +1,6 @@
 import TaskModal from '@/components/modal/TaskModal';
 import Tooltip from '@/components/Tooltip';
-import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
+import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
 const ReasonCell = ({ text, className }) => {
@@ -100,13 +100,23 @@ export default function PendingReasonsTab({
   translate,
   onUpdatePendingDetail,
   driverData,
+  tasks,
 }) {
   const [modalData, setModalData] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [filteredTasks, setFilteredTasks] = useState(tasks);
 
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-') return;
+    const data = tasks.find((task) => task._id === taskId);
+    const date = data?.startTime ? formatUTC7(data?.startTime, 'DD/MM/YYYY') : '';
+    const filter = tasks.filter((task) => {
+      const taskDate = formatUTC7(task.startTime, 'DD/MM/YYYY');
+      return taskDate === date;
+    });
+
+    setFilteredTasks(filter);
     setSelectedTaskId(taskId);
     setIsTaskModalOpen(true);
   };
@@ -164,6 +174,7 @@ export default function PendingReasonsTab({
           onClose={() => setIsTaskModalOpen(false)}
           taskId={selectedTaskId}
           driverData={driverData}
+          allTasks={filteredTasks}
         />
 
         <table className="border-collapse w-full text-sm">

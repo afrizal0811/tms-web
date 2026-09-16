@@ -241,10 +241,10 @@ export const handleFullRouteTransDownload = async ({
       triggerDownload(blob, lastFileName);
       toastSuccess(t('common.toast.success'));
     } else {
-      toastError(t('common.toast.error', { err: 'Tidak ada data valid' }));
+      toastError(t('common.toast.error', { err: t('common.no_data') }));
     }
   } catch (err) {
-    toastError(t('common.toast.error', { err: err.message }));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsDownloading(false);
   }
@@ -366,7 +366,7 @@ export const handlePartialRouteTransDownload = async ({
     }
 
     if (!masterHasData) {
-      toastError(t('common.toast.error', { err: 'Tidak ada transaksi valid untuk diunduh' }));
+      toastError(t('common.toast.error', { err: t('common.no_data') }));
       setIsDownloading(false);
       return;
     }
@@ -375,7 +375,7 @@ export const handlePartialRouteTransDownload = async ({
     triggerDownload(masterContent, `Route Transaction - ${dateForFilename} - ${locationName}.zip`);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
-    toastError(t('common.toast.error', { err: err.message }));
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsDownloading(false);
   }

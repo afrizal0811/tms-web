@@ -18,7 +18,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
         const types = await getVehicleTypes();
         setVehicleTypes(types.map((type) => type.name));
       } catch (error) {
-        toastError(t('common.toast.error', { err: error.message }));
+        toastError(t('common.toast.error', { err: error.message }), error);
       } finally {
         setIsLoading(false);
       }
@@ -42,7 +42,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       }
       onCompleted();
     } catch (error) {
-      toastError(t('common.toast.error', { err: error.message }));
+      toastError(t('common.toast.error', { err: error.message }), error);
     } finally {
       setIsSaving(false);
     }

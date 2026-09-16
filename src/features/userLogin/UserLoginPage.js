@@ -157,7 +157,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
       setUserToConfirm(foundUser);
       setIsConfirmOpen(true);
     } catch (err) {
-      toastError(t('common.toast.error', { err: err.message }));
+      toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setLoading(false);
     }
@@ -180,6 +180,15 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
         const { storedSession } = getLocalStorage();
         const currentData = storedSession || {};
 
+        let rolePaths = [];
+        try {
+          const roles = await getRoles();
+          const userRole = (roles || []).find(
+            (r) => String(r._id || r.id) === String(userToConfirm.roleId)
+          );
+          rolePaths = userRole?.paths || [];
+        } catch (e) {}
+
         const filteredUserSession = {
           _id: userToConfirm._id,
           email: userToConfirm.email,
@@ -187,6 +196,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           hubId: userToConfirm.hubId,
           roleId: userToConfirm.roleId,
           status: userToConfirm.status,
+          paths: rolePaths,
           activeHubId: selectedLocation,
           activeHubName: selectedLocationName,
           activeHubAcronym: selectedHubObj?.acronym || '',
@@ -201,7 +211,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
         handleUserSelect(filteredUserSession);
         toastSuccess(t('home.toast.login_success'));
       } catch (err) {
-        toastError(t('home.toast.login_failed', { err: err.message }));
+        toastError(t('home.toast.login_failed', { err: err.message }), err);
       }
     });
     setLoading(false);

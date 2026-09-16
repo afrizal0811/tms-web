@@ -1,7 +1,7 @@
 'use client';
 
+import { toastError } from '@/lib/toast';
 import { useState } from 'react';
-
 export default function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
 
@@ -13,7 +13,7 @@ export default function CopyButton({ text }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy text', err);
+      toastError(err.message, err);
     }
   };
 

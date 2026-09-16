@@ -3,8 +3,8 @@ import * as XLSX from 'xlsx-js-style';
 
 export function generateTaskCountWorkbook(allTasks, selectedHubs, startDate, endDate, t) {
   const wb = XLSX.utils.book_new();
-  const noteRow1 = t('report.tc_detail.note_one');
-  const noteRow2 = t('report.tc_detail.note_two');
+  const noteRow1 = t('report.task_count.note_one');
+  const noteRow2 = t('report.task_count.note_two');
 
   const summary = {};
   selectedHubs.forEach((hub) => {

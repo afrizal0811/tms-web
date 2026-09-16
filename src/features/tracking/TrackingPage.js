@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getTrackingData } from '@/lib/api/mceasy';
 import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { toastError } from '@/lib/toast';
 import { getBasePlate, getDistance, getStorageType } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
@@ -26,6 +27,7 @@ export default function TrackingPage() {
   const [recentlyUpdated, setRecentlyUpdated] = useState({});
   const [isHubHovered, setIsHubHovered] = useState(false);
   const [hubCoord, setHubCoord] = useState({ lat: null, lng: null });
+  
   const { t } = useLanguage();
   const hasFetched = useRef(false);
   const prevPositionsRef = useRef({});
@@ -50,14 +52,14 @@ export default function TrackingPage() {
           setHubCoord({ lat: null, lng: null });
         }
       } catch (error) {
-        console.error('Gagal mengambil data master driver:', error);
+        toastError(t('common.toast.error', { err: error.message }), error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchMasterData();
-  }, [storedLocation]);
+  }, [storedLocation, t]);
 
   useEffect(() => {
     const fetchWebhookData = async () => {

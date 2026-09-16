@@ -6,12 +6,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const roles = await prisma.role.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { id: 'asc' },
     });
 
     const formattedRoles = roles.map((role) => ({
       _id: role.id,
       name: role.name,
+      paths: role.paths || [],
       updatedAt: role.updatedAt,
     }));
 
@@ -68,5 +69,24 @@ export async function POST() {
       { error: 'Gagal melakukan sinkronisasi data roles dengan Vendor API', detail: errorMessage },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const { id, paths } = await request.json();
+    if (!id) throw new Error('ID Role dibutuhkan');
+
+    const role = await prisma.role.update({
+      where: { id: String(id) },
+      data: { paths: paths || [] },
+    });
+
+    return NextResponse.json(
+      { message: 'Role akses berhasil diupdate', data: role },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

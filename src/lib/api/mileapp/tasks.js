@@ -6,24 +6,19 @@ export async function getTasks({
   status,
   timeFrom,
   timeTo,
-  timeBy,
-  limit = 10000,
   isNeedFields = true,
 }) {
   const tasksFields = fields.tasks.join(',');
   const params = new URLSearchParams();
+  params.append('timeBy', 'startTime');
+  params.append('limit', 10000);
   if (hubId) params.append('hubId', hubId);
   if (status) params.append('status', status);
   if (timeFrom) params.append('timeFrom', timeFrom);
   if (timeTo) params.append('timeTo', timeTo);
-  if (timeBy) params.append('timeBy', timeBy);
-  if (limit) params.append('limit', limit);
   if (isNeedFields && tasksFields) params.append('fields', tasksFields);
 
-  return await apiFetch(
-    `/api/mileapp/tasks?${params.toString()}`,
-    'Gagal mengambil data tasks'
-  );
+  return await apiFetch(`/api/mileapp/tasks?${params.toString()}`, 'Gagal mengambil data tasks');
 }
 
 export async function getTask(id) {

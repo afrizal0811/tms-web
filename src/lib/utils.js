@@ -359,6 +359,12 @@ export function toApiDateString(dateInput) {
 export const capitalizeText = (text = '') =>
   text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
+// Mengubah teks ke Proper Case
+export const ProperCaseText = (str) => {
+  if (!str) return '';
+  return str.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+};
+
 // Menghasilkan tanggal besok atau minggu depan
 export const tomorrowDate = (isTomorrow = true) => {
   const date = new Date();
@@ -549,3 +555,13 @@ export const getBaseVehicleType = (typeStr, knownTypes = []) => {
   if (typeParts.length > 1 && typeParts[1] === 'LONG') base = `${base}-LONG`;
   return base;
 };
+
+export function formatOdometer(value, locale = 'id-ID') {
+  if (isEmpty(value)) {
+    return '-';
+  }
+  return Number(value).toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import TableData from '@/components/table/TableData';
+import { toastError } from '@/lib/toast';
 import { useEffect, useRef, useState } from 'react';
 
 const EditIcon = () => (
@@ -104,7 +105,7 @@ export default function Table({
       await onSave(id, editValues, item);
       setEditId(null);
     } catch (e) {
-      // Parent component (misal: memunculkan toastError) yang akan handle logikanya
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsSaving(false);
     }

@@ -29,6 +29,7 @@ export default function TableData({
   onExternalSort,
   rowClassName,
   rowTooltip,
+  tableLayout = 'table-auto',
 }) {
   const [internalSortConfig, setInternalSortConfig] = useState(null);
   const [page, setPage] = useState(1);
@@ -87,7 +88,7 @@ export default function TableData({
     !paginate || limit === 'all' ? 1 : Math.ceil(sortedData.length / Number(limit));
 
   return (
-    <div className="flex flex-col flex-1 h-full min-h-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+    <div className="flex flex-col flex-1 h-full min-h-0 bg-white dark:bg-slate-900 ">
       <div className="flex-1 overflow-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-full min-h-[300px]">
@@ -98,7 +99,7 @@ export default function TableData({
             {t('common.no_data')}
           </div>
         ) : (
-          <table className="w-full table-auto" style={{ minWidth: '100%' }}>
+          <table className={`w-full ${tableLayout}`} style={{ minWidth: '100%' }}>
             <thead className="bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
               <tr>
                 {columns.map((col, index) => {

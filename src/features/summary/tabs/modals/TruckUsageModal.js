@@ -126,7 +126,7 @@ export default function TruckUsageModal({
       onSuccess(resData.data ? resData.data : resData);
       onClose();
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +148,7 @@ export default function TruckUsageModal({
       onSuccess({ id: data.id, isDelete: true });
       onClose();
     } catch (e) {
-      toastError(translate('common.toast.error', { err: e.message }));
+      toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
       setIsLoading(false);
     }

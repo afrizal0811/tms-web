@@ -5,7 +5,7 @@ import UploadArea from './UploadArea';
 import { tutorialData } from './helper/tutorialData';
 import { validateRoutingFile, validateTaskFile } from './helper/validator';
 
-export default function FileUploader({ labelKey, files, onUpdateFiles, inputId, tutorialKey = 'routing' }) {
+export default function FileUploader({ labelKey, files, onUpdateFiles, inputId, tutorialKey }) {
   const { t } = useLanguage();
   const validator = tutorialKey === 'routing' ? validateRoutingFile : validateTaskFile;
   return (

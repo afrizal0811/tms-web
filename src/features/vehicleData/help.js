@@ -1,6 +1,6 @@
 // File: src/features/vehicleData/help.js
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal, isEmpty } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
 
@@ -12,7 +12,7 @@ export const formatVolume = (vol) => {
 };
 
 const COLOR_INCOMPLETE = 'FFD9D9';
-const COLOR_DUPLICATE = 'FFF2CC'; 
+const COLOR_DUPLICATE = 'FFF2CC';
 
 const applyRowColorsAndLegend = (ws, rawData, t) => {
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -23,7 +23,7 @@ const applyRowColorsAndLegend = (ws, rawData, t) => {
     else if (v.isDuplicateDriver) bgColor = COLOR_DUPLICATE;
 
     if (bgColor) {
-      const rowIndex = idx + 1; 
+      const rowIndex = idx + 1;
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: C });
         if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
@@ -36,7 +36,7 @@ const applyRowColorsAndLegend = (ws, rawData, t) => {
     }
   });
 
-  const legendStartRow = range.e.r + 2; 
+  const legendStartRow = range.e.r + 2;
 
   ws[XLSX.utils.encode_cell({ r: legendStartRow, c: 0 })] = {
     t: 's',
@@ -159,18 +159,14 @@ export const handleConfirmDownload = ({
       XLSX.utils.book_append_sheet(wb, ws2, t('vehicle.tabs.template_title'));
     }
 
-    if (isEmpty(wb.SheetNames)) {
-      toastError(t('vehicle.toast.choose_one'));
-    } else {
-      const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
-      const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
-      const prefix = fileNamePrefix ? `${fileNamePrefix} - ` : '';
-      const fileName = `${t('vehicle.title')} - ${prefix}${date} - ${locationName}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      toastSuccess(t('common.toast.success'));
-    }
-  } catch (err) {
-    toastError(t('common.toast.error', { err: err.message }));
+    const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
+    const date = formatDateUniversal(new Date(), 'DD.MM.YYYY');
+    const prefix = fileNamePrefix ? `${fileNamePrefix} - ` : '';
+    const fileName = `${t('vehicle.title')} - ${prefix}${date} - ${locationName}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toastSuccess(t('common.toast.success'));
+  } catch (e) {
+    toastError(t('common.toast.error', { err: e.message }), e);
   } finally {
     setIsDownloading(false);
     setIsDownloadDropdownOpen(false);

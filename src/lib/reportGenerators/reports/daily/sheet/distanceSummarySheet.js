@@ -67,11 +67,11 @@ export function buildDistanceSummary(wb, driverData, routingMap, timeDataObjects
     ],
     [
       t('excel.reports.dist_summary.category'),
-      t('common.travel_time'),
+      t('common.travel_time_actual'),
       t('common.distance'),
       '',
       t('excel.reports.dist_summary.category'),
-      t('common.travel_time'),
+      t('common.travel_time_plan'),
       t('common.distance'),
     ],
     [

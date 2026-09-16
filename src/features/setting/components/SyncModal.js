@@ -4,8 +4,8 @@ import Button from '@/components/button/Button';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Modal from '@/components/modal/Modal';
 import TableData from '@/components/table/TableData';
+import Tooltip from '@/components/Tooltip';
 import { capitalizeText } from '@/lib/utils';
-
 export default function SyncModal({
   isOpen,
   mismatchedData,
@@ -38,17 +38,19 @@ export default function SyncModal({
       <div className="h-[60vh]">
         <TableData
           subHeaders={true}
+          tableLayout="table-fixed"
           columns={[
-            { label: 'No.', key: 'no', align: 'center', width: 'w-12', render: (_, i) => i + 1 },
+            { label: 'No.', key: 'no', align: 'center', width: 'w-[5%]', render: (_, i) => i + 1 },
             {
               label: 'MileApp',
               subColumns: [
                 {
                   label: translate('common.driver'),
                   key: 'maNameClean',
+                  width: 'w-[25%]',
                   render: (row) => <span>{capitalizeText(row.maNameClean)}</span>,
                 },
-                { label: translate('common.license_number'), key: 'maPlat' },
+                { label: translate('common.license_number'), key: 'maPlat', width: 'w-[20%]' },
               ],
             },
             {
@@ -57,11 +59,12 @@ export default function SyncModal({
                 {
                   label: translate('common.driver'),
                   key: 'mcName',
+                  width: 'w-[25%]',
                   render: (row) => {
                     const isMismatch = row.mcName?.toLowerCase() !== row.maNameClean?.toLowerCase();
                     if (!isMismatch) return <span>{row.mcName}</span>;
                     return (
-                      <div className="min-w-36">
+                      <div className="w-full">
                         <Dropdown
                           options={mcEasyDrivers}
                           value={
@@ -76,6 +79,7 @@ export default function SyncModal({
                             mcEasyDrivers.find((opt) => opt.value === val)?.label || row.mcName
                           }
                           size="sm"
+                          className="w-full"
                         />
                       </div>
                     );
@@ -84,19 +88,24 @@ export default function SyncModal({
                 {
                   label: translate('common.license_number'),
                   key: 'mcPlat',
+                  width: 'w-[25%]',
                   render: (row) => {
                     const isMismatch =
                       row.mcPlat?.replace(/\s+/g, '')?.toUpperCase() !==
                       row.maPlatBase?.replace(/\s+/g, '')?.toUpperCase();
                     if (!isMismatch) return <span>{row.mcPlat}</span>;
                     return (
-                      <input
-                        type="text"
-                        className="w-full min-w-28 px-2 py-1.5 text-xs border border-red-300 dark:border-red-500/50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
-                        placeholder={row.mcPlat}
-                        value={row.updatedPlat !== undefined ? row.updatedPlat : ''}
-                        onChange={(e) => onMismatchedChange(row.id, 'updatedPlat', e.target.value)}
-                      />
+                      <Tooltip tooltipContent={row.mcPlat}>
+                        <input
+                          type="text"
+                          className="w-full px-2 py-1.5 text-xs border border-red-300 dark:border-red-500/50 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                          placeholder={row.mcPlat}
+                          value={row.updatedPlat !== undefined ? row.updatedPlat : ''}
+                          onChange={(e) =>
+                            onMismatchedChange(row.id, 'updatedPlat', e.target.value)
+                          }
+                        />
+                      </Tooltip>
                     );
                   },
                 },

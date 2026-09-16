@@ -12,22 +12,15 @@ export async function getVehicles({ hubId, limit }) {
   );
 }
 
-export async function getLocationHistories({
-  timeFrom,
-  timeTo,
-  limit = 10000,
-  startFinish,
-  timeBy,
-}) {
+export async function getLocationHistories({ timeFrom, timeTo }) {
   const locationsFields = fields.locations.join(',');
   const params = new URLSearchParams();
-
+  params.append('timeBy', 'createdTime');
+  params.append('limit', 10000);
+  params.append('startFinish', 'true');
   if (timeFrom) params.append('timeFrom', timeFrom);
   if (timeTo) params.append('timeTo', timeTo);
-  if (limit) params.append('limit', limit);
-  if (startFinish) params.append('startFinish', startFinish);
   if (locationsFields) params.append('fields', locationsFields);
-  if (timeBy) params.append('timeBy', timeBy);
 
   return await apiFetch(
     `/api/mileapp/location-histories?${params.toString()}`,
