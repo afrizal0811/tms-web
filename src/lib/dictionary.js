@@ -254,10 +254,7 @@ export const dictionary = {
         routing_actual: {
           is_match: 'Sesuai?',
           show_map: 'Lihat Peta',
-          status: 'Status',
           is_within_hours: 'Dalam Jam Buka?',
-          yes: 'Ya',
-          no: 'Tidak',
           early: 'Lebih Awal',
           tooltip: {
             exp_within_hours:
@@ -730,6 +727,11 @@ export const dictionary = {
       subtitle_highlight: 'langsung',
       engine_status: 'Status Mesin',
     },
+    error: {
+      title: 'Ups, Ada Masalah!',
+      description: 'Halaman gagal dimuat. Coba muat ulang halaman atau kembali beberapa saat lagi.',
+      btn_reload: 'Muat Ulang',
+    },
   },
   en: {
     common: {
@@ -985,10 +987,7 @@ export const dictionary = {
         routing_actual: {
           is_match: 'Is Match?',
           show_map: 'View Map',
-          status: 'Status',
           is_within_hours: 'Is Within Hours?',
-          yes: 'Yes',
-          no: 'No',
           early: 'Early',
           tooltip: {
             exp_within_hours: `Actual arrival time within the customer's operating hours`,
@@ -1457,6 +1456,12 @@ export const dictionary = {
       subtitle: 'Track vehicle location in',
       subtitle_highlight: 'real time',
       engine_status: 'Engine Status',
+    },
+    error: {
+      title: 'Oops, Something Went Wrong!',
+      description:
+        'This page could not be loaded. Try reloading the page or come back in a little while.',
+      btn_reload: 'Reload',
     },
   },
 };

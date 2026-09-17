@@ -257,7 +257,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
 const getHoursStatusUI = (status, t) => {
   if (status === 'yes')
     return {
-      text: t('dashboard.tab.routing_actual.yes'),
+      text: t('common.button.btn_yes'),
       color: 'text-[#16A34A] dark:text-[#86EFAC]',
       hex: '16A34A',
     };
@@ -269,7 +269,7 @@ const getHoursStatusUI = (status, t) => {
     };
   if (status === 'no')
     return {
-      text: t('dashboard.tab.routing_actual.no'),
+      text: t('common.button.btn_no'),
       color: 'text-[#DC2626] dark:text-[#FCA5A5]',
       hex: 'DC2626',
     };
@@ -328,7 +328,7 @@ export const getRoutingActualColumns = (t) => {
     },
     {
       id: 'statusLabel',
-      header: t('dashboard.tab.routing_actual.status'),
+      header: 'Status',
       align: 'center',
       excelWidth: 15,
       getValue: (row) => row.statusLabel || '-',
