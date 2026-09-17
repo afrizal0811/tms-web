@@ -875,10 +875,10 @@ export default function DeliveryPage() {
           >
             {r.vehicleName}{' '}
             {hasMT && (
-              <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">[MT]</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
             )}
             {r.isRedelivery && (
-              <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+              <span className="text-red-600 dark:text-red-400 font-bold">[R]</span>
             )}
           </span>
         </Tooltip>
