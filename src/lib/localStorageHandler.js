@@ -1,5 +1,6 @@
 import CryptoJS from 'crypto-js';
 import { toastError } from './toast';
+import { getHubs } from './api/mileapp';
 const SECRET_KEY = process.env.NEXT_PUBLIC_STORAGE_KEY || '@frizaL_TaMpaN_B@ngEeTTH_2026!!';
 const CURRENT_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 let hubsFetchLock = null;
@@ -184,7 +185,7 @@ export async function getSyncHubs() {
   if (!isExpired && cached && cached.length > 0) return cached;
 
   if (!hubsFetchLock) {
-    hubsFetchLock = getCachedHubs()
+    hubsFetchLock = getHubs()
       .then((fresh) => {
         if (fresh && fresh.length > 0) setCachedHubs(fresh);
         hubsFetchLock = null;
