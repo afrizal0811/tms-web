@@ -2,6 +2,7 @@ import CryptoJS from 'crypto-js';
 import { toastError } from './toast';
 const SECRET_KEY = process.env.NEXT_PUBLIC_STORAGE_KEY || '@frizaL_TaMpaN_B@ngEeTTH_2026!!';
 const CURRENT_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
+let hubsFetchLock = null;
 
 const encryptData = (data) => {
   try {
@@ -143,7 +144,7 @@ export function getCachedHubs() {
   return null;
 }
 
-export function setCachedHubs(hubs) {
+function setCachedHubs(hubs) {
   if (typeof window === 'undefined') return;
   const rawData = localStorage.getItem('data');
   if (rawData) {
@@ -151,9 +152,52 @@ export function setCachedHubs(hubs) {
       const decrypted = decryptData(rawData);
       const parsed = JSON.parse(decrypted);
       parsed.cachedHubs = hubs;
+      parsed.cachedHubsTimestamp = new Date().getTime();
       setLocalStorage('data', parsed);
     } catch (e) {}
   }
+}
+
+function getCachedHubsTimestamp() {
+  if (typeof window === 'undefined') return null;
+  const rawData = localStorage.getItem('data');
+  if (rawData) {
+    try {
+      const decrypted = decryptData(rawData);
+      const parsed = JSON.parse(decrypted);
+      return parsed.cachedHubsTimestamp || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function getSyncHubs() {
+  if (typeof window === 'undefined') return null;
+
+  const cached = getCachedHubs();
+  const lastUpdate = getCachedHubsTimestamp();
+  const now = new Date().getTime();
+  const isExpired = !lastUpdate || now - lastUpdate > 6 * 60 * 60 * 1000;
+
+  if (!isExpired && cached && cached.length > 0) return cached;
+
+  if (!hubsFetchLock) {
+    hubsFetchLock = getCachedHubs()
+      .then((fresh) => {
+        if (fresh && fresh.length > 0) setCachedHubs(fresh);
+        hubsFetchLock = null;
+        return fresh;
+      })
+      .catch((e) => {
+        hubsFetchLock = null;
+        throw e;
+      });
+  }
+
+  if (cached && cached.length > 0) return cached;
+  return await hubsFetchLock;
 }
 
 export function updateActiveHub(id, name, acronym) {

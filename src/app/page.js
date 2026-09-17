@@ -7,13 +7,7 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
-import { getHubs } from '@/lib/api/mileapp';
-import {
-  getCachedHubs,
-  getLocalStorage,
-  setCachedHubs,
-  setLocalStorage,
-} from '@/lib/localStorageHandler';
+import { getLocalStorage, getSyncHubs, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { getDriverData } from '../lib/driverData';
@@ -35,22 +29,10 @@ export default function Home() {
     async function initializeApp() {
       setIsLoading(true);
       setPageError(null);
-      let processedHubs = getCachedHubs();
+      let processedHubs = [];
 
       try {
-        if (!processedHubs || isEmpty(processedHubs)) {
-          processedHubs = await getHubs();
-          setCachedHubs(processedHubs);
-        } else {
-          getHubs()
-            .then((freshHubs) => {
-              if (!isEmpty(freshHubs)) {
-                setCachedHubs(freshHubs);
-                setAllHubsList(freshHubs);
-              }
-            })
-            .catch(() => {});
-        }
+        processedHubs = await getSyncHubs();
         setAllHubsList(processedHubs);
       } catch (e) {
         setPageError('Gagal terhubung ke database.');

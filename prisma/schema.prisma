@@ -21,6 +21,7 @@ model Hub {
   lng          Float?  
   updatedAt    DateTime @updatedAt
   drivers      Driver[] 
+  is_active    Boolean @default(true)
 }
 
 model Driver {

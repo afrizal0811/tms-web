@@ -3,14 +3,8 @@
 import Dropdown from '@/components/dropdown/Dropdown';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs } from '@/lib/api/mileapp';
 import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
-import {
-  getCachedHubs,
-  getLocalStorage,
-  setCachedHubs,
-  updateActiveHub,
-} from '@/lib/localStorageHandler';
+import { getLocalStorage, getSyncHubs, updateActiveHub } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -23,7 +17,8 @@ export default function LocationSelector({
   value,
 }) {
   const { t } = useLanguage();
-  const data = Array.isArray(hubsToShow) ? hubsToShow : [];
+  const rawData = Array.isArray(hubsToShow) ? hubsToShow : [];
+  const data = rawData.filter((hub) => hub.isActive !== false);
   const placeholder = `-- ${t('common.select')} ${t('common.branch')}--`;
   const handleChange = (id) => {
     const option = data.find((d) => String(d._id) === String(id));
@@ -79,18 +74,13 @@ export function LocationSwitcher() {
         const user = JSON.parse(userStr);
         setCurrentUser(user);
 
-        let cached = getCachedHubs();
-
-        if (!cached || isEmpty(cached)) {
-          cached = await getHubs();
-          if (!isEmpty(cached)) setCachedHubs(cached);
-        }
+        const cached = (await getSyncHubs()) || [];
 
         const userHubIds = Array.isArray(user.hubId) ? user.hubId : [];
         const allowed =
           userHubIds.length > 0
-            ? (cached || []).filter((h) => userHubIds.includes(h._id))
-            : cached || [];
+            ? (cached || []).filter((h) => userHubIds.includes(h._id) && h.isActive !== false)
+            : (cached || []).filter((h) => h.isActive !== false);
 
         setAllowedHubs(allowed);
       } catch (e) {
