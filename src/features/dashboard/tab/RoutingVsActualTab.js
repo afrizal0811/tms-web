@@ -106,7 +106,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               {columns.map((col, index) => (
                 <th
                   key={index}
-                  className={`px-4 py-3 border-b border-gray-300 dark:border-slate-700 text-center ${col.tooltip ? 'cursor-help' : ''} ${col.className || ''}`}
+                  className={`px-4 py-3 border-b border-gray-300 dark:border-slate-700 text-center ${col.width || ''} ${col.tooltip ? 'cursor-help' : ''} ${col.className || ''}`}
                 >
                   <Tooltip tooltipContent={col.tooltip || ''} width={col.tooltipWidth}>
                     <span>{col.header}</span>

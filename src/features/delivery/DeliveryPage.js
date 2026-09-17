@@ -696,6 +696,19 @@ export default function DeliveryPage() {
   const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}`;
   const headerItems = [
     {
+      label: t('common.search'),
+      component: (
+        <SearchBar
+          disabled={isLoading || isDownloading}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
+          value={searchQuery}
+          width="w-full xl:w-70"
+        />
+      ),
+    },
+    {
       label: t('common.delivery_date'),
       component: (
         <CustomDatePicker
@@ -727,19 +740,6 @@ export default function DeliveryPage() {
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
-        />
-      ),
-    },
-    {
-      label: t('common.search'),
-      component: (
-        <SearchBar
-          disabled={isLoading || isDownloading}
-          onChange={setSearchQuery}
-          placeholder={t('common.search')}
-          tooltip={searchPlaceholder}
-          value={searchQuery}
-          width="w-full xl:w-70"
         />
       ),
     },
