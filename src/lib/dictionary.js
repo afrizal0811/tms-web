@@ -37,6 +37,7 @@ export const dictionary = {
       download: 'Unduh',
       downloading: 'Mengunduh...',
       driver: 'Sopir',
+      duration: 'Durasi',
       estimate: 'Perkiraan',
       eta: 'ETA',
       etd: 'ETD',
@@ -495,6 +496,7 @@ export const dictionary = {
         routing_time: {
           title: 'Waktu Ruting',
           tooltip: {
+            duration: 'Durasi proses ruting',
             finish_time: 'Waktu penugasan tugas terakhir',
             finish_time_error: 'Tidak ada tugas yang ditugaskan melalui proses ruting',
             routing_date: 'Tanggal proses ruting',
@@ -768,6 +770,7 @@ export const dictionary = {
       download: 'Download',
       downloading: 'Downloading...',
       driver: 'Driver',
+      duration: 'Duration',
       estimate: 'Estimate',
       eta: 'ETA',
       etd: 'ETD',
@@ -1227,6 +1230,7 @@ export const dictionary = {
         routing_time: {
           title: 'Routing Time',
           tooltip: {
+            duration: 'Duration of routing process',
             finish_time: 'Last task assignment time',
             finish_time_error: 'No tasks assigned through routing process',
             routing_date: 'Date of routing process',

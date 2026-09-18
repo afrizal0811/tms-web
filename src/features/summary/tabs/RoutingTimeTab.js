@@ -3,8 +3,10 @@
 import CopyButton from '@/components/button/CopyButton';
 import Tooltip from '@/components/Tooltip';
 import {
+  calculateMinuteDifference,
   formatDateUniversal,
   formatLongDate,
+  formatMinutesToHHMM,
   isDateSunday,
   isPastDate,
   parseCustomerString,
@@ -16,7 +18,7 @@ const headerClass =
 const dataClass =
   'px-6 py-4 font-medium text-slate-900 dark:text-slate-200 border-r border-b border-gray-200 dark:border-slate-700 text-center';
 
-const HEADER_TITLES = ['routing_date', 'start_time', 'finish_time'];
+const HEADER_TITLES = ['routing_date', 'start_time', 'finish_time', 'duration'];
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
@@ -58,17 +60,10 @@ const isValidRoutingTimeWIB = (utcString) => {
 export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
-
     const start = new Date(startDateStr);
     start.setHours(0, 0, 0, 0);
-
     const end = new Date(endDateStr);
     end.setHours(0, 0, 0, 0);
-
-    const lastDayKey = formatDateUniversal(end, 'YYYY-MM-DD');
-    const nextDay = new Date(end);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayKey = formatDateUniversal(nextDay, 'YYYY-MM-DD');
 
     const current = new Date(start);
 
@@ -80,7 +75,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         dateKey: dateKey,
         dateDisplay: displayDate,
         startData: { time: null, name: null, soNumber: null },
-        endData: { time: null, name: null, soNumber: null },
+        finishData: { time: null, name: null, soNumber: null },
       };
       current.setDate(current.getDate() + 1);
     }
@@ -94,13 +89,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
         let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
 
-        if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
-          taskDateKey = '2025-12-31';
-        }
-
-        const targetKey =
-          taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
-        const targetRow = dataMap[targetKey];
+        const targetRow = dataMap[taskDateKey];
 
         if (targetRow) {
           const {
@@ -111,29 +100,31 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
           parseCustomerString(task.customerName) ||
           '-';
 
-          if (
-            !targetRow.startData.time ||
-            new Date(task.createdTime) < new Date(targetRow.startData.time)
-          ) {
-            targetRow.startData.time = task.createdTime;
-            targetRow.startData.name = taskName;
-            targetRow.startData.soNumber = invoiceNumber;
-            targetRow.startData.truncateInvoice = truncateInvoice;
-          }
-
-          if (
+          const isValidRoutedTask =
             task.assignedTime &&
             task.routingResultId &&
-            isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
-          ) {
+            (task.eta || task.etd || task.routePlannedOrder) &&
+            isValidAssignedTimeWIB(task.createdTime, task.assignedTime);
+
+          if (isValidRoutedTask) {
             if (
-              !targetRow.endData.time ||
-              new Date(task.assignedTime) > new Date(targetRow.endData.time)
+              !targetRow.startData.time ||
+              new Date(task.createdTime) < new Date(targetRow.startData.time)
             ) {
-              targetRow.endData.time = task.assignedTime;
-              targetRow.endData.name = taskName;
-              targetRow.endData.soNumber = invoiceNumber;
-              targetRow.endData.truncateInvoice = truncateInvoice;
+              targetRow.startData.time = task.createdTime;
+              targetRow.startData.name = taskName;
+              targetRow.startData.soNumber = invoiceNumber;
+              targetRow.startData.truncateInvoice = truncateInvoice;
+            }
+
+            if (
+              !targetRow.finishData.time ||
+              new Date(task.assignedTime) > new Date(targetRow.finishData.time)
+            ) {
+              targetRow.finishData.time = task.assignedTime;
+              targetRow.finishData.name = taskName;
+              targetRow.finishData.soNumber = invoiceNumber;
+              targetRow.finishData.truncateInvoice = truncateInvoice;
             }
           }
         }
@@ -167,11 +158,11 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
           <tbody className="bg-white dark:bg-slate-800">
             {processedData.map((row, idx) => {
               const hasStart = !!row.startData.time;
-              const hasEnd = !!row.endData.time;
+              const hasFinish = !!row.finishData.time;
               const isSunday = isDateSunday(row.dateKey);
               const isPast = isPastDate(row.dateKey);
 
-              const isDynamicHoliday = isPast && !hasStart && !hasEnd && !isSunday;
+              const isDynamicHoliday = isPast && !hasStart && !hasFinish && !isSunday;
 
               if (isSunday || isDynamicHoliday) {
                 const content = isSunday ? (
@@ -193,7 +184,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                       {row.dateDisplay}
                     </td>
                     <td
-                      colSpan={2}
+                      colSpan={3}
                       className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
                     >
                       {content}
@@ -202,12 +193,21 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                 );
               }
 
-              const isStartMissing = !hasStart && hasEnd;
-              const isEndMissing = hasStart && !hasEnd;
+              const isStartMissing = !hasStart && hasFinish;
+              const isFinishMissing = hasStart && !hasFinish;
               const startDisplay = hasStart
                 ? formatDateUniversal(row.startData.time, 'HH:mm')
                 : '-';
-              const endDisplay = hasEnd ? formatDateUniversal(row.endData.time, 'HH:mm') : '-';
+              const endDisplay = hasFinish
+                ? formatDateUniversal(row.finishData.time, 'HH:mm')
+                : '-';
+
+              let durationDisplay = '-';
+              if (hasStart && hasFinish) {
+                const diffMins = calculateMinuteDifference(row.startData.time, row.finishData.time);
+                durationDisplay = formatMinutesToHHMM(diffMins, false);
+              }
+
               const errorClass =
                 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
 
@@ -224,7 +224,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                           isStartMissing
                             ? translate('summary.tabs.routing_time.tooltip.start_time_error')
                             : hasStart
-                              ? `${row.startData.name}\n${row.startData.truncateInvoice}`
+                              ? row.startData.truncateInvoice
                               : ''
                         }
                       >
@@ -237,26 +237,27 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                       {hasStart && <CopyButton text={row.startData.soNumber} />}
                     </div>
                   </td>
-                  <td className={`${dataClass} ${isEndMissing ? errorClass : ''}`}>
+                  <td className={`${dataClass} ${isFinishMissing ? errorClass : ''}`}>
                     <div className="flex items-center justify-center gap-1">
                       <Tooltip
                         tooltipContent={
-                          isEndMissing
+                          isFinishMissing
                             ? translate('summary.tabs.routing_time.tooltip.finish_time_error')
-                            : hasEnd
-                              ? `${row.endData.name}\n${row.endData.truncateInvoice}`
+                            : hasFinish
+                              ? row.finishData.truncateInvoice
                               : ''
                         }
                       >
                         <span
-                          className={`${isEndMissing ? 'cursor-help w-full inline-block' : hasEnd ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
+                          className={`${isFinishMissing ? 'cursor-help w-full inline-block' : hasFinish ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
                         >
                           {endDisplay}
                         </span>
                       </Tooltip>
-                      {hasEnd && <CopyButton text={row.endData.soNumber} />}
+                      {hasFinish && <CopyButton text={row.finishData.soNumber} />}
                     </div>
                   </td>
+                  <td className={dataClass}>{durationDisplay}</td>
                 </tr>
               );
             })}
