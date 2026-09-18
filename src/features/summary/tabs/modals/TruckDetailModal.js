@@ -123,7 +123,7 @@ export default function TruckDetailModal({
                     <Tooltip
                       tooltipContent={
                         <span>
-                          {translate('common.ro_seq')}: <b>{displayRO}</b> <br />
+                          {translate('common.plan_seq')}: <b>{displayRO}</b> <br />
                           {translate('common.actual_seq')}: <b>{displayReal}</b>
                         </span>
                       }

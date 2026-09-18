@@ -1,5 +1,6 @@
 'use client';
 
+import Button from '@/components/button/Button';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import SearchBar from '@/components/SearchBar';
 import { patchRolePaths } from '@/lib/api/mileapp';
@@ -7,7 +8,6 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { AVAILABLE_PATHS } from '../helper/constants';
-
 const EditIcon = () => (
   <svg
     className="w-3.5 h-3.5 md:w-4 md:h-4"
@@ -278,20 +278,21 @@ export default function PermissionTab({ roles, onRefresh, isReadOnly, translate 
 
               {isEditing && (
                 <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={handleCancel}
+                  <Button
                     disabled={isSaving}
-                    className="text-xs px-3 py-1.5 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    {translate('common.button.btn_cancel')}
-                  </button>
-                  <button
-                    onClick={() => handleSave(id)}
+                    isLoading={isSaving}
+                    onClick={handleCancel}
+                    size="sm"
+                    text={translate('common.button.btn_cancel')}
+                    className="text-red-600 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:text-red-300 dark:hover:bg-red-600"
+                  />
+                  <Button
                     disabled={isSaving || !hasUnsavedChanges}
-                    className="text-xs px-3 py-1.5 font-medium text-white bg-sky-600 hover:bg-sky-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
-                  >
-                    {isSaving ? translate('common.saving') : translate('common.button.btn_save')}
-                  </button>
+                    isLoading={isSaving}
+                    onClick={() => handleSave(id)}
+                    size="sm"
+                    text={translate('common.button.btn_save')}
+                  />
                 </div>
               )}
             </div>

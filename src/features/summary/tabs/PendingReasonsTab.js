@@ -149,10 +149,10 @@ export default function PendingReasonsTab({
     translate('common.etd'),
     translate('common.actual_arrival'),
     translate('common.actual_departure'),
-    translate('common.visit_plan'),
-    translate('common.visit_actual'),
+    translate('common.plan_visit'),
+    translate('common.actual_visit'),
     translate('common.customer_id'),
-    translate('common.ro_seq'),
+    translate('common.plan_seq'),
     translate('common.actual_seq'),
     translate('common.storage_type'),
   ];

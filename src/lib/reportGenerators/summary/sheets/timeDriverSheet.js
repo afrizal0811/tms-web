@@ -272,7 +272,7 @@ export function generateTimeDriverSheet(
     row2.push(
       translate('common.start_time'),
       translate('common.finish_time'),
-      translate('summary.tabs.time_driver.duration')
+      translate('common.duration')
     );
   });
   const excelData = [row1, row2];

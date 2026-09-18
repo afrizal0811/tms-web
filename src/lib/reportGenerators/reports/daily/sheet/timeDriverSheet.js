@@ -15,7 +15,7 @@ export function buildTimeDriverSheet(wb, timeDataObjects, t, driverData = []) {
     t('common.start_time'),
     t('excel.reports.time_driver.finish_date'),
     t('common.finish_time'),
-    t('excel.reports.time_driver.duration'),
+    t('common.duration'),
     t('common.dist_travel'),
   ];
 

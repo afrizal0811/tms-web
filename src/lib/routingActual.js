@@ -177,12 +177,12 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
               hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',
               hubETA: formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-',
               hubLongLat: firstHub.coordinate || null,
-              middleHubs: middleHubs.map(h => ({
+              middleHubs: middleHubs.map((h) => ({
                 order: h.order,
                 eta: formatDateUniversal(`${date} ${h.eta}`, 'HH:mm') || '-',
                 etd: formatDateUniversal(`${date} ${h.etd}`, 'HH:mm') || '-',
                 longlat: h.coordinate || null,
-              }))
+              })),
             };
             hubTimesFallbackMap.set(driverName, timesObj);
             if (routeBasePlat) hubTimesMap.set(`${driverName}_${routeBasePlat}`, timesObj);
@@ -243,7 +243,7 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       customerName: 'HUB',
     });
 
-    const mHubs = (hubTimes.middleHubs || []).map(h => ({
+    const mHubs = (hubTimes.middleHubs || []).map((h) => ({
       type: 'HUB_MIDDLE',
       driver: driverName,
       plat: driverPlat,
@@ -251,10 +251,12 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
       etd: h.etd,
       roSequence: h.order,
       customerName: 'HUB',
-      longlat: h.longlat
+      longlat: h.longlat,
     }));
 
-    const combined = [...matchingTasks, ...mHubs].sort((a, b) => (a.roSequence || 0) - (b.roSequence || 0));
+    const combined = [...matchingTasks, ...mHubs].sort(
+      (a, b) => (a.roSequence || 0) - (b.roSequence || 0)
+    );
     combined.forEach((t) => finalRows.push(t.type === 'HUB_MIDDLE' ? t : { type: 'TASK', ...t }));
 
     finalRows.push({
@@ -331,7 +333,7 @@ export const getRoutingActualColumns = (t) => {
     },
     {
       id: 'driver',
-      header: t('common.driver'), 
+      header: t('common.driver'),
       align: 'left',
       width: 'min-w-[140px]',
       className: 'font-medium',
@@ -415,7 +417,7 @@ export const getRoutingActualColumns = (t) => {
 
     {
       id: 'visitTime',
-      header: t('common.visit_plan'),
+      header: t('common.plan_visit'),
       align: 'center',
       excelWidth: 12,
       className: theme.pinkClass,
@@ -424,7 +426,7 @@ export const getRoutingActualColumns = (t) => {
     },
     {
       id: 'actualVisitTime',
-      header: t('common.visit_actual'),
+      header: t('common.actual_visit'),
       align: 'center',
       excelWidth: 12,
       className: theme.pinkClass,
@@ -434,7 +436,7 @@ export const getRoutingActualColumns = (t) => {
 
     {
       id: 'roSequence',
-      header: t('common.ro_seq'),
+      header: t('common.plan_seq'),
       align: 'center',
       excelWidth: 10,
       className: `font-semibold ${theme.blueClass}`,
@@ -534,9 +536,9 @@ export function routingActualSheet(wb, data, t) {
         if (col.id === 'etd' && isHubStart) return row.time;
         if (col.id === 'eta' && isHubEnd) return row.time;
         if (isHubMiddle) {
-           if (col.id === 'eta') return row.eta;
-           if (col.id === 'etd') return row.etd;
-           if (col.id === 'roSequence') return row.roSequence;
+          if (col.id === 'eta') return row.eta;
+          if (col.id === 'etd') return row.etd;
+          if (col.id === 'roSequence') return row.roSequence;
         }
         return null;
       }
@@ -600,7 +602,12 @@ export function routingActualSheet(wb, data, t) {
         };
       } else if (isHubRow) {
         if (isMiddleHubRow) {
-          if (col.id === 'customerName' || col.id === 'eta' || col.id === 'etd' || col.id === 'roSequence')
+          if (
+            col.id === 'customerName' ||
+            col.id === 'eta' ||
+            col.id === 'etd' ||
+            col.id === 'roSequence'
+          )
             ws[cellRef].s = STYLES.hubViolet;
           else ws[cellRef].s = { font: { color: { rgb: '7C3AED' } } };
         } else {
@@ -612,7 +619,7 @@ export function routingActualSheet(wb, data, t) {
         const isSpacerRow =
           isEmpty(ws[XLSX.utils.encode_cell({ r: R, c: 0 })]?.v) &&
           isEmpty(ws[XLSX.utils.encode_cell({ r: R, c: 2 })]?.v);
-        
+
         if (isSpacerRow) {
           ws[cellRef].s = { fill: { fgColor: { rgb: 'E2E8F0' }, patternType: 'solid' } };
           continue;

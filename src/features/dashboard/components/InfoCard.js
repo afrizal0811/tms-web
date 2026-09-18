@@ -333,13 +333,13 @@ const InfoCard = ({
 
             <div className="grid grid-cols-[1fr_auto] gap-2 items-center pt-3 border-t border-dashed border-gray-200">
               <div>
-                <span className="block text-gray-500 text-[11px]">{t('common.visit_plan')}</span>
+                <span className="block text-gray-500 text-[11px]">{t('common.plan_visit')}</span>
                 <span className="font-semibold text-slate-700 text-sm">
                   {planVisit} {t('common.minute')}
                 </span>
               </div>
               <div className="text-right">
-                <span className="block text-gray-500 text-[11px]">{t('common.visit_actual')}</span>
+                <span className="block text-gray-500 text-[11px]">{t('common.actual_visit')}</span>
                 <div className="flex items-center justify-end gap-2">
                   <span className="font-bold text-slate-700 text-sm">
                     {actVisit >= 0 &&

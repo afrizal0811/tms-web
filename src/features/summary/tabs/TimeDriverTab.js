@@ -131,7 +131,7 @@ export default function TimeDriverTab({ data, translate, localeCode, activeHubLo
                       {translate('common.finish_time')}
                     </th>
                     <th className={`${thClass} ${metricColor}`}>
-                      {translate('summary.tabs.time_driver.duration')}
+                      {translate('common.duration')}
                     </th>
                   </Fragment>
                 );
