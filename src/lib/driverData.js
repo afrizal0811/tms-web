@@ -1,42 +1,9 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api/mileapp';
-import { formatUTC7, getBasePlate, isEmpty, normalizeEmail } from './utils';
 import { toastError } from './toast';
+import { formatUTC7, getBasePlate, getStorageType, isEmpty, normalizeEmail } from './utils';
 
-const driversCache = {};
 let vehicleTypesPromise = null;
 let vehicleMappingsPromise = null;
-
-function syncConditionalTags(drivers) {
-  if (!Array.isArray(drivers)) return [];
-  const baseMap = new Map();
-
-  drivers.forEach((d) => {
-    const bp = getBasePlate(d.plat);
-    if (d.plat === bp && d.type) {
-      baseMap.set(bp, {
-        type: d.type,
-        tags: d.tags,
-        storage: d.storage,
-        _rawType: d._rawType || d.type,
-      });
-    }
-  });
-
-  return drivers.map((d) => {
-    const bp = getBasePlate(d.plat);
-    if (d.plat !== bp && baseMap.has(bp)) {
-      const m = baseMap.get(bp);
-      return {
-        ...d,
-        type: m.type,
-        tags: m.tags,
-        storage: d.storage || m.storage,
-        _rawType: m._rawType,
-      };
-    }
-    return d;
-  });
-}
 
 const resolveVehicleType = (rawTag, plate, mappingsObj) => {
   if (plate && mappingsObj[plate]) return mappingsObj[plate];
@@ -68,7 +35,7 @@ export async function checkUnmappedVehicles(hubId) {
 
     const [vehicleTypesObj, drivers, mappingsDB] = await Promise.all([
       vehicleTypesPromise,
-      getDriverData(hubId),
+      getDrivers(hubId),
       vehicleMappingsPromise,
     ]);
 
@@ -116,70 +83,7 @@ export async function checkUnmappedVehicles(hubId) {
   }
 }
 
-export async function getDriverData(selectedLocation) {
-  const locationKey = selectedLocation || 'ALL_LOCATIONS';
-  if (!driversCache[locationKey]) {
-    driversCache[locationKey] = (async () => {
-      try {
-        const [driversFromDB, mappingsDB] = await Promise.all([
-          getDrivers(selectedLocation || undefined),
-          getVehicleMappings(),
-        ]);
-
-        const mappingsObj = mappingsDB.reduce((acc, curr) => {
-          acc[curr.plat] = curr.mappedType;
-          return acc;
-        }, {});
-
-        const parsed = driversFromDB.map((d) => {
-          let mappedTypeStr = d.type;
-          if (d.plat && mappingsObj[d.plat]) {
-            mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
-          }
-
-          return {
-            _id: d.id,
-            vehicleId: d.vehicle_id,
-            vmsVehicleId: d.vms_id,
-            imei: d.imei,
-            vmsDriverId: d.vms_driver_id,
-            email: d.email,
-            name: d.name,
-            plat: d.plat,
-            type: mappedTypeStr,
-            _rawType: d.type,
-            tags: d.tags,
-            minWeight: d.minWeight,
-            maxWeight: d.maxWeight,
-            minVolume: d.minVolume,
-            maxVolume: d.maxVolume,
-            storage: d.storage,
-            oddEven: d.oddEven,
-            speed: d.speed,
-            costFactor: d.costFactor,
-            workingTime: {
-              startTime: d.startTime,
-              endTime: d.endTime,
-              multiday: d.multiday,
-            },
-            breakTime: {
-              startTime: d.startBreakTime,
-              endTime: d.endBreakTime,
-            },
-          };
-        });
-
-        return syncConditionalTags(parsed);
-      } catch (err) {
-        delete driversCache[locationKey];
-        throw err;
-      }
-    })();
-  }
-
-  return driversCache[locationKey];
-}
-export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
+export async function masterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
   const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 
   VEHICLE_TYPES.forEach((type) => {
@@ -209,7 +113,6 @@ export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_
 
   drivers.forEach((d) => {
     const plat = d.plat || '';
-    const name = (d.name || '').toUpperCase();
     const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
     const storageField = (d.storage || '').toUpperCase();
@@ -218,18 +121,7 @@ export async function calculateMasterTruckStorage(drivers, mappingsObj, VEHICLE_
       return;
     }
 
-    let isFrozen = false;
-    if (
-      storageField.includes('FROZEN') ||
-      rawTag.includes('FROZEN') ||
-      rawTag.includes('FRZ') ||
-      platUpper.includes('FRZ') ||
-      name.includes('FRZ')
-    ) {
-      isFrozen = true;
-    }
-    const storageCategory = isFrozen ? 'Frozen' : 'Dry';
-
+    const storageCategory = getStorageType(storageField || rawTag);
     const resolvedType = resolveVehicleType(rawTag, plat, mappingsObj);
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
 

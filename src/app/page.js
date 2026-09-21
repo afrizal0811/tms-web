@@ -7,10 +7,14 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
-import { getLocalStorage, getSyncHubs, setLocalStorage } from '@/lib/localStorageHandler';
+import {
+  getDrivers,
+  getLocalStorage,
+  getSyncHubs,
+  setLocalStorage,
+} from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
-import { getDriverData } from '../lib/driverData';
 import { toastError, toastInfo } from '../lib/toast';
 
 export default function Home() {
@@ -87,7 +91,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getDriverData(selectedLocation);
+        const data = await getDrivers(selectedLocation);
         setDriverData({ data: data });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);

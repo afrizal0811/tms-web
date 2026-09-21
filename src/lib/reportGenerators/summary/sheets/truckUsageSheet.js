@@ -1,5 +1,5 @@
-import { getVehicleMappings, getVehicleTypes } from '@/lib/api/mileapp';
-import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
+import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api/mileapp';
+import { masterTruckStorage } from '@/lib/driverData';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
@@ -153,7 +153,7 @@ export async function calculateTruckUsageData(
   const [vehicleTypesObj, mappingsDB, allDriversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
     getVehicleMappings(),
-    getDriverData(hubId),
+    getDrivers(hubId),
     getTruckUsageData(hubId, startDateStr, endDateStr, translate),
   ]);
 
@@ -222,11 +222,7 @@ export async function calculateTruckUsageData(
     vehicleTypes = filteredVehicleTypes;
   }
 
-  const hubMasterData = await calculateMasterTruckStorage(
-    masterDriversDB,
-    mappingsObj,
-    vehicleTypes
-  );
+  const hubMasterData = await masterTruckStorage(masterDriversDB, mappingsObj, vehicleTypes);
 
   const masterVehicleList = {
     Dry: { Gabungan: [] },

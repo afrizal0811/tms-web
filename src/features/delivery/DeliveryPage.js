@@ -27,8 +27,14 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getHubs, getLocationHistories, getResults, getTasks } from '../../lib/api/mileapp';
-import { driverTimeStamps, getDriverData } from '../../lib/driverData';
+import {
+  getDrivers,
+  getHubs,
+  getLocationHistories,
+  getResults,
+  getTasks,
+} from '../../lib/api/mileapp';
+import { driverTimeStamps } from '../../lib/driverData';
 import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
 import {
@@ -280,7 +286,7 @@ export default function DeliveryPage() {
         const activeHub = findActiveHub(currentHubs, storedLocation);
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
-        const rawDrivers = await getDriverData(storedLocation);
+        const rawDrivers = await getDrivers(storedLocation);
         if (isEmpty(rawDrivers)) {
           setEmptyMessage(t('common.no_driver'));
           throw new Error(t('common.no_driver'));

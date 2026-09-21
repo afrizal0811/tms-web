@@ -1,11 +1,11 @@
 import {
+  getDrivers,
   getLocationHistories,
   getResults,
   getTasks,
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
@@ -360,7 +360,7 @@ export const handleManualDownload = async ({
     const [{ vehicleTypes, mappingsObj }, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
-        getDriverData(hubId),
+        getDrivers(hubId),
         getLocationHistories({
           timeFrom,
           timeTo,

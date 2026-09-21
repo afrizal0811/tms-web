@@ -5,7 +5,7 @@ import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import KpiReport from '@/features/reports/KpiReport';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ export default function KpiReportPage() {
     async function fetchData() {
       try {
         const { storedLocation, storedLocationAcronym } = getLocalStorage();
-        const drivers = await getDriverData(storedLocation);
+        const drivers = await getDrivers(storedLocation);
         setData({
           storedLocation,
           storedLocationAcronym,

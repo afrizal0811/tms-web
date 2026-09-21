@@ -1,5 +1,6 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
+  getDrivers,
   getHubs,
   getLocationHistories,
   getResultHistories,
@@ -8,7 +9,7 @@ import {
   getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
-import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
+import { masterTruckStorage } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError } from '@/lib/toast';
@@ -674,7 +675,7 @@ export default function useSummaryData() {
       const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
-      const pDrivers = fetchWithTracker(() => getDriverData(selectedLocation));
+      const pDrivers = fetchWithTracker(() => getDrivers(selectedLocation));
 
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];
@@ -752,11 +753,7 @@ export default function useSummaryData() {
           }
         });
 
-        const calculatedMaster = await calculateMasterTruckStorage(
-          uniqueDriversForMT,
-          mapObj,
-          vTypes
-        );
+        const calculatedMaster = await masterTruckStorage(uniqueDriversForMT, mapObj, vTypes);
         setMasterTruckData(calculatedMaster);
 
         const activeHub = hubsDB?.find(

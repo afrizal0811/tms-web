@@ -2,8 +2,7 @@
 
 import Button from '@/components/button/Button';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
-import { patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers, patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
@@ -25,7 +24,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     try {
       const [res, mileappData] = await Promise.all([
         getMceasyUsers({ 'position-name': 'Driver' }),
-        getDriverData(activeHubId),
+        getDrivers(activeHubId),
       ]);
 
       const validEmails = new Set(

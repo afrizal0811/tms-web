@@ -4,8 +4,7 @@ import Button from '@/components/button/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
-import { getTasks } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers, getTasks } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
@@ -91,7 +90,7 @@ export default function UpdateCoordinatePage() {
         const timeTo = toApiDateString(localEnd);
 
         const [drivers, todayTasks] = await Promise.all([
-          getDriverData(hubId),
+          getDrivers(hubId),
           getTasks({
             status: 'DONE',
             hubId,

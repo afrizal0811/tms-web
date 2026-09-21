@@ -172,8 +172,8 @@ export function getStorageType(input) {
     if (text.includes('DRY')) return 'Dry';
     return '-';
   }
-  const typeStr = input.type || '';
-  const nameStr = input.name || input || '';
+  const typeStr = input?.type || '';
+  const nameStr = input?.name || input || '';
   if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
   if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
   if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))

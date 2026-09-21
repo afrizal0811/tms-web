@@ -11,8 +11,7 @@ import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getTasks } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers, getHubs, getTasks } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
@@ -63,7 +62,7 @@ export default function TaskPage() {
 
   useEffect(() => {
     const fetchDriverData = async () => {
-      const data = await getDriverData();
+      const data = await getDrivers();
       setDriverData(data);
     };
     fetchDriverData();
