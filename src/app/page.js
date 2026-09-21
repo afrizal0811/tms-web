@@ -7,12 +7,8 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
-import {
-  getDrivers,
-  getLocalStorage,
-  getSyncHubs,
-  setLocalStorage,
-} from '@/lib/localStorageHandler';
+import { getDrivers } from '@/lib/api/mileapp';
+import { getLocalStorage, getSyncHubs, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { toastError, toastInfo } from '../lib/toast';
