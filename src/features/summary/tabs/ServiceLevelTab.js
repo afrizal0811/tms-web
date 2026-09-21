@@ -34,7 +34,7 @@ export default function ServiceLevelTab({
     setModalConfig({
       isOpen: true,
       tasks: taskList,
-      title: `${translate('summary.tabs.service_level.title')} - ${storageType}`,
+      title: `${isDateRange ? translate('summary.tabs.service_level.summary_tab') : translate('summary.tabs.service_level.detail_tab')} - ${storageType}`,
       subtitle: `${formattedDate}${dayLabel}`,
     });
   };
