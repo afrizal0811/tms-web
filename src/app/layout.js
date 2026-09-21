@@ -1,8 +1,9 @@
-import SessionGuard from '@/components/page/SessionGuard';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
+import SessionGuard from '@/components/page/SessionGuard';
 import { LanguageProvider } from '@/context/LanguageContext';
 import ThemeProvider from '@/context/ThemeProvider';
+import { Analytics } from '@vercel/analytics/next';
 import 'leaflet/dist/leaflet.css';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
@@ -43,6 +44,7 @@ export default function RootLayout({ children }) {
             </SessionGuard>
           </LanguageProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
