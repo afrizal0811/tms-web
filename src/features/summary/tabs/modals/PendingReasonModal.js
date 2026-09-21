@@ -1,6 +1,7 @@
 'use client';
 
 import Button from '@/components/button/Button';
+import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
@@ -20,7 +21,10 @@ export default function PendingReasonModal({
   const [detail, setDetail] = useState('');
   const [groupReason, setGroupReason] = useState('');
   const [pic, setPic] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState({
+    save: false,
+    delete: false,
+  });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -50,10 +54,16 @@ export default function PendingReasonModal({
     return { sortedReasons: sorted, reasonCounts: counts };
   }, [reasons]);
 
+  const availableReasons = useMemo(() => {
+    if (!intExt) return [];
+    return sortedReasons.filter(
+      (r) => r.category === intExt || r.internalExternal === intExt || r.type === intExt
+    );
+  }, [sortedReasons, intExt]);
+
   if (!data) return null;
 
-  const handleGroupReasonChange = (e) => {
-    const val = e.target.value;
+  const handleGroupReasonChange = (val) => {
     if (val) {
       const [gReason, gPic] = val.split('|');
       setGroupReason(gReason);
@@ -65,7 +75,7 @@ export default function PendingReasonModal({
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsLoading((prev) => ({ ...prev, save: true }));
     try {
       const dateParts = data.dateStr.split('-');
       const dbDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -86,13 +96,13 @@ export default function PendingReasonModal({
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
-      setIsLoading(false);
+      setIsLoading((prev) => ({ ...prev, save: false }));
     }
   };
 
   const handleDelete = async () => {
     setIsConfirmOpen(false);
-    setIsLoading(true);
+    setIsLoading((prev) => ({ ...prev, delete: true }));
     try {
       await deletePendingDetail(data._id);
       toastSuccess(translate('common.toast.success'));
@@ -102,17 +112,16 @@ export default function PendingReasonModal({
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
-      setIsLoading(false);
+      setIsLoading((prev) => ({ ...prev, delete: false }));
     }
   };
 
-  const isEmptyData = !intExt || !detail.trim() || !groupReason || !pic;
-  const isSaveDisabled = isLoading || isEmptyData;
+  const isEmptyData = !intExt || !groupReason || !pic;
+  const isSaveDisabled = isLoading.save || isEmptyData;
 
   const hasExistingData =
     data?.pendingDetail &&
     (data.pendingDetail.internalExternal ||
-      data.pendingDetail.detailReason ||
       data.pendingDetail.groupReason ||
       data.pendingDetail.pic);
 
@@ -123,7 +132,10 @@ export default function PendingReasonModal({
     <>
       <ConfirmModal
         isOpen={isConfirmOpen}
-        onCancel={() => setIsConfirmOpen(false)}
+        onCancel={() => {
+          setIsConfirmOpen(false);
+          setIsLoading({ save: false, delete: false });
+        }}
         onConfirm={handleDelete}
         title={translate('common.modal.delete_title', {
           text: translate('summary.tabs.pending_reasons.modal_title'),
@@ -143,32 +155,21 @@ export default function PendingReasonModal({
         title={translate('summary.tabs.pending_reasons.modal_title')}
         subtitle={`${capitalizeText(statusText)} | ${data.customer}`}
         footer={
-          <div className="flex justify-between items-center w-full">
-            <div>
-              {hasExistingData ? (
-                <button
-                  disabled={isLoading}
+          <div className="flex justify-end w-full">
+            <div className="flex items-center gap-2 w-fit">
+              {hasExistingData && (
+                <Button
+                  disabled={isLoading.delete}
+                  isLoading={isLoading.delete}
                   onClick={() => setIsConfirmOpen(true)}
-                  className="px-4 py-2 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {translate('common.button.btn_delete')}
-                </button>
-              ) : (
-                <div></div>
+                  size="md"
+                  text={translate('common.button.btn_delete')}
+                  className=" bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 rounded-md border border-red-300 dark:border-red-500/30 hover:bg-red-200 dark:hover:bg-red-900/60"
+                />
               )}
-            </div>
-            <div className="flex gap-2">
               <Button
-                disabled={isLoading}
-                isLoading={isLoading}
-                onClick={onClose}
-                size="md"
-                text={translate('common.button.btn_cancel')}
-                className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600"
-              />
-              <Button
-                disabled={isLoading || isSaveDisabled}
-                isLoading={isLoading}
+                disabled={isLoading.save || isSaveDisabled}
+                isLoading={isLoading.save}
                 onClick={handleSave}
                 size="md"
                 text={translate('common.button.btn_save')}
@@ -177,47 +178,54 @@ export default function PendingReasonModal({
           </div>
         }
       >
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col gap-3">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.pending_reasons.category')}
             </label>
-            <select
+            <Dropdown
               value={intExt}
-              onChange={(e) => setIntExt(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-            >
-              <option value="" disabled>
-                {translate('common.select')} {translate('summary.tabs.pending_reasons.category')}
-              </option>
-              <option value="Internal">Internal</option>
-              <option value="External">External</option>
-            </select>
+              onChange={(val) => {
+                setIntExt(val);
+                setGroupReason('');
+                setPic('');
+              }}
+              options={[
+                { label: 'Internal', value: 'Internal' },
+                { label: 'External', value: 'External' },
+              ]}
+              getLabel={(val) =>
+                val ||
+                `${translate('common.select')} ${translate('summary.tabs.pending_reasons.category')}`
+              }
+              className="w-full"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.pending_reasons.group_reason')}
             </label>
-            <select
+            <Dropdown
               value={groupReason && pic ? `${groupReason}|${pic}` : ''}
               onChange={handleGroupReasonChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-            >
-              <option value="" disabled>
-                {translate('common.select')}{' '}
-                {translate('summary.tabs.pending_reasons.group_reason')}
-              </option>
-              {sortedReasons.map((r, i) => {
+              disabled={!intExt}
+              options={availableReasons.map((r) => {
                 const isDuplicate = reasonCounts[r.reasons] > 1;
                 const displayLabel = isDuplicate ? `${r.reasons} (${r.pic})` : r.reasons;
-                return (
-                  <option key={i} value={`${r.reasons}|${r.pic}`}>
-                    {displayLabel}
-                  </option>
-                );
+                return { label: displayLabel, value: `${r.reasons}|${r.pic}` };
               })}
-            </select>
+              getLabel={(val) => {
+                if (!val)
+                  return `${translate('common.select')} ${translate('summary.tabs.pending_reasons.group_reason')}`;
+                const match = sortedReasons.find((r) => `${r.reasons}|${r.pic}` === val);
+                if (!match) return val;
+                const isDuplicate = reasonCounts[match.reasons] > 1;
+                return isDuplicate ? `${match.reasons} (${match.pic})` : match.reasons;
+              }}
+              isAutocomplete={true}
+              className="w-full"
+            />
           </div>
 
           <div>
@@ -242,8 +250,8 @@ export default function PendingReasonModal({
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
               placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
-            ></textarea>
+              className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800`}
+            />
           </div>
         </div>
       </Modal>

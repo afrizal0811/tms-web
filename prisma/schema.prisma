@@ -101,6 +101,7 @@ model Reason {
   id          Int      @id @default(autoincrement())
   reasons     String 
   pic         String
+  category    String?
   lastUpdated DateTime @updatedAt @default(now())
 
   @@unique([reasons, pic])

@@ -1,7 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
-
 export default function Dropdown({
   options = [],
   value,
@@ -16,6 +16,7 @@ export default function Dropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
+  const { t } = useLanguage();
 
   const sizeClasses = {
     sm: 'h-8 pl-3 pr-8 text-xs rounded',
@@ -81,7 +82,7 @@ export default function Dropdown({
               <input
                 type="text"
                 className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500"
-                placeholder="Cari..."
+                placeholder={t('common.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
@@ -109,7 +110,7 @@ export default function Dropdown({
               })
             ) : (
               <div className="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center italic">
-                Data tidak ditemukan
+                {t('common.no_data')}
               </div>
             )}
           </div>

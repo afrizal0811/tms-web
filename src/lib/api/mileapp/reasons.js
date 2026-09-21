@@ -4,19 +4,19 @@ export async function getReasons() {
   return await apiFetch('/api/mileapp/reasons', 'Gagal mengambil data reasons');
 }
 
-export async function postReason(reasons, pic) {
+export async function postReason(reasons, pic, category) {
   return await apiFetch('/api/mileapp/reasons', 'Gagal menambah reason', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reasons, pic }),
+    body: JSON.stringify({ reasons, pic, category }),
   });
 }
 
-export async function updateReason(id, reasons, pic) {
+export async function updateReason(id, reasons, pic, category) {
   return await apiFetch('/api/mileapp/reasons', 'Gagal mengubah reason', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, reasons, pic }),
+    body: JSON.stringify({ id, reasons, pic, category }),
   });
 }
 

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const reasons = await prisma.reason.findMany({
-      orderBy: { pic: 'asc' },
+      orderBy: [{ category: 'desc' }, { pic: 'asc' }, { reasons: 'asc' }],
     });
     return NextResponse.json(reasons, { status: 200 });
   } catch (error) {
@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    if (!body.reasons || !body.pic) {
+    if (!body.reasons || !body.pic || !body.category) {
       return NextResponse.json({ error: 'Reason dan PIC dibutuhkan' }, { status: 400 });
     }
 
@@ -29,6 +29,7 @@ export async function POST(request) {
       data: {
         reasons: body.reasons,
         pic: body.pic,
+        category: body.category,
       },
     });
 
@@ -38,7 +39,6 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error('Error Create Reason:', error);
-    // Tangkap error unique constraint
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Kombinasi Group Reason dan PIC tersebut sudah terdaftar.' },
@@ -55,7 +55,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    if (!body.id || !body.reasons || !body.pic) {
+    if (!body.id || !body.reasons || !body.pic || !body.category) {
       return NextResponse.json({ error: 'ID, Reason, dan PIC dibutuhkan' }, { status: 400 });
     }
 
@@ -64,6 +64,7 @@ export async function PUT(request) {
       data: {
         reasons: body.reasons,
         pic: body.pic,
+        category: body.category,
       },
     });
 

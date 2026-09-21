@@ -33,7 +33,7 @@ export default function ConfirmModal({
       <Button
         text={resolvedCancel}
         onClick={onCancel}
-        className="bg-gray-600! hover:bg-gray-700! border-gray-700!"
+        className="bg-gray-600! hover:bg-gray-700! border-gray-700! text-slate-100"
       />
       <Button text={resolvedConfirm} onClick={onConfirm} isLoading={loading} />
     </div>
