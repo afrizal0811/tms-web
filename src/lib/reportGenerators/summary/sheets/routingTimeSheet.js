@@ -1,4 +1,9 @@
-import { formatDateUniversal, formatLongDate } from '@/lib/utils';
+import {
+  calculateMinuteDifference,
+  formatDateUniversal,
+  formatLongDate,
+  formatMinutesToHHMM,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
 
@@ -31,7 +36,7 @@ const isValidRoutingTimeWIB = (utcString) => {
   const hour = wibDate.getUTCHours();
 
   if (day >= 1 && day <= 5) {
-    return hour >= 16;
+    return hour >= 15;
   } else if (day === 6) {
     return hour >= 12;
   } else {
@@ -56,11 +61,6 @@ export function generateRoutingTimeSheet(
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
-  const lastDayKey = formatDateUniversal(end, 'YYYY-MM-DD');
-  const nextDay = new Date(end);
-  nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayKey = formatDateUniversal(nextDay, 'YYYY-MM-DD');
-
   const current = new Date(start);
   while (current <= end) {
     const key = formatDateUniversal(current, 'YYYY-MM-DD');
@@ -82,31 +82,26 @@ export function generateRoutingTimeSheet(
 
       let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
 
-      if (taskDateKey === '2026-01-02' && dataMap['2025-12-31']) {
-        taskDateKey = '2025-12-31';
-      }
-
-      const targetKey =
-        taskDateKey === nextDayKey && dataMap[lastDayKey] ? lastDayKey : taskDateKey;
-
-      if (dataMap[targetKey]) {
-        if (
-          !dataMap[targetKey].firstCreatedTime ||
-          new Date(task.createdTime) < new Date(dataMap[targetKey].firstCreatedTime)
-        ) {
-          dataMap[targetKey].firstCreatedTime = task.createdTime;
-        }
-
-        if (
+      if (dataMap[taskDateKey]) {
+        const isValidRoutedTask =
           task.assignedTime &&
           task.routingResultId &&
-          isValidAssignedTimeWIB(task.createdTime, task.assignedTime)
-        ) {
+          (task.eta || task.etd || task.routePlannedOrder) &&
+          isValidAssignedTimeWIB(task.createdTime, task.assignedTime);
+
+        if (isValidRoutedTask) {
           if (
-            !dataMap[targetKey].lastAssignedTime ||
-            new Date(task.assignedTime) > new Date(dataMap[targetKey].lastAssignedTime)
+            !dataMap[taskDateKey].firstCreatedTime ||
+            new Date(task.createdTime) < new Date(dataMap[taskDateKey].firstCreatedTime)
           ) {
-            dataMap[targetKey].lastAssignedTime = task.assignedTime;
+            dataMap[taskDateKey].firstCreatedTime = task.createdTime;
+          }
+
+          if (
+            !dataMap[taskDateKey].lastAssignedTime ||
+            new Date(task.assignedTime) > new Date(dataMap[taskDateKey].lastAssignedTime)
+          ) {
+            dataMap[taskDateKey].lastAssignedTime = task.assignedTime;
           }
         }
       }
@@ -115,9 +110,10 @@ export function generateRoutingTimeSheet(
 
   const excelData = [
     [
-      translate('summary.tabs.routing_time.date_ro'),
+      translate('common.routing_date'),
       translate('common.start_time'),
       translate('common.finish_time'),
+      translate('common.duration'),
     ],
   ];
   const merges = [];
@@ -143,17 +139,24 @@ export function generateRoutingTimeSheet(
           ? translate('common.holiday_sunday')
           : translate('common.holiday');
 
-        excelData.push([row.dateDisplay, textLibur, '']);
+        excelData.push([row.dateDisplay, textLibur, '', '']);
 
         merges.push({
           s: { r: rowIndex, c: 1 },
-          e: { r: rowIndex, c: 2 },
+          e: { r: rowIndex, c: 3 },
         });
       } else {
+        let durationDisplay = '-';
+        if (hasStart && hasEnd) {
+          const diffMins = calculateMinuteDifference(row.firstCreatedTime, row.lastAssignedTime);
+          durationDisplay = formatMinutesToHHMM(diffMins, false);
+        }
+
         excelData.push([
           row.dateDisplay,
           hasStart ? formatDateUniversal(row.firstCreatedTime, 'HH:mm') : '-',
           hasEnd ? formatDateUniversal(row.lastAssignedTime, 'HH:mm') : '-',
+          durationDisplay,
         ]);
       }
     });
@@ -163,7 +166,7 @@ export function generateRoutingTimeSheet(
 
   const range = XLSX.utils.decode_range(ws['!ref']);
 
-  for (let C = 0; C <= 2; C++) {
+  for (let C = 0; C <= 3; C++) {
     const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
     if (cell) cell.s = HEADER_STYLES.main;
   }
@@ -181,11 +184,10 @@ export function generateRoutingTimeSheet(
     const textLiburDynamic = translate('common.holiday');
     const isHolidayRow = startVal === textLiburSunday || startVal === textLiburDynamic;
 
-    // Validasi missing pair
     const isStartMissing = startVal === '-' && endVal !== '-';
     const isEndMissing = startVal !== '-' && endVal === '-';
 
-    for (let C = 0; C <= 2; C++) {
+    for (let C = 0; C <= 3; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (!cell) continue;
 
@@ -197,7 +199,6 @@ export function generateRoutingTimeSheet(
           currentStyle.font = { bold: true, color: { rgb: '990000' } };
         }
       } else {
-        // Berikan warna merah pada cell yang bolong
         if (C === 1 && isStartMissing) {
           currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
         } else if (C === 2 && isEndMissing) {
@@ -209,7 +210,7 @@ export function generateRoutingTimeSheet(
     }
   }
 
-  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }];
+  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
 
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.routing_time.title'));
 }

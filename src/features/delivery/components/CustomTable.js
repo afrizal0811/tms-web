@@ -86,7 +86,13 @@ export default function CustomTable({
         custId,
         locId,
         displaySo,
-        displayNo: isHub ? '' : trip.isManual ? '-' : trip.routePlannedOrder,
+        displayNo: isHub
+          ? trip.isMiddleHub
+            ? trip.routePlannedOrder
+            : ''
+          : trip.isManual
+            ? '-'
+            : trip.routePlannedOrder,
         pickupWh: null,
         isSplit: false,
         originalIndex: index,
@@ -109,9 +115,8 @@ export default function CustomTable({
         if (a.isHub && a.originalIndex === activeRoute.trips.length - 1) return 1;
         if (b.isHub && b.originalIndex === activeRoute.trips.length - 1) return -1;
 
-        if (!isDefaultSort) {
-          if (a.isMiddleHub && !b.isMiddleHub) return 1;
-          if (!a.isMiddleHub && b.isMiddleHub) return -1;
+        if (isDefaultSort) {
+          return a.originalIndex - b.originalIndex;
         }
 
         if (currentSortConfig.key === 'no') {
@@ -151,12 +156,6 @@ export default function CustomTable({
   };
 
   const getRowClassName = (row) => {
-    const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
-    const isMisplacedMiddleHub = row.isMiddleHub && !isDefaultSort;
-
-    if (isMisplacedMiddleHub) {
-      return 'bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 transition-colors';
-    }
     if (row.isManual) {
       return 'bg-[#E6EEFF] hover:bg-[#C9D9FF] dark:bg-blue-900/40 dark:hover:bg-blue-900/70 transition-colors';
     }
@@ -164,9 +163,7 @@ export default function CustomTable({
   };
 
   const getRowTooltip = (row) => {
-    const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
     const tooltips = [];
-    if (row.isMiddleHub && !isDefaultSort) tooltips.push(t('delivery.tooltip.inaccurate_hub'));
     if (row.hasPartner) tooltips.push(t('delivery.tooltip.find_invoice'));
     if (row.isManual) tooltips.push(t('common.status.manual_assign'));
     if (row.isInvalidSo) tooltips.push(t('delivery.tooltip.invalid_invoice'));
@@ -184,7 +181,7 @@ export default function CustomTable({
       render: (row) => (
         <div className="flex justify-center w-full">
           <p
-            className={`text-center w-full ${row.isSplit ? 'text-green-600 dark:text-green-400 font-bold' : row.isManual ? 'text-[#4F76C7] dark:text-blue-400 font-medium' : ''}`}
+            className={`text-center w-full ${row.isMiddleHub ? 'text-violet-600 dark:text-violet-400 font-bold' : row.isSplit ? 'text-green-600 dark:text-green-400 font-bold' : row.isManual ? 'text-[#4F76C7] dark:text-blue-400 font-medium' : ''}`}
           >
             {row.displayNo}
           </p>
@@ -200,7 +197,15 @@ export default function CustomTable({
         if (row.isHub) {
           return (
             <div className="text-left w-full">
-              <strong className="text-red-600 dark:text-red-300 font-semibold">HUB</strong>
+              <strong
+                className={
+                  row.isMiddleHub
+                    ? 'text-violet-600 dark:text-violet-400 font-bold'
+                    : 'text-red-600 dark:text-red-400 font-semibold'
+                }
+              >
+                HUB
+              </strong>
             </div>
           );
         }
@@ -210,7 +215,7 @@ export default function CustomTable({
             <div className="flex flex-wrap gap-2">
               <HighlightText text={row.outletName || ''} highlight={searchQuery} />
               {row.isReDelivery && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-300 uppercase tracking-tight">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-400 dark:border-red-400 uppercase tracking-tight">
                   Redelivery
                 </span>
               )}
@@ -237,7 +242,7 @@ export default function CustomTable({
       label: t('common.customer_id') || 'ID Customer',
       render: (row) => (
         <div className="text-center w-full">
-          <p className={row.isHub ? 'text-red-600 dark:text-red-300 font-semibold' : ''}>
+          <p className={row.isHub ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>
             {row.custId}
           </p>
         </div>
@@ -251,7 +256,7 @@ export default function CustomTable({
       label: t('common.location_id') || 'ID Location',
       render: (row) => (
         <div className="text-center w-full">
-          <p className={row.isHub ? 'text-red-600 dark:text-red-300 font-semibold' : ''}>
+          <p className={row.isHub ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>
             {row.locId}
           </p>
         </div>
@@ -314,7 +319,7 @@ export default function CustomTable({
           return (
             <div className="text-center w-full">
               <Tooltip tooltipContent={t('delivery.tooltip.hub_eta')}>
-                <span className="underline decoration-dashed decoration-red-600 dark:decoration-red-300 cursor-help text-red-600 dark:text-red-300 font-bold underline-offset-4">
+                <span className="underline decoration-dashed decoration-red-600 dark:decoration-red-400 cursor-help text-red-600 dark:text-red-400 font-bold underline-offset-4">
                   {timeStr}
                 </span>
               </Tooltip>
@@ -323,7 +328,15 @@ export default function CustomTable({
         }
         return (
           <div className="text-center w-full">
-            <p className={row.isHub ? 'text-red-600 dark:text-red-300 font-semibold' : ''}>
+            <p
+              className={
+                row.isHub
+                  ? row.isMiddleHub
+                    ? 'text-violet-600 dark:text-violet-400 font-bold'
+                    : 'text-red-600 dark:text-red-400 font-semibold'
+                  : ''
+              }
+            >
               {timeStr}
             </p>
           </div>
@@ -340,7 +353,15 @@ export default function CustomTable({
         const isLastHub = row.originalIndex === activeRoute.trips.length - 1 && row.isHub;
         return (
           <div className="text-center w-full">
-            <p className={row.isHub ? 'text-red-600 dark:text-red-300 font-semibold' : ''}>
+            <p
+              className={
+                row.isHub
+                  ? row.isMiddleHub
+                    ? 'text-violet-600 dark:text-violet-400 font-bold'
+                    : 'text-red-600 dark:text-red-400 font-semibold'
+                  : ''
+              }
+            >
               {isLastHub ? '' : row.etd ? formatDateUniversal(row.etd, 'HH:mm') : '-'}
             </p>
           </div>

@@ -115,7 +115,7 @@ export default function TimeDriverModal({ isOpen, onClose, data, translate }) {
       width: 'w-[30%]',
       sortable: false,
       align: 'center',
-      label: translate('summary.tabs.time_driver.modal.duration'),
+      label: translate('common.duration'),
       render: (row) => (
         <div className="text-center font-medium text-slate-700 dark:text-slate-200 w-full">
           {row.durationDisplay}

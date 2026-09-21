@@ -23,10 +23,10 @@ export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
     t('common.etd'),
     t('common.actual_arrival'),
     t('common.actual_departure'),
-    t('common.visit_plan'),
-    t('common.visit_actual'),
+    t('common.plan_visit'),
+    t('common.actual_visit'),
     t('common.customer_id'),
-    t('common.ro_seq'),
+    t('common.plan_seq'),
     t('common.actual_seq'),
     t('common.storage_type')
   );

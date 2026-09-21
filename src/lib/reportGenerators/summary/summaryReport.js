@@ -14,11 +14,13 @@ import {
   generateDistanceSummarySheet,
   generatePendingReasonSheet,
   generateRoutingTimeSheet,
+  generateServiceLevelSheet,
   generateTaskSummarySheet,
   generateTimeDriverSheet,
   generateTruckDetailSheet,
   generateTruckUsageSheet,
 } from './sheets';
+
 export async function generateSummaryDataPreview(
   driverData,
   taskData,
@@ -146,7 +148,7 @@ export async function generateSummaryWorkbook(
     startDateStr,
     endDateStr,
     translate,
-    localeCode,
+    localeCode
   );
 
   await generateTruckUsageSheet(
@@ -170,6 +172,7 @@ export async function generateSummaryWorkbook(
     taskData,
     locationHistoryData
   );
+  generateServiceLevelSheet(wb, taskData, startDateStr, endDateStr, translate);
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
   const { storedLocationAcronym: locationName } = getLocalStorage() || '-';

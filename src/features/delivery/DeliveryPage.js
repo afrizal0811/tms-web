@@ -696,6 +696,19 @@ export default function DeliveryPage() {
   const searchPlaceholder = `${t('common.license_number')}, ${t('common.customer_name')}, ${t('common.invoice_number')}`;
   const headerItems = [
     {
+      label: t('common.search'),
+      component: (
+        <SearchBar
+          disabled={isLoading || isDownloading}
+          onChange={setSearchQuery}
+          placeholder={t('common.search')}
+          tooltip={searchPlaceholder}
+          value={searchQuery}
+          width="w-full xl:w-70"
+        />
+      ),
+    },
+    {
       label: t('common.delivery_date'),
       component: (
         <CustomDatePicker
@@ -727,19 +740,6 @@ export default function DeliveryPage() {
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
-        />
-      ),
-    },
-    {
-      label: t('common.search'),
-      component: (
-        <SearchBar
-          disabled={isLoading || isDownloading}
-          onChange={setSearchQuery}
-          placeholder={t('common.search')}
-          tooltip={searchPlaceholder}
-          value={searchQuery}
-          width="w-full xl:w-70"
         />
       ),
     },
@@ -875,10 +875,10 @@ export default function DeliveryPage() {
           >
             {r.vehicleName}{' '}
             {hasMT && (
-              <span className="text-orange-600 dark:text-orange-500 font-bold mr-1">[MT]</span>
+              <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
             )}
             {r.isRedelivery && (
-              <span className="text-red-600 dark:text-red-300 font-bold">[R]</span>
+              <span className="text-red-600 dark:text-red-400 font-bold">[R]</span>
             )}
           </span>
         </Tooltip>

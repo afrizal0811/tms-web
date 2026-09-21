@@ -452,7 +452,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                       value={renderDate(departureSource)}
                     />
                     <Field
-                      label={`${translate('common.visit_actual')} (${translate('common.minute')})`}
+                      label={`${translate('common.actual_visit')} (${translate('common.minute')})`}
                       value={actualVisitMins}
                       needEmpty={true}
                     />
@@ -492,11 +492,11 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                       />
                     )}
                     <Field
-                      label={translate('common.travel_distance_actual')}
+                      label={translate('common.actual_travel_distance')}
                       value={renderFloatData(taskData.travelDistance / 1000)}
                     />
                     <Field
-                      label={translate('common.travel_duration_actual')}
+                      label={translate('common.actual_travel_duration')}
                       value={renderFloatData(taskData?.travelDuration / 60)}
                     />
                   </div>
@@ -614,17 +614,20 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     <Field label={translate('common.eta')} value={taskData.eta} />
                     <Field label={translate('common.etd')} value={taskData.etd} />
                     <Field
-                      label={`${translate('common.visit_plan')} (${translate('common.minute')})`}
+                      label={`${translate('common.plan_visit')} (${translate('common.minute')})`}
                       value={rVisitTime}
                     />
-                    <Field label={translate('common.ro_seq')} value={taskData.routePlannedOrder} />
                     <Field
-                      label={translate('common.travel_distance_plan')}
+                      label={translate('common.plan_seq')}
+                      value={taskData.routePlannedOrder}
+                    />
+                    <Field
+                      label={translate('common.plan_travel_distance')}
                       value={renderFloatData(taskData.distance / 1000)}
                       needEmpty={true}
                     />
                     <Field
-                      label={translate('common.travel_duration_plan')}
+                      label={translate('common.plan_travel_duration')}
                       value={renderFloatData(rTravelTime / 60)}
                       needEmpty={true}
                     />

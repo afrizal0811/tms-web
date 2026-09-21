@@ -5,9 +5,9 @@ import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
+import Dropdown from '@/components/dropdown/Dropdown';
 import Card from './Card';
 import CustomTable from './CustomTable';
-
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
   const [activeHub, setActiveHub] = useState({ hubId: '', hubName: '' });
   const [mappings, setMappings] = useState([]);
@@ -93,25 +93,19 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         </span>
       ),
       renderEdit: (value, onChange) => (
-        <select
+        <Dropdown
+          options={vehicleTypes.map((v) => ({ label: v.name, value: v.name }))}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full min-w-0 px-1 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none cursor-pointer"
-        >
-          <option value="" disabled>
-            {translate('common.select')}
-          </option>
-          {vehicleTypes.map((v) => (
-            <option key={v.id} value={v.name}>
-              {v.name}
-            </option>
-          ))}
-        </select>
+          onChange={onChange}
+          getLabel={(val) => val || translate('common.select')}
+          size="sm"
+          className="w-full min-w-0"
+        />
       ),
     },
   ];
 
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -119,7 +113,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
         onConfirm={confirmDelete}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.delete_title', {
           text: translate('setting.tab.general.mapping_title'),
         })}
         message={

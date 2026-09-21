@@ -5,6 +5,7 @@ import {
   formatDateUniversal,
   formatLongDate,
   formatUTC7,
+  getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
   isEmpty,
@@ -346,9 +347,60 @@ export async function calculateTruckUsageData(
     resultsData.forEach((res) => {
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
       const dateKey = getDeliveryDateFromRouting(res.createdTime);
-      if (dateKey && dateMap[dateKey] && res.name) {
+      if (!dateKey || !dateMap[dateKey]) return;
+      if (res.name) {
         dateMap[dateKey].routingNames.add(res.name);
       }
+
+      (res.result?.routing || []).forEach((route) => {
+        const validTrips = (route.trips || []).filter((t) => !t.isHub);
+        if (validTrips.length === 0) return;
+
+        if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
+        const dailyVehicles = usedVehiclesPerDay.get(dateKey);
+
+        const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
+        const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
+        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+        const basePlateClean = getBasePlate(strictBasePlate) || strictBasePlate;
+
+        let driverInfo = null;
+        if (rawPlate) {
+          driverInfo =
+            findDriverInfoByPlate(masterDriversDB, normalizePlate(strictBasePlate)) ||
+            findDriverInfoByPlate(masterDriversDB, normalizePlate(basePlateClean)) ||
+            findDriverInfoByPlate(allDriversDB, normalizePlate(strictBasePlate)) ||
+            findDriverInfoByPlate(allDriversDB, normalizePlate(basePlateClean));
+        }
+        if (!driverInfo && rawEmail) {
+          driverInfo = driverMapHash.get(rawEmail);
+        }
+
+        const finalDriverPlat = driverInfo?.plat ? getBasePlate(driverInfo.plat) : basePlateClean;
+        const canonicalPlate =
+          normalizePlate(finalDriverPlat) || rawEmail || `unknown-route-${Math.random()}`;
+
+        const firstTag = driverInfo?.masterTag || '';
+        let isFrozen = false;
+        if (driverInfo) {
+          const driverDataArr = [
+            driverInfo.masterTag,
+            driverInfo.name,
+            driverInfo.plat,
+            driverInfo.rawType,
+          ];
+          isFrozen = getStorageType(driverDataArr) === 'Frozen';
+        }
+
+        if (!dailyVehicles.has(canonicalPlate)) {
+          dailyVehicles.set(canonicalPlate, {
+            storageType: isFrozen ? 'Frozen' : 'Dry',
+            firstTag: driverInfo?.rawType || firstTag,
+            plate: strictBasePlate || driverInfo?.plat || '-',
+            driverName: driverInfo?.name || rawEmail || '-',
+          });
+        }
+      });
     });
 
     if (taskData && Array.isArray(taskData)) {
@@ -378,22 +430,28 @@ export async function calculateTruckUsageData(
         const canonicalPlate =
           normalizePlate(strictBasePlate) || rawEmail || `unknown-${Math.random()}`;
 
-        let driverInfo = driverMapHash.get(rawEmail);
-        if (!driverInfo && rawPlate) {
-          const found = findDriverInfoByPlate(masterDriversDB, canonicalPlate);
-          if (found) driverInfo = found;
+        let driverInfo = null;
+        if (rawPlate) {
+          driverInfo = findDriverInfoByPlate(masterDriversDB, canonicalPlate);
+        }
+        if (!driverInfo && rawEmail) {
+          driverInfo = driverMapHash.get(rawEmail.toLowerCase().trim());
         }
 
         const firstTag = driverInfo?.masterTag || task.typeStorage || '';
-        let isFrozen =
-          firstTag === 'Frozen' || (task.typeStorage || '').toUpperCase().includes('FROZEN');
-        if (
-          driverInfo &&
-          ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
-            (driverInfo.plat || '').toUpperCase().includes('FRZ') ||
-            (driverInfo.rawType || '').toUpperCase().includes('FRZ'))
-        )
-          isFrozen = true;
+        let isFrozen = false;
+
+        if (driverInfo) {
+          const driverDataArr = [
+            driverInfo.masterTag,
+            driverInfo.name,
+            driverInfo.plat,
+            driverInfo.rawType,
+          ];
+          isFrozen = getStorageType(driverDataArr) === 'Frozen';
+        } else {
+          isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
+        }
 
         if (!dailyVehicles.has(canonicalPlate)) {
           dailyVehicles.set(canonicalPlate, {
@@ -432,7 +490,14 @@ export async function calculateTruckUsageData(
         if (conditionalPlates.has(rawCanonical)) return;
 
         const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        let driverInfo = driverMapHash.get(emailClean);
+        let driverInfo = null;
+
+        if (rawPlate) {
+          driverInfo = findDriverInfoByPlate(masterDriversDB, normalizePlate(strictBasePlate));
+        }
+        if (!driverInfo && emailClean) {
+          driverInfo = driverMapHash.get(emailClean);
+        }
 
         let plateForCanonical = strictBasePlate;
         if (!plateForCanonical && driverInfo && driverInfo.plat) {
@@ -442,20 +507,20 @@ export async function calculateTruckUsageData(
         const canonicalPlate =
           normalizePlate(plateForCanonical) || emailClean || `unknown-task-${Math.random()}`;
 
-        if (!driverInfo && rawPlate) {
-          const found = findDriverInfoByPlate(masterDriversDB, canonicalPlate);
-          if (found) driverInfo = found;
-        }
-
         const firstTag = driverInfo?.masterTag || task.typeStorage || '';
-        let isFrozen =
-          firstTag === 'Frozen' || (task.typeStorage || '').toUpperCase().includes('FROZEN');
-        if (
-          driverInfo &&
-          ((driverInfo.name || '').toUpperCase().includes('FRZ') ||
-            (driverInfo.rawType || '').toUpperCase().includes('FRZ'))
-        )
-          isFrozen = true;
+        let isFrozen = false;
+
+        if (driverInfo) {
+          const driverDataArr = [
+            driverInfo.masterTag,
+            driverInfo.name,
+            driverInfo.plat,
+            driverInfo.rawType,
+          ];
+          isFrozen = getStorageType(driverDataArr) === 'Frozen';
+        } else {
+          isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
+        }
 
         if (!dailyVehicles.has(canonicalPlate)) {
           dailyVehicles.set(canonicalPlate, {
@@ -482,11 +547,17 @@ export async function calculateTruckUsageData(
         const storage = vh.storageType;
         if (dateMap[dateKey][storage][type] !== undefined) {
           const detailsList = dateMap[dateKey][storage][`${type}_details`];
-          const isExist = detailsList.some(
-            (d) =>
-              (d.plate || '').toLowerCase().trim() === (vh.plate || '').toLowerCase().trim() &&
-              (d.driver || '').toLowerCase().trim() === (vh.driverName || '').toLowerCase().trim()
-          );
+          const vhBasePlate = normalizePlate(getBasePlate(vh.plate) || vh.plate);
+          const vhDriver = (vh.driverName || '').toLowerCase().trim();
+
+          const isExist = detailsList.some((d) => {
+            const dBasePlate = normalizePlate(getBasePlate(d.plate) || d.plate);
+            const dDriver = (d.driver || '').toLowerCase().trim();
+            return (
+              (vhBasePlate && dBasePlate && vhBasePlate === dBasePlate) ||
+              (vhDriver && dDriver && vhDriver !== '-' && vhDriver === dDriver)
+            );
+          });
 
           if (!isExist) {
             dateMap[dateKey][storage][type]++;

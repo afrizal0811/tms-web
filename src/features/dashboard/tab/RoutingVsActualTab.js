@@ -120,7 +120,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
             {processedData.map((row, rowIndex) => {
               if (row.type === 'SPACER') {
                 return (
-                  <tr key={rowIndex} className="bg-[gray-50] dark:bg-slate-700/40">
+                  <tr key={rowIndex} className="bg-slate-200 dark:bg-slate-700">
                     <td colSpan={columns.length} className="h-4 sm:h-6"></td>
                   </tr>
                 );
@@ -128,17 +128,24 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
 
               const hubStart = row.type === 'HUB_START';
               const hubEnd = row.type === 'HUB_END';
-              if (hubStart || hubEnd) {
+              const hubMiddle = row.type === 'HUB_MIDDLE';
+              
+              if (hubStart || hubEnd || hubMiddle) {
                 return (
                   <tr
                     key={rowIndex}
-                    className="text-red-600 dark:text-red-300 font-bold border-b border-gray-100 bg-white dark:bg-slate-800"
+                    className={`${hubMiddle ? 'text-violet-600 dark:text-violet-400 font-bold border-b border-gray-100 bg-white dark:bg-slate-800' : 'text-red-600 dark:text-red-300 font-bold border-b border-gray-100 bg-white dark:bg-slate-800'}`}
                   >
                     {columns.map((col, colIndex) => {
                       let content = '';
                       if (col.id === 'customerName') content = !searchQuery ? 'HUB' : '';
                       if (col.id === 'etd' && hubStart) content = !searchQuery ? row.time : '';
                       if (col.id === 'eta' && hubEnd) content = !searchQuery ? row.time : '';
+                      if (hubMiddle) {
+                        if (col.id === 'eta') content = !searchQuery ? row.eta : '';
+                        if (col.id === 'etd') content = !searchQuery ? row.etd : '';
+                        if (col.id === 'roSequence') content = !searchQuery ? row.roSequence : '';
+                      }
                       return (
                         <td
                           key={colIndex}

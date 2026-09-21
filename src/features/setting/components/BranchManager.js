@@ -7,11 +7,11 @@ import { useState } from 'react';
 import Card from './Card';
 import CustomTable from './CustomTable';
 
-const RenderData = ({ item, translate }) => (
+const RenderData = ({ item }) => (
   <div
     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${item ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}
   >
-    {item ? translate('common.button.btn_yes') : translate('common.button.btn_no')}
+    {item ? 'ON' : 'OFF'}
   </div>
 );
 
@@ -56,11 +56,17 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       const safeVms =
         editValues.hasVms !== undefined ? Boolean(editValues.hasVms) : Boolean(currentHub.hasVms);
 
+      const safeActiveHub =
+        editValues.isActive !== undefined
+          ? Boolean(editValues.isActive)
+          : Boolean(currentHub.isActive);
+
       await patchHubs(id, {
         acronym: safeAcronym,
         hasPendingGR: safePendingGR,
         hasPartialRouting: safePartialRouting,
         hasVms: safeVms,
+        isActive: safeActiveHub,
       });
 
       toastSuccess(translate('common.toast.success'));
@@ -71,6 +77,14 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
   };
 
   const columns = [
+    {
+      header: 'Status',
+      field: 'isActive',
+      align: 'center',
+      cellClassName: 'text-center',
+      render: (item) => <RenderData item={item.isActive} />,
+      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
+    },
     {
       header: translate('common.branch'),
       field: 'name',
@@ -105,7 +119,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       field: 'hasPendingGR',
       align: 'center',
       cellClassName: 'text-center',
-      render: (item) => <RenderData item={item.hasPendingGR} translate={translate} />,
+      render: (item) => <RenderData item={item.hasPendingGR} />,
       renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
     },
     // {
@@ -113,7 +127,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
     //   field: 'hasPartialRouting',
     //   align: 'center',
     //   cellClassName: 'text-center',
-    //   render: (item) => <RenderData item={item.hasPartialRouting} translate={translate} />,
+    //   render: (item) => <RenderData item={item.hasPartialRouting} />,
     //   renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
     // },
     {
@@ -121,12 +135,12 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       field: 'hasVms',
       align: 'center',
       cellClassName: 'text-center',
-      render: (item) => <RenderData item={item.hasVms} translate={translate} />,
+      render: (item) => <RenderData item={item.hasVms} />,
       renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
     },
   ];
 
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.reset_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -142,7 +156,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
           });
           setDeleteConfig({ isOpen: false, id: null, name: null });
         }}
-        title={translate('common.modal.confirm_title', {
+        title={translate('common.modal.reset_title', {
           text: translate('setting.tab.general.branch_title'),
         })}
         message={

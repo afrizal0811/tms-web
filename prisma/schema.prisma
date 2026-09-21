@@ -21,6 +21,7 @@ model Hub {
   lng          Float?  
   updatedAt    DateTime @updatedAt
   drivers      Driver[] 
+  is_active    Boolean @default(true)
 }
 
 model Driver {
@@ -100,6 +101,7 @@ model Reason {
   id          Int      @id @default(autoincrement())
   reasons     String 
   pic         String
+  category    String?
   lastUpdated DateTime @updatedAt @default(now())
 
   @@unique([reasons, pic])

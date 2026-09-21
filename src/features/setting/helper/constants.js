@@ -1,3 +1,4 @@
+export const CAT_OPTIONS = ['Internal', 'External'];
 export const PIC_OPTIONS = [
   'Sales',
   'Warehouse',

@@ -103,7 +103,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
       />
 
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
-        {tableSections.map(({ title, Component, props }, index) => (
+        {tableSections.slice(0, 2).map(({ title, Component, props }, index) => (
           <div key={index} className="flex flex-col gap-2 w-full">
             <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
               {translate(title)}
@@ -113,6 +113,19 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
             </div>
           </div>
         ))}
+
+        <div className="w-full overflow-x-auto shrink-0 pb-4">
+          <div className="flex flex-col gap-8 w-max min-w-full">
+            {tableSections.slice(2, 4).map(({ title, Component, props }, index) => (
+              <div key={index + 2} className="flex flex-col gap-2 w-full">
+                <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0 w-fit z-30">
+                  {translate(title)}
+                </h3>
+                <Component translate={translate} {...props} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

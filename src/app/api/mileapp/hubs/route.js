@@ -20,6 +20,7 @@ export async function GET() {
         lng: hub.lng,
         updatedAt: hub.updatedAt,
         hasVms: hub.has_vms || false,
+        isActive: hub.is_active || false,
       }));
 
     return NextResponse.json(formattedHubs, { status: 200 });
@@ -105,7 +106,7 @@ export async function POST() {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, acronym, hasPendingGR, hasPartialRouting, hasVms } = body;
+    const { id, acronym, hasPendingGR, hasPartialRouting, hasVms, isActive } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID Hub diperlukan' }, { status: 400 });
@@ -123,6 +124,9 @@ export async function PATCH(req) {
     }
     if (hasVms !== undefined && hasVms !== null) {
       updateData.has_vms = hasVms === true || hasVms === 'true';
+    }
+    if (isActive !== undefined && isActive !== null) {
+      updateData.is_active = isActive === true || isActive === 'true';
     }
 
     const updatedHub = await prisma.hub.update({

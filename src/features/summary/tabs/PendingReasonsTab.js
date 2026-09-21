@@ -30,7 +30,6 @@ const ReasonCell = ({ text, className }) => {
   );
 };
 
-// Komponen ActionCell baru untuk 4 kolom interaktif dengan fitur hover tanda plus (+)
 const ActionCell = ({ text, className, onClick }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -63,7 +62,7 @@ const ActionCell = ({ text, className, onClick }) => {
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
           {isHovered ? (
-            <span className="relative text-slate-600/30 dark:text-slate-400/30 text-xl font-bold">
+            <span className="relative text-slate-600/30 dark:text-slate-400/30 text-lg font-bold">
               +
             </span>
           ) : (
@@ -149,10 +148,10 @@ export default function PendingReasonsTab({
     translate('common.etd'),
     translate('common.actual_arrival'),
     translate('common.actual_departure'),
-    translate('common.visit_plan'),
-    translate('common.visit_actual'),
+    translate('common.plan_visit'),
+    translate('common.actual_visit'),
     translate('common.customer_id'),
-    translate('common.ro_seq'),
+    translate('common.plan_seq'),
     translate('common.actual_seq'),
     translate('common.storage_type'),
   ];

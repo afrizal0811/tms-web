@@ -71,7 +71,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
   ];
 
   const title = translate('setting.tab.general.standard_title');
-  const msgParts = translate('common.modal.confirm_message', { text: '|||' }).split('|||');
+  const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (
     <Card>
@@ -79,7 +79,7 @@ export default function StandardType({ vehicleTypes, onRefresh, isReadOnly, tran
         isOpen={deleteConfig.isOpen}
         onCancel={() => setDeleteConfig({ isOpen: false, id: null, name: null })}
         onConfirm={confirmDeleteType}
-        title={translate('common.modal.confirm_title', { text: title })}
+        title={translate('common.modal.delete_title', { text: title })}
         message={
           <span>
             {msgParts[0]}

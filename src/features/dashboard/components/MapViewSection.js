@@ -207,7 +207,7 @@ export default function MapViewSection({
       >
         <span>{title}</span>
         <span className="text-xs bg-black/20 px-2 py-0.5 rounded-full">
-          {sortedTasks.length} {t('common.point')}
+          {sortedTasks.length} {t('common.task')}
         </span>
       </div>
 

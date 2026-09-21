@@ -86,38 +86,9 @@ export function calculateTimeDriverData(
     dataMatrix[d.str] = {};
   });
 
-  const activeDriverDates = new Set();
-  let hasCrossReferenceData = false;
-
-  if (Array.isArray(tasks) && tasks.length > 0) {
-    hasCrossReferenceData = true;
-    tasks.forEach((t) => {
-      const rawEmail =
-        t.doneBy ||
-        (t.assignedTo && t.assignedTo.email) ||
-        (Array.isArray(t.assignee) ? t.assignee[0] : t.assignee);
-      const email = normalizeEmail(rawEmail);
-      const dateObj = parseApiDateString(t.startTime || t.doneTime);
-      if (email && dateObj) {
-        activeDriverDates.add(`${email}_${formatDateUniversal(dateObj, 'YYYY-MM-DD')}`);
-      }
-    });
-  }
-
-  if (Array.isArray(results) && results.length > 0) {
-    hasCrossReferenceData = true;
-    results.forEach((res) => {
-      const dateObj = parseApiDateString(res.createdTime);
-      if (!dateObj) return;
-      const dateStr = formatDateUniversal(dateObj, 'YYYY-MM-DD');
-      (res.result?.routing || []).forEach((vehicle) => {
-        const email = normalizeEmail(vehicle.assignee);
-        if (email) activeDriverDates.add(`${email}_${dateStr}`);
-      });
-    });
-  }
-
   if (locationHistoryData && Array.isArray(locationHistoryData)) {
+    const groupedByDriverDate = new Map();
+
     locationHistoryData.forEach((item) => {
       const email = normalizeEmail(item.email);
       if (!email || !driverMap.has(email)) return;
@@ -125,27 +96,51 @@ export function calculateTimeDriverData(
       const startObj = parseApiDateString(item.startTime);
       if (!startObj) return;
       const dateKey = formatDateUniversal(startObj, 'YYYY-MM-DD');
-
-      if (hasCrossReferenceData && dateKey) {
-        if (!activeDriverDates.has(`${email}_${dateKey}`)) {
-          return;
-        }
-      }
-
-      const driverInfo = driverMap.get(email);
-      if (!isTripInShift(item.startTime, item.finish?.finishTime, driverInfo.workingTime)) {
-        return;
-      }
+      if (!dataMatrix[dateKey]) return;
 
       const trackedTime = Math.abs(item.trackedTime || 0);
       const totalDistance = item.finish ? item.finish.totalDistance || 0 : 0;
+      if (trackedTime < 10 || totalDistance <= 5) return;
 
-      if (trackedTime < 10) return;
-      if (totalDistance <= 5) return;
+      const groupKey = `${dateKey}_${email}`;
+      if (!groupedByDriverDate.has(groupKey)) {
+        groupedByDriverDate.set(groupKey, []);
+      }
+      groupedByDriverDate
+        .get(groupKey)
+        .push({ item, email, dateKey, startObj, trackedTime, totalDistance });
+    });
 
-      const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
+    const storedHubs = getCachedHubs();
+    const { storedLocationName } = getLocalStorage();
+    const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
+    const hubLat = activeHubLocation?.lat || 0;
+    const hubLon = activeHubLocation?.lng || 0;
+    const RADIUS_THRESHOLD = 500;
+    const hubLocation = `${hubLat}, ${hubLon}`;
 
-      if (dateKey && dataMatrix[dateKey]) {
+    groupedByDriverDate.forEach((records) => {
+      const uniques = records.filter(
+        (v, idx, self) =>
+          idx ===
+          self.findIndex(
+            (t) =>
+              t.item.startTime === v.item.startTime &&
+              t.item.finish?.finishTime === v.item.finish?.finishTime
+          )
+      );
+
+      let validRecords = uniques;
+      if (uniques.length > 1) {
+        const driverInfo = driverMap.get(records[0].email);
+        const filtered = uniques.filter((r) =>
+          isTripInShift(r.item.startTime, r.item.finish?.finishTime, driverInfo.workingTime)
+        );
+        if (filtered.length > 0) validRecords = filtered;
+      }
+
+      validRecords.forEach(({ item, email, dateKey, startObj, trackedTime, totalDistance }) => {
+        const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
         const startStr = formatDateUniversal(startObj, 'HH:mm');
         const finishStr = formatDateUniversal(finishObj, 'HH:mm');
         let durationStr = '-';
@@ -159,16 +154,10 @@ export function calculateTimeDriverData(
         const finishTime = parseAndShiftToUTC7(item.finish?.finishTime);
         const realFinishTime = toApiDateString(finishTime);
 
-        const storedHubs = getCachedHubs();
-        const { storedLocationName } = getLocalStorage();
-        const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
-        const hubLat = activeHubLocation?.lat || 0;
-        const hubLon = activeHubLocation?.lng || 0;
-        const RADIUS_THRESHOLD = 500;
         const startLocation = item.lat && item.lon ? `${item.lat}, ${item.lon}` : null;
         const finishLocation =
           item.finish?.lat && item.finish?.lon ? `${item.finish?.lat}, ${item.finish?.lon}` : null;
-        const hubLocation = `${hubLat}, ${hubLon}`;
+
         const entry = {
           dayDiff: dayDiff,
           distance: totalDistance,
@@ -188,11 +177,11 @@ export function calculateTimeDriverData(
           isStartOutRadius: startLocation
             ? getDistance(startLocation, hubLocation) > RADIUS_THRESHOLD
             : false,
-
           isFinishOutRadius: finishLocation
             ? getDistance(finishLocation, hubLocation) > RADIUS_THRESHOLD
             : false,
         };
+
         if (!dataMatrix[dateKey][email]) {
           dataMatrix[dateKey][email] = {
             ...entry,
@@ -211,7 +200,7 @@ export function calculateTimeDriverData(
           const latestEntry = currentData.entries[currentData.entries.length - 1];
           Object.assign(currentData, latestEntry);
         }
-      }
+      });
     });
   }
 
@@ -283,7 +272,7 @@ export function generateTimeDriverSheet(
     row2.push(
       translate('common.start_time'),
       translate('common.finish_time'),
-      translate('summary.tabs.time_driver.duration')
+      translate('common.duration')
     );
   });
   const excelData = [row1, row2];

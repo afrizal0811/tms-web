@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx-js-style';
 import DistanceSummaryTab from './tabs/DistanceSummaryTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
 import RoutingTimeTab from './tabs/RoutingTimeTab';
+import ServiceLevelTab from './tabs/ServiceLevelTab';
 import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
@@ -276,6 +277,8 @@ export default function SummaryPage() {
         const data = reportPreview?.distanceSummaryData;
         return !data || isEmpty(data) || !data.some((row) => (row.totalKm || 0) > 0);
       }
+      case 'Service Level':
+        return isEmpty(rawData.tasks);
       default:
         return false;
     }
@@ -353,6 +356,15 @@ export default function SummaryPage() {
           translate: t,
           localeCode: localeCode,
         });
+      case 'Service Level':
+        return renderTab(ServiceLevelTab, {
+          tasks: rawData.tasks,
+          driverData,
+          startDateStr: startStr,
+          endDateStr: endStr,
+          translate: t,
+          localeCode: localeCode,
+        });
     }
   };
 
@@ -412,6 +424,10 @@ export default function SummaryPage() {
     { id: 'Truck Detail', label: t('summary.tabs.truck_detail.title') },
     { id: 'Truck Usage', label: t('summary.tabs.truck_usage.title') },
     { id: 'Distance Summary', label: t('summary.tabs.dist_summary.title') },
+    {
+      id: 'Service Level',
+      label: t('summary.tabs.service_level.title'),
+    },
   ];
 
   const longLoading = pendingEndpoints.length > 0 && (
@@ -434,6 +450,10 @@ export default function SummaryPage() {
           text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
           data: colorLegend,
           isColorLegend: true,
+        };
+      case 'Service Level':
+        return {
+          text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
         };
       default:
         return {

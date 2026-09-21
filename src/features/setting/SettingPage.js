@@ -31,7 +31,7 @@ export default function SettingPage() {
   const isReadOnlySync = !isSuperadmin && !isSecretMode;
   const buttonData = [
     { tab: 'general', label: t('setting.tab.general.title') },
-    ...(isSuperadmin ? [{ tab: 'permission', label: 'Permission' }] : []),
+    ...(isSuperadmin ? [{ tab: 'permission', label: t('setting.tab.permission.title') }] : []),
     { tab: 'sync', label: t('setting.tab.sync_data.title') },
   ];
   const fetchAllData = useCallback(async () => {
@@ -153,7 +153,7 @@ export default function SettingPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
+    <div className=" mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
           {t('setting.title')}
