@@ -177,7 +177,10 @@ export const handleSingleDownload = async ({
         fetchVehicleMetadata(),
       ]);
 
-    const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
+    const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
+      return item.startTime?.startsWith(selectedDateString);
+    });
+    const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
@@ -280,7 +283,10 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
         }),
       ]);
 
-      const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
+      const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
+        return item.startTime?.startsWith(dateForFile);
+      });
+      const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
       const filteredTimeData = timeDataObjects.filter(
         (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
       );
@@ -358,7 +364,10 @@ export const handleManualDownload = async ({
       ]),
     ]);
 
-    const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
+    const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
+      return item.startTime?.startsWith(extractedStartDate);
+    });
+    const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
     const hasPendingGR = getHasPendingGR(hubsData, hubId);
     const { wb, excelFileName } = await generateManualReportWorkbook({
       routingBuffers,
