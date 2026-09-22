@@ -73,8 +73,7 @@ export default function TaskPage() {
       const fetchHubs = async () => {
         try {
           const res = await getHubs();
-          const data = Array.isArray(res) ? res : [];
-          setHubsData(data);
+          setHubsData(res?.allHub);
         } catch (err) {
           toastError(t('common.toast.error', { err: err.message }), err);
         }

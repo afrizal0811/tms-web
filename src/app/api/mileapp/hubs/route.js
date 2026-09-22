@@ -2,28 +2,34 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const hubId = searchParams.get('hubId');
     const hubs = await prisma.hub.findMany({
       orderBy: { name: 'asc' },
     });
+    const activeHub = hubs.find((h) => String(h.id) === String(hubId));
+    const formattedHubs = hubs.map((hub) => ({
+      _id: hub.id,
+      name: hub.name.replace('Hub ', ''),
+      acronym: hub.acronym,
+      hasPendingGR: hub.hasPendingGR || false,
+      hasPartialRouting: hub.hasPartialRouting || false,
+      lat: hub.lat,
+      lng: hub.lng,
+      updatedAt: hub.updatedAt,
+      hasVms: hub.has_vms || false,
+      isActive: hub.is_active || false,
+    }));
 
-    const formattedHubs = hubs
-      .filter((hub) => hub.name !== 'Hub Demo')
-      .map((hub) => ({
-        _id: hub.id,
-        name: hub.name.replace('Hub ', ''),
-        acronym: hub.acronym,
-        hasPendingGR: hub.hasPendingGR || false,
-        hasPartialRouting: hub.hasPartialRouting || false,
-        lat: hub.lat,
-        lng: hub.lng,
-        updatedAt: hub.updatedAt,
-        hasVms: hub.has_vms || false,
-        isActive: hub.is_active || false,
-      }));
-
-    return NextResponse.json(formattedHubs, { status: 200 });
+    return NextResponse.json(
+      {
+        activeHub : activeHub,
+        allHub: formattedHubs,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error Hubs:', error);
     const errorMessage =

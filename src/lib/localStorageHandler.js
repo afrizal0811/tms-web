@@ -187,9 +187,9 @@ export async function getSyncHubs() {
   if (!hubsFetchLock) {
     hubsFetchLock = getHubs()
       .then((fresh) => {
-        if (fresh && fresh.length > 0) setCachedHubs(fresh);
+        if (fresh && fresh.allHub.length > 0) setCachedHubs(fresh);
         hubsFetchLock = null;
-        return fresh;
+        return fresh.allHub;
       })
       .catch((e) => {
         hubsFetchLock = null;

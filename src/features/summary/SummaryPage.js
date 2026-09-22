@@ -124,12 +124,8 @@ export default function SummaryPage() {
       driverChecker(driverData);
       try {
         const hubs = await getHubs();
-        const activeHub = hubs.find(
-          (h) =>
-            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
-        );
-        if (activeHub) {
-          setHasPendingGR(activeHub.hasPendingGR || false);
+        if (hubs?.activeHub) {
+          setHasPendingGR(hubs.activeHub.hasPendingGR || false);
         }
       } catch (error) {}
     };

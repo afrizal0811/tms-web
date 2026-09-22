@@ -56,11 +56,6 @@ const getStoragePrefix = (storageFilter) => {
   return '';
 };
 
-const findActiveHub = (hubs, storedLocation) =>
-  hubs.find(
-    (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-  );
-
 const persistDeliveryPageSetting = (key, value) => {
   const { storedSession } = getLocalStorage();
   if (storedSession) {
@@ -129,10 +124,12 @@ export default function DeliveryPage() {
       try {
         const res = await getHubs();
         setHubsData(res);
-      } catch (error) {}
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
+      }
     };
     fetchHubsData();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -221,8 +218,7 @@ export default function DeliveryPage() {
     setIsDownloadDropdownOpen(false);
 
     if (['routeTransaction', 'deliveryList', 'deliveryForm'].includes(type)) {
-      const { storedLocation } = getLocalStorage();
-      const activeHub = findActiveHub(hubsData, storedLocation);
+      const activeHub = hubsData.activeHub;
 
       let excludeList = [];
       if (type === 'routeTransaction' && isNoBun) {
@@ -240,8 +236,7 @@ export default function DeliveryPage() {
 
   const handleDownloadBunSpecific = (excludeList) => {
     setIsBunModalOpen(false);
-    const { storedLocation } = getLocalStorage();
-    const activeHub = findActiveHub(hubsData, storedLocation);
+    const activeHub = hubsData.activeHub;
 
     const baseProps = {
       setIsDownloading,
@@ -275,8 +270,6 @@ export default function DeliveryPage() {
 
       try {
         const { storedLocation } = getLocalStorage();
-        if (!storedLocation)
-          throw new Error(t('common.toast.error', { err: 'Location not found' }));
 
         let currentHubs = hubsData;
         if (currentHubs.length === 0) {
@@ -284,7 +277,7 @@ export default function DeliveryPage() {
           setHubsData(currentHubs);
         }
 
-        const activeHub = findActiveHub(currentHubs, storedLocation);
+        const activeHub = currentHubs.activeHub;
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
         const rawDrivers = await getDrivers(storedLocation);

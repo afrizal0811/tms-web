@@ -14,7 +14,14 @@ export async function getDrivers(hubId) {
 }
 
 export async function getDriverStatus() {
-  return await apiFetch('/api/mileapp/drivers/status', 'Gagal mengambil status sync driver');
+  const { storedLocation } = getLocalStorage();
+  const params = new URLSearchParams();
+  if (storedLocation) params.append('hubId', storedLocation);
+
+  return await apiFetch(
+    `/api/mileapp/drivers/status?${params.toString()}`,
+    'Gagal mengambil status sync driver'
+  );
 }
 
 export async function getLocationHistories({ timeFrom, timeTo }) {

@@ -34,7 +34,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
 
   const handleSaveSettings = async (id, editValues) => {
     try {
-      const currentHub = hubs.find((h) => h.id === id || h._id === id) || {};
+      const currentHub = hubs?.allHub.find((h) => h.id === id || h._id === id) || {};
 
       const safeAcronym =
         editValues.acronym !== undefined
@@ -178,7 +178,7 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
       </div>
 
       <CustomTable
-        data={hubs}
+        data={hubs.allHub}
         columns={columns}
         isReadOnly={isReadOnly}
         containerHeight="h-[408px]"

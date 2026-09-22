@@ -756,10 +756,7 @@ export default function useSummaryData() {
         const calculatedMaster = await masterTruckStorage(uniqueDriversForMT, mapObj, vTypes);
         setMasterTruckData(calculatedMaster);
 
-        const activeHub = hubsDB?.find(
-          (h) =>
-            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
-        );
+        const activeHub = hubsDB?.activeHub
         hasPendingGRValue = activeHub?.hasPendingGR || false;
 
         if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {
