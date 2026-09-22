@@ -115,11 +115,7 @@ const processSingleKpiDate = async (
   const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
   const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
-  const { kpiHistories } = convertLocationHistories(
-    histories?.tasks?.data || [],
-    drivers,
-    dateString
-  );
+  const { kpiHistories } = convertLocationHistories(histories || [], drivers);
 
   return generateKpiWorkbook(
     dateString,
@@ -310,11 +306,7 @@ const executeManualKpiDownload = async ({
     timeTo,
   });
 
-  const { kpiHistories: historiesData } = convertLocationHistories(
-    histories?.tasks?.data || [],
-    drivers,
-    formattedDate
-  );
+  const { kpiHistories: historiesData } = convertLocationHistories(histories || [], drivers);
   const { wb } = generateKpiWorkbook(
     formattedDate,
     hubAcronym,

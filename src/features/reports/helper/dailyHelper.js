@@ -177,12 +177,7 @@ export const handleSingleDownload = async ({
         fetchVehicleMetadata(),
       ]);
 
-    const allApiData = locationHistoriesRes?.tasks?.data || [];
-    const { timeDataObjects } = convertLocationHistories(
-      allApiData || [],
-      driverData,
-      selectedDateString
-    );
+    const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
@@ -285,12 +280,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
         }),
       ]);
 
-      const allApiData = locationHistoriesRes?.tasks?.data || [];
-      const { timeDataObjects } = convertLocationHistories(
-        allApiData || [],
-        driverData,
-        dateForFile
-      );
+      const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
       const filteredTimeData = timeDataObjects.filter(
         (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
       );
@@ -368,12 +358,7 @@ export const handleManualDownload = async ({
       ]),
     ]);
 
-    const allApiData = locationHistoriesRes?.tasks?.data || [];
-    const { timeDataObjects } = convertLocationHistories(
-      allApiData || [],
-      driverData,
-      extractedStartDate
-    );
+    const { timeDataObjects } = convertLocationHistories(locationHistoriesRes || [], driverData);
     const hasPendingGR = getHasPendingGR(hubsData, hubId);
     const { wb, excelFileName } = await generateManualReportWorkbook({
       routingBuffers,

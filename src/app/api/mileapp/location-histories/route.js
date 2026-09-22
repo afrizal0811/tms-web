@@ -1,15 +1,18 @@
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+
+import { formatMinutesToHHMM, formatUTC7, getBasePlate, normalizeEmail } from '@/lib/utils';
 
 export async function GET(request) {
   try {
-    // 1. Ambil params
     const { searchParams } = new URL(request.url);
     const timeFrom = searchParams.get('timeFrom');
     const timeTo = searchParams.get('timeTo');
     const limit = searchParams.get('limit') || 1000;
     const startFinish = searchParams.get('startFinish') || 'true';
-    const fields = searchParams.get('fields') || 'finish,startTime,email';
+    const fields = searchParams.get('fields') || 'finish,startTime,email,trackedTime';
     const timeBy = searchParams.get('timeBy') || 'createdTime';
+    const hubId = searchParams.get('hubId');
 
     if (!timeFrom || !timeTo) {
       return NextResponse.json(
@@ -21,8 +24,21 @@ export async function GET(request) {
         }
       );
     }
+    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
+    const [rawDrivers] = await Promise.all([prisma.driver.findMany({ where })]);
+    const driverMap = new Map();
+    rawDrivers.forEach((d) => {
+      const email = normalizeEmail(d.email);
+      if (email) {
+        driverMap.set(email, {
+          name: d.name,
+          basePlat: getBasePlate(d.plat),
+          workingTime: d.workingTime,
+          vehicleId: d.vehicle_id,
+        });
+      }
+    });
 
-    // 2. Ambil variabel rahasia
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const apiToken = process.env.API_TOKEN;
 
@@ -37,7 +53,6 @@ export async function GET(request) {
       );
     }
 
-    // 3. Buat URL
     const externalUrl = new URL(`${apiUrl}/location-histories`);
     externalUrl.searchParams.append('limit', limit);
     externalUrl.searchParams.append('startFinish', startFinish);
@@ -46,7 +61,6 @@ export async function GET(request) {
     externalUrl.searchParams.append('timeTo', timeTo);
     externalUrl.searchParams.append('timeBy', timeBy);
 
-    // 4. Panggil API
     const externalResponse = await fetch(externalUrl.toString(), {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -68,8 +82,36 @@ export async function GET(request) {
       );
     }
 
-    // 5. Kirim kembali data
-    return NextResponse.json(data);
+    const filteredData = (data.tasks?.data || []).reduce((acc, item) => {
+      const email = normalizeEmail(item.email);
+      const trackedTime = Math.abs(item.trackedTime || 0);
+      const totalDistance = item.finish?.totalDistance || 0;
+      if (email && driverMap.has(email) && trackedTime >= 10 && totalDistance > 5) {
+        const driverInfo = driverMap.get(email) || {};
+        const parsedFinish = item.finish
+          ? {
+              ...item.finish,
+              finishTime: formatUTC7(item.finish.finishTime, 'YYYY-MM-DD HH:mm:ss'),
+              totalDistance: Number(totalDistance.toFixed(2)),
+            }
+          : null;
+
+        acc.push({
+          ...item,
+          vehicleId: driverInfo.vehicleId || driverInfo.vmsVehicleId,
+          email,
+          driverName: driverInfo.name || null,
+          basePlat: driverInfo.basePlat || null,
+          startTime: formatUTC7(item.startTime, 'YYYY-MM-DD HH:mm:ss'),
+          finish: parsedFinish,
+          durationHour: item.finish?.totalDuration
+            ? formatMinutesToHHMM(item.finish.totalDuration, false)
+            : null,
+        });
+      }
+      return acc;
+    }, []);
+    return NextResponse.json(filteredData);
   } catch (error) {
     console.error('Error Location:', error);
     const errorMessage =

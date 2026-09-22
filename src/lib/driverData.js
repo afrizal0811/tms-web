@@ -1,6 +1,6 @@
 import { getDrivers, getVehicleMappings, getVehicleTypes } from './api/mileapp';
 import { toastError } from './toast';
-import { formatUTC7, getBasePlate, getStorageType, isEmpty, normalizeEmail } from './utils';
+import { getBasePlate, getStorageType, isEmpty } from './utils';
 
 let vehicleTypesPromise = null;
 let vehicleMappingsPromise = null;
@@ -132,80 +132,4 @@ export async function masterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
   });
 
   return masterData;
-}
-
-export function driverTimeStamps(apiData, selectedDateStr) {
-  const timeMap = new Map();
-  const tasksData = apiData?.tasks?.data || [];
-  if (!Array.isArray(tasksData) || isEmpty(tasksData)) return timeMap;
-
-  const [y, m, d] = selectedDateStr.split('-');
-  const targetDateFormatted = `${d}-${m}-${y}`;
-
-  tasksData.forEach((item) => {
-    const trackedTime = Math.abs(item.trackedTime || 0);
-    const totalDistance = item.finish?.totalDistance || 0;
-
-    if (trackedTime < 10 || totalDistance <= 5) return;
-
-    const startTime = item.startTime;
-    const startDateFormatted = formatUTC7(startTime, 'DD-MM-YYYY');
-
-    if (startDateFormatted !== targetDateFormatted) return;
-
-    const email = normalizeEmail(item.email);
-    if (!email) return;
-
-    const startDisplay = formatUTC7(startTime, 'HH:mm') || '-';
-
-    const finishTime = item.finish?.finishTime;
-    let finishDisplay = formatUTC7(finishTime, 'HH:mm') || '-';
-
-    if (startTime && finishTime) {
-      const sDate = new Date(formatUTC7(startTime, 'YYYY-MM-DD'));
-      const fDate = new Date(formatUTC7(finishTime, 'YYYY-MM-DD'));
-      const d1 = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
-      const d2 = new Date(fDate.getFullYear(), fDate.getMonth(), fDate.getDate());
-
-      const diffTime = d2 - d1;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays > 0) {
-        finishDisplay = `${finishDisplay} (+${diffDays})`;
-      }
-    }
-    if (!timeMap.has(email)) {
-      timeMap.set(email, {
-        jamBerangkat: startDisplay,
-        jamKembali: finishDisplay,
-        _rawStart: new Date(startTime),
-        _rawFinish: finishTime ? new Date(finishTime) : null,
-      });
-    } else {
-      const current = timeMap.get(email);
-      const newStart = new Date(startTime);
-      const newFinish = finishTime ? new Date(finishTime) : null;
-      if (newStart < current._rawStart) {
-        current._rawStart = newStart;
-        current.jamBerangkat = startDisplay;
-      }
-      if (newFinish && (!current._rawFinish || newFinish > current._rawFinish)) {
-        current._rawFinish = newFinish;
-        const d1 = new Date(
-          current._rawStart.getFullYear(),
-          current._rawStart.getMonth(),
-          current._rawStart.getDate()
-        );
-        const d2 = new Date(newFinish.getFullYear(), newFinish.getMonth(), newFinish.getDate());
-        const diffDays = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
-
-        const updatedRawFinish = formatUTC7(finishTime, 'HH:mm');
-        current.jamKembali =
-          diffDays > 0 ? `${updatedRawFinish} (H+${diffDays})` : updatedRawFinish;
-      }
-
-      timeMap.set(email, current);
-    }
-  });
-  return timeMap;
 }

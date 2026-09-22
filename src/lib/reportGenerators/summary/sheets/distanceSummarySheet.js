@@ -316,10 +316,13 @@ export function calculateDistanceSummaryData(
         } else if (isPastDate(currentDateString)) {
           rowData.isDynamicHoliday = true;
         }
+        const locationHistoryByDate = (locationHistoryData || []).filter((item) => {
+          return item.startTime?.startsWith(currentDateString);
+        });
+
         const { timeDataObjects } = convertLocationHistories(
-          locationHistoryData || [],
-          driverData || [],
-          currentDateString
+          locationHistoryByDate,
+          driverData || []
         );
 
         const dailyTasks = (taskData || []).filter((t) => {
@@ -329,7 +332,6 @@ export function calculateDistanceSummaryData(
         });
 
         timeDataObjects.forEach((tData) => {
-          if (!tData.totalDistance || tData.totalDistance < 5) return;
           if (!tData.startTimeFmt || !tData.finishTimeFmt) return;
 
           const email = (tData.email || '').toLowerCase().trim();

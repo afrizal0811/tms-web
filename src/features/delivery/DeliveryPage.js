@@ -34,10 +34,11 @@ import {
   getResults,
   getTasks,
 } from '../../lib/api/mileapp';
-import { driverTimeStamps } from '../../lib/driverData';
+
 import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
 import {
+  driverTime,
   getDriverName,
   handleFullDeliveryFormDownload,
   handleFullDeliveryListDownload,
@@ -526,7 +527,7 @@ export default function DeliveryPage() {
 
         setAllRoutes(finalRoutes);
         setActiveVehicleId(finalRoutes.length > 0 ? finalRoutes[0].vehicleId : null);
-        setTimeMap(driverTimeStamps(historyData, selectedDate));
+        setTimeMap(driverTime(historyData));
       } catch (err) {
         toastError(t('common.toast.error', { err: err.message }), err);
       } finally {

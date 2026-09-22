@@ -65,9 +65,7 @@ export async function generateSummaryDataPreview(
     locationHistoryData,
     startDateStr,
     endDateStr,
-    localeCode,
-    taskData,
-    resultsData
+    localeCode
   );
 
   const pendingReasonData = calculatePendingReasonData(

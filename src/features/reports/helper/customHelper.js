@@ -353,12 +353,12 @@ export const processServiceLevelReport = async ({
         timeTo: locTimeTo,
       }),
     ]);
-    const allApiData = locHistories?.tasks?.data || [];
-    const { timeDataObjects } = convertLocationHistories(
-      allApiData || [],
-      driverData,
-      selectedDateString
-    );
+
+    const locationHistoryByDate = (locHistories || []).filter((item) => {
+      return item.startTime?.startsWith(selectedDateString);
+    });
+
+    const { timeDataObjects } = convertLocationHistories(locationHistoryByDate, driverData);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
@@ -477,24 +477,8 @@ export const processServiceLevelReport = async ({
   return generatedFiles;
 };
 
-export const processTripActivityReport = async ({
-  hubId,
-  datesToProcess,
-  locationName,
-  t,
-  driverData,
-}) => {
+export const processTripActivityReport = async ({ datesToProcess, locationName, t }) => {
   const generatedFiles = [];
-  const driverMap = new Map();
-  driverData.forEach((d) => {
-    if (d.email) {
-      driverMap.set(normalizeEmail(d.email), {
-        name: d.name || d.email,
-        plat: d.plat || '-',
-        vehicleId: d.vehicleId || d.vmsVehicleId || '-',
-      });
-    }
-  });
 
   for (const date of datesToProcess) {
     const { locTimeFrom, locTimeTo, selectedDateString } = getReportDates(date, date);
@@ -504,34 +488,34 @@ export const processTripActivityReport = async ({
       timeTo: locTimeTo,
     });
 
-    const trips = locHistories?.tasks?.data || locHistories?.data || [];
+    const trips = locHistories || [];
     if (isEmpty(trips)) continue;
-
     const rows = [];
 
     trips.forEach((trip) => {
-      const email = normalizeEmail(trip.email);
-      const d = driverMap.get(email) || {};
-      const start = trip.startTime ? formatUTC7(trip.startTime) : '-';
-
+      const email = trip.email;
+      const d = trips.find((driver) => driver.email === email);
+      const start = formatDateUniversal(trip.startTime);
       if (isEmpty(d) || start !== selectedDateString) return;
 
+      const startTrip = trip.startTime
+        ? formatDateUniversal(trip.startTime, 'DD/MM/YYYY HH:mm:ss')
+        : '-';
+      const endTrip = trip.finish?.finishTime
+        ? formatDateUniversal(trip.finish?.finishTime, 'DD/MM/YYYY HH:mm:ss')
+        : '-';
+
       const assignedVehicleId = d.vehicleId || '-';
-      const username = d.name || '-';
-      const assignedVehicle = d.plat || '-';
+      const username = d.driverName || '-';
+      const assignedVehicle = d.basePlat || '-';
 
       const tripId = trip.tripActivityId || '-';
-      const startTrip = trip.startTime ? formatUTC7(trip.startTime, 'DD/MM/YYYY HH:mm:ss') : '-';
       const startTripCoordinate = trip.lat && trip.lon ? `${trip.lat}, ${trip.lon}` : '-';
-
-      const endTrip = trip.finish?.finishTime
-        ? formatUTC7(trip.finish?.finishTime, 'DD/MM/YYYY HH:mm:ss')
-        : '-';
       const endTripCoordinate =
         trip.finish?.lat && trip.finish?.lon ? `${trip.finish.lat}, ${trip.finish.lon}` : '-';
 
       const totalDistance = trip.finish?.totalDistance ?? '-';
-      const totalDuration = trip.finish?.totalDuration ?? '-';
+      const totalDuration = trip.durationHour ?? '-';
 
       rows.push({
         rowData: [

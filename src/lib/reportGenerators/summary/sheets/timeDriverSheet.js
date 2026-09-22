@@ -7,9 +7,6 @@ import {
   isEmpty,
   isPastDate,
   normalizeEmail,
-  parseAndShiftToUTC7,
-  parseApiDateString,
-  toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
@@ -42,9 +39,7 @@ export function calculateTimeDriverData(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  localeCode,
-  tasks = [],
-  results = []
+  localeCode
 ) {
   const driverMap = new Map();
   const driverEmailsRaw = [];
@@ -90,18 +85,16 @@ export function calculateTimeDriverData(
     const groupedByDriverDate = new Map();
 
     locationHistoryData.forEach((item) => {
-      const email = normalizeEmail(item.email);
+      const email = item.email;
       if (!email || !driverMap.has(email)) return;
 
-      const startObj = parseApiDateString(item.startTime);
-      if (!startObj) return;
-      const dateKey = formatDateUniversal(startObj, 'YYYY-MM-DD');
-      if (!dataMatrix[dateKey]) return;
+      if (!item.startTime) return;
+      const dateKey = formatDateUniversal(item.startTime, 'YYYY-MM-DD');
+      if (!dateKey || !dataMatrix[dateKey]) return;
 
-      const trackedTime = Math.abs(item.trackedTime || 0);
+      const trackedTime = item.trackedTime || 0;
       const totalDistance = item.finish ? item.finish.totalDistance || 0 : 0;
-      if (trackedTime < 10 || totalDistance <= 5) return;
-
+      const startObj = new Date(item.startTime.replace(' ', 'T'));
       const groupKey = `${dateKey}_${email}`;
       if (!groupedByDriverDate.has(groupKey)) {
         groupedByDriverDate.set(groupKey, []);
@@ -140,19 +133,19 @@ export function calculateTimeDriverData(
       }
 
       validRecords.forEach(({ item, email, dateKey, startObj, trackedTime, totalDistance }) => {
-        const finishObj = item.finish ? parseApiDateString(item.finish.finishTime) : null;
-        const startStr = formatDateUniversal(startObj, 'HH:mm');
-        const finishStr = formatDateUniversal(finishObj, 'HH:mm');
+        const finishObj = item.finish ? new Date(item.finish.finishTime.replace(' ', 'T')) : null;
+        const startStr = item.startTime ? formatDateUniversal(item.startTime, 'HH:mm') : '-';
+        const finishStr = item.finish?.finishTime
+          ? formatDateUniversal(item.finish.finishTime, 'HH:mm')
+          : '-';
         let durationStr = '-';
         let dayDiff = 0;
         if (startObj && finishObj) {
           durationStr = calculateDuration(startObj, finishObj);
           dayDiff = getDayDifferenceWIB(startObj, finishObj);
         }
-        const startTime = parseAndShiftToUTC7(item.startTime);
-        const realStartTime = toApiDateString(startTime);
-        const finishTime = parseAndShiftToUTC7(item.finish?.finishTime);
-        const realFinishTime = toApiDateString(finishTime);
+        const realStartTime = item.startTime;
+        const realFinishTime = item.finish?.finishTime;
 
         const startLocation = item.lat && item.lon ? `${item.lat}, ${item.lon}` : null;
         const finishLocation =
