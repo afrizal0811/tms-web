@@ -8,5 +8,4 @@ export * from './tasks';
 export * from './trash';
 export * from './truckUsage';
 export * from './users';
-export * from './vehicleMappings';
-export * from './vehicleTypes';
+export * from './vehicles';

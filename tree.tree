@@ -15,12 +15,12 @@
 │   │   │           └── route.js
 │   │   └── mileapp
 │   │       ├── drivers
+│   │       │   ├── location-histories
+│   │       │   │   └── route.js
 │   │       │   ├── route.js
 │   │       │   └── status
 │   │       │       └── route.js
 │   │       ├── hubs
-│   │       │   └── route.js
-│   │       ├── location-histories
 │   │       │   └── route.js
 │   │       ├── pending-details
 │   │       │   └── route.js
@@ -46,12 +46,11 @@
 │   │       │   └── route.js
 │   │       ├── users
 │   │       │   └── route.js
-│   │       ├── vehicle-mappings
-│   │       │   └── route.js
-│   │       ├── vehicle-types
-│   │       │   └── route.js
 │   │       └── vehicles
-│   │           └── route.js
+│   │           ├── mappings
+│   │           │   └── route.js
+│   │           └── types
+│   │               └── route.js
 │   ├── coordinate
 │   │   └── page.js
 │   ├── delivery
@@ -235,18 +234,22 @@
 │   │   └── tabs
 │   │       ├── components
 │   │       │   ├── RoutingDropdown.js
+│   │       │   ├── ServiceLevelSummaryTable.js
+│   │       │   ├── ServiceLevelTable.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── DistanceSummaryTab.js
 │   │       ├── modals
 │   │       │   ├── DistanceSummaryModal.js
 │   │       │   ├── PendingReasonModal.js
+│   │       │   ├── ServiceLevelModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
 │   │       │   ├── TruckDetailModal.js
 │   │       │   └── TruckUsageModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── RoutingTimeTab.js
+│   │       ├── ServiceLevelTab.js
 │   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
 │   │       ├── TruckDetailTab.js
@@ -356,6 +359,7 @@
     │       │   ├── pendingReasonSheet.js
     │       │   ├── reportStyles.js
     │       │   ├── routingTimeSheet.js
+    │       │   ├── serviceLevelSheet.js
     │       │   ├── taskSummarySheet.js
     │       │   ├── timeDriverSheet.js
     │       │   ├── truckDetailSheet.js

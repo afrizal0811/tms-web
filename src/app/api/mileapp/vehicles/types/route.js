@@ -1,4 +1,4 @@
-// File: src/app/api/vehicle-types/route.js
+// File: src/app/api/vehicles/types/route.js
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 

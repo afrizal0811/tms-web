@@ -108,7 +108,7 @@ export function LocationSwitcher() {
     const acronym = selectedHub.acronym || '';
 
     updateActiveHub(id, name, acronym);
-    window.location.href = '/';
+    window.location.reload();
   };
 
   const options = allowedHubs.map((h) => ({ label: h.name, value: h._id }));
