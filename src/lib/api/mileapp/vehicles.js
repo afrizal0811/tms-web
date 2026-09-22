@@ -1,6 +1,7 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { apiFetch } from '../base';
 import { fields } from './fields';
+
 export async function getVehicles({ hubId, limit }) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -24,7 +25,7 @@ export async function getLocationHistories({ timeFrom, timeTo }) {
   if (locationsFields) params.append('fields', locationsFields);
   if (storedLocation) params.append('hubId', storedLocation);
   return await apiFetch(
-    `/api/mileapp/location-histories?${params.toString()}`,
+    `/api/mileapp/vehicles/location-histories?${params.toString()}`,
     'Gagal mengambil data location histories'
   );
 }
