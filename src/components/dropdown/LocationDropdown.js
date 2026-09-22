@@ -1,9 +1,7 @@
 'use client';
 
 import Dropdown from '@/components/dropdown/Dropdown';
-import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, getSyncHubs, updateActiveHub } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { isEmpty } from '@/lib/utils';
@@ -66,8 +64,6 @@ export function LocationSwitcher() {
   const [allowedHubs, setAllowedHubs] = useState([]);
   const { t } = useLanguage();
 
-  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
-
   useEffect(() => {
     async function fetchHubsFromDatabase(userStr) {
       try {
@@ -104,23 +100,15 @@ export function LocationSwitcher() {
     return () => clearTimeout(timer);
   }, [t]);
 
-  const handleLocationChange = (id) => {
+  const handleLocationChange = async (id) => {
     const selectedHub = allowedHubs.find((h) => h._id === id);
     if (!selectedHub) return;
 
     const name = selectedHub.name;
     const acronym = selectedHub.acronym || '';
 
-    const updateLocationAndReload = () => {
-      updateActiveHub(id, name, acronym);
-      window.location.reload();
-    };
-
-    try {
-      triggerCheck(id, updateLocationAndReload);
-    } catch (err) {
-      updateLocationAndReload();
-    }
+    updateActiveHub(id, name, acronym);
+    window.location.href = '/';
   };
 
   const options = allowedHubs.map((h) => ({ label: h.name, value: h._id }));
@@ -141,21 +129,12 @@ export function LocationSwitcher() {
   }
 
   return (
-    <>
-      <Dropdown
-        options={options}
-        value={currentLocationId || ''}
-        onChange={handleLocationChange}
-        getLabel={getLabel}
-        className="w-30"
-      />
-      {showModal && (
-        <VehicleTagMappingModal
-          t={t}
-          unmappedData={unmappedData}
-          onCompleted={handleMappingCompleted}
-        />
-      )}
-    </>
+    <Dropdown
+      options={options}
+      value={currentLocationId || ''}
+      onChange={handleLocationChange}
+      getLabel={getLabel}
+      className="w-30"
+    />
   );
 }

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const types = await prisma.vehicleType.findMany({ orderBy: { id: 'asc' } });
+    const types = await prisma.vehicleType.findMany({ orderBy: { name: 'asc' } });
     return NextResponse.json(types, { status: 200 });
   } catch (error) {
     console.error('Error Get Vehicle Types:', error);

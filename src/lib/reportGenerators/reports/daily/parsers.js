@@ -8,12 +8,7 @@ import {
   isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
-import {
-  buildDriverMaps,
-  buildNormalizedMappings,
-  FAILED_STATUSES,
-  PENDING_SHEET_STATUSES_BASE,
-} from './help';
+import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
 
 const getTaskPlat = (item) =>
   item?.vehicleName ||
@@ -32,41 +27,22 @@ const getTaskPlat = (item) =>
   item?.nopol ||
   '';
 
-const matchNormalizedCategory = (originalStr, baseStr, normalizedMappings) => {
-  const dbKeys = Object.keys(normalizedMappings);
-  if (baseStr && normalizedMappings[baseStr]) return normalizedMappings[baseStr];
-  if (originalStr && normalizedMappings[originalStr]) return normalizedMappings[originalStr];
-
-  for (const targetStr of [originalStr, baseStr]) {
-    if (!targetStr) continue;
-    for (const dbKey of dbKeys) {
-      if (dbKey.length > 3 && (targetStr.includes(dbKey) || dbKey.includes(targetStr))) {
-        return normalizedMappings[dbKey];
-      }
-    }
-  }
-  return '';
-};
-
 export function parseRoutingData(
   filteredResults,
   driverData,
-  mappingsObj,
   vehicleTypes,
   allTasks,
   selectedDateString
 ) {
   const { emailMap, platMap } = buildDriverMaps(driverData);
-  const normalizedMappings = buildNormalizedMappings(mappingsObj);
   const routingMap = new Map();
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
   const seenTrucks = new Set();
 
   driverData.forEach((d) => {
-    const basePlateStr = (d?.plat || '').replace(/\s+/g, '').toLowerCase();
-    let cat = matchNormalizedCategory(basePlateStr, basePlateStr, normalizedMappings);
-    if (!cat) {
+    let cat = d?.type ? String(d.type).toUpperCase() : undefined;
+    if (!cat || !vehicleTypes.includes(cat)) {
       let tCat = d?.type || '';
       if (tCat) {
         const pts = String(tCat).split('-');
@@ -84,11 +60,8 @@ export function parseRoutingData(
   });
 
   function resolveVehicleCategory(driverInfo, route) {
-    const basePlateStr = (driverInfo?.plat || '').replace(/\s+/g, '').toLowerCase();
-    const originalRawStr = (route.vehicleName || '').replace(/\s+/g, '').toLowerCase();
-    let category = matchNormalizedCategory(originalRawStr, basePlateStr, normalizedMappings);
-
-    if (!category) {
+    let category = driverInfo?.type ? String(driverInfo.type).toUpperCase() : '';
+    if (!category || !vehicleTypes.includes(category)) {
       const tempCategory = driverInfo?.type || route.vehicleTags?.[0] || '';
       if (tempCategory) {
         const parts = String(tempCategory).split('-');

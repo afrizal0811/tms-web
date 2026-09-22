@@ -1,4 +1,4 @@
-import { getDrivers, getVehicleMappings, getVehicleTypes } from '@/lib/api/mileapp';
+import { getDrivers, getVehicleTypes } from '@/lib/api/mileapp';
 import { masterTruckStorage } from '@/lib/driverData';
 import { toastError } from '@/lib/toast';
 import {
@@ -16,16 +16,9 @@ import { BASE_STYLES, BORDERS, FILL_STYLES, FONT_STYLES, HEADER_STYLES } from '.
 
 const normalizePlate = (plate) => (plate || '').replace(/\s+/g, '').toLowerCase();
 
-function getVehicleType(rawTag, vehiclePlate, mappingsObj, vehicleTypes) {
-  const cleanPlate = normalizePlate(vehiclePlate);
-
-  if (cleanPlate && mappingsObj[cleanPlate]) {
-    return mappingsObj[cleanPlate];
-  }
-
-  if (!rawTag) return 'Lainnya';
-
-  const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
+function extractVehicleType(dType, vehicleTypes) {
+  if (!dType) return 'Lainnya';
+  const cleanTag = dType.replace(/["'\\]/g, '').trim();
   const parts = cleanTag.split('-');
 
   let specificType = parts.length > 1 ? parts[1].toUpperCase() : cleanTag.toUpperCase();
@@ -150,21 +143,13 @@ export async function calculateTruckUsageData(
       if (d) taskPresence[d] = true;
     });
   }
-  const [vehicleTypesObj, mappingsDB, allDriversDB, manualUsageDB] = await Promise.all([
+  const [vehicleTypesObj, allDriversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
-    getVehicleMappings(),
     getDrivers(hubId),
     getTruckUsageData(hubId, startDateStr, endDateStr, translate),
   ]);
 
   let vehicleTypes = vehicleTypesObj.map((v) => v.name);
-
-  const mappingsObj = mappingsDB.reduce((acc, curr) => {
-    const cleanType = (curr.mappedType || '').replace(/["'\\]/g, '').trim();
-    acc[curr.plat] = cleanType;
-    if (curr.plat) acc[normalizePlate(curr.plat)] = cleanType;
-    return acc;
-  }, {});
 
   const groupedByEmail = {};
   (allDriversDB || []).forEach((d) => {
@@ -207,9 +192,7 @@ export async function calculateTruckUsageData(
 
   const branchTypesSet = new Set();
   masterDriversDB.forEach((d) => {
-    const firstTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
-    const rawTypeSource = d.type || firstTag;
-    const type = getVehicleType(rawTypeSource, d.plat, mappingsObj, vehicleTypes);
+    const type = extractVehicleType(d.type, vehicleTypes);
     if (type && type !== 'Lainnya') branchTypesSet.add(type);
   });
 
@@ -222,7 +205,7 @@ export async function calculateTruckUsageData(
     vehicleTypes = filteredVehicleTypes;
   }
 
-  const hubMasterData = await masterTruckStorage(masterDriversDB, mappingsObj, vehicleTypes);
+  const hubMasterData = await masterTruckStorage(masterDriversDB, vehicleTypes);
 
   const masterVehicleList = {
     Dry: { Gabungan: [] },
@@ -241,10 +224,8 @@ export async function calculateTruckUsageData(
   });
 
   activeDrivers.forEach((d) => {
+    const type = extractVehicleType(d.type, vehicleTypes);
     const firstTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
-
-    const rawTypeSource = d.type || firstTag;
-    const type = getVehicleType(rawTypeSource, d.plat, mappingsObj, vehicleTypes);
 
     let isFrozen = firstTag === 'Frozen';
     const platUpper = (d.plat || '').toUpperCase();
@@ -539,7 +520,7 @@ export async function calculateTruckUsageData(
 
     usedVehiclesPerDay.forEach((dailyVehicles, dateKey) => {
       dailyVehicles.forEach((vh) => {
-        const type = getVehicleType(vh.firstTag, vh.plate, mappingsObj, vehicleTypes);
+        const type = extractVehicleType(vh.firstTag, vehicleTypes);
         const storage = vh.storageType;
         if (dateMap[dateKey][storage][type] !== undefined) {
           const detailsList = dateMap[dateKey][storage][`${type}_details`];

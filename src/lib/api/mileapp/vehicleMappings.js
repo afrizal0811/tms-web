@@ -12,15 +12,11 @@ export async function getVehicleMappings(hubId = null) {
 }
 
 export async function postVehicleMappings(mappingsArray) {
-  return await apiFetch(
-    '/api/mileapp/vehicle-mappings',
-    'Gagal menyimpan pemetaan kendaraan',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mappingsArray),
-    }
-  );
+  return await apiFetch('/api/mileapp/vehicle-mappings', 'Gagal menyimpan pemetaan kendaraan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mappingsArray),
+  });
 }
 
 export async function updateVehicleMapping(id, plat, mappedType) {
@@ -39,12 +35,12 @@ export async function updateVehicleMapping(id, plat, mappedType) {
   return true;
 }
 
-export async function deleteVehicleMapping(id, plat) {
+export async function deleteVehicleMapping(id) {
   const params = new URLSearchParams();
-  if (plat) params.append('plat', plat);
+  if (id) params.append('id', id);
 
   return await apiFetch(
-    `/api/mileapp/vmileapp/ehicle-mappings?${params.toString()}`,
+    `/api/mileapp/vehicle-mappings?${params.toString()}`,
     'Gagal menghapus pemetaan kendaraan',
     {
       method: 'DELETE',

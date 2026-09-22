@@ -11,12 +11,7 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import {
-  buildDriverMaps,
-  buildNormalizedMappings,
-  FAILED_STATUSES,
-  PENDING_SHEET_STATUSES_BASE,
-} from './help';
+import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
 import {
   buildDistanceSummary,
   buildPendingSOSheet,
@@ -42,16 +37,6 @@ function ultraNormalize(str) {
     .toLowerCase();
 }
 
-function findFuzzyCategory(normalizedMappings, str) {
-  const dbKeys = Object.keys(normalizedMappings);
-  for (const dbKey of dbKeys) {
-    if (dbKey.length > 3 && (str.includes(dbKey) || dbKey.includes(str))) {
-      return normalizedMappings[dbKey];
-    }
-  }
-  return undefined;
-}
-
 function deriveCategoryFromType(typeStr) {
   const tCat = typeStr || '';
   if (!tCat) return undefined;
@@ -63,21 +48,15 @@ function deriveCategoryFromType(typeStr) {
   return sType;
 }
 
-async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehicleTypes) {
+async function parseManualRouting(routingBuffers, driverData, vehicleTypes) {
   const routingMap = new Map();
   const truckUsageCount = {};
   const seenTrucks = new Set();
   const { emailMap, platMap } = buildDriverMaps(driverData);
-  const normalizedMappings = buildNormalizedMappings(mappingsObj);
 
   driverData.forEach((d) => {
-    const basePlateStr = ultraNormalize(d?.plat);
-    let cat = normalizedMappings[basePlateStr];
-    if (!cat && basePlateStr) {
-      const found = findFuzzyCategory(normalizedMappings, basePlateStr);
-      if (found) cat = found;
-    }
-    if (!cat) {
+    let cat = d?.type ? String(d.type).toUpperCase() : undefined;
+    if (!cat || !vehicleTypes.includes(cat)) {
       const derived = deriveCategoryFromType(d?.type);
       if (derived !== undefined) cat = derived;
     }
@@ -170,32 +149,8 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
         ext.shipDurationRaw += spentTimeMins;
       }
 
-      let category = '';
-      const basePlateStr = ultraNormalize(cleanPlat);
-      const originalRawStr = ultraNormalize(rawAssignee || rawPlate);
-      let mapped = false;
-
-      if (basePlateStr && normalizedMappings[basePlateStr]) {
-        category = normalizedMappings[basePlateStr];
-        mapped = true;
-      } else if (originalRawStr && normalizedMappings[originalRawStr]) {
-        category = normalizedMappings[originalRawStr];
-        mapped = true;
-      } else {
-        const fuzzyByRaw = findFuzzyCategory(normalizedMappings, originalRawStr);
-        if (fuzzyByRaw) {
-          category = fuzzyByRaw;
-          mapped = true;
-        } else if (basePlateStr) {
-          const fuzzyByPlate = findFuzzyCategory(normalizedMappings, basePlateStr);
-          if (fuzzyByPlate) {
-            category = fuzzyByPlate;
-            mapped = true;
-          }
-        }
-      }
-
-      if (!mapped) {
+      let category = driverInfo?.type ? String(driverInfo.type).toUpperCase() : '';
+      if (!category || !vehicleTypes.includes(category)) {
         const derived = deriveCategoryFromType(driverInfo?.type);
         if (derived !== undefined) category = derived;
       }
@@ -493,7 +448,6 @@ export async function generateManualReportWorkbook({
   deliveryBuffers,
   driverData,
   timeData,
-  mappingsObj,
   vehicleTypes,
   targetRoutingStr,
   selectedDateString,
@@ -506,7 +460,6 @@ export async function generateManualReportWorkbook({
   const { routingMap, truckUsageCount } = await parseManualRouting(
     routingBuffers,
     driverData,
-    mappingsObj,
     vehicleTypes
   );
 

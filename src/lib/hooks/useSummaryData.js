@@ -6,7 +6,6 @@ import {
   getResultHistories,
   getResults,
   getTasks,
-  getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
 import { masterTruckStorage } from '@/lib/driverData';
@@ -730,16 +729,8 @@ export default function useSummaryData() {
       let hubCoordsString = null;
 
       try {
-        const [vTypesObj, mapsDB, hubsDB] = await Promise.all([
-          getVehicleTypes(),
-          getVehicleMappings(),
-          getHubs(),
-        ]);
+        const [vTypesObj, hubsDB] = await Promise.all([getVehicleTypes(), getHubs()]);
         const vTypes = vTypesObj.map((v) => v.name);
-        const mapObj = mapsDB.reduce((acc, curr) => {
-          acc[curr.plat] = curr.mappedType;
-          return acc;
-        }, {});
 
         const uniqueDriversForMT = [];
         const seenBasePlates = new Set();
@@ -753,10 +744,10 @@ export default function useSummaryData() {
           }
         });
 
-        const calculatedMaster = await masterTruckStorage(uniqueDriversForMT, mapObj, vTypes);
+        const calculatedMaster = await masterTruckStorage(uniqueDriversForMT, vTypes);
         setMasterTruckData(calculatedMaster);
 
-        const activeHub = hubsDB?.activeHub
+        const activeHub = hubsDB?.activeHub;
         hasPendingGRValue = activeHub?.hasPendingGR || false;
 
         if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {

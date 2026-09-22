@@ -3,7 +3,6 @@ import {
   getLocationHistories,
   getResults,
   getTasks,
-  getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
@@ -108,16 +107,9 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
 };
 
 const fetchVehicleMetadata = async () => {
-  const [vehicleTypesObj, mappingsDB] = await Promise.all([
-    getVehicleTypes(),
-    getVehicleMappings(),
-  ]);
+  const vehicleTypesObj = await getVehicleTypes();
   const vehicleTypes = vehicleTypesObj.map((v) => v.name);
-  const mappingsObj = mappingsDB.reduce((acc, curr) => {
-    acc[curr.plat] = curr.mappedType;
-    return acc;
-  }, {});
-  return { vehicleTypes, mappingsObj };
+  return { vehicleTypes };
 };
 
 export const handleSingleDownload = async ({
@@ -162,20 +154,19 @@ export const handleSingleDownload = async ({
     }
 
     const { storedLocationAcronym } = getLocalStorage();
-    const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes, mappingsObj }] =
-      await Promise.all([
-        getResults({
-          dateFrom: `${targetRoutingStr} 00:00:00`,
-          dateTo: `${targetRoutingStr} 23:59:59`,
-          hubId: hubId,
-        }),
-        getCachedHubs(),
-        getLocationHistories({
-          timeFrom: timeFromHistories,
-          timeTo: timeToHistories,
-        }),
-        fetchVehicleMetadata(),
-      ]);
+    const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes }] = await Promise.all([
+      getResults({
+        dateFrom: `${targetRoutingStr} 00:00:00`,
+        dateTo: `${targetRoutingStr} 23:59:59`,
+        hubId: hubId,
+      }),
+      getCachedHubs(),
+      getLocationHistories({
+        timeFrom: timeFromHistories,
+        timeTo: timeToHistories,
+      }),
+      fetchVehicleMetadata(),
+    ]);
 
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
       return item.startTime?.startsWith(selectedDateString);
@@ -197,7 +188,6 @@ export const handleSingleDownload = async ({
       filteredResults,
       allTasks,
       timeData: timeDataObjects,
-      mappingsObj,
       vehicleTypes,
       targetRoutingStr,
       selectedDateString,
@@ -216,17 +206,15 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
-  let mappingsObj = {};
   let vehicleTypes = [];
   let hubsMap = {};
   try {
     setIsLoading(true);
-    const [{ vehicleTypes: vTypes, mappingsObj: mObj }, hubsDB] = await Promise.all([
+    const [{ vehicleTypes: vTypes }, hubsDB] = await Promise.all([
       fetchVehicleMetadata(),
       getCachedHubs(),
     ]);
     vehicleTypes = vTypes;
-    mappingsObj = mObj;
     hubsMap = hubsDB.reduce((acc, curr) => {
       acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
       return acc;
@@ -297,7 +285,6 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
           filteredResults,
           allTasks,
           timeData: timeDataObjects,
-          mappingsObj,
           vehicleTypes,
           targetRoutingStr,
           selectedDateString: dateForFile,
@@ -353,7 +340,7 @@ export const handleManualDownload = async ({
 
     const extractedStartDate = getManualDate('starttime', deliveryBuffers, selectedDateString);
     const { timeFrom, timeTo } = calculateStartFinishDates(extractedStartDate);
-    const [{ vehicleTypes, mappingsObj }, [hubsData, locationHistoriesRes]] = await Promise.all([
+    const [{ vehicleTypes }, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
         getDrivers(hubId),
@@ -374,7 +361,6 @@ export const handleManualDownload = async ({
       deliveryBuffers,
       driverData,
       timeData: timeDataObjects,
-      mappingsObj,
       vehicleTypes,
       targetRoutingStr: getManualDate('assignedtime', deliveryBuffers, targetRoutingStr),
       selectedDateString: extractedStartDate,

@@ -88,15 +88,6 @@ export function buildDriverMaps(driverData) {
   return { emailMap, platMap };
 }
 
-export function buildNormalizedMappings(mappingsObj) {
-  const normalized = {};
-  if (!mappingsObj) return normalized;
-  Object.keys(mappingsObj).forEach((key) => {
-    if (key) normalized[ultraNormalize(key)] = mappingsObj[key];
-  });
-  return normalized;
-}
-
 export function resolveVehicleCategory(data, normalizedMappings) {
   const basePlateStr = ultraNormalize(data.plat);
   const originalRawStr = ultraNormalize(data.originalPlateForMap || data.plat);

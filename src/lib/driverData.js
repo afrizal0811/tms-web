@@ -1,50 +1,18 @@
-import { getDrivers, getVehicleMappings, getVehicleTypes } from './api/mileapp';
+import { getDrivers, getVehicleTypes } from './api/mileapp';
 import { toastError } from './toast';
-import { getBasePlate, getStorageType, isEmpty } from './utils';
+import { getStorageType, isEmpty } from './utils';
 
 let vehicleTypesPromise = null;
-let vehicleMappingsPromise = null;
-
-const resolveVehicleType = (rawTag, plate, mappingsObj) => {
-  if (plate && mappingsObj[plate]) return mappingsObj[plate];
-
-  const basePlat = getBasePlate(plate);
-  if (basePlat && mappingsObj[basePlat]) return mappingsObj[basePlat];
-
-  if (!rawTag) return null;
-  const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
-  const parts = cleanTag.split('-');
-
-  let typeCandidate = parts.length > 1 ? parts[1].toUpperCase() : cleanTag.toUpperCase();
-
-  if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
-    if (['CDE', 'CDD', 'FUSO'].includes(typeCandidate)) {
-      typeCandidate = `${typeCandidate}-LONG`;
-    }
-  }
-
-  return typeCandidate;
-};
 
 export async function checkUnmappedVehicles(hubId) {
   if (!hubId) return [];
 
   try {
     if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
-    vehicleMappingsPromise = getVehicleMappings();
 
-    const [vehicleTypesObj, drivers, mappingsDB] = await Promise.all([
-      vehicleTypesPromise,
-      getDrivers(hubId),
-      vehicleMappingsPromise,
-    ]);
+    const [vehicleTypesObj, drivers] = await Promise.all([vehicleTypesPromise, getDrivers(hubId)]);
 
     const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
-
-    const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mappedType;
-      return acc;
-    }, {});
 
     const unmappedList = [];
     const processedPlates = new Set();
@@ -56,16 +24,25 @@ export async function checkUnmappedVehicles(hubId) {
       const plat = v.plat || '';
       if (isEmpty(plat) || processedPlates.has(plat)) return;
 
-      const cleanTag = rawTag.replace(/["'\\]/g, '').trim();
-      const parts = cleanTag.split('-');
-      let specificType = parts.length > 1 ? parts[1] : cleanTag;
+      const parseType = (tag) => {
+        if (!tag) return '';
+        const clean = String(tag)
+          .toUpperCase()
+          .replace(/["'\\]/g, '')
+          .trim();
+        const p = clean.split('-');
+        let spec = p.length > 1 ? p[1] : clean;
+        if (p.length > 2 && p[2] === 'LONG' && ['CDE', 'CDD', 'FUSO'].includes(spec)) {
+          spec = `${spec}-LONG`;
+        }
+        return spec;
+      };
 
-      if (parts.length > 2 && parts[2] === 'LONG') {
-        if (['CDE', 'CDD', 'FUSO'].includes(specificType)) specificType = `${specificType}-LONG`;
-      }
+      const specificType = parseType(rawTag);
+      const mappedType = parseType(v.type);
 
       const isStandard = VEHICLE_TYPES.includes(specificType);
-      const isMappedInDB = !!mappingsObj[plat];
+      const isMappedInDB = VEHICLE_TYPES.includes(mappedType);
 
       if (isStandard || isMappedInDB) {
         processedPlates.add(plat);
@@ -83,7 +60,7 @@ export async function checkUnmappedVehicles(hubId) {
   }
 }
 
-export async function masterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
+export async function masterTruckStorage(drivers, VEHICLE_TYPES) {
   const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 
   VEHICLE_TYPES.forEach((type) => {
@@ -94,35 +71,26 @@ export async function masterTruckStorage(drivers, mappingsObj, VEHICLE_TYPES) {
   if (!Array.isArray(drivers)) return masterData;
 
   drivers.forEach((d) => {
-    const sourceTag = d._rawType || d.type;
-    if (!d.plat || !sourceTag) return;
-    const cleanTag = String(sourceTag)
-      .toUpperCase()
-      .replace(/["'\\]/g, '')
-      .trim();
-    const parts = cleanTag.split('-');
-    let specificType = parts.length > 1 ? parts[1] : cleanTag;
-    if (parts.length > 2 && parts[2] === 'LONG') {
-      if (['CDE', 'CDD', 'FUSO'].includes(specificType)) specificType = `${specificType}-LONG`;
-    }
-    if (VEHICLE_TYPES.includes(specificType)) {
-      mappingsObj[d.plat] = specificType;
-      mappingsObj[getBasePlate(d.plat)] = specificType;
-    }
-  });
-
-  drivers.forEach((d) => {
     const plat = d.plat || '';
-    const rawTag = (d.type || '').toUpperCase();
     const platUpper = plat.toUpperCase();
-    const storageField = (d.storage || '').toUpperCase();
 
     if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO')) {
       return;
     }
 
-    const storageCategory = getStorageType(storageField || rawTag);
-    const resolvedType = resolveVehicleType(rawTag, plat, mappingsObj);
+    const storageCategory = getStorageType(d.storage || d.type || '');
+
+    let resolvedType = d.type;
+    if (resolvedType && resolvedType.includes('-')) {
+      const parts = resolvedType.split('-');
+      resolvedType = parts.length > 1 ? parts[1].toUpperCase() : resolvedType.toUpperCase();
+      if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
+        if (['CDE', 'CDD', 'FUSO'].includes(resolvedType)) {
+          resolvedType = `${resolvedType}-LONG`;
+        }
+      }
+    }
+
     const matchedType = VEHICLE_TYPES.find((vt) => resolvedType === vt);
 
     if (matchedType) {

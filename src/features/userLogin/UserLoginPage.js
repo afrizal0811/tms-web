@@ -2,10 +2,8 @@
 
 import LocationSelector from '@/components/dropdown/LocationDropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
-import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import Spinner from '@/components/Spinner';
 import { getRoles, getUsers } from '@/lib/api/mileapp';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { capitalizeText, isEmpty } from '@/lib/utils';
@@ -22,8 +20,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
   const [userToConfirm, setUserToConfirm] = useState(null);
   const [secretClicks, setSecretClicks] = useState(0);
   const [isSecretMode, setIsSecretMode] = useState(false);
-
-  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
 
   useEffect(() => {
     const { storedLocation, storedLocationName } = getLocalStorage();
@@ -174,46 +170,46 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
       setIsConfirmOpen(false);
       return;
     }
-    await triggerCheck(targetCheckHubId, async () => {
+
+    try {
+      const selectedHubObj = allHubsList.find((h) => h._id === selectedLocation);
+      const { storedSession } = getLocalStorage();
+      const currentData = storedSession || {};
+
+      let rolePaths = [];
       try {
-        const selectedHubObj = allHubsList.find((h) => h._id === selectedLocation);
-        const { storedSession } = getLocalStorage();
-        const currentData = storedSession || {};
+        const roles = await getRoles();
+        const userRole = (roles || []).find(
+          (r) => String(r._id || r.id) === String(userToConfirm.roleId)
+        );
+        rolePaths = userRole?.paths || [];
+      } catch (e) {}
 
-        let rolePaths = [];
-        try {
-          const roles = await getRoles();
-          const userRole = (roles || []).find(
-            (r) => String(r._id || r.id) === String(userToConfirm.roleId)
-          );
-          rolePaths = userRole?.paths || [];
-        } catch (e) {}
+      const filteredUserSession = {
+        _id: userToConfirm._id,
+        email: userToConfirm.email,
+        name: userToConfirm.name,
+        hubId: userToConfirm.hubId,
+        roleId: userToConfirm.roleId,
+        status: userToConfirm.status,
+        paths: rolePaths,
+        activeHubId: selectedLocation,
+        activeHubName: selectedLocationName,
+        activeHubAcronym: selectedHubObj?.acronym || '',
+      };
 
-        const filteredUserSession = {
-          _id: userToConfirm._id,
-          email: userToConfirm.email,
-          name: userToConfirm.name,
-          hubId: userToConfirm.hubId,
-          roleId: userToConfirm.roleId,
-          status: userToConfirm.status,
-          paths: rolePaths,
-          activeHubId: selectedLocation,
-          activeHubName: selectedLocationName,
-          activeHubAcronym: selectedHubObj?.acronym || '',
-        };
+      const newSession = {
+        ...currentData,
+        user: filteredUserSession,
+      };
 
-        const newSession = {
-          ...currentData,
-          user: filteredUserSession,
-        };
+      setLocalStorage('data', JSON.stringify(newSession));
+      handleUserSelect(filteredUserSession);
+      toastSuccess(t('home.toast.login_success'));
+    } catch (err) {
+      toastError(t('home.toast.login_failed', { err: err.message }), err);
+    }
 
-        setLocalStorage('data', JSON.stringify(newSession));
-        handleUserSelect(filteredUserSession);
-        toastSuccess(t('home.toast.login_success'));
-      } catch (err) {
-        toastError(t('home.toast.login_failed', { err: err.message }), err);
-      }
-    });
     setLoading(false);
     setIsConfirmOpen(false);
   };
@@ -344,14 +340,6 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           </span>
         </div>
       </div>
-
-      {showModal && (
-        <VehicleTagMappingModal
-          onCompleted={handleMappingCompleted}
-          t={t}
-          unmappedData={unmappedData}
-        />
-      )}
     </div>
   );
 }
