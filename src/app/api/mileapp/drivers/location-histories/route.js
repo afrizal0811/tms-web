@@ -1,7 +1,6 @@
 import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-
 import { formatMinutesToHHMM, formatUTC7, getBasePlate, normalizeEmail } from '@/lib/utils';
+import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {

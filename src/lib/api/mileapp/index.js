@@ -9,5 +9,4 @@ export * from './trash';
 export * from './truckUsage';
 export * from './users';
 export * from './vehicleMappings';
-export * from './vehicles';
 export * from './vehicleTypes';
