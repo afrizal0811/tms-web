@@ -45,7 +45,7 @@ export default function BreadReportPage() {
   }
 
   return (
-    <AppLayout mainClassName="items-center justify-center px-4">
+    <SelectionLayout>
       <BreadReport
         driverData={data.driverData}
         hubAcronym={data.storedLocationAcronym}
@@ -56,6 +56,6 @@ export default function BreadReportPage() {
         setIsLoading={setIsLoading}
         t={t}
       />
-    </AppLayout>
+    </SelectionLayout>
   );
 }

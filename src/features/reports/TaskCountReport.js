@@ -25,7 +25,7 @@ export default function TaskCountReport() {
   useEffect(() => {
     const loadHubs = async () => {
       try {
-        let cached = getCachedHubs();
+        let cached = getCachedHubs().allHub
         setHubs(cached || []);
         setSelectedHubs((cached || []).map((h) => h._id));
       } catch (err) {

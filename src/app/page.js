@@ -1,7 +1,6 @@
 'use client';
 
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
-import AppLayout from '@/components/page/AppLayout';
 import ErrorPage from '@/components/page/ErrorPage';
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
@@ -129,7 +128,7 @@ export default function Home() {
   }
 
   return (
-    <AppLayout mainClassName="items-center px-4 relative">
+    <SelectionLayout>
       <Dashboard driverData={driverData.data} />
       {showModal && (
         <VehicleTagMappingModal
@@ -138,6 +137,6 @@ export default function Home() {
           unmappedData={unmappedData}
         />
       )}
-    </AppLayout>
+    </SelectionLayout>
   );
 }

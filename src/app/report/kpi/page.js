@@ -1,6 +1,5 @@
 'use client';
 
-import AppLayout from '@/components/page/AppLayout';
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -44,7 +43,7 @@ export default function KpiReportPage() {
   }
 
   return (
-    <AppLayout mainClassName="items-center justify-center px-4">
+    <SelectionLayout>
       <KpiReport
         driverData={data.driverData}
         hubAcronym={data.storedLocationAcronym}
@@ -54,6 +53,6 @@ export default function KpiReportPage() {
         setIsLoading={setIsLoading}
         t={t}
       />
-    </AppLayout>
+    </SelectionLayout>
   );
 }

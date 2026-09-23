@@ -1,12 +1,12 @@
 'use client';
 
-import AppLayout from '@/components/page/AppLayout';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import TaskCountReport from '@/features/reports/TaskCountReport';
 
 export default function TaskCountReportPage() {
   return (
-    <AppLayout>
+    <SelectionLayout>
       <TaskCountReport />
-    </AppLayout>
+    </SelectionLayout>
   );
 }
