@@ -726,9 +726,12 @@ export default function useSummaryData() {
       let hasPendingGRValue = false;
       let hubCoordsString = null;
 
+      let currentMasterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+      
       try {
         const [hubsDB, masterRes] = await Promise.all([getHubs(), getMasterTruck()]);
 
+        currentMasterData = masterRes;
         setMasterTruckData(masterRes);
 
         const activeHub = hubsDB?.activeHub;
@@ -746,7 +749,7 @@ export default function useSummaryData() {
         }
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);
-        setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
+        setMasterTruckData(currentMasterData);
       }
 
       const newRawData = {
@@ -765,7 +768,7 @@ export default function useSummaryData() {
         endStr,
         localeCode,
         hubCoordsString,
-        masterTruckData
+        currentMasterData
       );
       setReportPreview(preview);
 
@@ -781,7 +784,6 @@ export default function useSummaryData() {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line
   }, [
     selectedLocation,
     dateRange,
