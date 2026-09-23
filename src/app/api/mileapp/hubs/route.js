@@ -9,7 +9,6 @@ export async function GET(request) {
     const hubs = await prisma.hub.findMany({
       orderBy: { name: 'asc' },
     });
-    const activeHub = hubs.find((h) => String(h.id) === String(hubId));
     const formattedHubs = hubs.map((hub) => ({
       _id: hub.id,
       name: hub.name.replace('Hub ', ''),
@@ -22,10 +21,13 @@ export async function GET(request) {
       hasVms: hub.has_vms || false,
       isActive: hub.is_active || false,
     }));
+    const activeHub = formattedHubs.find((h) => String(h._id) === String(hubId));
+    console.log('formattedHubs :', formattedHubs);
+    console.log('activeHub :', activeHub);
 
     return NextResponse.json(
       {
-        activeHub : activeHub,
+        activeHub: activeHub,
         allHub: formattedHubs,
       },
       { status: 200 }

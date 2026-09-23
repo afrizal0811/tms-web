@@ -45,7 +45,7 @@ export default function TrackingPage() {
           setAllVehiclesMaster(drivers);
         }
         const cachedHubs = getCachedHubs() || [];
-        const activeHubData = cachedHubs.find((h) => h._id === storedLocation);
+        const activeHubData = cachedHubs.activeHub;
         if (activeHubData) {
           setHubCoord({ lat: activeHubData.lat, lng: activeHubData.lng });
         } else {

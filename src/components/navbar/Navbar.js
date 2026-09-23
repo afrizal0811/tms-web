@@ -170,13 +170,13 @@ export default function Navbar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
-  const { storedUser, storedLocation } = getLocalStorage();
+  const { storedUser } = getLocalStorage();
   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
   const userPaths = parsedUser?.paths || [];
   const userName = parsedUser?.name || '';
   const userEmail = storedUser ? JSON.parse(storedUser).email : 'email@example.com';
   const hubs = getCachedHubs();
-  const hasVms = hubs ? hubs.find((h) => String(h._id) === String(storedLocation))?.hasVms : false;
+  const hasVms = hubs ? hubs.activeHub?.hasVms : false;
 
   const handleLogout = () => {
     removeLocalStorage('data');
