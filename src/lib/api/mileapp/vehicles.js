@@ -1,6 +1,7 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { apiFetch } from '../base';
 
-
+// vehicle type
 export async function createVehicleType(name) {
   return await apiFetch('/api/mileapp/vehicles/types', 'Gagal menambah tipe kendaraan', {
     method: 'POST',
@@ -9,6 +10,32 @@ export async function createVehicleType(name) {
   });
 }
 
+export async function getVehicleTypes() {
+  return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengambil data tipe kendaraan');
+}
+
+export async function updateVehicleType(id, name) {
+  return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengubah tipe kendaraan', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, name }),
+  });
+}
+
+export async function deleteVehicleType(id) {
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+
+  return await apiFetch(
+    `/api/mileapp/vehicles/types?${params.toString()}`,
+    'Gagal menghapus tipe kendaraan',
+    {
+      method: 'DELETE',
+    }
+  );
+}
+
+// vehicle mapping
 export async function getVehicleMappings(hubId = null) {
   const params = new URLSearchParams();
   if (hubId) params.append('hubId', hubId);
@@ -18,10 +45,6 @@ export async function getVehicleMappings(hubId = null) {
     `/api/mileapp/vehicles/mappings${queryString}`,
     'Gagal mengambil data pemetaan kendaraan'
   );
-}
-
-export async function getVehicleTypes() {
-  return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengambil data tipe kendaraan');
 }
 
 export async function postVehicleMappings(mappingsArray) {
@@ -48,14 +71,6 @@ export async function updateVehicleMapping(id, plat, mappedType) {
   return true;
 }
 
-export async function updateVehicleType(id, name) {
-  return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengubah tipe kendaraan', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name }),
-  });
-}
-
 export async function deleteVehicleMapping(id) {
   const params = new URLSearchParams();
   if (id) params.append('id', id);
@@ -69,15 +84,43 @@ export async function deleteVehicleMapping(id) {
   );
 }
 
-export async function deleteVehicleType(id) {
+// vehicle non tms
+export async function getTruckNonTms({ startDate, endDate }) {
+  const { storedLocation } = getLocalStorage();
   const params = new URLSearchParams();
-  if (id) params.append('id', id);
+  if (storedLocation) params.append('hubId', storedLocation);
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
 
   return await apiFetch(
-    `/api/mileapp/vehicles/types?${params.toString()}`,
-    'Gagal menghapus tipe kendaraan',
-    {
-      method: 'DELETE',
-    }
+    `/api/mileapp/vehicles/non-tms?${params.toString()}`,
+    'Gagal mengambil data truck usage'
+  );
+}
+
+export async function postTruckNonTms(payload) {
+  return await apiFetch('/api/mileapp/vehicles/non-tms', 'Gagal menyimpan data penggunaan truk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteTruckNonTms(payload) {
+  return await apiFetch('/api/mileapp/vehicles/non-tms', 'Gagal menghapus data penggunaan truk', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+//master vehicle type
+export async function getMasterTruck() {
+  const { storedLocation } = getLocalStorage();  const params = new URLSearchParams();
+  if (storedLocation) params.append('hubId', storedLocation);
+
+  return await apiFetch(
+    `/api/mileapp/vehicles/master?${params.toString()}`,
+    'Gagal memproses perhitungan master truck storage'
   );
 }

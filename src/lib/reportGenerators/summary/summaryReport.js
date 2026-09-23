@@ -28,9 +28,9 @@ export async function generateSummaryDataPreview(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  hubId,
   localeCode,
-  activeHubCoords
+  activeHubCoords,
+  masterTruckData
 ) {
   const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
@@ -46,8 +46,8 @@ export async function generateSummaryDataPreview(
     resultsData,
     startDateStr,
     endDateStr,
-    hubId,
-    taskData
+    taskData,
+    masterTruckData
   );
 
   const truckDetailRaw = calculateTruckDetailData(
@@ -92,8 +92,6 @@ export async function generateSummaryWorkbook(
   locationHistoryData,
   startDateStr,
   endDateStr,
-  hubName,
-  hubId,
   taskSummaryMetrics,
   masterTruckData,
   translate,
@@ -103,7 +101,7 @@ export async function generateSummaryWorkbook(
 ) {
   const wb = XLSX.utils.book_new();
   const hubsList = getCachedHubs() || [];
-  const activeHub = hubsList.find((h) => h._id === hubId || h.id === hubId);
+  const activeHub = hubsList.activeHub;
   activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
   generateRoutingTimeSheet(wb, taskData, startDateStr, endDateStr, translate, localeCode);
   generateTaskSummarySheet(
@@ -123,7 +121,7 @@ export async function generateSummaryWorkbook(
     startDateStr,
     endDateStr,
     hasPendingGR,
-    pendingDetails // <-- Diteruskan
+    pendingDetails
   );
 
   generateTimeDriverSheet(
@@ -154,10 +152,10 @@ export async function generateSummaryWorkbook(
     resultsData,
     startDateStr,
     endDateStr,
-    hubId,
     translate,
     localeCode,
-    taskData
+    taskData,
+    masterTruckData
   );
   generateDistanceSummarySheet(
     wb,

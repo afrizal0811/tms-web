@@ -1,6 +1,4 @@
-import { getDrivers, getVehicleTypes } from '@/lib/api/mileapp';
-import { masterTruckStorage } from '@/lib/driverData';
-import { toastError } from '@/lib/toast';
+import { getDrivers, getTruckNonTms } from '@/lib/api/mileapp';
 import {
   formatDateUniversal,
   formatLongDate,
@@ -115,26 +113,12 @@ function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
   };
 }
 
-async function getTruckUsageData(hubId, startDate, endDate, translate) {
-  try {
-    const res = await fetch(
-      `/api/mileapp/truck-usage?hubId=${hubId}&startDate=${startDate}&endDate=${endDate}`
-    );
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (e) {
-    toastError(translate('common.toast.error', { err: e.message }), e);
-    return [];
-  }
-}
-
 export async function calculateTruckUsageData(
   resultsData,
   startDateStr,
   endDateStr,
-  hubId,
   taskData,
-  translate
+  masterTruckData
 ) {
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
@@ -143,13 +127,13 @@ export async function calculateTruckUsageData(
       if (d) taskPresence[d] = true;
     });
   }
-  const [vehicleTypesObj, allDriversDB, manualUsageDB] = await Promise.all([
-    getVehicleTypes(),
+  const [allDriversDB, manualUsageDB] = await Promise.all([
     getDrivers(),
-    getTruckUsageData(hubId, startDateStr, endDateStr, translate),
+    getTruckNonTms({ startDate: startDateStr, endDate: endDateStr }),
   ]);
 
-  let vehicleTypes = vehicleTypesObj.map((v) => v.name);
+  const vehicleTypes = masterTruckData?.vehicleTypes || [];
+  const hubMasterData = masterTruckData?.masterData;
 
   const groupedByEmail = {};
   (allDriversDB || []).forEach((d) => {
@@ -189,23 +173,6 @@ export async function calculateTruckUsageData(
       masterDriversDB.push(d);
     }
   });
-
-  const branchTypesSet = new Set();
-  masterDriversDB.forEach((d) => {
-    const type = extractVehicleType(d.type, vehicleTypes);
-    if (type && type !== 'Lainnya') branchTypesSet.add(type);
-  });
-
-  const filteredVehicleTypes = vehicleTypes.filter((vt) => branchTypesSet.has(vt));
-  Array.from(branchTypesSet).forEach((bt) => {
-    if (!filteredVehicleTypes.includes(bt)) filteredVehicleTypes.push(bt);
-  });
-
-  if (filteredVehicleTypes.length > 0) {
-    vehicleTypes = filteredVehicleTypes;
-  }
-
-  const hubMasterData = await masterTruckStorage(masterDriversDB, vehicleTypes);
 
   const masterVehicleList = {
     Dry: { Gabungan: [] },
@@ -627,20 +594,13 @@ export async function generateTruckUsageSheet(
   resultsData,
   startDateStr,
   endDateStr,
-  hubId,
   translate,
   localeCode,
-  taskData
+  taskData,
+  masterTruckData
 ) {
   const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
-    await calculateTruckUsageData(
-      resultsData,
-      startDateStr,
-      endDateStr,
-      hubId,
-      taskData,
-      translate
-    );
+    await calculateTruckUsageData(resultsData, startDateStr, endDateStr, taskData, masterTruckData);
 
   const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
   const excelData = [];

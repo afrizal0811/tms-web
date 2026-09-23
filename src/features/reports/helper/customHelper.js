@@ -1,5 +1,5 @@
 import { getLocationHistories, getResult, getResultHistories, getTasks } from '@/lib/api/mileapp';
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   buildRoutingMap,
@@ -156,9 +156,8 @@ export const processTaskRoutingReport = async ({
   t,
   driverData,
 }) => {
-  const { storedLocation } = getLocalStorage();
   const hubsList = getCachedHubs() || [];
-  const activeHub = hubsList.find((h) => h._id === storedLocation);
+  const activeHub = hubsList.activeHub;
   const hubCoordsStr =
     activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
 

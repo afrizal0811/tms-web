@@ -3,19 +3,17 @@ import {
   getDrivers,
   getHubs,
   getLocationHistories,
+  getMasterTruck,
   getResultHistories,
   getResults,
   getTasks,
-  getVehicleTypes,
 } from '@/lib/api/mileapp';
-import { masterTruckStorage } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatUTC7,
-  getBasePlate,
   getDeliveryDateFromRouting,
   parseCustomerString,
   toApiDateString,
@@ -729,23 +727,9 @@ export default function useSummaryData() {
       let hubCoordsString = null;
 
       try {
-        const [vTypesObj, hubsDB] = await Promise.all([getVehicleTypes(), getHubs()]);
-        const vTypes = vTypesObj.map((v) => v.name);
+        const [hubsDB, masterRes] = await Promise.all([getHubs(), getMasterTruck()]);
 
-        const uniqueDriversForMT = [];
-        const seenBasePlates = new Set();
-        (driversRes || []).forEach((d) => {
-          if (d.additionalData && d.additionalData.trim() !== '') return;
-
-          const bp = getBasePlate(d.plat).toLowerCase();
-          if (bp && !seenBasePlates.has(bp)) {
-            seenBasePlates.add(bp);
-            uniqueDriversForMT.push(d);
-          }
-        });
-
-        const calculatedMaster = await masterTruckStorage(uniqueDriversForMT, vTypes);
-        setMasterTruckData(calculatedMaster);
+        setMasterTruckData(masterRes);
 
         const activeHub = hubsDB?.activeHub;
         hasPendingGRValue = activeHub?.hasPendingGR || false;
@@ -779,9 +763,9 @@ export default function useSummaryData() {
         newRawData.locations,
         startStr,
         endStr,
-        selectedLocation,
         localeCode,
-        hubCoordsString
+        hubCoordsString,
+        masterTruckData
       );
       setReportPreview(preview);
 
@@ -797,6 +781,7 @@ export default function useSummaryData() {
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line
   }, [
     selectedLocation,
     dateRange,

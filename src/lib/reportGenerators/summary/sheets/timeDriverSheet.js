@@ -1,4 +1,4 @@
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { isTripInShift } from '@/lib/reportGenerators/helper';
 import {
   formatDateUniversal,
@@ -105,8 +105,7 @@ export function calculateTimeDriverData(
     });
 
     const storedHubs = getCachedHubs();
-    const { storedLocationName } = getLocalStorage();
-    const activeHubLocation = storedHubs.find((h) => h.name === storedLocationName);
+    const activeHubLocation = storedHubs.activeHub;
     const hubLat = activeHubLocation?.lat || 0;
     const hubLon = activeHubLocation?.lng || 0;
     const RADIUS_THRESHOLD = 500;

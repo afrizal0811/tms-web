@@ -1,4 +1,4 @@
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   calculateReturnHubDistance,
@@ -92,11 +92,8 @@ export function calculateDistanceSummaryData(
 
   let hubCoordsStr = null;
   if (typeof window !== 'undefined') {
-    const { storedLocation } = getLocalStorage();
     const hubsList = getCachedHubs() || [];
-    const activeHub = hubsList.find(
-      (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-    );
+    const activeHub = hubsList.activeHub;
     if (activeHub && activeHub.lat && activeHub.lng) {
       hubCoordsStr = `${activeHub.lat},${activeHub.lng}`;
     }

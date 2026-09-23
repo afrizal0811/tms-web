@@ -48,7 +48,6 @@ export default function SummaryPage() {
   const { t, localeCode, isIndonesian } = useLanguage();
   const {
     selectedLocation,
-    selectedLocationName,
     dateRange,
     setDateRange,
     driverData,
@@ -171,10 +170,8 @@ export default function SummaryPage() {
         rawData.locations,
         formatDateUniversal(startDate),
         formatDateUniversal(endDate),
-        selectedLocationName,
-        selectedLocation,
         taskSummaryMetrics,
-        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
+        masterTruckData,
         t,
         localeCode,
         hasPendingGR,
@@ -308,7 +305,7 @@ export default function SummaryPage() {
           endDateStr: endStr,
           isHasData: Object.entries(taskSummaryMetrics).length > 0,
           translate: t,
-          masterTruckData: masterTruckData,
+          masterTruckData: masterTruckData.masterData,
         });
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
