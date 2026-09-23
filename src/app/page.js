@@ -90,7 +90,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getDrivers(selectedLocation);
+        const data = await getDrivers();
         setDriverData({ data: data });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);
@@ -98,7 +98,7 @@ export default function Home() {
     }
     if (selectedLocation) {
       fetchDriverData();
-      triggerCheck(selectedLocation, () => {});
+      triggerCheck(() => {});
     }
   }, [selectedLocation, t, triggerCheck]);
 

@@ -22,8 +22,6 @@ export async function GET(request) {
       isActive: hub.is_active || false,
     }));
     const activeHub = formattedHubs.find((h) => String(h._id) === String(hubId));
-    console.log('formattedHubs :', formattedHubs);
-    console.log('activeHub :', activeHub);
 
     return NextResponse.json(
       {

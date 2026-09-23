@@ -280,7 +280,7 @@ export default function DeliveryPage() {
         const activeHub = currentHubs.activeHub;
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
-        const rawDrivers = await getDrivers(storedLocation);
+        const rawDrivers = await getDrivers();
         if (isEmpty(rawDrivers)) {
           setEmptyMessage(t('common.no_driver'));
           throw new Error(t('common.no_driver'));

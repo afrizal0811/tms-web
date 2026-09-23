@@ -343,7 +343,7 @@ export const handleManualDownload = async ({
     const [{ vehicleTypes }, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
-        getDrivers(hubId),
+        getDrivers(),
         getLocationHistories({
           timeFrom,
           timeTo,

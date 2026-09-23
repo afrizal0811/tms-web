@@ -136,8 +136,7 @@ export default function VehicleData() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { storedLocation } = getLocalStorage();
-        const rawDriversData = await getDrivers(storedLocation);
+        const rawDriversData = await getDrivers();
 
         if (!rawDriversData || isEmpty(rawDriversData)) {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));

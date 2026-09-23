@@ -4,9 +4,10 @@ import { apiFetch } from '../base';
 import { getVehiclesStatuses } from '../mceasy';
 import { fields } from './fields';
 
-export async function getDrivers(hubId) {
+export async function getDrivers() {
+  const { storedLocation } = getLocalStorage();
   const params = new URLSearchParams();
-  if (hubId) params.append('hubId', hubId);
+  if (storedLocation) params.append('hubId', storedLocation);
   return await apiFetch(
     `/api/mileapp/drivers?${params.toString()}`,
     'Gagal mengambil data drivers dari DB'

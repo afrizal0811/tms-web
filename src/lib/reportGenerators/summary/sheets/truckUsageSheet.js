@@ -145,7 +145,7 @@ export async function calculateTruckUsageData(
   }
   const [vehicleTypesObj, allDriversDB, manualUsageDB] = await Promise.all([
     getVehicleTypes(),
-    getDrivers(hubId),
+    getDrivers(),
     getTruckUsageData(hubId, startDateStr, endDateStr, translate),
   ]);
 

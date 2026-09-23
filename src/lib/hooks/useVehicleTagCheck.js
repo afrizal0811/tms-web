@@ -11,13 +11,11 @@ export function useVehicleTagCheck() {
   const [unmappedData, setUnmappedData] = useState([]);
   const [onSuccessCallback, setOnSuccessCallback] = useState(null);
   const { t } = useLanguage();
-
+  
   const triggerCheck = useCallback(
-    async (hubId, onSuccess) => {
-      if (!hubId) return;
-
+    async (onSuccess) => {
       try {
-        const issues = await checkUnmappedVehicles(hubId);
+        const issues = await checkUnmappedVehicles();
         if (issues && issues.length > 0) {
           setUnmappedData(issues);
           setOnSuccessCallback(() => onSuccess);

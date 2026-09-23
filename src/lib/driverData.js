@@ -4,13 +4,11 @@ import { getStorageType, isEmpty } from './utils';
 
 let vehicleTypesPromise = null;
 
-export async function checkUnmappedVehicles(hubId) {
-  if (!hubId) return [];
-
+export async function checkUnmappedVehicles() {
   try {
     if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
 
-    const [vehicleTypesObj, drivers] = await Promise.all([vehicleTypesPromise, getDrivers(hubId)]);
+    const [vehicleTypesObj, drivers] = await Promise.all([vehicleTypesPromise, getDrivers()]);
 
     const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
 

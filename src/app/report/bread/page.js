@@ -19,7 +19,7 @@ export default function BreadReportPage() {
     async function fetchData() {
       try {
         const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getDrivers();
         setData({
           storedLocation,
           storedLocationName,

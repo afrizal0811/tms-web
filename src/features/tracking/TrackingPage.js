@@ -40,7 +40,7 @@ export default function TrackingPage() {
       hasFetched.current = true;
 
       try {
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getDrivers();
         if (drivers && Array.isArray(drivers)) {
           setAllVehiclesMaster(drivers);
         }

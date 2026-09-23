@@ -19,7 +19,7 @@ export default function DailyReportPage() {
     async function fetchData() {
       try {
         const { storedLocation, storedLocationName } = getLocalStorage();
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getDrivers();
         setData({
           storedLocation,
           storedLocationName,

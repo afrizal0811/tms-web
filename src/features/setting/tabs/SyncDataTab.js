@@ -24,7 +24,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     try {
       const [res, mileappData] = await Promise.all([
         getMceasyUsers({ 'position-name': 'Driver' }),
-        getDrivers(activeHubId),
+        getDrivers(),
       ]);
 
       const validEmails = new Set(
@@ -53,7 +53,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     } finally {
       setIsDriverLoading(false);
     }
-  }, [activeHubId, translate]);
+  }, [translate]);
 
   useEffect(() => {
     if (modalOpen) fetchMcEasyDrivers();

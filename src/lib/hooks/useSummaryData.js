@@ -674,7 +674,7 @@ export default function useSummaryData() {
       const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
-      const pDrivers = fetchWithTracker(() => getDrivers(selectedLocation));
+      const pDrivers = fetchWithTracker(() => getDrivers());
 
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];

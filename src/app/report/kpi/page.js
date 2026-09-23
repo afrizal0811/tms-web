@@ -19,7 +19,7 @@ export default function KpiReportPage() {
     async function fetchData() {
       try {
         const { storedLocation, storedLocationAcronym } = getLocalStorage();
-        const drivers = await getDrivers(storedLocation);
+        const drivers = await getDrivers();
         setData({
           storedLocation,
           storedLocationAcronym,

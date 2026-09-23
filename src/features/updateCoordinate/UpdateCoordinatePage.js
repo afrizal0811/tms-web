@@ -90,7 +90,7 @@ export default function UpdateCoordinatePage() {
         const timeTo = toApiDateString(localEnd);
 
         const [drivers, todayTasks] = await Promise.all([
-          getDrivers(hubId),
+          getDrivers(),
           getTasks({
             status: 'DONE',
             hubId,
