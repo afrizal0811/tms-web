@@ -34,8 +34,6 @@
 │   │       │       └── route.js
 │   │       ├── roles
 │   │       │   └── route.js
-│   │       ├── task
-│   │       │   └── route.js
 │   │       ├── tasks
 │   │       │   ├── route.js
 │   │       │   └── [id]
@@ -128,7 +126,6 @@
 │   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
 │   ├── page
-│   │   ├── AppLayout.js
 │   │   ├── ErrorPage.js
 │   │   ├── Footer.js
 │   │   ├── PageTemplate.js
@@ -296,9 +293,7 @@
     │       ├── trash.js
     │       ├── truckUsage.js
     │       ├── users.js
-    │       ├── vehicleMappings.js
-    │       ├── vehicles.js
-    │       └── vehicleTypes.js
+    │       └── vehicles.js
     ├── dictionary.js
     ├── driverData.js
     ├── hooks
