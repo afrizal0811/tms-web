@@ -11,7 +11,7 @@ async function checkUnmappedVehicles() {
   try {
     if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
     const [vehicleTypesObj, drivers] = await Promise.all([vehicleTypesPromise, getDrivers()]);
-    const VEHICLE_TYPES = vehicleTypesObj.map((v) => v.name);
+    const VEHICLE_TYPES = vehicleTypesObj.allTypes.map((v) => v.name);
     const unmappedList = [];
     const processedPlates = new Set();
 

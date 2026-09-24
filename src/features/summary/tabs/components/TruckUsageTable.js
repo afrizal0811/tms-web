@@ -6,7 +6,7 @@ import RoutingDropdown from './RoutingDropdown';
 export default function TruckUsageTable({
   dateMap,
   dateKeys,
-  vehicleTypes,
+  activeTypes,
   hubMasterData,
   isPercentage = false,
   translate,
@@ -133,7 +133,7 @@ export default function TruckUsageTable({
       manualRaw = dateMap[d.str][`${category}Manual`] || 0;
 
       const actualCat = category.replace('Total', '');
-      vehicleTypes.forEach((vt) => {
+      activeTypes.forEach((vt) => {
         const details = dateMap[d.str][actualCat][`${vt}_details`] || [];
         tmsDetails = tmsDetails.concat(details);
       });
@@ -142,7 +142,7 @@ export default function TruckUsageTable({
       manualRaw = dateMap[d.str].OTVManual || 0;
 
       ['Dry', 'Frozen'].forEach((cat) => {
-        vehicleTypes.forEach((vt) => {
+        activeTypes.forEach((vt) => {
           const details = dateMap[d.str][cat][`${vt}_details`] || [];
           tmsDetails = tmsDetails.concat(details);
         });
@@ -158,7 +158,7 @@ export default function TruckUsageTable({
   };
 
   const renderSectionRows = (cat, bgClass, types) => {
-    const totalRows = vehicleTypes.length * 2 + 5;
+    const totalRows = activeTypes.length * 2 + 5;
     return types.map((type, idx) => {
       const masterTotal = getMasterVal(cat, type);
       const isClickableMaster = !isPercentage && masterTotal > 0;
@@ -584,7 +584,7 @@ export default function TruckUsageTable({
           </tr>
         </thead>
         <tbody>
-          {renderSectionRows('Dry', bgDry, vehicleTypes)}
+          {renderSectionRows('Dry', bgDry, activeTypes)}
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.interbranch'),
             'Dry',
@@ -600,7 +600,7 @@ export default function TruckUsageTable({
             true
           )}
 
-          {renderSectionRows('Frozen', bgFrozen, vehicleTypes)}
+          {renderSectionRows('Frozen', bgFrozen, activeTypes)}
           {renderSpecialRow(
             translate('summary.tabs.truck_usage.interbranch'),
             'Frozen',

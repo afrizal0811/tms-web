@@ -735,7 +735,6 @@ export default function DeliveryPage() {
       label: t('common.vehicle_type'),
       component: (
         <VehicleTypeFilter
-          data={Object.values(driverData)}
           disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}

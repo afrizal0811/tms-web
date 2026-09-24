@@ -8,7 +8,6 @@ import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getOdometer } from '@/lib/api/mceasy/odometer';
 import { getDrivers } from '@/lib/api/mileapp';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateUniversal, getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toastError } from '../../lib/toast';
@@ -268,7 +267,6 @@ export default function VehicleData() {
       hideLabel: false,
       component: (
         <VehicleTypeFilter
-          data={templateData}
           disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}

@@ -11,7 +11,14 @@ export async function createVehicleType(name) {
 }
 
 export async function getVehicleTypes() {
-  return await apiFetch('/api/mileapp/vehicles/types', 'Gagal mengambil data tipe kendaraan');
+  const { storedLocation } = getLocalStorage();
+  const params = new URLSearchParams();
+  if (storedLocation) params.append('hubId', storedLocation);
+
+  return await apiFetch(
+    `/api/mileapp/vehicles/types?${params.toString()}`,
+    'Gagal memproses perhitungan types truck storage'
+  );
 }
 
 export async function updateVehicleType(id, name) {
@@ -112,15 +119,4 @@ export async function deleteTruckNonTms(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-}
-
-//master vehicle type
-export async function getMasterTruck() {
-  const { storedLocation } = getLocalStorage();  const params = new URLSearchParams();
-  if (storedLocation) params.append('hubId', storedLocation);
-
-  return await apiFetch(
-    `/api/mileapp/vehicles/master?${params.toString()}`,
-    'Gagal memproses perhitungan master truck storage'
-  );
 }

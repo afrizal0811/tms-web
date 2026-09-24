@@ -3,10 +3,10 @@ import {
   getDrivers,
   getHubs,
   getLocationHistories,
-  getMasterTruck,
   getResultHistories,
   getResults,
   getTasks,
+  getVehicleTypes,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
@@ -727,9 +727,9 @@ export default function useSummaryData() {
       let hubCoordsString = null;
 
       let currentMasterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
-      
+
       try {
-        const [hubsDB, masterRes] = await Promise.all([getHubs(), getMasterTruck()]);
+        const [hubsDB, masterRes] = await Promise.all([getHubs(), getVehicleTypes()]);
 
         currentMasterData = masterRes;
         setMasterTruckData(masterRes);

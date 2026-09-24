@@ -132,7 +132,7 @@ export async function calculateTruckUsageData(
     getTruckNonTms({ startDate: startDateStr, endDate: endDateStr }),
   ]);
 
-  const vehicleTypes = masterTruckData?.vehicleTypes || [];
+  const activeTypes = masterTruckData?.activeTypes || [];
   const hubMasterData = masterTruckData?.masterData;
 
   const groupedByEmail = {};
@@ -180,7 +180,7 @@ export async function calculateTruckUsageData(
     OTV: { Gabungan: [] },
   };
 
-  vehicleTypes.forEach((type) => {
+  activeTypes.forEach((type) => {
     masterVehicleList.Dry[type] = [];
     masterVehicleList.Frozen[type] = [];
   });
@@ -191,7 +191,7 @@ export async function calculateTruckUsageData(
   });
 
   activeDrivers.forEach((d) => {
-    const type = extractVehicleType(d.type, vehicleTypes);
+    const type = extractVehicleType(d.type, activeTypes);
     const firstTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
 
     let isFrozen = firstTag === 'Frozen';
@@ -239,7 +239,7 @@ export async function calculateTruckUsageData(
       routingNames: new Set(),
     };
 
-    vehicleTypes.forEach((type) => {
+    activeTypes.forEach((type) => {
       dateMap[dateStr].Dry[type] = 0;
       dateMap[dateStr].Dry[`${type}_details`] = [];
       dateMap[dateStr].Frozen[type] = 0;
@@ -487,7 +487,7 @@ export async function calculateTruckUsageData(
 
     usedVehiclesPerDay.forEach((dailyVehicles, dateKey) => {
       dailyVehicles.forEach((vh) => {
-        const type = extractVehicleType(vh.firstTag, vehicleTypes);
+        const type = extractVehicleType(vh.firstTag, activeTypes);
         const storage = vh.storageType;
         if (dateMap[dateKey][storage][type] !== undefined) {
           const detailsList = dateMap[dateKey][storage][`${type}_details`];
@@ -531,7 +531,7 @@ export async function calculateTruckUsageData(
           const prevHasTasks = taskPresence[prevDateKey];
 
           if (prevDm && prevDm.OTV > 0 && !prevHasTasks) {
-            vehicleTypes.forEach((type) => {
+            activeTypes.forEach((type) => {
               currDm.Dry[type] = prevDm.Dry[type];
               currDm.Frozen[type] = prevDm.Frozen[type];
               currDm.Dry[`${type}_details`] = [...prevDm.Dry[`${type}_details`]];
@@ -585,8 +585,8 @@ export async function calculateTruckUsageData(
     dk.routingNames = Array.from(dm.routingNames || []);
   });
 
-  const summaryData = calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleTypes);
-  return { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData, masterVehicleList };
+  const summaryData = calculateUsageSummary(dateMap, dateKeys, hubMasterData, activeTypes);
+  return { dateMap, dateKeys, activeTypes, hubMasterData, summaryData, masterVehicleList };
 }
 
 export async function generateTruckUsageSheet(
@@ -599,7 +599,7 @@ export async function generateTruckUsageSheet(
   taskData,
   masterTruckData
 ) {
-  const { dateMap, dateKeys, vehicleTypes, hubMasterData, summaryData } =
+  const { dateMap, dateKeys, activeTypes, hubMasterData, summaryData } =
     await calculateTruckUsageData(resultsData, startDateStr, endDateStr, taskData, masterTruckData);
 
   const monthName = formatLongDate(startDateStr, localeCode).split(' ').slice(1).join(' ');
@@ -637,7 +637,7 @@ export async function generateTruckUsageSheet(
   ]);
 
   const addSummarySection = (cat, isPercentage = false) => {
-    vehicleTypes.forEach((type) => {
+    activeTypes.forEach((type) => {
       const d = summaryData[cat].types[type];
       if (isPercentage) {
         excelData.push([type, d.PctTMS, d.PctManual, d.PctTVU]);
@@ -781,7 +781,7 @@ export async function generateTruckUsageSheet(
     };
 
     let rIdx = 2;
-    vehicleTypes.forEach((type, idx) =>
+    activeTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Dry' : '', type, 'Dry', rIdx++))
     );
     tableRows.push(
@@ -791,7 +791,7 @@ export async function generateTruckUsageSheet(
       createRow(translate('summary.tabs.truck_usage.total_used'), '', 'DryTotal', rIdx++)
     );
 
-    vehicleTypes.forEach((type, idx) =>
+    activeTypes.forEach((type, idx) =>
       tableRows.push(createRow(idx === 0 ? 'Frozen' : '', type, 'Frozen', rIdx++))
     );
     tableRows.push(
@@ -805,7 +805,7 @@ export async function generateTruckUsageSheet(
     const H1 = startRowIndex;
     const H2 = startRowIndex + 1;
     let colIdx = 3;
-    const totalRows = vehicleTypes.length * 2 + 5;
+    const totalRows = activeTypes.length * 2 + 5;
     dateKeys.forEach((d) => {
       merges.push({ s: { r: H1, c: colIdx }, e: { r: H1, c: colIdx + 2 } });
       const isHoliday = d.isSunday || d.isDynamicHoliday;
@@ -820,10 +820,10 @@ export async function generateTruckUsageSheet(
     merges.push({ s: { r: H1, c: 2 }, e: { r: H2, c: 2 } });
 
     const dryStart = startRowIndex + 2;
-    const dryInter = dryStart + vehicleTypes.length;
+    const dryInter = dryStart + activeTypes.length;
     const dryTot = dryInter + 1;
     const frzStart = dryTot + 1;
-    const frzInter = frzStart + vehicleTypes.length;
+    const frzInter = frzStart + activeTypes.length;
     const frzTot = frzInter + 1;
     const otvRow = frzTot + 1;
 
@@ -880,11 +880,11 @@ export async function generateTruckUsageSheet(
   ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: table1StartRow + 2 }];
 
   const range = XLSX.utils.decode_range(ws['!ref']);
-  const tableHeight = 2 + vehicleTypes.length + 1 + 1 + vehicleTypes.length + 1 + 1 + 1;
-  const sumDryEnd = 2 + vehicleTypes.length;
+  const tableHeight = 2 + activeTypes.length + 1 + 1 + activeTypes.length + 1 + 1 + 1;
+  const sumDryEnd = 2 + activeTypes.length;
   const sumDryTot = sumDryEnd;
   const sumFrzStart = sumDryTot + 1;
-  const sumFrzEnd = sumFrzStart + vehicleTypes.length;
+  const sumFrzEnd = sumFrzStart + activeTypes.length;
   const sumFrzTot = sumFrzEnd;
   const sumOTV = sumFrzTot + 1;
 
@@ -967,10 +967,10 @@ export async function generateTruckUsageSheet(
       if (relR !== -1) {
         const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2.rowMasterTotals;
         const startDry = 2;
-        const dryInter = startDry + vehicleTypes.length;
+        const dryInter = startDry + activeTypes.length;
         const dryTot = dryInter + 1;
         const frzStart = dryTot + 1;
-        const frzInter = frzStart + vehicleTypes.length;
+        const frzInter = frzStart + activeTypes.length;
         const frzTot = frzInter + 1;
         const otvRow = frzTot + 1;
 

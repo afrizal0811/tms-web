@@ -68,7 +68,7 @@ export default function SettingPage() {
         drivers: latestDriverSync,
       });
 
-      setVehicleTypes(vTypes);
+      setVehicleTypes(vTypes.allTypes);
       setReasons(reasonsDb || []);
     } catch (e) {
       toastError(t('common.toast.error', { err: e.message }), e);

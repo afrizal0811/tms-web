@@ -360,7 +360,6 @@ export default function Dashboard({ driverData }) {
       hideLabel: false,
       component: (
         <VehicleTypeFilter
-          data={driverData}
           disabled={isLoadingSelected}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}

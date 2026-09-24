@@ -12,7 +12,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
     setLocalData(data);
   }, [data]);
 
-  const { summaryData, vehicleTypes, dateMap, dateKeys, hubMasterData, masterVehicleList } =
+  const { summaryData, activeTypes, dateMap, dateKeys, hubMasterData, masterVehicleList } =
     localData || {};
 
   const handleCellClick = (cellData) => {
@@ -46,7 +46,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
 
     newDateMap[updatedCell.date] = dayData;
 
-    const newSummary = calculateUsageSummary(newDateMap, dateKeys, hubMasterData, vehicleTypes);
+    const newSummary = calculateUsageSummary(newDateMap, dateKeys, hubMasterData, activeTypes);
 
     setLocalData({
       ...localData,
@@ -61,12 +61,12 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
     {
       title: 'summary.tabs.truck_usage.subtitle_1',
       Component: TruckUsageSummaryTable,
-      props: { summaryData, vehicleTypes, isPercentage: false },
+      props: { summaryData, activeTypes, isPercentage: false },
     },
     {
       title: 'summary.tabs.truck_usage.subtitle_2',
       Component: TruckUsageSummaryTable,
-      props: { summaryData, vehicleTypes, isPercentage: true },
+      props: { summaryData, activeTypes, isPercentage: true },
     },
     {
       title: 'summary.tabs.truck_usage.subtitle_3',
@@ -96,7 +96,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
         hubId={hubId}
         onSuccess={handleModalSuccess}
         driverData={driverData}
-        vehicleTypes={vehicleTypes}
+        vehicleTypes={activeTypes}
         translate={translate}
         localeCode={localeCode}
         masterVehicleList={masterVehicleList}

@@ -107,9 +107,9 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
 };
 
 const fetchVehicleMetadata = async () => {
-  const vehicleTypesObj = await getVehicleTypes();
-  const vehicleTypes = vehicleTypesObj.map((v) => v.name);
-  return { vehicleTypes };
+  const vehicleTypes = await getVehicleTypes();
+  const allVehicleTypes = vehicleTypes.allTypes;
+  return { allVehicleTypes };
 };
 
 export const handleSingleDownload = async ({
@@ -154,19 +154,20 @@ export const handleSingleDownload = async ({
     }
 
     const { storedLocationAcronym } = getLocalStorage();
-    const [filteredResults, hubsData, locationHistoriesRes, { vehicleTypes }] = await Promise.all([
-      getResults({
-        dateFrom: `${targetRoutingStr} 00:00:00`,
-        dateTo: `${targetRoutingStr} 23:59:59`,
-        hubId: hubId,
-      }),
-      getCachedHubs(),
-      getLocationHistories({
-        timeFrom: timeFromHistories,
-        timeTo: timeToHistories,
-      }),
-      fetchVehicleMetadata(),
-    ]);
+    const [filteredResults, hubsData, locationHistoriesRes, { allVehicleTypes }] =
+      await Promise.all([
+        getResults({
+          dateFrom: `${targetRoutingStr} 00:00:00`,
+          dateTo: `${targetRoutingStr} 23:59:59`,
+          hubId: hubId,
+        }),
+        getCachedHubs(),
+        getLocationHistories({
+          timeFrom: timeFromHistories,
+          timeTo: timeToHistories,
+        }),
+        fetchVehicleMetadata(),
+      ]);
 
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
       return item.startTime?.startsWith(selectedDateString);
@@ -188,7 +189,7 @@ export const handleSingleDownload = async ({
       filteredResults,
       allTasks,
       timeData: timeDataObjects,
-      vehicleTypes,
+      allVehicleTypes,
       targetRoutingStr,
       selectedDateString,
       hubLabel,
@@ -206,7 +207,7 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
-  let vehicleTypes = [];
+  let allVehicleTypes = [];
   let hubsMap = {};
   try {
     setIsLoading(true);
@@ -214,7 +215,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
       fetchVehicleMetadata(),
       getCachedHubs(),
     ]);
-    vehicleTypes = vTypes;
+    allVehicleTypes = vTypes;
     hubsMap = hubsDB.reduce((acc, curr) => {
       acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
       return acc;
@@ -285,7 +286,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
           filteredResults,
           allTasks,
           timeData: timeDataObjects,
-          vehicleTypes,
+          allVehicleTypes,
           targetRoutingStr,
           selectedDateString: dateForFile,
           hubLabel: hubName,
