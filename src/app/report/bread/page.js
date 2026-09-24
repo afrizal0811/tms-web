@@ -1,6 +1,5 @@
 'use client';
 
-import AppLayout from '@/components/page/AppLayout';
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
