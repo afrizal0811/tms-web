@@ -74,12 +74,10 @@ export function generateSheetDataRouting(g2) {
   const seenInput = new Set();
 
   (g2.detailRows || []).forEach((row) => {
-    const manualTotal =
-      (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
     const spentTimeHHMM = !row.isNoRoutingData
-      ? `${Math.floor(manualTotal / 60)}:${String(manualTotal % 60).padStart(2, '0')}`
+      ? `${Math.floor(row.spent / 60)}:${String(row.spent % 60).padStart(2, '0')}`
       : '';
-    const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${manualTotal}|${spentTimeHHMM}`;
+    const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${row.spent}|${spentTimeHHMM}`;
     if (!seenInput.has(key)) {
       seenInput.add(key);
       uniqueInputRows.push(row);
@@ -100,14 +98,12 @@ export function generateSheetDataRouting(g2) {
       basePlateToOriginalPlates[basePlate].add(vPlat);
     }
 
-    if (row.isNoRoutingData) return { ...row, manualTotal: '' };
+    if (row.isNoRoutingData) return row;
 
-    const manualTotal =
-      (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
-    if (row.category === 'DRY') recalcTotalDry += manualTotal;
-    else if (row.category === 'FROZEN') recalcTotalFrz += manualTotal;
+    if (row.category === 'DRY') recalcTotalDry += row.spent;
+    else if (row.category === 'FROZEN') recalcTotalFrz += row.spent;
 
-    return { ...row, manualTotal };
+    return row;
   });
 
   const statsDry = formatTimeStats(recalcTotalDry);
@@ -159,33 +155,33 @@ export function generateSheetDataRouting(g2) {
         driverStyle = styleLeftDuplicate;
       }
 
-      const spentH = typeof row.manualTotal === 'number' ? Math.round(row.manualTotal / 60) : '';
+      const spentH = typeof row.spent === 'number' ? Math.round(row.spent / 60) : '';
 
       currentRow = [
         { v: row.routing, s: rowStyle },
         { v: getBasePlate(row.plat), s: rowStyle },
         { v: row.driver, s: driverStyle },
         {
-          v: row.isVisitMissing && !isMissingRow ? '' : row.visit,
-          s: row.isVisitMissing && !isMissingRow ? styleError : rowStyle,
+          v: row.visit,
+          s: rowStyle,
         },
         {
-          v: row.isTravelMissing && !isMissingRow ? '' : row.travel,
-          s: row.isTravelMissing && !isMissingRow ? styleError : rowStyle,
+          v: row.travel,
+          s: rowStyle,
         },
         {
-          v: row.isWaitMissing && !isMissingRow ? '' : row.wait,
-          s: row.isWaitMissing && !isMissingRow ? styleError : rowStyle,
+          v: row.wait,
+          s: rowStyle,
         },
         {
-          v: isMissingRow ? '' : row.manualTotal,
+          v: isMissingRow ? '' : row.spent,
           s: rowStyle,
           ...(isMissingRow ? {} : { t: 'n' }),
         },
         {
           v:
             !isMissingRow && spentH !== ''
-              ? `${Math.floor(row.manualTotal / 60)}:${String(row.manualTotal % 60).padStart(2, '0')}`
+              ? `${Math.floor(row.spent / 60)}:${String(row.spent % 60).padStart(2, '0')}`
               : '',
           s: rowStyle,
         },

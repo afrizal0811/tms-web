@@ -1,11 +1,5 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { normalizeEmail, parseCustomerString, standardizeSo } from '@/lib/utils';
-
-export const getDriverName = (route, driverData) => {
-  if (!route) return '';
-  const email = normalizeEmail(route.assignee);
-  return driverData?.[email]?.name || '-';
-};
+import { parseCustomerString, standardizeSo } from '@/lib/utils';
 
 export const isTripRedelivery = (trip) => {
   const flowLower = (trip.flow || '').toLowerCase();
@@ -114,5 +108,3 @@ export const resolveDedupedTrip = (rawTrip, enrichedTripsMap, vehicleSeenSOs) =>
   }
   return { ...trip, orderId: newSOs.join(', '), orderIdOverride: newSOs.join(', ') };
 };
-
-export const sanitizeName = (name) => name.replace(/[\\/:*?\[\]]/g, '');

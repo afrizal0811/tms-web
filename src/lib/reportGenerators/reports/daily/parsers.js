@@ -34,7 +34,7 @@ export function parseRoutingData(
   allTasks,
   selectedDateString
 ) {
-  const { emailMap, platMap } = buildDriverMaps(driverData);
+  const { emailMap } = buildDriverMaps(driverData);
   const routingMap = new Map();
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
@@ -42,6 +42,7 @@ export function parseRoutingData(
 
   driverData.forEach((d) => {
     let cat = d?.type ? String(d.type).toUpperCase() : undefined;
+    console.log('vehicleTypes :', vehicleTypes);
     if (!cat || !vehicleTypes.includes(cat)) {
       let tCat = d?.type || '';
       if (tCat) {
@@ -78,26 +79,19 @@ export function parseRoutingData(
   filteredResults.forEach((resultItem) => {
     if (!resultItem.result || !Array.isArray(resultItem.result.routing)) return;
     resultItem.result.routing.forEach((route) => {
-      const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
-      const vehiclePlatNorm = route.vehicleName
-        ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
-        : '';
-      const driverInfo = emailMap.get(assigneeEmail) || platMap.get(vehiclePlatNorm);
-      const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
-
+      const driverName = route.driverName || '';
       if (!driverName) return;
 
-      const rawPlat = getTaskPlat(route) || driverInfo?.plat || '';
-      const basePlat = getBasePlate(rawPlat) || rawPlat;
+      const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
+      const driverInfo = emailMap.get(assigneeEmail);
+
+      const rawPlat = route.vehicleName || '-';
+      const basePlat = route.basePlat || getBasePlate(rawPlat) || rawPlat;
       const groupKey = `${driverName}_${basePlat}`;
       const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
 
       let etdHubVal = '-';
       let etaFirstStoreVal = '-';
-      let manualDistance = 0,
-        manualTravelTime = 0,
-        manualVisitTime = 0,
-        manualWaitTime = 0;
 
       if (hasTrips) {
         const hubTrip = route.trips.find((t) => t.isHub);
@@ -112,28 +106,14 @@ export function parseRoutingData(
             `${selectedDateString} ${firstStore.eta}`,
             'HH:mm'
           );
-
-        const hubTrips = route.trips.filter((t) => t.isHub);
-        const maxHubWaitTime = hubTrips.length
-          ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
-          : 0;
-        manualWaitTime += maxHubWaitTime;
-
-        route.trips.forEach((t) => {
-          if (!t.isHub) {
-            manualVisitTime += t.visitTime || 0;
-            manualWaitTime += t.waitingTime || 0;
-          }
-          manualDistance += Number(t.distance) || 0;
-          manualTravelTime += Number(t.travelTime) || 0;
-        });
       }
 
-      const fDist = manualDistance || route.totalDistance || 0;
-      const fSpent =
-        manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
+      const fDist = Number(route.totalDistance) || 0;
+      const fSpent = Number(route.totalSpentTime) || 0;
 
       const row = {
+        driver: driverName,
+        plat: rawPlat,
         driver: driverName,
         plat: rawPlat || driverInfo?.plat || '-',
         hasTrips,
@@ -267,12 +247,6 @@ export function parseDeliveryData(
   hasPendingGR,
   selectedDateString
 ) {
-  const emailToDriverMap = driverData.reduce((acc, d) => {
-    const e = normalizeEmail(d.email);
-    if (e) acc[e] = { plat: d.plat || null, name: d.name };
-    return acc;
-  }, {});
-
   const hubTimesMap = new Map();
   if (resultsData) {
     resultsData
@@ -280,10 +254,8 @@ export function parseDeliveryData(
       .forEach((res) => {
         if (Array.isArray(res.result?.routing)) {
           res.result.routing.forEach((r) => {
-            const dName = emailToDriverMap[normalizeEmail(r.assignee)]?.name || r.assignee || 'N/A';
-            const routePlat =
-              getTaskPlat(r) || emailToDriverMap[normalizeEmail(r.assignee)]?.plat || '';
-            const routeBasePlat = getBasePlate(routePlat) || routePlat;
+            const dName = r.driverName || 'N/A';
+            const routeBasePlat = r.basePlat || r.vehicleName || '';
             const hubTrips = (r.trips || []).filter((t) => t.isHub);
             if (hubTrips.length > 0) {
               const timesObj = {

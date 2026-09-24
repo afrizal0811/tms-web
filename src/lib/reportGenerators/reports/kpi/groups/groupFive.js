@@ -27,7 +27,6 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
 
   const startFinishRows = [];
   const routeReviewRows = [];
-  let totalAllMinutes = 0;
 
   if (Array.isArray(driverData)) {
     driverData.forEach((driver) => {
@@ -101,9 +100,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
         if (matchingG2.length > 0) {
           hasRouting = true;
           matchingG2.forEach((g) => {
-            const manualTotal =
-              (Number(g.visit) || 0) + (Number(g.travel) || 0) + (Number(g.wait) || 0);
-            if (manualTotal > 0) totalEstHours += Math.floor(manualTotal / 60);
+            if (g.spent > 0) totalEstHours += Math.floor(g.spent / 60);
           });
         }
       }

@@ -404,29 +404,18 @@ export default function useSummaryData() {
           if (validTrips.length === 0) return;
 
           const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-          const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
-
-          const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+          const strictBasePlate = route.basePlat || route.vehicleName || '';
           const baseCanonical =
             strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
 
           const foundDriver =
             fetchedDrivers.find((d) => (d.email || '').toLowerCase() === rawEmail) ||
-            fetchedDrivers.find((d) => {
-              const driverClean = (d.plat || '')
-                .replace(/\s*\([^)]*\)/g, '')
-                .replace(/\s+/g, '')
-                .toLowerCase();
-              return driverClean === baseCanonical;
-            }) ||
-            fetchedDrivers.find((d) => cleanPlat(d.plat) === cleanPlat(rawPlate));
+            fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
 
           const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
-          const driverName = foundDriver ? foundDriver.name : route.assignee || '-';
+          const driverName = route.driverName || (foundDriver ? foundDriver.name : route.assignee || '-');
 
-          const finalPlate = foundDriver
-            ? (foundDriver.plat || '').replace(/\s*\([^)]*\)/g, '').trim()
-            : strictBasePlate;
+          const finalPlate = strictBasePlate;
           const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
 
           if (tempMetrics[dateKey] && tempMetrics[dateKey][type]) {
@@ -692,7 +681,6 @@ export default function useSummaryData() {
         const rawResults = [];
         for (const range of routingRanges) {
           const res = await getResults({
-            hubId: selectedLocation,
             routingDateObj: new Date(range.from),
             deliveryDateObj: new Date(range.to),
           });

@@ -49,16 +49,15 @@ export default function Dashboard({ driverData }) {
 
   useEffect(() => {
     const fetchHubSettings = async () => {
-      if (!hubId || isEmpty(driverData)) return;
       try {
         const hubs = getCachedHubs();
-        const activeHub = hubs.find(
-          (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
-        );
+        const activeHub = hubs.activeHub;
         if (activeHub) {
           setHasPendingGR(activeHub.hasPendingGR || false);
         }
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error Hubs:', error);
+      }
     };
     fetchHubSettings();
   }, [hubId, driverData]);
@@ -148,14 +147,12 @@ export default function Dashboard({ driverData }) {
         getResults({
           routingDateObj: routingStart,
           deliveryDateObj: localStart,
-          hubId: hubId,
         }),
       ]);
 
       const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
-      const resultsArray = Array.isArray(resultsData) ? resultsData : resultsData?.data || [];
 
-      setRawData({ tasks: tasksArray, results: resultsArray });
+      setRawData({ tasks: tasksArray, results: resultsData });
     } catch (err) {
       toastError(t('common.toast.error', { err: err.message }), err);
     } finally {

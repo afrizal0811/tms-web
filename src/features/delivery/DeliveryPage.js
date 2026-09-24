@@ -39,7 +39,6 @@ import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
 import {
   driverTime,
-  getDriverName,
   handleFullDeliveryFormDownload,
   handleFullDeliveryListDownload,
   handleFullRouteTransDownload,
@@ -169,7 +168,6 @@ export default function DeliveryPage() {
       setIsDownloading,
       t,
       selectedDate,
-      driverData,
       timeMap,
       isDetailView,
       fileNamePrefix,
@@ -193,7 +191,6 @@ export default function DeliveryPage() {
       setIsDownloading,
       t,
       selectedDate,
-      driverData,
       timeMap,
       isDetailView,
       excludeSoList,
@@ -267,10 +264,8 @@ export default function DeliveryPage() {
       setAllRoutes([]);
       setActiveVehicleId(null);
       setTimeMap(new Map());
-
+      const { storedLocation } = getLocalStorage();
       try {
-        const { storedLocation } = getLocalStorage();
-
         let currentHubs = hubsData;
         if (currentHubs.length === 0) {
           currentHubs = await getHubs();
@@ -308,7 +303,6 @@ export default function DeliveryPage() {
 
         const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResults({
-            hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,
             hasPartialRouting: currentHasPartialRouting,
@@ -326,7 +320,7 @@ export default function DeliveryPage() {
         ]);
 
         setTasksData(tasksResponse);
-        setRoutingResults(resultsData || []);
+        setRoutingResults(resultsData);
         const filteredTasks = (Array.isArray(tasksResponse) ? tasksResponse : []).filter(
           (t) => Array.isArray(t?.assignee) && t.assignee.length > 0
         );
@@ -402,11 +396,10 @@ export default function DeliveryPage() {
         }, {});
 
         const resultHubsByPlat = new Map();
-        (resultsData || [])
-          .filter((i) => i.dispatchStatus === 'done' && i.result?.routing)
+        resultsData
           .flatMap((i) => i.result.routing)
           .forEach((route) => {
-            const plat = getBasePlate(route.vehicleName);
+            const plat = route.basePlat;
             const email = normalizeEmail(route.assignee);
             const hubs = (route.trips || []).filter((t) => t.isHub);
             if (hubs.length > 0) {
@@ -416,8 +409,6 @@ export default function DeliveryPage() {
                 middleHubs: hubs.length > 2 ? hubs.slice(1, hubs.length - 1) : [],
               };
               if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
-              if (plat) resultHubsByPlat.set(plat, hubObj);
-              if (email) resultHubsByPlat.set(email, hubObj);
             }
           });
 
@@ -490,6 +481,8 @@ export default function DeliveryPage() {
               vehicleName: plat,
               assignee: email,
               assigneeName,
+              driverName: assigneeName,
+              basePlat: plat,
               trips: finalTrips,
             };
           }
@@ -625,7 +618,7 @@ export default function DeliveryPage() {
       const lower = searchQuery.toLowerCase();
       routes = routes
         .map((r) => {
-          const dName = (getDriverName(r, driverData) || '').toLowerCase();
+          const dName = (r.driverName || '').toLowerCase();
           if (
             dName.includes(lower) ||
             (r.vehicleName || '').toLowerCase().includes(lower) ||
@@ -647,7 +640,7 @@ export default function DeliveryPage() {
       if (storageFilter.length === 0) return false;
       let keep = true;
       if (storageFilter.length === 1) {
-        const dName = getDriverName(route, driverData);
+        const dName = route.driverName;
         keep =
           (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
           (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
@@ -860,7 +853,7 @@ export default function DeliveryPage() {
   ];
 
   const tabData = filteredVehicleRoutes.map((r) => {
-    const dName = getDriverName(r, driverData);
+    const dName = r.driverName || '-';
     const isManual = r.hasManual;
     const hasMT = r.trips?.some((t) => t.isMiddleHub);
     const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
@@ -872,7 +865,7 @@ export default function DeliveryPage() {
           <span
             className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
           >
-            {r.vehicleName}{' '}
+            {r.basePlat || r.vehicleName}{' '}
             {hasMT && (
               <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
             )}

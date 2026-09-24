@@ -20,7 +20,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
   const emailFallbackMap = new Map();
   for (const d of drivers) {
     const normEmail = normalizeEmail(d.email);
-    const bPlat = getBasePlate(d.plat) || d.plat || '';
+    const bPlat = d.basePlat || '';
     if (normEmail) {
       emailFallbackMap.set(normEmail, { plat: d.plat || null, name: d.name });
       if (bPlat)
@@ -151,27 +151,18 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   const hubTimesMap = new Map();
   const hubTimesFallbackMap = new Map();
   if (results) {
-    const emailToDriverMap = drivers.reduce((acc, d) => {
-      const norm = normalizeEmail(d.email);
-      if (norm) acc[norm] = { plat: d.plat || null, name: d.name };
-      return acc;
-    }, {});
-
     const filteredResults = results.filter((item) => item.dispatchStatus === 'done');
     for (const result of filteredResults) {
       if (result.result && Array.isArray(result.result.routing)) {
         for (const route of result.result.routing) {
-          const driverEmail = normalizeEmail(route.assignee);
-          const driverInfo = driverEmail ? emailToDriverMap[driverEmail] : null;
-          const driverName = driverInfo ? driverInfo.name : driverEmail || 'N/A';
+          const driverName = route.driverName || 'N/A';
           if (!driverName || !Array.isArray(route.trips) || isEmpty(route.trips)) continue;
 
           const hubTrips = route.trips.filter((trip) => trip.isHub === true);
           if (hubTrips.length > 0) {
             const firstHub = hubTrips[0];
             const lastHub = hubTrips[hubTrips.length - 1];
-            const routePlat = route.vehicleName || driverInfo?.plat || '';
-            const routeBasePlat = getBasePlate(routePlat) || routePlat;
+            const routeBasePlat = route.basePlat || route.vehicleName || '';
             const middleHubs = hubTrips.length > 2 ? hubTrips.slice(1, hubTrips.length - 1) : [];
             const timesObj = {
               hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',

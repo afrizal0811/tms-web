@@ -147,28 +147,8 @@ export function calculateTruckDetailData(
             }
             const entry = dataMatrix[dateKey][email];
 
-            let manualTravel = 0,
-              manualVisit = 0,
-              manualWait = 0,
-              manualDistance = 0;
-            if (Array.isArray(route.trips)) {
-              const hubTrips = route.trips.filter((t) => t.isHub);
-              manualWait = hubTrips.length
-                ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
-                : 0;
-
-              route.trips.forEach((trip) => {
-                if (!trip.isHub) {
-                  manualVisit += trip.visitTime || 0;
-                  manualWait += trip.waitingTime || 0;
-                }
-                manualTravel += trip.travelTime || 0;
-                manualDistance += Number(trip.distance) || 0;
-              });
-            }
-            const manualSum = manualTravel + manualVisit + manualWait;
-            let durationVal = manualSum || Number(route.totalSpentTime) || 0;
-            let distVal = manualDistance || Number(route.totalDistance) || 0;
+            const durationVal = Number(route.totalSpentTime) || 0;
+            const distVal = Number(route.totalDistance) || 0;
 
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
             entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);

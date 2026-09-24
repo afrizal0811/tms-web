@@ -103,7 +103,6 @@ const processSingleKpiDate = async (
     getResults({
       routingDateObj: targetRoutingDateObj,
       deliveryDateObj: validDeliveryDate,
-      hubId: hubId,
     }),
     getLocationHistories({
       timeFrom: histFrom,
@@ -272,7 +271,6 @@ async function parseTaskFiles(files) {
 const executeManualKpiDownload = async ({
   routingFiles,
   taskFiles,
-  hubId,
   hubAcronym,
   drivers,
 }) => {
@@ -400,7 +398,6 @@ export const handleBulkDownload = async ({
 };
 
 export const handleManualDownload = async ({
-  hubId,
   hubAcronym,
   selectedRoutingFiles,
   selectedDeliveryFiles,
@@ -416,7 +413,6 @@ export const handleManualDownload = async ({
     await executeManualKpiDownload({
       routingFiles: selectedRoutingFiles,
       taskFiles: selectedDeliveryFiles,
-      hubId,
       hubAcronym,
       drivers: driverData,
       s,

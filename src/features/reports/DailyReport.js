@@ -62,7 +62,6 @@ export default function DailyReport({
 
   const triggerManualDownload = () =>
     handleManualDownload({
-      hubId,
       hubName,
       selectedDate,
       selectedDateString,

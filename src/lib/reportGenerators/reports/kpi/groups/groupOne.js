@@ -15,10 +15,9 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
           if (tripsCount === 0) return;
 
-          const email = normalizeEmail(route.assignee);
-          const driverName = driverMap[email] || '';
+          const driverName = route.driverName || '';
           const category = getStorageType(driverName).toUpperCase();
-          const truckId = route.assignee || route.vehicleName || route.vehicleId || '-';
+          const truckId = route.basePlat || route.vehicleName || '-';
 
           if (truckId) {
             if (category === 'DRY') {

@@ -304,25 +304,21 @@ export async function calculateTruckUsageData(
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
         const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-        const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
-        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        const basePlateClean = getBasePlate(strictBasePlate) || strictBasePlate;
+        const strictBasePlate = route.basePlat || route.vehicleName || '';
+        const basePlateClean = strictBasePlate;
 
         let driverInfo = null;
-        if (rawPlate) {
+        if (strictBasePlate) {
           driverInfo =
             findDriverInfoByPlate(masterDriversDB, normalizePlate(strictBasePlate)) ||
-            findDriverInfoByPlate(masterDriversDB, normalizePlate(basePlateClean)) ||
-            findDriverInfoByPlate(allDriversDB, normalizePlate(strictBasePlate)) ||
-            findDriverInfoByPlate(allDriversDB, normalizePlate(basePlateClean));
+            findDriverInfoByPlate(allDriversDB, normalizePlate(strictBasePlate));
         }
         if (!driverInfo && rawEmail) {
           driverInfo = driverMapHash.get(rawEmail);
         }
 
-        const finalDriverPlat = driverInfo?.plat ? getBasePlate(driverInfo.plat) : basePlateClean;
         const canonicalPlate =
-          normalizePlate(finalDriverPlat) || rawEmail || `unknown-route-${Math.random()}`;
+          normalizePlate(basePlateClean) || rawEmail || `unknown-route-${Math.random()}`;
 
         const firstTag = driverInfo?.masterTag || '';
         let isFrozen = false;
@@ -340,8 +336,8 @@ export async function calculateTruckUsageData(
           dailyVehicles.set(canonicalPlate, {
             storageType: isFrozen ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || firstTag,
-            plate: strictBasePlate || driverInfo?.plat || '-',
-            driverName: driverInfo?.name || rawEmail || '-',
+            plate: strictBasePlate || '-',
+            driverName: route.driverName || driverInfo?.name || rawEmail || '-',
           });
         }
       });

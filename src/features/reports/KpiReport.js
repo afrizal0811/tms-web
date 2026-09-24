@@ -64,7 +64,6 @@ export default function KpiReport({
 
   const triggerManualDownload = () =>
     handleManualDownload({
-      hubId,
       hubAcronym,
       selectedDate,
       isCustomRouting,

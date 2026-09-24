@@ -21,8 +21,6 @@ import {
 import * as XLSX from 'xlsx-js-style';
 import { bulkZipDownloader, getPreviousRoutingDate } from './help';
 
-const parseDate = (dateStr) => new Date(dateStr.replace(/-/g, '/'));
-
 const detectRoutingDateFromTasks = (allTasks, fallbackBaseDate) => {
   const dates = [];
   allTasks.forEach((task) => {
@@ -48,11 +46,6 @@ const detectRoutingDateFromTasks = (allTasks, fallbackBaseDate) => {
   }
 
   return formatDateUniversal(getPreviousRoutingDate(fallbackBaseDate));
-};
-
-const getHasPendingGR = (hubsData, hubId) => {
-  const activeHub = (hubsData || []).find((h) => String(h._id || h.id) === String(hubId));
-  return activeHub ? activeHub.hasPendingGR : false;
 };
 
 export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
@@ -102,6 +95,7 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
 
     return majorityDate;
   } catch (e) {
+    console.error(e);
     return fallbackDate;
   }
 };
@@ -109,7 +103,7 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
 const fetchVehicleMetadata = async () => {
   const vehicleTypes = await getVehicleTypes();
   const allVehicleTypes = vehicleTypes.allTypes;
-  return { allVehicleTypes };
+  return allVehicleTypes;
 };
 
 export const handleSingleDownload = async ({
@@ -154,20 +148,18 @@ export const handleSingleDownload = async ({
     }
 
     const { storedLocationAcronym } = getLocalStorage();
-    const [filteredResults, hubsData, locationHistoriesRes, { allVehicleTypes }] =
-      await Promise.all([
-        getResults({
-          dateFrom: `${targetRoutingStr} 00:00:00`,
-          dateTo: `${targetRoutingStr} 23:59:59`,
-          hubId: hubId,
-        }),
-        getCachedHubs(),
-        getLocationHistories({
-          timeFrom: timeFromHistories,
-          timeTo: timeToHistories,
-        }),
-        fetchVehicleMetadata(),
-      ]);
+    const [filteredResults, hubsData, locationHistoriesRes, allVehicleTypes] = await Promise.all([
+      getResults({
+        dateFrom: `${targetRoutingStr} 00:00:00`,
+        dateTo: `${targetRoutingStr} 23:59:59`,
+      }),
+      getCachedHubs(),
+      getLocationHistories({
+        timeFrom: timeFromHistories,
+        timeTo: timeToHistories,
+      }),
+      fetchVehicleMetadata(),
+    ]);
 
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
       return item.startTime?.startsWith(selectedDateString);
@@ -181,7 +173,7 @@ export const handleSingleDownload = async ({
       throw new Error(t('common.no_data'));
     }
 
-    const hasPendingGR = getHasPendingGR(hubsData, hubId);
+    const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
     const hubLabel = storedLocationAcronym || hubName;
 
     const { wb, excelFileName } = await generateAutoReportWorkbook({
@@ -189,7 +181,7 @@ export const handleSingleDownload = async ({
       filteredResults,
       allTasks,
       timeData: timeDataObjects,
-      allVehicleTypes,
+      vehicleTypes: allVehicleTypes,
       targetRoutingStr,
       selectedDateString,
       hubLabel,
@@ -207,16 +199,13 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
-  let allVehicleTypes = [];
   let hubsMap = {};
+  let vehicleTypes = [];
   try {
     setIsLoading(true);
-    const [{ vehicleTypes: vTypes }, hubsDB] = await Promise.all([
-      fetchVehicleMetadata(),
-      getCachedHubs(),
-    ]);
-    allVehicleTypes = vTypes;
-    hubsMap = hubsDB.reduce((acc, curr) => {
+    const [allVehicleTypes, hubsDB] = await Promise.all([fetchVehicleMetadata(), getCachedHubs()]);
+    vehicleTypes = allVehicleTypes;
+    hubsMap = hubsDB.allHub.reduce((acc, curr) => {
       acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
       return acc;
     }, {});
@@ -235,7 +224,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
     zipPrefix: `${t('report.daily_report')} (${t('common.bulk')})`,
     setIsLoading,
     processDateCallback: async ({ dateForFile, hubId, hubName }) => {
-      const deliveryDateObj = parseDate(dateForFile);
+      const deliveryDateObj = formatDateUniversal(dateForFile);
       const startD = new Date(deliveryDateObj);
       startD.setHours(0, 0, 0, 0);
       const endD = new Date(deliveryDateObj);
@@ -258,7 +247,6 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
       const summaryPayload = {
         dateFrom: `${targetRoutingStr} 00:00:00`,
         dateTo: `${targetRoutingStr} 23:59:59`,
-        hubId,
       };
 
       const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
@@ -286,7 +274,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
           filteredResults,
           allTasks,
           timeData: timeDataObjects,
-          allVehicleTypes,
+          vehicleTypes,
           targetRoutingStr,
           selectedDateString: dateForFile,
           hubLabel: hubName,
@@ -301,7 +289,6 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
 };
 
 export const handleManualDownload = async ({
-  hubId,
   hubName,
   selectedDate,
   selectedDateString,
@@ -356,7 +343,7 @@ export const handleManualDownload = async ({
       return item.startTime?.startsWith(extractedStartDate);
     });
     const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
-    const hasPendingGR = getHasPendingGR(hubsData, hubId);
+    const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
     const { wb, excelFileName } = await generateManualReportWorkbook({
       routingBuffers,
       deliveryBuffers,

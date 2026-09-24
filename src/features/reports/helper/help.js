@@ -85,6 +85,7 @@ export const bulkZipDownloader = async ({
 
         skippedDates.push(dateForFile);
       } catch (err) {
+        console.error(err);
         skippedDates.push(dateForFile);
       }
     }

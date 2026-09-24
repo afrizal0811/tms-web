@@ -16,7 +16,6 @@ import {
   isTripRedelivery,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
-  sanitizeName,
 } from './shared';
 
 const buildSegments = (trips, isSplitMultitrip) => {
@@ -172,7 +171,7 @@ export const handleFullRouteTransDownload = async ({
     let lastFileName = '';
 
     for (const route of filteredVehicleRoutes) {
-      const cleanName = sanitizeName(route.vehicleName || 'Vehicle');
+      const plat = route.basePlat;
       const seenSO = new Set();
       const segments = buildSegments(route.trips, isSplitMultitrip);
       const generatedSegments = [];
@@ -204,7 +203,7 @@ export const handleFullRouteTransDownload = async ({
 
       generatedSegments.forEach((processedRows, idx) => {
         const isMulti = generatedSegments.length > 1;
-        const baseName = isMulti ? `${cleanName} - ${idx + 1}` : cleanName;
+        const baseName = isMulti ? `${plat} - ${idx + 1}` : plat;
         const nameFile = isMulti
           ? `${baseName}.xlsx`
           : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);
@@ -216,7 +215,7 @@ export const handleFullRouteTransDownload = async ({
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
         if (isMulti && filteredVehicleRoutes.length > 1) {
-          zip.folder(`${cleanName} - ${dateForFilename}`).file(nameFile, excelBuffer);
+          zip.folder(`${plat} - ${dateForFilename}`).file(nameFile, excelBuffer);
         } else {
           zip.file(nameFile, excelBuffer);
         }
@@ -231,7 +230,7 @@ export const handleFullRouteTransDownload = async ({
       const content = await zip.generateAsync({ type: 'blob' });
       let zipName = `Route Transaction - ${dateForFilename} - ${locationName}.zip`;
       if (filteredVehicleRoutes.length === 1) {
-        const singleName = sanitizeName(filteredVehicleRoutes[0].vehicleName || 'Vehicle');
+        const singleName = filteredVehicleRoutes[0].basePlat;
         zipName = `${singleName} - ${dateForFilename}.zip`;
       }
       triggerDownload(content, zipName);
@@ -278,7 +277,7 @@ export const handlePartialRouteTransDownload = async ({
       const routes = routing.result?.routing || [];
       if (routes.length === 0) continue;
 
-      const cleanRoutingName = sanitizeName(routing.name || routing._id || 'Routing');
+      const cleanRoutingName = routing.name;
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
       routingIndex++;
 
@@ -287,12 +286,11 @@ export const handlePartialRouteTransDownload = async ({
       const seenFileNames = new Set();
 
       for (const route of routes) {
-        const cleanName = sanitizeName(route.vehicleName || route.vehicleId || 'Vehicle');
-
-        if (!globalSeenSOByVehicle.has(cleanName)) {
-          globalSeenSOByVehicle.set(cleanName, new Set());
+        const plat = route.basePlat;
+        if (!globalSeenSOByVehicle.has(plat)) {
+          globalSeenSOByVehicle.set(plat, new Set());
         }
-        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(plat);
 
         const seenSO = new Set();
         const segments = buildSegments(route.trips, isSplitMultitrip);
@@ -338,7 +336,7 @@ export const handlePartialRouteTransDownload = async ({
 
         generatedSegments.forEach((processedRows, idx) => {
           const isMulti = generatedSegments.length > 1;
-          const baseName = isMulti ? `${cleanName} - ${idx + 1}` : cleanName;
+          const baseName = isMulti ? `${plat} - ${idx + 1}` : plat;
           const nameFile = isMulti
             ? `${baseName}.xlsx`
             : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);
@@ -349,7 +347,7 @@ export const handlePartialRouteTransDownload = async ({
           const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
           if (isMulti) {
-            routingZip.folder(`${cleanName} - ${dateForFilename}`).file(nameFile, excelBuffer);
+            routingZip.folder(`${plat} - ${dateForFilename}`).file(nameFile, excelBuffer);
           } else {
             routingZip.file(nameFile, excelBuffer);
           }

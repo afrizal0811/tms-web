@@ -50,14 +50,12 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g2 && Array.isArray(g2.detailRows)) {
     g2.detailRows.forEach((row) => {
       if (!row.isNoRoutingData) {
-        const manualTotal =
-          (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
-        const spentTimeHHMM = `${Math.floor(manualTotal / 60)}:${String(manualTotal % 60).padStart(2, '0')}`;
-        const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${manualTotal}|${spentTimeHHMM}`;
+        const spentTimeHHMM = `${Math.floor(row.spent / 60)}:${String(row.spent % 60).padStart(2, '0')}`;
+        const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${row.spent}|${spentTimeHHMM}`;
         if (!seenRouting.has(key)) {
           seenRouting.add(key);
-          if (row.category === 'DRY') totalMenitEstDry += manualTotal;
-          else if (row.category === 'FROZEN') totalMenitEstFrz += manualTotal;
+          if (row.category === 'DRY') totalMenitEstDry += row.spent;
+          else if (row.category === 'FROZEN') totalMenitEstFrz += row.spent;
         }
       }
     });
@@ -92,11 +90,9 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g2 && Array.isArray(g2.detailRows)) {
     g2.detailRows.forEach((row) => {
       if (!row.isNoRoutingData) {
-        const manualTotal =
-          (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
         g2Map.set(
           (row.driver || '').toUpperCase(),
-          manualTotal > 0 ? Math.round(manualTotal / 60) : 0
+          row.spent > 0 ? Math.round(row.spent / 60) : 0
         );
       }
     });
@@ -108,8 +104,6 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
       sfMap.set(`${r.driver}|${r.plat}`, r);
     });
   }
-
-  let exactTotalOvertime = 0;
 
   if (g5 && Array.isArray(g5.routeReviewRows)) {
     g5.routeReviewRows.forEach((row) => {

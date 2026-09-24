@@ -15,9 +15,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
       if (!g.isNoRoutingData) {
         const key = (g.driver || '').toUpperCase().trim();
         if (!g2Map.has(key)) g2Map.set(key, 0);
-        const manualTotal =
-          (Number(g.visit) || 0) + (Number(g.travel) || 0) + (Number(g.wait) || 0);
-        g2Map.set(key, g2Map.get(key) + manualTotal);
+        g2Map.set(key, g2Map.get(key) + (Number(g.spent) || 0));
       }
     });
   }
