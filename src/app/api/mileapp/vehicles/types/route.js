@@ -83,9 +83,14 @@ export async function GET(request) {
       activeTypesSet.add(resolvedType);
       const storageCategory = getStorageType(d.storage || d.type || '');
 
+      if (!masterData[storageCategory]) {
+        masterData[storageCategory] = { Total: 0 };
+      }
+
       if (masterData[storageCategory][resolvedType] === undefined) {
-        masterData.Dry[resolvedType] = 0;
-        masterData.Frozen[resolvedType] = 0;
+        Object.keys(masterData).forEach(key => {
+          masterData[key][resolvedType] = 0;
+        });
       }
 
       masterData[storageCategory][resolvedType]++;
@@ -97,11 +102,11 @@ export async function GET(request) {
 
     return NextResponse.json({ masterData, activeTypes, allTypes });
   } catch (error) {
-    console.error('Error calculate Master Truck Storage:', error);
+    console.error('Gagal memproses tipe kendaraan', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
-      { error: 'Gagal memproses perhitungan master truck', detail: errorMessage },
+      { error: 'Gagal memproses tipe kendaraan', detail: errorMessage },
       { status: 500 }
     );
   }
