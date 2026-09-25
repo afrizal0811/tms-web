@@ -25,7 +25,7 @@ export default function TaskCountReport() {
   useEffect(() => {
     const loadHubs = async () => {
       try {
-        let cached = getCachedHubs().allHub
+        let cached = getCachedHubs().allHub;
         setHubs(cached || []);
         setSelectedHubs((cached || []).map((h) => h._id));
       } catch (err) {
@@ -74,7 +74,6 @@ export default function TaskCountReport() {
 
     setIsLoading(true);
     try {
-      const hubIdsStr = selectedHubs.join(',');
       const chunks = [];
       let currentStart = new Date(calcStart);
       const finalEnd = new Date(calcEnd);
@@ -100,7 +99,6 @@ export default function TaskCountReport() {
 
         const response = await getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',
-          hubId: hubIdsStr,
           timeFrom,
           timeTo,
         });
@@ -135,6 +133,7 @@ export default function TaskCountReport() {
           }
         });
       } catch (err) {
+        toastError(t('common.toast.error', { err: err.message }), err);
         toastWarning(t('report.toast.failed_trash'));
       }
 

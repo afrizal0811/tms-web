@@ -60,7 +60,6 @@ export const handleCustomDownload = async ({
   endDate,
   singleDate,
   driverData,
-  hubId,
   hubAcronym,
   hubName,
   t,
@@ -106,7 +105,7 @@ export const handleCustomDownload = async ({
           t,
           fetchFilesCallback: async () => {
             const datesToProcess = getDatesInRange(startDate, endDate || startDate);
-            return await config.process({ hubId, datesToProcess, locationName, t, driverData });
+            return await config.process({ datesToProcess, locationName, t, driverData });
           },
         });
       } else {
@@ -118,7 +117,6 @@ export const handleCustomDownload = async ({
           setIsLoading,
           processDateCallback: async ({ dateObj }) => {
             const files = await config.process({
-              hubId,
               datesToProcess: [dateObj],
               locationName,
               t,
@@ -132,7 +130,6 @@ export const handleCustomDownload = async ({
       }
     } else {
       const files = await config.process({
-        hubId,
         datesToProcess: [singleDate],
         locationName,
         t,
@@ -149,13 +146,7 @@ export const handleCustomDownload = async ({
   }
 };
 
-export const processTaskRoutingReport = async ({
-  hubId,
-  datesToProcess,
-  locationName,
-  t,
-  driverData,
-}) => {
+export const processTaskRoutingReport = async ({ datesToProcess, locationName, t, driverData }) => {
   const hubsList = getCachedHubs() || [];
   const activeHub = hubsList.activeHub;
   const hubCoordsStr =
@@ -171,7 +162,6 @@ export const processTaskRoutingReport = async ({
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
@@ -215,14 +205,13 @@ export const processTaskRoutingReport = async ({
   return generatedFiles;
 };
 
-export const processTaskManualReport = async ({ hubId, datesToProcess, locationName, t }) => {
+export const processTaskManualReport = async ({ datesToProcess, locationName, t }) => {
   const generatedFiles = [];
 
   for (const date of datesToProcess) {
     const { timeFromUtc, timeToUtc } = getReportDates(date, date);
 
     const tasks = await getTasks({
-      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
@@ -319,7 +308,6 @@ export const processTaskManualReport = async ({ hubId, datesToProcess, locationN
 };
 
 export const processServiceLevelReport = async ({
-  hubId,
   datesToProcess,
   locationName,
   t,
@@ -341,7 +329,6 @@ export const processServiceLevelReport = async ({
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,

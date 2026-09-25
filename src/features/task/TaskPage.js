@@ -13,7 +13,6 @@ import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDrivers, getHubs, getTasks } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { formatUTC7, normalizeEmail, parseCustomerString, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 export default function TaskPage() {
   const { t } = useLanguage();
   const { isSuperadmin } = useSuperadmin();
-  const { storedLocation: hubId } = getLocalStorage();
 
   const [dateRange, setDateRange] = useState([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
@@ -80,7 +78,7 @@ export default function TaskPage() {
       };
       fetchHubs();
     }
-  }, [isSuperadmin, hubId, t]);
+  }, [isSuperadmin, t]);
 
   const fetchTasksData = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -102,13 +100,13 @@ export default function TaskPage() {
 
     setLoading(true);
     try {
-      const targetHub = isSuperadmin && isAllHub ? undefined : hubId;
+      const isShowAll = isSuperadmin && isAllHub;
 
       const res = await getTasks({
-        hubId: targetHub,
+        isShowAll: isShowAll,
+        status: 'DONE,UNASSIGNED,ONGOING',
         timeFrom: toApiDateString(localStart),
         timeTo: toApiDateString(localEnd),
-        status: 'DONE,UNASSIGNED,ONGOING',
       });
 
       const dataArray = Array.isArray(res) ? res : res?.data || [];
@@ -120,7 +118,7 @@ export default function TaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, isAllHub, hubId, isSuperadmin, t]);
+  }, [startDate, endDate, isAllHub, isSuperadmin, t]);
 
   useEffect(() => {
     fetchTasksData();
@@ -352,6 +350,31 @@ export default function TaskPage() {
 
   const searchPlaceholder = `${t('common.customer_name')}, ${t('common.customer_id')}, ${t('common.invoice_number')} ${t('common.driver')} ${isAllHub ? `, ${t('common.branch')}` : ''}`;
 
+  const tableCustomSort = useCallback((items, config) => {
+    if (!config) return items;
+    return [...items].sort((a, b) => {
+      const valA = a[config.key] ?? '';
+      const valB = b[config.key] ?? '';
+      let cmp =
+        typeof valA === 'string' && typeof valB === 'string'
+          ? valA.localeCompare(valB)
+          : valA < valB
+            ? -1
+            : valA > valB
+              ? 1
+              : 0;
+
+      if (config.direction === 'desc') cmp = -cmp;
+
+      if (cmp === 0 && config.key === '_hubName') {
+        const timeA = a.startTime ?? '';
+        const timeB = b.startTime ?? '';
+        return timeA.localeCompare(timeB);
+      }
+      return cmp;
+    });
+  }, []);
+
   const headerItems = [
     {
       label: t('common.search'),
@@ -414,7 +437,11 @@ export default function TaskPage() {
               <ToggleButton
                 className="w-full"
                 disabled={loading}
-                onChange={(val) => setIsAllHub(val === 'ALL')}
+                onChange={(val) => {
+                  const isAll = val === 'ALL';
+                  setIsAllHub(isAll);
+                  setSortConfig({ key: isAll ? '_hubName' : '_startFmt', direction: 'asc' });
+                }}
                 options={[
                   { label: t('task_detail.modal.one'), value: 'ONE' },
                   { label: t('common.all'), value: 'ALL' },
@@ -449,6 +476,7 @@ export default function TaskPage() {
         <TableData
           columns={columns}
           data={processedData}
+          customSort={tableCustomSort}
           externalSortConfig={sortConfig}
           onExternalSort={setSortConfig}
           isLoading={loading}

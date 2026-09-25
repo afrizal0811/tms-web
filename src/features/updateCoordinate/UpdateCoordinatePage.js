@@ -5,7 +5,6 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getDrivers, getTasks } from '@/lib/api/mileapp';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
   formatCoordinates,
@@ -78,7 +77,6 @@ export default function UpdateCoordinatePage() {
 
       try {
         if (typeof window === 'undefined') return;
-        const { storedLocation: hubId } = getLocalStorage();
 
         const localStart = new Date(selectedDate);
         localStart.setHours(0, 0, 0, 0);
@@ -93,7 +91,6 @@ export default function UpdateCoordinatePage() {
           getDrivers(),
           getTasks({
             status: 'DONE',
-            hubId,
             timeFrom,
             timeTo,
           }),

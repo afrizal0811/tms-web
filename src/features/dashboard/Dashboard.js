@@ -140,7 +140,6 @@ export default function Dashboard({ driverData }) {
       const [tasksData, resultsData] = await Promise.all([
         getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',
-          hubId,
           timeFrom,
           timeTo,
         }),
@@ -158,7 +157,7 @@ export default function Dashboard({ driverData }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, hubId, t, driverData]);
+  }, [selectedDate, t, driverData]);
 
   useEffect(() => {
     fetchData();

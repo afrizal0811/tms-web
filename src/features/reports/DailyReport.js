@@ -13,7 +13,6 @@ import {
 
 export default function DailyReport({
   driverData,
-  hubId,
   hubName,
   isIndonesian,
   isLoading,
@@ -40,7 +39,6 @@ export default function DailyReport({
 
   const triggerSingleDownload = () =>
     handleSingleDownload({
-      hubId,
       hubName,
       selectedDate,
       selectedDateString,

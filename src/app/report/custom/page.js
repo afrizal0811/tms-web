@@ -17,10 +17,9 @@ export default function BreadReportPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { storedLocation, storedLocationName, storedLocationAcronym } = getLocalStorage();
+        const { storedLocationName, storedLocationAcronym } = getLocalStorage();
         const drivers = await getDrivers();
         setData({
-          storedLocation,
           storedLocationName,
           storedLocationAcronym,
           driverData: drivers || [],
@@ -48,7 +47,6 @@ export default function BreadReportPage() {
       <CustomReport
         driverData={data.driverData}
         hubAcronym={data.storedLocationAcronym}
-        hubId={data.storedLocation}
         hubName={data.storedLocationName}
         isIndonesian={isIndonesian}
         isLoading={isLoading}

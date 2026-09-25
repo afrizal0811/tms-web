@@ -413,7 +413,8 @@ export default function useSummaryData() {
             fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
 
           const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
-          const driverName = route.driverName || (foundDriver ? foundDriver.name : route.assignee || '-');
+          const driverName =
+            route.driverName || (foundDriver ? foundDriver.name : route.assignee || '-');
 
           const finalPlate = strictBasePlate;
           const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
@@ -667,7 +668,6 @@ export default function useSummaryData() {
         const rawResults = [];
         for (const range of taskRanges) {
           const res = await getTasks({
-            hubId: selectedLocation,
             status: 'ONGOING,DONE',
             timeFrom: range.from,
             timeTo: range.to,

@@ -264,7 +264,6 @@ export default function DeliveryPage() {
       setAllRoutes([]);
       setActiveVehicleId(null);
       setTimeMap(new Map());
-      const { storedLocation } = getLocalStorage();
       try {
         let currentHubs = hubsData;
         if (currentHubs.length === 0) {
@@ -312,7 +311,6 @@ export default function DeliveryPage() {
             timeTo: historyTo,
           }),
           getTasks({
-            hubId: storedLocation,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
             status: 'DONE,ONGOING,UNASSIGNED',

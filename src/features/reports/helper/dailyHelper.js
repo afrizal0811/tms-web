@@ -107,7 +107,6 @@ const fetchVehicleMetadata = async () => {
 };
 
 export const handleSingleDownload = async ({
-  hubId,
   hubName,
   selectedDate,
   selectedDateString,
@@ -129,7 +128,6 @@ export const handleSingleDownload = async ({
       calculateStartFinishDates(selectedDateString);
 
     const allTasks = await getTasks({
-      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromTasks,
       timeTo: timeToTasks,
@@ -199,16 +197,13 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
-  let hubsMap = {};
+  let hubs = {};
   let vehicleTypes = [];
   try {
     setIsLoading(true);
     const [allVehicleTypes, hubsDB] = await Promise.all([fetchVehicleMetadata(), getCachedHubs()]);
     vehicleTypes = allVehicleTypes;
-    hubsMap = hubsDB.allHub.reduce((acc, curr) => {
-      acc[String(curr._id || curr.id)] = curr.hasPendingGR || false;
-      return acc;
-    }, {});
+    hubs = hubsDB;
   } catch (e) {
     toastError(t('common.toast.error', { err: e.message }), e);
     setIsLoading(false);
@@ -216,14 +211,13 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
   } finally {
     setIsLoading(false);
   }
-
   bulkZipDownloader({
     startDate,
     endDate,
     driverData,
     zipPrefix: `${t('report.daily_report')} (${t('common.bulk')})`,
     setIsLoading,
-    processDateCallback: async ({ dateForFile, hubId, hubName }) => {
+    processDateCallback: async ({ dateForFile, hubName }) => {
       const deliveryDateObj = formatDateUniversal(dateForFile);
       const startD = new Date(deliveryDateObj);
       startD.setHours(0, 0, 0, 0);
@@ -234,7 +228,6 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
       const timeToTasks = toApiDateString(endD);
 
       const allTasks = await getTasks({
-        hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromTasks,
         timeTo: timeToTasks,
@@ -267,7 +260,7 @@ export const handleBulkDownload = async ({ startDate, endDate, driverData, setIs
       const filteredTimeData = timeDataObjects.filter(
         (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
       );
-      const hasPendingGR = hubsMap[String(hubId)] || false;
+      const hasPendingGR = hubs?.activeHub ? hubs?.activeHub?.hasPendingGR : false;
       if (!isEmpty(filteredResults) && !isEmpty(allTasks) && !isEmpty(filteredTimeData)) {
         return await generateAutoReportWorkbook({
           driverData,

@@ -10,7 +10,6 @@ import { handleBulkDownload, handleManualDownload, handleSingleDownload } from '
 export default function KpiReport({
   driverData,
   hubAcronym,
-  hubId,
   isIndonesian,
   isLoading,
   setIsLoading,
@@ -31,17 +30,9 @@ export default function KpiReport({
   const [routingDate, setRoutingDate] = useState(initialDate);
   const [startDate, setStartDate] = useState(initialDate);
   const [endDate, setEndDate] = useState(initialDate);
-  const [prevHubId, setPrevHubId] = useState(hubId);
-
-  if (hubId !== prevHubId) {
-    setPrevHubId(hubId);
-    setSelectedRoutingFiles([]);
-    setSelectedDeliveryFiles([]);
-  }
 
   const triggerSingleDownload = () =>
     handleSingleDownload({
-      hubId,
       hubAcronym,
       selectedDate,
       isCustomRouting,
@@ -53,7 +44,6 @@ export default function KpiReport({
 
   const triggerBulkDownload = () =>
     handleBulkDownload({
-      hubId,
       hubAcronym,
       startDate,
       endDate,

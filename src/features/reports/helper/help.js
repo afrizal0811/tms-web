@@ -42,11 +42,7 @@ export const bulkZipDownloader = async ({
   try {
     const originalStartDateString = formatDateUniversal(startDate, 'DD.MM.YYYY');
     const originalEndDateString = formatDateUniversal(endDate, 'DD.MM.YYYY');
-    const {
-      storedLocation: hubId,
-      storedLocationName: hubName,
-      storedLocationAcronym,
-    } = getLocalStorage();
+    const { storedLocationName: hubName, storedLocationAcronym } = getLocalStorage();
     const hubLabel = storedLocationAcronym || hubName;
     const datesToProcess = getDatesInRange(startDate, endDate);
     const zip = new JSZip();
@@ -64,7 +60,6 @@ export const bulkZipDownloader = async ({
         const result = await processDateCallback({
           dateObj,
           dateForFile,
-          hubId,
           hubName: hubLabel,
         });
         if (result?.error) {

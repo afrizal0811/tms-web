@@ -77,7 +77,6 @@ const evaluateRoutingValidity = (results, taskMap) => {
 const processSingleKpiDate = async (
   targetDateObj,
   drivers,
-  hubId,
   hubAcronym,
   customRoutingDateObj = null
 ) => {
@@ -95,7 +94,6 @@ const processSingleKpiDate = async (
 
   const [tasks, rawResults, histories] = await Promise.all([
     getTasks({
-      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom,
       timeTo,
@@ -268,12 +266,7 @@ async function parseTaskFiles(files) {
   return { tasks: parsedTasks, majorityDate };
 }
 
-const executeManualKpiDownload = async ({
-  routingFiles,
-  taskFiles,
-  hubAcronym,
-  drivers,
-}) => {
+const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, drivers }) => {
   let routing = [],
     tasks = [],
     dateStr = null;
@@ -329,7 +322,6 @@ const executeManualKpiDownload = async ({
 };
 
 export const handleSingleDownload = async ({
-  hubId,
   hubAcronym,
   selectedDate,
   isCustomRouting,
@@ -345,7 +337,6 @@ export const handleSingleDownload = async ({
     const { wb, fileName, hasError } = await processSingleKpiDate(
       selectedDate,
       driverData,
-      hubId,
       hubAcronym,
       isCustomRouting ? routingDate : null
     );
@@ -361,7 +352,6 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({
-  hubId,
   hubAcronym,
   startDate,
   endDate,
@@ -384,7 +374,6 @@ export const handleBulkDownload = async ({
         const { wb, fileName, hasError } = await processSingleKpiDate(
           dateObj,
           driverData,
-          hubId,
           hubAcronym
         );
         if (hasError) toastWarning(`Data tidak lengkap untuk ${formatDateUniversal(dateObj)}`);

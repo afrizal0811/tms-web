@@ -17,10 +17,9 @@ export default function DailyReportPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { storedLocation, storedLocationName } = getLocalStorage();
+        const { storedLocationName } = getLocalStorage();
         const drivers = await getDrivers();
         setData({
-          storedLocation,
           storedLocationName,
           driverData: drivers || [],
         });
@@ -46,7 +45,6 @@ export default function DailyReportPage() {
     <SelectionLayout>
       <DailyReport
         driverData={data.driverData}
-        hubId={data.storedLocation}
         hubName={data.storedLocationName}
         isIndonesian={isIndonesian}
         isLoading={isLoading}

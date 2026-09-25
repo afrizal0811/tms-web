@@ -1,18 +1,14 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { apiFetch } from '../base';
 import { fields } from './fields';
 
-export async function getTasks({
-  hubId,
-  status,
-  timeFrom,
-  timeTo,
-  isNeedFields = true,
-}) {
+export async function getTasks({ status, timeFrom, timeTo, isNeedFields = true, isShowAll = false }) {
+  const { storedLocation } = getLocalStorage();
   const tasksFields = fields.tasks.join(',');
   const params = new URLSearchParams();
   params.append('timeBy', 'startTime');
   params.append('limit', 10000);
-  if (hubId) params.append('hubId', hubId);
+  if (!isShowAll && storedLocation) params.append('hubId', storedLocation);
   if (status) params.append('status', status);
   if (timeFrom) params.append('timeFrom', timeFrom);
   if (timeTo) params.append('timeTo', timeTo);

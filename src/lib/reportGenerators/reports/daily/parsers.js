@@ -145,7 +145,6 @@ export function parseRoutingData(
 
       if (hasTrips) {
         const category = resolveVehicleCategory(driverInfo, route);
-        console.log('category :', category);
         let generalType = 'DRY';
         if (route.vehicleTags && route.vehicleTags.length > 0) {
           generalType = String(route.vehicleTags[0]).split('-')[0].toUpperCase();
