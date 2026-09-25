@@ -36,7 +36,7 @@ export default function TaskPage() {
   const [hubsData, setHubsData] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortConfig, setSortConfig] = useState({ key: '_startFmt', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'startTime', direction: 'asc' });
 
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
@@ -110,7 +110,6 @@ export default function TaskPage() {
       });
 
       const dataArray = Array.isArray(res) ? res : res?.data || [];
-
       cacheRef.current[mode] = dataArray;
       setTasks(dataArray);
     } catch (err) {
@@ -174,9 +173,6 @@ export default function TaskPage() {
         _statusDel: task.statusDelivery?.[0]
           ? statusMap[task.statusDelivery[0].toUpperCase()] || task.statusDelivery[0]
           : '-',
-        _startFmt: formatUTC7(task.startTime, 'DD/MM/YYYY HH:mm') || '-',
-        _assignFmt: formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') || '-',
-        _doneFmt: formatUTC7(task.doneTime, 'DD/MM/YYYY HH:mm') || '-',
       };
     });
 
@@ -322,19 +318,19 @@ export default function TaskPage() {
       sortable: true,
     },
     {
-      key: '_assignFmt',
+      key: 'assignedTime',
       label: t('common.assigned_time'),
       width: cw.assign,
       sortable: true,
     },
     {
-      key: '_startFmt',
+      key: 'startTime',
       label: t('common.start_time'),
       width: cw.start,
       sortable: true,
     },
     {
-      key: '_doneFmt',
+      key: 'doneTime',
       label: t('common.done_time'),
       width: cw.done,
       sortable: true,
@@ -440,7 +436,7 @@ export default function TaskPage() {
                 onChange={(val) => {
                   const isAll = val === 'ALL';
                   setIsAllHub(isAll);
-                  setSortConfig({ key: isAll ? '_hubName' : '_startFmt', direction: 'asc' });
+                  setSortConfig({ key: isAll ? '_hubName' : 'startTime', direction: 'asc' });
                 }}
                 options={[
                   { label: t('task_detail.modal.one'), value: 'ONE' },

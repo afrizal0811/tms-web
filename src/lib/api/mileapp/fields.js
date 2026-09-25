@@ -50,6 +50,7 @@ export const fields = {
     'status',
     'statusDelivery',
     'travelDistance',
+    'travelDuration',
     'typeStorage',
     'visitTime',
     'volumeCbm',
