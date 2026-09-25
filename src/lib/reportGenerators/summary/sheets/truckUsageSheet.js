@@ -100,16 +100,13 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
 }
 
 function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
-  const platMatch = masterDriversDB.find(
-    (d) => d.plat && normalizePlate(d.plat) === canonicalPlate
-  );
+  const platMatch = masterDriversDB.find((d) => d.plat && d.basePlat === canonicalPlate);
   if (!platMatch) return undefined;
   return {
     name: platMatch.name,
-    storage: (platMatch.storage || 'DRY').toUpperCase(),
-    masterTag: getStorageType(platMatch.tags || platMatch.vehicleTags || platMatch.userTags),
+    storage: platMatch.storage.toUpperCase(),
     rawType: platMatch.type,
-    plat: platMatch.plat,
+    plat: platMatch.basePlat,
   };
 }
 
@@ -275,12 +272,10 @@ export async function calculateTruckUsageData(
     const driverMapHash = new Map();
     masterDriversDB.forEach((d) => {
       if (d.email) {
-        const mTag = getStorageType(d.tags || d.vehicleTags || d.userTags);
         driverMapHash.set(d.email.toLowerCase().trim(), {
           name: d.name,
-          storage: (d.storage || 'DRY').toUpperCase(),
-          plat: d.plat,
-          masterTag: mTag,
+          storage: d.storage.toUpperCase(),
+          plat: d.basePlat,
           rawType: d.type,
         });
       }
@@ -304,39 +299,25 @@ export async function calculateTruckUsageData(
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
         const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-        const strictBasePlate = route.basePlat || route.vehicleName || '';
-        const basePlateClean = strictBasePlate;
+        const plat = route.basePlat || route.vehicleName || '';
 
         let driverInfo = null;
-        if (strictBasePlate) {
+        if (plat) {
           driverInfo =
-            findDriverInfoByPlate(masterDriversDB, normalizePlate(strictBasePlate)) ||
-            findDriverInfoByPlate(allDriversDB, normalizePlate(strictBasePlate));
+            findDriverInfoByPlate(masterDriversDB, plat) ||
+            findDriverInfoByPlate(allDriversDB, plat);
         }
         if (!driverInfo && rawEmail) {
           driverInfo = driverMapHash.get(rawEmail);
         }
 
-        const canonicalPlate =
-          normalizePlate(basePlateClean) || rawEmail || `unknown-route-${Math.random()}`;
-
-        const firstTag = driverInfo?.masterTag || '';
-        let isFrozen = false;
-        if (driverInfo) {
-          const driverDataArr = [
-            driverInfo.masterTag,
-            driverInfo.name,
-            driverInfo.plat,
-            driverInfo.rawType,
-          ];
-          isFrozen = getStorageType(driverDataArr) === 'Frozen';
-        }
+        const canonicalPlate = plat || rawEmail || '-';
 
         if (!dailyVehicles.has(canonicalPlate)) {
           dailyVehicles.set(canonicalPlate, {
-            storageType: isFrozen ? 'Frozen' : 'Dry',
-            firstTag: driverInfo?.rawType || firstTag,
-            plate: strictBasePlate || '-',
+            storageType: driverInfo ? getStorageType(driverInfo.rawType) : '-',
+            firstTag: driverInfo?.rawType || driverInfo?.storage,
+            plate: plat || '-',
             driverName: route.driverName || driverInfo?.name || rawEmail || '-',
           });
         }
@@ -366,9 +347,8 @@ export async function calculateTruckUsageData(
         const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 
-        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
-        const canonicalPlate =
-          normalizePlate(strictBasePlate) || rawEmail || `unknown-${Math.random()}`;
+        const plat = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+        const canonicalPlate = normalizePlate(plat) || rawEmail || `unknown-${Math.random()}`;
 
         let driverInfo = null;
         if (rawPlate) {
@@ -378,16 +358,11 @@ export async function calculateTruckUsageData(
           driverInfo = driverMapHash.get(rawEmail.toLowerCase().trim());
         }
 
-        const firstTag = driverInfo?.masterTag || task.typeStorage || '';
+        const firstTag = driverInfo?.storage || task.typeStorage || '';
         let isFrozen = false;
 
         if (driverInfo) {
-          const driverDataArr = [
-            driverInfo.masterTag,
-            driverInfo.name,
-            driverInfo.plat,
-            driverInfo.rawType,
-          ];
+          const driverDataArr = [driverInfo.name, driverInfo.plat, driverInfo.rawType];
           isFrozen = getStorageType(driverDataArr) === 'Frozen';
         } else {
           isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
@@ -397,7 +372,7 @@ export async function calculateTruckUsageData(
           dailyVehicles.set(canonicalPlate, {
             storageType: isFrozen ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || firstTag,
-            plate: strictBasePlate || driverInfo?.plat || '-',
+            plate: plat || driverInfo?.plat || '-',
             driverName: driverInfo?.name || rawEmail || '-',
           });
         }
@@ -429,17 +404,17 @@ export async function calculateTruckUsageData(
         const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 
-        const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+        const plat = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
         let driverInfo = null;
 
         if (rawPlate) {
-          driverInfo = findDriverInfoByPlate(masterDriversDB, normalizePlate(strictBasePlate));
+          driverInfo = findDriverInfoByPlate(masterDriversDB, normalizePlate(plat));
         }
         if (!driverInfo && emailClean) {
           driverInfo = driverMapHash.get(emailClean);
         }
 
-        let plateForCanonical = strictBasePlate;
+        let plateForCanonical = plat;
         if (!plateForCanonical && driverInfo && driverInfo.plat) {
           plateForCanonical = driverInfo.plat;
         }
@@ -447,16 +422,11 @@ export async function calculateTruckUsageData(
         const canonicalPlate =
           normalizePlate(plateForCanonical) || emailClean || `unknown-task-${Math.random()}`;
 
-        const firstTag = driverInfo?.masterTag || task.typeStorage || '';
+        const firstTag = driverInfo?.storage || task.typeStorage || '';
         let isFrozen = false;
 
         if (driverInfo) {
-          const driverDataArr = [
-            driverInfo.masterTag,
-            driverInfo.name,
-            driverInfo.plat,
-            driverInfo.rawType,
-          ];
+          const driverDataArr = [driverInfo.name, driverInfo.plat, driverInfo.rawType];
           isFrozen = getStorageType(driverDataArr) === 'Frozen';
         } else {
           isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
@@ -466,13 +436,13 @@ export async function calculateTruckUsageData(
           dailyVehicles.set(canonicalPlate, {
             storageType: isFrozen ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || firstTag,
-            plate: strictBasePlate || driverInfo?.plat || '-',
+            plate: plat || driverInfo?.plat || '-',
             driverName: driverInfo?.name || emailClean || '-',
           });
         } else {
           const existing = dailyVehicles.get(canonicalPlate);
           if (!existing.plate || existing.plate === '-') {
-            existing.plate = strictBasePlate || driverInfo?.plat || '-';
+            existing.plate = plat || driverInfo?.plat || '-';
           }
           if (!existing.driverName || existing.driverName === '-') {
             existing.driverName = driverInfo?.name || emailClean || '-';

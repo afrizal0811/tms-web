@@ -54,84 +54,18 @@ export const reportStyles = {
   },
 };
 
-export function ultraNormalize(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/[\s\-'"]/g, '')
-    .toLowerCase();
-}
-
 export function buildDriverMaps(driverData) {
   const emailMap = new Map();
-  const platMap = new Map();
-
-  if (!Array.isArray(driverData)) return { emailMap, platMap };
-
+  if (!Array.isArray(driverData)) return { emailMap };
   driverData.forEach((driver) => {
-    let typeVal = driver.type;
-    if (!typeVal && driver.tags) {
-      try {
-        const parsed = JSON.parse(driver.tags);
-        if (Array.isArray(parsed) && parsed.length > 0) typeVal = parsed[0];
-      } catch {
-        typeVal = driver.tags;
-      }
-    }
-
-    const storage = (driver.storage || 'DRY').toUpperCase();
-    const entry = { name: driver.name, plat: driver.plat, storage, type: typeVal };
+    const typeVal = driver.type;
+    const storage = driver.storage.toUpperCase();
+    const entry = { name: driver.name, plat: driver.basePlat, storage, type: typeVal };
 
     if (driver.email) emailMap.set(driver.email.trim().toLowerCase(), entry);
-    if (driver.plat) platMap.set(ultraNormalize(driver.plat), entry);
   });
 
-  return { emailMap, platMap };
-}
-
-export function resolveVehicleCategory(data, normalizedMappings) {
-  const basePlateStr = ultraNormalize(data.plat);
-  const originalRawStr = ultraNormalize(data.originalPlateForMap || data.plat);
-  const dbKeys = Object.keys(normalizedMappings);
-
-  let category = '';
-  let mapped = false;
-
-  if (basePlateStr && normalizedMappings[basePlateStr]) {
-    category = normalizedMappings[basePlateStr];
-    mapped = true;
-  } else if (originalRawStr && normalizedMappings[originalRawStr]) {
-    category = normalizedMappings[originalRawStr];
-    mapped = true;
-  } else {
-    for (const targetStr of [originalRawStr, basePlateStr]) {
-      if (!targetStr || mapped) continue;
-      for (const dbKey of dbKeys) {
-        if (dbKey.length > 3 && (targetStr.includes(dbKey) || dbKey.includes(targetStr))) {
-          category = normalizedMappings[dbKey];
-          mapped = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!mapped) {
-    const tempCategory = data.vehicleType;
-    if (tempCategory && typeof tempCategory === 'string') {
-      const parts = tempCategory.split('-');
-      let specificType = parts.length > 1 ? parts[1].toUpperCase() : parts[0].toUpperCase();
-      if (parts.length > 2 && parts[2].toUpperCase() === 'LONG') {
-        if (['CDE', 'CDD', 'FUSO'].includes(specificType)) {
-          specificType = `${specificType}-LONG`;
-        }
-      }
-      category = specificType;
-    } else {
-      category = tempCategory;
-    }
-  }
-
-  return category && typeof category === 'string' ? category.toUpperCase() : '';
+  return { emailMap };
 }
 
 export function buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, headers, sheetNames) {

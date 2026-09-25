@@ -93,19 +93,15 @@ export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
 export function calculateMinuteDifference(time1, time2) {
   if (!time1 || !time2) return null;
 
-  try {
-    const date1 = new Date(time1);
-    const date2 = new Date(time2);
+  const date1 = new Date(time1);
+  const date2 = new Date(time2);
 
-    if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
+  if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return null;
 
-    const m1 = Math.floor(date1.getTime() / 60000);
-    const m2 = Math.floor(date2.getTime() / 60000);
+  const m1 = Math.floor(date1.getTime() / 60000);
+  const m2 = Math.floor(date2.getTime() / 60000);
 
-    return Math.abs(m2 - m1);
-  } catch (e) {
-    return null;
-  }
+  return Math.abs(m2 - m1);
 }
 
 // Memecah string data pelanggan menjadi Nama, ID, dan Lokasi berdasarkan pola pemisah tertentu
@@ -263,23 +259,19 @@ export function calculateStartFinishDates(selectedDateStr) {
 // Mengubah timestamp UTC ke UTC+7
 export function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
-  try {
-    let utcTimestamp = timestampStr.replace(' ', 'T');
-    if (
-      !utcTimestamp.endsWith('Z') &&
-      !utcTimestamp.substring(10).includes('+') &&
-      !utcTimestamp.substring(10).includes('-')
-    ) {
-      utcTimestamp += 'Z';
-    }
-
-    const utcDate = new Date(utcTimestamp);
-    if (isNaN(utcDate.getTime())) return null;
-
-    return addHours(utcDate, 7);
-  } catch (e) {
-    return null;
+  let utcTimestamp = timestampStr.replace(' ', 'T');
+  if (
+    !utcTimestamp.endsWith('Z') &&
+    !utcTimestamp.substring(10).includes('+') &&
+    !utcTimestamp.substring(10).includes('-')
+  ) {
+    utcTimestamp += 'Z';
   }
+
+  const utcDate = new Date(utcTimestamp);
+  if (isNaN(utcDate.getTime())) return null;
+
+  return addHours(utcDate, 7);
 }
 
 // Memformat timestamp UTC+7
@@ -323,11 +315,7 @@ export function formatLongDate(dateInput, language = 'id-ID', withDate = true) {
     year: 'numeric',
   };
   if (withDate) config.day = 'numeric';
-  try {
-    return new Date(dateInput).toLocaleDateString(language, config);
-  } catch (e) {
-    return '-';
-  }
+  return new Date(dateInput).toLocaleDateString(language, config);
 }
 
 // Mengecek nilai kosong
@@ -431,20 +419,16 @@ export function getBasePlate(plat) {
 // Menghitung tanggal delivery berdasarkan tanggal routing
 export function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
-  try {
-    const date = new Date(isoString);
-    const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
-    const wibDate = new Date(wibMs);
-    const routingDay = wibDate.getUTCDay();
+  const date = new Date(isoString);
+  const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
+  const wibDate = new Date(wibMs);
+  const routingDay = wibDate.getUTCDay();
 
-    let offsetDays = 1;
-    if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
+  let offsetDays = 1;
+  if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
 
-    const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
-    return new Date(deliveryMs).toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
+  const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
+  return new Date(deliveryMs).toISOString().split('T')[0];
 }
 
 // Mengubah nilai persentase menjadi warna heatmap pastel dalam format HEX

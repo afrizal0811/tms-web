@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { getBasePlate } from '@/lib/utils';
+import { getBasePlate, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -118,8 +118,8 @@ export async function GET(request) {
           }
 
           const spent = tTr + tVi + tWa;
-          r.totalWeight = Number(tW.toFixed(2));
-          r.totalVolume = Number(tV.toFixed(2));
+          r.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
+          r.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
           r.weightPercentage = toPct(tW, r.vehicleMaxWeight);
           r.volumePercentage = toPct(tV, r.vehicleMaxVolume);
           r.totalDistance = tD;
