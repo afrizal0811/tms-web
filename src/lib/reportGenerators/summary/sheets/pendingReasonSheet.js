@@ -30,18 +30,22 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       const dObj = new Date(task.doneTime || task.createdTime);
       if (startDateStr && endDateStr) {
         if (!isNaN(dObj.getTime())) {
-          const wibDate = dObj.toISOString().split('T')[0];
+          const wibDate = formatDateUniversal(dObj);
+
           if (wibDate < startDateStr || wibDate > endDateStr) {
             return;
           }
         }
       }
 
-      const status = task.statusDelivery ? task.statusDelivery.split(',')[0].trim().toUpperCase() : '';
+      const status = task.statusDelivery
+        ? task.statusDelivery.split(',')[0].trim().toUpperCase()
+        : '';
       if (TARGET_STATUSES.includes(status)) {
         let emailRaw = '';
         if (task.assignee) {
-           emailRaw = typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
+          emailRaw =
+            typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
         }
         const email = normalizeEmail(emailRaw);
         if (!driverMap.has(email)) return;

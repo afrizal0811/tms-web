@@ -66,7 +66,18 @@ export default function TruckUsageModal({
   const sortedMasterVehicles = useMemo(() => {
     if (!data?.isMaster) return [];
     const vehicles = masterVehicleList?.[data.storage]?.[data.type] || [];
-    return sortVehicles(vehicles);
+
+    const seenCombos = new Set();
+    const uniqueVehicles = vehicles.reduce((acc, vh) => {
+      const plateRaw = (vh.plate || vh.plat || '').toLowerCase().replace(/\s+/g, '');
+      if (!seenCombos.has(plateRaw)) {
+        seenCombos.add(plateRaw);
+        acc.push(vh);
+      }
+      return acc;
+    }, []);
+
+    return sortVehicles(uniqueVehicles);
   }, [data, masterVehicleList]);
 
   const tmsDetailsList = useMemo(() => {

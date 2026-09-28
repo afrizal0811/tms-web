@@ -14,7 +14,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import { parseCustomerString, toApiDateString } from '@/lib/utils';
+import { formatDateUniversal, parseCustomerString, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function TaskPage() {
@@ -299,18 +299,24 @@ export default function TaskPage() {
       label: t('common.assigned_time'),
       width: cw.assign,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.assignedTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
       key: 'startTime',
       label: t('common.start_time'),
       width: cw.start,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.startTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
       key: 'doneTime',
       label: t('common.done_time'),
       width: cw.done,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.doneTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
       key: 'driverName',

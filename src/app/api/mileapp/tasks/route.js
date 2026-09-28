@@ -110,20 +110,21 @@ export async function GET(request) {
       allTasks.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
 
       allTasks.forEach((task) => {
-        if (task.startTime) task.startTime = formatUTC7(task.startTime, 'YYYY-MM-DDTHH:mm:ssZ');
-        if (task.endTime) task.endTime = formatUTC7(task.endTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.startTime) task.startTime = formatUTC7(task.startTime, 'YYYY-MM-DDTHH:mm:ss');
+        if (task.endTime) task.endTime = formatUTC7(task.endTime, 'YYYY-MM-DDTHH:mm:ss');
         if (task.assignedTime)
-          task.assignedTime = formatUTC7(task.assignedTime, 'YYYY-MM-DDTHH:mm:ssZ');
-        if (task.doneTime) task.doneTime = formatUTC7(task.doneTime, 'YYYY-MM-DDTHH:mm:ssZ');
-        if (task.createdTime) task.createdTime = formatUTC7(task.createdTime, 'YYYY-MM-DDTHH:mm:ssZ');
+          task.assignedTime = formatUTC7(task.assignedTime, 'YYYY-MM-DDTHH:mm:ss');
+        if (task.doneTime) task.doneTime = formatUTC7(task.doneTime, 'YYYY-MM-DDTHH:mm:ss');
+        if (task.createdTime)
+          task.createdTime = formatUTC7(task.createdTime, 'YYYY-MM-DDTHH:mm:ss');
         if (task.klikJikaSudahSampai)
-          task.klikJikaSudahSampai = formatUTC7(task.klikJikaSudahSampai, 'YYYY-MM-DDTHH:mm:ssZ');
+          task.klikJikaSudahSampai = formatUTC7(task.klikJikaSudahSampai, 'YYYY-MM-DDTHH:mm:ss');
         if (task.page1DoneTime)
-          task.page1DoneTime = formatUTC7(task.page1DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+          task.page1DoneTime = formatUTC7(task.page1DoneTime, 'YYYY-MM-DDTHH:mm:ss');
         if (task.page2DoneTime)
-          task.page2DoneTime = formatUTC7(task.page2DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+          task.page2DoneTime = formatUTC7(task.page2DoneTime, 'YYYY-MM-DDTHH:mm:ss');
         if (task.page3DoneTime)
-          task.page3DoneTime = formatUTC7(task.page3DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+          task.page3DoneTime = formatUTC7(task.page3DoneTime, 'YYYY-MM-DDTHH:mm:ss');
 
         if (task.volumeCbm != null) task.volumeCbm = Number(Number(task.volumeCbm).toFixed(2));
         if (task.weightKg != null) task.weightKg = Number(Number(task.weightKg).toFixed(2));

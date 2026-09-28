@@ -33,8 +33,7 @@ export function generateServiceLevelSheet(wb, tasks, startDateStr, endDateStr, t
     const dDate = new Date(t.doneTime);
 
     if (isNaN(cDate.getTime()) || isNaN(dDate.getTime())) return;
-
-    const doneWib = dDate.toISOString().split('T')[0];
+    const doneWib = formatDateUniversal(dDate);
 
     if (!dateMap[doneWib]) return;
 

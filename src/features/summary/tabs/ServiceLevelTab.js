@@ -73,12 +73,10 @@ export default function ServiceLevelTab({
       const dDate = new Date(t.doneTime);
 
       if (isNaN(cDate.getTime()) || isNaN(dDate.getTime())) return;
-
-      const doneWib = dDate.toISOString().split('T')[0];
+      const doneWib = formatDateUniversal(dDate);
 
       if (!map[doneWib]) return;
 
-      // Hitung selisih hari dengan menormalisasi waktu ke tengah malam UTC
       const cDateMid = new Date(
         Date.UTC(cDate.getUTCFullYear(), cDate.getUTCMonth(), cDate.getUTCDate())
       );

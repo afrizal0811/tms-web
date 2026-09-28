@@ -125,7 +125,7 @@ export default function PendingReasonModal({
       data.pendingDetail.groupReason ||
       data.pendingDetail.pic);
 
-  const statusText = data.statusDelivery ? data.statusDelivery[0] : data.status;
+  const statusText = data.statusDelivery ? data.statusDelivery : data.status;
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
 
   return (

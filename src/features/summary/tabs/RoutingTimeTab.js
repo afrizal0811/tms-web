@@ -87,7 +87,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         if (!task.createdTime) return;
         if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-        const taskDateKey = new Date(task.createdTime).toISOString().split('T')[0];
+        const taskDateKey = formatDateUniversal(task.createdTime);
 
         const targetRow = dataMap[taskDateKey];
 

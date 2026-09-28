@@ -80,8 +80,8 @@ export function routingActual({ tasks, drivers, dateStr }) {
       : t.klikJikaSudahSampai || t.klikJikaAndaSudahSampai;
     const actualDep = isGrOrPickup ? t.page1DoneTime : t.page3DoneTime;
 
-    const arrDate = new Date(String(actualArr).slice(0, 19));
-    const depDate = new Date(String(actualDep).slice(0, 19));
+    const arrDate = new Date(actualArr);
+    const depDate = new Date(actualDep);
 
     const actualArrTimestamp = isNaN(arrDate.getTime()) ? null : arrDate.getTime();
     const actualDepTimestamp = isNaN(depDate.getTime()) ? null : depDate.getTime();

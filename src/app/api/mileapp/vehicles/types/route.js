@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
+import { getBasePlate, getStorageType, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
-import { getStorageType, isEmpty, getBasePlate } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
@@ -40,15 +40,21 @@ export async function GET(request) {
     const masterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 
     parsedDrivers.forEach((d) => {
-      const isSewa = (d.plat || '').toUpperCase().includes('SEWA');
-      if (isSewa) return;
+      const plat = d.basePlat || d.plat || '';
+      const platUpper = plat.toUpperCase();
+
+      if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO')) {
+        return;
+      }
 
       let isConditional = false;
+      const isSewa = platUpper.includes('SEWA');
       const email = (d.email || '').toLowerCase().trim();
-      if (email && email !== '-' && groupedByEmail[email]) {
+
+      if (!isSewa && email && email !== '-' && groupedByEmail[email]) {
         const group = groupedByEmail[email];
         if (group.length > 1) {
-          const spaceCount = (d.plat || '').trim().split(' ').length - 1;
+          const spaceCount = plat.trim().split(' ').length - 1;
           const minSpaces = Math.min(
             ...group.map((v) => (v.plat || '').trim().split(' ').length - 1)
           );
@@ -59,13 +65,6 @@ export async function GET(request) {
       }
 
       if (isConditional) return;
-
-      const plat = d.plat || '';
-      const platUpper = plat.toUpperCase();
-
-      if (!plat || isEmpty(plat.trim()) || platUpper.includes('DEMO')) {
-        return;
-      }
 
       let resolvedType = d.type || 'Lainnya';
       if (resolvedType && resolvedType.includes('-')) {
@@ -81,14 +80,14 @@ export async function GET(request) {
       }
 
       activeTypesSet.add(resolvedType);
-      const storageCategory = getStorageType(d.storage || d.type || '');
+      const storageCategory = getStorageType(d.tags || d.name || d.type);
 
       if (!masterData[storageCategory]) {
         masterData[storageCategory] = { Total: 0 };
       }
 
       if (masterData[storageCategory][resolvedType] === undefined) {
-        Object.keys(masterData).forEach(key => {
+        Object.keys(masterData).forEach((key) => {
           masterData[key][resolvedType] = 0;
         });
       }
@@ -98,7 +97,19 @@ export async function GET(request) {
     });
 
     const allTypes = await prisma.vehicleType.findMany({ orderBy: { name: 'asc' } });
-    const activeTypes = Array.from(activeTypesSet).sort();
+
+    const CUSTOM_SORT_ORDER = ['L300', 'CDE', 'CDE-LONG', 'CDD', 'CDD-LONG', 'FUSO', 'FUSO-LONG'];
+
+    const activeTypes = Array.from(activeTypesSet).sort((a, b) => {
+      const indexA = CUSTOM_SORT_ORDER.indexOf(a);
+      const indexB = CUSTOM_SORT_ORDER.indexOf(b);
+
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+
+      return a.localeCompare(b);
+    });
 
     return NextResponse.json({ masterData, activeTypes, allTypes });
   } catch (error) {

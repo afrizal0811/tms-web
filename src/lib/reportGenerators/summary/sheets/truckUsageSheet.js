@@ -313,8 +313,9 @@ export async function calculateTruckUsageData(
         const canonicalPlate = plat || rawEmail || '-';
 
         if (!dailyVehicles.has(canonicalPlate)) {
+          const rawSt = driverInfo ? getStorageType(driverInfo.name || driverInfo.rawType) : '-';
           dailyVehicles.set(canonicalPlate, {
-            storageType: driverInfo ? getStorageType(driverInfo.rawType) : '-',
+            storageType: rawSt === 'Frozen' ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || driverInfo?.storage,
             plate: plat || '-',
             driverName: route.driverName || driverInfo?.name || rawEmail || '-',
@@ -446,7 +447,7 @@ export async function calculateTruckUsageData(
       dailyVehicles.forEach((vh) => {
         const type = extractVehicleType(vh.firstTag, activeTypes);
         const storage = vh.storageType;
-        if (dateMap[dateKey][storage][type] !== undefined) {
+        if (dateMap[dateKey][storage] && dateMap[dateKey][storage][type] !== undefined) {
           const detailsList = dateMap[dateKey][storage][`${type}_details`];
           const vhBasePlate = normalizePlate(getBasePlate(vh.plate) || vh.plate);
           const vhDriver = (vh.driverName || '').toLowerCase().trim();

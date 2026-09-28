@@ -105,6 +105,24 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     }
   };
 
+  const handleBypass = async () => {
+    setSyncLoading('drivers');
+    try {
+      await postDrivers([activeHubId]);
+      if (matchedData.length > 0) {
+        await patchDriverMceasy(activeHubId, storedLocationName, matchedData);
+      }
+
+      setModalOpen(false);
+      toastSuccess(translate('common.toast.success'));
+      await onRefresh();
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
   const executeSync = async (type) => {
     if (isReadOnly) return;
     setSyncLoading(type);
@@ -208,6 +226,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
         mismatchedData={mismatchedData}
         onMismatchedChange={handleMismatchedChange}
         onSave={handleSaveMismatches}
+        onBypass={handleBypass}
         mcEasyDrivers={mcEasyDrivers}
         isDriverLoading={isDriverLoading}
         isSaving={syncLoading === 'drivers'}

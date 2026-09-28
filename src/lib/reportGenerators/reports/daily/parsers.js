@@ -173,7 +173,7 @@ export function parseRoutingData(
     const parseDateKey = (dateStr) => {
       if (!dateStr) return null;
       const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+      return isNaN(d.getTime()) ? null : formatDateUniversal(d);
     };
 
     const dateKey = parseDateKey(task.startTime) || parseDateKey(task.doneTime);

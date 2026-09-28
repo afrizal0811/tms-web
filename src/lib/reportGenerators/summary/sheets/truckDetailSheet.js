@@ -341,7 +341,7 @@ export function calculateTruckDetailData(
         for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
           const d = new Date(currDateKey);
           d.setUTCDate(d.getUTCDate() - back);
-          const prevDateKey = d.toISOString().split('T')[0];
+          const prevDateKey = formatDateUniversal(d);
 
           const prevData = dataMatrix[prevDateKey]?.[email];
 
