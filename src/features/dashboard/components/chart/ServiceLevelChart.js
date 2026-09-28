@@ -56,7 +56,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   return null;
 };
 
-function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
+function ServiceLevelChart({ allTasks, isDarkMode }) {
   const { t, localeCode } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
@@ -73,9 +73,9 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
       setSelectedMonth(null);
       return;
     }
-    const result = processServiceLevelData(allTasks, 'monthly', null, hubId, localeCode);
+    const result = processServiceLevelData(allTasks, 'monthly', null, localeCode);
     setMonthlyData(result);
-  }, [allTasks, hubId, localeCode]);
+  }, [allTasks, localeCode]);
 
   const localizedData = useMemo(() => {
     if (!monthlyData) return null;
@@ -108,11 +108,11 @@ function ServiceLevelChart({ allTasks, hubId, isDarkMode }) {
     }
     setIsModalLoading(true);
     setTimeout(() => {
-      const result = processServiceLevelData(allTasks, 'daily', key, hubId, localeCode);
+      const result = processServiceLevelData(allTasks, 'daily', key, localeCode);
       setDailyData(result);
       setIsModalLoading(false);
     }, 150);
-  }, [selectedMonth, allTasks, hubId, localeCode]);
+  }, [selectedMonth, allTasks, localeCode]);
 
   const handleBarClick = (data, index) => {
     const payload = data && data.payload ? data.payload : data;

@@ -87,7 +87,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         if (!task.createdTime) return;
         if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-        let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
+        const taskDateKey = new Date(task.createdTime).toISOString().split('T')[0];
 
         const targetRow = dataMap[taskDateKey];
 
@@ -107,9 +107,12 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             isValidAssignedTimeWIB(task.createdTime, task.assignedTime);
 
           if (isValidRoutedTask) {
+            const taskCreatedTimeMs = new Date(task.createdTime).getTime();
+            const taskAssignedTimeMs = new Date(task.assignedTime).getTime();
+
             if (
               !targetRow.startData.time ||
-              new Date(task.createdTime) < new Date(targetRow.startData.time)
+              taskCreatedTimeMs < new Date(targetRow.startData.time).getTime()
             ) {
               targetRow.startData.time = task.createdTime;
               targetRow.startData.name = taskName;
@@ -119,7 +122,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
 
             if (
               !targetRow.finishData.time ||
-              new Date(task.assignedTime) > new Date(targetRow.finishData.time)
+              taskAssignedTimeMs > new Date(targetRow.finishData.time).getTime()
             ) {
               targetRow.finishData.time = task.assignedTime;
               targetRow.finishData.name = taskName;

@@ -11,10 +11,10 @@ import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDrivers, getHubs, getTasks } from '@/lib/api/mileapp';
+import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import { formatUTC7, normalizeEmail, parseCustomerString, toApiDateString } from '@/lib/utils';
+import { parseCustomerString, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function TaskPage() {
@@ -32,7 +32,6 @@ export default function TaskPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isAllHub, setIsAllHub] = useState(false);
-  const [driverData, setDriverData] = useState([]);
   const [hubsData, setHubsData] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,14 +56,6 @@ export default function TaskPage() {
     { label: t('common.status.manual_assign'), value: t('common.status.manual_assign') },
     { label: t('common.status.diff_day'), value: t('common.status.diff_day') },
   ];
-
-  useEffect(() => {
-    const fetchDriverData = async () => {
-      const data = await getDrivers();
-      setDriverData(data);
-    };
-    fetchDriverData();
-  }, []);
 
   useEffect(() => {
     if (isSuperadmin) {
@@ -123,16 +114,6 @@ export default function TaskPage() {
     fetchTasksData();
   }, [fetchTasksData]);
 
-  const driverMap = useMemo(() => {
-    const map = new Map();
-    driverData.forEach((driver) => {
-      if (driver.email) {
-        map.set(normalizeEmail(driver.email), { name: driver.name });
-      }
-    });
-    return map;
-  }, [driverData]);
-
   const hubMap = useMemo(() => {
     const map = new Map();
     hubsData.forEach((hub) => {
@@ -153,16 +134,11 @@ export default function TaskPage() {
 
     let result = tasks.map((task) => {
       const custInfo = parseCustomerString(task.customerOrder);
-      const assigneeEmail = task.assignee?.[0];
-      const driver = driverMap.get(normalizeEmail(assigneeEmail)) || {
-        name: assigneeEmail || '-',
-      };
       const hubName = hubMap.get(task.hubId) || '-';
 
       return {
         ...task,
         _custInfo: custInfo,
-        _driverName: driver.name,
         _hubName: hubName,
         _custName: custInfo.name || '-',
         _custId: custInfo.id || '-',
@@ -170,8 +146,8 @@ export default function TaskPage() {
         _invoiceNumber: custInfo.invoiceNumber || '-',
         _truncateInvoice: custInfo.truncateInvoice || '-',
         _isTruncated: custInfo.isTruncated,
-        _statusDel: task.statusDelivery?.[0]
-          ? statusMap[task.statusDelivery[0].toUpperCase()] || task.statusDelivery[0]
+        _statusDel: task.statusDelivery
+          ? statusMap[task.statusDelivery.toUpperCase()] || task.statusDelivery
           : '-',
       };
     });
@@ -187,19 +163,20 @@ export default function TaskPage() {
 
     if (statusTaskFilter !== t('common.all')) {
       result = result.filter((task) => {
-        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery?.[0];
+        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery;
         if (statusTaskFilter === t('common.status.unassigned'))
-          return !task.assignee || task.assignee.length === 0;
+          return !task.assignee || task.assignee === '';
         if (statusTaskFilter === t('common.status.ongoing'))
           return task.status?.toLowerCase() === 'ongoing';
         if (statusTaskFilter === t('common.status.manual_assign'))
           return (
-            task.assignee?.length > 0 &&
+            task.assignee &&
+            task.assignee !== '' &&
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
         if (statusTaskFilter === t('common.status.diff_day')) {
-          const startFormat = formatUTC7(task.startTime, 'DD/MM/YYYY');
-          const doneFormat = formatUTC7(task.doneTime, 'DD/MM/YYYY');
+          const startFormat = task.startTime ? task.startTime.split('T')[0] : null;
+          const doneFormat = task.doneTime ? task.doneTime.split('T')[0] : null;
           return startFormat && doneFormat && startFormat !== doneFormat;
         }
         return true;
@@ -209,13 +186,13 @@ export default function TaskPage() {
     if (q) {
       result = result.filter((task) => {
         const strToSearch =
-          `${task._hubName} ${task._custInfo.name} ${task._custInfo.id} ${task._custInfo.invoiceNumber} ${task._driverName}`.toLowerCase();
+          `${task._hubName} ${task._custInfo.name} ${task._custInfo.id} ${task._custInfo.invoiceNumber} ${task.driverName}`.toLowerCase();
         return strToSearch.includes(q);
       });
     }
 
     return result;
-  }, [tasks, driverMap, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
+  }, [tasks, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
 
   const handleApplyDate = () => {
     if (!tempStart) return;
@@ -336,11 +313,11 @@ export default function TaskPage() {
       sortable: true,
     },
     {
-      key: '_driverName',
+      key: 'driverName',
       label: t('common.driver'),
       width: cw.assignee,
       sortable: true,
-      render: (row) => <HighlightText text={row._driverName} highlight={searchQuery} />,
+      render: (row) => <HighlightText text={row.driverName} highlight={searchQuery} />,
     },
   ];
 
@@ -483,7 +460,6 @@ export default function TaskPage() {
           }}
         />
       </PageTemplate>
-
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
@@ -499,7 +475,6 @@ export default function TaskPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        driverData={driverData}
         allTasks={tasks}
       />
     </>

@@ -1,11 +1,5 @@
 // File: src/features/dashboard/help.js
-import {
-  formatDateUniversal,
-  isEmpty,
-  normalizeEmail,
-  parseAndShiftToUTC7,
-  parseCustomerString,
-} from '@/lib/utils';
+import { isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
 
 export const serviceLevelData = [
   {
@@ -131,6 +125,7 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
 
   taskList.forEach((task) => {
     if (!task || !task.startTime) return;
+
     const rawDate = new Date(task.startTime);
     if (isNaN(rawDate)) return;
 
@@ -139,26 +134,30 @@ export const processLoadCapacityData = (tasks, driverData, year) => {
     if (wibDate.getUTCFullYear() !== year) return;
 
     let driverEmail = task.assignedTo?.email;
-    if (!driverEmail && Array.isArray(task.assignee) && task.assignee.length > 0) {
-      driverEmail = task.assignee[0];
+    if (!driverEmail && task.assignee) {
+      driverEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     }
 
     if (!driverEmail) return;
 
     const mapData = driverMap[driverEmail];
-    const vehiclePlat = mapData?.plat || task.assignedVehicle?.name || 'Unknown';
+    const vehiclePlat =
+      mapData?.plat || task.basePlat || task.vehicleName || task.plat || 'Unknown';
 
     if (vehiclePlat === 'Unknown') return;
 
-    const dateStr = wibDate.toISOString().split('T')[0];
+    const monthIdx = wibDate.getMonth();
+    const day = wibDate.getDate();
+    const dateStr = `${wibDate.getFullYear()}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const key = `${dateStr}_${driverEmail}`;
 
     if (!trips[key]) {
-      const driverName = mapData?.name || task.assignedTo?.name || driverEmail;
+      const driverName = mapData?.name || task.driverName || task.assignedTo?.name || driverEmail;
 
       trips[key] = {
         date: dateStr,
-        monthIndex: wibDate.getUTCMonth(),
+        monthIndex: monthIdx,
         email: driverEmail,
         driverName: driverName,
         vehicleName: vehiclePlat,
@@ -226,7 +225,6 @@ export function processServiceLevelData(
   allTasks,
   view = 'monthly',
   selectedMonthKey = null,
-  hubId = null,
   localeCode = 'id-ID'
 ) {
   if (!allTasks || isEmpty(allTasks)) return [];
@@ -234,26 +232,20 @@ export function processServiceLevelData(
   const grouped = {};
 
   allTasks.forEach((task) => {
-    if (!task.assignee || isEmpty(task.assignee)) return;
     if (task.flow && String(task.flow).toUpperCase() === 'PICKUP') {
       return;
     }
-    if (hubId) {
-      const taskHub =
-        task.hubId ||
-        (task.hub && (task.hub._id || task.hub.id)) ||
-        task.branchId ||
-        (task.branch && (task.branch._id || task.branch.id)) ||
-        task.originHubId ||
-        task.sourceHubId ||
-        null;
-      if (taskHub && String(taskHub) !== String(hubId)) {
-        return;
-      }
+
+    let rawEmail = null;
+    if (task.assignee) {
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     }
+    const email = rawEmail ? rawEmail.toLowerCase() : null;
+    if (!email) return;
     const dateStr = task.doneTime || task.createdTime;
-    const wibTime = parseAndShiftToUTC7(dateStr);
-    if (!wibTime) return;
+    const wibTime = new Date(dateStr);
+    if (isNaN(wibTime.getTime())) return;
 
     const year = wibTime.getFullYear();
     const month = String(wibTime.getMonth() + 1).padStart(2, '0');
@@ -289,7 +281,8 @@ export function processServiceLevelData(
     }
     grouped[key].total += 1;
     if (task.statusDelivery) {
-      const rawStatus = String(task.statusDelivery).toUpperCase();
+      let rawStatus = String(task.statusDelivery).toUpperCase();
+      if (rawStatus.includes(',')) rawStatus = rawStatus.split(',')[0].trim();
       const status = rawStatus.replace('_', ' ').trim();
 
       if (status.startsWith('SUKSES')) {
@@ -331,11 +324,19 @@ export function processSequenceAccuracyData(
       return;
     }
 
-    const email = task.assignee && task.assignee[0] ? task.assignee[0].toLowerCase() : null;
+    let rawEmail = null;
+    if (task.assignee) {
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
+    }
+    const email = rawEmail ? rawEmail.toLowerCase() : null;
+
     if (!email) return;
+
     const dateStr = task.doneTime || task.createdTime;
-    const wibTime = parseAndShiftToUTC7(dateStr);
-    if (!wibTime) return;
+    const wibTime = new Date(dateStr);
+    if (isNaN(wibTime.getTime())) return;
+
     const year = wibTime.getFullYear();
     const month = String(wibTime.getMonth() + 1).padStart(2, '0');
     const day = String(wibTime.getDate()).padStart(2, '0');
@@ -346,8 +347,10 @@ export function processSequenceAccuracyData(
     const arrivalSource = isGR
       ? task.page1DoneTime
       : task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
-    const arrDate = parseAndShiftToUTC7(arrivalSource);
-    const arrivalTimestamp = arrDate ? arrDate.getTime() : 9999999999999;
+
+    const arrDate = arrivalSource ? new Date(arrivalSource) : null;
+    const arrivalTimestamp =
+      arrDate && !isNaN(arrDate.getTime()) ? arrDate.getTime() : 9999999999999;
     if (!driverDateMap[groupingKey]) driverDateMap[groupingKey] = [];
     driverDateMap[groupingKey].push({
       roSequence: task.routePlannedOrder,
@@ -456,8 +459,14 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       truncateInvoice,
       isTruncated,
     } = parseCustomerString(task.customerOrder) || 'N/A';
-    const rawAssignee = task.assignee && task.assignee.length > 0 ? task.assignee[0] : 'N/A';
-    let finalAssignee = driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
+
+    let rawAssignee = 'N/A';
+    if (task.assignee && task.assignee !== '') {
+      rawAssignee =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
+    }
+    let finalAssignee =
+      task.driverName || driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
     if (finalAssignee === 'N/A') finalAssignee = '-';
     const taskId = task._id || '-';
     const flow = task.flow || 'N/A';
@@ -478,11 +487,17 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     };
     if (task.status === 'DONE') {
       done++;
-      const statusDelivery = task.statusDelivery[0].toLowerCase();
+      let statusDelivery = '';
+      if (task.statusDelivery) {
+        statusDelivery =
+          typeof task.statusDelivery === 'string'
+            ? task.statusDelivery.split(',')[0].trim().toLowerCase()
+            : task.statusDelivery.toLowerCase();
+      }
       if (statusDelivery === 'sukses') {
         successList.push(baseData);
         success++;
-      } else if (statusDelivery === 'terima sebagian') {
+      } else if (statusDelivery === 'terima sebagian' || statusDelivery === 'partial') {
         partialList.push(baseData);
         partial++;
       } else if (statusDelivery === 'batal') {
@@ -519,8 +534,8 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     else if (flow.includes('Re Delivery')) flowReDelivery++;
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
-      const startDateWIB = formatDateUniversal(task.startTime, 'DD-MM-YYYY');
-      const doneDateWIB = formatDateUniversal(task.doneTime, 'DD-MM-YYYY');
+      const startDateWIB = task.startTime.split('T')[0];
+      const doneDateWIB = task.doneTime.split('T')[0];
 
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
         const startDate = new Date(task.startTime);

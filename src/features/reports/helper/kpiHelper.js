@@ -231,7 +231,7 @@ async function parseTaskFiles(files) {
         const start = c.start !== -1 ? formatExcelDate(r[c.start]) : '';
         if (start) {
           let iso = '';
-          const p = start.split(' ')[0];
+          const p = start.split(/[ T]/)[0];
           if (p.includes('-')) {
             const s = p.split('-');
             iso = s[0].length === 4 ? p : s[2]?.length === 4 ? `${s[2]}-${s[1]}-${s[0]}` : '';
@@ -250,14 +250,14 @@ async function parseTaskFiles(files) {
         parsedTasks.push({
           flow: c.flow !== -1 ? cleanStr(r[c.flow]) || '-' : '-',
           startTime: start,
-          assignedVehicle: c.veh !== -1 ? cleanStr(r[c.veh]) || '-' : '-',
+          basePlat: c.veh !== -1 ? cleanStr(r[c.veh]) || '-' : '-',
           driverName: c.to !== -1 ? cleanStr(r[c.to]) : '',
           typeStorage: c.storage !== -1 ? cleanStr(r[c.storage]) || '-' : '-',
           customerOrder: c.order !== -1 ? cleanStr(r[c.order]) || '-' : '-',
           statusDelivery: c.deliv !== -1 ? cleanStr(r[c.deliv]) : '',
           statusGr: c.gr !== -1 ? cleanStr(r[c.gr]) : '',
           alasan: c.alasan !== -1 ? cleanStr(r[c.alasan]) || '-' : '-',
-          gpsSesuai: [c.gps !== -1 ? cleanStr(r[c.gps]) : ''],
+          gpsSesuai: c.gps !== -1 ? cleanStr(r[c.gps]) : '',
         });
       });
   }

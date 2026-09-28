@@ -109,8 +109,14 @@ async function parseManualRouting(routingBuffers, driverData, vehicleTypes) {
 
       const rawPlate =
         idxVehicleName !== -1 && row[idxVehicleName] ? String(row[idxVehicleName]) : '';
-      const rawAssignee =
-        idxAssignee !== -1 && row[idxAssignee] ? String(row[idxAssignee]).trim().toLowerCase() : '';
+
+      let rawAssignee = '';
+      if (idxAssignee !== -1 && row[idxAssignee]) {
+        const assigneeStr = String(row[idxAssignee]);
+        rawAssignee = assigneeStr.includes(',')
+          ? assigneeStr.split(',')[0].trim().toLowerCase()
+          : assigneeStr.trim().toLowerCase();
+      }
 
       if (!rawPlate && !rawAssignee) continue;
 
@@ -265,8 +271,14 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
       const title = idxTitle !== -1 && row[idxTitle] ? String(row[idxTitle]) : '';
       const pickupCustomerName = `${title} (${customerName})`;
 
-      let statusLabel =
-        idxStatusDel !== -1 && row[idxStatusDel] ? String(row[idxStatusDel]).toUpperCase() : null;
+      let statusLabel = null;
+      if (idxStatusDel !== -1 && row[idxStatusDel]) {
+        const rawStatus = String(row[idxStatusDel]);
+        statusLabel = rawStatus.includes(',')
+          ? rawStatus.split(',')[0].trim().toUpperCase()
+          : rawStatus.toUpperCase();
+      }
+
       const taskStatus = idxStatus !== -1 && row[idxStatus] ? String(row[idxStatus]) : null;
       statusLabel = flow.toLowerCase() === 'pickup' && taskStatus ? 'SUKSES' : statusLabel;
 
@@ -297,13 +309,12 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           stats.failedCount += 1;
         }
 
-        const startDateOnly = startTime ? startTime.split(/[T\s]/)[0] : null;
-        const doneDateOnly = doneTime && doneTime !== '-' ? doneTime.split(/[T\s]/)[0] : null;
+        const startDateOnly = startTime ? startTime.split('T')[0] : null;
+        const doneDateOnly = doneTime && doneTime !== '-' ? doneTime.split('T')[0] : null;
         if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly && !isOngoingTask) {
-          const parts = doneDateOnly.split('-');
           stats.mismatchCustomers.push({
             name: customerName,
-            date: parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : doneDateOnly,
+            date: formatDateUniversal(doneTime, 'DD-MM-YYYY'),
           });
         }
         if (

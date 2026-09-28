@@ -2,14 +2,12 @@ import {
   calculateReturnHubDistance,
   formatDateUniversal,
   formatMinutesToHHMM,
-  formatUTC7,
   getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
   heatMap,
   isEmpty,
   isPastDate,
-  parseApiDateString,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -176,14 +174,14 @@ export function calculateTruckDetailData(
 
   cleanTasks.forEach((task) => {
     const dateKey =
-      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+      (task.startTime && task.startTime.split('T')[0]) ||
+      (task.doneTime && task.doneTime.split('T')[0]);
     if (!dateKey) return;
 
     let rawEmail = null;
-    if (Array.isArray(task.assignee) && task.assignee.length > 0) {
-      rawEmail = task.assignee[0];
-    } else if (typeof task.assignee === 'string') {
-      rawEmail = task.assignee;
+    if (task.assignee) {
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     } else if (task.assignedTo && task.assignedTo.email) {
       rawEmail = task.assignedTo.email;
     } else if (task.doneBy) {
@@ -235,8 +233,8 @@ export function calculateTruckDetailData(
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
       const hasSplitTask = task.isSplitTask === 'true';
-      const startD = formatUTC7(task.startTime, 'YYYY-MM-DD');
-      const doneD = formatUTC7(task.doneTime, 'YYYY-MM-DD');
+      const startD = task.startTime ? task.startTime.split('T')[0] : null;
+      const doneD = task.doneTime ? task.doneTime.split('T')[0] : null;
 
       let isDateDiff = false;
       let dayDiffCount = 0;
@@ -273,11 +271,19 @@ export function calculateTruckDetailData(
       } else {
         arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
       }
-      const arrObj = parseApiDateString(arrivalSource);
-      const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
+
+      const arrDt = new Date(arrivalSource);
+      const arrMs = isNaN(arrDt.getTime()) ? null : arrDt.getTime();
+      const arrivalTimestamp = arrMs ? arrMs : 9999999999999;
+
+      const formatStringDT = (d) => {
+        if (!d || d === '-') return '-';
+        return formatDateTimeWIB(d);
+      };
+
       const realStartTimeStr = arrivalSource
-        ? formatDateTimeWIB(arrivalSource)
-        : formatDateTimeWIB(task.startTime);
+        ? formatStringDT(arrivalSource)
+        : formatStringDT(task.startTime);
 
       const customerData = parseCustomerString(task.customerOrder || '');
       const finalCustomerName =

@@ -27,20 +27,23 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
   const rawTasks = [];
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
+      const dObj = new Date(task.doneTime || task.createdTime);
       if (startDateStr && endDateStr) {
-        const dObj = parseApiDateString(task.doneTime || task.createdTime);
-        if (dObj) {
-          const wibDate = formatDateUniversal(dObj, 'YYYY-MM-DD');
+        if (!isNaN(dObj.getTime())) {
+          const wibDate = dObj.toISOString().split('T')[0];
           if (wibDate < startDateStr || wibDate > endDateStr) {
             return;
           }
         }
       }
 
-      const status = task.label && task.label.length > 0 ? task.label[0].toUpperCase() : '';
+      const status = task.statusDelivery ? task.statusDelivery.split(',')[0].trim().toUpperCase() : '';
       if (TARGET_STATUSES.includes(status)) {
-        const email =
-          task.assignee && task.assignee.length > 0 ? normalizeEmail(task.assignee[0]) : '';
+        let emailRaw = '';
+        if (task.assignee) {
+           emailRaw = typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
+        }
+        const email = normalizeEmail(emailRaw);
         if (!driverMap.has(email)) return;
         const driverInfo = driverMap.get(email);
         const flow = task.flow || '';

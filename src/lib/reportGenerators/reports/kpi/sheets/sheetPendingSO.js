@@ -1,4 +1,4 @@
-import { formatUTC7, getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import { getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetPendingSO(tasksData, driverData) {
@@ -6,16 +6,30 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      const statusDeliv = Array.isArray(task.statusDelivery)
-        ? task.statusDelivery[0]
-        : task.statusDelivery;
+      let statusDeliv = '';
+      if (task.statusDelivery) {
+        statusDeliv =
+          typeof task.statusDelivery === 'string'
+            ? task.statusDelivery.split(',')[0].trim()
+            : task.statusDelivery;
+      }
       let isPending = String(statusDeliv || '').toUpperCase() === 'PENDING';
 
-      if (!isPending) isPending = String(task.statusGr || '').toUpperCase() === 'PENDING';
+      if (!isPending) {
+        let statusGr = '';
+        if (task.statusGr) {
+          statusGr = typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
+        }
+        isPending = String(statusGr || '').toUpperCase() === 'PENDING';
+      }
 
       if (isPending) {
         let driverName = task.driverName;
-        const rawAssignee = task.assignee?.[0] || '';
+        let rawAssignee = '';
+        if (task.assignee) {
+          rawAssignee =
+            typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
+        }
         const email = normalizeEmail(rawAssignee);
 
         const driverInfo = (driverData || []).find(
@@ -24,14 +38,19 @@ export function generateSheetPendingSO(tasksData, driverData) {
             (driverName && d.name && d.name.toUpperCase() === driverName.toUpperCase())
         );
 
-        let rawPlat = driverInfo?.plat || task.assignedVehicle.name || '-';
+        let rawPlat = driverInfo?.plat || task.basePlat || task.vehicleName || task.plat || '-';
         const finalPlat = getBasePlate(rawPlat);
         const finalDriver = driverInfo?.name || driverName || rawAssignee || '-';
         const custInfo = parseCustomerString(task.customerOrder || '');
 
+        let formattedStartTime = '-';
+        if (task.startTime) {
+          formattedStartTime = task.startTime.split('T')[0];
+        }
+
         pendingRows.push([
           task.flow || '-',
-          formatUTC7(task.startTime, 'DD-MM-YYYY'),
+          formattedStartTime,
           finalPlat,
           finalDriver,
           custInfo.fullCustomerName || custInfo.name || '-',

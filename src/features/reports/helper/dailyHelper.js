@@ -25,9 +25,10 @@ const detectRoutingDateFromTasks = (allTasks, fallbackBaseDate) => {
   const dates = [];
   allTasks.forEach((task) => {
     if (task.createdFrom === 'API' && task.createdTime) {
-      const d = new Date(task.createdTime);
-      d.setHours(d.getHours() + 7);
-      dates.push(d.toISOString().split('T')[0]);
+      const datePart = task.createdTime.split('T')[0];
+      if (datePart) {
+        dates.push(datePart);
+      }
     }
   });
 

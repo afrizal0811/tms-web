@@ -2,7 +2,6 @@ import { getDrivers, getTruckNonTms } from '@/lib/api/mileapp';
 import {
   formatDateUniversal,
   formatLongDate,
-  formatUTC7,
   getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
@@ -120,7 +119,7 @@ export async function calculateTruckUsageData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = formatUTC7(t.startTime, 'YYYY-MM-DD');
+      const d = t.startTime ? t.startTime.split('T')[0] : null;
       if (d) taskPresence[d] = true;
     });
   }
@@ -326,24 +325,20 @@ export async function calculateTruckUsageData(
 
     if (taskData && Array.isArray(taskData)) {
       taskData.forEach((task) => {
-        const dateKey = formatUTC7(task.startTime, 'YYYY-MM-DD');
+        const dateKey = task.startTime ? task.startTime.split('T')[0] : null;
         if (!dateKey || !dateMap[dateKey]) return;
 
         if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
         let rawEmail = null;
-        if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
-        else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+        if (task.assignee)
+          rawEmail =
+            typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
         else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
         else if (task.doneBy) rawEmail = task.doneBy;
 
-        const rawPlate =
-          task.vehicleName ||
-          task.assignedVehicle?.name ||
-          task.assignedVehicle?.plat ||
-          task.plat ||
-          '';
+        const rawPlate = task.basePlat || task.vehicleName || task.plat || '';
         const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 
@@ -381,7 +376,7 @@ export async function calculateTruckUsageData(
 
     if (taskData && Array.isArray(taskData)) {
       taskData.forEach((task) => {
-        const dateKey = formatUTC7(task.startTime, 'YYYY-MM-DD');
+        const dateKey = task.startTime ? task.startTime.split('T')[0] : null;
         if (!dateKey || !dateMap[dateKey]) return;
         if (usedVehiclesPerDay.has(dateKey) && usedVehiclesPerDay.get(dateKey).size > 0) return;
 
@@ -389,18 +384,14 @@ export async function calculateTruckUsageData(
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
         let rawEmail = null;
-        if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
-        else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+        if (task.assignee)
+          rawEmail =
+            typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
         else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
         else if (task.doneBy) rawEmail = task.doneBy;
 
         const emailClean = (rawEmail || '').toLowerCase().trim();
-        const rawPlate =
-          task.vehicleName ||
-          task.assignedVehicle?.name ||
-          task.assignedVehicle?.plat ||
-          task.plat ||
-          '';
+        const rawPlate = task.basePlat || task.vehicleName || task.plat || '';
         const rawCanonical = normalizePlate(rawPlate);
         if (conditionalPlates.has(rawCanonical)) return;
 

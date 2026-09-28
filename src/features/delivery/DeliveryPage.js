@@ -16,8 +16,6 @@ import {
   calculateStartFinishDates,
   checkInvalidSoList,
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
   getBaseVehicleType,
   isEmpty,
   normalizeEmail,
@@ -27,13 +25,7 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  getDrivers,
-  getHubs,
-  getLocationHistories,
-  getResults,
-  getTasks,
-} from '../../lib/api/mileapp';
+import { getHubs, getLocationHistories, getResults, getTasks } from '../../lib/api/mileapp';
 
 import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
@@ -71,8 +63,6 @@ export default function DeliveryPage() {
   const [allRoutes, setAllRoutes] = useState([]);
   const [bunSoList, setBunSoList] = useState([]);
   const [downloadType, setDownloadType] = useState(null);
-  const [driverData, setDriverData] = useState({});
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
   const [hubsData, setHubsData] = useState([]);
   const [isBunModalOpen, setIsBunModalOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -97,7 +87,6 @@ export default function DeliveryPage() {
   const [tasksData, setTasksData] = useState({});
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
-  const driversArray = driverData ? Object.values(driverData) : null;
 
   useEffect(() => {
     setIsClient(true);
@@ -156,7 +145,7 @@ export default function DeliveryPage() {
   };
 
   const handleRowClick = (taskId) => {
-    if (!taskId || taskId === '-') return;
+    if (!taskId || taskId === '-' || taskId.includes('hub')) return;
     setSelectedTaskId(taskId);
     setIsTaskModalOpen(true);
   };
@@ -274,21 +263,6 @@ export default function DeliveryPage() {
         const activeHub = currentHubs.activeHub;
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
 
-        const rawDrivers = await getDrivers();
-        if (isEmpty(rawDrivers)) {
-          setEmptyMessage(t('common.no_driver'));
-          throw new Error(t('common.no_driver'));
-        }
-
-        const dataObj = {};
-        const mapObj = new Map();
-        (Array.isArray(rawDrivers) ? rawDrivers : []).forEach((d) => {
-          const email = normalizeEmail(d.email);
-          dataObj[email] = d;
-          mapObj.set(email, getBasePlate(d.plat) || 'Other');
-        });
-        setDriverData(dataObj);
-
         const routingDate = new Date(deliveryDateObj);
         routingDate.setDate(deliveryDateObj.getDate() - (deliveryDateObj.getDay() === 1 ? 2 : 1));
 
@@ -319,9 +293,7 @@ export default function DeliveryPage() {
 
         setTasksData(tasksResponse);
         setRoutingResults(resultsData);
-        const filteredTasks = (Array.isArray(tasksResponse) ? tasksResponse : []).filter(
-          (t) => Array.isArray(t?.assignee) && t.assignee.length > 0
-        );
+        const filteredTasks = tasksResponse.filter((t) => t?.assignee);
 
         const tempBunList = [];
         filteredTasks.forEach((task) => {
@@ -342,7 +314,7 @@ export default function DeliveryPage() {
               tempBunList.push({
                 so,
                 customer: parsedCust.name || '-',
-                vehicle: task.assignedVehicle?.name || task.vehicleName || task.plat || '-',
+                vehicle: task.basePlat || task.vehicleName || task.plat || '-',
                 items: allItems,
                 hasNonBun,
               });
@@ -366,19 +338,9 @@ export default function DeliveryPage() {
         });
 
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
-          const email = normalizeEmail(task?.assignee[0]);
-          const rawTaskPlat =
-            task.assignedVehicle?.name ||
-            task.assignedVehicle?.plat ||
-            (typeof task.assignedVehicle === 'string' ? task.assignedVehicle : null) ||
-            task.vehicle?.name ||
-            task.vehicle?.plat ||
-            task.vehicleName ||
-            task.vehicleId ||
-            task.plat ||
-            task.licensePlate ||
-            null;
-          const plat = getBasePlate(rawTaskPlat) || mapObj.get(email) || t('common.others');
+          const email = normalizeEmail(task?.assignee);
+          const rawTaskPlat = task.basePlat || null;
+          const plat = rawTaskPlat || t('common.others');
           const groupKey = `${email}_${plat}`;
 
           if (!groups[groupKey])
@@ -386,7 +348,8 @@ export default function DeliveryPage() {
               vehicleId: groupKey,
               plat,
               email,
-              assigneeName: task.user?.name || task.courierName || dataObj[email]?.name || email,
+              vehicleType: task.vehicleType || '',
+              assigneeName: task.driverName || task.user?.name || task.courierName || email,
               tasks: [],
             };
           groups[groupKey].tasks.push(task);
@@ -411,7 +374,7 @@ export default function DeliveryPage() {
           });
 
         const finalRoutes = Object.values(tasksByPlat).map(
-          ({ vehicleId, plat, tasks, email, assigneeName }) => {
+          ({ vehicleId, plat, tasks, email, assigneeName, vehicleType }) => {
             tasks.sort(
               (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
             );
@@ -421,6 +384,9 @@ export default function DeliveryPage() {
                 .split(',')
                 .map((s) => s.trim())
                 .filter(Boolean);
+
+              const startFormat = task.startTime ? task.startTime.split('T')[0] : null;
+
               return {
                 visitId: task._id || task.taskId,
                 routePlannedOrder: task.routePlannedOrder,
@@ -432,8 +398,8 @@ export default function DeliveryPage() {
                 locationName: task.locationName || null,
                 openTime: task.openTime,
                 closeTime: task.closeTime,
-                eta: `${formatUTC7(task.startTime)} ${task.eta}`,
-                etd: `${formatUTC7(task.startTime)} ${task.etd}`,
+                eta: startFormat ? `${startFormat} ${task.eta}` : task.eta,
+                etd: startFormat ? `${startFormat} ${task.etd}` : task.etd,
                 isHub: false,
                 isManual: task.routePlannedOrder == null,
                 isReDelivery: task.flow?.toLowerCase().includes('re delivery'),
@@ -481,6 +447,7 @@ export default function DeliveryPage() {
               assigneeName,
               driverName: assigneeName,
               basePlat: plat,
+              vehicleType: vehicleType,
               trips: finalTrips,
             };
           }
@@ -646,16 +613,13 @@ export default function DeliveryPage() {
       if (!keep) return false;
 
       if (typeFilter && typeFilter !== 'all') {
-        const email = normalizeEmail(route.assignee);
-        const d = driverData[email];
-        if (!d) return false;
-        if (getBaseVehicleType(d.type, masterVehicleTypes) !== typeFilter) return false;
+        if (getBaseVehicleType(route.vehicleType, masterVehicleTypes) !== typeFilter) return false;
       }
       return true;
     });
 
     return sortRows([...routes], 'vehicleName', 'vehicleName');
-  }, [searchQuery, enrichedRoutes, driverData, storageFilter, typeFilter, masterVehicleTypes]);
+  }, [searchQuery, enrichedRoutes, storageFilter, typeFilter, masterVehicleTypes]);
 
   useEffect(() => {
     if (activeVehicleId && !filteredVehicleRoutes.some((r) => r.vehicleId === activeVehicleId)) {
@@ -892,7 +856,6 @@ export default function DeliveryPage() {
         tabs={tabData}
         isLoading={isLoading}
         isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
-        emptyMessage={emptyMessage}
         footer={{ text: t('common.click_for_detail') }}
         bodyProps={{ className: 'min-h-[400px]', routingData: routingResults }}
       >
@@ -951,7 +914,6 @@ export default function DeliveryPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        driverData={driversArray}
         allTasks={tasksData}
       />
     </>

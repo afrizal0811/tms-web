@@ -1,11 +1,13 @@
-import { formatMinutesToHHMM, formatUTC7, getStorageType, normalizeEmail } from '@/lib/utils';
+import { formatMinutesToHHMM, formatDateUniversal, getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupFive(tasksData, driverData, historiesData, g2DetailRows = []) {
   let countMasterMaintenance = 0;
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      const val = Array.isArray(task.gpsSesuai) ? task.gpsSesuai[0] : task.gpsSesuai;
+      let val = task.gpsSesuai;
+      if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
+
       if (
         String(val || '')
           .trim()
@@ -48,21 +50,25 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
           let durasiStr = null;
 
           if (startStr && finishStr) {
-            startDate = formatUTC7(startStr, 'DD-MM-YYYY');
-            startTime = formatUTC7(startStr, 'HH:mm');
-            finishDate = formatUTC7(finishStr, 'DD-MM-YYYY');
-            finishTime = formatUTC7(finishStr, 'HH:mm');
-            const diffMins = (new Date(finishStr) - new Date(startStr)) / 60000;
-            if (diffMins > 0) {
-              totalActMinutes += diffMins;
-              totalAllMinutes += diffMins;
-              durasiStr = formatMinutesToHHMM(diffMins, false);
+            const startObj = new Date(startStr);
+            const finishObj = new Date(finishStr);
+
+            if (!isNaN(startObj.getTime()) && !isNaN(finishObj.getTime())) {
+              startDate = formatDateUniversal(startStr, 'DD-MM-YYYY');
+              startTime = formatDateUniversal(startStr, 'HH:mm');
+              finishDate = formatDateUniversal(finishStr, 'DD-MM-YYYY');
+              finishTime = formatDateUniversal(finishStr, 'HH:mm');
+              const diffMins = (finishObj.getTime() - startObj.getTime()) / 60000;
+              if (diffMins > 0) {
+                totalActMinutes += diffMins;
+                durasiStr = formatMinutesToHHMM(diffMins, false);
+              }
             }
           }
 
           startFinishRows.push({
             tipe: category,
-            plat: driver.plat,
+            plat: driver.basePlat,
             driver: driver.name,
             startDate,
             startTime,
@@ -75,7 +81,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
       } else {
         startFinishRows.push({
           tipe: category,
-          plat: driver.plat,
+          plat: driver.basePlat,
           driver: driver.name,
           startDate: null,
           startTime: null,

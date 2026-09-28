@@ -10,13 +10,9 @@ import {
 } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
-  calculateMinuteDifference,
   calculateStartFinishDates,
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
   isEmpty,
-  normalizeEmail,
   parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
@@ -314,12 +310,6 @@ export const processServiceLevelReport = async ({
   driverData,
 }) => {
   const generatedFiles = [];
-  const driverMap = new Map();
-  driverData.forEach((d) => {
-    if (d.email) {
-      driverMap.set(normalizeEmail(d.email), { name: d.name || '-', plat: d.plat || '-' });
-    }
-  });
 
   for (const date of datesToProcess) {
     const { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString } = getReportDates(
@@ -332,7 +322,6 @@ export const processServiceLevelReport = async ({
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
-        isNeedFields: false,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
@@ -345,6 +334,7 @@ export const processServiceLevelReport = async ({
     });
 
     const { timeDataObjects } = convertLocationHistories(locationHistoryByDate, driverData);
+    console.log('timeDataObjects :', timeDataObjects);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
@@ -355,26 +345,28 @@ export const processServiceLevelReport = async ({
       const arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
       const doneSource = task.page3DoneTime || task.doneTime;
       const flow = task.flow || '-';
-      const statusDelivery = task.statusDelivery || task.label || '-';
-      const created = task.createdTime ? formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm') : '-';
-      const arrived = arrivalSource ? formatUTC7(arrivalSource, 'DD/MM/YYYY HH:mm') : '-';
-      const assigned = task.assignedTime ? formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') : '-';
-      const completed = doneSource ? formatUTC7(doneSource, 'DD/MM/YYYY HH:mm') : '-';
+      const statusDelivery = task.statusDelivery || '-';
+      const created = task.createdTime || '-';
+      const arrived = arrivalSource || '-';
+      const assigned = task.assignedTime || '-';
+      const completed = doneSource || '-';
       let serviceLevel = '-';
       let startTrip = null;
-      let driverName = '-';
-      let licenseNumber = '-';
-      if (task.createdTime && doneSource) {
-        const diff = calculateMinuteDifference(task.createdTime, doneSource);
-        if (diff !== null) {
-          const days = Math.ceil(diff / 1440) || 1;
-          serviceLevel = `${days}`;
+      let driverName = task.driverName || '-';
+      let licenseNumber = task.basePlat || '-';
+
+      const createdTime = new Date(created);
+      const doneDate = new Date(doneSource);
+
+      if (!isNaN(createdTime) && !isNaN(doneDate)) {
+        const diffMs = doneDate.getTime() - createdTime.getTime();
+
+        if (diffMs > 0) {
+          serviceLevel = `${Math.ceil(diffMs / 86400000)}`;
         }
       }
 
-      const assigneeArray = task.assignee || [];
-      const assigneeEmail = Array.isArray(assigneeArray) ? assigneeArray[0] : assigneeArray;
-
+      let assigneeEmail = task.assignee || '';
       if (assigneeEmail) {
         const driverHistory = filteredTimeData.find((item) => item.email === assigneeEmail);
         const timeDriver =
@@ -382,15 +374,7 @@ export const processServiceLevelReport = async ({
             ? `${driverHistory.startDate} ${driverHistory.startTimeFmt}`
             : '-';
 
-        startTrip = !isEmpty(timeDriver)
-          ? formatDateUniversal(timeDriver.replace(/-/g, '/'), 'DD/MM/YYYY HH:mm')
-          : '-';
-
-        const d = driverMap.get(normalizeEmail(assigneeEmail));
-        if (d) {
-          driverName = d.name;
-          licenseNumber = getBasePlate(d.plat);
-        }
+        startTrip = !isEmpty(timeDriver) ? timeDriver : '-';
       }
 
       return {

@@ -13,7 +13,6 @@ import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summa
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
-  formatUTC7,
   getDeliveryDateFromRouting,
   parseCustomerString,
   toApiDateString,
@@ -258,7 +257,8 @@ export default function useSummaryData() {
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
           const dateKey =
-            formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+            formatDateUniversal(task.startTime, 'YYYY-MM-DD') ||
+            formatDateUniversal(task.doneTime, 'YYYY-MM-DD');
           if (!dateKey) return;
 
           initDate(dateKey);

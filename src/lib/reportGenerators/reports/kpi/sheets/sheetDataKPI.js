@@ -1,4 +1,4 @@
-import { getBasePlate, isEmpty } from '@/lib/utils';
+import { getBasePlate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvertime = 0) {
@@ -90,10 +90,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g2 && Array.isArray(g2.detailRows)) {
     g2.detailRows.forEach((row) => {
       if (!row.isNoRoutingData) {
-        g2Map.set(
-          (row.driver || '').toUpperCase(),
-          row.spent > 0 ? Math.round(row.spent / 60) : 0
-        );
+        g2Map.set((row.driver || '').toUpperCase(), row.spent > 0 ? Math.round(row.spent / 60) : 0);
       }
     });
   }
@@ -102,33 +99,6 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g5 && Array.isArray(g5.startFinishRows)) {
     g5.startFinishRows.forEach((r) => {
       sfMap.set(`${r.driver}|${r.plat}`, r);
-    });
-  }
-
-  if (g5 && Array.isArray(g5.routeReviewRows)) {
-    g5.routeReviewRows.forEach((row) => {
-      const sfRow = sfMap.get(`${row.driver}|${row.plat}`);
-
-      let estOp = g2Map.has((row.driver || '').toUpperCase())
-        ? g2Map.get((row.driver || '').toUpperCase())
-        : '';
-      if (estOp === '' && !isEmpty(row.estOpHours)) estOp = Number(row.estOpHours);
-
-      let actOp = '';
-      if (sfRow && typeof sfRow.durasi === 'string' && sfRow.durasi.includes(':')) {
-        const parts = sfRow.durasi.split(':');
-        const totalMenit = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        actOp = Math.round(totalMenit / 60);
-      }
-      if (actOp === '' && !isEmpty(row.actOpHours)) actOp = Number(row.actOpHours);
-
-      if (
-        typeof estOp === 'number' &&
-        typeof actOp === 'number' &&
-        !(estOp === 0 && actOp !== '')
-      ) {
-        exactTotalOvertime += estOp - actOp;
-      }
     });
   }
 

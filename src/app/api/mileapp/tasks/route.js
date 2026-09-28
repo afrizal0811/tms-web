@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { formatMinutesToHHMM, formatUTC7, getBasePlate } from '@/lib/utils';
+import { formatMinutesToHHMM, formatUTC7, getBasePlate, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -78,95 +78,99 @@ export async function GET(request) {
     firstPageData.tasks.to = allTasks.length;
     firstPageData.tasks.total = allTasks.length;
 
-    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-    const [rawDrivers, mappingsDB] = await Promise.all([
-      prisma.driver.findMany({ where }),
-      prisma.vehicleMapping.findMany(),
-    ]);
+    if (!isEmpty(fields)) {
+      const where = hubId ? { hubs: { some: { id: hubId } } } : {};
+      const [rawDrivers, mappingsDB] = await Promise.all([
+        prisma.driver.findMany({ where }),
+        prisma.vehicleMapping.findMany(),
+      ]);
 
-    const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mappedType;
-      return acc;
-    }, {});
+      const mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mappedType;
+        return acc;
+      }, {});
 
-    const driversByEmail = {};
-    rawDrivers.forEach((d) => {
-      let mappedTypeStr = d.type;
-      if (d.plat && mappingsObj[d.plat]) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
-      }
+      const driversByEmail = {};
+      rawDrivers.forEach((d) => {
+        let mappedTypeStr = d.type;
+        if (d.plat && mappingsObj[d.plat]) {
+          mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
+        }
 
-      const email = (d.email || '').toLowerCase().trim();
-      if (email && email !== '-') {
-        driversByEmail[email] = {
-          ...d,
-          type: mappedTypeStr,
-          basePlat: getBasePlate(d.plat),
-        };
-      }
-    });
+        const email = (d.email || '').toLowerCase().trim();
+        if (email && email !== '-') {
+          driversByEmail[email] = {
+            ...d,
+            type: mappedTypeStr,
+            basePlat: getBasePlate(d.plat),
+          };
+        }
+      });
 
-    // Sorting data secara ascending berdasarkan createdTime sebelum nilai tanggal di-format menjadi string
-    allTasks.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
+      allTasks.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
 
-    allTasks.forEach((task) => {
-      if (task.startTime) task.startTime = formatUTC7(task.startTime, 'DD/MM/YYYY HH:mm');
-      if (task.endTime) task.endTime = formatUTC7(task.endTime, 'DD/MM/YYYY HH:mm');
-      if (task.assignedTime) task.assignedTime = formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm');
-      if (task.doneTime) task.doneTime = formatUTC7(task.doneTime, 'DD/MM/YYYY HH:mm');
-      if (task.createdTime) task.createdTime = formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm');
-      if (task.klikJikaSudahSampai)
-        task.klikJikaSudahSampai = formatUTC7(task.klikJikaSudahSampai, 'DD/MM/YYYY HH:mm');
-      if (task.page1DoneTime)
-        task.page1DoneTime = formatUTC7(task.page1DoneTime, 'DD/MM/YYYY HH:mm');
-      if (task.page2DoneTime)
-        task.page2DoneTime = formatUTC7(task.page2DoneTime, 'DD/MM/YYYY HH:mm');
-      if (task.page3DoneTime)
-        task.page3DoneTime = formatUTC7(task.page3DoneTime, 'DD/MM/YYYY HH:mm');
+      allTasks.forEach((task) => {
+        if (task.startTime) task.startTime = formatUTC7(task.startTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.endTime) task.endTime = formatUTC7(task.endTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.assignedTime)
+          task.assignedTime = formatUTC7(task.assignedTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.doneTime) task.doneTime = formatUTC7(task.doneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.createdTime) task.createdTime = formatUTC7(task.createdTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.klikJikaSudahSampai)
+          task.klikJikaSudahSampai = formatUTC7(task.klikJikaSudahSampai, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.page1DoneTime)
+          task.page1DoneTime = formatUTC7(task.page1DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.page2DoneTime)
+          task.page2DoneTime = formatUTC7(task.page2DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
+        if (task.page3DoneTime)
+          task.page3DoneTime = formatUTC7(task.page3DoneTime, 'YYYY-MM-DDTHH:mm:ssZ');
 
-      if (task.volumeCbm != null) task.volumeCbm = Number(Number(task.volumeCbm).toFixed(2));
-      if (task.weightKg != null) task.weightKg = Number(Number(task.weightKg).toFixed(2));
+        if (task.volumeCbm != null) task.volumeCbm = Number(Number(task.volumeCbm).toFixed(2));
+        if (task.weightKg != null) task.weightKg = Number(Number(task.weightKg).toFixed(2));
 
-      if (task.distance != null) task.distance = Number((task.distance / 1000).toFixed(2));
-      if (task.travelDistance != null)
-        task.travelDistance = Number((task.travelDistance / 1000).toFixed(2));
+        if (task.distance != null) task.distance = Number((task.distance / 1000).toFixed(2));
+        if (task.travelDistance != null)
+          task.travelDistance = Number((task.travelDistance / 1000).toFixed(2));
 
-      if (task.travelDuration != null)
-        task.travelDuration = formatMinutesToHHMM(task.travelDuration, false);
+        if (task.travelDuration != null)
+          task.travelDuration = formatMinutesToHHMM(task.travelDuration, false);
 
-      delete task.assignedVehicle;
-      delete task.parentId;
-      delete task.subId;
-      delete task.label;
-      delete task.taskType;
+        if (task.eta && typeof task.eta === 'string') task.eta = task.eta.substring(0, 5);
+        if (task.etd && typeof task.etd === 'string') task.etd = task.etd.substring(0, 5);
 
-      const assigneeEmail =
-        task.assignee && task.assignee.length > 0 ? task.assignee[0].toLowerCase().trim() : null;
-      const driverData = assigneeEmail ? driversByEmail[assigneeEmail] : null;
+        delete task.assignedVehicle;
+        delete task.parentId;
+        delete task.subId;
+        delete task.label;
+        delete task.taskType;
 
-      if (driverData) {
-        task.driverName = driverData.name;
-        task.basePlat = driverData.basePlat;
-        task.vehicleType = driverData.type;
-        task.maxVolume = driverData.maxVolume;
-        task.maxWeight = driverData.maxWeight;
-      }
+        const assigneeEmail =
+          task.assignee && task.assignee.length > 0 ? task.assignee[0].toLowerCase().trim() : null;
+        const driverData = assigneeEmail ? driversByEmail[assigneeEmail] : null;
 
-      task.weightPct =
-        task.maxWeight && task.weightKg != null
-          ? `${((task.weightKg / task.maxWeight) * 100).toFixed(2)}%`
-          : '0%';
-      task.volumePct =
-        task.maxVolume && task.volumeCbm != null
-          ? `${((task.volumeCbm / task.maxVolume) * 100).toFixed(2)}%`
-          : '0%';
+        if (driverData) {
+          task.driverName = driverData.name;
+          task.basePlat = driverData.basePlat;
+          task.vehicleType = driverData.type;
+          task.maxVolume = driverData.maxVolume;
+          task.maxWeight = driverData.maxWeight;
+        }
 
-      if (Array.isArray(task.gpsSesuai)) task.gpsSesuai = task.gpsSesuai.join(', ');
-      if (Array.isArray(task.statusDelivery)) task.statusDelivery = task.statusDelivery.join(', ');
-      if (Array.isArray(task.assignee)) task.assignee = task.assignee.join(', ');
-    });
+        task.weightPct =
+          task.maxWeight && task.weightKg != null
+            ? `${((task.weightKg / task.maxWeight) * 100).toFixed(2)}%`
+            : '0%';
+        task.volumePct =
+          task.maxVolume && task.volumeCbm != null
+            ? `${((task.volumeCbm / task.maxVolume) * 100).toFixed(2)}%`
+            : '0%';
 
-    console.log('allTasks :', allTasks[1]);
+        if (Array.isArray(task.gpsSesuai)) task.gpsSesuai = task.gpsSesuai.join(', ');
+        if (Array.isArray(task.statusDelivery))
+          task.statusDelivery = task.statusDelivery.join(', ');
+        if (Array.isArray(task.assignee)) task.assignee = task.assignee.join(', ');
+      });
+    }
     return NextResponse.json(allTasks);
   } catch (error) {
     console.error('Error Tasks:', error);

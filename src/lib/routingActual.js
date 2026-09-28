@@ -3,7 +3,6 @@
 import { toastError, toastSuccess } from '@/lib/toast';
 import * as XLSX from 'xlsx-js-style';
 import {
-  calculateMinuteDifference,
   formatDateUniversal,
   getBasePlate,
   getStorageType,
@@ -33,21 +32,14 @@ export function routingActual({ tasks, drivers, dateStr }) {
   for (const t of tasks) {
     const flow = t.flow || '';
 
-    const taskPlat =
-      t.assignedVehicle?.name ||
-      t.assignedVehicle?.plat ||
-      (typeof t.assignedVehicle === 'string' ? t.assignedVehicle : null) ||
-      t.vehicle?.name ||
-      t.vehicle?.plat ||
-      t.vehicleName ||
-      t.vehicleId ||
-      t.plat ||
-      t.licensePlate ||
-      null;
+    const taskPlat = t.basePlat || t.vehicleName || t.vehicleId || t.plat || t.licensePlate || null;
 
-    const emailStr = Array.isArray(t.assignee) && t.assignee.length > 0 ? t.assignee[0] : null;
+    let emailStr = null;
+    if (t.assignee) {
+      emailStr = typeof t.assignee === 'string' ? t.assignee.split(',')[0].trim() : t.assignee;
+    }
     const driverEmail = normalizeEmail(emailStr);
-    const taskBasePlat = getBasePlate(taskPlat) || taskPlat || '';
+    const taskBasePlat = taskPlat || '';
 
     let driverInfo = null;
     if (driverEmail && taskBasePlat) {
@@ -62,7 +54,14 @@ export function routingActual({ tasks, drivers, dateStr }) {
     const basePlat = getBasePlate(finalPlat) || finalPlat;
     const groupKey = `${driverName}_${basePlat}`;
 
-    let statusLabel = t.statusDelivery?.length > 0 ? t.statusDelivery[0].toUpperCase() : null;
+    let statusLabel = null;
+    if (t.statusDelivery) {
+      statusLabel =
+        typeof t.statusDelivery === 'string'
+          ? t.statusDelivery.split(',')[0].trim().toUpperCase()
+          : t.statusDelivery.toUpperCase();
+    }
+
     if (flow === 'Pickup') statusLabel = t.status ? t.status.toUpperCase() : statusLabel;
     if (flow === 'Pickup' && statusLabel === 'DONE') statusLabel = 'SUKSES';
     if (t.status !== 'ONGOING' && flow !== 'Pickup') statusLabel = statusLabel || '-';
@@ -81,9 +80,19 @@ export function routingActual({ tasks, drivers, dateStr }) {
       : t.klikJikaSudahSampai || t.klikJikaAndaSudahSampai;
     const actualDep = isGrOrPickup ? t.page1DoneTime : t.page3DoneTime;
 
-    const actualArrVal = formatDateUniversal(actualArr, 'HH:mm') || '-';
-    const openTimeVal = formatDateUniversal(`${dateStr} ${t.openTime}`, 'HH:mm') || '-';
-    const closeTimeVal = formatDateUniversal(`${dateStr} ${t.closeTime}`, 'HH:mm') || '-';
+    const arrDate = new Date(String(actualArr).slice(0, 19));
+    const depDate = new Date(String(actualDep).slice(0, 19));
+
+    const actualArrTimestamp = isNaN(arrDate.getTime()) ? null : arrDate.getTime();
+    const actualDepTimestamp = isNaN(depDate.getTime()) ? null : depDate.getTime();
+
+    const actualArrVal = actualArrTimestamp ? formatDateUniversal(arrDate, 'HH:mm') : '-';
+    const actualDepVal = actualDepTimestamp ? formatDateUniversal(depDate, 'HH:mm') : '-';
+
+    const openTimeVal =
+      t.openTime || formatDateUniversal(`${dateStr} ${t.openTime}`, 'HH:mm') || '-';
+    const closeTimeVal =
+      t.closeTime || formatDateUniversal(`${dateStr} ${t.closeTime}`, 'HH:mm') || '-';
 
     let hoursStatus = null;
     if (actualArrVal !== '-' && openTimeVal !== '-' && closeTimeVal !== '-') {
@@ -94,13 +103,18 @@ export function routingActual({ tasks, drivers, dateStr }) {
       hoursStatus = isInside ? 'yes' : actualArrVal < openTimeVal ? 'early' : 'no';
     }
 
+    let actualVisitMinutes = '-';
+    if (actualArrTimestamp && actualDepTimestamp) {
+      actualVisitMinutes = Math.abs(Math.floor((actualDepTimestamp - actualArrTimestamp) / 60000));
+    }
+
     processed.push({
       groupKey,
       basePlat,
       driver: driverName,
       driverEmail,
       plat: finalPlat,
-      actualArrivalTimestamp: actualArr ? new Date(actualArr).getTime() : null,
+      actualArrivalTimestamp: actualArrTimestamp,
       roSequence: t.routePlannedOrder || 0,
       statusLabel,
       flow,
@@ -110,13 +124,12 @@ export function routingActual({ tasks, drivers, dateStr }) {
       locationId: cLoc,
       openTime: openTimeVal,
       closeTime: closeTimeVal,
-      eta: formatDateUniversal(`${dateStr} ${t.eta}`, 'HH:mm') || '-',
-      etd: formatDateUniversal(`${dateStr} ${t.etd}`, 'HH:mm') || '-',
+      eta: t.eta || '-',
+      etd: t.etd || '-',
       actualArrival: actualArrVal,
-      actualDeparture: formatDateUniversal(actualDep, 'HH:mm') || '-',
+      actualDeparture: actualDepVal,
       visitTime: t.visitTime || '-',
-      actualVisitTime:
-        actualArr && actualDep ? calculateMinuteDifference(actualArr, actualDep) : '-',
+      actualVisitTime: actualVisitMinutes,
       isManualAssign: !t.routePlannedOrder || t.routePlannedOrder === 0,
       isWithinHoursStatus: hoursStatus,
       reason: t.alasan || '',

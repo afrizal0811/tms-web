@@ -1,6 +1,6 @@
 import TaskModal from '@/components/modal/TaskModal';
 import Tooltip from '@/components/Tooltip';
-import { formatUTC7, getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
+import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
 const ReasonCell = ({ text, className }) => {
@@ -109,9 +109,9 @@ export default function PendingReasonsTab({
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-') return;
     const data = tasks.find((task) => task._id === taskId);
-    const date = data?.startTime ? formatUTC7(data?.startTime, 'DD/MM/YYYY') : '';
+    const date = data?.startTime ? data.startTime.split('T')[0] : '';
     const filter = tasks.filter((task) => {
-      const taskDate = formatUTC7(task.startTime, 'DD/MM/YYYY');
+      const taskDate = task.startTime ? task.startTime.split('T')[0] : '';
       return taskDate === date;
     });
 

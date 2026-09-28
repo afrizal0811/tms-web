@@ -2,30 +2,12 @@ import { routingActual } from '@/lib/routingActual';
 import {
   formatCoordinates,
   formatDateUniversal,
-  formatUTC7,
   getBasePlate,
   getDistance,
   isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
 import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
-
-const getTaskPlat = (item) =>
-  item?.vehicleName ||
-  item?.vehiclePlat ||
-  item?.licenseNumber ||
-  item?.licensePlate ||
-  item?.vehicleId ||
-  item?.vehicle_name ||
-  item?.vehicle_plate ||
-  item?.plate_number ||
-  item?.plat_nomor ||
-  (typeof item?.vehicle === 'string' ? item.vehicle : null) ||
-  item?.assignedVehicle?.name ||
-  item?.assignedVehicle?.plat ||
-  item?.plat ||
-  item?.nopol ||
-  '';
 
 export function parseRoutingData(
   filteredResults,
@@ -81,7 +63,14 @@ export function parseRoutingData(
       const driverName = route.driverName || '';
       if (!driverName) return;
 
-      const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
+      let assigneeEmail = '';
+      if (route.assignee) {
+        assigneeEmail =
+          typeof route.assignee === 'string'
+            ? route.assignee.split(',')[0].trim().toLowerCase()
+            : String(route.assignee).trim().toLowerCase();
+      }
+
       const driverInfo = emailMap.get(assigneeEmail);
 
       const rawPlat = route.vehicleName || '-';
@@ -181,26 +170,31 @@ export function parseRoutingData(
   }
 
   Array.from(uniqueTasksMap.values()).forEach((task) => {
-    const dateKey =
-      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+    const parseDateKey = (dateStr) => {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+    };
+
+    const dateKey = parseDateKey(task.startTime) || parseDateKey(task.doneTime);
     if (selectedDateString && dateKey !== selectedDateString) return;
 
     let rawEmail = null;
-    if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
-    else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+    if (task.assignee)
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     else if (task.assignedTo?.email) rawEmail = task.assignedTo.email;
     else if (task.doneBy) rawEmail = task.doneBy;
 
     const assigneeEmail = rawEmail ? String(rawEmail).trim().toLowerCase() : '';
     const driverInfo = emailMap.get(assigneeEmail);
-    const driverName = driverInfo ? driverInfo.name : rawEmail || 'N/A';
+    const driverName = task.driverName || driverInfo?.name || rawEmail || 'N/A';
     const taskW = Math.abs(Number(task.weightKg) || 0);
     const taskV = Math.abs(Number(task.volumeCbm) || 0);
 
     if (driverName !== 'N/A') {
-      const taskPlat = getTaskPlat(task) || driverInfo?.plat || '';
-      const basePlat = getBasePlate(taskPlat) || taskPlat;
-      const groupKey = `${driverName}_${basePlat}`;
+      const taskPlat = task?.basePlat;
+      const groupKey = `${driverName}_${taskPlat}`;
 
       if (!routingMap.has(groupKey)) {
         const masterData = driverData.find((d) => normalizeEmail(d.email) === assigneeEmail);
@@ -307,11 +301,16 @@ export function parseDeliveryData(
       stats.totalOutlet += 1;
       if (FAILED_STATUSES.includes(statusLabel) || isEmpty(statusLabel)) stats.failedCount += 1;
       if (task.isSplitTask === 'true' || task.isSplitTask === true) stats.hasSplitTask = true;
-
-      const startDate = formatUTC7(task.startTime, 'YYYY-MM-DD');
-      const doneDate = formatUTC7(task.doneTime, 'YYYY-MM-DD');
-      if (startDate && doneDate && startDate !== doneDate) {
-        stats.mismatchCustomers.push({ name: cName, date: doneDate });
+      const startTime = task.startTime ? task.startTime : '-';
+      const doneTime = task.doneTime ? task.doneTime : '-';
+      const startDateOnly = startTime ? formatDateUniversal(startTime, 'DD-MM-YYYY') : null;
+      const doneDateOnly =
+        doneTime && doneTime !== '-' ? formatDateUniversal(doneTime, 'DD-MM-YYYY') : null;
+      if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly) {
+        stats.mismatchCustomers.push({
+          name: cName,
+          date: formatDateUniversal(doneTime, 'DD-MM-YYYY'),
+        });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
         const pickupCName = `${task.title} (${cName})`;
