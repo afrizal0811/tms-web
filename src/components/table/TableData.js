@@ -33,7 +33,7 @@ export default function TableData({
 }) {
   const [internalSortConfig, setInternalSortConfig] = useState(null);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(25);
   const [prevData, setPrevData] = useState(data);
 
   const { t } = useLanguage();
@@ -79,13 +79,11 @@ export default function TableData({
   }, [data, sortConfig, customSort]);
 
   const paginatedData = useMemo(() => {
-    if (!paginate || limit === 'all') return sortedData;
     const start = (page - 1) * Number(limit);
     return sortedData.slice(start, start + Number(limit));
-  }, [sortedData, page, limit, paginate]);
+  }, [sortedData, page, limit]);
 
-  const totalPages =
-    !paginate || limit === 'all' ? 1 : Math.ceil(sortedData.length / Number(limit));
+  const totalPages = Math.ceil(sortedData.length / Number(limit));
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 bg-white dark:bg-slate-900 ">
@@ -175,8 +173,7 @@ export default function TableData({
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {paginatedData.map((row, rowIndex) => {
                 const tooltipMsg = rowTooltip ? rowTooltip(row) : null;
-                const absoluteIndex =
-                  paginate && limit !== 'all' ? (page - 1) * Number(limit) + rowIndex : rowIndex;
+                const absoluteIndex = paginate ? (page - 1) * Number(limit) + rowIndex : rowIndex;
 
                 const dataColumns = subHeaders
                   ? columns.reduce(
@@ -224,17 +221,16 @@ export default function TableData({
                 setPage(1);
               }}
               options={[
+                { label: '25', value: 25 },
                 { label: '50', value: 50 },
                 { label: '100', value: 100 },
-                { label: '200', value: 200 },
-                { label: 'All', value: 'all' },
               ]}
               placement="top"
               className="w-[90px] min-w-[90px]!"
             />
             <span className="ml-4">Total data: {sortedData.length}</span>
           </div>
-          {limit !== 'all' && totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
