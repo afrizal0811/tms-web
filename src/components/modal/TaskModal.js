@@ -199,9 +199,8 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
       translate('task_detail.modal.list_product'),
       translate('task_detail.modal.history'),
       ...(hasMap ? [translate('task_detail.modal.map')] : []),
-      ...(isSuperadmin
-        ? [`JSON ${translate('common.task')}`, `JSON ${translate('common.routing')}`]
-        : []),
+      ...(isSuperadmin && taskData ? [`JSON ${translate('common.task')}`] : []),
+      ...(isSuperadmin && resultData ? [`JSON ${translate('common.routing')}`] : []),
     ];
 
     const productColumns = [
