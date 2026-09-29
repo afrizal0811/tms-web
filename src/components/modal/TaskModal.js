@@ -7,7 +7,13 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getResult, getTask } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import { formatDateUniversal, isEmpty, parseCustomerString, ProperCaseText } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  formatMinutesToHHMM,
+  isEmpty,
+  parseCustomerString,
+  ProperCaseText,
+} from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import CopyButton from '../button/CopyButton';
 import JsonTree from '../JsonTree';
@@ -68,8 +74,8 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
         ]);
 
         setResultData(
-          resultRes.status === 'fulfilled' && resultRes.value && resultRes.value?.data
-            ? resultRes.value?.data || resultRes.value
+          resultRes.status === 'fulfilled' && resultRes.value && resultRes.value
+            ? resultRes.value
             : null
         );
       } catch (err) {
@@ -86,10 +92,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
     if (!val) return '-';
     const [lat, lng] = val.split(',').map((coord) => Number(coord).toFixed(7));
     return `${lat}, ${lng}`;
-  };
-  const renderFloatData = (val) => {
-    if (!val) return 0;
-    return Number(val).toFixed(2);
   };
 
   const getSubtitle = () => {
@@ -235,13 +237,13 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
         key: 'volume',
         sortable: true,
         label: translate('common.volume'),
-        render: (row) => renderFloatData(row.volume) ?? '-',
+        render: (row) => row.volume.toFixed(2),
       },
       {
         key: 'weight',
         sortable: true,
         label: translate('common.weight'),
-        render: (row) => renderFloatData(row.weight) ?? '-',
+        render: (row) => row.weight.toFixed(2),
       },
     ];
     const isAutomation =
@@ -383,7 +385,13 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                     actualVisitMins = 0;
                   }
                 } else actualVisitMins = '-';
-
+                const actualVisitTooltip =
+                  actualVisitMins > 60 ? `${actualVisitMins} ${translate('common.minute')}` : '';
+                const travelDurationTooltip =
+                  taskData?.travelDuration > 60
+                    ? `${taskData?.travelDuration} ${translate('common.minute')}`
+                    : '';
+                const actualVisitHour = formatMinutesToHHMM(actualVisitMins, false);
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
@@ -395,15 +403,16 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                       needEmpty={true}
                     />
                     <Field
-                      label={translate('common.weightas')}
+                      label={translate('common.weight')}
                       value={taskData.weightKg}
                       needEmpty={true}
                     />
                     <Field label={translate('common.actual_arrival')} value={arrivalDate} />
                     <Field label={translate('common.actual_departure')} value={departureDate} />
                     <Field
-                      label={`${translate('common.actual_visit')} (${translate('common.minute')})`}
-                      value={actualVisitMins}
+                      label={translate('common.actual_visit')}
+                      tooltip={actualVisitTooltip}
+                      value={actualVisitHour}
                       needEmpty={true}
                     />
                     <Field
@@ -447,80 +456,9 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                     />
                     <Field
                       label={translate('common.actual_travel_duration')}
-                      value={taskData?.travelDuration}
+                      value={taskData?.travelDurationHour}
+                      tooltip={travelDurationTooltip}
                     />
-                  </div>
-                );
-              })()}
-
-            {activeTab === translate('task_detail.modal.map') &&
-              hasMap &&
-              (() => {
-                const parseCoord = (coordStr) => {
-                  if (!coordStr) return null;
-                  const [lat, lng] = coordStr.split(',').map(Number);
-                  if (isNaN(lat) || isNaN(lng)) return null;
-                  return [lat, lng];
-                };
-                const expectedCoord = parseCoord(taskData.longlat);
-                const doneCoord = parseCoord(taskData.doneCoordinate);
-                const newCoord = parseCoord(taskData.klikLokasiClient);
-                const mapBounds = [expectedCoord, doneCoord, newCoord].filter(Boolean);
-
-                return (
-                  <div className="w-full h-[50vh] relative z-0 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                    <Map
-                      bounds={mapBounds}
-                      onMapReady={(map) => {
-                        map.dragging.disable();
-                        setTimeout(() => {
-                          map.setMinZoom(map.getZoom());
-                        }, 500);
-                      }}
-                    >
-                      {(rl, L, icons) => (
-                        <>
-                          {expectedCoord && (
-                            <rl.Marker
-                              position={expectedCoord}
-                              icon={icons.circle('E', 'bg-blue-500', 'text-xs')}
-                            >
-                              <rl.Tooltip direction="top" offset={[0, -10]}>
-                                {translate('task_detail.modal.expected_coord')}
-                              </rl.Tooltip>
-                            </rl.Marker>
-                          )}
-                          {doneCoord && (
-                            <rl.Marker
-                              position={doneCoord}
-                              icon={icons.circle(
-                                isIndonesian ? 'S' : 'D',
-                                'bg-green-500',
-                                'text-xs'
-                              )}
-                            >
-                              <rl.Tooltip direction="top" offset={[0, -10]}>
-                                {translate('task_detail.modal.done_coord')}
-                              </rl.Tooltip>
-                            </rl.Marker>
-                          )}
-                          {newCoord && (
-                            <rl.Marker
-                              position={newCoord}
-                              icon={icons.circle(
-                                isIndonesian ? 'B' : 'N',
-                                'bg-orange-500',
-                                'text-xs'
-                              )}
-                            >
-                              <rl.Tooltip direction="top" offset={[0, -10]}>
-                                {translate('task_detail.modal.new_coord')}
-                              </rl.Tooltip>
-                            </rl.Marker>
-                          )}
-                        </>
-                      )}
-                    </Map>
                   </div>
                 );
               })()}
@@ -530,19 +468,33 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                 let rTravelTime = 0;
                 let rWaitingTime = 0;
                 let rVisitTime = 0;
+                let rTravelTimeHour = 0;
+                let rWaitingTimeHour = 0;
+                let rVisitTimeHour = 0;
                 const rName = resultData?.name || '-';
 
-                if (resultData?.result?.routing && assigneeEmail) {
-                  const vehicleMatch = resultData.result.routing.find(
+                if (resultData?.routing && assigneeEmail) {
+                  const vehicleMatch = resultData.routing.find(
                     (v) => String(v.assignee).toLowerCase() === String(assigneeEmail).toLowerCase()
                   );
                   if (vehicleMatch && vehicleMatch.trips) {
-                    const targetVisitId = `taskId-${taskData._id}`;
-                    const tripMatch = vehicleMatch.trips.find((t) => t.visitId === targetVisitId);
+                    const tripMatch = vehicleMatch.trips.find((t) => t.visitId === taskData._id);
                     if (tripMatch) {
-                      rTravelTime = tripMatch.travelTime;
-                      rWaitingTime = tripMatch.waitingTime;
-                      rVisitTime = tripMatch.visitTime;
+                      rTravelTime =
+                        tripMatch.travelTime > 60
+                          ? `${tripMatch.travelTime} ${translate('common.minute')}`
+                          : 0;
+                      rWaitingTime =
+                        tripMatch.waitingTime > 60
+                          ? `${tripMatch.waitingTime} ${translate('common.minute')}`
+                          : 0;
+                      rVisitTime =
+                        tripMatch.visitTime > 60
+                          ? `${tripMatch.visitTime} ${translate('common.minute')}`
+                          : 0;
+                      rTravelTimeHour = tripMatch.travelTimeHour;
+                      rWaitingTimeHour = tripMatch.waitingTimeHour;
+                      rVisitTimeHour = tripMatch.visitTimeHour;
                     }
                   }
                 }
@@ -564,8 +516,9 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                     <Field label={translate('common.eta')} value={taskData.eta} />
                     <Field label={translate('common.etd')} value={taskData.etd} />
                     <Field
-                      label={`${translate('common.plan_visit')} (${translate('common.minute')})`}
-                      value={rVisitTime}
+                      label={translate('common.plan_visit')}
+                      tooltip={rVisitTime}
+                      value={rVisitTimeHour}
                     />
                     <Field
                       label={translate('common.plan_seq')}
@@ -573,18 +526,17 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                     />
                     <Field
                       label={translate('common.plan_travel_distance')}
-                      value={taskData.distance}
-                      needEmpty={true}
+                      value={taskData?.distance}
                     />
                     <Field
                       label={translate('common.plan_travel_duration')}
-                      value={renderFloatData(rTravelTime / 60)}
-                      needEmpty={true}
+                      tooltip={rTravelTime}
+                      value={rTravelTimeHour}
                     />
                     <Field
                       label={translate('task_detail.modal.waiting_time')}
-                      value={renderFloatData(rWaitingTime / 60)}
-                      needEmpty={true}
+                      tooltip={rWaitingTime}
+                      value={rWaitingTimeHour}
                     />
                   </div>
                 );
@@ -692,6 +644,78 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                 )}
               </div>
             )}
+
+            {activeTab === translate('task_detail.modal.map') &&
+              hasMap &&
+              (() => {
+                const parseCoord = (coordStr) => {
+                  if (!coordStr) return null;
+                  const [lat, lng] = coordStr.split(',').map(Number);
+                  if (isNaN(lat) || isNaN(lng)) return null;
+                  return [lat, lng];
+                };
+                const expectedCoord = parseCoord(taskData.longlat);
+                const doneCoord = parseCoord(taskData.doneCoordinate);
+                const newCoord = parseCoord(taskData.klikLokasiClient);
+                const mapBounds = [expectedCoord, doneCoord, newCoord].filter(Boolean);
+
+                return (
+                  <div className="w-full h-[50vh] relative z-0 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                    <Map
+                      bounds={mapBounds}
+                      onMapReady={(map) => {
+                        map.dragging.disable();
+                        setTimeout(() => {
+                          map.setMinZoom(map.getZoom());
+                        }, 500);
+                      }}
+                    >
+                      {(rl, L, icons) => (
+                        <>
+                          {expectedCoord && (
+                            <rl.Marker
+                              position={expectedCoord}
+                              icon={icons.circle('E', 'bg-blue-500', 'text-xs')}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.expected_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                          {doneCoord && (
+                            <rl.Marker
+                              position={doneCoord}
+                              icon={icons.circle(
+                                isIndonesian ? 'S' : 'D',
+                                'bg-green-500',
+                                'text-xs'
+                              )}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.done_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                          {newCoord && (
+                            <rl.Marker
+                              position={newCoord}
+                              icon={icons.circle(
+                                isIndonesian ? 'B' : 'N',
+                                'bg-orange-500',
+                                'text-xs'
+                              )}
+                            >
+                              <rl.Tooltip direction="top" offset={[0, -10]}>
+                                {translate('task_detail.modal.new_coord')}
+                              </rl.Tooltip>
+                            </rl.Marker>
+                          )}
+                        </>
+                      )}
+                    </Map>
+                  </div>
+                );
+              })()}
 
             {activeTab === `JSON ${translate('common.task')}` && (
               <div className="relative bg-slate-950 border border-slate-800 rounded-lg p-4 max-h-[60vh] overflow-y-auto">

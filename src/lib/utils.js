@@ -80,7 +80,7 @@ export function calculateTargetDates(selectedDateStr) {
 // Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
 export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
-    return "'-'";
+    return '-';
   }
   const hours = Math.floor(totalMinutes / 60);
   const minutes = Math.round(totalMinutes % 60);
