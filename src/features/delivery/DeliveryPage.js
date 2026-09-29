@@ -84,7 +84,6 @@ export default function DeliveryPage() {
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [tasksData, setTasksData] = useState({});
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
 
@@ -291,7 +290,6 @@ export default function DeliveryPage() {
           }),
         ]);
 
-        setTasksData(tasksResponse);
         setRoutingResults(resultsData);
         const filteredTasks = tasksResponse.filter((t) => t?.assignee);
 
@@ -914,7 +912,6 @@ export default function DeliveryPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        allTasks={tasksData}
       />
     </>
   );

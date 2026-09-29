@@ -103,7 +103,7 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     }
     setLoading(true);
     try {
-      const response = await getUsers(selectedLocation, emailInput);
+      const response = await getUsers(emailInput);
       let usersArray = [];
       if (Array.isArray(response)) {
         usersArray = response;
@@ -183,7 +183,9 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
           (r) => String(r._id || r.id) === String(userToConfirm.roleId)
         );
         rolePaths = userRole?.paths || [];
-      } catch (e) {}
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
+      }
 
       const filteredUserSession = {
         _id: userToConfirm._id,

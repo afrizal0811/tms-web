@@ -481,7 +481,7 @@ export default function TaskPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        allTasks={tasks}
+        isAllHub={isAllHub}
       />
     </>
   );

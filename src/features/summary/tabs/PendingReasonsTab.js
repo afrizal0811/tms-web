@@ -98,24 +98,14 @@ export default function PendingReasonsTab({
   hasPendingGR,
   translate,
   onUpdatePendingDetail,
-  driverData,
-  tasks,
 }) {
   const [modalData, setModalData] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [filteredTasks, setFilteredTasks] = useState(tasks);
 
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-') return;
-    const data = tasks.find((task) => task._id === taskId);
-    const date = data?.startTime ? data.startTime.split('T')[0] : '';
-    const filter = tasks.filter((task) => {
-      const taskDate = task.startTime ? task.startTime.split('T')[0] : '';
-      return taskDate === date;
-    });
 
-    setFilteredTasks(filter);
     setSelectedTaskId(taskId);
     setIsTaskModalOpen(true);
   };
@@ -172,8 +162,6 @@ export default function PendingReasonsTab({
           isOpen={isTaskModalOpen}
           onClose={() => setIsTaskModalOpen(false)}
           taskId={selectedTaskId}
-          driverData={driverData}
-          allTasks={filteredTasks}
         />
 
         <table className="border-collapse w-full text-sm">

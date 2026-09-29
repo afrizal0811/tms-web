@@ -4,17 +4,10 @@ import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
 import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
-import { getResult, getTask, getUsers } from '@/lib/api/mileapp';
+import { getResult, getTask } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import {
-  formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
-  isEmpty,
-  parseCustomerString,
-  ProperCaseText,
-} from '@/lib/utils';
+import { formatDateUniversal, isEmpty, parseCustomerString, ProperCaseText } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import CopyButton from '../button/CopyButton';
 import JsonTree from '../JsonTree';
@@ -46,12 +39,10 @@ const Field = ({
   </div>
 );
 
-export default function TaskModal({ isOpen, onClose, taskId, driverData = [], allTasks = [] }) {
+export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
-  const [createdBy, setCreatedBy] = useState(null);
-  const [updatedBy, setUpdatedBy] = useState(null);
   const [resultData, setResultData] = useState(null);
 
   const { t: translate, isIndonesian } = useLanguage();
@@ -68,26 +59,14 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     const loadData = async () => {
       setLoading(true);
       try {
-        const response = await getTask(taskId);
+        const response = await getTask(taskId, isAllHub);
         const task = response?.task || response;
         setTaskData(task);
 
-        const [createdRes, updatedRes, resultRes] = await Promise.allSettled([
-          task?.createdBy ? getUsers(task.hubId, task.createdBy) : Promise.resolve(null),
-          task?.updatedBy ? getUsers(task.hubId, task.updatedBy) : Promise.resolve(null),
+        const [resultRes] = await Promise.allSettled([
           task?.routingResultId ? getResult(task.routingResultId) : Promise.resolve(null),
         ]);
 
-        setCreatedBy(
-          createdRes.status === 'fulfilled' && createdRes.value && !createdRes.value.data
-            ? createdRes.value[0]?.name
-            : task?.createdBy
-        );
-        setUpdatedBy(
-          updatedRes.status === 'fulfilled' && updatedRes.value && !updatedRes.value.data
-            ? updatedRes.value[0]?.name
-            : task?.updatedBy
-        );
         setResultData(
           resultRes.status === 'fulfilled' && resultRes.value && resultRes.value?.data
             ? resultRes.value?.data || resultRes.value
@@ -101,12 +80,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     };
 
     loadData();
-  }, [isOpen, taskId, translate]);
-
-  const renderDate = (val) => {
-    if (!val) return '-';
-    return formatUTC7(val, 'DD/MM/YYYY HH:mm');
-  };
+  }, [isOpen, taskId, translate, isAllHub]);
 
   const renderCoordinate = (val) => {
     if (!val) return '-';
@@ -121,7 +95,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
   const getSubtitle = () => {
     if (!taskData) return '';
     const status = taskData.status || '-';
-    const statusDelivery = taskData.statusDelivery?.[0];
+    const statusDelivery = taskData.statusDelivery;
     const subtitleText = statusDelivery ? `${status} | ${statusDelivery}` : status;
     return subtitleText.toUpperCase();
   };
@@ -200,15 +174,10 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     }
 
     const custInfo = parseCustomerString(taskData.customerOrder);
-    const assigneeEmail = taskData.assignee?.[0];
-    const driver =
-      driverData.find(
-        (d) => String(d.email).toLowerCase() === String(assigneeEmail).toLowerCase()
-      ) || {};
-
-    const maxVehicle = driver.type || taskData?.maksimumVehicleType || '-';
-    const assigneeName = driver.name || assigneeEmail || '-';
-    const licenseNumber = getBasePlate(driver.plat) || '-';
+    const assigneeEmail = taskData.assignee;
+    const maxVehicle = taskData?.maksimumVehicleType || '-';
+    const assigneeName = taskData.driverName || assigneeEmail || '-';
+    const licenseNumber = taskData.basePlat || taskData.plat || '-';
 
     const products = taskData.listProduct || [];
     const uniqueProducts = new Set(products.map((p) => p.title)).size;
@@ -282,7 +251,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
       {
         YA: isIndonesian ? 'Ya' : 'Yes',
         TIDAK: isIndonesian ? 'Tidak' : 'No',
-      }[taskData.gpsSesuai?.[0]] ?? '-';
+      }[taskData.gpsSesuai] ?? '-';
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/50">
@@ -308,12 +277,15 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
           <Field label={translate('common.vehicle_type')} value={maxVehicle} />
           <Field
             label={translate('common.updated_by')}
-            value={driver.name || updatedBy || taskData.updatedBy}
+            value={taskData.updatedByName || taskData.updatedBy}
             tooltip={taskData.updatedBy}
             isCopy={true}
             copyValue={taskData.updatedBy}
           />
-          <Field label={translate('common.updated_at')} value={renderDate(taskData.updatedTime)} />
+          <Field
+            label={translate('common.updated_at')}
+            value={formatDateUniversal(taskData.updatedTime, 'DD/MM/YYYY HH:mm')}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
@@ -323,19 +295,19 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
             <div className="grid grid-cols-2 gap-4">
               <Field
                 label={translate('common.created_by')}
-                value={createdBy}
+                value={taskData.createdByName || taskData.createdBy}
                 tooltip={isAutomation ? null : taskData.createdBy}
                 isCopy={isAutomation ? false : true}
                 copyValue={isAutomation ? null : taskData.createdBy}
               />
               <Field
                 label={translate('common.created_time')}
-                value={renderDate(taskData.createdTime)}
+                value={formatDateUniversal(taskData.createdTime, 'DD/MM/YYYY HH:mm')}
               />
               <Field label={translate('common.created_from')} value={taskData.createdFrom} />
               <Field
                 label={translate('common.start_time')}
-                value={renderDate(taskData.startTime)}
+                value={formatDateUniversal(taskData.startTime, 'DD/MM/YYYY HH:mm')}
               />
             </div>
           </div>
@@ -354,9 +326,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
               <Field label={translate('common.license_number')} value={licenseNumber} />
               <Field
                 label={translate('common.assigned_time')}
-                value={renderDate(taskData.assignedTime)}
+                value={formatDateUniversal(taskData.assignedTime, 'DD/MM/YYYY HH:mm')}
               />
-              <Field label={translate('common.done_time')} value={renderDate(taskData.doneTime)} />
+              <Field
+                label={translate('common.done_time')}
+                value={formatDateUniversal(taskData.doneTime, 'DD/MM/YYYY HH:mm')}
+              />
             </div>
           </div>
         </div>
@@ -391,12 +366,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                   arrivalSource = taskData.klikJikaSudahSampai || taskData.klikJikaAndaSudahSampai;
                   departureSource = taskData.page3DoneTime;
                 }
-                const arrObj = renderDate(arrivalSource);
-                const depObj = renderDate(departureSource);
+                const arrivalDate = formatDateUniversal(arrivalSource, 'YYYY-MM-DD HH:mm');
+                const departureDate = formatDateUniversal(departureSource, 'YYYY-MM-DD HH:mm');
                 let actualVisitMins = 0;
                 if (arrivalSource && departureSource) {
-                  const tArr = new Date(arrObj);
-                  const tDep = new Date(depObj);
+                  const tArr = new Date(arrivalDate);
+                  const tDep = new Date(departureDate);
                   tArr.setSeconds(0, 0);
                   tDep.setSeconds(0, 0);
                   const diff = tDep.getTime() - tArr.getTime();
@@ -408,25 +383,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     actualVisitMins = 0;
                   }
                 } else actualVisitMins = '-';
-                let actualSeq = '-';
-                const statusDelivery = taskData.statusDelivery?.[0] || '-';
-
-                if (!isEmpty(statusDelivery))
-                  actualSeq =
-                    [...allTasks]
-                      .filter((t) => t.assignee?.[0] === taskData.assignee?.[0])
-                      .sort((a, b) => {
-                        const getDep = (x) => {
-                          const flow = (x.flow || '').toUpperCase();
-                          return flow.includes('GR') || flow.includes('PICKUP')
-                            ? x.doneTime
-                            : x.page3DoneTime;
-                        };
-                        return (
-                          new Date(getDep(a) || 0).getTime() - new Date(getDep(b) || 0).getTime()
-                        );
-                      })
-                      .findIndex((t) => t._id === taskData._id) + 1;
 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -435,22 +391,16 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     <Field label={translate('common.close_time')} value={taskData.closeTime} />
                     <Field
                       label={translate('common.volume')}
-                      value={renderFloatData(taskData.volumeCbm)}
+                      value={taskData.volumeCbm}
                       needEmpty={true}
                     />
                     <Field
-                      label={translate('common.weight')}
-                      value={renderFloatData(taskData.weightKg)}
+                      label={translate('common.weightas')}
+                      value={taskData.weightKg}
                       needEmpty={true}
                     />
-                    <Field
-                      label={translate('common.actual_arrival')}
-                      value={renderDate(arrivalSource)}
-                    />
-                    <Field
-                      label={translate('common.actual_departure')}
-                      value={renderDate(departureSource)}
-                    />
+                    <Field label={translate('common.actual_arrival')} value={arrivalDate} />
+                    <Field label={translate('common.actual_departure')} value={departureDate} />
                     <Field
                       label={`${translate('common.actual_visit')} (${translate('common.minute')})`}
                       value={actualVisitMins}
@@ -458,7 +408,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     />
                     <Field
                       label={translate('common.actual_seq')}
-                      value={actualSeq > 0 ? actualSeq : '-'}
+                      value={taskData.doneOrder > 0 ? taskData.doneOrder : '-'}
                     />
                     <Field
                       label={translate('task_detail.modal.expected_coord')}
@@ -493,11 +443,11 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     )}
                     <Field
                       label={translate('common.actual_travel_distance')}
-                      value={renderFloatData(taskData.travelDistance / 1000)}
+                      value={taskData.travelDistance}
                     />
                     <Field
                       label={translate('common.actual_travel_duration')}
-                      value={renderFloatData(taskData?.travelDuration / 60)}
+                      value={taskData?.travelDuration}
                     />
                   </div>
                 );
@@ -623,7 +573,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     />
                     <Field
                       label={translate('common.plan_travel_distance')}
-                      value={renderFloatData(taskData.distance / 1000)}
+                      value={taskData.distance}
                       needEmpty={true}
                     />
                     <Field
@@ -673,7 +623,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                             {h.action || '-'}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
-                            {renderDate(h.createdAt)}
+                            {h.createdAt}
                           </span>
                         </div>
                         <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
