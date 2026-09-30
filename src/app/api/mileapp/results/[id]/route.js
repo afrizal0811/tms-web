@@ -134,9 +134,9 @@ export async function GET(request, { params }) {
             t.visitId = t.visitId.replace('taskId-', '');
           }
 
-          const tripTravel = t.travelTime || 0;
-          const tripVisit = t.visitTime || 0;
-          const tripWait = t.waitingTime || 0;
+          const tripTravel = Number(t.travelTime) || 0;
+          const tripVisit = Number(t.visitTime) || 0;
+          const tripWait = Number(t.waitingTime) || 0;
 
           tW += t.weight || 0;
           tV += t.volume || 0;
