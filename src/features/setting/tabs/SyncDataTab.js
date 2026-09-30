@@ -199,8 +199,8 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     );
   };
   return (
-    <div className="w-full">
-      <Card>
+    <div className="w-full grow flex flex-col h-full">
+      <Card className="grow">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 pb-4 gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">

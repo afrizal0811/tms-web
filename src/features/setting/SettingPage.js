@@ -149,7 +149,7 @@ export default function SettingPage() {
   };
 
   return (
-    <div className=" mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
+    <div className="mx-auto px-4 sm:px-6 py-2 pb-12 w-full h-full flex flex-col grow">
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
           {t('setting.title')}
