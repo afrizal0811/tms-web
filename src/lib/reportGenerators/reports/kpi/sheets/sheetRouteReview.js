@@ -73,6 +73,9 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
       actOp,
       overtime,
       isErrorRed,
+      isNoRouting:
+        sfRows.some((sf) => !isEmpty(sf.startTime) || !isEmpty(sf.finishTime)) &&
+        (estOp === '' || estOp === null || estOp === 0),
       isMultipleSessions: sfRows.some((sf) => sf.isMultipleSessions) || sfRows.length > 1,
     });
   });
@@ -100,6 +103,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     [],
     ['NOTE'],
     ['', 'Terdapat data routing tapi tidak ada waktu start-finish'],
+    ['', 'Terdapat data start-finish tapi tidak ada waktu routing'],
     ['', 'Driver klik Start-Finish lebih dari 1x dalam sehari'],
     ['Est Operating Hours', 'Spent Time di Data Routing'],
     ['Act Operating Hours', 'Durasi di Start & Finish'],
@@ -139,6 +143,16 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     fill: { fgColor: { rgb: 'FFF2CC' } },
     font: { color: { rgb: '000000' } },
   };
+  const styleLightBlue = {
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'D4E6F1' } },
+    font: { color: { rgb: '000000' } },
+  };
+  const styleLeftLightBlue = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+    fill: { fgColor: { rgb: 'D4E6F1' } },
+    font: { color: { rgb: '000000' } },
+  };
 
   const totalRowIdx = sheetData.length - 7;
   for (let R = 0; R < sheetData.length; ++R) {
@@ -153,10 +167,12 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
           wsRR[cell].t = 'n';
           wsRR[cell].z = '0';
         }
-      } else if (R === sheetData.length - 5 && C === 0)
+      } else if (R === sheetData.length - 6 && C === 0)
         wsRR[cell].s = { font: { color: { rgb: 'FF0000' }, underline: true, bold: true } };
-      else if (R === sheetData.length - 4 && C === 0)
+      else if (R === sheetData.length - 5 && C === 0)
         wsRR[cell].s = { fill: { fgColor: { rgb: 'F6C5C0' } } };
+      else if (R === sheetData.length - 4 && C === 0)
+        wsRR[cell].s = { fill: { fgColor: { rgb: 'D4E6F1' } } };
       else if (R === sheetData.length - 3 && C === 0)
         wsRR[cell].s = { fill: { fgColor: { rgb: 'FFF2CC' } } };
       else if (R >= sheetData.length - 2 && C === 0)
@@ -164,22 +180,26 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
           font: { bold: true, color: { rgb: '333333' } },
           alignment: { vertical: 'center', horizontal: 'left' },
         };
-      else if (R >= sheetData.length - 4 && C === 1)
+      else if (R >= sheetData.length - 5 && C === 1)
         wsRR[cell].s = { alignment: { vertical: 'center', horizontal: 'left' } };
       else if (R > 0 && R < totalRowIdx) {
         const rowData = sortedRows[R - 1];
         if (C === 2) {
           wsRR[cell].s = rowData?.isErrorRed
             ? styleLeftError
-            : rowData?.isMultipleSessions
-              ? styleLeftMultiple
-              : styleLeft;
+            : rowData?.isNoRouting
+              ? styleLeftLightBlue
+              : rowData?.isMultipleSessions
+                ? styleLeftMultiple
+                : styleLeft;
         } else {
           wsRR[cell].s = rowData?.isErrorRed
             ? styleError
-            : rowData?.isMultipleSessions
-              ? styleMultiple
-              : styleCenter;
+            : rowData?.isNoRouting
+              ? styleLightBlue
+              : rowData?.isMultipleSessions
+                ? styleMultiple
+                : styleCenter;
         }
         if (typeof wsRR[cell].v === 'number') {
           wsRR[cell].t = 'n';
@@ -191,6 +211,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
 
   wsRR['!cols'] = [{ wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 15 }];
   wsRR['!merges'] = [
+    { s: { r: sheetData.length - 5, c: 1 }, e: { r: sheetData.length - 5, c: 5 } },
     { s: { r: sheetData.length - 4, c: 1 }, e: { r: sheetData.length - 4, c: 5 } },
     { s: { r: sheetData.length - 3, c: 1 }, e: { r: sheetData.length - 3, c: 5 } },
     { s: { r: sheetData.length - 2, c: 1 }, e: { r: sheetData.length - 2, c: 5 } },

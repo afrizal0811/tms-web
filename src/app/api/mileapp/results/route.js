@@ -94,17 +94,36 @@ export async function GET(request) {
             tVi = 0,
             tWa = 0;
 
-          if (r.trips) {
-            r.trips = r.trips.map((t) => {
+          if (r.trips && r.trips.length > 0) {
+            const lastHubWait = Number(r.trips[r.trips.length - 1].waitingTime) || 0;
+
+            if ((Number(r.trips[0].waitingTime) || 0) <= 0) {
+              r.trips[0].waitingTime = lastHubWait;
+            }
+
+            r.trips = r.trips.map((t, i) => {
               if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
                 t.visitId = t.visitId.replace('taskId-', '');
               }
+
+              const tripTravel = t.travelTime || 0;
+              const tripVisit = t.visitTime || 0;
+              const tripWait = t.waitingTime || 0;
+
               tW += t.weight || 0;
               tV += t.volume || 0;
               tD += t.distance || 0;
-              tTr += t.travelTime || 0;
-              tVi += t.visitTime || 0;
-              tWa += t.waitingTime || 0;
+              tTr += tripTravel;
+              tVi += tripVisit;
+
+              if (i !== r.trips.length - 1) {
+                tWa += tripWait;
+              }
+
+              t.travelTime = toHr(tripTravel);
+              t.visitTime = toHr(tripVisit);
+              t.waitingTime = toHr(tripWait);
+              t.spentTime = toHr(tripTravel + tripVisit + tripWait);
 
               delete t.etaStr;
               delete t.etdStr;

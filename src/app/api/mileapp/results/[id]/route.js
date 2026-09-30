@@ -122,8 +122,14 @@ export async function GET(request, { params }) {
         tVi = 0,
         tWa = 0;
 
-      if (route.trips) {
-        route.trips = route.trips.map((t) => {
+      if (route.trips && route.trips.length > 0) {
+        const lastHubWait = Number(route.trips[route.trips.length - 1].waitingTime) || 0;
+
+        if ((Number(route.trips[0].waitingTime) || 0) <= 0) {
+          route.trips[0].waitingTime = lastHubWait;
+        }
+
+        route.trips = route.trips.map((t, i) => {
           if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
             t.visitId = t.visitId.replace('taskId-', '');
           }
@@ -131,19 +137,21 @@ export async function GET(request, { params }) {
           const tripTravel = t.travelTime || 0;
           const tripVisit = t.visitTime || 0;
           const tripWait = t.waitingTime || 0;
-          const tripSpent = tripTravel + tripVisit + tripWait;
 
           tW += t.weight || 0;
           tV += t.volume || 0;
           tD += t.distance || 0;
           tTr += tripTravel;
           tVi += tripVisit;
-          tWa += tripWait;
 
-          t.travelTimeHour = toHr(tripTravel);
-          t.visitTimeHour = toHr(tripVisit);
-          t.waitingTimeHour = toHr(tripWait);
-          t.spentTimeHour = toHr(tripSpent);
+          if (i !== route.trips.length - 1) {
+            tWa += tripWait;
+          }
+
+          t.travelTime = toHr(tripTravel);
+          t.visitTime = toHr(tripVisit);
+          t.waitingTime = toHr(tripWait);
+          t.spentTime = toHr(tripTravel + tripVisit + tripWait);
 
           delete t.etaStr;
           delete t.etdStr;
@@ -155,7 +163,6 @@ export async function GET(request, { params }) {
           return t;
         });
       }
-
       const spent = tTr + tVi + tWa;
       route.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
       route.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
