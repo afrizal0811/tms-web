@@ -148,6 +148,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
 
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
+      window.location.reload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -199,7 +200,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     );
   };
   return (
-    <div className="w-full grow flex flex-col h-full">
+    <div className="w-full flex flex-col h-full">
       <Card className="grow">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 pb-4 gap-3">
           <div>
