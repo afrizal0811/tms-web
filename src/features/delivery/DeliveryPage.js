@@ -72,6 +72,7 @@ export default function DeliveryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNoBun, setIsNoBun] = useState(false);
   const [isSplitMultitrip, setIsSplitMultitrip] = useState(false);
+  const [isSplitStorageType, setIsSplitStorageType] = useState(true);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [routingResults, setRoutingResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +103,9 @@ export default function DeliveryPage() {
       }
       if (typeof dp.isSplitMultitrip === 'boolean') {
         setIsSplitMultitrip(dp.isSplitMultitrip);
+      }
+      if (typeof dp.isSplitStorageType === 'boolean') {
+        setIsSplitStorageType(dp.isSplitStorageType);
       }
     }
   }, []);
@@ -143,6 +147,11 @@ export default function DeliveryPage() {
     persistDeliveryPageSetting('isSplitMultitrip', isActive);
   };
 
+  const handleToggleSplitStorageType = (isActive) => {
+    setIsSplitStorageType(isActive);
+    persistDeliveryPageSetting('isSplitStorageType', isActive);
+  };
+
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-' || taskId.includes('hub')) return;
     setSelectedTaskId(taskId);
@@ -162,6 +171,7 @@ export default function DeliveryPage() {
       excludeSoList,
       sortConfig,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (type === 'routeTransaction') {
@@ -184,6 +194,7 @@ export default function DeliveryPage() {
       excludeSoList,
       sortConfig,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (type === 'routeTransaction') {
@@ -229,6 +240,7 @@ export default function DeliveryPage() {
       selectedDate,
       excludeSoList: excludeList,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (activeHub?.hasPartialRouting) {
@@ -402,6 +414,7 @@ export default function DeliveryPage() {
                 isManual: task.routePlannedOrder == null,
                 isReDelivery: task.flow?.toLowerCase().includes('re delivery'),
                 soWarehouseMapping: sos.map((so) => ({ so, wh: soToWarehouseMap.get(so) || '' })),
+                typeStorage: task.typeStorage,
               };
             });
 
@@ -443,7 +456,6 @@ export default function DeliveryPage() {
               vehicleName: plat,
               assignee: email,
               assigneeName,
-              driverName: assigneeName,
               basePlat: plat,
               vehicleType: vehicleType,
               trips: finalTrips,
@@ -581,11 +593,11 @@ export default function DeliveryPage() {
       const lower = searchQuery.toLowerCase();
       routes = routes
         .map((r) => {
-          const dName = (r.driverName || '').toLowerCase();
+          const dName = (r.basePlat || '').toLowerCase();
           if (
             dName.includes(lower) ||
             (r.vehicleName || '').toLowerCase().includes(lower) ||
-            (r.vehicleId || '').toLowerCase().includes(lower)
+            (r.assigneeName || '').toLowerCase().includes(lower)
           )
             return r;
           const matchingTrips = r.trips.filter(
@@ -603,10 +615,12 @@ export default function DeliveryPage() {
       if (storageFilter.length === 0) return false;
       let keep = true;
       if (storageFilter.length === 1) {
-        const dName = route.driverName;
+        const dName = route.assigneeName;
+        const vType = route.vehicleType;
         keep =
-          (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
-          (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
+          (storageFilter.includes('DRY') && (dName.includes("'DRY'") || vType.includes('DRY'))) ||
+          (storageFilter.includes('FROZEN') &&
+            (dName.includes("'FRZ'") || vType.includes('FROZEN')));
       }
       if (!keep) return false;
 
@@ -787,8 +801,18 @@ export default function DeliveryPage() {
                         checked={isSplitMultitrip}
                         onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
                       />
-                      {t('delivery.spit_multitrip')}
-                      <InformationButton infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                      {t('delivery.split_multitrip')}
+                      <InformationButton infoText={t('delivery.split_multitrip_info')} size="3.5" />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                        checked={isSplitStorageType}
+                        onChange={(e) => handleToggleSplitStorageType(e.target.checked)}
+                      />
+                      {t('delivery.split_storage')}
+                      <InformationButton infoText={t('delivery.split_storage_info')} size="3.5" />
                     </label>
                   </div>
                 </div>
@@ -813,7 +837,7 @@ export default function DeliveryPage() {
   ];
 
   const tabData = filteredVehicleRoutes.map((r) => {
-    const dName = r.driverName || '-';
+    const dName = r.assigneeName || '-';
     const isManual = r.hasManual;
     const hasMT = r.trips?.some((t) => t.isMiddleHub);
     const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
@@ -857,22 +881,18 @@ export default function DeliveryPage() {
         footer={{ text: t('common.click_for_detail') }}
         bodyProps={{ className: 'min-h-[400px]', routingData: routingResults }}
       >
-        <div className="bg-white dark:bg-slate-800 h-full flex flex-col border-none transition-colors">
-          <div className="overflow-y-auto grow h-full m-0 ">
-            {!isLoading && activeRoute && (
-              <CustomTable
-                activeRoute={activeRoute}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                isDetailView={isDetailView}
-                t={t}
-                sortConfig={sortConfig}
-                setSortConfig={setSortConfig}
-                onRowClick={handleRowClick}
-              />
-            )}
-          </div>
-        </div>
+        {!isLoading && activeRoute && (
+          <CustomTable
+            activeRoute={activeRoute}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isDetailView={isDetailView}
+            t={t}
+            sortConfig={sortConfig}
+            setSortConfig={setSortConfig}
+            onRowClick={handleRowClick}
+          />
+        )}
       </PageTemplate>
 
       <PartialRoutingModal

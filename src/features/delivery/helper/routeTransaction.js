@@ -11,30 +11,56 @@ import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../../lib/toast';
 import {
   abortIfNoRoutingResults,
+  buildEnrichedTripsMap,
   getLocationName,
   getUniqueFileName,
   isTripRedelivery,
+  resolveDedupedTrip,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
 } from './shared';
 
-const buildSegments = (trips, isSplitMultitrip) => {
-  const segments = [];
+const buildSegments = (trips, isSplitMultitrip, isSplitStorageType) => {
+  const baseSegments = [];
   let currentSegment = [];
 
   (trips || []).forEach((trip) => {
     if (trip.isHub) {
       if (isSplitMultitrip && currentSegment.length > 0) {
-        segments.push(currentSegment);
+        baseSegments.push(currentSegment);
         currentSegment = [];
       }
     } else {
       currentSegment.push(trip);
     }
   });
-  if (currentSegment.length > 0) segments.push(currentSegment);
+  if (currentSegment.length > 0) baseSegments.push(currentSegment);
 
-  return segments;
+  if (!isSplitStorageType) {
+    return baseSegments.map((segment) => ({ trips: segment, type: null }));
+  }
+
+  const finalSegments = [];
+  baseSegments.forEach((segment) => {
+    const dryTrips = [];
+    const frzTrips = [];
+
+    segment.forEach((trip) => {
+      const st = (trip.typeStorage || '').toUpperCase();
+      if (st.includes('FROZEN') || st.includes('FRZ')) {
+        frzTrips.push(trip);
+      } else {
+        dryTrips.push(trip);
+      }
+    });
+
+    const isMixed = dryTrips.length > 0 && frzTrips.length > 0;
+
+    if (dryTrips.length > 0) finalSegments.push({ trips: dryTrips, type: isMixed ? 'DRY' : null });
+    if (frzTrips.length > 0) finalSegments.push({ trips: frzTrips, type: isMixed ? 'FRZ' : null });
+  });
+
+  return finalSegments;
 };
 
 const buildSoWorksheet = (processedRows, t) => {
@@ -159,6 +185,7 @@ export const handleFullRouteTransDownload = async ({
   selectedDate,
   excludeSoList = [],
   isSplitMultitrip,
+  isSplitStorageType,
 }) => {
   setIsDownloading(true);
   try {
@@ -173,12 +200,12 @@ export const handleFullRouteTransDownload = async ({
     for (const route of filteredVehicleRoutes) {
       const plat = route.basePlat;
       const seenSO = new Set();
-      const segments = buildSegments(route.trips, isSplitMultitrip);
+      const segments = buildSegments(route.trips, isSplitMultitrip, isSplitStorageType);
       const generatedSegments = [];
 
-      segments.forEach((segmentTrips) => {
+      segments.forEach((segmentData) => {
         const processedRows = [];
-        segmentTrips.forEach((trip) => {
+        segmentData.trips.forEach((trip) => {
           if (trip.orderId && !isTripRedelivery(trip)) {
             const parsedCust = parseCustomerString(trip.visitName);
             const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
@@ -198,12 +225,16 @@ export const handleFullRouteTransDownload = async ({
             });
           }
         });
-        if (processedRows.length > 0) generatedSegments.push(processedRows);
+        if (processedRows.length > 0)
+          generatedSegments.push({ rows: processedRows, type: segmentData.type });
       });
 
-      generatedSegments.forEach((processedRows, idx) => {
+      generatedSegments.forEach((segment, idx) => {
+        const processedRows = segment.rows;
         const isMulti = generatedSegments.length > 1;
-        const baseName = isMulti ? `${plat} - ${idx + 1}` : plat;
+        const typeSuffix = segment.type ? ` (${segment.type})` : '';
+        const baseName = isMulti ? `${plat} - ${idx + 1}${typeSuffix}` : `${plat}${typeSuffix}`;
+
         const nameFile = isMulti
           ? `${baseName}.xlsx`
           : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);
@@ -251,11 +282,13 @@ export const handleFullRouteTransDownload = async ({
 
 export const handlePartialRouteTransDownload = async ({
   routingResults,
+  filteredVehicleRoutes,
   setIsDownloading,
   t,
   selectedDate,
   excludeSoList = [],
   isSplitMultitrip,
+  isSplitStorageType,
 }) => {
   setIsDownloading(true);
   try {
@@ -285,6 +318,8 @@ export const handlePartialRouteTransDownload = async ({
       let routingHasData = false;
       const seenFileNames = new Set();
 
+      const enrichedTripsMap = buildEnrichedTripsMap(filteredVehicleRoutes);
+
       for (const route of routes) {
         const plat = route.basePlat;
         if (!globalSeenSOByVehicle.has(plat)) {
@@ -293,12 +328,17 @@ export const handlePartialRouteTransDownload = async ({
         const vehicleSeenSOs = globalSeenSOByVehicle.get(plat);
 
         const seenSO = new Set();
-        const segments = buildSegments(route.trips, isSplitMultitrip);
+
+        const enrichedRouteTrips = (route.trips || [])
+          .map((t) => resolveDedupedTrip(t, enrichedTripsMap, vehicleSeenSOs))
+          .filter(Boolean);
+
+        const segments = buildSegments(enrichedRouteTrips, isSplitMultitrip, isSplitStorageType);
         const generatedSegments = [];
 
-        segments.forEach((segmentTrips) => {
+        segments.forEach((segmentData) => {
           const processedRows = [];
-          segmentTrips.forEach((trip) => {
+          segmentData.trips.forEach((trip) => {
             if (!isTripRedelivery(trip)) {
               const parsedCust = parseCustomerString(trip.visitName);
               const isCustomerInvalid = isEmpty(parsedCust?.id) || isEmpty(parsedCust?.location);
@@ -334,9 +374,12 @@ export const handlePartialRouteTransDownload = async ({
           if (processedRows.length > 0) generatedSegments.push(processedRows);
         });
 
-        generatedSegments.forEach((processedRows, idx) => {
+        generatedSegments.forEach((segment, idx) => {
+          const processedRows = segment.rows;
           const isMulti = generatedSegments.length > 1;
-          const baseName = isMulti ? `${plat} - ${idx + 1}` : plat;
+          const typeSuffix = segment.type ? ` (${segment.type})` : '';
+          const baseName = isMulti ? `${plat} - ${idx + 1}${typeSuffix}` : `${plat}${typeSuffix}`;
+
           const nameFile = isMulti
             ? `${baseName}.xlsx`
             : getUniqueFileName(baseName, dateForFilename, '.xlsx', seenFileNames);

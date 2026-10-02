@@ -79,9 +79,11 @@ export default function TableData({
   }, [data, sortConfig, customSort]);
 
   const paginatedData = useMemo(() => {
+    if (!paginate) return sortedData;
+
     const start = (page - 1) * Number(limit);
     return sortedData.slice(start, start + Number(limit));
-  }, [sortedData, page, limit]);
+  }, [sortedData, page, limit, paginate]);
 
   const totalPages = Math.ceil(sortedData.length / Number(limit));
 

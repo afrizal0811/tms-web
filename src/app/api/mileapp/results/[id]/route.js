@@ -232,7 +232,6 @@ export async function GET(request, { params }) {
       );
     }
 
-    console.log('data :', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error Single Result:', error);

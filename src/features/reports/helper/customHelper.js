@@ -334,7 +334,6 @@ export const processServiceLevelReport = async ({
     });
 
     const { timeDataObjects } = convertLocationHistories(locationHistoryByDate, driverData);
-    console.log('timeDataObjects :', timeDataObjects);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
