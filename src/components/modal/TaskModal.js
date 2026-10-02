@@ -575,7 +575,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                             {h.action || '-'}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
-                            {h.createdAt}
+                            {formatDateUniversal(h.createdAt, 'DD/MM/YYYY HH:mm')}
                           </span>
                         </div>
                         <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
