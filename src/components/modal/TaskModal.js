@@ -367,12 +367,13 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                   arrivalSource = taskData.klikJikaSudahSampai || taskData.klikJikaAndaSudahSampai;
                   departureSource = taskData.page3DoneTime;
                 }
-                const arrivalDate = formatDateUniversal(arrivalSource, 'YYYY-MM-DD HH:mm');
-                const departureDate = formatDateUniversal(departureSource, 'YYYY-MM-DD HH:mm');
+
+                const arrivalDate = formatDateUniversal(arrivalSource, 'DD/MM/YYYY HH:mm');
+                const departureDate = formatDateUniversal(departureSource, 'DD/MM/YYYY HH:mm');
                 let actualVisitMins = 0;
                 if (arrivalSource && departureSource) {
-                  const tArr = new Date(arrivalDate);
-                  const tDep = new Date(departureDate);
+                  const tArr = new Date(arrivalSource);
+                  const tDep = new Date(departureSource);
                   tArr.setSeconds(0, 0);
                   tDep.setSeconds(0, 0);
                   const diff = tDep.getTime() - tArr.getTime();
