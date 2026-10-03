@@ -1,5 +1,5 @@
 // File: src/features/dashboard/help.js
-import { isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import { formatDateUniversal, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
 
 export const serviceLevelData = [
   {

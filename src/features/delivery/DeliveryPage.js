@@ -71,7 +71,7 @@ export default function DeliveryPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isNoBun, setIsNoBun] = useState(false);
-  const [isSplitMultitrip, setIsSplitMultitrip] = useState(false);
+  const [isSplitMultitrip, setIsSplitMultitrip] = useState(true);
   const [isSplitStorageType, setIsSplitStorageType] = useState(true);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [routingResults, setRoutingResults] = useState([]);
