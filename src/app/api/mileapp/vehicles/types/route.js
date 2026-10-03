@@ -9,10 +9,13 @@ export async function GET(request) {
     const hubId = searchParams.get('hubId');
 
     const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-    const [rawDrivers, mappingsDB] = await Promise.all([
+    const [rawDrivers, mappingsDB, rawVehiclesType] = await Promise.all([
       prisma.driver.findMany({ where }),
       prisma.vehicleMapping.findMany(),
+      prisma.vehicleType.findMany(),
     ]);
+
+    const allowedTypes = new Set(rawVehiclesType.map((v) => v.name.toUpperCase()));
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
       acc[curr.plat] = curr.mappedType;
@@ -79,6 +82,8 @@ export async function GET(request) {
         resolvedType = resolvedType.toUpperCase();
       }
 
+      if (!allowedTypes.has(resolvedType)) return;
+
       activeTypesSet.add(resolvedType);
       const storageCategory = getStorageType(d.tags || d.name || d.type);
 
@@ -92,8 +97,11 @@ export async function GET(request) {
         });
       }
 
-      masterData[storageCategory][resolvedType]++;
-      masterData[storageCategory].Total++;
+      const isMainVehicle = d.plat === d.basePlat;
+      if (isMainVehicle && !isSewa) {
+        masterData[storageCategory][resolvedType]++;
+        masterData[storageCategory].Total++;
+      }
     });
 
     const allTypes = await prisma.vehicleType.findMany({ orderBy: { name: 'asc' } });
