@@ -83,7 +83,8 @@ export function calculateDistanceSummaryData(
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
       const dKey =
-        (t.startTime && t.startTime.split('T')[0]) || (t.doneTime && t.doneTime.split('T')[0]);
+        (t.startTime && formatDateUniversal(t.startTime)) ||
+        (t.doneTime && formatDateUniversal(t.doneTime));
       if (dKey) taskPresence[dKey] = true;
     });
   }
@@ -115,8 +116,8 @@ export function calculateDistanceSummaryData(
     taskData.forEach((task) => {
       if (task.isDeleted) return;
       const dateKey =
-        (task.startTime && task.startTime.split('T')[0]) ||
-        (task.doneTime && task.doneTime.split('T')[0]);
+        (task.startTime && formatDateUniversal(task.startTime)) ||
+        (task.doneTime && formatDateUniversal(task.doneTime));
       if (!dateKey || !dateMap[dateKey]) return;
 
       if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
@@ -321,7 +322,8 @@ export function calculateDistanceSummaryData(
 
         const dailyTasks = (taskData || []).filter((t) => {
           const dDate =
-            (t.startTime && t.startTime.split('T')[0]) || (t.doneTime && t.doneTime.split('T')[0]);
+            (t.startTime && formatDateUniversal(t.startTime)) ||
+            (t.doneTime && formatDateUniversal(t.doneTime));
           return dDate === currentDateString;
         });
 

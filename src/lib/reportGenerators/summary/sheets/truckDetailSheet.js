@@ -151,7 +151,7 @@ export function calculateTruckDetailData(
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
             entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
             entry.duration = Math.max(entry.duration, durationVal);
-            entry.dist = Math.max(entry.dist, distVal);
+            entry.dist = Number((Math.max(entry.dist, distVal) / 1000).toFixed(2));
           });
         }
       }
@@ -174,8 +174,8 @@ export function calculateTruckDetailData(
 
   cleanTasks.forEach((task) => {
     const dateKey =
-      (task.startTime && task.startTime.split('T')[0]) ||
-      (task.doneTime && task.doneTime.split('T')[0]);
+      (task.startTime && formatDateUniversal(task.startTime)) ||
+      (task.doneTime && formatDateUniversal(task.doneTime));
     if (!dateKey) return;
 
     let rawEmail = null;
@@ -219,7 +219,7 @@ export function calculateTruckDetailData(
       let statusDelivery = '';
       if (flow !== 'Pickup') {
         if (task.statusDelivery && task.statusDelivery.length > 0) {
-          statusDelivery = task.statusDelivery[0].toUpperCase();
+          statusDelivery = task.statusDelivery.toUpperCase();
         } else if (flow.includes('GR')) {
           if (task.statusGr && task.statusGr.length > 0) {
             statusDelivery = task.statusGr[0].toUpperCase();
@@ -233,8 +233,8 @@ export function calculateTruckDetailData(
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
       const hasSplitTask = task.isSplitTask === 'true';
-      const startD = task.startTime ? task.startTime.split('T')[0] : null;
-      const doneD = task.doneTime ? task.doneTime.split('T')[0] : null;
+      const startD = task.startTime ? formatDateUniversal(task.startTime) : null;
+      const doneD = task.doneTime ? formatDateUniversal(task.doneTime) : null;
 
       let isDateDiff = false;
       let dayDiffCount = 0;
@@ -319,7 +319,7 @@ export function calculateTruckDetailData(
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];
       if (entry && (!entry.dist || entry.dist === 0) && entry.taskDist > 0) {
-        entry.dist = entry.taskDist;
+        entry.dist = Number(entry.taskDist.toFixed(2));
         entry.isDistFallback = true;
       }
     });

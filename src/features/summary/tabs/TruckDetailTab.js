@@ -81,7 +81,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
     {
       key: 'distance',
       getValue: (m) => {
-        const val = m?.dist ? Number((m.dist / 1000).toFixed(2)).toLocaleString() : '-';
+        const val = m?.dist ? m.dist : '-';
         return (
           <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
             {val}
@@ -253,8 +253,9 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                           tooltipText = translate('summary.tabs.truck_detail.tooltip.pct_info');
                           showDotted = true;
                         } else if (isDistance && hasFallback) {
-                          tooltipText =
-                            'Sebagian/seluruh jarak menggunakan data Task (Routing kosong)';
+                          tooltipText = translate(
+                            'summary.tabs.truck_detail.tooltip.no_route_dist'
+                          );
                           showDotted = true;
                         }
                       }
@@ -269,9 +270,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                           >
                             <span
                               className={
-                                showDotted
-                                  ? 'cursor-help border-b-2 border-dotted border-gray-400 dark:border-slate-500 pb-0.5'
-                                  : ''
+                                showDotted ? 'cursor-help border-b-2 border-dotted  pb-0.5' : ''
                               }
                             >
                               {text}

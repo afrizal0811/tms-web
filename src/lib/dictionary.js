@@ -569,6 +569,7 @@ export const dictionary = {
           total_outlet: 'Jumlah Toko',
           tooltip: {
             inaccurate_data: 'Ada penugasan manual, data tidak akurat',
+            no_route_dist: 'Sebagian/seluruh jarak menggunakan data tugas (data ruting kosong)',
             no_routing: 'Tidak ada ruting untuk kendaraan ini',
             pct_info: 'Hanya untuk tugas yang sukses terkirim',
             split_task: 'Ada tugas yang dipecah',
@@ -1305,6 +1306,7 @@ export const dictionary = {
           total_outlet: 'Total Outlets',
           tooltip: {
             inaccurate_data: 'Has manual assign, data is inaccurate',
+            no_route_dist: 'Partial/full distance uses task data (routing data is empty)',
             no_routing: 'No routing found for this vehicle',
             pct_info: 'Only for success deliveries',
             split_task: 'Has split tasks',
