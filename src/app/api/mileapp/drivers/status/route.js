@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const hubId = searchParams.get('hubId');
   try {
     const hubsWithDriverStatus = await prisma.hub.findMany({
       include: {
@@ -23,8 +25,8 @@ export async function GET() {
         },
       };
     });
-
-    return NextResponse.json(status, { status: 200 });
+    const selectedStatus = status.find((s) => s.hubId === hubId);
+    return NextResponse.json(selectedStatus, { status: 200 });
   } catch (error) {
     console.error('Error Status Driver:', error);
     const errorMessage =

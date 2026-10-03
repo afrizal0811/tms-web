@@ -8,7 +8,6 @@ import { handleCustomDownload } from './helper/customHelper';
 export default function CustomReport({
   driverData,
   hubAcronym,
-  hubId,
   hubName,
   isIndonesian,
   isLoading,
@@ -68,7 +67,6 @@ export default function CustomReport({
       endDate,
       singleDate,
       driverData,
-      hubId,
       hubAcronym,
       hubName,
       t,

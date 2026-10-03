@@ -1,18 +1,18 @@
 'use client';
 
+import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
-import Dropdown from '@/components/dropdown/Dropdown';
 import Card from './Card';
 import CustomTable from './CustomTable';
 export default function VehicleMappingManager({ vehicleTypes, isReadOnly, translate }) {
   const [activeHub, setActiveHub] = useState({ hubId: '', hubName: '' });
   const [mappings, setMappings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, plat: null });
+  const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null });
 
   useEffect(() => {
     const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
@@ -31,8 +31,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     setIsLoading(true);
     try {
       const data = await getVehicleMappings(activeHub.hubId);
-      const sortedData = data.sort((a, b) => a.plat.localeCompare(b.plat));
-      setMappings(sortedData);
+      setMappings(data);
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -57,14 +56,13 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   };
 
   const confirmDelete = async () => {
+    setDeleteConfig({ isOpen: false, id: null });
     const targetId = deleteConfig.id;
-    const targetPlat = deleteConfig.plat;
-    setDeleteConfig({ isOpen: false, id: null, plat: null });
-    if (!targetId && !targetPlat) return;
+    if (!targetId) return;
 
     setIsLoading(true);
     try {
-      await deleteVehicleMapping(targetId, targetPlat);
+      await deleteVehicleMapping(targetId);
       toastSuccess(translate('common.toast.success'));
       await loadMappings();
     } catch (e) {
@@ -111,7 +109,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     <Card>
       <ConfirmModal
         isOpen={deleteConfig.isOpen}
-        onCancel={() => setDeleteConfig({ isOpen: false, id: null, plat: null })}
+        onCancel={() => setDeleteConfig({ isOpen: false, id: null })}
         onConfirm={confirmDelete}
         title={translate('common.modal.delete_title', {
           text: translate('setting.tab.general.mapping_title'),
@@ -143,7 +141,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         emptyMessage={translate('common.no_data')}
         translate={translate}
         onSave={handleUpdateMapping}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, plat: item.plat })}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id })}
       />
     </Card>
   );

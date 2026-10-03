@@ -49,16 +49,15 @@ export default function Dashboard({ driverData }) {
 
   useEffect(() => {
     const fetchHubSettings = async () => {
-      if (!hubId || isEmpty(driverData)) return;
       try {
         const hubs = getCachedHubs();
-        const activeHub = hubs.find(
-          (h) => String(h._id) === String(hubId) || String(h.id) === String(hubId)
-        );
+        const activeHub = hubs.activeHub;
         if (activeHub) {
           setHasPendingGR(activeHub.hasPendingGR || false);
         }
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error Hubs:', error);
+      }
     };
     fetchHubSettings();
   }, [hubId, driverData]);
@@ -141,27 +140,24 @@ export default function Dashboard({ driverData }) {
       const [tasksData, resultsData] = await Promise.all([
         getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',
-          hubId,
           timeFrom,
           timeTo,
         }),
         getResults({
           routingDateObj: routingStart,
           deliveryDateObj: localStart,
-          hubId: hubId,
         }),
       ]);
 
       const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
-      const resultsArray = Array.isArray(resultsData) ? resultsData : resultsData?.data || [];
 
-      setRawData({ tasks: tasksArray, results: resultsArray });
+      setRawData({ tasks: tasksArray, results: resultsData });
     } catch (err) {
       toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, hubId, t, driverData]);
+  }, [selectedDate, t, driverData]);
 
   useEffect(() => {
     fetchData();
@@ -285,17 +281,16 @@ export default function Dashboard({ driverData }) {
       }
       if (typeFilter && typeFilter !== 'all') {
         filtered = filtered.filter((t) => {
-          let email = Array.isArray(t.assignee)
-            ? t.assignee[0]
-            : t.assignee || t.assignedTo?.email || t.doneBy;
+          let rawEmail = t.assignee || t.assignedTo?.email || t.doneBy;
+          let email =
+            typeof rawEmail === 'string' && rawEmail.includes(',')
+              ? rawEmail.split(',')[0].trim()
+              : rawEmail;
           email = normalizeEmail(email);
-          const plat =
-            t.assignedVehicle?.name || t.assignedVehicle?.plat || t.vehicleName || t.plat;
+          const plat = t.basePlat || t.vehicleName || t.plat;
           const platNorm = (plat || '').replace(/\s+/g, '').toLowerCase();
           const d = driverData?.find(
-            (dr) =>
-              normalizeEmail(dr.email) === email ||
-              (dr.plat && dr.plat.replace(/\s+/g, '').toLowerCase() === platNorm)
+            (dr) => normalizeEmail(dr.email) === email || (dr.plat || '').toLowerCase() === platNorm
           );
           if (!d) return false;
           return getBaseVehicleType(d.type, masterVehicleTypes) === typeFilter;
@@ -317,10 +312,7 @@ export default function Dashboard({ driverData }) {
   }, [filteredDailyTasks, driverMap, isIndonesian, hasPendingGR]);
 
   const isDiagramTab = activeTab === 'Diagram';
-
   const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
-
-  const currentHubId = typeof window !== 'undefined' ? hubId : null;
 
   let isCardEmpty = false;
   let emptyMessage = t('common.no_data');
@@ -360,7 +352,6 @@ export default function Dashboard({ driverData }) {
       hideLabel: false,
       component: (
         <VehicleTypeFilter
-          data={driverData}
           disabled={isLoadingSelected}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
@@ -440,7 +431,6 @@ export default function Dashboard({ driverData }) {
         {activeTab === 'Diagram' && !isYearlyLoading && (
           <DiagramTab
             yearlyTasks={filteredYearlyTasks}
-            hubId={currentHubId}
             driverData={driverData}
             selectedDate={selectedDate}
             hasPendingGR={hasPendingGR}

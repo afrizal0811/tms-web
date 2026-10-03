@@ -1,7 +1,12 @@
 import { apiFetch } from '../base';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 
 export async function getHubs() {
-  return await apiFetch('/api/mileapp/hubs', 'Gagal mengambil data hubs');
+  const { storedLocation } = getLocalStorage();
+  const params = new URLSearchParams();
+  if (storedLocation) params.append('hubId', storedLocation);
+
+  return await apiFetch(`/api/mileapp/hubs?${params.toString()}`, 'Gagal mengambil data hubs');
 }
 
 export async function postHubs() {

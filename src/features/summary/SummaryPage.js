@@ -9,7 +9,7 @@ import { getHubs, getPendingDetails, getReasons } from '@/lib/api/mileapp';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { formatDateUniversal, formatUTC7, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import DistanceSummaryTab from './tabs/DistanceSummaryTab';
@@ -48,7 +48,6 @@ export default function SummaryPage() {
   const { t, localeCode, isIndonesian } = useLanguage();
   const {
     selectedLocation,
-    selectedLocationName,
     dateRange,
     setDateRange,
     driverData,
@@ -124,14 +123,12 @@ export default function SummaryPage() {
       driverChecker(driverData);
       try {
         const hubs = await getHubs();
-        const activeHub = hubs.find(
-          (h) =>
-            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
-        );
-        if (activeHub) {
-          setHasPendingGR(activeHub.hasPendingGR || false);
+        if (hubs?.activeHub) {
+          setHasPendingGR(hubs.activeHub.hasPendingGR || false);
         }
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error Hubs:', error);
+      }
     };
     fetchHubSettings();
   }, [selectedLocation, driverData, driverChecker, t]);
@@ -175,10 +172,8 @@ export default function SummaryPage() {
         rawData.locations,
         formatDateUniversal(startDate),
         formatDateUniversal(endDate),
-        selectedLocationName,
-        selectedLocation,
         taskSummaryMetrics,
-        masterTruckData || { Dry: { Total: 0 }, Frozen: { Total: 0 } },
+        masterTruckData,
         t,
         localeCode,
         hasPendingGR,
@@ -233,7 +228,7 @@ export default function SummaryPage() {
         return !rawData.tasks?.some((t) => {
           if (t.createdFrom !== 'API') return false;
           if (!startStr || !endStr) return true;
-          const assignedDate = t.createdTime ? formatUTC7(t.createdTime, 'YYYY-MM-DD') : null;
+          const assignedDate = t.createdTime ? formatDateUniversal(t.createdTime) : null;
           return assignedDate && isInDateRange(assignedDate, startStr, endStr);
         });
       }
@@ -312,7 +307,7 @@ export default function SummaryPage() {
           endDateStr: endStr,
           isHasData: Object.entries(taskSummaryMetrics).length > 0,
           translate: t,
-          masterTruckData: masterTruckData,
+          masterTruckData: masterTruckData.masterData,
         });
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
@@ -323,7 +318,6 @@ export default function SummaryPage() {
           hasPendingGR: hasPendingGR,
           translate: t,
           driverData: driverData,
-          tasks: rawData.tasks,
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {

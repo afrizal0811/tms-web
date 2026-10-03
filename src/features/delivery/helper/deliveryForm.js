@@ -1,4 +1,4 @@
-import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
+import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { pdf, StyleSheet } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { toastError, toastSuccess } from '../../../lib/toast';
@@ -6,7 +6,6 @@ import DeliveryForm from '../components/DeliveryForm';
 import {
   abortIfNoRoutingResults,
   buildEnrichedTripsMap,
-  getDriverName,
   getLocationName,
   getUniqueFileName,
   resolveDedupedTrip,
@@ -205,12 +204,64 @@ export const styles = StyleSheet.create({
   sigCellLast: { borderRightWidth: 0 },
 });
 
+export function driverTime(apiData) {
+  const timeMap = new Map();
+  if (!Array.isArray(apiData) || isEmpty(apiData)) return timeMap;
+
+  apiData.forEach((item) => {
+    const email = item.email;
+    const driver = item.driverName;
+    if (!email) return;
+
+    const startTime = item.startTime;
+    const finishTime = item.finish?.finishTime;
+
+    const startDisplay = startTime ? formatDateUniversal(startTime, 'HH:mm') : '-';
+    let finishDisplay = finishTime ? formatDateUniversal(finishTime, 'HH:mm') : '-';
+
+    if (startTime && finishTime) {
+      const sDate = new Date(formatDateUniversal(startTime));
+      const fDate = new Date(formatDateUniversal(finishTime));
+      const diffDays = Math.floor((fDate - sDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        finishDisplay = `${finishDisplay} (+${diffDays})`;
+      }
+    }
+
+    if (!driver) return;
+
+    if (!timeMap.has(driver)) {
+      timeMap.set(driver, {
+        jamBerangkat: startDisplay,
+        jamKembali: finishDisplay,
+        startTimeISO: startTime,
+        finishTimeISO: finishTime,
+      });
+    } else {
+      const current = timeMap.get(driver);
+
+      if (startTime && (!current.startTimeISO || startTime < current.startTimeISO)) {
+        current.startTimeISO = startTime;
+        current.jamBerangkat = startDisplay;
+      }
+
+      if (finishTime && (!current.finishTimeISO || finishTime > current.finishTimeISO)) {
+        current.finishTimeISO = finishTime;
+        current.jamKembali = finishDisplay;
+      }
+
+      timeMap.set(driver, current);
+    }
+  });
+  return timeMap;
+}
+
 export const handleFullDeliveryFormDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
   selectedDate,
-  driverData,
   timeMap,
 }) => {
   setIsDownloading(true);
@@ -221,9 +272,8 @@ export const handleFullDeliveryFormDownload = async ({
     const zip = isMultiVehicle ? new JSZip() : null;
 
     const generatePdfBlob = async (route) => {
-      const normalizedAssignee = normalizeEmail(route.assignee);
-      const realDriverName = getDriverName(route, driverData);
-      const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
+      const realDriverName = route.driverName || '-';
+      const timeData = timeMap.get(realDriverName) || { jamBerangkat: '', jamKembali: '' };
 
       return await pdf(
         <DeliveryForm
@@ -239,23 +289,23 @@ export const handleFullDeliveryFormDownload = async ({
     if (!isMultiVehicle) {
       const route = filteredVehicleRoutes[0];
       const blob = await generatePdfBlob(route);
-      const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-      triggerDownload(blob, `Delivery Form - ${safeName} - ${dateForFilename}.pdf`);
+      const plat = route.basePlat;
+      triggerDownload(blob, `Delivery Form - ${plat} - ${dateForFilename}.pdf`);
       toastSuccess(t('common.toast.success'));
       return;
     }
 
     const pdfPromises = filteredVehicleRoutes.map(async (route) => {
       const blob = await generatePdfBlob(route);
-      const safeName = (route.vehicleName || 'Vehicle').replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-      return { safeName, blob };
+      const plat = route.basePlat;
+      return { plat, blob };
     });
 
     const generatedFiles = await Promise.all(pdfPromises);
     const seenFileNames = new Set();
 
     generatedFiles.forEach((file) => {
-      const fileName = getUniqueFileName(file.safeName, dateForFilename, '.pdf', seenFileNames);
+      const fileName = getUniqueFileName(file.plat, dateForFilename, '.pdf', seenFileNames);
       zip.file(fileName, file.blob);
     });
 
@@ -275,7 +325,6 @@ export const handlePartialDeliveryFormDownload = async ({
   setIsDownloading,
   t,
   selectedDate,
-  driverData,
   timeMap,
 }) => {
   setIsDownloading(true);
@@ -323,14 +372,11 @@ export const handlePartialDeliveryFormDownload = async ({
       const seenFileNames = new Set();
 
       for (const route of routes) {
-        const cleanName = (route.vehicleName || route.vehicleId || 'Vehicle')
-          .replace(/[\\/:*?\[\]]/g, '')
-          .trim();
-
-        if (!globalSeenSOByVehicle.has(cleanName)) {
-          globalSeenSOByVehicle.set(cleanName, new Set());
+        const plat = route.basePlat;
+        if (!globalSeenSOByVehicle.has(plat)) {
+          globalSeenSOByVehicle.set(plat, new Set());
         }
-        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(plat);
 
         const processedTripsToRender = [];
 
@@ -345,11 +391,10 @@ export const handlePartialDeliveryFormDownload = async ({
         }
 
         routingHasData = true;
-        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.pdf', seenFileNames);
-        const driverName = getDriverName(route, driverData);
+        const nameFile = getUniqueFileName(plat, dateForFilename, '.pdf', seenFileNames);
+        const driverName = route.driverName || '-';
 
-        const normalizedAssignee = normalizeEmail(route.assignee);
-        const timeData = timeMap.get(normalizedAssignee) || { jamBerangkat: '', jamKembali: '' };
+        const timeData = timeMap.get(driverName) || { jamBerangkat: '', jamKembali: '' };
 
         const modifiedRoute = { ...route, trips: processedTripsToRender };
         const blob = await generatePdfBlob(modifiedRoute, driverName, timeData);

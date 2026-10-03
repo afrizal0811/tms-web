@@ -11,6 +11,7 @@ export default function SyncModal({
   mismatchedData,
   onMismatchedChange,
   onSave,
+  onBypass,
   mcEasyDrivers,
   isDriverLoading,
   isSaving,
@@ -25,6 +26,14 @@ export default function SyncModal({
       maxWidth="max-w-6xl"
       footer={
         <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={onBypass}
+            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 font-medium text-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Bypass
+          </button>
           <Button
             onClick={onSave}
             isLoading={isSaving}

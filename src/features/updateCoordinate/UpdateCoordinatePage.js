@@ -5,20 +5,17 @@ import CustomDatePicker from '@/components/CustomDatePicker';
 import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTasks } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
   formatCoordinates,
   formatDateUniversal,
   getDistance,
   isEmpty,
-  normalizeEmail,
   parseCustomerString,
   toApiDateString,
   tomorrowDate,
 } from '@/lib/utils';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import CustomTable from './components/CustomTable';
 import { handleDownloadExcel } from './help';
 
@@ -29,13 +26,15 @@ export default function UpdateCoordinatePage() {
   const [tasksData, setTasksData] = useState([]);
   const [historyMap, setHistoryMap] = useState(new Map());
   const [isDownloading, setIsDownloading] = useState(false);
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
 
-  const driverMapRef = useRef(new Map());
   const processHistoryRawData = (rawTasks, targetCustomerSet) => {
     const tempMap = new Map();
 
-    rawTasks.sort((a, b) => new Date(a.doneTime) - new Date(b.doneTime));
+    rawTasks.sort((a, b) => {
+      const timeA = new Date(a.doneTime || 0).getTime();
+      const timeB = new Date(b.doneTime || 0).getTime();
+      return timeA - timeB;
+    });
 
     rawTasks.forEach((task) => {
       if (!task.klikLokasiClient) return;
@@ -47,10 +46,6 @@ export default function UpdateCoordinatePage() {
         tempMap.set(name, []);
       }
 
-      const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
-      const normAssignee = normalizeEmail(rawAssignee);
-      const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
-
       const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
 
       tempMap.get(name).push({
@@ -58,7 +53,7 @@ export default function UpdateCoordinatePage() {
         newLonglat: task.klikLokasiClient,
         oldLonglat: task.longlat,
         distanceDiff: distanceDiff,
-        driverName: driverName,
+        driverName: task.driverName || task.assignee || '-',
       });
     });
 
@@ -70,7 +65,6 @@ export default function UpdateCoordinatePage() {
       setLoading(true);
       setTasksData([]);
       setHistoryMap(new Map());
-      driverMapRef.current = new Map();
 
       if (selectedDate.getDay() === 0) {
         setLoading(false);
@@ -79,7 +73,6 @@ export default function UpdateCoordinatePage() {
 
       try {
         if (typeof window === 'undefined') return;
-        const { storedLocation: hubId } = getLocalStorage();
 
         const localStart = new Date(selectedDate);
         localStart.setHours(0, 0, 0, 0);
@@ -90,27 +83,15 @@ export default function UpdateCoordinatePage() {
         const timeFrom = toApiDateString(localStart);
         const timeTo = toApiDateString(localEnd);
 
-        const [drivers, todayTasks] = await Promise.all([
-          getDriverData(hubId),
+        const [todayTasks] = await Promise.all([
           getTasks({
             status: 'DONE',
-            hubId,
             timeFrom,
             timeTo,
           }),
         ]);
 
         if (mountedContext && !mountedContext.isMounted) return;
-
-        if (isEmpty(drivers)) {
-          setEmptyMessage(t('common.no_driver'));
-          throw new Error(t('common.no_driver'));
-        } else {
-          drivers.forEach((d) => {
-            const normEmail = normalizeEmail(d.email);
-            if (normEmail) driverMapRef.current.set(normEmail, d.name);
-          });
-        }
 
         const currentData = todayTasks || [];
         setTasksData(currentData);
@@ -141,7 +122,11 @@ export default function UpdateCoordinatePage() {
 
   useEffect(() => {
     const mountedContext = { isMounted: true };
-    fetchData(mountedContext);
+    const initFetch = async () => {
+      await Promise.resolve();
+      if (mountedContext.isMounted) fetchData(mountedContext);
+    };
+    initFetch();
     return () => {
       mountedContext.isMounted = false;
     };
@@ -159,20 +144,17 @@ export default function UpdateCoordinatePage() {
         const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
         const isDataIncomplete = !custId || !locId;
 
-        const rawAssignee = Array.isArray(task.assignee) ? task.assignee[0] : '';
-        const normAssignee = normalizeEmail(rawAssignee);
-        const driverName = driverMapRef.current.get(normAssignee) || rawAssignee || '-';
         const { invoiceNumber } = parseCustomerString(task.customerOrder);
         updateList.push({
           customerData: customerName,
           customerName: custName,
           customerId: custId,
           locationId: locId,
-          driverName: driverName,
-          updateTime: formatDateUniversal(task.doneTime, 'HH:mm'),
+          driverName: task.driverName || task.assignee || '-',
+          updateTime: task.doneTime ? formatDateUniversal(task.doneTime, 'HH:mm') : '-',
           newLonglat: formatCoordinates(task.klikLokasiClient),
           distanceDiff: distanceDiff !== null ? distanceDiff : 0,
-          soNumber: invoiceNumber || task.content || '-',
+          soNumber: invoiceNumber || '-',
           originalTask: task,
           isIncomplete: isDataIncomplete,
         });
@@ -219,7 +201,6 @@ export default function UpdateCoordinatePage() {
       subtitle={subtitle}
       headerItems={headerItems}
       isEmpty={!loading && isEmpty(processedData)}
-      emptyMessage={emptyMessage}
       isLoading={loading}
       footer={{
         text: t('common.click_for_detail'),

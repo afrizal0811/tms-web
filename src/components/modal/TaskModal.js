@@ -4,13 +4,12 @@ import Accordion from '@/components/Accordion';
 import Spinner from '@/components/Spinner';
 import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
-import { getResult, getTask, getUsers } from '@/lib/api/mileapp';
+import { getResult, getTask } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
+  formatMinutesToHHMM,
   isEmpty,
   parseCustomerString,
   ProperCaseText,
@@ -46,12 +45,10 @@ const Field = ({
   </div>
 );
 
-export default function TaskModal({ isOpen, onClose, taskId, driverData = [], allTasks = [] }) {
+export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
-  const [createdBy, setCreatedBy] = useState(null);
-  const [updatedBy, setUpdatedBy] = useState(null);
   const [resultData, setResultData] = useState(null);
 
   const { t: translate, isIndonesian } = useLanguage();
@@ -68,29 +65,17 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     const loadData = async () => {
       setLoading(true);
       try {
-        const response = await getTask(taskId);
+        const response = await getTask(taskId, isAllHub);
         const task = response?.task || response;
         setTaskData(task);
 
-        const [createdRes, updatedRes, resultRes] = await Promise.allSettled([
-          task?.createdBy ? getUsers(task.hubId, task.createdBy) : Promise.resolve(null),
-          task?.updatedBy ? getUsers(task.hubId, task.updatedBy) : Promise.resolve(null),
+        const [resultRes] = await Promise.allSettled([
           task?.routingResultId ? getResult(task.routingResultId) : Promise.resolve(null),
         ]);
 
-        setCreatedBy(
-          createdRes.status === 'fulfilled' && createdRes.value && !createdRes.value.data
-            ? createdRes.value[0]?.name
-            : task?.createdBy
-        );
-        setUpdatedBy(
-          updatedRes.status === 'fulfilled' && updatedRes.value && !updatedRes.value.data
-            ? updatedRes.value[0]?.name
-            : task?.updatedBy
-        );
         setResultData(
-          resultRes.status === 'fulfilled' && resultRes.value && resultRes.value?.data
-            ? resultRes.value?.data || resultRes.value
+          resultRes.status === 'fulfilled' && resultRes.value && resultRes.value
+            ? resultRes.value
             : null
         );
       } catch (err) {
@@ -101,27 +86,18 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     };
 
     loadData();
-  }, [isOpen, taskId, translate]);
-
-  const renderDate = (val) => {
-    if (!val) return '-';
-    return formatUTC7(val, 'DD/MM/YYYY HH:mm');
-  };
+  }, [isOpen, taskId, translate, isAllHub]);
 
   const renderCoordinate = (val) => {
     if (!val) return '-';
     const [lat, lng] = val.split(',').map((coord) => Number(coord).toFixed(7));
     return `${lat}, ${lng}`;
   };
-  const renderFloatData = (val) => {
-    if (!val) return 0;
-    return Number(val).toFixed(2);
-  };
 
   const getSubtitle = () => {
     if (!taskData) return '';
     const status = taskData.status || '-';
-    const statusDelivery = taskData.statusDelivery?.[0];
+    const statusDelivery = taskData.statusDelivery;
     const subtitleText = statusDelivery ? `${status} | ${statusDelivery}` : status;
     return subtitleText.toUpperCase();
   };
@@ -200,15 +176,10 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
     }
 
     const custInfo = parseCustomerString(taskData.customerOrder);
-    const assigneeEmail = taskData.assignee?.[0];
-    const driver =
-      driverData.find(
-        (d) => String(d.email).toLowerCase() === String(assigneeEmail).toLowerCase()
-      ) || {};
-
-    const maxVehicle = driver.type || taskData?.maksimumVehicleType || '-';
-    const assigneeName = driver.name || assigneeEmail || '-';
-    const licenseNumber = getBasePlate(driver.plat) || '-';
+    const assigneeEmail = taskData.assignee;
+    const maxVehicle = taskData?.maksimumVehicleType || '-';
+    const assigneeName = taskData.driverName || assigneeEmail || '-';
+    const licenseNumber = taskData.basePlat || taskData.plat || '-';
 
     const products = taskData.listProduct || [];
     const uniqueProducts = new Set(products.map((p) => p.title)).size;
@@ -228,9 +199,8 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
       translate('task_detail.modal.list_product'),
       translate('task_detail.modal.history'),
       ...(hasMap ? [translate('task_detail.modal.map')] : []),
-      ...(isSuperadmin
-        ? [`JSON ${translate('common.task')}`, `JSON ${translate('common.routing')}`]
-        : []),
+      ...(isSuperadmin && taskData ? [`JSON ${translate('common.task')}`] : []),
+      ...(isSuperadmin && resultData ? [`JSON ${translate('common.routing')}`] : []),
     ];
 
     const productColumns = [
@@ -266,13 +236,13 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
         key: 'volume',
         sortable: true,
         label: translate('common.volume'),
-        render: (row) => renderFloatData(row.volume) ?? '-',
+        render: (row) => row.volume.toFixed(2),
       },
       {
         key: 'weight',
         sortable: true,
         label: translate('common.weight'),
-        render: (row) => renderFloatData(row.weight) ?? '-',
+        render: (row) => row.weight.toFixed(2),
       },
     ];
     const isAutomation =
@@ -282,7 +252,7 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
       {
         YA: isIndonesian ? 'Ya' : 'Yes',
         TIDAK: isIndonesian ? 'Tidak' : 'No',
-      }[taskData.gpsSesuai?.[0]] ?? '-';
+      }[taskData.gpsSesuai] ?? '-';
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/50">
@@ -308,12 +278,15 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
           <Field label={translate('common.vehicle_type')} value={maxVehicle} />
           <Field
             label={translate('common.updated_by')}
-            value={driver.name || updatedBy || taskData.updatedBy}
+            value={taskData.updatedByName || taskData.updatedBy}
             tooltip={taskData.updatedBy}
             isCopy={true}
             copyValue={taskData.updatedBy}
           />
-          <Field label={translate('common.updated_at')} value={renderDate(taskData.updatedTime)} />
+          <Field
+            label={translate('common.updated_at')}
+            value={formatDateUniversal(taskData.updatedTime, 'DD/MM/YYYY HH:mm')}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
@@ -323,19 +296,19 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
             <div className="grid grid-cols-2 gap-4">
               <Field
                 label={translate('common.created_by')}
-                value={createdBy}
+                value={taskData.createdByName || taskData.createdBy}
                 tooltip={isAutomation ? null : taskData.createdBy}
                 isCopy={isAutomation ? false : true}
                 copyValue={isAutomation ? null : taskData.createdBy}
               />
               <Field
                 label={translate('common.created_time')}
-                value={renderDate(taskData.createdTime)}
+                value={formatDateUniversal(taskData.createdTime, 'DD/MM/YYYY HH:mm')}
               />
               <Field label={translate('common.created_from')} value={taskData.createdFrom} />
               <Field
                 label={translate('common.start_time')}
-                value={renderDate(taskData.startTime)}
+                value={formatDateUniversal(taskData.startTime, 'DD/MM/YYYY HH:mm')}
               />
             </div>
           </div>
@@ -354,9 +327,12 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
               <Field label={translate('common.license_number')} value={licenseNumber} />
               <Field
                 label={translate('common.assigned_time')}
-                value={renderDate(taskData.assignedTime)}
+                value={formatDateUniversal(taskData.assignedTime, 'DD/MM/YYYY HH:mm')}
               />
-              <Field label={translate('common.done_time')} value={renderDate(taskData.doneTime)} />
+              <Field
+                label={translate('common.done_time')}
+                value={formatDateUniversal(taskData.doneTime, 'DD/MM/YYYY HH:mm')}
+              />
             </div>
           </div>
         </div>
@@ -391,12 +367,13 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                   arrivalSource = taskData.klikJikaSudahSampai || taskData.klikJikaAndaSudahSampai;
                   departureSource = taskData.page3DoneTime;
                 }
-                const arrObj = renderDate(arrivalSource);
-                const depObj = renderDate(departureSource);
+
+                const arrivalDate = formatDateUniversal(arrivalSource, 'DD/MM/YYYY HH:mm');
+                const departureDate = formatDateUniversal(departureSource, 'DD/MM/YYYY HH:mm');
                 let actualVisitMins = 0;
                 if (arrivalSource && departureSource) {
-                  const tArr = new Date(arrObj);
-                  const tDep = new Date(depObj);
+                  const tArr = new Date(arrivalSource);
+                  const tDep = new Date(departureSource);
                   tArr.setSeconds(0, 0);
                   tDep.setSeconds(0, 0);
                   const diff = tDep.getTime() - tArr.getTime();
@@ -408,26 +385,13 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     actualVisitMins = 0;
                   }
                 } else actualVisitMins = '-';
-                let actualSeq = '-';
-                const statusDelivery = taskData.statusDelivery?.[0] || '-';
-
-                if (!isEmpty(statusDelivery))
-                  actualSeq =
-                    [...allTasks]
-                      .filter((t) => t.assignee?.[0] === taskData.assignee?.[0])
-                      .sort((a, b) => {
-                        const getDep = (x) => {
-                          const flow = (x.flow || '').toUpperCase();
-                          return flow.includes('GR') || flow.includes('PICKUP')
-                            ? x.doneTime
-                            : x.page3DoneTime;
-                        };
-                        return (
-                          new Date(getDep(a) || 0).getTime() - new Date(getDep(b) || 0).getTime()
-                        );
-                      })
-                      .findIndex((t) => t._id === taskData._id) + 1;
-
+                const actualVisitTooltip =
+                  actualVisitMins > 60 ? `${actualVisitMins} ${translate('common.minute')}` : '';
+                const travelDurationTooltip =
+                  taskData?.travelDuration > 60
+                    ? `${taskData?.travelDuration} ${translate('common.minute')}`
+                    : '';
+                const actualVisitHour = formatMinutesToHHMM(actualVisitMins, false);
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
@@ -435,30 +399,25 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     <Field label={translate('common.close_time')} value={taskData.closeTime} />
                     <Field
                       label={translate('common.volume')}
-                      value={renderFloatData(taskData.volumeCbm)}
+                      value={taskData.volumeCbm}
                       needEmpty={true}
                     />
                     <Field
                       label={translate('common.weight')}
-                      value={renderFloatData(taskData.weightKg)}
+                      value={taskData.weightKg}
                       needEmpty={true}
                     />
+                    <Field label={translate('common.actual_arrival')} value={arrivalDate} />
+                    <Field label={translate('common.actual_departure')} value={departureDate} />
                     <Field
-                      label={translate('common.actual_arrival')}
-                      value={renderDate(arrivalSource)}
-                    />
-                    <Field
-                      label={translate('common.actual_departure')}
-                      value={renderDate(departureSource)}
-                    />
-                    <Field
-                      label={`${translate('common.actual_visit')} (${translate('common.minute')})`}
-                      value={actualVisitMins}
+                      label={translate('common.actual_visit')}
+                      tooltip={actualVisitTooltip}
+                      value={actualVisitHour}
                       needEmpty={true}
                     />
                     <Field
                       label={translate('common.actual_seq')}
-                      value={actualSeq > 0 ? actualSeq : '-'}
+                      value={taskData.doneOrder > 0 ? taskData.doneOrder : '-'}
                     />
                     <Field
                       label={translate('task_detail.modal.expected_coord')}
@@ -493,15 +452,198 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                     )}
                     <Field
                       label={translate('common.actual_travel_distance')}
-                      value={renderFloatData(taskData.travelDistance / 1000)}
+                      value={taskData.travelDistance}
                     />
                     <Field
                       label={translate('common.actual_travel_duration')}
-                      value={renderFloatData(taskData?.travelDuration / 60)}
+                      value={taskData?.travelDurationHour}
+                      tooltip={travelDurationTooltip}
                     />
                   </div>
                 );
               })()}
+
+            {activeTab === translate('common.routing') &&
+              (() => {
+                let rTravelTime = 0;
+                let rWaitingTime = 0;
+                let rVisitTime = 0;
+                let rTravelTimeHour = 0;
+                let rWaitingTimeHour = 0;
+                let rVisitTimeHour = 0;
+                const rName = resultData?.name || '-';
+
+                if (resultData?.routing && assigneeEmail) {
+                  const vehicleMatch = resultData.routing.find(
+                    (v) => String(v.assignee).toLowerCase() === String(assigneeEmail).toLowerCase()
+                  );
+                  if (vehicleMatch && vehicleMatch.trips) {
+                    const tripMatch = vehicleMatch.trips.find((t) => t.visitId === taskData._id);
+                    if (tripMatch) {
+                      rTravelTime =
+                        tripMatch.travelTime > 60
+                          ? `${tripMatch.travelTime} ${translate('common.minute')}`
+                          : 0;
+                      rWaitingTime =
+                        tripMatch.waitingTime > 60
+                          ? `${tripMatch.waitingTime} ${translate('common.minute')}`
+                          : 0;
+                      rVisitTime =
+                        tripMatch.visitTime > 60
+                          ? `${tripMatch.visitTime} ${translate('common.minute')}`
+                          : 0;
+                      rTravelTimeHour = tripMatch.travelTimeHour;
+                      rWaitingTimeHour = tripMatch.waitingTimeHour;
+                      rVisitTimeHour = tripMatch.visitTimeHour;
+                    }
+                  }
+                }
+
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Field
+                      label={translate('common.routing_id')}
+                      value={taskData.routingResultId}
+                      isCopy={true}
+                      isTruncated={true}
+                    />
+                    <Field
+                      label={translate('common.routing_name')}
+                      value={rName}
+                      isCopy={true}
+                      isTruncated={true}
+                    />
+                    <Field label={translate('common.eta')} value={taskData.eta} />
+                    <Field label={translate('common.etd')} value={taskData.etd} />
+                    <Field
+                      label={translate('common.plan_visit')}
+                      tooltip={rVisitTime}
+                      value={rVisitTimeHour}
+                    />
+                    <Field
+                      label={translate('common.plan_seq')}
+                      value={taskData.routePlannedOrder}
+                    />
+                    <Field
+                      label={translate('common.plan_travel_distance')}
+                      value={taskData?.distance}
+                    />
+                    <Field
+                      label={translate('common.plan_travel_duration')}
+                      tooltip={rTravelTime}
+                      value={rTravelTimeHour}
+                    />
+                    <Field
+                      label={translate('task_detail.modal.waiting_time')}
+                      tooltip={rWaitingTime}
+                      value={rWaitingTimeHour}
+                    />
+                  </div>
+                );
+              })()}
+
+            {activeTab === translate('task_detail.modal.list_product') && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+                  <Field
+                    label={translate('task_detail.modal.total_product')}
+                    value={uniqueProducts}
+                  />
+                  <Field label={translate('task_detail.modal.total_item')} value={totalItems} />
+                </div>
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col max-h-[60vh]">
+                  <TableData
+                    columns={productColumns}
+                    data={products}
+                    emptyMessage={translate('common.no_data')}
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === translate('task_detail.modal.history') && (
+              <div className="py-2 max-h-[60vh] overflow-y-auto pr-2">
+                {histories.length > 0 ? (
+                  <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
+                    {histories.map((h, i) => (
+                      <div key={i} className="relative pl-6">
+                        <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-slate-800" />
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-md font-bold capitalize w-fit tracking-wide ${getActionStyle(h.action)}`}
+                          >
+                            {h.action || '-'}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
+                            {formatDateUniversal(h.createdAt, 'DD/MM/YYYY HH:mm')}
+                          </span>
+                        </div>
+                        <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
+                          {h.changedBy || '-'}
+                        </div>
+                        <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
+                          {h.notes || '-'}
+                          {h.action &&
+                            h.action.toLowerCase() === 'put' &&
+                            (() => {
+                              const diffMatch = putDiffs.find(
+                                (d) => d.id === (h._id || h.createdAt)
+                              );
+                              if (diffMatch && diffMatch.diffs.length > 0) {
+                                const formatVal = (v) => {
+                                  if (typeof v === 'object') return JSON.stringify(v);
+                                  const str = String(v);
+                                  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
+                                    return formatDateUniversal(str, 'DD-MM-YYYY HH:mm');
+                                  }
+                                  return str;
+                                };
+                                return (
+                                  <details className="mt-1.5 group">
+                                    <summary className="text-[11px] text-sky-600 dark:text-sky-400 cursor-pointer select-none font-medium hover:underline outline-none w-fit">
+                                      {translate('task_detail.modal.view_changes')} (
+                                      {diffMatch.diffs.length})
+                                    </summary>
+                                    <div className="mt-1.5 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5 max-h-[150px] overflow-y-auto">
+                                      {diffMatch.diffs.map((d, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded"
+                                        >
+                                          <div className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">
+                                            {ProperCaseText(d.key)}
+                                          </div>
+                                          <div
+                                            className="text-red-500 dark:text-red-400 truncate"
+                                            title={formatVal(d.oldVal)}
+                                          >
+                                            - {formatVal(d.oldVal)}
+                                          </div>
+                                          <div
+                                            className="text-emerald-600 dark:text-emerald-400 truncate"
+                                            title={formatVal(d.newVal)}
+                                          >
+                                            + {formatVal(d.newVal)}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                );
+                              }
+                              return null;
+                            })()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-gray-500 p-4">
+                    {translate('common.no_data')}
+                  </div>
+                )}
+              </div>
+            )}
 
             {activeTab === translate('task_detail.modal.map') &&
               hasMap &&
@@ -574,174 +716,6 @@ export default function TaskModal({ isOpen, onClose, taskId, driverData = [], al
                   </div>
                 );
               })()}
-
-            {activeTab === translate('common.routing') &&
-              (() => {
-                let rTravelTime = 0;
-                let rWaitingTime = 0;
-                let rVisitTime = 0;
-                const rName = resultData?.name || '-';
-
-                if (resultData?.result?.routing && assigneeEmail) {
-                  const vehicleMatch = resultData.result.routing.find(
-                    (v) => String(v.assignee).toLowerCase() === String(assigneeEmail).toLowerCase()
-                  );
-                  if (vehicleMatch && vehicleMatch.trips) {
-                    const targetVisitId = `taskId-${taskData._id}`;
-                    const tripMatch = vehicleMatch.trips.find((t) => t.visitId === targetVisitId);
-                    if (tripMatch) {
-                      rTravelTime = tripMatch.travelTime;
-                      rWaitingTime = tripMatch.waitingTime;
-                      rVisitTime = tripMatch.visitTime;
-                    }
-                  }
-                }
-
-                return (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Field
-                      label={translate('common.routing_id')}
-                      value={taskData.routingResultId}
-                      isCopy={true}
-                      isTruncated={true}
-                    />
-                    <Field
-                      label={translate('common.routing_name')}
-                      value={rName}
-                      isCopy={true}
-                      isTruncated={true}
-                    />
-                    <Field label={translate('common.eta')} value={taskData.eta} />
-                    <Field label={translate('common.etd')} value={taskData.etd} />
-                    <Field
-                      label={`${translate('common.plan_visit')} (${translate('common.minute')})`}
-                      value={rVisitTime}
-                    />
-                    <Field
-                      label={translate('common.plan_seq')}
-                      value={taskData.routePlannedOrder}
-                    />
-                    <Field
-                      label={translate('common.plan_travel_distance')}
-                      value={renderFloatData(taskData.distance / 1000)}
-                      needEmpty={true}
-                    />
-                    <Field
-                      label={translate('common.plan_travel_duration')}
-                      value={renderFloatData(rTravelTime / 60)}
-                      needEmpty={true}
-                    />
-                    <Field
-                      label={translate('task_detail.modal.waiting_time')}
-                      value={renderFloatData(rWaitingTime / 60)}
-                      needEmpty={true}
-                    />
-                  </div>
-                );
-              })()}
-
-            {activeTab === translate('task_detail.modal.list_product') && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
-                  <Field
-                    label={translate('task_detail.modal.total_product')}
-                    value={uniqueProducts}
-                  />
-                  <Field label={translate('task_detail.modal.total_item')} value={totalItems} />
-                </div>
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col max-h-[60vh]">
-                  <TableData
-                    columns={productColumns}
-                    data={products}
-                    emptyMessage={translate('common.no_data')}
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeTab === translate('task_detail.modal.history') && (
-              <div className="py-2 max-h-[60vh] overflow-y-auto pr-2">
-                {histories.length > 0 ? (
-                  <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
-                    {histories.map((h, i) => (
-                      <div key={i} className="relative pl-6">
-                        <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-slate-800" />
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                          <span
-                            className={`text-[11px] px-2 py-0.5 rounded-md font-bold capitalize w-fit tracking-wide ${getActionStyle(h.action)}`}
-                          >
-                            {h.action || '-'}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
-                            {renderDate(h.createdAt)}
-                          </span>
-                        </div>
-                        <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
-                          {h.changedBy || '-'}
-                        </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
-                          {h.notes || '-'}
-                          {h.action &&
-                            h.action.toLowerCase() === 'put' &&
-                            (() => {
-                              const diffMatch = putDiffs.find(
-                                (d) => d.id === (h._id || h.createdAt)
-                              );
-                              if (diffMatch && diffMatch.diffs.length > 0) {
-                                const formatVal = (v) => {
-                                  if (typeof v === 'object') return JSON.stringify(v);
-                                  const str = String(v);
-                                  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
-                                    return formatDateUniversal(str, 'DD-MM-YYYY HH:mm');
-                                  }
-                                  return str;
-                                };
-                                return (
-                                  <details className="mt-1.5 group">
-                                    <summary className="text-[11px] text-sky-600 dark:text-sky-400 cursor-pointer select-none font-medium hover:underline outline-none w-fit">
-                                      {translate('task_detail.modal.view_changes')} (
-                                      {diffMatch.diffs.length})
-                                    </summary>
-                                    <div className="mt-1.5 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5 max-h-[150px] overflow-y-auto">
-                                      {diffMatch.diffs.map((d, idx) => (
-                                        <div
-                                          key={idx}
-                                          className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded"
-                                        >
-                                          <div className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">
-                                            {ProperCaseText(d.key)}
-                                          </div>
-                                          <div
-                                            className="text-red-500 dark:text-red-400 truncate"
-                                            title={formatVal(d.oldVal)}
-                                          >
-                                            - {formatVal(d.oldVal)}
-                                          </div>
-                                          <div
-                                            className="text-emerald-600 dark:text-emerald-400 truncate"
-                                            title={formatVal(d.newVal)}
-                                          >
-                                            + {formatVal(d.newVal)}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
-                                );
-                              }
-                              return null;
-                            })()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-sm text-gray-500 p-4">
-                    {translate('common.no_data')}
-                  </div>
-                )}
-              </div>
-            )}
 
             {activeTab === `JSON ${translate('common.task')}` && (
               <div className="relative bg-slate-950 border border-slate-800 rounded-lg p-4 max-h-[60vh] overflow-y-auto">

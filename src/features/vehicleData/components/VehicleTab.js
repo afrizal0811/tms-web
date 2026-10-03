@@ -21,7 +21,7 @@ export default function VehicleTab({ localeCode, paginatedData, searchQuery, t }
 
   const { storedLocation } = getLocalStorage();
   const hubs = getCachedHubs();
-  const hasVms = hubs ? hubs.find((h) => String(h._id) === String(storedLocation))?.hasVms : false;
+  const hasVms = hubs ? hubs.activeHub?.hasVms : false;
 
   const getRowTooltip = (row) => {
     const tooltips = [];

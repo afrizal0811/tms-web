@@ -7,8 +7,7 @@ import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getOdometer } from '@/lib/api/mceasy/odometer';
-import { getDriverData } from '@/lib/driverData';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getDrivers } from '@/lib/api/mileapp';
 import { formatDateUniversal, getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toastError } from '../../lib/toast';
@@ -136,8 +135,7 @@ export default function VehicleData() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { storedLocation } = getLocalStorage();
-        const rawDriversData = await getDriverData(storedLocation);
+        const rawDriversData = await getDrivers();
 
         if (!rawDriversData || isEmpty(rawDriversData)) {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
@@ -269,7 +267,6 @@ export default function VehicleData() {
       hideLabel: false,
       component: (
         <VehicleTypeFilter
-          data={templateData}
           disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}

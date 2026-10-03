@@ -45,8 +45,8 @@ export function generateTaskSummarySheet(
   const current = new Date(startDateStr);
   const end = new Date(endDateStr);
   let currentRow = 1;
-  const mtDry = masterTruckData?.Dry?.Total || 0;
-  const mtFrozen = masterTruckData?.Frozen?.Total || 0;
+  const mtDry = masterTruckData?.masterData?.Dry?.Total || 0;
+  const mtFrozen = masterTruckData?.masterData?.Frozen?.Total || 0;
 
   while (current <= end) {
     const day = current.getDate().toString().padStart(2, '0');

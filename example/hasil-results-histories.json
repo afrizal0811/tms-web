@@ -1,800 +1,1256 @@
-{
-  "data": [
-    {
-      "resultId": "6a4e4b69b9eb4ecdae0324b2",
-      "total": 20,
-      "history": [
+[
+  {
+    "name": "Route Kiriman 2 09-23 08:58",
+    "result": {
+      "routing": [
         {
-          "move": {
-            "data": [
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit Megah Jaya Lestari - C0105929 - MAIN, SO0126-070797 moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c6068744",
-                    "visitName": "Megah Jaya Lestari - C0105929 - MAIN, SO0126-070797",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:15:04.000000Z",
-                "vehicleFrom": "L 8491 NH",
-                "vehicleTo": "W 8944 PC",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 20,
-                "updatedTime": "2026-07-08T13:15:04.674000Z",
-                "_id": "6a4e4d58684981a3e0094cf2"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "3 visits moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41b2e0771c9104f9c6",
-                    "visitName": "Wild Donut - C0106231 - MAIN, SO0126-070310",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c6068740",
-                    "visitName": "Prestisius RFA Kuliner, PT (Carls Jr.) - C0105803 - MAIN, SO0126-070390",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d2",
-                    "visitName": "Honey Pok - C0103754 - MAIN, SO0126-070535",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:14:33.000000Z",
-                "vehicleFrom": "W 8944 PC",
-                "vehicleTo": "W 8212 QH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 19,
-                "updatedTime": "2026-07-08T13:14:33.379000Z",
-                "_id": "6a4e4d39c2134895ad0b9fa9"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "3 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4105173a9c1c01c034",
-                    "visitName": "Rustic Market - C0101581 - LOC002, SO0126-070555",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d8",
-                    "visitName": "Bara, Cafe - C0101743 - MAIN, SO0126-070520",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42dfdd1ce637016421",
-                    "visitName": "Rifara Frozen Food - C0103408 - MAIN, SO0126-070605",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:14:21.000000Z",
-                "vehicleFrom": "W 8212 QH",
-                "vehicleTo": "L 8493 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 18,
-                "updatedTime": "2026-07-08T13:14:21.794000Z",
-                "_id": "6a4e4d2dcef75efb970cd002"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "3 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4268d4897afb0923ea",
-                    "visitName": "Albaik Adem Sejahtera, CV - C0102666 - LOC003, SO0126-070629",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41969e5e9946023c05",
-                    "visitName": "Hazanah Frozen, Toko - C0102578 - MAIN, SO0126-070616",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42969e5e9946023c13",
-                    "visitName": "Yin Gelato - C0105030 - MAIN, SO0126-070460,SO0126-070462,SO0126-070507",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:13:49.000000Z",
-                "vehicleFrom": "W 8212 QH, W 8944 PC",
-                "vehicleTo": "L 8493 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 17,
-                "updatedTime": "2026-07-08T13:13:49.705000Z",
-                "_id": "6a4e4d0d397364eb8a0b6f82"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "14 visits moved to vehicle L 8493 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41969e5e9946023c03",
-                    "visitName": "Ascarya Makmur Jaya, CV (Shamrock Surabaya) - C0104433 - MAIN, SO0126-070725",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42969e5e9946023c15",
-                    "visitName": "Mon Mon, Toko /Ps Puncak Permai - C0102177 - MAIN, SO0126-070455,SO0126-070458",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41dfdd1ce63701641b",
-                    "visitName": "Bina Srikandi Propertama, PT (Hotel Harris Bundaran Satelit Surabaya ) - C0101005 - MAIN, SO0126-070682",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d0808273f",
-                    "visitName": "Commond Ground, Cafe (PT.Kopi Sukses Bersama) - C0101325 - LOC001, SO0126-070705",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b410bbc9580ae079034",
-                    "visitName": "Inti Selera Ind., PT (Bentoya, Restaurant) - C0101861 - MAIN, SO0126-070467",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c606873e",
-                    "visitName": "Happy Tummy - C0101098 - MAIN, SO0126-070720,SO0126-070741",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b410bbc9580ae079032",
-                    "visitName": "Froz N Frez, Toko - C0102659 - LOC002, SO0126-070764",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42a857c2c4660ae8be",
-                    "visitName": "De Von - C0105383 - LOC001, SO0126-070345",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae07903a",
-                    "visitName": "The Westin, Hotel - C0101012 - LOC001, SO0126-070349,SO0126-070710",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41969e5e9946023c07",
-                    "visitName": "Four Points By Sheraton /Pakuwon Indah - C0101007 - MAIN, SO0126-070729",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4105173a9c1c01c036",
-                    "visitName": "Kone, Resto Cafe - C0104252 - MAIN, SO0126-070799",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b423046e9b79f08e589",
-                    "visitName": "Moos, Resto Cafe - C0105528 - LOC002, SO0126-070347",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4168d4897afb0923e0",
-                    "visitName": "Rasa Sayang Group - C0104627 - MAIN, SO0126-070803",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d08082743",
-                    "visitName": "ABG Sosis /Rumah Sosis - C0100479 - MAIN, SO0126-070512,SO0126-070515,SO0126-070517",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:13:36.000000Z",
-                "vehicleFrom": "W 8944 PC, L 8491 NH",
-                "vehicleTo": "L 8493 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 16,
-                "updatedTime": "2026-07-08T13:13:36.871000Z",
-                "_id": "6a4e4d001d556a649406fb64"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "2 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b42969e5e9946023c0f",
-                    "visitName": "Alfa Midi, Midi Utama Indonesia PT - C0103066 - LOC004, SO0126-070484",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b423046e9b79f08e583",
-                    "visitName": "Matahari Putra Prima, PT - C0103335 - LOC013, SO0126-070456",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:13:11.000000Z",
-                "vehicleFrom": "W 8958 PQ",
-                "vehicleTo": "L 8491 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 15,
-                "updatedTime": "2026-07-08T13:13:11.050000Z",
-                "_id": "6a4e4ce75fdd4b5cb50d3952"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "3 visits moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae079042",
-                    "visitName": "Rumah Bolu - C0105966 - MAIN, SO0126-070532",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c6068742",
-                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC099, SO0126-070573",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d08082741",
-                    "visitName": "Maulana Frozen - C0104198 - MAIN, SO0126-070429,SO0126-070431",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:13:00.000000Z",
-                "vehicleFrom": "L 8491 NH",
-                "vehicleTo": "W 8958 PQ",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 14,
-                "updatedTime": "2026-07-08T13:13:00.608000Z",
-                "_id": "6a4e4cdc22488b41ac066b7c"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit Jaya Bersama, CV - C0103899 - LOC004, SO0126-069879,SO0126-069880 moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4205173a9c1c01c03e",
-                    "visitName": "Jaya Bersama, CV - C0103899 - LOC004, SO0126-069879,SO0126-069880",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:12:29.000000Z",
-                "vehicleFrom": "L 8491 NH",
-                "vehicleTo": "W 8958 PQ",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 13,
-                "updatedTime": "2026-07-08T13:12:29.863000Z",
-                "_id": "6a4e4cbd22488b41ac066b7b"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "2 visits moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41a857c2c4660ae8ac",
-                    "visitName": "Dharma Graha Utama PT (Aston In) - C0101010 - MAIN, SO0126-070811",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d08082747",
-                    "visitName": "Bekuin Frozen Food - C0105196 - LOC002, SO0126-070621",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:11:48.000000Z",
-                "vehicleFrom": "L 8493 NH",
-                "vehicleTo": "W 8944 PC",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 12,
-                "updatedTime": "2026-07-08T13:11:48.756000Z",
-                "_id": "6a4e4c94811e111c0205da12"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit Barokah Sejahtera Grup, CV - C0101981 - LOC002, SO0126-070727 moved to vehicle W 8944 PC by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b8",
-                    "visitName": "Barokah Sejahtera Grup, CV - C0101981 - LOC002, SO0126-070727",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:11:36.000000Z",
-                "vehicleFrom": "L 8493 NH",
-                "vehicleTo": "W 8944 PC",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 11,
-                "updatedTime": "2026-07-08T13:11:36.662000Z",
-                "_id": "6a4e4c8817461db709082c42"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "22 visits moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b4",
-                    "visitName": "Tobys Estate - C0101428 - LOC005, SO0126-070342",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41dfdd1ce637016415",
-                    "visitName": "Hurricanes Grill - C0104107 - MAIN, SO0126-070344",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4205173a9c1c01c042",
-                    "visitName": "Karbs Bakehouse - C0104124 - LOC003, SO0126-070435",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42969e5e9946023c0d",
-                    "visitName": "Kampar, Resto - C0101849 - MAIN, SO0126-070343,SO0126-070806",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42dfdd1ce63701641d",
-                    "visitName": "Santika, Hotel /Pandegiling - C0100671 - MAIN, SO0126-070674",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b423046e9b79f08e581",
-                    "visitName": "Cold N Brew - C0105345 - LOC002, SO0126-070526",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41a857c2c4660ae8b2",
-                    "visitName": "De Soematra, Restaurant - C0101921 - MAIN, SO0126-070364",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4168d4897afb0923e4",
-                    "visitName": "Saudara Sekawan Sejahtera, PT (Harris, Hotel) /Gubeng - C0100966 - LOC001, SO0126-070810",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b410bbc9580ae079036",
-                    "visitName": "Santika Premier, Hotel - C0100652 - MAIN, SO0126-070730",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d6",
-                    "visitName": "Halaman 78, Resto Cafe - C0105476 - MAIN, SO0126-070769",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4268d4897afb0923f0",
-                    "visitName": "One Two Three, Resto Cafe - C0104363 - MAIN, SO0126-070772",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4132201a81c6068736",
-                    "visitName": "Cash /Lokal - C0102787 - LOC004, SS0126-000606,SS0126-000608,SS0126-000609",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41f23c378d0808273b",
-                    "visitName": "Am Pm Coffee - C0104460 - MAIN, SO0126-070587",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4205173a9c1c01c03a",
-                    "visitName": "Bekizaar, Hotel - C0103695 - MAIN, SO0126-070700",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41f23c378d0808273d",
-                    "visitName": "Max One, Hotel /Open Oven - C0100971 - MAIN, SO0126-070492",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41f23c378d08082739",
-                    "visitName": "La Freya, Bakery - C0100688 - LOC002, SO0126-070332",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b410bbc9580ae079038",
-                    "visitName": "Great Dipo, Hotel - C0100998 - MAIN, SO0126-070658",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41b2e0771c9104f9ca",
-                    "visitName": "Majapahit, Hotel - C0106214 - MAIN, SO0126-070815",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4168d4897afb0923e2",
-                    "visitName": "Paris Baguette (PT.Era Boga Patiserindo) - C0104196 - LOC002, SO0126-070788",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4168d4897afb0923e6",
-                    "visitName": "Sheraton, Hotel - C0100665 - LOC001, SO0126-070818",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9ce",
-                    "visitName": "JW Marriott, Hotel - C0100669 - LOC001, SO0126-070348,SO0126-070716",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b413046e9b79f08e579",
-                    "visitName": "Samudra Sukses Mandiri, PT - C0105554 - LOC002, SO0126-070723",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:11:23.000000Z",
-                "vehicleFrom": "W 9094 PD, W 8944 PC, L 8493 NH, L 8491 NH",
-                "vehicleTo": "W 8212 QH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 10,
-                "updatedTime": "2026-07-08T13:11:23.050000Z",
-                "_id": "6a4e4c7bac041f6fe90556d2"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit Pasar Terang - C0106047 - MAIN, SO0126-070771 moved to vehicle W 8212 QH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41a857c2c4660ae8ae",
-                    "visitName": "Pasar Terang - C0106047 - MAIN, SO0126-070771",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:10:45.000000Z",
-                "vehicleFrom": "L 8491 NH",
-                "vehicleTo": "W 8212 QH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 9,
-                "updatedTime": "2026-07-08T13:10:45.232000Z",
-                "_id": "6a4e4c5568474e0a69096ba2"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit PT. Foods Beverages Indonesia - C0104613 - LOC008, SO0126-070809 moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41a857c2c4660ae8b0",
-                    "visitName": "PT. Foods Beverages Indonesia - C0104613 - LOC008, SO0126-070809",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:10:22.000000Z",
-                "vehicleFrom": "W 8212 QH",
-                "vehicleTo": "W 9094 PD",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 8,
-                "updatedTime": "2026-07-08T13:10:22.882000Z",
-                "_id": "6a4e4c3eb9eb4ecdae0324b3"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "3 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c606873a",
-                    "visitName": "Moriko Mise - C0101092 - MAIN, SO0126-070715",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41b2e0771c9104f9c8",
-                    "visitName": "Nooma - C0105395 - MAIN, SO0126-070801",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42a857c2c4660ae8bc",
-                    "visitName": "Bes Frozen Food, Toko - C0104225 - MAIN, SO0126-070695",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:09:58.000000Z",
-                "vehicleFrom": "W 8212 QH",
-                "vehicleTo": "W 9094 PD",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 7,
-                "updatedTime": "2026-07-08T13:09:58.540000Z",
-                "_id": "6a4e4c26c2134895ad0b9fa6"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "2 visits moved to vehicle W 8958 PQ by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b42a857c2c4660ae8b6",
-                    "visitName": "Bastian Frozen Food - C0103073 - LOC001, SO0126-070627",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae07903e",
-                    "visitName": "Arida Makmur Sejahtera.CV - C0103735 - LOC001, SO0126-070388",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:09:36.000000Z",
-                "vehicleFrom": "W 9094 PD",
-                "vehicleTo": "W 8958 PQ",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 6,
-                "updatedTime": "2026-07-08T13:09:36.682000Z",
-                "_id": "6a4e4c103a81f4ab730c4042"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "2 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4205173a9c1c01c03c",
-                    "visitName": "Primaraya Sukses, CV - C0102274 - LOC001, SO0126-070567",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41969e5e9946023c09",
-                    "visitName": "Osaka Pool And Bistro - C0104842 - MAIN, SO0126-070560,SO0126-070561",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:09:04.000000Z",
-                "vehicleFrom": "L 8493 NH",
-                "vehicleTo": "W 9094 PD",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 5,
-                "updatedTime": "2026-07-08T13:09:04.418000Z",
-                "_id": "6a4e4bf0535c52c0c40b69c9"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "9 visits moved to vehicle W 9094 PD by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4132201a81c6068734",
-                    "visitName": "Suka Sana Sini, CV (Camden Surabaya) - C0104432 - MAIN, SO0126-070724",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4132201a81c6068738",
-                    "visitName": "Citra Mulia, CV - C0100720 - LOC002, SO0126-070767",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4105173a9c1c01c038",
-                    "visitName": "House Of Daeju - C0106157 - MAIN, SO0126-070489,SO0126-070491",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4268d4897afb0923ec",
-                    "visitName": "Nio Billiard - C0104698 - MAIN, SO0126-070721",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d08082745",
-                    "visitName": "Le Ble Boulangerie - C0104244 - LOC002, SO0126-070793",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4268d4897afb0923ee",
-                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC007, SO0126-070578",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d0",
-                    "visitName": "Dopamine Chocolate - C0104903 - LOC001, SO0126-070702",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42b2e0771c9104f9d4",
-                    "visitName": "Sweet Scoop, Bakery - C0104146 - MAIN, SO0126-070795",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b413046e9b79f08e577",
-                    "visitName": "Safaatul Komsiah, Toko - C0102534 - MAIN, SO0126-070579",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:08:44.000000Z",
-                "vehicleFrom": "W 8212 QH, L 8493 NH",
-                "vehicleTo": "W 9094 PD",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 4,
-                "updatedTime": "2026-07-08T13:08:44.640000Z",
-                "_id": "6a4e4bdc790ba249a402639a"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "4 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c606873c",
-                    "visitName": "Keke Frozen Food - C0104498 - MAIN, SO0126-070666",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae079040",
-                    "visitName": "Dhifi, Bapak - C0105858 - MAIN, SO0126-070307",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae07903c",
-                    "visitName": "Winda Rosa, Toko - C0102332 - MAIN, SO0126-070048",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b423046e9b79f08e585",
-                    "visitName": "Dapur Cokelat Indonesia, PT - C0101816 - MAIN, SO0126-070350",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:07:54.000000Z",
-                "vehicleFrom": "W 9094 PD, W 8212 QH",
-                "vehicleTo": "L 8491 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 2,
-                "updatedTime": "2026-07-08T13:07:54.333000Z",
-                "_id": "6a4e4baa790ba249a4026399"
-              },
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "8 visits moved to vehicle L 8491 NH by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b41dfdd1ce637016417",
-                    "visitName": "Kedai Semoga Makmur - C0106048 - MAIN, SO0126-070822",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41b2e0771c9104f9cc",
-                    "visitName": "Novi Herayanti, Ibu - C0105512 - MAIN, SO0126-070626",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42dfdd1ce637016423",
-                    "visitName": "Uyan Coffee & Heritage - C0105209 - MAIN, SO0126-070375",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42969e5e9946023c0b",
-                    "visitName": "PT. Foods Beverages Indonesia - C0104613 - LOC017, SO0126-070808",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b41dfdd1ce637016419",
-                    "visitName": "Abel Frozen - C0102601 - MAIN, SO0126-070436",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b420bbc9580ae079042",
-                    "visitName": "Rumah Bolu - C0105966 - MAIN, SO0126-070532",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b4232201a81c6068742",
-                    "visitName": "Penak Nata Barokah, PT - C0101298 - LOC099, SO0126-070573",
-                    "action": "move"
-                  },
-                  {
-                    "visitId": "taskId-6a4e4b42f23c378d08082741",
-                    "visitName": "Maulana Frozen - C0104198 - MAIN, SO0126-070429,SO0126-070431",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:07:35.000000Z",
-                "vehicleFrom": "W 9094 PD, W 8212 QH",
-                "vehicleTo": "L 8491 NH",
-                "createdFrom": "WEB",
-                "createdType": "bulkMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 1,
-                "updatedTime": "2026-07-08T13:07:35.128000Z",
-                "_id": "6a4e4b971d556a649406fb63"
-              }
-            ],
-            "count": 19
-          },
-          "dropped": {
-            "data": [],
-            "count": 0
-          },
-          "switch": {
-            "data": [],
-            "count": 0
-          },
-          "manual": {
-            "data": [
-              {
-                "resultId": "6a4e4b69b9eb4ecdae0324b2",
-                "action": "move",
-                "description": "Visit Fast Food Indonesia Tbk, PT ( KFC ) - C0101990 - LOC005, SO0126-070781,SO0126-070782 moved to vehicle W 8137 PI by IMAM AGUNG GIRI SUBEKTI",
-                "visits": [
-                  {
-                    "visitId": "taskId-6a4e4b413046e9b79f08e57b",
-                    "visitName": "Fast Food Indonesia Tbk, PT ( KFC ) - C0101990 - LOC005, SO0126-070781,SO0126-070782",
-                    "action": "move"
-                  }
-                ],
-                "organizationId": "6703410af6be892f3208ecda",
-                "createdTime": "2026-07-08T13:08:14.000000Z",
-                "vehicleFrom": "dropped",
-                "vehicleTo": "W 8137 PI",
-                "createdFrom": "WEB",
-                "createdType": "individualMove",
-                "createdBy": "IMAM AGUNG GIRI SUBEKTI",
-                "version": 3,
-                "updatedTime": "2026-07-08T13:08:14.236000Z",
-                "_id": "6a4e4bbe535c52c0c40b69c8"
-              }
-            ],
-            "count": 1
-          }
+          "vehicleId": "6a5d887b765ba676e3062c35",
+          "vehicleName": "H 8756 PQ",
+          "assignee": "ekspedisiplsolo03@panganlestari.com",
+          "trips": [
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 0,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "09:30:00",
+              "etd": "09:30:00",
+              "distance": 0,
+              "order": 0
+            },
+            {
+              "visitId": "6ab331dc411691a2b507ecf4",
+              "visitName": "Sumber Jadi Mulia - C1000422 - MAIN, SO1026-014900",
+              "address": "Jl. Veteran 189 Gemblegan Timur Solo,Surakarta",
+              "coordinate": "-7.5823942,110.8183779",
+              "isHub": false,
+              "weight": 254.004,
+              "volume": 0.7,
+              "travelTime": 10,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "09:39:08",
+              "etd": "10:09:08",
+              "distance": 5167,
+              "order": 1
+            },
+            {
+              "visitId": "6ab247fe3a52dc02d10cec9e",
+              "visitName": "Whims Coffee / Surakarta - C1000840 - MAIN, SO1026-014862,SO1026-014864",
+              "address": "Jl. Slamet Riyadi No. 191,Surakarta",
+              "coordinate": "-7.5698427,110.8169832",
+              "isHub": false,
+              "weight": 32.78,
+              "volume": 0.09,
+              "travelTime": 4,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "10:12:50",
+              "etd": "10:42:50",
+              "distance": 1779,
+              "order": 2
+            },
+            {
+              "visitId": "6ab247fe34243b71c00ffa4a",
+              "visitName": "Multi Rasa, Bakery - C1000127 - MAIN, SO1026-014835",
+              "address": "Jl. Joko Tingkir No. 25A Pajang Gentan,Surakarta",
+              "coordinate": "-7.574700,110.783177",
+              "isHub": false,
+              "weight": 30.48,
+              "volume": 0.05,
+              "travelTime": 9,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "10:51:26",
+              "etd": "11:06:26",
+              "distance": 4817,
+              "order": 3
+            },
+            {
+              "visitId": "6ab247fe2f962975b30f3b9b",
+              "visitName": "Eighteen Ground / Kartasura - C1000753 - MAIN, SO1026-014834",
+              "address": "Jl. A. Yani,Sukoharjo",
+              "coordinate": "-7.5613895,110.7637185",
+              "isHub": false,
+              "weight": 21.48,
+              "volume": 0.03,
+              "travelTime": 8,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "11:13:36",
+              "etd": "11:43:36",
+              "distance": 3859,
+              "order": 4
+            },
+            {
+              "visitId": "6ab331dcca17e55a5c06f9f2",
+              "visitName": "DUA PENDEKAR AYAM - C1000750 - MAIN, SO1026-014739",
+              "address": "Dusun I, Winong,Boyolali",
+              "coordinate": "-7.515580,110.586811",
+              "isHub": false,
+              "weight": 122.0004,
+              "volume": 1.18,
+              "travelTime": 35,
+              "visitTime": 120,
+              "waitingTime": 0,
+              "eta": "12:17:55",
+              "etd": "14:17:55",
+              "distance": 21840,
+              "order": 5
+            },
+            {
+              "visitId": "6ab247fe708980325808944b",
+              "visitName": "Bares Frozen, Toko /Klaten - C1000504 - LOC002, SO1026-014844,SO1026-014846",
+              "address": "Jl. Basole - Stasiun Ceper,Klaten",
+              "coordinate": "-7.663046,110.675926",
+              "isHub": false,
+              "weight": 33.19,
+              "volume": 0.1,
+              "travelTime": 48,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "15:05:19",
+              "etd": "15:20:19",
+              "distance": 25817,
+              "order": 6
+            },
+            {
+              "visitId": "6ab331dd411691a2b507ecf6",
+              "visitName": "Panili Frozen Mart /Klaten - C1000604 - MAIN, SO1026-014901,SO1026-014902",
+              "address": "Jl Sultan Agung No. 10,Klaten",
+              "coordinate": "-7.690805,110.635803",
+              "isHub": false,
+              "weight": 30.8,
+              "volume": 0.09,
+              "travelTime": 11,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "15:30:21",
+              "etd": "15:45:21",
+              "distance": 6012,
+              "order": 7
+            },
+            {
+              "visitId": "6ab331ddca17e55a5c06f9f4",
+              "visitName": "Bee Frozen - C1000611 - LOC001, SO1026-014898",
+              "address": "Jl. Pramuka Pondok No. 3 Pondok,Klaten",
+              "coordinate": "-7.710623,110.597638",
+              "isHub": false,
+              "weight": 20.04,
+              "volume": 0.06,
+              "travelTime": 11,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "15:55:44",
+              "etd": "16:05:44",
+              "distance": 5525,
+              "order": 8
+            },
+            {
+              "visitId": "6ab247fe708980325808944d",
+              "visitName": "Awor Coffe Klaten - C1000606 - MAIN, SO1026-014832,SO1026-014833",
+              "address": "Jl. Merbabu No. 5,Klaten",
+              "coordinate": "-7.709720,110.594157",
+              "isHub": false,
+              "weight": 29.35992,
+              "volume": 0.14,
+              "travelTime": 2,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "16:07:20",
+              "etd": "16:17:20",
+              "distance": 574,
+              "order": 9
+            },
+            {
+              "visitId": "6ab247fe2f962975b30f3b95",
+              "visitName": "Mohamad Kusnudin  /Klaten - C1000434 - MAIN, SO1026-014892,SO1026-014893",
+              "address": "Jl. Merbabu 15 Utara Stadion Trikoyo Klaten,Klaten",
+              "coordinate": "-7.705207,110.597804",
+              "isHub": false,
+              "weight": 120.71987,
+              "volume": 0.42,
+              "travelTime": 2,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "16:18:43",
+              "etd": "16:33:43",
+              "distance": 656,
+              "order": 10
+            },
+            {
+              "visitId": "6ab247fe1330ef721c044e48",
+              "visitName": "KSA Frozen - C1000718 - MAIN, SO1026-014697",
+              "address": "Jl. Ki Ageng Panjawi No. 7,Klaten",
+              "coordinate": "-7.688750,110.602975",
+              "isHub": false,
+              "weight": 50,
+              "volume": 0.15,
+              "travelTime": 5,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "16:38:27",
+              "etd": "16:53:27",
+              "distance": 2257,
+              "order": 11
+            },
+            {
+              "visitId": "6ab247fe2f962975b30f3b91",
+              "visitName": "Vinno Frozen Food /Klaten - C1000030 - LOC001, SO1026-014826",
+              "address": "Pasar Cokro Kembang No. 10,Klaten",
+              "coordinate": "-7.603061,110.647742",
+              "isHub": false,
+              "weight": 383.4044,
+              "volume": 1.08,
+              "travelTime": 28,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "17:20:47",
+              "etd": "17:35:47",
+              "distance": 13438,
+              "order": 12
+            },
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 47,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "18:22:01",
+              "etd": "18:22:01",
+              "distance": 27396,
+              "order": 13
+            }
+          ],
+          "totalWeight": 1128.25859,
+          "vehicleMaxWeight": 1800,
+          "vehicleMinWeight": 0,
+          "weightPercentage": 62.68,
+          "totalVolume": 4.09,
+          "vehicleMaxVolume": 5.31843,
+          "vehicleMinVolume": 0,
+          "volumePercentage": 76.9,
+          "totalTravelTime": 220,
+          "totalDistance": 119137,
+          "totalVisits": 12,
+          "totalVisitTime": 320,
+          "totalWaitingTime": 0,
+          "totalSpentTime": 540,
+          "distanceKm": 119.14,
+          "travelHour": "03:40",
+          "visitHour": "05:20",
+          "waitingHour": "00:00",
+          "spentHour": "09:00",
+          "driverName": "'FRZ' TAUFIK AKBAR",
+          "basePlat": "H 8756 PQ"
         }
-      ]
-    }
-  ]
-}
+      ],
+      "dropped": []
+    },
+    "summary": {
+      "routedVisits": 12,
+      "droppedVisits": 0,
+      "totalVisits": 12,
+      "totalDistance": 119137,
+      "totalTravelTime": 220,
+      "totalVisitTime": 320,
+      "totalWaitingTime": 0,
+      "totalSpentTime": 540,
+      "distanceKm": 119.14,
+      "travelHour": "03:40",
+      "visitHour": "05:20",
+      "waitingHour": "00:00",
+      "spentHour": "09:00"
+    },
+    "createdTime": "2026-09-23T01:58:34+00:00",
+    "createdBy": "6a5d81642bfb30acf204fd18",
+    "dispatchStatus": "done",
+    "dispatchMessage": "12/12",
+    "user": {
+      "name": "Bayu"
+    },
+    "_id": "6ab3324a78159d41890f2dd3"
+  },
+  {
+    "name": "Rouute Kiriman 24 Sept 15:54",
+    "result": {
+      "routing": [
+        {
+          "vehicleId": "6a5d887c765ba676e3062c37",
+          "vehicleName": "H 8128 MQ",
+          "assignee": "ekspedisiplsolo05@panganlestari.com",
+          "vehicleMaxWeight": 1800,
+          "vehicleMinWeight": 0,
+          "weightPercentage": 32.89,
+          "vehicleMaxVolume": 8.3232,
+          "vehicleMinVolume": 0,
+          "volumePercentage": 66.44,
+          "trips": [
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 0,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "07:00:00",
+              "etd": "07:52:10",
+              "distance": 0,
+              "order": 0
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed0e",
+              "visitName": "Indogrosir, Toko - C1000420 - LOC002, SO1026-014916,SO1026-014917,SO1026-014918",
+              "address": "Jl. Raya Solo - Tawangmangu No. 9-10 Km 7,2,Karanganyar",
+              "coordinate": "-7.571961,110.885063",
+              "isHub": false,
+              "weight": 153.45991,
+              "volume": 0.17,
+              "travelTime": 8,
+              "visitTime": 60,
+              "waitingTime": 0,
+              "eta": "08:00:00",
+              "etd": "09:00:00",
+              "distance": 4498,
+              "order": 1
+            },
+            {
+              "visitId": "6ab392ec36b2dcb73a0ed571",
+              "visitName": "Luwes Mojosongo, Toko - C1000059 - MAIN, SO1026-014925,SO1026-014926",
+              "address": "Mojosongo Solo,Surakarta",
+              "coordinate": "-7.553328,110.839222",
+              "isHub": false,
+              "weight": 62.985,
+              "volume": 0.1,
+              "travelTime": 12,
+              "visitTime": 60,
+              "waitingTime": 0,
+              "eta": "09:11:38",
+              "etd": "10:11:38",
+              "distance": 6625,
+              "order": 2
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064ae1",
+              "visitName": "Grill It, Resto /Solo - C1000378 - MAIN, SO1026-014906",
+              "address": "Jl. Rm Said No. 55,Surakarta",
+              "coordinate": "-7.563464,110.8208614",
+              "isHub": false,
+              "weight": 3.09,
+              "volume": 0,
+              "travelTime": 6,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "10:17:27",
+              "etd": "10:27:27",
+              "distance": 3186,
+              "order": 3
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064aeb",
+              "visitName": "Reska Multi Usaha, PT - C1000496 - LOC003, SO1026-014942,SO1026-014943",
+              "address": "Kp. Tukangan,Yogyakarta",
+              "coordinate": "-7.5584771,110.8248511",
+              "isHub": false,
+              "weight": 290.19469,
+              "volume": 5.04,
+              "travelTime": 3,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "10:29:45",
+              "etd": "10:59:45",
+              "distance": 941,
+              "order": 4
+            },
+            {
+              "visitId": "6ab247ff7089803258089455",
+              "visitName": "Padmowati, Toko - C1000178 - MAIN, SO1026-014871",
+              "address": "Pasar Nusukan Bawah (Dekat Pintu Masuk),Surakarta",
+              "coordinate": "-7.5469426,110.8206999",
+              "isHub": false,
+              "weight": 11.18,
+              "volume": 0.03,
+              "travelTime": 3,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "11:02:44",
+              "etd": "11:02:44",
+              "distance": 1684,
+              "order": 5
+            },
+            {
+              "visitId": "6ab247ff1330ef721c044e56",
+              "visitName": "Padmo Sum, Ibu - C1000217 - MAIN, SO1026-014872",
+              "address": "Pasar Nusukan C9,Surakarta",
+              "coordinate": "-7.5469426,110.8206999",
+              "isHub": false,
+              "weight": 11.18,
+              "volume": 0.03,
+              "travelTime": 0,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "11:02:44",
+              "etd": "11:12:44",
+              "distance": 0,
+              "order": 6
+            },
+            {
+              "visitId": "6ab247ff2f962975b30f3ba1",
+              "visitName": "Darmi, Ibu - C1000263 - MAIN, SO1026-014868",
+              "address": "Pasar Nusukan Barat Warjo Lantai 2,Surakarta",
+              "coordinate": "-7.546925,110.820726",
+              "isHub": false,
+              "weight": 21.36,
+              "volume": 0.1,
+              "travelTime": 0,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "11:12:44",
+              "etd": "11:22:44",
+              "distance": 1,
+              "order": 7
+            },
+            {
+              "visitId": "6ab247fe34243b71c00ffa4c",
+              "visitName": "Warjo, Bapak /Ps. Nusukan - C1000204 - MAIN, SO1026-014869",
+              "address": "Pasar Nusukan Lantai 2 (Samping Lukman),Surakarta",
+              "coordinate": "-7.546775,110.821103",
+              "isHub": false,
+              "weight": 6.17066,
+              "volume": 0.03,
+              "travelTime": 1,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "11:23:16",
+              "etd": "11:33:16",
+              "distance": 162,
+              "order": 8
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed08",
+              "visitName": "Haraya Mart /Karanganyar - C1000546 - MAIN, SO1026-014950",
+              "address": "Pulosari Karangasem Rt 006 Rw 002 Sroyo,Karanganyar",
+              "coordinate": "-7.5398621,110.8764126",
+              "isHub": false,
+              "weight": 1.698,
+              "volume": 0,
+              "travelTime": 15,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "11:47:38",
+              "etd": "12:07:38",
+              "distance": 8629,
+              "order": 9
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed06",
+              "visitName": "Koperasi Indo Acidatama/Karanganyar - C1000267 - MAIN, SO1026-014948,SO1026-014949",
+              "address": ",Karanganyar",
+              "coordinate": "-7.527256,110.886440",
+              "isHub": false,
+              "weight": 3.13615,
+              "volume": 0.01,
+              "travelTime": 6,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "12:12:42",
+              "etd": "12:32:42",
+              "distance": 2290,
+              "order": 10
+            },
+            {
+              "visitId": "6ab392ebbc4f15a87401f7ae",
+              "visitName": "Rozan, MM /Solo - C1000164 - LOC002, SO1026-014951,SO1026-014952",
+              "address": "Jl. Grompol - Jambangan Km 0,5,Karanganyar",
+              "coordinate": "-7.532118,110.900208",
+              "isHub": false,
+              "weight": 7.623,
+              "volume": 0.01,
+              "travelTime": 4,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "12:36:18",
+              "etd": "12:36:18",
+              "distance": 1719,
+              "order": 11
+            },
+            {
+              "visitId": "6ab392ebbc4f15a87401f7ac",
+              "visitName": "Rozan, MM /Solo - C1000164 - LOC001, SO1026-014939,SO1026-014940",
+              "address": "Gedangan RT 004 RW 002,Karanganyar",
+              "coordinate": "-7.532118,110.900208",
+              "isHub": false,
+              "weight": 18.756,
+              "volume": 0.01,
+              "travelTime": 0,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "12:36:18",
+              "etd": "12:56:18",
+              "distance": 0,
+              "order": 12
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed12",
+              "visitName": "Rozan SM /Karanganyar - C1000547 - MAIN, SO1026-014941",
+              "address": "Jl. Nangsri-Kaliro Km 1 Dk. Tawang Rt 001 Macanan,Karanganyar",
+              "coordinate": "-7.5116709,110.890036",
+              "isHub": false,
+              "weight": 1.17,
+              "volume": 0,
+              "travelTime": 8,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "13:03:45",
+              "etd": "13:23:45",
+              "distance": 3632,
+              "order": 13
+            },
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 19,
+              "visitTime": 0,
+              "waitingTime": 53,
+              "eta": "13:42:44",
+              "etd": "13:42:44",
+              "distance": 11364,
+              "order": 14
+            }
+          ],
+          "totalWeight": 592.0034099999999,
+          "totalVolume": 5.53,
+          "totalTravelTime": 85,
+          "totalDistance": 44731,
+          "totalVisits": 13,
+          "totalVisitTime": 270,
+          "totalWaitingTime": 53,
+          "totalSpentTime": 408,
+          "distanceKm": 44.73,
+          "travelHour": "01:25",
+          "visitHour": "04:30",
+          "waitingHour": "00:53",
+          "spentHour": "06:48",
+          "driverName": "'DRY' FEBRI WIJAYA",
+          "basePlat": "H 8128 MQ"
+        },
+        {
+          "vehicleId": "6a5d887c765ba676e3062c36",
+          "vehicleName": "H 8758 PQ",
+          "assignee": "ekspedisiplsolo04@panganlestari.com",
+          "vehicleMaxWeight": 1800,
+          "vehicleMinWeight": 0,
+          "weightPercentage": 21.33,
+          "vehicleMaxVolume": 8.3232,
+          "vehicleMinVolume": 0,
+          "volumePercentage": 30.16,
+          "trips": [
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 0,
+              "visitTime": 0,
+              "waitingTime": 0,
+              "eta": "07:00:00",
+              "etd": "07:41:36",
+              "distance": 0,
+              "order": 0
+            },
+            {
+              "visitId": "6ab392eb6acbf26df5064ad9",
+              "visitName": "Sinar, Toko /Ps. Gede - C1000448 - MAIN, SO1026-014921",
+              "address": "Jl. Kapten Mulyadi Solo,Surakarta",
+              "coordinate": "-7.569286,110.832952",
+              "isHub": false,
+              "weight": 49.79998,
+              "volume": 0.07,
+              "travelTime": 4,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "07:45:35",
+              "etd": "07:55:35",
+              "distance": 2304,
+              "order": 1
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064ae3",
+              "visitName": "Lion Super Indo, PT - C1000429 - LOC006, SO1026-014914",
+              "address": "Jl. Ronggowarsito No 23 Rt 001 Kel Timuran Banjarsari Solo,Surakarta",
+              "coordinate": "-7.566065,110.815834",
+              "isHub": false,
+              "weight": 1.52499,
+              "volume": 0.01,
+              "travelTime": 6,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "08:01:11",
+              "etd": "08:31:11",
+              "distance": 2624,
+              "order": 2
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7b2",
+              "visitName": "Bu Jami, Toko /Surakarta - C1000601 - MAIN, SO1026-014912",
+              "address": "Dalam Pasar Kadipolo Laweyan,Surakarta",
+              "coordinate": "-7.5726273,110.8129447",
+              "isHub": false,
+              "weight": 1.89996,
+              "volume": 0.04,
+              "travelTime": 4,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "08:34:18",
+              "etd": "08:49:18",
+              "distance": 1326,
+              "order": 3
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed04",
+              "visitName": "Redgar Food Indonesia, CV - C1000501 - MAIN, SO1026-014908",
+              "address": "Jl. Honggowongso No. 113,Surakarta",
+              "coordinate": "-7.577909,110.814877",
+              "isHub": false,
+              "weight": 56.9988,
+              "volume": 1.12999,
+              "travelTime": 2,
+              "visitTime": 15,
+              "waitingTime": 20,
+              "eta": "08:51:08",
+              "etd": "09:06:08",
+              "distance": 862,
+              "order": 4
+            },
+            {
+              "visitId": "6ab37bb3f8c384553e039f75",
+              "visitName": "Luwes Gentan, Toko - C1000450 - MAIN, SO1026-014895,SO1026-014896,SO1026-014897",
+              "address": "Gentan Sukoharjo,Sukoharjo",
+              "coordinate": "-7.5775344,110.7803885",
+              "isHub": false,
+              "weight": 68.55,
+              "volume": 0.1,
+              "travelTime": 10,
+              "visitTime": 60,
+              "waitingTime": 0,
+              "eta": "09:15:40",
+              "etd": "10:15:40",
+              "distance": 4678,
+              "order": 5
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7b0",
+              "visitName": "Yanto Sayur, Toko /Sukoharjo - C1000533 - MAIN, SO1026-014957",
+              "address": "Jl. Butuh Rw Iii Gedongan, Baki,Sukoharjo",
+              "coordinate": "-7.6275114,110.7757299",
+              "isHub": false,
+              "weight": 5.34,
+              "volume": 0.03,
+              "travelTime": 14,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "10:29:28",
+              "etd": "10:44:28",
+              "distance": 6502,
+              "order": 6
+            },
+            {
+              "visitId": "6ab392ebbc4f15a87401f7aa",
+              "visitName": "Jacken Fly / Sukoharjo - C1000842 - MAIN, SO1026-014936",
+              "address": "Jl. Kutilang I No. 11 Dusun I,Sukoharjo",
+              "coordinate": "-7.609168,110.816245",
+              "isHub": false,
+              "weight": 41.22,
+              "volume": 0.07,
+              "travelTime": 13,
+              "visitTime": 30,
+              "waitingTime": 0,
+              "eta": "10:57:16",
+              "etd": "11:27:16",
+              "distance": 6106,
+              "order": 7
+            },
+            {
+              "visitId": "6ab392eb411691a2b507ed00",
+              "visitName": "Mbak Dhepik, Catering / Sukoharjo - C1000788 - MAIN, SO1026-014866",
+              "address": "Jl. Gatot Subroto, Kutorejo, Bulusari,Sukoharjo",
+              "coordinate": "-7.678200,110.835300",
+              "isHub": false,
+              "weight": 37.9992,
+              "volume": 0.62,
+              "travelTime": 17,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "11:44:04",
+              "etd": "12:04:04",
+              "distance": 8980,
+              "order": 8
+            },
+            {
+              "visitId": "6ab392eb6acbf26df5064adb",
+              "visitName": "Lapak Barokah, Toko - C1000186 - MAIN, SO1026-014767",
+              "address": "Jl. Raya Nguter Sukoharjo (Depan Plosek Nguter),Sukoharjo",
+              "coordinate": "-7.7441637,110.876929",
+              "isHub": false,
+              "weight": 22.83,
+              "volume": 0.02,
+              "travelTime": 17,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "12:20:31",
+              "etd": "12:35:31",
+              "distance": 8974,
+              "order": 9
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064adf",
+              "visitName": "Pandawa, Toko /Wonogiri - C1000388 - MAIN, SO1026-014876",
+              "address": "Perempatan Nagger 002/005,Wonogiri",
+              "coordinate": "-7.7579824,110.8850061",
+              "isHub": false,
+              "weight": 6.0948,
+              "volume": 0,
+              "travelTime": 5,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "12:39:34",
+              "etd": "12:54:34",
+              "distance": 2327,
+              "order": 10
+            },
+            {
+              "visitId": "6ab392eb411691a2b507ed02",
+              "visitName": "Lastri, Toko /Ps. Krisak - C1000352 - MAIN, SO1026-014877",
+              "address": "Ps. Krisak Selogiri Wonogiri,Wonogiri",
+              "coordinate": "-7.7943781,110.8992488",
+              "isHub": false,
+              "weight": 13.35,
+              "volume": 0.07,
+              "travelTime": 9,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "13:02:38",
+              "etd": "13:17:38",
+              "distance": 4594,
+              "order": 11
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7b4",
+              "visitName": "Dandang, Toko - C1000619 - SHIP TO, SO1026-014878,SO1026-014879",
+              "address": "Jl. Bima V Wonokarto Tengah,Wonogiri",
+              "coordinate": "-7.801730,110.915468",
+              "isHub": false,
+              "weight": 56.34,
+              "volume": 0.07,
+              "travelTime": 5,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "13:22:36",
+              "etd": "13:37:36",
+              "distance": 2395,
+              "order": 12
+            },
+            {
+              "visitId": "6ab392eb6acbf26df5064add",
+              "visitName": "Kambing Guling Aprilis /Wonogiri - C1000293 - MAIN, SO1026-014838",
+              "address": "Jl. Kartini No. 20 Kajen,Wonogiri",
+              "coordinate": "-7.816372,110.924189",
+              "isHub": false,
+              "weight": 11.39976,
+              "volume": 0.23,
+              "travelTime": 5,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "13:42:09",
+              "etd": "13:57:09",
+              "distance": 2361,
+              "order": 13
+            },
+            {
+              "visitId": "6ab392eb411691a2b507ecfe",
+              "visitName": "Surani, Toko /Wonogiri - C1000130 - MAIN, SO1026-014804",
+              "address": "Kios Dalam Pasar Wonogiri Lt. 2,Wonogiri",
+              "coordinate": "-7.8167361,110.9221951",
+              "isHub": false,
+              "weight": 10.68,
+              "volume": 0.05,
+              "travelTime": 2,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "13:58:14",
+              "etd": "14:18:14",
+              "distance": 388,
+              "order": 14
+            },
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 62,
+              "visitTime": 0,
+              "waitingTime": 42,
+              "eta": "15:19:34",
+              "etd": "15:19:34",
+              "distance": 34643,
+              "order": 15
+            }
+          ],
+          "totalWeight": 384.0274900000001,
+          "totalVolume": 2.5099899999999997,
+          "totalTravelTime": 175,
+          "totalDistance": 89064,
+          "totalVisits": 14,
+          "totalVisitTime": 290,
+          "totalWaitingTime": 62,
+          "totalSpentTime": 527,
+          "distanceKm": 89.06,
+          "travelHour": "02:55",
+          "visitHour": "04:50",
+          "waitingHour": "01:02",
+          "spentHour": "08:47",
+          "driverName": "'DRY' RAHMADI",
+          "basePlat": "H 8758 PQ"
+        },
+        {
+          "vehicleId": "6a5d887b765ba676e3062c35",
+          "vehicleName": "H 8756 PQ",
+          "assignee": "ekspedisiplsolo03@panganlestari.com",
+          "trips": [
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 0,
+              "visitTime": 0,
+              "waitingTime": 150,
+              "eta": "07:00:00",
+              "etd": "09:30:00",
+              "distance": 0,
+              "order": 0
+            },
+            {
+              "visitId": "6ab392ec72ce2d5df009f102",
+              "visitName": "Pie Susu Daku / Sukoharjo - C1000774 - MAIN, SO1026-014947",
+              "address": "Perumahan Jl. Proyek Bengawan Solo No. 8,Sukoharjo",
+              "coordinate": "-7.563495,110.764155",
+              "isHub": false,
+              "weight": 13.59,
+              "volume": 0.02,
+              "travelTime": 20,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "09:49:22",
+              "etd": "10:09:22",
+              "distance": 10818,
+              "order": 1
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed0a",
+              "visitName": "Solo Top Food /Kartasura - C1000432 - MAIN, SO1026-014971",
+              "address": "Jl. Veteran 9A Singopuran Rt 04 Rw 05,Sukoharjo",
+              "coordinate": "-7.546665,110.745116",
+              "isHub": false,
+              "weight": 520,
+              "volume": 1.5,
+              "travelTime": 7,
+              "visitTime": 25,
+              "waitingTime": 0,
+              "eta": "10:16:06",
+              "etd": "10:41:06",
+              "distance": 3788,
+              "order": 2
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7ba",
+              "visitName": "Solo Kopi /Karanganyar - C1000599 - MAIN, SO1026-014937",
+              "address": "Jl. Adi Sucipto No. 31A Kenaiban,Karanganyar",
+              "coordinate": "-7.545601,110.774694",
+              "isHub": false,
+              "weight": 10.4,
+              "volume": 0.03,
+              "travelTime": 6,
+              "visitTime": 15,
+              "waitingTime": 110,
+              "eta": "10:47:04",
+              "etd": "12:52:04",
+              "distance": 5128,
+              "order": 3
+            },
+            {
+              "visitId": "6ab392ecc6ff73f83901df6d",
+              "visitName": "Dahareco, Catering /Surakarta - C1000395 - MAIN, SO1026-014938",
+              "address": "Jl. Sidorejo No. 33 003/003 Sambeng,Surakarta",
+              "coordinate": "-7.5562823,110.8139475",
+              "isHub": false,
+              "weight": 5,
+              "volume": 0.02,
+              "travelTime": 9,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "13:00:00",
+              "etd": "13:15:00",
+              "distance": 4854,
+              "order": 4
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed0c",
+              "visitName": "Lumeria, Bakery / Sukoharjo - C1000786 - MAIN, SO1026-014944",
+              "address": "Jl. Anyelir 1 Palur Kulon RT 01 RW 01,Sukoharjo",
+              "coordinate": "-7.568144,110.869830",
+              "isHub": false,
+              "weight": 78.565,
+              "volume": 0.11,
+              "travelTime": 14,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "13:28:41",
+              "etd": "13:48:41",
+              "distance": 7780,
+              "order": 5
+            },
+            {
+              "visitId": "6ab392ebbc4f15a87401f7a8",
+              "visitName": "MAQWA GLOBAL FROZENFOOD, CV - C1000425 - MAIN, SO1026-014775,SO1026-014776,SO1026-014907",
+              "address": "Jl. Lawu Solo Tawangmangu,Karanganyar",
+              "coordinate": "-7.603627,110.971272",
+              "isHub": false,
+              "weight": 799.0306,
+              "volume": 2.18,
+              "travelTime": 24,
+              "visitTime": 25,
+              "waitingTime": 0,
+              "eta": "14:12:35",
+              "etd": "14:37:35",
+              "distance": 13223,
+              "order": 6
+            },
+            {
+              "visitId": "6ab392ecb27159c5fc0f650f",
+              "visitName": "ARTHA PANGAN MAKMUR, CV - C1000418 - MAIN, SO1026-014863",
+              "address": "Jl. Veteran Selatan Palang Kereta Alun-Alun Sragen Kud Kota,Sragen",
+              "coordinate": "-7.4284132,111.024475",
+              "isHub": false,
+              "weight": 50,
+              "volume": 0.15,
+              "travelTime": 50,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "15:26:36",
+              "etd": "15:46:36",
+              "distance": 28500,
+              "order": 7
+            },
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 37,
+              "visitTime": 0,
+              "waitingTime": 150,
+              "eta": "16:23:31",
+              "etd": "16:23:31",
+              "distance": 29697,
+              "order": 8
+            }
+          ],
+          "totalWeight": 1476.5856,
+          "vehicleMaxWeight": 1800,
+          "vehicleMinWeight": 0,
+          "weightPercentage": 82.03,
+          "totalVolume": 4.010000000000001,
+          "vehicleMaxVolume": 5.31843,
+          "vehicleMinVolume": 0,
+          "volumePercentage": 75.4,
+          "totalTravelTime": 167,
+          "totalDistance": 103788,
+          "totalVisits": 7,
+          "totalVisitTime": 140,
+          "totalWaitingTime": 410,
+          "totalSpentTime": 717,
+          "distanceKm": 103.79,
+          "travelHour": "02:47",
+          "visitHour": "02:20",
+          "waitingHour": "06:50",
+          "spentHour": "11:57",
+          "driverName": "'FRZ' TAUFIK AKBAR",
+          "basePlat": "H 8756 PQ"
+        },
+        {
+          "vehicleId": "6a5d887a765ba676e3062c34",
+          "vehicleName": "H 9716 JQ",
+          "assignee": "ekspedisiplsolo02@panganlestari.com",
+          "trips": [
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 0,
+              "visitTime": 0,
+              "waitingTime": 120,
+              "eta": "07:00:00",
+              "etd": "09:00:00",
+              "distance": 0,
+              "order": 0
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064ae5",
+              "visitName": "Mulia Rasa Sejahtera, CV - C1000499 - LOC009, SO1026-014935",
+              "address": "Dusun I Madegondo,Sukoharjo",
+              "coordinate": "-7.598418,110.811535",
+              "isHub": false,
+              "weight": 25.56,
+              "volume": 0.07,
+              "travelTime": 13,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "09:12:33",
+              "etd": "09:22:33",
+              "distance": 7106,
+              "order": 1
+            },
+            {
+              "visitId": "6ab392ec411691a2b507ed10",
+              "visitName": "OR Bakery & Kitchen - C1000668 - MAIN, SO1026-014958",
+              "address": "Jl. Pesanggrahan No. 27 Dusun II,Sukoharjo",
+              "coordinate": "-7.611485,110.815690",
+              "isHub": false,
+              "weight": 6.64999,
+              "volume": 0.01,
+              "travelTime": 6,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "09:27:44",
+              "etd": "09:42:44",
+              "distance": 2677,
+              "order": 2
+            },
+            {
+              "visitId": "6ab392ecb27159c5fc0f6511",
+              "visitName": "KF Frozen Food /Sukoharjo - C1000355 - MAIN, SO1026-014801,SO1026-014802",
+              "address": "Tegalsari Timur Pasar Trucuk,Sukoharjo",
+              "coordinate": "-7.6769029,110.7974316",
+              "isHub": false,
+              "weight": 10.43333,
+              "volume": 0.02,
+              "travelTime": 20,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "10:01:57",
+              "etd": "10:16:57",
+              "distance": 9654,
+              "order": 3
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064ae7",
+              "visitName": "Bm Frozen Food /Sukoharjo - C1000330 - MAIN, SO1026-014803",
+              "address": "Jl. Dalangan-Tawangsari, Pondoksari 004/005 Pojok,Sukoharjo",
+              "coordinate": "-7.728549,110.799517",
+              "isHub": false,
+              "weight": 50,
+              "volume": 0.15,
+              "travelTime": 15,
+              "visitTime": 10,
+              "waitingTime": 0,
+              "eta": "10:31:35",
+              "etd": "10:41:35",
+              "distance": 6966,
+              "order": 4
+            },
+            {
+              "visitId": "6ab392ec36b2dcb73a0ed573",
+              "visitName": "Ferdy Frozen - C1000061 - SHIP TO, SO1026-014964,SO1026-014965",
+              "address": "Jl. Pemuda No. 29,Sukoharjo",
+              "coordinate": "-7.679936,110.839234",
+              "isHub": false,
+              "weight": 54.5,
+              "volume": 0.16,
+              "travelTime": 14,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "10:55:14",
+              "etd": "11:10:14",
+              "distance": 7715,
+              "order": 5
+            },
+            {
+              "visitId": "6ab392ecc6ff73f83901df6b",
+              "visitName": "Your Snack Frozen /Sukoharjo - C1000503 - MAIN, SO1026-014821,SO1026-014822",
+              "address": "Jl. Jend. Sudirman No. 120 Gudangsari,Sukoharjo",
+              "coordinate": "-7.675489,110.840731",
+              "isHub": false,
+              "weight": 33.1002,
+              "volume": 0.09,
+              "travelTime": 3,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "11:12:20",
+              "etd": "11:27:20",
+              "distance": 819,
+              "order": 6
+            },
+            {
+              "visitId": "6ab392ec6acbf26df5064ae9",
+              "visitName": "Konala Cafe / Sukoharjo - C1000823 - MAIN, SO1026-014797",
+              "address": "Jl. Wandyo Pranoto, Gronong,Sukoharjo",
+              "coordinate": "-7.695300,110.838400",
+              "isHub": false,
+              "weight": 12.78,
+              "volume": 0.03,
+              "travelTime": 6,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "11:32:24",
+              "etd": "11:52:24",
+              "distance": 2436,
+              "order": 7
+            },
+            {
+              "visitId": "6ab392ec36b2dcb73a0ed577",
+              "visitName": "FM Bakery / Wonogiri - C1000775 - MAIN, SO1026-014836",
+              "address": "Gandul RT 3 RW 1,Wonogiri",
+              "coordinate": "-7.8123,110.9099",
+              "isHub": false,
+              "weight": 13.29999,
+              "volume": 0.01,
+              "travelTime": 31,
+              "visitTime": 20,
+              "waitingTime": 0,
+              "eta": "12:23:19",
+              "etd": "12:43:19",
+              "distance": 17078,
+              "order": 8
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7b6",
+              "visitName": "Hohah Frozen /Wonogiri - C1000014 - MAIN, SO1026-014880,SO1026-014882,SO1026-014883,SO1026-014903",
+              "address": "Jl. Jendral Ahmad Yani No. 33,Wonogiri",
+              "coordinate": "-7.803866,110.919910",
+              "isHub": false,
+              "weight": 210.22058,
+              "volume": 0.61,
+              "travelTime": 5,
+              "visitTime": 25,
+              "waitingTime": 0,
+              "eta": "12:47:35",
+              "etd": "13:12:35",
+              "distance": 1865,
+              "order": 9
+            },
+            {
+              "visitId": "6ab392ec36b2dcb73a0ed575",
+              "visitName": "Ww Frozen Food /Wonogiri - C1000185 - MAIN, SO1026-014884,SO1026-014886,SO1026-014887",
+              "address": "Jl. Klengkeng Ii No. 36 Salak,Wonogiri",
+              "coordinate": "-7.809310,110.925248",
+              "isHub": false,
+              "weight": 31.6701,
+              "volume": 0.09,
+              "travelTime": 2,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "13:14:34",
+              "etd": "13:29:34",
+              "distance": 985,
+              "order": 10
+            },
+            {
+              "visitId": "6ab392ecbc4f15a87401f7b8",
+              "visitName": "Aiko Frozen Food /Wonogiri - C1000268 - MAIN, SO1026-014913",
+              "address": "Ngrawan RT 001 RW 002,Wonogiri",
+              "coordinate": "-7.949474,110.849325",
+              "isHub": false,
+              "weight": 20.8,
+              "volume": 0.06,
+              "travelTime": 41,
+              "visitTime": 15,
+              "waitingTime": 0,
+              "eta": "14:09:41",
+              "etd": "14:24:41",
+              "distance": 21847,
+              "order": 11
+            },
+            {
+              "visitId": "hub-6a222cbf28031827460afefe",
+              "coordinate": "-7.56972,110.85107",
+              "isHub": true,
+              "weight": 0,
+              "volume": 0,
+              "travelTime": 94,
+              "visitTime": 0,
+              "waitingTime": 120,
+              "eta": "15:57:51",
+              "etd": "15:57:51",
+              "distance": 52178,
+              "order": 12
+            }
+          ],
+          "totalWeight": 469.01419,
+          "vehicleMaxWeight": 1800,
+          "vehicleMinWeight": 0,
+          "weightPercentage": 26.06,
+          "totalVolume": 1.3,
+          "vehicleMaxVolume": 5.31843,
+          "vehicleMinVolume": 0,
+          "volumePercentage": 24.44,
+          "totalTravelTime": 250,
+          "totalDistance": 131326,
+          "totalVisits": 11,
+          "totalVisitTime": 175,
+          "totalWaitingTime": 240,
+          "totalSpentTime": 665,
+          "distanceKm": 131.33,
+          "travelHour": "04:10",
+          "visitHour": "02:55",
+          "waitingHour": "04:00",
+          "spentHour": "11:05",
+          "driverName": "'FRZ' CATUR",
+          "basePlat": "H 9716 JQ"
+        }
+      ],
+      "dropped": []
+    },
+    "summary": {
+      "totalVisits": 45,
+      "routedVisits": 45,
+      "droppedVisits": 0,
+      "totalVisitTime": 875,
+      "totalWaitingTime": 765,
+      "totalTravelTime": 677,
+      "totalSpentTime": 2317,
+      "totalDistance": 368909,
+      "distanceKm": 368.91,
+      "travelHour": "11:17",
+      "visitHour": "14:35",
+      "waitingHour": "12:45",
+      "spentHour": "38:37"
+    },
+    "createdTime": "2026-09-23T08:54:52+00:00",
+    "createdBy": "6a698ac56e893bb56e08c7bb",
+    "dispatchStatus": "done",
+    "dispatchMessage": "45/45",
+    "user": {
+      "name": "Atnan"
+    },
+    "_id": "6ab393dcfb61c6a9150b331e"
+  }
+]

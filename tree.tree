@@ -15,12 +15,12 @@
 │   │   │           └── route.js
 │   │   └── mileapp
 │   │       ├── drivers
+│   │       │   ├── location-histories
+│   │       │   │   └── route.js
 │   │       │   ├── route.js
 │   │       │   └── status
 │   │       │       └── route.js
 │   │       ├── hubs
-│   │       │   └── route.js
-│   │       ├── location-histories
 │   │       │   └── route.js
 │   │       ├── pending-details
 │   │       │   └── route.js
@@ -34,8 +34,6 @@
 │   │       │       └── route.js
 │   │       ├── roles
 │   │       │   └── route.js
-│   │       ├── task
-│   │       │   └── route.js
 │   │       ├── tasks
 │   │       │   ├── route.js
 │   │       │   └── [id]
@@ -46,12 +44,11 @@
 │   │       │   └── route.js
 │   │       ├── users
 │   │       │   └── route.js
-│   │       ├── vehicle-mappings
-│   │       │   └── route.js
-│   │       ├── vehicle-types
-│   │       │   └── route.js
 │   │       └── vehicles
-│   │           └── route.js
+│   │           ├── mappings
+│   │           │   └── route.js
+│   │           └── types
+│   │               └── route.js
 │   ├── coordinate
 │   │   └── page.js
 │   ├── delivery
@@ -129,7 +126,6 @@
 │   │   ├── NavDropdown.js
 │   │   └── UserDropdown.js
 │   ├── page
-│   │   ├── AppLayout.js
 │   │   ├── ErrorPage.js
 │   │   ├── Footer.js
 │   │   ├── PageTemplate.js
@@ -235,18 +231,22 @@
 │   │   └── tabs
 │   │       ├── components
 │   │       │   ├── RoutingDropdown.js
+│   │       │   ├── ServiceLevelSummaryTable.js
+│   │       │   ├── ServiceLevelTable.js
 │   │       │   ├── TruckUsageSummaryTable.js
 │   │       │   └── TruckUsageTable.js
 │   │       ├── DistanceSummaryTab.js
 │   │       ├── modals
 │   │       │   ├── DistanceSummaryModal.js
 │   │       │   ├── PendingReasonModal.js
+│   │       │   ├── ServiceLevelModal.js
 │   │       │   ├── TaskSummaryModal.js
 │   │       │   ├── TimeDriverModal.js
 │   │       │   ├── TruckDetailModal.js
 │   │       │   └── TruckUsageModal.js
 │   │       ├── PendingReasonsTab.js
 │   │       ├── RoutingTimeTab.js
+│   │       ├── ServiceLevelTab.js
 │   │       ├── TaskSummaryTab.js
 │   │       ├── TimeDriverTab.js
 │   │       ├── TruckDetailTab.js
@@ -293,9 +293,7 @@
     │       ├── trash.js
     │       ├── truckUsage.js
     │       ├── users.js
-    │       ├── vehicleMappings.js
-    │       ├── vehicles.js
-    │       └── vehicleTypes.js
+    │       └── vehicles.js
     ├── dictionary.js
     ├── driverData.js
     ├── hooks
@@ -356,6 +354,7 @@
     │       │   ├── pendingReasonSheet.js
     │       │   ├── reportStyles.js
     │       │   ├── routingTimeSheet.js
+    │       │   ├── serviceLevelSheet.js
     │       │   ├── taskSummarySheet.js
     │       │   ├── timeDriverSheet.js
     │       │   ├── truckDetailSheet.js

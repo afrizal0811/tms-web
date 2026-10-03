@@ -6,7 +6,7 @@ import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTrackingData } from '@/lib/api/mceasy';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { getBasePlate, getDistance, getStorageType } from '@/lib/utils';
@@ -27,7 +27,7 @@ export default function TrackingPage() {
   const [recentlyUpdated, setRecentlyUpdated] = useState({});
   const [isHubHovered, setIsHubHovered] = useState(false);
   const [hubCoord, setHubCoord] = useState({ lat: null, lng: null });
-  
+
   const { t } = useLanguage();
   const hasFetched = useRef(false);
   const prevPositionsRef = useRef({});
@@ -40,12 +40,12 @@ export default function TrackingPage() {
       hasFetched.current = true;
 
       try {
-        const drivers = await getDriverData(storedLocation);
+        const drivers = await getDrivers();
         if (drivers && Array.isArray(drivers)) {
           setAllVehiclesMaster(drivers);
         }
         const cachedHubs = getCachedHubs() || [];
-        const activeHubData = cachedHubs.find((h) => h._id === storedLocation);
+        const activeHubData = cachedHubs.activeHub;
         if (activeHubData) {
           setHubCoord({ lat: activeHubData.lat, lng: activeHubData.lng });
         } else {

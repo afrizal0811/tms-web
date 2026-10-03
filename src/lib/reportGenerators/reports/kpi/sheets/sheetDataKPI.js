@@ -1,4 +1,4 @@
-import { getBasePlate, isEmpty } from '@/lib/utils';
+import { getBasePlate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvertime = 0) {
@@ -50,14 +50,12 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g2 && Array.isArray(g2.detailRows)) {
     g2.detailRows.forEach((row) => {
       if (!row.isNoRoutingData) {
-        const manualTotal =
-          (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
-        const spentTimeHHMM = `${Math.floor(manualTotal / 60)}:${String(manualTotal % 60).padStart(2, '0')}`;
-        const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${manualTotal}|${spentTimeHHMM}`;
+        const spentTimeHHMM = `${Math.floor(row.spent / 60)}:${String(row.spent % 60).padStart(2, '0')}`;
+        const key = `${row.routing}|${getBasePlate((row.plat || '').toUpperCase().trim())}|${row.driver}|${row.visit}|${row.travel}|${row.wait}|${row.spent}|${spentTimeHHMM}`;
         if (!seenRouting.has(key)) {
           seenRouting.add(key);
-          if (row.category === 'DRY') totalMenitEstDry += manualTotal;
-          else if (row.category === 'FROZEN') totalMenitEstFrz += manualTotal;
+          if (row.category === 'DRY') totalMenitEstDry += row.spent;
+          else if (row.category === 'FROZEN') totalMenitEstFrz += row.spent;
         }
       }
     });
@@ -92,12 +90,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g2 && Array.isArray(g2.detailRows)) {
     g2.detailRows.forEach((row) => {
       if (!row.isNoRoutingData) {
-        const manualTotal =
-          (Number(row.visit) || 0) + (Number(row.travel) || 0) + (Number(row.wait) || 0);
-        g2Map.set(
-          (row.driver || '').toUpperCase(),
-          manualTotal > 0 ? Math.round(manualTotal / 60) : 0
-        );
+        g2Map.set((row.driver || '').toUpperCase(), row.spent > 0 ? Math.round(row.spent / 60) : 0);
       }
     });
   }
@@ -106,35 +99,6 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   if (g5 && Array.isArray(g5.startFinishRows)) {
     g5.startFinishRows.forEach((r) => {
       sfMap.set(`${r.driver}|${r.plat}`, r);
-    });
-  }
-
-  let exactTotalOvertime = 0;
-
-  if (g5 && Array.isArray(g5.routeReviewRows)) {
-    g5.routeReviewRows.forEach((row) => {
-      const sfRow = sfMap.get(`${row.driver}|${row.plat}`);
-
-      let estOp = g2Map.has((row.driver || '').toUpperCase())
-        ? g2Map.get((row.driver || '').toUpperCase())
-        : '';
-      if (estOp === '' && !isEmpty(row.estOpHours)) estOp = Number(row.estOpHours);
-
-      let actOp = '';
-      if (sfRow && typeof sfRow.durasi === 'string' && sfRow.durasi.includes(':')) {
-        const parts = sfRow.durasi.split(':');
-        const totalMenit = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        actOp = Math.round(totalMenit / 60);
-      }
-      if (actOp === '' && !isEmpty(row.actOpHours)) actOp = Number(row.actOpHours);
-
-      if (
-        typeof estOp === 'number' &&
-        typeof actOp === 'number' &&
-        !(estOp === 0 && actOp !== '')
-      ) {
-        exactTotalOvertime += estOp - actOp;
-      }
     });
   }
 

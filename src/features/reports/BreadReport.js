@@ -7,7 +7,6 @@ import { handleBreadDownload } from './helper/breadHelper';
 export default function BreadReport({
   driverData,
   hubAcronym,
-  hubId,
   hubName,
   isIndonesian,
   isLoading,
@@ -41,7 +40,6 @@ export default function BreadReport({
       endDate,
       singleDate,
       driverData,
-      hubId,
       hubAcronym,
       hubName,
       t,

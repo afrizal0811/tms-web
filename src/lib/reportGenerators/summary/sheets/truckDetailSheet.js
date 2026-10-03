@@ -2,14 +2,12 @@ import {
   calculateReturnHubDistance,
   formatDateUniversal,
   formatMinutesToHHMM,
-  formatUTC7,
   getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
   heatMap,
   isEmpty,
   isPastDate,
-  parseApiDateString,
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
@@ -147,33 +145,13 @@ export function calculateTruckDetailData(
             }
             const entry = dataMatrix[dateKey][email];
 
-            let manualTravel = 0,
-              manualVisit = 0,
-              manualWait = 0,
-              manualDistance = 0;
-            if (Array.isArray(route.trips)) {
-              const hubTrips = route.trips.filter((t) => t.isHub);
-              manualWait = hubTrips.length
-                ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
-                : 0;
-
-              route.trips.forEach((trip) => {
-                if (!trip.isHub) {
-                  manualVisit += trip.visitTime || 0;
-                  manualWait += trip.waitingTime || 0;
-                }
-                manualTravel += trip.travelTime || 0;
-                manualDistance += Number(trip.distance) || 0;
-              });
-            }
-            const manualSum = manualTravel + manualVisit + manualWait;
-            let durationVal = manualSum || Number(route.totalSpentTime) || 0;
-            let distVal = manualDistance || Number(route.totalDistance) || 0;
+            const durationVal = Number(route.totalSpentTime) || 0;
+            const distVal = Number(route.totalDistance) || 0;
 
             entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
             entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
             entry.duration = Math.max(entry.duration, durationVal);
-            entry.dist = Math.max(entry.dist, distVal);
+            entry.dist = Number((Math.max(entry.dist, distVal) / 1000).toFixed(2));
           });
         }
       }
@@ -196,14 +174,14 @@ export function calculateTruckDetailData(
 
   cleanTasks.forEach((task) => {
     const dateKey =
-      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+      (task.startTime && formatDateUniversal(task.startTime)) ||
+      (task.doneTime && formatDateUniversal(task.doneTime));
     if (!dateKey) return;
 
     let rawEmail = null;
-    if (Array.isArray(task.assignee) && task.assignee.length > 0) {
-      rawEmail = task.assignee[0];
-    } else if (typeof task.assignee === 'string') {
-      rawEmail = task.assignee;
+    if (task.assignee) {
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     } else if (task.assignedTo && task.assignedTo.email) {
       rawEmail = task.assignedTo.email;
     } else if (task.doneBy) {
@@ -241,7 +219,7 @@ export function calculateTruckDetailData(
       let statusDelivery = '';
       if (flow !== 'Pickup') {
         if (task.statusDelivery && task.statusDelivery.length > 0) {
-          statusDelivery = task.statusDelivery[0].toUpperCase();
+          statusDelivery = task.statusDelivery.toUpperCase();
         } else if (flow.includes('GR')) {
           if (task.statusGr && task.statusGr.length > 0) {
             statusDelivery = task.statusGr[0].toUpperCase();
@@ -255,8 +233,8 @@ export function calculateTruckDetailData(
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
       const hasSplitTask = task.isSplitTask === 'true';
-      const startD = formatUTC7(task.startTime, 'YYYY-MM-DD');
-      const doneD = formatUTC7(task.doneTime, 'YYYY-MM-DD');
+      const startD = task.startTime ? formatDateUniversal(task.startTime) : null;
+      const doneD = task.doneTime ? formatDateUniversal(task.doneTime) : null;
 
       let isDateDiff = false;
       let dayDiffCount = 0;
@@ -293,11 +271,19 @@ export function calculateTruckDetailData(
       } else {
         arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
       }
-      const arrObj = parseApiDateString(arrivalSource);
-      const arrivalTimestamp = arrObj ? arrObj.getTime() : 9999999999999;
+
+      const arrDt = new Date(arrivalSource);
+      const arrMs = isNaN(arrDt.getTime()) ? null : arrDt.getTime();
+      const arrivalTimestamp = arrMs ? arrMs : 9999999999999;
+
+      const formatStringDT = (d) => {
+        if (!d || d === '-') return '-';
+        return formatDateTimeWIB(d);
+      };
+
       const realStartTimeStr = arrivalSource
-        ? formatDateTimeWIB(arrivalSource)
-        : formatDateTimeWIB(task.startTime);
+        ? formatStringDT(arrivalSource)
+        : formatStringDT(task.startTime);
 
       const customerData = parseCustomerString(task.customerOrder || '');
       const finalCustomerName =
@@ -333,7 +319,7 @@ export function calculateTruckDetailData(
     Object.keys(dataMatrix[dateKey]).forEach((email) => {
       const entry = dataMatrix[dateKey][email];
       if (entry && (!entry.dist || entry.dist === 0) && entry.taskDist > 0) {
-        entry.dist = entry.taskDist;
+        entry.dist = Number(entry.taskDist.toFixed(2));
         entry.isDistFallback = true;
       }
     });
@@ -355,7 +341,7 @@ export function calculateTruckDetailData(
         for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
           const d = new Date(currDateKey);
           d.setUTCDate(d.getUTCDate() - back);
-          const prevDateKey = d.toISOString().split('T')[0];
+          const prevDateKey = formatDateUniversal(d);
 
           const prevData = dataMatrix[prevDateKey]?.[email];
 

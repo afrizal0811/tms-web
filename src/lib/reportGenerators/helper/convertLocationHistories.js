@@ -1,44 +1,41 @@
-import { formatUTC7, getBasePlate, normalizeEmail } from '@/lib/utils';
+import { getBasePlate, normalizeEmail } from '@/lib/utils';
 import { isTripInShift } from './isTripInShift';
 
-export function convertLocationHistories(allApiData, driverData, selectedDateString) {
+import { formatDateUniversal } from '@/lib/utils';
+
+export function convertLocationHistories(allApiData, driverData) {
   const emailToDriverMap = driverData.reduce((acc, d) => {
     const e = normalizeEmail(d.email);
     if (e) acc[e] = { plat: d.plat, name: d.name, workingTime: d.workingTime };
     return acc;
   }, {});
 
-  const [y, m, d] = selectedDateString.split('-');
-  const targetDateFormatted = `${d}-${m}-${y}`;
-
   const processed = allApiData
     .map((item) => {
-      const email = normalizeEmail(item.email);
+      const email = item.email;
       const dInfo = emailToDriverMap[email];
       return {
         email,
         emailExists: !!dInfo,
-        plat: dInfo?.plat,
-        driver: dInfo?.name || email,
+        plat: item.basePlat || dInfo?.plat,
+        driver: item.driverName || dInfo?.name || email,
         workingTime: dInfo?.workingTime,
-        trackedTime: Math.abs(item.trackedTime || 0),
+        trackedTime: item.trackedTime,
         totalDistance: item.finish?.totalDistance || 0,
-        startDate: formatUTC7(item.startTime, 'DD-MM-YYYY'),
+        startDate: formatDateUniversal(item.startTime, 'DD-MM-YYYY'),
         rawStart: item.startTime,
         rawFinish: item.finish?.finishTime,
         travelTimeVal: item.finish?.totalDuration || 0,
-        startTimeFmt: formatUTC7(item.startTime, 'HH:mm'),
-        finishDateFmt: formatUTC7(item.finish?.finishTime, 'DD-MM-YYYY'),
-        finishTimeFmt: formatUTC7(item.finish?.finishTime, 'HH:mm'),
+        startTimeFmt: item.startTime ? formatDateUniversal(item.startTime, 'HH:mm') : null,
+        finishDateFmt: item.finish?.finishTime
+          ? formatDateUniversal(item.finish.finishTime, 'DD-MM-YYYY')
+          : null,
+        finishTimeFmt: item.finish?.finishTime
+          ? formatDateUniversal(item.finish.finishTime, 'HH:mm')
+          : null,
       };
     })
-    .filter(
-      (i) =>
-        i.trackedTime >= 10 &&
-        i.totalDistance > 5 &&
-        i.emailExists &&
-        i.startDate === targetDateFormatted
-    );
+    .filter((i) => i.emailExists);
 
   const grouped = {};
   processed.forEach((i) => {
@@ -47,7 +44,7 @@ export function convertLocationHistories(allApiData, driverData, selectedDateStr
   });
 
   const timeDataObjects = [];
-  const kpiHistories = []; 
+  const kpiHistories = [];
 
   const seenEmails = new Set();
   const uniqueDrivers = driverData.filter((d) => {

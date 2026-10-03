@@ -16,7 +16,7 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
     async function fetchVehicleTypes() {
       try {
         const types = await getVehicleTypes();
-        setVehicleTypes(types.map((type) => type.name));
+        setVehicleTypes(types.allTypes.map((type) => type.name));
       } catch (error) {
         toastError(t('common.toast.error', { err: error.message }), error);
       } finally {

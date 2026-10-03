@@ -11,12 +11,7 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import {
-  buildDriverMaps,
-  buildNormalizedMappings,
-  FAILED_STATUSES,
-  PENDING_SHEET_STATUSES_BASE,
-} from './help';
+import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
 import {
   buildDistanceSummary,
   buildPendingSOSheet,
@@ -42,16 +37,6 @@ function ultraNormalize(str) {
     .toLowerCase();
 }
 
-function findFuzzyCategory(normalizedMappings, str) {
-  const dbKeys = Object.keys(normalizedMappings);
-  for (const dbKey of dbKeys) {
-    if (dbKey.length > 3 && (str.includes(dbKey) || dbKey.includes(str))) {
-      return normalizedMappings[dbKey];
-    }
-  }
-  return undefined;
-}
-
 function deriveCategoryFromType(typeStr) {
   const tCat = typeStr || '';
   if (!tCat) return undefined;
@@ -63,21 +48,15 @@ function deriveCategoryFromType(typeStr) {
   return sType;
 }
 
-async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehicleTypes) {
+async function parseManualRouting(routingBuffers, driverData, vehicleTypes) {
   const routingMap = new Map();
   const truckUsageCount = {};
   const seenTrucks = new Set();
   const { emailMap, platMap } = buildDriverMaps(driverData);
-  const normalizedMappings = buildNormalizedMappings(mappingsObj);
 
   driverData.forEach((d) => {
-    const basePlateStr = ultraNormalize(d?.plat);
-    let cat = normalizedMappings[basePlateStr];
-    if (!cat && basePlateStr) {
-      const found = findFuzzyCategory(normalizedMappings, basePlateStr);
-      if (found) cat = found;
-    }
-    if (!cat) {
+    let cat = d?.type ? String(d.type).toUpperCase() : undefined;
+    if (!cat || !vehicleTypes.includes(cat)) {
       const derived = deriveCategoryFromType(d?.type);
       if (derived !== undefined) cat = derived;
     }
@@ -130,8 +109,14 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
 
       const rawPlate =
         idxVehicleName !== -1 && row[idxVehicleName] ? String(row[idxVehicleName]) : '';
-      const rawAssignee =
-        idxAssignee !== -1 && row[idxAssignee] ? String(row[idxAssignee]).trim().toLowerCase() : '';
+
+      let rawAssignee = '';
+      if (idxAssignee !== -1 && row[idxAssignee]) {
+        const assigneeStr = String(row[idxAssignee]);
+        rawAssignee = assigneeStr.includes(',')
+          ? assigneeStr.split(',')[0].trim().toLowerCase()
+          : assigneeStr.trim().toLowerCase();
+      }
 
       if (!rawPlate && !rawAssignee) continue;
 
@@ -170,32 +155,8 @@ async function parseManualRouting(routingBuffers, driverData, mappingsObj, vehic
         ext.shipDurationRaw += spentTimeMins;
       }
 
-      let category = '';
-      const basePlateStr = ultraNormalize(cleanPlat);
-      const originalRawStr = ultraNormalize(rawAssignee || rawPlate);
-      let mapped = false;
-
-      if (basePlateStr && normalizedMappings[basePlateStr]) {
-        category = normalizedMappings[basePlateStr];
-        mapped = true;
-      } else if (originalRawStr && normalizedMappings[originalRawStr]) {
-        category = normalizedMappings[originalRawStr];
-        mapped = true;
-      } else {
-        const fuzzyByRaw = findFuzzyCategory(normalizedMappings, originalRawStr);
-        if (fuzzyByRaw) {
-          category = fuzzyByRaw;
-          mapped = true;
-        } else if (basePlateStr) {
-          const fuzzyByPlate = findFuzzyCategory(normalizedMappings, basePlateStr);
-          if (fuzzyByPlate) {
-            category = fuzzyByPlate;
-            mapped = true;
-          }
-        }
-      }
-
-      if (!mapped) {
+      let category = driverInfo?.type ? String(driverInfo.type).toUpperCase() : '';
+      if (!category || !vehicleTypes.includes(category)) {
         const derived = deriveCategoryFromType(driverInfo?.type);
         if (derived !== undefined) category = derived;
       }
@@ -310,8 +271,14 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
       const title = idxTitle !== -1 && row[idxTitle] ? String(row[idxTitle]) : '';
       const pickupCustomerName = `${title} (${customerName})`;
 
-      let statusLabel =
-        idxStatusDel !== -1 && row[idxStatusDel] ? String(row[idxStatusDel]).toUpperCase() : null;
+      let statusLabel = null;
+      if (idxStatusDel !== -1 && row[idxStatusDel]) {
+        const rawStatus = String(row[idxStatusDel]);
+        statusLabel = rawStatus.includes(',')
+          ? rawStatus.split(',')[0].trim().toUpperCase()
+          : rawStatus.toUpperCase();
+      }
+
       const taskStatus = idxStatus !== -1 && row[idxStatus] ? String(row[idxStatus]) : null;
       statusLabel = flow.toLowerCase() === 'pickup' && taskStatus ? 'SUKSES' : statusLabel;
 
@@ -342,13 +309,12 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           stats.failedCount += 1;
         }
 
-        const startDateOnly = startTime ? startTime.split(/[T\s]/)[0] : null;
-        const doneDateOnly = doneTime && doneTime !== '-' ? doneTime.split(/[T\s]/)[0] : null;
+        const startDateOnly = startTime ? formatDateUniversal(startTime) : null;
+        const doneDateOnly = doneTime && doneTime !== '-' ? formatDateUniversal(doneTime) : null;
         if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly && !isOngoingTask) {
-          const parts = doneDateOnly.split('-');
           stats.mismatchCustomers.push({
             name: customerName,
-            date: parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : doneDateOnly,
+            date: formatDateUniversal(doneTime, 'DD-MM-YYYY'),
           });
         }
         if (
@@ -493,7 +459,6 @@ export async function generateManualReportWorkbook({
   deliveryBuffers,
   driverData,
   timeData,
-  mappingsObj,
   vehicleTypes,
   targetRoutingStr,
   selectedDateString,
@@ -506,7 +471,6 @@ export async function generateManualReportWorkbook({
   const { routingMap, truckUsageCount } = await parseManualRouting(
     routingBuffers,
     driverData,
-    mappingsObj,
     vehicleTypes
   );
 

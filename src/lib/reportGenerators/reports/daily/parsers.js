@@ -2,71 +2,29 @@ import { routingActual } from '@/lib/routingActual';
 import {
   formatCoordinates,
   formatDateUniversal,
-  formatUTC7,
   getBasePlate,
   getDistance,
   isEmpty,
   normalizeEmail,
 } from '@/lib/utils';
-import {
-  buildDriverMaps,
-  buildNormalizedMappings,
-  FAILED_STATUSES,
-  PENDING_SHEET_STATUSES_BASE,
-} from './help';
-
-const getTaskPlat = (item) =>
-  item?.vehicleName ||
-  item?.vehiclePlat ||
-  item?.licenseNumber ||
-  item?.licensePlate ||
-  item?.vehicleId ||
-  item?.vehicle_name ||
-  item?.vehicle_plate ||
-  item?.plate_number ||
-  item?.plat_nomor ||
-  (typeof item?.vehicle === 'string' ? item.vehicle : null) ||
-  item?.assignedVehicle?.name ||
-  item?.assignedVehicle?.plat ||
-  item?.plat ||
-  item?.nopol ||
-  '';
-
-const matchNormalizedCategory = (originalStr, baseStr, normalizedMappings) => {
-  const dbKeys = Object.keys(normalizedMappings);
-  if (baseStr && normalizedMappings[baseStr]) return normalizedMappings[baseStr];
-  if (originalStr && normalizedMappings[originalStr]) return normalizedMappings[originalStr];
-
-  for (const targetStr of [originalStr, baseStr]) {
-    if (!targetStr) continue;
-    for (const dbKey of dbKeys) {
-      if (dbKey.length > 3 && (targetStr.includes(dbKey) || dbKey.includes(targetStr))) {
-        return normalizedMappings[dbKey];
-      }
-    }
-  }
-  return '';
-};
+import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
 
 export function parseRoutingData(
   filteredResults,
   driverData,
-  mappingsObj,
   vehicleTypes,
   allTasks,
   selectedDateString
 ) {
-  const { emailMap, platMap } = buildDriverMaps(driverData);
-  const normalizedMappings = buildNormalizedMappings(mappingsObj);
+  const { emailMap } = buildDriverMaps(driverData);
   const routingMap = new Map();
   const truckUsageCount = {};
   const distanceTotals = { dry: 0, frozen: 0 };
   const seenTrucks = new Set();
 
   driverData.forEach((d) => {
-    const basePlateStr = (d?.plat || '').replace(/\s+/g, '').toLowerCase();
-    let cat = matchNormalizedCategory(basePlateStr, basePlateStr, normalizedMappings);
-    if (!cat) {
+    let cat = d?.type ? String(d.type).toUpperCase() : undefined;
+    if (!cat || !vehicleTypes.includes(cat)) {
       let tCat = d?.type || '';
       if (tCat) {
         const pts = String(tCat).split('-');
@@ -84,11 +42,8 @@ export function parseRoutingData(
   });
 
   function resolveVehicleCategory(driverInfo, route) {
-    const basePlateStr = (driverInfo?.plat || '').replace(/\s+/g, '').toLowerCase();
-    const originalRawStr = (route.vehicleName || '').replace(/\s+/g, '').toLowerCase();
-    let category = matchNormalizedCategory(originalRawStr, basePlateStr, normalizedMappings);
-
-    if (!category) {
+    let category = driverInfo?.type ? String(driverInfo.type).toUpperCase() : '';
+    if (!category || !vehicleTypes.includes(category)) {
       const tempCategory = driverInfo?.type || route.vehicleTags?.[0] || '';
       if (tempCategory) {
         const parts = String(tempCategory).split('-');
@@ -105,26 +60,26 @@ export function parseRoutingData(
   filteredResults.forEach((resultItem) => {
     if (!resultItem.result || !Array.isArray(resultItem.result.routing)) return;
     resultItem.result.routing.forEach((route) => {
-      const assigneeEmail = route.assignee ? String(route.assignee).trim().toLowerCase() : '';
-      const vehiclePlatNorm = route.vehicleName
-        ? String(route.vehicleName).replace(/\s+/g, '').toLowerCase()
-        : '';
-      const driverInfo = emailMap.get(assigneeEmail) || platMap.get(vehiclePlatNorm);
-      const driverName = driverInfo ? driverInfo.name : route.assignee || route.vehicleName;
-
+      const driverName = route.driverName || '';
       if (!driverName) return;
 
-      const rawPlat = getTaskPlat(route) || driverInfo?.plat || '';
-      const basePlat = getBasePlate(rawPlat) || rawPlat;
+      let assigneeEmail = '';
+      if (route.assignee) {
+        assigneeEmail =
+          typeof route.assignee === 'string'
+            ? route.assignee.split(',')[0].trim().toLowerCase()
+            : String(route.assignee).trim().toLowerCase();
+      }
+
+      const driverInfo = emailMap.get(assigneeEmail);
+
+      const rawPlat = route.vehicleName || '-';
+      const basePlat = route.basePlat || getBasePlate(rawPlat) || rawPlat;
       const groupKey = `${driverName}_${basePlat}`;
       const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
 
       let etdHubVal = '-';
       let etaFirstStoreVal = '-';
-      let manualDistance = 0,
-        manualTravelTime = 0,
-        manualVisitTime = 0,
-        manualWaitTime = 0;
 
       if (hasTrips) {
         const hubTrip = route.trips.find((t) => t.isHub);
@@ -139,28 +94,14 @@ export function parseRoutingData(
             `${selectedDateString} ${firstStore.eta}`,
             'HH:mm'
           );
-
-        const hubTrips = route.trips.filter((t) => t.isHub);
-        const maxHubWaitTime = hubTrips.length
-          ? Math.max(...hubTrips.map((t) => t.waitingTime || 0))
-          : 0;
-        manualWaitTime += maxHubWaitTime;
-
-        route.trips.forEach((t) => {
-          if (!t.isHub) {
-            manualVisitTime += t.visitTime || 0;
-            manualWaitTime += t.waitingTime || 0;
-          }
-          manualDistance += Number(t.distance) || 0;
-          manualTravelTime += Number(t.travelTime) || 0;
-        });
       }
 
-      const fDist = manualDistance || route.totalDistance || 0;
-      const fSpent =
-        manualTravelTime + manualVisitTime + manualWaitTime || route.totalSpentTime || 0;
+      const fDist = Number(route.totalDistance) || 0;
+      const fSpent = Number(route.totalSpentTime) || 0;
 
       const row = {
+        driver: driverName,
+        plat: rawPlat,
         driver: driverName,
         plat: rawPlat || driverInfo?.plat || '-',
         hasTrips,
@@ -229,26 +170,31 @@ export function parseRoutingData(
   }
 
   Array.from(uniqueTasksMap.values()).forEach((task) => {
-    const dateKey =
-      formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+    const parseDateKey = (dateStr) => {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : formatDateUniversal(d);
+    };
+
+    const dateKey = parseDateKey(task.startTime) || parseDateKey(task.doneTime);
     if (selectedDateString && dateKey !== selectedDateString) return;
 
     let rawEmail = null;
-    if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
-    else if (typeof task.assignee === 'string') rawEmail = task.assignee;
+    if (task.assignee)
+      rawEmail =
+        typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
     else if (task.assignedTo?.email) rawEmail = task.assignedTo.email;
     else if (task.doneBy) rawEmail = task.doneBy;
 
     const assigneeEmail = rawEmail ? String(rawEmail).trim().toLowerCase() : '';
     const driverInfo = emailMap.get(assigneeEmail);
-    const driverName = driverInfo ? driverInfo.name : rawEmail || 'N/A';
+    const driverName = task.driverName || driverInfo?.name || rawEmail || 'N/A';
     const taskW = Math.abs(Number(task.weightKg) || 0);
     const taskV = Math.abs(Number(task.volumeCbm) || 0);
 
     if (driverName !== 'N/A') {
-      const taskPlat = getTaskPlat(task) || driverInfo?.plat || '';
-      const basePlat = getBasePlate(taskPlat) || taskPlat;
-      const groupKey = `${driverName}_${basePlat}`;
+      const taskPlat = task?.basePlat;
+      const groupKey = `${driverName}_${taskPlat}`;
 
       if (!routingMap.has(groupKey)) {
         const masterData = driverData.find((d) => normalizeEmail(d.email) === assigneeEmail);
@@ -294,12 +240,6 @@ export function parseDeliveryData(
   hasPendingGR,
   selectedDateString
 ) {
-  const emailToDriverMap = driverData.reduce((acc, d) => {
-    const e = normalizeEmail(d.email);
-    if (e) acc[e] = { plat: d.plat || null, name: d.name };
-    return acc;
-  }, {});
-
   const hubTimesMap = new Map();
   if (resultsData) {
     resultsData
@@ -307,10 +247,8 @@ export function parseDeliveryData(
       .forEach((res) => {
         if (Array.isArray(res.result?.routing)) {
           res.result.routing.forEach((r) => {
-            const dName = emailToDriverMap[normalizeEmail(r.assignee)]?.name || r.assignee || 'N/A';
-            const routePlat =
-              getTaskPlat(r) || emailToDriverMap[normalizeEmail(r.assignee)]?.plat || '';
-            const routeBasePlat = getBasePlate(routePlat) || routePlat;
+            const dName = r.driverName || 'N/A';
+            const routeBasePlat = r.basePlat || r.vehicleName || '';
             const hubTrips = (r.trips || []).filter((t) => t.isHub);
             if (hubTrips.length > 0) {
               const timesObj = {
@@ -363,11 +301,16 @@ export function parseDeliveryData(
       stats.totalOutlet += 1;
       if (FAILED_STATUSES.includes(statusLabel) || isEmpty(statusLabel)) stats.failedCount += 1;
       if (task.isSplitTask === 'true' || task.isSplitTask === true) stats.hasSplitTask = true;
-
-      const startDate = formatUTC7(task.startTime, 'YYYY-MM-DD');
-      const doneDate = formatUTC7(task.doneTime, 'YYYY-MM-DD');
-      if (startDate && doneDate && startDate !== doneDate) {
-        stats.mismatchCustomers.push({ name: cName, date: doneDate });
+      const startTime = task.startTime ? task.startTime : '-';
+      const doneTime = task.doneTime ? task.doneTime : '-';
+      const startDateOnly = startTime ? formatDateUniversal(startTime, 'DD-MM-YYYY') : null;
+      const doneDateOnly =
+        doneTime && doneTime !== '-' ? formatDateUniversal(doneTime, 'DD-MM-YYYY') : null;
+      if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly) {
+        stats.mismatchCustomers.push({
+          name: cName,
+          date: formatDateUniversal(doneTime, 'DD-MM-YYYY'),
+        });
       }
       if (!task.eta || !task.etd || !task.routePlannedOrder) {
         const pickupCName = `${task.title} (${cName})`;

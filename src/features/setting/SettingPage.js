@@ -43,13 +43,9 @@ export default function SettingPage() {
         getVehicleTypes(),
         getReasons(),
       ]);
-
-      const { storedLocation } = getLocalStorage();
       let maxDriverDate = null;
-
-      const activeHubData = dStatus.find((d) => d.hubId === storedLocation);
-      if (activeHubData && activeHubData._max && activeHubData._max.updatedAt) {
-        maxDriverDate = new Date(activeHubData._max.updatedAt);
+      if (dStatus && dStatus._max && dStatus._max.updatedAt) {
+        maxDriverDate = new Date(dStatus._max.updatedAt);
       }
 
       const latestDriverSync = maxDriverDate
@@ -62,8 +58,8 @@ export default function SettingPage() {
       setRolesList(filteredRoles);
       setLastUpdated({
         hubs:
-          hubsDb.length > 0 && hubsDb[0].updatedAt
-            ? formatDateUniversal(new Date(hubsDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
+          hubsDb.activeHub && hubsDb.activeHub.updatedAt
+            ? formatDateUniversal(new Date(hubsDb.activeHub.updatedAt), 'DD/MM/YYYY HH:mm:ss')
             : '-',
         roles:
           rolesDb.length > 0 && rolesDb[0].updatedAt
@@ -72,7 +68,7 @@ export default function SettingPage() {
         drivers: latestDriverSync,
       });
 
-      setVehicleTypes(vTypes);
+      setVehicleTypes(vTypes.allTypes);
       setReasons(reasonsDb || []);
     } catch (e) {
       toastError(t('common.toast.error', { err: e.message }), e);
@@ -153,7 +149,7 @@ export default function SettingPage() {
   };
 
   return (
-    <div className=" mx-auto px-4 sm:px-6 py-2 pb-12 w-full">
+    <div className="mx-auto px-4 sm:px-6 py-2 pb-12 w-full h-full flex flex-col grow">
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
           {t('setting.title')}

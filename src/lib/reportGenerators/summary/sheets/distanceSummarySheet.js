@@ -1,10 +1,9 @@
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   calculateReturnHubDistance,
   formatDateUniversal,
   formatLongDate,
-  formatUTC7,
   getDeliveryDateFromRouting,
   isPastDate,
 } from '@/lib/utils';
@@ -83,8 +82,10 @@ export function calculateDistanceSummaryData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
-      if (d) taskPresence[d] = true;
+      const dKey =
+        (t.startTime && formatDateUniversal(t.startTime)) ||
+        (t.doneTime && formatDateUniversal(t.doneTime));
+      if (dKey) taskPresence[dKey] = true;
     });
   }
   const { emailMap, platMap } = createDriverMap(driverData);
@@ -92,11 +93,8 @@ export function calculateDistanceSummaryData(
 
   let hubCoordsStr = null;
   if (typeof window !== 'undefined') {
-    const { storedLocation } = getLocalStorage();
     const hubsList = getCachedHubs() || [];
-    const activeHub = hubsList.find(
-      (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-    );
+    const activeHub = hubsList.activeHub;
     if (activeHub && activeHub.lat && activeHub.lng) {
       hubCoordsStr = `${activeHub.lat},${activeHub.lng}`;
     }
@@ -118,29 +116,26 @@ export function calculateDistanceSummaryData(
     taskData.forEach((task) => {
       if (task.isDeleted) return;
       const dateKey =
-        formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+        (task.startTime && formatDateUniversal(task.startTime)) ||
+        (task.doneTime && formatDateUniversal(task.doneTime));
       if (!dateKey || !dateMap[dateKey]) return;
 
       if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
       const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
       let rawEmail = null;
-      if (Array.isArray(task.assignee) && task.assignee.length > 0) rawEmail = task.assignee[0];
-      else if (typeof task.assignee === 'string') rawEmail = task.assignee;
-      else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
+      if (task.assignee) {
+        rawEmail =
+          typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
+      } else if (task.assignedTo && task.assignedTo.email) rawEmail = task.assignedTo.email;
       else if (task.doneBy) rawEmail = task.doneBy;
 
       const emailClean = (rawEmail || '').toLowerCase().trim();
-      const rawPlate =
-        task.vehicleName ||
-        task.assignedVehicle?.name ||
-        task.assignedVehicle?.plat ||
-        task.plat ||
-        '';
+      const rawPlate = task.basePlat || task.vehicleName || task.plat || '';
       const plateNorm = rawPlate.replace(/\s+/g, '').toLowerCase();
 
       const driverInfo = emailMap.get(emailClean) || platMap.get(plateNorm);
-      const driverName = driverInfo ? driverInfo.name : rawEmail || rawPlate;
+      const driverName = task.driverName || (driverInfo ? driverInfo.name : rawEmail || rawPlate);
 
       if (!driverName) return;
 
@@ -316,20 +311,23 @@ export function calculateDistanceSummaryData(
         } else if (isPastDate(currentDateString)) {
           rowData.isDynamicHoliday = true;
         }
+        const locationHistoryByDate = (locationHistoryData || []).filter((item) => {
+          return item.startTime?.startsWith(currentDateString);
+        });
+
         const { timeDataObjects } = convertLocationHistories(
-          locationHistoryData || [],
-          driverData || [],
-          currentDateString
+          locationHistoryByDate,
+          driverData || []
         );
 
         const dailyTasks = (taskData || []).filter((t) => {
           const dDate =
-            formatUTC7(t.startTime, 'YYYY-MM-DD') || formatUTC7(t.doneTime, 'YYYY-MM-DD');
+            (t.startTime && formatDateUniversal(t.startTime)) ||
+            (t.doneTime && formatDateUniversal(t.doneTime));
           return dDate === currentDateString;
         });
 
         timeDataObjects.forEach((tData) => {
-          if (!tData.totalDistance || tData.totalDistance < 5) return;
           if (!tData.startTimeFmt || !tData.finishTimeFmt) return;
 
           const email = (tData.email || '').toLowerCase().trim();
@@ -349,13 +347,15 @@ export function calculateDistanceSummaryData(
 
           const actualPlate = tData.plat || dInfo?.plat || '';
           const mapKey = tData.driver;
+
           const tTime = new Date(tData.finishTimeFmt || tData.startTimeFmt || 0).getTime();
 
           const actVisits = dailyTasks.filter((t) => {
-            const tEmail = Array.isArray(t.assignee)
-              ? t.assignee[0]
-              : t.assignee || t.assignedTo?.email || t.doneBy;
-            return String(tEmail).toLowerCase().trim() === email;
+            const tEmailRaw =
+              typeof t.assignee === 'string'
+                ? t.assignee.split(',')[0].trim()
+                : t.assignedTo?.email || t.doneBy;
+            return String(tEmailRaw).toLowerCase().trim() === email;
           }).length;
 
           if (!actVehiclesMap.has(mapKey)) {

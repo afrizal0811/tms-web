@@ -1,5 +1,5 @@
 import { getLocationHistories, getResult, getResultHistories, getTasks } from '@/lib/api/mileapp';
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
   buildRoutingMap,
@@ -10,13 +10,9 @@ import {
 } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
-  calculateMinuteDifference,
   calculateStartFinishDates,
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
   isEmpty,
-  normalizeEmail,
   parseCustomerString,
   toApiDateString,
 } from '@/lib/utils';
@@ -60,7 +56,6 @@ export const handleCustomDownload = async ({
   endDate,
   singleDate,
   driverData,
-  hubId,
   hubAcronym,
   hubName,
   t,
@@ -106,7 +101,7 @@ export const handleCustomDownload = async ({
           t,
           fetchFilesCallback: async () => {
             const datesToProcess = getDatesInRange(startDate, endDate || startDate);
-            return await config.process({ hubId, datesToProcess, locationName, t, driverData });
+            return await config.process({ datesToProcess, locationName, t, driverData });
           },
         });
       } else {
@@ -118,7 +113,6 @@ export const handleCustomDownload = async ({
           setIsLoading,
           processDateCallback: async ({ dateObj }) => {
             const files = await config.process({
-              hubId,
               datesToProcess: [dateObj],
               locationName,
               t,
@@ -132,7 +126,6 @@ export const handleCustomDownload = async ({
       }
     } else {
       const files = await config.process({
-        hubId,
         datesToProcess: [singleDate],
         locationName,
         t,
@@ -149,16 +142,9 @@ export const handleCustomDownload = async ({
   }
 };
 
-export const processTaskRoutingReport = async ({
-  hubId,
-  datesToProcess,
-  locationName,
-  t,
-  driverData,
-}) => {
-  const { storedLocation } = getLocalStorage();
+export const processTaskRoutingReport = async ({ datesToProcess, locationName, t, driverData }) => {
   const hubsList = getCachedHubs() || [];
-  const activeHub = hubsList.find((h) => h._id === storedLocation);
+  const activeHub = hubsList.activeHub;
   const hubCoordsStr =
     activeHub?.lat && activeHub?.lng ? `${activeHub.lat},${activeHub.lng}` : null;
 
@@ -172,7 +158,6 @@ export const processTaskRoutingReport = async ({
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
@@ -216,14 +201,13 @@ export const processTaskRoutingReport = async ({
   return generatedFiles;
 };
 
-export const processTaskManualReport = async ({ hubId, datesToProcess, locationName, t }) => {
+export const processTaskManualReport = async ({ datesToProcess, locationName, t }) => {
   const generatedFiles = [];
 
   for (const date of datesToProcess) {
     const { timeFromUtc, timeToUtc } = getReportDates(date, date);
 
     const tasks = await getTasks({
-      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom: timeFromUtc,
       timeTo: timeToUtc,
@@ -320,19 +304,12 @@ export const processTaskManualReport = async ({ hubId, datesToProcess, locationN
 };
 
 export const processServiceLevelReport = async ({
-  hubId,
   datesToProcess,
   locationName,
   t,
   driverData,
 }) => {
   const generatedFiles = [];
-  const driverMap = new Map();
-  driverData.forEach((d) => {
-    if (d.email) {
-      driverMap.set(normalizeEmail(d.email), { name: d.name || '-', plat: d.plat || '-' });
-    }
-  });
 
   for (const date of datesToProcess) {
     const { timeFromUtc, timeToUtc, locTimeFrom, locTimeTo, selectedDateString } = getReportDates(
@@ -342,23 +319,21 @@ export const processServiceLevelReport = async ({
 
     const [tasks, locHistories] = await Promise.all([
       getTasks({
-        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom: timeFromUtc,
         timeTo: timeToUtc,
-        isNeedFields: false,
       }),
       getLocationHistories({
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
       }),
     ]);
-    const allApiData = locHistories?.tasks?.data || [];
-    const { timeDataObjects } = convertLocationHistories(
-      allApiData || [],
-      driverData,
-      selectedDateString
-    );
+
+    const locationHistoryByDate = (locHistories || []).filter((item) => {
+      return item.startTime?.startsWith(selectedDateString);
+    });
+
+    const { timeDataObjects } = convertLocationHistories(locationHistoryByDate, driverData);
     const filteredTimeData = timeDataObjects.filter(
       (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
     );
@@ -369,26 +344,28 @@ export const processServiceLevelReport = async ({
       const arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
       const doneSource = task.page3DoneTime || task.doneTime;
       const flow = task.flow || '-';
-      const statusDelivery = task.statusDelivery || task.label || '-';
-      const created = task.createdTime ? formatUTC7(task.createdTime, 'DD/MM/YYYY HH:mm') : '-';
-      const arrived = arrivalSource ? formatUTC7(arrivalSource, 'DD/MM/YYYY HH:mm') : '-';
-      const assigned = task.assignedTime ? formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') : '-';
-      const completed = doneSource ? formatUTC7(doneSource, 'DD/MM/YYYY HH:mm') : '-';
+      const statusDelivery = task.statusDelivery || '-';
+      const created = task.createdTime || '-';
+      const arrived = arrivalSource || '-';
+      const assigned = task.assignedTime || '-';
+      const completed = doneSource || '-';
       let serviceLevel = '-';
       let startTrip = null;
-      let driverName = '-';
-      let licenseNumber = '-';
-      if (task.createdTime && doneSource) {
-        const diff = calculateMinuteDifference(task.createdTime, doneSource);
-        if (diff !== null) {
-          const days = Math.ceil(diff / 1440) || 1;
-          serviceLevel = `${days}`;
+      let driverName = task.driverName || '-';
+      let licenseNumber = task.basePlat || '-';
+
+      const createdTime = new Date(created);
+      const doneDate = new Date(doneSource);
+
+      if (!isNaN(createdTime) && !isNaN(doneDate)) {
+        const diffMs = doneDate.getTime() - createdTime.getTime();
+
+        if (diffMs > 0) {
+          serviceLevel = `${Math.ceil(diffMs / 86400000)}`;
         }
       }
 
-      const assigneeArray = task.assignee || [];
-      const assigneeEmail = Array.isArray(assigneeArray) ? assigneeArray[0] : assigneeArray;
-
+      let assigneeEmail = task.assignee || '';
       if (assigneeEmail) {
         const driverHistory = filteredTimeData.find((item) => item.email === assigneeEmail);
         const timeDriver =
@@ -396,15 +373,7 @@ export const processServiceLevelReport = async ({
             ? `${driverHistory.startDate} ${driverHistory.startTimeFmt}`
             : '-';
 
-        startTrip = !isEmpty(timeDriver)
-          ? formatDateUniversal(timeDriver.replace(/-/g, '/'), 'DD/MM/YYYY HH:mm')
-          : '-';
-
-        const d = driverMap.get(normalizeEmail(assigneeEmail));
-        if (d) {
-          driverName = d.name;
-          licenseNumber = getBasePlate(d.plat);
-        }
+        startTrip = !isEmpty(timeDriver) ? timeDriver : '-';
       }
 
       return {
@@ -477,24 +446,8 @@ export const processServiceLevelReport = async ({
   return generatedFiles;
 };
 
-export const processTripActivityReport = async ({
-  hubId,
-  datesToProcess,
-  locationName,
-  t,
-  driverData,
-}) => {
+export const processTripActivityReport = async ({ datesToProcess, locationName, t }) => {
   const generatedFiles = [];
-  const driverMap = new Map();
-  driverData.forEach((d) => {
-    if (d.email) {
-      driverMap.set(normalizeEmail(d.email), {
-        name: d.name || d.email,
-        plat: d.plat || '-',
-        vehicleId: d.vehicleId || d.vmsVehicleId || '-',
-      });
-    }
-  });
 
   for (const date of datesToProcess) {
     const { locTimeFrom, locTimeTo, selectedDateString } = getReportDates(date, date);
@@ -504,34 +457,34 @@ export const processTripActivityReport = async ({
       timeTo: locTimeTo,
     });
 
-    const trips = locHistories?.tasks?.data || locHistories?.data || [];
+    const trips = locHistories || [];
     if (isEmpty(trips)) continue;
-
     const rows = [];
 
     trips.forEach((trip) => {
-      const email = normalizeEmail(trip.email);
-      const d = driverMap.get(email) || {};
-      const start = trip.startTime ? formatUTC7(trip.startTime) : '-';
-
+      const email = trip.email;
+      const d = trips.find((driver) => driver.email === email);
+      const start = formatDateUniversal(trip.startTime);
       if (isEmpty(d) || start !== selectedDateString) return;
 
+      const startTrip = trip.startTime
+        ? formatDateUniversal(trip.startTime, 'DD/MM/YYYY HH:mm:ss')
+        : '-';
+      const endTrip = trip.finish?.finishTime
+        ? formatDateUniversal(trip.finish?.finishTime, 'DD/MM/YYYY HH:mm:ss')
+        : '-';
+
       const assignedVehicleId = d.vehicleId || '-';
-      const username = d.name || '-';
-      const assignedVehicle = d.plat || '-';
+      const username = d.driverName || '-';
+      const assignedVehicle = d.basePlat || '-';
 
       const tripId = trip.tripActivityId || '-';
-      const startTrip = trip.startTime ? formatUTC7(trip.startTime, 'DD/MM/YYYY HH:mm:ss') : '-';
       const startTripCoordinate = trip.lat && trip.lon ? `${trip.lat}, ${trip.lon}` : '-';
-
-      const endTrip = trip.finish?.finishTime
-        ? formatUTC7(trip.finish?.finishTime, 'DD/MM/YYYY HH:mm:ss')
-        : '-';
       const endTripCoordinate =
         trip.finish?.lat && trip.finish?.lon ? `${trip.finish.lat}, ${trip.finish.lon}` : '-';
 
       const totalDistance = trip.finish?.totalDistance ?? '-';
-      const totalDuration = trip.finish?.totalDuration ?? '-';
+      const totalDuration = trip.durationHour ?? '-';
 
       rows.push({
         rowData: [

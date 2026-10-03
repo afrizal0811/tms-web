@@ -1,10 +1,13 @@
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { getBasePlate } from '../../utils';
 import { apiFetch } from '../base';
 import { getVehiclesStatuses } from '../mceasy';
+import { fields } from './fields';
 
-export async function getDrivers(hubId) {
+export async function getDrivers() {
+  const { storedLocation } = getLocalStorage();
   const params = new URLSearchParams();
-  if (hubId) params.append('hubId', hubId);
+  if (storedLocation) params.append('hubId', storedLocation);
   return await apiFetch(
     `/api/mileapp/drivers?${params.toString()}`,
     'Gagal mengambil data drivers dari DB'
@@ -12,7 +15,31 @@ export async function getDrivers(hubId) {
 }
 
 export async function getDriverStatus() {
-  return await apiFetch('/api/mileapp/drivers/status', 'Gagal mengambil status sync driver');
+  const { storedLocation } = getLocalStorage();
+  const params = new URLSearchParams();
+  if (storedLocation) params.append('hubId', storedLocation);
+
+  return await apiFetch(
+    `/api/mileapp/drivers/status?${params.toString()}`,
+    'Gagal mengambil status sync driver'
+  );
+}
+
+export async function getLocationHistories({ timeFrom, timeTo }) {
+  const { storedLocation } = getLocalStorage();
+  const locationsFields = fields.locations.join(',');
+  const params = new URLSearchParams();
+  params.append('timeBy', 'createdTime');
+  params.append('limit', 10000);
+  params.append('startFinish', 'true');
+  if (timeFrom) params.append('timeFrom', timeFrom);
+  if (timeTo) params.append('timeTo', timeTo);
+  if (locationsFields) params.append('fields', locationsFields);
+  if (storedLocation) params.append('hubId', storedLocation);
+  return await apiFetch(
+    `/api/mileapp/drivers/location-histories?${params.toString()}`,
+    'Gagal mengambil data location histories'
+  );
 }
 
 export async function postDrivers(hubIds = []) {

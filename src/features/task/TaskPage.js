@@ -12,17 +12,14 @@ import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
-import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
-import { formatUTC7, normalizeEmail, parseCustomerString, toApiDateString } from '@/lib/utils';
+import { formatDateUniversal, parseCustomerString, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function TaskPage() {
   const { t } = useLanguage();
   const { isSuperadmin } = useSuperadmin();
-  const { storedLocation: hubId } = getLocalStorage();
 
   const [dateRange, setDateRange] = useState([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
@@ -35,11 +32,10 @@ export default function TaskPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isAllHub, setIsAllHub] = useState(false);
-  const [driverData, setDriverData] = useState([]);
   const [hubsData, setHubsData] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortConfig, setSortConfig] = useState({ key: '_startFmt', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'startTime', direction: 'asc' });
 
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
@@ -62,27 +58,18 @@ export default function TaskPage() {
   ];
 
   useEffect(() => {
-    const fetchDriverData = async () => {
-      const data = await getDriverData();
-      setDriverData(data);
-    };
-    fetchDriverData();
-  }, []);
-
-  useEffect(() => {
     if (isSuperadmin) {
       const fetchHubs = async () => {
         try {
           const res = await getHubs();
-          const data = Array.isArray(res) ? res : [];
-          setHubsData(data);
+          setHubsData(res?.allHub);
         } catch (err) {
           toastError(t('common.toast.error', { err: err.message }), err);
         }
       };
       fetchHubs();
     }
-  }, [isSuperadmin, hubId, t]);
+  }, [isSuperadmin, t]);
 
   const fetchTasksData = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -104,17 +91,16 @@ export default function TaskPage() {
 
     setLoading(true);
     try {
-      const targetHub = isSuperadmin && isAllHub ? undefined : hubId;
+      const isShowAll = isSuperadmin && isAllHub;
 
       const res = await getTasks({
-        hubId: targetHub,
+        isShowAll: isShowAll,
+        status: 'DONE,UNASSIGNED,ONGOING',
         timeFrom: toApiDateString(localStart),
         timeTo: toApiDateString(localEnd),
-        status: 'DONE,UNASSIGNED,ONGOING',
       });
 
       const dataArray = Array.isArray(res) ? res : res?.data || [];
-
       cacheRef.current[mode] = dataArray;
       setTasks(dataArray);
     } catch (err) {
@@ -122,21 +108,11 @@ export default function TaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, isAllHub, hubId, isSuperadmin, t]);
+  }, [startDate, endDate, isAllHub, isSuperadmin, t]);
 
   useEffect(() => {
     fetchTasksData();
   }, [fetchTasksData]);
-
-  const driverMap = useMemo(() => {
-    const map = new Map();
-    driverData.forEach((driver) => {
-      if (driver.email) {
-        map.set(normalizeEmail(driver.email), { name: driver.name });
-      }
-    });
-    return map;
-  }, [driverData]);
 
   const hubMap = useMemo(() => {
     const map = new Map();
@@ -158,16 +134,11 @@ export default function TaskPage() {
 
     let result = tasks.map((task) => {
       const custInfo = parseCustomerString(task.customerOrder);
-      const assigneeEmail = task.assignee?.[0];
-      const driver = driverMap.get(normalizeEmail(assigneeEmail)) || {
-        name: assigneeEmail || '-',
-      };
       const hubName = hubMap.get(task.hubId) || '-';
 
       return {
         ...task,
         _custInfo: custInfo,
-        _driverName: driver.name,
         _hubName: hubName,
         _custName: custInfo.name || '-',
         _custId: custInfo.id || '-',
@@ -175,12 +146,9 @@ export default function TaskPage() {
         _invoiceNumber: custInfo.invoiceNumber || '-',
         _truncateInvoice: custInfo.truncateInvoice || '-',
         _isTruncated: custInfo.isTruncated,
-        _statusDel: task.statusDelivery?.[0]
-          ? statusMap[task.statusDelivery[0].toUpperCase()] || task.statusDelivery[0]
+        _statusDel: task.statusDelivery
+          ? statusMap[task.statusDelivery.toUpperCase()] || task.statusDelivery
           : '-',
-        _startFmt: formatUTC7(task.startTime, 'DD/MM/YYYY HH:mm') || '-',
-        _assignFmt: formatUTC7(task.assignedTime, 'DD/MM/YYYY HH:mm') || '-',
-        _doneFmt: formatUTC7(task.doneTime, 'DD/MM/YYYY HH:mm') || '-',
       };
     });
 
@@ -195,19 +163,20 @@ export default function TaskPage() {
 
     if (statusTaskFilter !== t('common.all')) {
       result = result.filter((task) => {
-        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery?.[0];
+        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery;
         if (statusTaskFilter === t('common.status.unassigned'))
-          return !task.assignee || task.assignee.length === 0;
+          return !task.assignee || task.assignee === '';
         if (statusTaskFilter === t('common.status.ongoing'))
           return task.status?.toLowerCase() === 'ongoing';
         if (statusTaskFilter === t('common.status.manual_assign'))
           return (
-            task.assignee?.length > 0 &&
+            task.assignee &&
+            task.assignee !== '' &&
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
         if (statusTaskFilter === t('common.status.diff_day')) {
-          const startFormat = formatUTC7(task.startTime, 'DD/MM/YYYY');
-          const doneFormat = formatUTC7(task.doneTime, 'DD/MM/YYYY');
+          const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
+          const doneFormat = task.doneTime ? formatDateUniversal(task.doneTime) : null;
           return startFormat && doneFormat && startFormat !== doneFormat;
         }
         return true;
@@ -217,13 +186,13 @@ export default function TaskPage() {
     if (q) {
       result = result.filter((task) => {
         const strToSearch =
-          `${task._hubName} ${task._custInfo.name} ${task._custInfo.id} ${task._custInfo.invoiceNumber} ${task._driverName}`.toLowerCase();
+          `${task._hubName} ${task._custInfo.name} ${task._custInfo.id} ${task._custInfo.invoiceNumber} ${task.driverName}`.toLowerCase();
         return strToSearch.includes(q);
       });
     }
 
     return result;
-  }, [tasks, driverMap, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
+  }, [tasks, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
 
   const handleApplyDate = () => {
     if (!tempStart) return;
@@ -326,33 +295,64 @@ export default function TaskPage() {
       sortable: true,
     },
     {
-      key: '_assignFmt',
+      key: 'assignedTime',
       label: t('common.assigned_time'),
       width: cw.assign,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.assignedTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
-      key: '_startFmt',
+      key: 'startTime',
       label: t('common.start_time'),
       width: cw.start,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.startTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
-      key: '_doneFmt',
+      key: 'doneTime',
       label: t('common.done_time'),
       width: cw.done,
       sortable: true,
+      render: (row) =>
+        row.startTime ? formatDateUniversal(row.doneTime, 'DD/MM/YYYY HH:mm') : '-',
     },
     {
-      key: '_driverName',
+      key: 'driverName',
       label: t('common.driver'),
       width: cw.assignee,
       sortable: true,
-      render: (row) => <HighlightText text={row._driverName} highlight={searchQuery} />,
+      render: (row) => <HighlightText text={row.driverName} highlight={searchQuery} />,
     },
   ];
 
   const searchPlaceholder = `${t('common.customer_name')}, ${t('common.customer_id')}, ${t('common.invoice_number')} ${t('common.driver')} ${isAllHub ? `, ${t('common.branch')}` : ''}`;
+
+  const tableCustomSort = useCallback((items, config) => {
+    if (!config) return items;
+    return [...items].sort((a, b) => {
+      const valA = a[config.key] ?? '';
+      const valB = b[config.key] ?? '';
+      let cmp =
+        typeof valA === 'string' && typeof valB === 'string'
+          ? valA.localeCompare(valB)
+          : valA < valB
+            ? -1
+            : valA > valB
+              ? 1
+              : 0;
+
+      if (config.direction === 'desc') cmp = -cmp;
+
+      if (cmp === 0 && config.key === '_hubName') {
+        const timeA = a.startTime ?? '';
+        const timeB = b.startTime ?? '';
+        return timeA.localeCompare(timeB);
+      }
+      return cmp;
+    });
+  }, []);
 
   const headerItems = [
     {
@@ -416,7 +416,11 @@ export default function TaskPage() {
               <ToggleButton
                 className="w-full"
                 disabled={loading}
-                onChange={(val) => setIsAllHub(val === 'ALL')}
+                onChange={(val) => {
+                  const isAll = val === 'ALL';
+                  setIsAllHub(isAll);
+                  setSortConfig({ key: isAll ? '_hubName' : 'startTime', direction: 'asc' });
+                }}
                 options={[
                   { label: t('task_detail.modal.one'), value: 'ONE' },
                   { label: t('common.all'), value: 'ALL' },
@@ -451,6 +455,7 @@ export default function TaskPage() {
         <TableData
           columns={columns}
           data={processedData}
+          customSort={tableCustomSort}
           externalSortConfig={sortConfig}
           onExternalSort={setSortConfig}
           isLoading={loading}
@@ -461,7 +466,6 @@ export default function TaskPage() {
           }}
         />
       </PageTemplate>
-
       <ConfirmModal
         isOpen={showWarningModal}
         title={t('common.modal.data_load_title')}
@@ -477,8 +481,7 @@ export default function TaskPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        driverData={driverData}
-        allTasks={tasks}
+        isAllHub={isAllHub}
       />
     </>
   );

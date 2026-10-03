@@ -1,6 +1,6 @@
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
-import { deleteTruckUsage, postTruckUsage } from '@/lib/api/mileapp';
+import { deleteTruckNonTms, postTruckNonTms } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -66,7 +66,18 @@ export default function TruckUsageModal({
   const sortedMasterVehicles = useMemo(() => {
     if (!data?.isMaster) return [];
     const vehicles = masterVehicleList?.[data.storage]?.[data.type] || [];
-    return sortVehicles(vehicles);
+
+    const seenCombos = new Set();
+    const uniqueVehicles = vehicles.reduce((acc, vh) => {
+      const plateRaw = (vh.plate || vh.plat || '').toLowerCase().replace(/\s+/g, '');
+      if (!seenCombos.has(plateRaw)) {
+        seenCombos.add(plateRaw);
+        acc.push(vh);
+      }
+      return acc;
+    }, []);
+
+    return sortVehicles(uniqueVehicles);
   }, [data, masterVehicleList]);
 
   const tmsDetailsList = useMemo(() => {
@@ -113,7 +124,7 @@ export default function TruckUsageModal({
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const resData = await postTruckUsage({
+      const resData = await postTruckNonTms({
         hubId,
         date: data.date,
         storageType: data.storage,
@@ -137,7 +148,7 @@ export default function TruckUsageModal({
     setIsConfirmOpen(false);
     setIsLoading(true);
     try {
-      await deleteTruckUsage({
+      await deleteTruckNonTms({
         hubId,
         date: data.date,
         storageType: data.storage,

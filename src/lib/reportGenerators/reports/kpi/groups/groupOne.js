@@ -15,10 +15,9 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
           if (tripsCount === 0) return;
 
-          const email = normalizeEmail(route.assignee);
-          const driverName = driverMap[email] || '';
+          const driverName = route.driverName || '';
           const category = getStorageType(driverName).toUpperCase();
-          const truckId = route.assignee || route.vehicleName || route.vehicleId || '-';
+          const truckId = route.basePlat || route.vehicleName || '-';
 
           if (truckId) {
             if (category === 'DRY') {
@@ -43,24 +42,28 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      const statusDelivery = Array.isArray(task.statusDelivery)
-        ? task.statusDelivery[0]
-        : task.statusDelivery;
+      let statusDelivery = '';
+      if (task.statusDelivery) {
+        statusDelivery = typeof task.statusDelivery === 'string' ? task.statusDelivery.split(',')[0].trim() : task.statusDelivery;
+      }
       let isRedelivery = String(statusDelivery || '').toUpperCase() === 'PENDING';
 
       if (!isRedelivery) {
-        isRedelivery = String(task.statusGr || '').toUpperCase() === 'PENDING';
+        let statusGr = '';
+        if (task.statusGr) {
+          statusGr = typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
+        }
+        isRedelivery = String(statusGr || '').toUpperCase() === 'PENDING';
       }
 
       if (isRedelivery) {
         let driverName = task.driverName === '-' ? '' : task.driverName || '';
         let category = task.typeStorage === '-' ? '' : task.typeStorage || '';
 
-        if (!driverName && Array.isArray(task.assignee) && task.assignee.length > 0) {
-          const rawAssignee = task.assignee[0];
+        if (!driverName && task.assignee) {
+          const rawAssignee = typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
           driverName =
-            driverMap[normalizeEmail(rawAssignee)] ||
-            (typeof rawAssignee === 'string' ? rawAssignee : '');
+            driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
         }
 
         if (!category && driverName) {

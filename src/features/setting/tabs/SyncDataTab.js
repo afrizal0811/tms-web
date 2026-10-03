@@ -2,8 +2,7 @@
 
 import Button from '@/components/button/Button';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
-import { patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers, patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
@@ -25,7 +24,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     try {
       const [res, mileappData] = await Promise.all([
         getMceasyUsers({ 'position-name': 'Driver' }),
-        getDriverData(activeHubId),
+        getDrivers(),
       ]);
 
       const validEmails = new Set(
@@ -54,7 +53,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     } finally {
       setIsDriverLoading(false);
     }
-  }, [activeHubId, translate]);
+  }, [translate]);
 
   useEffect(() => {
     if (modalOpen) fetchMcEasyDrivers();
@@ -106,6 +105,24 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     }
   };
 
+  const handleBypass = async () => {
+    setSyncLoading('drivers');
+    try {
+      await postDrivers([activeHubId]);
+      if (matchedData.length > 0) {
+        await patchDriverMceasy(activeHubId, storedLocationName, matchedData);
+      }
+
+      setModalOpen(false);
+      toastSuccess(translate('common.toast.success'));
+      await onRefresh();
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
   const executeSync = async (type) => {
     if (isReadOnly) return;
     setSyncLoading(type);
@@ -131,6 +148,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
 
       toastSuccess(translate('common.toast.success'));
       await onRefresh();
+      window.location.reload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -182,8 +200,8 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
     );
   };
   return (
-    <div className="w-full">
-      <Card>
+    <div className="w-full flex flex-col h-full">
+      <Card className="grow">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 pb-4 gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
@@ -209,6 +227,7 @@ export default function SyncDataTab({ lastUpdated, onRefresh, isReadOnly, transl
         mismatchedData={mismatchedData}
         onMismatchedChange={handleMismatchedChange}
         onSave={handleSaveMismatches}
+        onBypass={handleBypass}
         mcEasyDrivers={mcEasyDrivers}
         isDriverLoading={isDriverLoading}
         isSaving={syncLoading === 'drivers'}

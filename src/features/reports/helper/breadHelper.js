@@ -26,7 +26,6 @@ export const handleBreadDownload = async ({
   endDate,
   singleDate,
   driverData,
-  hubId,
   hubAcronym,
   hubName,
   t,
@@ -49,7 +48,6 @@ export const handleBreadDownload = async ({
       const { timeFrom, timeTo } = getDateParams(date);
 
       const tasks = await getTasks({
-        hubId: hubId,
         status: 'DONE,ONGOING',
         timeFrom,
         timeTo,

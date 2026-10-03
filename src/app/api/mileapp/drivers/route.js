@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { isEmpty } from '@/lib/utils';
+import { getBasePlate, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,80 @@ export async function GET(request) {
 
   try {
     const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-    const drivers = await prisma.driver.findMany({ where });
+    const [rawDrivers, mappingsDB] = await Promise.all([
+      prisma.driver.findMany({ where }),
+      prisma.vehicleMapping.findMany(), 
+    ]);
+
+    const mappingsObj = mappingsDB.reduce((acc, curr) => {
+      acc[curr.plat] = curr.mappedType;
+      return acc;
+    }, {});
+
+    const parsed = rawDrivers.map((d) => {
+      let mappedTypeStr = d.type;
+      if (d.plat && mappingsObj[d.plat]) {
+        mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
+      }
+
+      return {
+        _id: d.id,
+        vehicleId: d.vehicle_id,
+        vmsVehicleId: d.vms_id,
+        imei: d.imei,
+        vmsDriverId: d.vms_driver_id,
+        email: d.email,
+        name: d.name,
+        plat: d.plat,
+        basePlat: getBasePlate(d.plat),
+        type: mappedTypeStr,
+        _rawType: d.type,
+        tags: d.tags,
+        minWeight: d.minWeight,
+        maxWeight: d.maxWeight,
+        minVolume: d.minVolume,
+        maxVolume: d.maxVolume,
+        storage: d.storage,
+        oddEven: d.oddEven,
+        speed: d.speed,
+        costFactor: d.costFactor,
+        workingTime: {
+          startTime: d.startTime,
+          endTime: d.endTime,
+          multiday: d.multiday,
+        },
+        breakTime: {
+          startTime: d.startBreakTime,
+          endTime: d.endBreakTime,
+        },
+      };
+    });
+
+    const baseMap = new Map();
+    parsed.forEach((d) => {
+      if (d.plat === d.basePlat && d.type) {
+        baseMap.set(d.basePlat, {
+          type: d.type,
+          tags: d.tags,
+          storage: d.storage,
+          _rawType: d._rawType,
+        });
+      }
+    });
+
+    const drivers = parsed.map((d) => {
+      if (d.plat !== d.basePlat && baseMap.has(d.basePlat)) {
+        const m = baseMap.get(d.basePlat);
+        return {
+          ...d,
+          type: m.type,
+          tags: m.tags,
+          storage: d.storage || m.storage,
+          _rawType: m._rawType,
+        };
+      }
+      return d;
+    });
 
     return NextResponse.json(drivers, { status: 200 });
   } catch (error) {

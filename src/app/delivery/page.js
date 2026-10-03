@@ -1,13 +1,13 @@
 // File: app/estimasi/page.js
 'use client';
 
-import AppLayout from '@/components/page/AppLayout';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import DeliveryPage from '@/features/delivery/DeliveryPage';
 
 export default function EstimasiPage() {
   return (
-    <AppLayout mainClassName="items-center px-4">
+    <SelectionLayout>
       <DeliveryPage />
-    </AppLayout>
+    </SelectionLayout>
   );
 }

@@ -1,9 +1,9 @@
 // File: lib/api/results.js
 
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateUniversal } from '../../utils';
 import { apiFetch } from '../base';
 import { fields } from './fields';
-
 function getCutOffTime(dateObj, hasPartialRouting = false) {
   const isSaturday = dateObj.getDay() === 6;
   return {
@@ -17,7 +17,6 @@ export async function getResults({
   dateTo,
   routingDateObj,
   deliveryDateObj,
-  hubId,
   hasPartialRouting = false,
 }) {
   let finalDateFrom = dateFrom;
@@ -35,18 +34,17 @@ export async function getResults({
   }
   const resultsFields = fields.results.join(',');
   const params = new URLSearchParams();
+  const { storedLocation } = getLocalStorage();
   params.append('limit', 10000);
   if (finalDateFrom) params.append('dateFrom', finalDateFrom);
   if (finalDateTo) params.append('dateTo', finalDateTo);
-  if (hubId) params.append('hubId', hubId);
+  if (storedLocation) params.append('hubId', storedLocation);
   if (resultsFields) params.append('fields', resultsFields);
 
-  const results = await apiFetch(
+  return await apiFetch(
     `/api/mileapp/results?${params.toString()}`,
     'Gagal mengambil data results'
   );
-
-  return (results || []).filter((item) => item.dispatchStatus?.toLowerCase() === 'done');
 }
 
 export async function getResult(id) {

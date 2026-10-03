@@ -1,4 +1,4 @@
-import { formatDateUniversal, formatUTC7, isPastDate } from '@/lib/utils';
+import { formatDateUniversal, isPastDate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FONT_STYLES, HEADER_STYLES } from './reportStyles';
 
@@ -29,16 +29,21 @@ export function generateServiceLevelSheet(wb, tasks, startDateStr, endDateStr, t
   (tasks || []).forEach((t) => {
     if (t.status !== 'DONE' || !t.createdTime || !t.doneTime) return;
 
-    const createdWib = formatUTC7(t.createdTime, 'YYYY-MM-DD');
-    const doneWib = formatUTC7(t.doneTime, 'YYYY-MM-DD');
+    const cDate = new Date(t.createdTime);
+    const dDate = new Date(t.doneTime);
+
+    if (isNaN(cDate.getTime()) || isNaN(dDate.getTime())) return;
+    const doneWib = formatDateUniversal(dDate);
 
     if (!dateMap[doneWib]) return;
 
-    const [cy, cm, cd] = createdWib.split('-').map(Number);
-    const [dy, dmNum, dd] = doneWib.split('-').map(Number);
-    const cDate = new Date(cy, cm - 1, cd);
-    const dDate = new Date(dy, dmNum - 1, dd);
-    const rawDiff = Math.round((dDate - cDate) / (1000 * 60 * 60 * 24));
+    const cDateMid = new Date(
+      Date.UTC(cDate.getUTCFullYear(), cDate.getUTCMonth(), cDate.getUTCDate())
+    );
+    const dDateMid = new Date(
+      Date.UTC(dDate.getUTCFullYear(), dDate.getUTCMonth(), dDate.getUTCDate())
+    );
+    const rawDiff = Math.round((dDateMid - cDateMid) / (1000 * 60 * 60 * 24));
     const diffDays = rawDiff <= 0 ? 1 : rawDiff;
 
     if (diffDays > maxDay) maxDay = diffDays;

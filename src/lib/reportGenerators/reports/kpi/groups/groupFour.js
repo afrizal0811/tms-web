@@ -46,53 +46,18 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
 
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
-      const summary = item.summary || {};
       if (item.result && Array.isArray(item.result.routing)) {
-        const isSingleVehicle = item.result.routing.length === 1;
-
         item.result.routing.forEach((route) => {
           if (!Array.isArray(route.trips) || route.trips.length === 0) return;
 
           const email = normalizeEmail(route.assignee || '');
-          let info = driverInfoMap[email];
-          if (!info) {
-            info = Object.values(driverInfoMap).find(
-              (d) => d.name.toUpperCase() === (route.assignee || '').toUpperCase()
-            );
-          }
-
-          const driverName = info ? info.name : route.assignee;
+          const info = driverInfoMap[email];
+          const driverName = route.driverName || '';
           const category = getStorageType(driverName).toUpperCase();
-          const truckId = (route.vehicleName || route.vehicleId || route.assignee || 'Unknown')
-            .toUpperCase()
-            .trim();
+          const truckId = (route.basePlat || route.vehicleName || 'Unknown').toUpperCase().trim();
 
-          let routeWeight = 0,
-            routeVolume = 0;
-          let sumVisit = 0,
-            sumTravel = 0,
-            sumWait = 0;
-          let countedHubWait = false;
-
-          route.trips.forEach((trip) => {
-            if (!trip.isHub) {
-              routeWeight = safeAdd(routeWeight, trip.weight);
-              routeVolume = safeAdd(routeVolume, trip.volume);
-            }
-            const isHub = String(trip.isHub).toLowerCase() === 'true';
-            sumVisit += Number(trip.visitTime) || 0;
-            sumTravel += Number(trip.travelTime) || 0;
-
-            if (!isHub || !countedHubWait) {
-              sumWait += Number(trip.waitingTime) || 0;
-              if (isHub) countedHubWait = true;
-            }
-          });
-
-          if (routeWeight === 0 && route.totalWeight !== undefined)
-            routeWeight = safeNum(route.totalWeight);
-          if (routeVolume === 0 && route.totalVolume !== undefined)
-            routeVolume = safeNum(route.totalVolume);
+          const routeWeight = safeNum(route.totalWeight);
+          const routeVolume = safeNum(route.totalVolume);
 
           activeVehicles[truckId] = {
             maxWeight: safeNum(route.vehicleMaxWeight ?? route.maxWeight ?? info?.maxWeight ?? 0),
@@ -100,15 +65,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
             category,
           };
 
-          const finalTravel = sumTravel > 0 ? sumTravel : Number(route.totalTravelTime || 0);
-          const finalVisit = sumVisit > 0 ? sumVisit : Number(route.totalVisitTime || 0);
-          const finalWait = sumWait > 0 ? sumWait : Number(route.totalWaitingTime || 0);
-          const manualSpentTime = finalTravel + finalVisit + finalWait;
-
-          let finalSpentTime = Number(route.totalSpentTime) || 0;
-          if (finalSpentTime === 0 && isSingleVehicle && summary.totalSpentTime)
-            finalSpentTime = Number(summary.totalSpentTime);
-          if (finalSpentTime === 0) finalSpentTime = manualSpentTime;
+          const finalSpentTime = Number(route.totalSpentTime) || 0;
 
           if (category === 'DRY') {
             actWeightDry = safeAdd(actWeightDry, routeWeight);

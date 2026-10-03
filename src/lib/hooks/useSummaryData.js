@@ -1,21 +1,18 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
+  getDrivers,
   getHubs,
   getLocationHistories,
   getResultHistories,
   getResults,
   getTasks,
-  getVehicleMappings,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
-import { calculateMasterTruckStorage, getDriverData } from '@/lib/driverData';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
 import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
   getDeliveryDateFromRouting,
   parseCustomerString,
   toApiDateString,
@@ -260,7 +257,8 @@ export default function useSummaryData() {
       if (allTasks && Array.isArray(allTasks)) {
         allTasks.forEach((task) => {
           const dateKey =
-            formatUTC7(task.startTime, 'YYYY-MM-DD') || formatUTC7(task.doneTime, 'YYYY-MM-DD');
+            formatDateUniversal(task.startTime, 'YYYY-MM-DD') ||
+            formatDateUniversal(task.doneTime, 'YYYY-MM-DD');
           if (!dateKey) return;
 
           initDate(dateKey);
@@ -406,29 +404,19 @@ export default function useSummaryData() {
           if (validTrips.length === 0) return;
 
           const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-          const rawPlate = route.vehicleName || route.vehicleId || route.licensePlate || '';
-
-          const strictBasePlate = rawPlate.replace(/\s*\([^)]*\)/g, '').trim();
+          const strictBasePlate = route.basePlat || route.vehicleName || '';
           const baseCanonical =
             strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
 
           const foundDriver =
             fetchedDrivers.find((d) => (d.email || '').toLowerCase() === rawEmail) ||
-            fetchedDrivers.find((d) => {
-              const driverClean = (d.plat || '')
-                .replace(/\s*\([^)]*\)/g, '')
-                .replace(/\s+/g, '')
-                .toLowerCase();
-              return driverClean === baseCanonical;
-            }) ||
-            fetchedDrivers.find((d) => cleanPlat(d.plat) === cleanPlat(rawPlate));
+            fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
 
           const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
-          const driverName = foundDriver ? foundDriver.name : route.assignee || '-';
+          const driverName =
+            route.driverName || (foundDriver ? foundDriver.name : route.assignee || '-');
 
-          const finalPlate = foundDriver
-            ? (foundDriver.plat || '').replace(/\s*\([^)]*\)/g, '').trim()
-            : strictBasePlate;
+          const finalPlate = strictBasePlate;
           const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
 
           if (tempMetrics[dateKey] && tempMetrics[dateKey][type]) {
@@ -531,7 +519,7 @@ export default function useSummaryData() {
           for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
             const d = new Date(currDateKey);
             d.setUTCDate(d.getUTCDate() - back);
-            const prevDateKey = d.toISOString().split('T')[0];
+            const prevDateKey = formatDateUniversal(d);
 
             const prevM = tempMetrics[prevDateKey];
             if (prevM) {
@@ -674,13 +662,12 @@ export default function useSummaryData() {
       const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
-      const pDrivers = fetchWithTracker(() => getDriverData(selectedLocation));
+      const pDrivers = fetchWithTracker(() => getDrivers());
 
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];
         for (const range of taskRanges) {
           const res = await getTasks({
-            hubId: selectedLocation,
             status: 'ONGOING,DONE',
             timeFrom: range.from,
             timeTo: range.to,
@@ -694,7 +681,6 @@ export default function useSummaryData() {
         const rawResults = [];
         for (const range of routingRanges) {
           const res = await getResults({
-            hubId: selectedLocation,
             routingDateObj: new Date(range.from),
             deliveryDateObj: new Date(range.to),
           });
@@ -728,41 +714,15 @@ export default function useSummaryData() {
       let hasPendingGRValue = false;
       let hubCoordsString = null;
 
+      let currentMasterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
+
       try {
-        const [vTypesObj, mapsDB, hubsDB] = await Promise.all([
-          getVehicleTypes(),
-          getVehicleMappings(),
-          getHubs(),
-        ]);
-        const vTypes = vTypesObj.map((v) => v.name);
-        const mapObj = mapsDB.reduce((acc, curr) => {
-          acc[curr.plat] = curr.mappedType;
-          return acc;
-        }, {});
+        const [hubsDB, masterRes] = await Promise.all([getHubs(), getVehicleTypes()]);
 
-        const uniqueDriversForMT = [];
-        const seenBasePlates = new Set();
-        (driversRes || []).forEach((d) => {
-          if (d.additionalData && d.additionalData.trim() !== '') return;
+        currentMasterData = masterRes;
+        setMasterTruckData(masterRes);
 
-          const bp = getBasePlate(d.plat).toLowerCase();
-          if (bp && !seenBasePlates.has(bp)) {
-            seenBasePlates.add(bp);
-            uniqueDriversForMT.push(d);
-          }
-        });
-
-        const calculatedMaster = await calculateMasterTruckStorage(
-          uniqueDriversForMT,
-          mapObj,
-          vTypes
-        );
-        setMasterTruckData(calculatedMaster);
-
-        const activeHub = hubsDB?.find(
-          (h) =>
-            String(h._id) === String(selectedLocation) || String(h.id) === String(selectedLocation)
-        );
+        const activeHub = hubsDB?.activeHub;
         hasPendingGRValue = activeHub?.hasPendingGR || false;
 
         if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {
@@ -777,7 +737,7 @@ export default function useSummaryData() {
         }
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);
-        setMasterTruckData({ Dry: { Total: 0 }, Frozen: { Total: 0 } });
+        setMasterTruckData(currentMasterData);
       }
 
       const newRawData = {
@@ -794,9 +754,9 @@ export default function useSummaryData() {
         newRawData.locations,
         startStr,
         endStr,
-        selectedLocation,
         localeCode,
-        hubCoordsString
+        hubCoordsString,
+        currentMasterData
       );
       setReportPreview(preview);
 

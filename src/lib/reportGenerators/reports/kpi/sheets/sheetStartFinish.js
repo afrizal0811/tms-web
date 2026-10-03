@@ -1,4 +1,4 @@
-import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
+import { isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) {
@@ -55,7 +55,7 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
     ],
     ...sortedRows.map((r) => [
       r.tipe,
-      getBasePlate(r.plat),
+      r.plat,
       r.driver,
       r.startDate || '',
       r.startTime,

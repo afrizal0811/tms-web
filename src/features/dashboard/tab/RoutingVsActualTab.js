@@ -129,7 +129,7 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
               const hubStart = row.type === 'HUB_START';
               const hubEnd = row.type === 'HUB_END';
               const hubMiddle = row.type === 'HUB_MIDDLE';
-              
+
               if (hubStart || hubEnd || hubMiddle) {
                 return (
                   <tr
@@ -216,8 +216,6 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        driverData={drivers}
-        allTasks={tasks}
       />
     </div>
   );

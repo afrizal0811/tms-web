@@ -1,11 +1,10 @@
 'use client';
 
-import AppLayout from '@/components/page/AppLayout';
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import KpiReport from '@/features/reports/KpiReport';
-import { getDriverData } from '@/lib/driverData';
+import { getDrivers } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -18,10 +17,9 @@ export default function KpiReportPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { storedLocation, storedLocationAcronym } = getLocalStorage();
-        const drivers = await getDriverData(storedLocation);
+        const { storedLocationAcronym } = getLocalStorage();
+        const drivers = await getDrivers();
         setData({
-          storedLocation,
           storedLocationAcronym,
           driverData: drivers || [],
         });
@@ -44,16 +42,15 @@ export default function KpiReportPage() {
   }
 
   return (
-    <AppLayout mainClassName="items-center justify-center px-4">
+    <SelectionLayout>
       <KpiReport
         driverData={data.driverData}
         hubAcronym={data.storedLocationAcronym}
-        hubId={data.storedLocation}
         isIndonesian={isIndonesian}
         isLoading={isLoading}
         setIsLoading={setIsLoading}
         t={t}
       />
-    </AppLayout>
+    </SelectionLayout>
   );
 }

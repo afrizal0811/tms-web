@@ -1,6 +1,6 @@
-import { getStorageType, normalizeEmail } from '@/lib/utils';
+import { getStorageType } from '@/lib/utils';
 
-export function calculateGroupThree(resultsData, historiesData, driverMap) {
+export function calculateGroupThree(resultsData, historiesData) {
   let totalActMinutes = 0;
 
   if (Array.isArray(historiesData)) {
@@ -20,33 +20,18 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
     resultsData.forEach((item) => {
       if (item.result && Array.isArray(item.result.routing)) {
         item.result.routing.forEach((route) => {
-          const email = normalizeEmail(route.assignee);
-          const driverName = driverMap[email] || route.assignee || '';
+          const driverName = route.driverName || '';
           const category = getStorageType(driverName).toUpperCase();
 
-          let routeWeight = 0;
-          let routeVolume = 0;
-          let sumDist = 0;
           const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
-
-          if (hasTrips) {
-            route.trips.forEach((trip) => {
-              if (!trip.isHub) {
-                routeWeight += Number(trip.weight) || 0;
-                routeVolume += Number(trip.volume) || 0;
-              }
-              sumDist += Number(trip.distance) || 0;
-            });
-          }
-
-          const activeWeight = routeWeight > 0 ? routeWeight : Number(route.totalWeight || 0);
-          const activeVolume = routeVolume > 0 ? routeVolume : Number(route.totalVolume || 0);
+          const activeWeight = Number(route.totalWeight || 0);
+          const activeVolume = Number(route.totalVolume || 0);
           const isVehicleActive =
             hasTrips &&
             (activeWeight > 0 || activeVolume > 0 || Number(route.totalVisits || 0) > 0);
 
           if (isVehicleActive) {
-            const vehicleDistMeters = sumDist > 0 ? sumDist : Number(route.totalDistance || 0);
+            const vehicleDistMeters = Number(route.totalDistance || 0);
             if (category === 'DRY') rawDistDryMeters += vehicleDistMeters;
             else if (category === 'FROZEN') rawDistFrzMeters += vehicleDistMeters;
           }

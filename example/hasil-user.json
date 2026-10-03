@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "name": "Hiroyoshi Itouda",
+      "email": "h.itoda@mitsui.com",
+      "hubId": ["68b8038b1aa98343380e3ab2", "67a41cb1480d2d3b580fc61c", "670369a8a5d2d4b5ee0b020d"],
+      "organizationId": "6703410af6be892f3208ecda",
+      "status": "active",
+      "isDeleted": false,
+      "lastLogin": "2025-02-07T06:59:18+00:00",
+      "roleId": "6703410af6be892f3208ecdc",
+      "activationCode": "K8bHXz4i8N6sVX6XE109",
+      "teamId": [],
+      "language": "en",
+      "verifiedTime": "2024-10-07T04:55:05+00:00",
+      "cloudAuthenticatorEnabled": false,
+      "firstLogin": false,
+      "role": {
+        "name": "admin",
+        "_id": "6703410af6be892f3208ecdc"
+      },
+      "_id": "67a5ad9086f97a313f088b0f"
+    }
+  ],
+  "status": true,
+  "dataVersion": "1790652449"
+}

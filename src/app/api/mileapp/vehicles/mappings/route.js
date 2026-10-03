@@ -3,33 +3,26 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// 1. GET: Ambil data (Bisa untuk Semua, bisa di-filter per Hub)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const hubId = searchParams.get('hubId');
 
   try {
     let mappings = [];
-
     if (hubId) {
-      // Cari semua kendaraan (pelat) yang ada di hub ini melalui tabel Driver
       const driversInHub = await prisma.driver.findMany({
         where: { hubs: { some: { id: hubId } } },
         select: { plat: true },
       });
-
-      // Ambil pelat yang unik saja dan buang yang kosong
+      
       const platsInHub = [...new Set(driversInHub.map((d) => d.plat).filter(Boolean))];
-
-      // Ambil mapping yang pelatnya ada di dalam list hub ini
       mappings = await prisma.vehicleMapping.findMany({
         where: { plat: { in: platsInHub } },
-        orderBy: { updatedAt: 'desc' }, // Urutkan dari yang terbaru
+        orderBy: [{ plat: 'asc' }, { mappedType: 'asc' }],
       });
     } else {
-      // Jika tidak ada hubId, ambil semua
       mappings = await prisma.vehicleMapping.findMany({
-        orderBy: { updatedAt: 'desc' },
+        orderBy: [{ plat: 'asc' }, { mappedType: 'asc' }],
       });
     }
 
@@ -103,13 +96,13 @@ export async function PUT(request) {
 // 4. DELETE: Hapus pemetaan jika ada kesalahan
 export async function DELETE(request) {
   const { searchParams } = new URL(request.url);
-  const plat = searchParams.get('plat');
+  const id = searchParams.get('id');
 
   try {
-    if (!plat) return NextResponse.json({ error: 'Plat dibutuhkan' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'id dibutuhkan' }, { status: 400 });
 
     await prisma.vehicleMapping.delete({
-      where: { plat: plat },
+      where: { id: Number(id) },
     });
 
     return NextResponse.json({ message: 'Mapping berhasil dihapus' }, { status: 200 });

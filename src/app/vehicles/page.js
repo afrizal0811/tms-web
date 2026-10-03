@@ -2,13 +2,13 @@
 'use client';
 
 // Impor layout utama
-import AppLayout from '@/components/page/AppLayout';
+import SelectionLayout from '@/components/page/SelectionLayout';
 import VehicleData from '@/features/vehicleData/VehicleData';
 
 export default function VehiclesPage() {
   return (
-    <AppLayout mainClassName="items-center px-4">
+    <SelectionLayout>
       <VehicleData />
-    </AppLayout>
+    </SelectionLayout>
   );
 }

@@ -38,7 +38,7 @@ export function generateKpiWorkbook(
 
   const g1 = calculateGroupOne(resultsData, tasksData, driverMap);
   const g2 = calculateGroupTwo(resultsData, driverMap, driverData);
-  const g3 = calculateGroupThree(resultsData, historiesData, driverMap);
+  const g3 = calculateGroupThree(resultsData, historiesData);
   const g4 = calculateGroupFour(resultsData, historiesData, driverData);
   const g5 = calculateGroupFive(tasksData, driverData, historiesData, g2.detailRows);
 

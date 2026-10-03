@@ -77,7 +77,6 @@ const evaluateRoutingValidity = (results, taskMap) => {
 const processSingleKpiDate = async (
   targetDateObj,
   drivers,
-  hubId,
   hubAcronym,
   customRoutingDateObj = null
 ) => {
@@ -95,7 +94,6 @@ const processSingleKpiDate = async (
 
   const [tasks, rawResults, histories] = await Promise.all([
     getTasks({
-      hubId: hubId,
       status: 'DONE,ONGOING',
       timeFrom,
       timeTo,
@@ -103,7 +101,6 @@ const processSingleKpiDate = async (
     getResults({
       routingDateObj: targetRoutingDateObj,
       deliveryDateObj: validDeliveryDate,
-      hubId: hubId,
     }),
     getLocationHistories({
       timeFrom: histFrom,
@@ -115,11 +112,11 @@ const processSingleKpiDate = async (
   const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
   const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
-  const { kpiHistories } = convertLocationHistories(
-    histories?.tasks?.data || [],
-    drivers,
-    dateString
-  );
+
+  const singleDateHistories = (histories || []).filter((item) => {
+    return item.startTime?.startsWith(dateString);
+  });
+  const { kpiHistories } = convertLocationHistories(singleDateHistories, drivers);
 
   return generateKpiWorkbook(
     dateString,
@@ -234,7 +231,7 @@ async function parseTaskFiles(files) {
         const start = c.start !== -1 ? formatExcelDate(r[c.start]) : '';
         if (start) {
           let iso = '';
-          const p = start.split(' ')[0];
+          const p = start.split(/[ T]/)[0];
           if (p.includes('-')) {
             const s = p.split('-');
             iso = s[0].length === 4 ? p : s[2]?.length === 4 ? `${s[2]}-${s[1]}-${s[0]}` : '';
@@ -253,14 +250,14 @@ async function parseTaskFiles(files) {
         parsedTasks.push({
           flow: c.flow !== -1 ? cleanStr(r[c.flow]) || '-' : '-',
           startTime: start,
-          assignedVehicle: c.veh !== -1 ? cleanStr(r[c.veh]) || '-' : '-',
+          basePlat: c.veh !== -1 ? cleanStr(r[c.veh]) || '-' : '-',
           driverName: c.to !== -1 ? cleanStr(r[c.to]) : '',
           typeStorage: c.storage !== -1 ? cleanStr(r[c.storage]) || '-' : '-',
           customerOrder: c.order !== -1 ? cleanStr(r[c.order]) || '-' : '-',
           statusDelivery: c.deliv !== -1 ? cleanStr(r[c.deliv]) : '',
           statusGr: c.gr !== -1 ? cleanStr(r[c.gr]) : '',
           alasan: c.alasan !== -1 ? cleanStr(r[c.alasan]) || '-' : '-',
-          gpsSesuai: [c.gps !== -1 ? cleanStr(r[c.gps]) : ''],
+          gpsSesuai: c.gps !== -1 ? cleanStr(r[c.gps]) : '',
         });
       });
   }
@@ -269,13 +266,7 @@ async function parseTaskFiles(files) {
   return { tasks: parsedTasks, majorityDate };
 }
 
-const executeManualKpiDownload = async ({
-  routingFiles,
-  taskFiles,
-  hubId,
-  hubAcronym,
-  drivers,
-}) => {
+const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, drivers }) => {
   let routing = [],
     tasks = [],
     dateStr = null;
@@ -310,11 +301,10 @@ const executeManualKpiDownload = async ({
     timeTo,
   });
 
-  const { kpiHistories: historiesData } = convertLocationHistories(
-    histories?.tasks?.data || [],
-    drivers,
-    formattedDate
-  );
+  const singleDateHistories = (histories || []).filter((item) => {
+    return item.startTime?.startsWith(formattedDate);
+  });
+  const { kpiHistories: historiesData } = convertLocationHistories(singleDateHistories, drivers);
   const { wb } = generateKpiWorkbook(
     formattedDate,
     hubAcronym,
@@ -332,7 +322,6 @@ const executeManualKpiDownload = async ({
 };
 
 export const handleSingleDownload = async ({
-  hubId,
   hubAcronym,
   selectedDate,
   isCustomRouting,
@@ -348,7 +337,6 @@ export const handleSingleDownload = async ({
     const { wb, fileName, hasError } = await processSingleKpiDate(
       selectedDate,
       driverData,
-      hubId,
       hubAcronym,
       isCustomRouting ? routingDate : null
     );
@@ -364,7 +352,6 @@ export const handleSingleDownload = async ({
 };
 
 export const handleBulkDownload = async ({
-  hubId,
   hubAcronym,
   startDate,
   endDate,
@@ -387,7 +374,6 @@ export const handleBulkDownload = async ({
         const { wb, fileName, hasError } = await processSingleKpiDate(
           dateObj,
           driverData,
-          hubId,
           hubAcronym
         );
         if (hasError) toastWarning(`Data tidak lengkap untuk ${formatDateUniversal(dateObj)}`);
@@ -401,7 +387,6 @@ export const handleBulkDownload = async ({
 };
 
 export const handleManualDownload = async ({
-  hubId,
   hubAcronym,
   selectedRoutingFiles,
   selectedDeliveryFiles,
@@ -417,7 +402,6 @@ export const handleManualDownload = async ({
     await executeManualKpiDownload({
       routingFiles: selectedRoutingFiles,
       taskFiles: selectedDeliveryFiles,
-      hubId,
       hubAcronym,
       drivers: driverData,
       s,

@@ -16,8 +16,6 @@ import {
   calculateStartFinishDates,
   checkInvalidSoList,
   formatDateUniversal,
-  formatUTC7,
-  getBasePlate,
   getBaseVehicleType,
   isEmpty,
   normalizeEmail,
@@ -28,11 +26,11 @@ import {
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getHubs, getLocationHistories, getResults, getTasks } from '../../lib/api/mileapp';
-import { driverTimeStamps, getDriverData } from '../../lib/driverData';
+
 import { toastError, toastWarning } from '../../lib/toast';
 import CustomTable from './components/CustomTable';
 import {
-  getDriverName,
+  driverTime,
   handleFullDeliveryFormDownload,
   handleFullDeliveryListDownload,
   handleFullRouteTransDownload,
@@ -48,11 +46,6 @@ const getStoragePrefix = (storageFilter) => {
   if (!storageFilter.includes('DRY') && storageFilter.includes('FROZEN')) return 'FRZ';
   return '';
 };
-
-const findActiveHub = (hubs, storedLocation) =>
-  hubs.find(
-    (h) => String(h._id) === String(storedLocation) || String(h.id) === String(storedLocation)
-  );
 
 const persistDeliveryPageSetting = (key, value) => {
   const { storedSession } = getLocalStorage();
@@ -70,8 +63,6 @@ export default function DeliveryPage() {
   const [allRoutes, setAllRoutes] = useState([]);
   const [bunSoList, setBunSoList] = useState([]);
   const [downloadType, setDownloadType] = useState(null);
-  const [driverData, setDriverData] = useState({});
-  const [emptyMessage, setEmptyMessage] = useState(t('common.no_data'));
   const [hubsData, setHubsData] = useState([]);
   const [isBunModalOpen, setIsBunModalOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -81,6 +72,7 @@ export default function DeliveryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNoBun, setIsNoBun] = useState(false);
   const [isSplitMultitrip, setIsSplitMultitrip] = useState(false);
+  const [isSplitStorageType, setIsSplitStorageType] = useState(true);
   const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
   const [routingResults, setRoutingResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,10 +85,8 @@ export default function DeliveryPage() {
   const [isRouteSettingsOpen, setIsRouteSettingsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [tasksData, setTasksData] = useState({});
   const downloadDropdownRef = useRef(null);
   const lastWarnedPlates = useRef('');
-  const driversArray = driverData ? Object.values(driverData) : null;
 
   useEffect(() => {
     setIsClient(true);
@@ -114,6 +104,9 @@ export default function DeliveryPage() {
       if (typeof dp.isSplitMultitrip === 'boolean') {
         setIsSplitMultitrip(dp.isSplitMultitrip);
       }
+      if (typeof dp.isSplitStorageType === 'boolean') {
+        setIsSplitStorageType(dp.isSplitStorageType);
+      }
     }
   }, []);
 
@@ -122,10 +115,12 @@ export default function DeliveryPage() {
       try {
         const res = await getHubs();
         setHubsData(res);
-      } catch (error) {}
+      } catch (e) {
+        toastError(t('common.toast.error', { err: e.message }), e);
+      }
     };
     fetchHubsData();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -152,8 +147,13 @@ export default function DeliveryPage() {
     persistDeliveryPageSetting('isSplitMultitrip', isActive);
   };
 
+  const handleToggleSplitStorageType = (isActive) => {
+    setIsSplitStorageType(isActive);
+    persistDeliveryPageSetting('isSplitStorageType', isActive);
+  };
+
   const handleRowClick = (taskId) => {
-    if (!taskId || taskId === '-') return;
+    if (!taskId || taskId === '-' || taskId.includes('hub')) return;
     setSelectedTaskId(taskId);
     setIsTaskModalOpen(true);
   };
@@ -165,13 +165,13 @@ export default function DeliveryPage() {
       setIsDownloading,
       t,
       selectedDate,
-      driverData,
       timeMap,
       isDetailView,
       fileNamePrefix,
       excludeSoList,
       sortConfig,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (type === 'routeTransaction') {
@@ -189,12 +189,12 @@ export default function DeliveryPage() {
       setIsDownloading,
       t,
       selectedDate,
-      driverData,
       timeMap,
       isDetailView,
       excludeSoList,
       sortConfig,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (type === 'routeTransaction') {
@@ -214,8 +214,7 @@ export default function DeliveryPage() {
     setIsDownloadDropdownOpen(false);
 
     if (['routeTransaction', 'deliveryList', 'deliveryForm'].includes(type)) {
-      const { storedLocation } = getLocalStorage();
-      const activeHub = findActiveHub(hubsData, storedLocation);
+      const activeHub = hubsData.activeHub;
 
       let excludeList = [];
       if (type === 'routeTransaction' && isNoBun) {
@@ -233,8 +232,7 @@ export default function DeliveryPage() {
 
   const handleDownloadBunSpecific = (excludeList) => {
     setIsBunModalOpen(false);
-    const { storedLocation } = getLocalStorage();
-    const activeHub = findActiveHub(hubsData, storedLocation);
+    const activeHub = hubsData.activeHub;
 
     const baseProps = {
       setIsDownloading,
@@ -242,6 +240,7 @@ export default function DeliveryPage() {
       selectedDate,
       excludeSoList: excludeList,
       isSplitMultitrip,
+      isSplitStorageType,
     };
 
     if (activeHub?.hasPartialRouting) {
@@ -265,35 +264,15 @@ export default function DeliveryPage() {
       setAllRoutes([]);
       setActiveVehicleId(null);
       setTimeMap(new Map());
-
       try {
-        const { storedLocation } = getLocalStorage();
-        if (!storedLocation)
-          throw new Error(t('common.toast.error', { err: 'Location not found' }));
-
         let currentHubs = hubsData;
         if (currentHubs.length === 0) {
           currentHubs = await getHubs();
           setHubsData(currentHubs);
         }
 
-        const activeHub = findActiveHub(currentHubs, storedLocation);
+        const activeHub = currentHubs.activeHub;
         const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
-
-        const rawDrivers = await getDriverData(storedLocation);
-        if (isEmpty(rawDrivers)) {
-          setEmptyMessage(t('common.no_driver'));
-          throw new Error(t('common.no_driver'));
-        }
-
-        const dataObj = {};
-        const mapObj = new Map();
-        (Array.isArray(rawDrivers) ? rawDrivers : []).forEach((d) => {
-          const email = normalizeEmail(d.email);
-          dataObj[email] = d;
-          mapObj.set(email, getBasePlate(d.plat) || 'Other');
-        });
-        setDriverData(dataObj);
 
         const routingDate = new Date(deliveryDateObj);
         routingDate.setDate(deliveryDateObj.getDate() - (deliveryDateObj.getDay() === 1 ? 2 : 1));
@@ -308,7 +287,6 @@ export default function DeliveryPage() {
 
         const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResults({
-            hubId: storedLocation,
             routingDateObj: routingDate,
             deliveryDateObj,
             hasPartialRouting: currentHasPartialRouting,
@@ -318,18 +296,14 @@ export default function DeliveryPage() {
             timeTo: historyTo,
           }),
           getTasks({
-            hubId: storedLocation,
             timeFrom: toApiDateString(startD),
             timeTo: toApiDateString(endD),
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
         ]);
 
-        setTasksData(tasksResponse);
-        setRoutingResults(resultsData || []);
-        const filteredTasks = (Array.isArray(tasksResponse) ? tasksResponse : []).filter(
-          (t) => Array.isArray(t?.assignee) && t.assignee.length > 0
-        );
+        setRoutingResults(resultsData);
+        const filteredTasks = tasksResponse.filter((t) => t?.assignee);
 
         const tempBunList = [];
         filteredTasks.forEach((task) => {
@@ -350,7 +324,7 @@ export default function DeliveryPage() {
               tempBunList.push({
                 so,
                 customer: parsedCust.name || '-',
-                vehicle: task.assignedVehicle?.name || task.vehicleName || task.plat || '-',
+                vehicle: task.basePlat || task.vehicleName || task.plat || '-',
                 items: allItems,
                 hasNonBun,
               });
@@ -374,19 +348,9 @@ export default function DeliveryPage() {
         });
 
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
-          const email = normalizeEmail(task?.assignee[0]);
-          const rawTaskPlat =
-            task.assignedVehicle?.name ||
-            task.assignedVehicle?.plat ||
-            (typeof task.assignedVehicle === 'string' ? task.assignedVehicle : null) ||
-            task.vehicle?.name ||
-            task.vehicle?.plat ||
-            task.vehicleName ||
-            task.vehicleId ||
-            task.plat ||
-            task.licensePlate ||
-            null;
-          const plat = getBasePlate(rawTaskPlat) || mapObj.get(email) || t('common.others');
+          const email = normalizeEmail(task?.assignee);
+          const rawTaskPlat = task.basePlat || null;
+          const plat = rawTaskPlat || t('common.others');
           const groupKey = `${email}_${plat}`;
 
           if (!groups[groupKey])
@@ -394,7 +358,8 @@ export default function DeliveryPage() {
               vehicleId: groupKey,
               plat,
               email,
-              assigneeName: task.user?.name || task.courierName || dataObj[email]?.name || email,
+              vehicleType: task.vehicleType || '',
+              assigneeName: task.driverName || task.user?.name || task.courierName || email,
               tasks: [],
             };
           groups[groupKey].tasks.push(task);
@@ -402,11 +367,10 @@ export default function DeliveryPage() {
         }, {});
 
         const resultHubsByPlat = new Map();
-        (resultsData || [])
-          .filter((i) => i.dispatchStatus === 'done' && i.result?.routing)
+        resultsData
           .flatMap((i) => i.result.routing)
           .forEach((route) => {
-            const plat = getBasePlate(route.vehicleName);
+            const plat = route.basePlat;
             const email = normalizeEmail(route.assignee);
             const hubs = (route.trips || []).filter((t) => t.isHub);
             if (hubs.length > 0) {
@@ -416,13 +380,11 @@ export default function DeliveryPage() {
                 middleHubs: hubs.length > 2 ? hubs.slice(1, hubs.length - 1) : [],
               };
               if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
-              if (plat) resultHubsByPlat.set(plat, hubObj);
-              if (email) resultHubsByPlat.set(email, hubObj);
             }
           });
 
         const finalRoutes = Object.values(tasksByPlat).map(
-          ({ vehicleId, plat, tasks, email, assigneeName }) => {
+          ({ vehicleId, plat, tasks, email, assigneeName, vehicleType }) => {
             tasks.sort(
               (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
             );
@@ -432,6 +394,9 @@ export default function DeliveryPage() {
                 .split(',')
                 .map((s) => s.trim())
                 .filter(Boolean);
+
+              const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
+
               return {
                 visitId: task._id || task.taskId,
                 routePlannedOrder: task.routePlannedOrder,
@@ -443,12 +408,13 @@ export default function DeliveryPage() {
                 locationName: task.locationName || null,
                 openTime: task.openTime,
                 closeTime: task.closeTime,
-                eta: `${formatUTC7(task.startTime)} ${task.eta}`,
-                etd: `${formatUTC7(task.startTime)} ${task.etd}`,
+                eta: startFormat ? `${startFormat} ${task.eta}` : task.eta,
+                etd: startFormat ? `${startFormat} ${task.etd}` : task.etd,
                 isHub: false,
                 isManual: task.routePlannedOrder == null,
                 isReDelivery: task.flow?.toLowerCase().includes('re delivery'),
                 soWarehouseMapping: sos.map((so) => ({ so, wh: soToWarehouseMap.get(so) || '' })),
+                typeStorage: task.typeStorage,
               };
             });
 
@@ -490,6 +456,8 @@ export default function DeliveryPage() {
               vehicleName: plat,
               assignee: email,
               assigneeName,
+              basePlat: plat,
+              vehicleType: vehicleType,
               trips: finalTrips,
             };
           }
@@ -520,7 +488,7 @@ export default function DeliveryPage() {
 
         setAllRoutes(finalRoutes);
         setActiveVehicleId(finalRoutes.length > 0 ? finalRoutes[0].vehicleId : null);
-        setTimeMap(driverTimeStamps(historyData, selectedDate));
+        setTimeMap(driverTime(historyData));
       } catch (err) {
         toastError(t('common.toast.error', { err: err.message }), err);
       } finally {
@@ -625,11 +593,11 @@ export default function DeliveryPage() {
       const lower = searchQuery.toLowerCase();
       routes = routes
         .map((r) => {
-          const dName = (getDriverName(r, driverData) || '').toLowerCase();
+          const dName = (r.basePlat || '').toLowerCase();
           if (
             dName.includes(lower) ||
             (r.vehicleName || '').toLowerCase().includes(lower) ||
-            (r.vehicleId || '').toLowerCase().includes(lower)
+            (r.assigneeName || '').toLowerCase().includes(lower)
           )
             return r;
           const matchingTrips = r.trips.filter(
@@ -647,24 +615,23 @@ export default function DeliveryPage() {
       if (storageFilter.length === 0) return false;
       let keep = true;
       if (storageFilter.length === 1) {
-        const dName = getDriverName(route, driverData);
+        const dName = route.assigneeName;
+        const vType = route.vehicleType;
         keep =
-          (storageFilter.includes('DRY') && dName.includes("'DRY'")) ||
-          (storageFilter.includes('FROZEN') && dName.includes("'FRZ'"));
+          (storageFilter.includes('DRY') && (dName.includes("'DRY'") || vType.includes('DRY'))) ||
+          (storageFilter.includes('FROZEN') &&
+            (dName.includes("'FRZ'") || vType.includes('FROZEN')));
       }
       if (!keep) return false;
 
       if (typeFilter && typeFilter !== 'all') {
-        const email = normalizeEmail(route.assignee);
-        const d = driverData[email];
-        if (!d) return false;
-        if (getBaseVehicleType(d.type, masterVehicleTypes) !== typeFilter) return false;
+        if (getBaseVehicleType(route.vehicleType, masterVehicleTypes) !== typeFilter) return false;
       }
       return true;
     });
 
     return sortRows([...routes], 'vehicleName', 'vehicleName');
-  }, [searchQuery, enrichedRoutes, driverData, storageFilter, typeFilter, masterVehicleTypes]);
+  }, [searchQuery, enrichedRoutes, storageFilter, typeFilter, masterVehicleTypes]);
 
   useEffect(() => {
     if (activeVehicleId && !filteredVehicleRoutes.some((r) => r.vehicleId === activeVehicleId)) {
@@ -735,7 +702,6 @@ export default function DeliveryPage() {
       label: t('common.vehicle_type'),
       component: (
         <VehicleTypeFilter
-          data={Object.values(driverData)}
           disabled={isLoading || isDownloading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
@@ -835,8 +801,18 @@ export default function DeliveryPage() {
                         checked={isSplitMultitrip}
                         onChange={(e) => handleToggleSplitMultitrip(e.target.checked)}
                       />
-                      {t('delivery.spit_multitrip')}
-                      <InformationButton infoText={t('delivery.spit_multitrip_info')} size="3.5" />
+                      {t('delivery.split_multitrip')}
+                      <InformationButton infoText={t('delivery.split_multitrip_info')} size="3.5" />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="cursor-pointer w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0"
+                        checked={isSplitStorageType}
+                        onChange={(e) => handleToggleSplitStorageType(e.target.checked)}
+                      />
+                      {t('delivery.split_storage')}
+                      <InformationButton infoText={t('delivery.split_storage_info')} size="3.5" />
                     </label>
                   </div>
                 </div>
@@ -861,7 +837,7 @@ export default function DeliveryPage() {
   ];
 
   const tabData = filteredVehicleRoutes.map((r) => {
-    const dName = getDriverName(r, driverData);
+    const dName = r.assigneeName || '-';
     const isManual = r.hasManual;
     const hasMT = r.trips?.some((t) => t.isMiddleHub);
     const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
@@ -873,7 +849,7 @@ export default function DeliveryPage() {
           <span
             className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
           >
-            {r.vehicleName}{' '}
+            {r.basePlat || r.vehicleName}{' '}
             {hasMT && (
               <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
             )}
@@ -902,26 +878,21 @@ export default function DeliveryPage() {
         tabs={tabData}
         isLoading={isLoading}
         isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
-        emptyMessage={emptyMessage}
         footer={{ text: t('common.click_for_detail') }}
         bodyProps={{ className: 'min-h-[400px]', routingData: routingResults }}
       >
-        <div className="bg-white dark:bg-slate-800 h-full flex flex-col border-none transition-colors">
-          <div className="overflow-y-auto grow h-full m-0 ">
-            {!isLoading && activeRoute && (
-              <CustomTable
-                activeRoute={activeRoute}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                isDetailView={isDetailView}
-                t={t}
-                sortConfig={sortConfig}
-                setSortConfig={setSortConfig}
-                onRowClick={handleRowClick}
-              />
-            )}
-          </div>
-        </div>
+        {!isLoading && activeRoute && (
+          <CustomTable
+            activeRoute={activeRoute}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isDetailView={isDetailView}
+            t={t}
+            sortConfig={sortConfig}
+            setSortConfig={setSortConfig}
+            onRowClick={handleRowClick}
+          />
+        )}
       </PageTemplate>
 
       <PartialRoutingModal
@@ -961,8 +932,6 @@ export default function DeliveryPage() {
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         taskId={selectedTaskId}
-        driverData={driversArray}
-        allTasks={tasksData}
       />
     </>
   );

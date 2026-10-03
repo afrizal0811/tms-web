@@ -13,16 +13,14 @@ import { toastError, toastSuccess } from '../../../lib/toast';
 import {
   abortIfNoRoutingResults,
   buildEnrichedTripsMap,
-  getDriverName,
   getLocationName,
   getUniqueFileName,
   resolveDedupedTrip,
-  sanitizeName,
   sortRoutingResultsByCreatedTime,
   triggerDownload,
 } from './shared';
 
-const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailView, t) => {
+const appendDeliveryListSheet = (wb, plat, driverName, tripsData, isDetailView, t) => {
   const activeCols = [
     { key: 'no', title: 'No.' },
     { key: 'visit', title: t('delivery.visit') },
@@ -38,7 +36,7 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
   const hasManualInRoute = tripsData.some((pt) => pt.trip.isManual);
 
   const wsData = [
-    [t('common.vehicle'), cleanName],
+    [t('common.vehicle'), plat],
     [t('common.driver'), driverName],
     [],
     activeCols.map((col) => col.title),
@@ -246,10 +244,10 @@ const appendDeliveryListSheet = (wb, cleanName, driverName, tripsData, isDetailV
     return { wch: Math.min(Math.max(maxLen + 2, 8), 60) };
   });
 
-  let finalSheetName = cleanName;
+  let finalSheetName = plat;
   let counter = 1;
   while (wb.SheetNames.includes(finalSheetName)) {
-    finalSheetName = `${cleanName.substring(0, 25)}_${counter++}`;
+    finalSheetName = `${plat}_${counter++}`;
   }
   XLSX.utils.book_append_sheet(wb, ws, finalSheetName);
 };
@@ -258,7 +256,6 @@ export const handleFullDeliveryListDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
-  driverData,
   fileNamePrefix,
   isDetailView,
   sortConfig,
@@ -269,8 +266,8 @@ export const handleFullDeliveryListDownload = async ({
     const wb = XLSX.utils.book_new();
 
     filteredVehicleRoutes.forEach((route) => {
-      const cleanName = sanitizeName(route.vehicleName || 'Vehicle').substring(0, 30);
-      const driverName = getDriverName(route, driverData);
+      const plat = route.basePlat;
+      const driverName = route.driverName || '-';
 
       const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
 
@@ -307,7 +304,7 @@ export const handleFullDeliveryListDownload = async ({
         });
       }
 
-      appendDeliveryListSheet(wb, cleanName, driverName, processedTrips, isDetailView, t);
+      appendDeliveryListSheet(wb, plat, driverName, processedTrips, isDetailView, t);
     });
 
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
@@ -330,7 +327,6 @@ export const handlePartialDeliveryListDownload = async ({
   filteredVehicleRoutes,
   setIsDownloading,
   t,
-  driverData,
   fileNamePrefix,
   isDetailView,
   selectedDate,
@@ -360,7 +356,7 @@ export const handlePartialDeliveryListDownload = async ({
 
       sortRows(routes, 'vehicleName', 'vehicleName');
 
-      const cleanRoutingName = sanitizeName(routing.name || routing._id || 'Routing').trim();
+      const cleanRoutingName = routing.name.trim();
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
       routingIndex++;
 
@@ -369,12 +365,11 @@ export const handlePartialDeliveryListDownload = async ({
       const seenFileNames = new Set();
 
       for (const route of routes) {
-        const cleanName = sanitizeName(route.vehicleName || route.vehicleId || 'Vehicle').trim();
-
-        if (!globalSeenSOByVehicle.has(cleanName)) {
-          globalSeenSOByVehicle.set(cleanName, new Set());
+        const plat = route.basePlat;
+        if (!globalSeenSOByVehicle.has(plat)) {
+          globalSeenSOByVehicle.set(plat, new Set());
         }
-        const vehicleSeenSOs = globalSeenSOByVehicle.get(cleanName);
+        const vehicleSeenSOs = globalSeenSOByVehicle.get(plat);
         const processedTripsToRender = [];
 
         const isDefaultSort = sortConfig?.key === 'no' && sortConfig?.direction === 'asc';
@@ -429,11 +424,11 @@ export const handlePartialDeliveryListDownload = async ({
         }
 
         routingHasData = true;
-        const nameFile = getUniqueFileName(cleanName, dateForFilename, '.xlsx', seenFileNames);
-        const driverName = getDriverName(route, driverData);
+        const nameFile = getUniqueFileName(plat, dateForFilename, '.xlsx', seenFileNames);
+        const driverName = route.driverName || '-';
         const wb = XLSX.utils.book_new();
 
-        appendDeliveryListSheet(wb, cleanName, driverName, processedTripsToRender, isDetailView, t);
+        appendDeliveryListSheet(wb, plat, driverName, processedTripsToRender, isDetailView, t);
 
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         routingZip.file(nameFile, excelBuffer);

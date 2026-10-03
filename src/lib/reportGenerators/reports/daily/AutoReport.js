@@ -18,7 +18,6 @@ export async function generateAutoReportWorkbook({
   filteredResults,
   allTasks,
   timeData,
-  mappingsObj,
   vehicleTypes,
   targetRoutingStr,
   selectedDateString,
@@ -31,7 +30,6 @@ export async function generateAutoReportWorkbook({
   const { routingMap, truckUsageCount } = parseRoutingData(
     filteredResults || [],
     driverData,
-    mappingsObj,
     vehicleTypes,
     allTasks || [],
     selectedDateString
