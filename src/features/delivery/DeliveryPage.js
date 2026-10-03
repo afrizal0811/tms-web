@@ -395,7 +395,7 @@ export default function DeliveryPage() {
                 .map((s) => s.trim())
                 .filter(Boolean);
 
-              const startFormat = task.startTime ? task.startTime.split('T')[0] : null;
+              const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
 
               return {
                 visitId: task._id || task.taskId,

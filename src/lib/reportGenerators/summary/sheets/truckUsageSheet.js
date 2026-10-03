@@ -119,7 +119,7 @@ export async function calculateTruckUsageData(
   const taskPresence = {};
   if (taskData && Array.isArray(taskData)) {
     taskData.forEach((t) => {
-      const d = t.startTime ? t.startTime.split('T')[0] : null;
+      const d = t.startTime ? formatDateUniversal(t.startTime) : null;
       if (d) taskPresence[d] = true;
     });
   }
@@ -326,7 +326,7 @@ export async function calculateTruckUsageData(
 
     if (taskData && Array.isArray(taskData)) {
       taskData.forEach((task) => {
-        const dateKey = task.startTime ? task.startTime.split('T')[0] : null;
+        const dateKey = task.startTime ? formatDateUniversal(task.startTime) : null;
         if (!dateKey || !dateMap[dateKey]) return;
 
         if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
@@ -377,7 +377,9 @@ export async function calculateTruckUsageData(
 
     if (taskData && Array.isArray(taskData)) {
       taskData.forEach((task) => {
-        const dateKey = task.startTime ? task.startTime.split('T')[0] : null;
+        const dateKey = task.startTime
+          ? formatDateUniversal(task.startTime, 'YYYY-MM-DD HH:mm')
+          : null;
         if (!dateKey || !dateMap[dateKey]) return;
         if (usedVehiclesPerDay.has(dateKey) && usedVehiclesPerDay.get(dateKey).size > 0) return;
 

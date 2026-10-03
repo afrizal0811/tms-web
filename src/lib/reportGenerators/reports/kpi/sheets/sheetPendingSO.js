@@ -1,4 +1,9 @@
-import { getBasePlate, normalizeEmail, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  getBasePlate,
+  normalizeEmail,
+  parseCustomerString,
+} from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetPendingSO(tasksData, driverData) {
@@ -18,7 +23,8 @@ export function generateSheetPendingSO(tasksData, driverData) {
       if (!isPending) {
         let statusGr = '';
         if (task.statusGr) {
-          statusGr = typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
+          statusGr =
+            typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
         }
         isPending = String(statusGr || '').toUpperCase() === 'PENDING';
       }
@@ -45,7 +51,7 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
         let formattedStartTime = '-';
         if (task.startTime) {
-          formattedStartTime = task.startTime.split('T')[0];
+          formattedStartTime = formatDateUniversal(task.startTime);
         }
 
         pendingRows.push([

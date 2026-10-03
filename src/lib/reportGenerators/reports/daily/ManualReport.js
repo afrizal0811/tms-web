@@ -309,8 +309,8 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
           stats.failedCount += 1;
         }
 
-        const startDateOnly = startTime ? startTime.split('T')[0] : null;
-        const doneDateOnly = doneTime && doneTime !== '-' ? doneTime.split('T')[0] : null;
+        const startDateOnly = startTime ? formatDateUniversal(startTime) : null;
+        const doneDateOnly = doneTime && doneTime !== '-' ? formatDateUniversal(doneTime) : null;
         if (startDateOnly && doneDateOnly && startDateOnly !== doneDateOnly && !isOngoingTask) {
           stats.mismatchCustomers.push({
             name: customerName,

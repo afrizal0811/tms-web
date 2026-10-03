@@ -534,9 +534,8 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     else if (flow.includes('Re Delivery')) flowReDelivery++;
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
-      const startDateWIB = task.startTime.split('T')[0];
-      const doneDateWIB = task.doneTime.split('T')[0];
-
+      const startDateWIB = formatDateUniversal(task.startTime);
+      const doneDateWIB = formatDateUniversal(task.doneTimes);
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
         const startDate = new Date(task.startTime);
         const doneDate = new Date(task.doneTime);

@@ -175,8 +175,8 @@ export default function TaskPage() {
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
         if (statusTaskFilter === t('common.status.diff_day')) {
-          const startFormat = task.startTime ? task.startTime.split('T')[0] : null;
-          const doneFormat = task.doneTime ? task.doneTime.split('T')[0] : null;
+          const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
+          const doneFormat = task.doneTime ? formatDateUniversal(task.doneTime) : null;
           return startFormat && doneFormat && startFormat !== doneFormat;
         }
         return true;

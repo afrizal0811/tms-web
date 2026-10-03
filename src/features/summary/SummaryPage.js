@@ -228,7 +228,7 @@ export default function SummaryPage() {
         return !rawData.tasks?.some((t) => {
           if (t.createdFrom !== 'API') return false;
           if (!startStr || !endStr) return true;
-          const assignedDate = t.createdTime ? t.createdTime.split('T')[0] : null;
+          const assignedDate = t.createdTime ? formatDateUniversal(t.createdTime) : null;
           return assignedDate && isInDateRange(assignedDate, startStr, endStr);
         });
       }
