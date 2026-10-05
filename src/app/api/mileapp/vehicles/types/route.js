@@ -85,7 +85,13 @@ export async function GET(request) {
       if (!allowedTypes.has(resolvedType)) return;
 
       activeTypesSet.add(resolvedType);
-      const storageCategory = getStorageType(d.tags || d.name || d.type);
+      
+      let storageCategory = getStorageType(d.tags || d.name || d.type);
+      if (d.type) {
+        const t = d.type.toUpperCase();
+        if (t.includes('DRY')) storageCategory = 'Dry';
+        else if (t.includes('FROZEN') || t.includes('FRZ')) storageCategory = 'Frozen';
+      }
 
       if (!masterData[storageCategory]) {
         masterData[storageCategory] = { Total: 0 };
