@@ -492,9 +492,9 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                         tripMatch.visitTime > 60
                           ? `${tripMatch.visitTime} ${translate('common.minute')}`
                           : 0;
-                      rTravelTimeHour = tripMatch.travelTime;
-                      rWaitingTimeHour = tripMatch.waitingTime;
-                      rVisitTimeHour = tripMatch.visitTime;
+                      rTravelTimeHour = tripMatch.travelTimeHour;
+                      rWaitingTimeHour = tripMatch.waitingTimeHour;
+                      rVisitTimeHour = tripMatch.visitTimeHour;
                     }
                   }
                 }
