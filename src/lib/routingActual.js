@@ -105,7 +105,12 @@ export function routingActual({ tasks, drivers, dateStr }) {
 
     let actualVisitMinutes = '-';
     if (actualArrTimestamp && actualDepTimestamp) {
-      actualVisitMinutes = Math.abs(Math.floor((actualDepTimestamp - actualArrTimestamp) / 60000));
+      const arrH = arrDate.getHours();
+      const arrM = arrDate.getMinutes();
+      const depH = depDate.getHours();
+      const depM = depDate.getMinutes();
+      actualVisitMinutes = depH * 60 + depM - (arrH * 60 + arrM);
+      if (actualVisitMinutes < 0) actualVisitMinutes += 24 * 60;
     }
 
     processed.push({
@@ -310,11 +315,11 @@ export const getRoutingActualColumns = (t) => {
   };
 
   const theme = {
-    greenClass: `bg-[#${colors.green.normal}] dark:bg-[#${colors.green.dark}]/40`,
-    orangeClass: `bg-[#${colors.orange.normal}] dark:bg-[#${colors.orange.dark}]/40`,
-    yellowClass: `bg-[#${colors.yellow.normal}] dark:bg-[#${colors.yellow.dark}]/40`,
-    pinkClass: `bg-[#${colors.pink.normal}] dark:bg-[#${colors.pink.dark}]/40`,
-    blueClass: `bg-[#${colors.blue.normal}] dark:bg-[#${colors.blue.dark}]/40`,
+    greenClass: 'bg-[#DCFCE7] dark:bg-[#14532D]/40',
+    orangeClass: 'bg-[#FFEDD5] dark:bg-[#7C2D12]/40',
+    yellowClass: 'bg-[#FEF3C7] dark:bg-[#713F12]/40',
+    pinkClass: 'bg-[#FCE7F3] dark:bg-[#831843]/40',
+    blueClass: 'bg-[#DBEAFE] dark:bg-[#1E3A8A]/40',
   };
 
   return [
@@ -426,7 +431,10 @@ export const getRoutingActualColumns = (t) => {
       excelWidth: 12,
       className: theme.pinkClass,
       excelBg: colors.pink.normal,
-      getValue: (row) => row.visitTime || '-',
+      getValue: (row) =>
+        row.visitTime !== undefined && row.visitTime !== null && row.visitTime !== ''
+          ? row.visitTime
+          : '-',
     },
     {
       id: 'actualVisitTime',
@@ -434,8 +442,10 @@ export const getRoutingActualColumns = (t) => {
       align: 'center',
       excelWidth: 12,
       className: theme.pinkClass,
+      getCellClassName: (row) =>
+        row.actualVisitTime === 0 ? 'bg-red-500 text-white dark:bg-red-600' : theme.pinkClass,
       excelBg: colors.pink.normal,
-      getValue: (row) => row.actualVisitTime || '-',
+      getValue: (row) => (row.actualVisitTime !== '-' ? row.actualVisitTime : '-'),
     },
 
     {
@@ -502,7 +512,12 @@ export const getRoutingActualColumns = (t) => {
         return <span className={`font-bold ${statusUI.color}`}>{statusUI.text}</span>;
       },
       getExcelValue: (val, row, t) => getHoursStatusUI(val, t).text,
-      getExcelColor: (val, t) => getHoursStatusUI(val, t).hex,
+      getExcelColor: (val, t) => {
+        if (val === t('common.button.btn_yes')) return '16A34A';
+        if (val === t('dashboard.tab.routing_actual.early')) return 'F59E0B';
+        if (val === t('common.button.btn_no')) return 'DC2626';
+        return null;
+      },
     },
   ];
 };
@@ -641,6 +656,14 @@ export function routingActualSheet(wb, data, t) {
           };
         } else {
           ws[cellRef].s = { ...baseStyle, ...bgStyle };
+        }
+
+        if (col.id === 'actualVisitTime' && ws[cellRef].v === 0) {
+          ws[cellRef].s = {
+            ...baseStyle,
+            fill: { fgColor: { rgb: 'EF4444' }, patternType: 'solid' },
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+          };
         }
 
         if (typeof ws[cellRef].v === 'number') ws[cellRef].t = 'n';
