@@ -17,7 +17,6 @@ const headerClass =
   'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold w-1/3 text-center min-w-[200px]';
 const dataClass =
   'px-6 py-4 font-medium text-slate-900 dark:text-slate-200 border-r border-b border-gray-200 dark:border-slate-700 text-center';
-
 const HEADER_TITLES = ['routing_date', 'start_time', 'finish_time', 'duration'];
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
@@ -51,7 +50,7 @@ const isValidRoutingTimeWIB = (utcString) => {
   if (day >= 1 && day <= 5) {
     return hour >= 15;
   } else if (day === 6) {
-    return hour >= 12;
+    return hour >= 11;
   } else {
     return true;
   }
@@ -74,8 +73,14 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
       dataMap[dateKey] = {
         dateKey: dateKey,
         dateDisplay: displayDate,
-        startData: { time: null, name: null, soNumber: null },
-        finishData: { time: null, name: null, soNumber: null },
+        dry: {
+          start: { time: null, name: null, soNumber: null },
+          finish: { time: null, name: null, soNumber: null },
+        },
+        frozen: {
+          start: { time: null, name: null, soNumber: null },
+          finish: { time: null, name: null, soNumber: null },
+        },
       };
       current.setDate(current.getDate() + 1);
     }
@@ -109,25 +114,26 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
           if (isValidRoutedTask) {
             const taskCreatedTimeMs = new Date(task.createdTime).getTime();
             const taskAssignedTimeMs = new Date(task.assignedTime).getTime();
+            const type = (task.typeStorage || '').toUpperCase().includes('FROZEN')
+              ? 'frozen'
+              : 'dry';
+            const target = targetRow[type];
 
-            if (
-              !targetRow.startData.time ||
-              taskCreatedTimeMs < new Date(targetRow.startData.time).getTime()
-            ) {
-              targetRow.startData.time = task.createdTime;
-              targetRow.startData.name = taskName;
-              targetRow.startData.soNumber = invoiceNumber;
-              targetRow.startData.truncateInvoice = truncateInvoice;
+            if (!target.start.time || taskCreatedTimeMs < new Date(target.start.time).getTime()) {
+              target.start.time = task.createdTime;
+              target.start.name = taskName;
+              target.start.soNumber = invoiceNumber;
+              target.start.truncateInvoice = truncateInvoice;
             }
 
             if (
-              !targetRow.finishData.time ||
-              taskAssignedTimeMs > new Date(targetRow.finishData.time).getTime()
+              !target.finish.time ||
+              taskAssignedTimeMs > new Date(target.finish.time).getTime()
             ) {
-              targetRow.finishData.time = task.assignedTime;
-              targetRow.finishData.name = taskName;
-              targetRow.finishData.soNumber = invoiceNumber;
-              targetRow.finishData.truncateInvoice = truncateInvoice;
+              target.finish.time = task.assignedTime;
+              target.finish.name = taskName;
+              target.finish.soNumber = invoiceNumber;
+              target.finish.truncateInvoice = truncateInvoice;
             }
           }
         }
@@ -139,33 +145,96 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr, localeCode]);
 
+  const isSeparated = useMemo(() => {
+    const isTimeDifferent = (t1, t2) => {
+      if (!t1 && !t2) return false;
+      if (!t1 || !t2) return true;
+      return Math.abs(new Date(t1).getTime() - new Date(t2).getTime()) > 60000;
+    };
+    return processedData.some((row) => {
+      return (
+        isTimeDifferent(row.dry.start.time, row.frozen.start.time) ||
+        isTimeDifferent(row.dry.finish.time, row.frozen.finish.time)
+      );
+    });
+  }, [processedData]);
+
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
         <table className="min-w-full text-sm text-left border-collapse">
           <thead className="text-xs text-slate-900 dark:text-slate-200 uppercase sticky top-0 z-10 bg-purple-200 dark:bg-[#34205c]">
-            <tr>
-              {HEADER_TITLES.map((header, index) => (
-                <th key={index} className={headerClass}>
-                  <Tooltip
-                    tooltipContent={translate(`summary.tabs.routing_time.tooltip.${header}`)}
-                  >
-                    <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
-                      {translate(`common.${header}`)}
-                    </span>
-                  </Tooltip>
-                </th>
-              ))}
-            </tr>
+            {isSeparated ? (
+              <>
+                <tr>
+                  <th rowSpan={2} className={headerClass}>
+                    {translate('common.routing_date')}
+                  </th>
+                  {['start_time', 'finish_time', 'duration'].map((header, index) => (
+                    <th key={index} colSpan={2} className={headerClass}>
+                      <Tooltip
+                        tooltipContent={translate(`summary.tabs.routing_time.tooltip.${header}`)}
+                      >
+                        <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                          {translate(`common.${header}`)}
+                        </span>
+                      </Tooltip>
+                    </th>
+                  ))}
+                </tr>
+                <tr>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Dry
+                  </th>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Frozen
+                  </th>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Dry
+                  </th>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Frozen
+                  </th>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Dry
+                  </th>
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                    Frozen
+                  </th>
+                </tr>
+              </>
+            ) : (
+              <tr>
+                {HEADER_TITLES.map((header, index) => (
+                  <th key={index} className={headerClass}>
+                    <Tooltip
+                      tooltipContent={translate(`summary.tabs.routing_time.tooltip.${header}`)}
+                    >
+                      <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                        {translate(`common.${header}`)}
+                      </span>
+                    </Tooltip>
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody className="bg-white dark:bg-slate-800">
             {processedData.map((row, idx) => {
-              const hasStart = !!row.startData.time;
-              const hasFinish = !!row.finishData.time;
+              const hasDryStart = !!row.dry.start.time;
+              const hasDryFinish = !!row.dry.finish.time;
+              const hasFrzStart = !!row.frozen.start.time;
+              const hasFrzFinish = !!row.frozen.finish.time;
+
               const isSunday = isDateSunday(row.dateKey);
               const isPast = isPastDate(row.dateKey);
-
-              const isDynamicHoliday = isPast && !hasStart && !hasFinish && !isSunday;
+              const isDynamicHoliday =
+                isPast &&
+                !hasDryStart &&
+                !hasDryFinish &&
+                !hasFrzStart &&
+                !hasFrzFinish &&
+                !isSunday;
 
               if (isSunday || isDynamicHoliday) {
                 const content = isSunday ? (
@@ -187,7 +256,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                       {row.dateDisplay}
                     </td>
                     <td
-                      colSpan={3}
+                      colSpan={isSeparated ? 6 : 3}
                       className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
                     >
                       {content}
@@ -196,23 +265,74 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                 );
               }
 
-              const isStartMissing = !hasStart && hasFinish;
-              const isFinishMissing = hasStart && !hasFinish;
-              const startDisplay = hasStart
-                ? formatDateUniversal(row.startData.time, 'HH:mm')
-                : '-';
-              const endDisplay = hasFinish
-                ? formatDateUniversal(row.finishData.time, 'HH:mm')
-                : '-';
+              const renderTimeCell = (type, timeType) => {
+                const target = row[type][timeType];
+                const hasTime = !!target.time;
+                const errClass = (
+                  timeType === 'start'
+                    ? !hasTime && !!row[type].finish.time
+                    : hasTime && !row[type].finish.time
+                )
+                  ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
+                  : '';
+                const display = hasTime ? formatDateUniversal(target.time, 'HH:mm') : '-';
 
-              let durationDisplay = '-';
-              if (hasStart && hasFinish) {
-                const diffMins = calculateMinuteDifference(row.startData.time, row.finishData.time);
-                durationDisplay = formatMinutesToHHMM(diffMins, false);
+                return (
+                  <td className={`${dataClass} ${errClass}`}>
+                    <div className="flex items-center justify-center gap-1">
+                      <Tooltip
+                        tooltipContent={
+                          errClass !== ''
+                            ? translate(`summary.tabs.routing_time.tooltip.${timeType}_time_error`)
+                            : hasTime
+                              ? target.truncateInvoice
+                              : ''
+                        }
+                      >
+                        <span
+                          className={
+                            errClass !== ''
+                              ? 'cursor-help w-full inline-block'
+                              : hasTime
+                                ? 'cursor-help border-b-2 border-dotted pb-0.5'
+                                : ''
+                          }
+                        >
+                          {display}
+                        </span>
+                      </Tooltip>
+                      {hasTime && <CopyButton text={target.soNumber} />}
+                    </div>
+                  </td>
+                );
+              };
+
+              let dryDur = '-',
+                frzDur = '-';
+              if (hasDryStart && hasDryFinish)
+                dryDur = formatMinutesToHHMM(
+                  calculateMinuteDifference(row.dry.start.time, row.dry.finish.time),
+                  false
+                );
+              if (hasFrzStart && hasFrzFinish)
+                frzDur = formatMinutesToHHMM(
+                  calculateMinuteDifference(row.frozen.start.time, row.frozen.finish.time),
+                  false
+                );
+
+              if (!isSeparated) {
+                return (
+                  <tr
+                    key={idx}
+                    className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                  >
+                    <td className={dataClass}>{row.dateDisplay}</td>
+                    {renderTimeCell('dry', 'start')}
+                    {renderTimeCell('dry', 'finish')}
+                    <td className={dataClass}>{dryDur}</td>
+                  </tr>
+                );
               }
-
-              const errorClass =
-                'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold';
 
               return (
                 <tr
@@ -220,47 +340,12 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
-                  <td className={`${dataClass} ${isStartMissing ? errorClass : ''}`}>
-                    <div className="flex items-center justify-center gap-1">
-                      <Tooltip
-                        tooltipContent={
-                          isStartMissing
-                            ? translate('summary.tabs.routing_time.tooltip.start_time_error')
-                            : hasStart
-                              ? row.startData.truncateInvoice
-                              : ''
-                        }
-                      >
-                        <span
-                          className={`${isStartMissing ? 'cursor-help w-full inline-block' : hasStart ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
-                        >
-                          {startDisplay}
-                        </span>
-                      </Tooltip>
-                      {hasStart && <CopyButton text={row.startData.soNumber} />}
-                    </div>
-                  </td>
-                  <td className={`${dataClass} ${isFinishMissing ? errorClass : ''}`}>
-                    <div className="flex items-center justify-center gap-1">
-                      <Tooltip
-                        tooltipContent={
-                          isFinishMissing
-                            ? translate('summary.tabs.routing_time.tooltip.finish_time_error')
-                            : hasFinish
-                              ? row.finishData.truncateInvoice
-                              : ''
-                        }
-                      >
-                        <span
-                          className={`${isFinishMissing ? 'cursor-help w-full inline-block' : hasFinish ? 'cursor-help border-b-2 border-dotted pb-0.5' : ''} `}
-                        >
-                          {endDisplay}
-                        </span>
-                      </Tooltip>
-                      {hasFinish && <CopyButton text={row.finishData.soNumber} />}
-                    </div>
-                  </td>
-                  <td className={dataClass}>{durationDisplay}</td>
+                  {renderTimeCell('dry', 'start')}
+                  {renderTimeCell('frozen', 'start')}
+                  {renderTimeCell('dry', 'finish')}
+                  {renderTimeCell('frozen', 'finish')}
+                  <td className={dataClass}>{dryDur}</td>
+                  <td className={dataClass}>{frzDur}</td>
                 </tr>
               );
             })}

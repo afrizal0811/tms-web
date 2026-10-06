@@ -272,7 +272,7 @@ export const handleFullDeliveryFormDownload = async ({
     const zip = isMultiVehicle ? new JSZip() : null;
 
     const generatePdfBlob = async (route) => {
-      const realDriverName = route.driverName || '-';
+      const realDriverName = route.assigneeName || '-';
       const timeData = timeMap.get(realDriverName) || { jamBerangkat: '', jamKembali: '' };
 
       return await pdf(
@@ -392,7 +392,7 @@ export const handlePartialDeliveryFormDownload = async ({
 
         routingHasData = true;
         const nameFile = getUniqueFileName(plat, dateForFilename, '.pdf', seenFileNames);
-        const driverName = route.driverName || '-';
+        const driverName = route.assigneeName || '-';
 
         const timeData = timeMap.get(driverName) || { jamBerangkat: '', jamKembali: '' };
 

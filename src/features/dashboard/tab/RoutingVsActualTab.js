@@ -164,9 +164,10 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
 
               const cellContent = columns.map((col, colIndex) => {
+                const baseColClass = col.getCellClassName ? col.getCellClassName(row) : (col.className || '');
                 const colClass = row.isManualAssign
-                  ? (col.className || '').replace(/\S*bg-\S+/g, '').trim()
-                  : col.className || '';
+                  ? baseColClass.replace(/\S*bg-\S+/g, '').trim()
+                  : baseColClass;
                 const rawVal = col.getValue(row);
                 let finalUI = rawVal;
 

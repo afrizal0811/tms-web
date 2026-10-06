@@ -193,14 +193,19 @@ export async function calculateTruckUsageData(
     let isFrozen = firstTag === 'Frozen';
     const platUpper = (d.plat || '').toUpperCase();
     const nameUpper = (d.name || '').toUpperCase();
+    const typeUpper = (d.type || '').toUpperCase();
+
     if (
       platUpper.includes('FRZ') ||
       nameUpper.includes('FRZ') ||
-      (d.type || '').toUpperCase().includes('FRZ')
+      typeUpper.includes('FRZ') ||
+      typeUpper.includes('FROZEN')
     ) {
       isFrozen = true;
     }
-
+    if (typeUpper.includes('DRY')) {
+      isFrozen = false;
+    }
     const storage = isFrozen ? 'Frozen' : 'Dry';
     const vInfo = { plate: d.plat, driver: d.name, type: type };
 
@@ -360,8 +365,14 @@ export async function calculateTruckUsageData(
         if (driverInfo) {
           const driverDataArr = [driverInfo.name, driverInfo.plat, driverInfo.rawType];
           isFrozen = getStorageType(driverDataArr) === 'Frozen';
+          const typeUpper = (driverInfo.rawType || '').toUpperCase();
+          if (typeUpper.includes('FROZEN') || typeUpper.includes('FRZ')) isFrozen = true;
+          if (typeUpper.includes('DRY')) isFrozen = false;
         } else {
           isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
+          const tStorage = (task.typeStorage || '').toUpperCase();
+          if (tStorage.includes('FROZEN') || tStorage.includes('FRZ')) isFrozen = true;
+          if (tStorage.includes('DRY')) isFrozen = false;
         }
 
         if (!dailyVehicles.has(canonicalPlate)) {
@@ -422,8 +433,14 @@ export async function calculateTruckUsageData(
         if (driverInfo) {
           const driverDataArr = [driverInfo.name, driverInfo.plat, driverInfo.rawType];
           isFrozen = getStorageType(driverDataArr) === 'Frozen';
+          const typeUpper = (driverInfo.rawType || '').toUpperCase();
+          if (typeUpper.includes('FROZEN') || typeUpper.includes('FRZ')) isFrozen = true;
+          if (typeUpper.includes('DRY')) isFrozen = false;
         } else {
           isFrozen = getStorageType(task.typeStorage || '') === 'Frozen';
+          const tStorage = (task.typeStorage || '').toUpperCase();
+          if (tStorage.includes('FROZEN') || tStorage.includes('FRZ')) isFrozen = true;
+          if (tStorage.includes('DRY')) isFrozen = false;
         }
 
         if (!dailyVehicles.has(canonicalPlate)) {

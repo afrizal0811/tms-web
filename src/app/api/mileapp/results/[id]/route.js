@@ -148,10 +148,15 @@ export async function GET(request, { params }) {
             tWa += tripWait;
           }
 
-          t.travelTime = toHr(tripTravel);
-          t.visitTime = toHr(tripVisit);
-          t.waitingTime = toHr(tripWait);
-          t.spentTime = toHr(tripTravel + tripVisit + tripWait);
+          t.travelTime = tripTravel;
+          t.visitTime = tripVisit;
+          t.waitingTime = tripWait;
+          t.spentTime = tripTravel + tripVisit + tripWait;
+
+          t.travelTimeHour = toHr(tripTravel);
+          t.visitTimeHour = toHr(tripVisit);
+          t.waitingTimeHour = toHr(tripWait);
+          t.spentTimeHour = toHr(tripTravel + tripVisit + tripWait);
 
           delete t.etaStr;
           delete t.etdStr;
