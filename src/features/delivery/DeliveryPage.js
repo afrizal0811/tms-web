@@ -347,9 +347,36 @@ export default function DeliveryPage() {
           }
         });
 
+        const taskIdToPlat = new Map();
+        const activePlatsByEmail = new Map();
+
+        resultsData.forEach((res) => {
+          if (res.result && Array.isArray(res.result.routing)) {
+            res.result.routing.forEach((route) => {
+              const routePlat = route.basePlat || route.vehicleName;
+              if (routePlat) {
+                const routeEmail = normalizeEmail(route.assignee);
+                if (routeEmail) activePlatsByEmail.set(routeEmail, routePlat);
+
+                (route.trips || []).forEach((trip) => {
+                  let tid = trip.visitId;
+                  if (tid) {
+                    if (tid.includes('taskId-')) tid = tid.split('taskId-')[1];
+                    taskIdToPlat.set(tid, routePlat);
+                  }
+                });
+              }
+            });
+          }
+        });
+
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
           const email = normalizeEmail(task?.assignee);
-          const rawTaskPlat = task.basePlat || null;
+          const taskId = task._id || task.taskId || task.id;
+          const platFromRouting = taskId ? taskIdToPlat.get(String(taskId)) : null;
+          const activeRoutingPlat = activePlatsByEmail.get(email);
+
+          const rawTaskPlat = platFromRouting || activeRoutingPlat || task.basePlat || null;
           const plat = rawTaskPlat || t('common.others');
           const groupKey = `${email}_${plat}`;
 

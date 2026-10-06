@@ -66,7 +66,9 @@ export async function GET(request) {
     rawDrivers.forEach((d) => {
       const email = (d.email || '').toLowerCase().trim();
       if (email && email !== '-') {
-        driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
+        if (!driversMap[email]) {
+          driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
+        }
       }
     });
 
@@ -160,7 +162,12 @@ export async function GET(request) {
 
           const email = (r.assignee || '').toLowerCase().trim();
           r.driverName = driversMap[email]?.name || null;
-          r.basePlat = driversMap[email]?.plat || null;
+          
+          if (!r.basePlat && !r.vehicleName) {
+            r.basePlat = driversMap[email]?.plat || null;
+          } else {
+            r.basePlat = getBasePlate(r.basePlat || r.vehicleName);
+          }
 
           delete r.workingTime;
           delete r.breakTime;
