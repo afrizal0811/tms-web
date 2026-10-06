@@ -120,10 +120,11 @@ export function routingActual({ tasks, drivers, dateStr }) {
       driverEmail,
       plat: finalPlat,
       actualArrivalTimestamp: actualArrTimestamp,
+      actualDepartureTimestamp: actualDepTimestamp,
       roSequence: t.routePlannedOrder || 0,
       statusLabel,
       flow,
-      customerName: fullCustomerName || cName || t.customerName,
+      customerName: cName || fullCustomerName || t.customerName,
       originalCustomerString: rawCustStr,
       customerId: cId,
       locationId: cLoc,
@@ -147,7 +148,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
 
   processed.sort((a, b) => {
     if (a.groupKey !== b.groupKey) return a.groupKey.localeCompare(b.groupKey);
-    return (a.actualArrivalTimestamp || Infinity) - (b.actualArrivalTimestamp || Infinity);
+    return (a.actualDepartureTimestamp || Infinity) - (b.actualDepartureTimestamp || Infinity);
   });
 
   let currGroup = null,
@@ -157,7 +158,7 @@ export function routingActual({ tasks, drivers, dateStr }) {
       currGroup = row.groupKey;
       rank = 1;
     }
-    row.realSequence = row.actualArrivalTimestamp ? rank++ : null;
+    row.realSequence = row.actualDepartureTimestamp ? rank++ : null;
   }
 
   return processed;
