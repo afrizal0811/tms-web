@@ -322,7 +322,7 @@ export const handleManualDownload = async ({
 
     const extractedStartDate = getManualDate('starttime', deliveryBuffers, selectedDateString);
     const { timeFrom, timeTo } = calculateStartFinishDates(extractedStartDate);
-    const [{ vehicleTypes }, [hubsData, locationHistoriesRes]] = await Promise.all([
+    const [vehicleTypes, [hubsData, locationHistoriesRes]] = await Promise.all([
       fetchVehicleMetadata(),
       Promise.all([
         getDrivers(),

@@ -1,4 +1,4 @@
-import { getBasePlate, getStorageType } from '@/lib/utils';
+import { getBasePlate, getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
   const detailRows = [];
@@ -13,7 +13,13 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
           if (!Array.isArray(route.trips) || route.trips.length === 0) return;
 
           const truckId = route.basePlat || route.vehicleName || 'No Plat';
-          const driverName = route.driverName || '';
+          let driverName = route.driverName || '';
+          
+          if (!driverName && route.assignee) {
+            const rawAssignee = typeof route.assignee === 'string' ? route.assignee.split(',')[0].trim() : route.assignee;
+            driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
+          }
+
           const category = getStorageType(driverName).toUpperCase();
 
           if (truckId) {

@@ -124,7 +124,7 @@ export default function DailyReport({
       title={titleMenu}
       selectedMode={selectedMode}
       onToggleMode={handleRadioToggle}
-      availableModes={['bulk', 'manual', 'custom']}
+      availableModes={['bulk', 'custom', 'manual']}
       singleDate={selectedDate}
       onSingleDateChange={handleSingleDateChange}
       startDate={startDate}
