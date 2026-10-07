@@ -36,10 +36,13 @@ StatCard.displayName = 'StatCard';
 export default function DetailTab({ loading, summaryData }) {
   const { t } = useLanguage();
 
-  const totalDry = summaryData?.totalDry ?? 0;
-  const totalFrozen = summaryData?.totalFrozen ?? 0;
-  const assignedDry = summaryData?.assignedDry ?? 0;
-  const assignedFrozen = summaryData?.assignedFrozen ?? 0;
+  const renderTooltip = (titleKey, keyBase) => (
+    <div className="space-y-1 text-xs">
+      <div>{t(titleKey)}</div>
+      <div>Total Dry : {summaryData?.[`${keyBase}Dry`] ?? 0}</div>
+      <div>Total Frozen : {summaryData?.[`${keyBase}Frozen`] ?? 0}</div>
+    </div>
+  );
 
   return (
     <div className="space-y-10 animate-in fade-in duration-300 h-full flex flex-col flex-1 overflow-auto pb-2 dark:bg-slate-800">
@@ -52,13 +55,7 @@ export default function DetailTab({ loading, summaryData }) {
               isLoading={loading}
               className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
               valueClassName="text-5xl"
-              tooltipContent={
-                <div className="space-y-1 text-xs">
-                  <div>{t('dashboard.tab.detail.tooltip.total_task')}</div>
-                  <div>Total Dry : {totalDry}</div>
-                  <div>Total Frozen : {totalFrozen}</div>
-                </div>
-              }
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.total_task', 'total')}
             />
             <StatCard
               title={t('dashboard.tab.detail.total_assigned')}
@@ -66,13 +63,10 @@ export default function DetailTab({ loading, summaryData }) {
               isLoading={loading}
               className="flex flex-col items-center justify-center text-center h-full min-h-[150px]"
               valueClassName="text-5xl"
-              tooltipContent={
-                <div className="space-y-1 text-xs">
-                  <div>{t('dashboard.tab.detail.tooltip.total_assigned')}</div>
-                  <div>Total Dry : {assignedDry}</div>
-                  <div>Total Frozen : {assignedFrozen}</div>
-                </div>
-              }
+              tooltipContent={renderTooltip(
+                'dashboard.tab.detail.tooltip.total_assigned',
+                'assigned'
+              )}
             />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -80,25 +74,31 @@ export default function DetailTab({ loading, summaryData }) {
               title={t('common.status.manual_assign')}
               value={summaryData?.manualAssignList?.length}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.manual')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.manual', 'manualAssign')}
             />
             <StatCard
               title={t('common.status.diff_day')}
               value={summaryData?.diffDayList?.length}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.diff_day')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.diff_day', 'diffDay')}
             />
             <StatCard
               title={t('dashboard.tab.detail.delivery')}
               value={summaryData?.flowDelivery}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.delivery')}
+              tooltipContent={renderTooltip(
+                'dashboard.tab.detail.tooltip.delivery',
+                'flowDelivery'
+              )}
             />
             <StatCard
               title={t('dashboard.tab.detail.redelivery')}
               value={summaryData?.flowReDelivery}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.redelivery')}
+              tooltipContent={renderTooltip(
+                'dashboard.tab.detail.tooltip.redelivery',
+                'flowReDelivery'
+              )}
             />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -106,49 +106,52 @@ export default function DetailTab({ loading, summaryData }) {
               title={t('dashboard.tab.detail.unassigned')}
               value={summaryData?.unassigned}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.unassigned')}
+              tooltipContent={renderTooltip(
+                'dashboard.tab.detail.tooltip.unassigned',
+                'unassigned'
+              )}
             />
             <StatCard
               title={t('common.status.ongoing')}
               value={summaryData?.ongoing}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.ongoing')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.ongoing', 'ongoing')}
             />
             <StatCard
               title={t('common.status.done')}
               value={summaryData?.done}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.done')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.done', 'done')}
             />
             <StatCard
               title={t('common.status.success')}
               value={summaryData?.success}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.success')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.success', 'success')}
             />
             <StatCard
               title={t('common.status.partial')}
               value={summaryData?.partial}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.partial')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.partial', 'partial')}
             />
             <StatCard
               title={t('common.status.pending')}
               value={summaryData?.pending}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.pending')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.pending', 'pending')}
             />
             <StatCard
               title={t('common.status.cancel')}
               value={summaryData?.cancel}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.cancel')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.cancel', 'cancel')}
             />
             <StatCard
               title={t('common.status.pending_gr')}
               value={summaryData?.pendingGr}
               isLoading={loading}
-              tooltipContent={t('dashboard.tab.detail.tooltip.pending_gr')}
+              tooltipContent={renderTooltip('dashboard.tab.detail.tooltip.pending_gr', 'pendingGr')}
             />
           </div>
         </div>

@@ -402,55 +402,53 @@ export function processSequenceAccuracyData(
 }
 
 export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
-  if (isEmpty(tasksArray)) {
-    return {
-      totalTasks: 0,
-      unassigned: 0,
-      manualAssignList: [],
-      unassignedList: [],
-      diffDayList: [],
-      ongoingList: [],
-      done: 0,
-      ongoing: 0,
-      assignedTasks: 0,
-      flowDelivery: 0,
-      flowReDelivery: 0,
-      totalDry: 0,
-      totalFrozen: 0,
-      assignedDry: 0,
-      assignedFrozen: 0,
-      success: 0,
-      partial: 0,
-      cancel: 0,
-      pending: 0,
-      pendingGr: 0,
-      taskId: null,
-    };
-  }
+  const keys = [
+    'unassigned',
+    'ongoing',
+    'done',
+    'flowDelivery',
+    'flowReDelivery',
+    'manualAssign',
+    'diffDay',
+    'success',
+    'partial',
+    'cancel',
+    'pending',
+    'pendingGr',
+  ];
 
-  let ongoingList = [];
-  let manualAssignList = [];
-  let diffDayList = [];
-  let unassignedList = [];
-  let successList = [];
-  let partialList = [];
-  let pendingList = [];
-  let cancelList = [];
-  let pendingGrList = [];
-  let done = 0;
-  let ongoing = 0;
-  let unassigned = 0;
-  let flowDelivery = 0;
-  let flowReDelivery = 0;
-  let totalDry = 0;
-  let totalFrozen = 0;
-  let assignedDry = 0;
-  let assignedFrozen = 0;
-  let success = 0;
-  let partial = 0;
-  let cancel = 0;
-  let pending = 0;
-  let pendingGr = 0;
+  const res = {
+    totalTasks: tasksArray?.length || 0,
+    totalDry: 0,
+    totalFrozen: 0,
+    assignedDry: 0,
+    assignedFrozen: 0,
+    assignedTasks: 0,
+    taskId: null,
+    ongoingList: [],
+    manualAssignList: [],
+    unassignedList: [],
+    diffDayList: [],
+    successList: [],
+    partialList: [],
+    cancelList: [],
+    pendingList: [],
+    pendingGrList: [],
+  };
+
+  keys.forEach((k) => {
+    res[k] = 0;
+    res[`${k}Dry`] = 0;
+    res[`${k}Frozen`] = 0;
+  });
+
+  if (isEmpty(tasksArray)) return res;
+
+  const inc = (key, isDry, isFrozen) => {
+    res[key]++;
+    if (isDry) res[`${key}Dry`]++;
+    if (isFrozen) res[`${key}Frozen`]++;
+  };
 
   for (const task of tasksArray) {
     const {
@@ -468,125 +466,102 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
     let finalAssignee =
       task.driverName || driverMap.get(normalizeEmail(rawAssignee)) || rawAssignee;
     if (finalAssignee === 'N/A') finalAssignee = '-';
-    const taskId = task._id || '-';
-    const flow = task.flow || 'N/A';
+
     const typeStorage = (task.typeStorage || '').toUpperCase();
     const isDry = typeStorage === 'DRY';
     const isFrozen = typeStorage === 'FROZEN';
 
-    if (isDry) totalDry++;
-    if (isFrozen) totalFrozen++;
+    if (isDry) res.totalDry++;
+    if (isFrozen) res.totalFrozen++;
+
+    const isAssigned = task.status !== 'UNASSIGNED';
+    if (isAssigned) {
+      if (isDry) res.assignedDry++;
+      if (isFrozen) res.assignedFrozen++;
+    }
+
     const baseData = {
       customer: customerName,
-      flow,
+      flow: task.flow || 'N/A',
       soNumber: invoiceNumber || '-',
       truncateSoNumber: truncateInvoice,
       isTruncated,
       driver: finalAssignee,
-      taskId,
+      taskId: task._id || '-',
     };
+
     if (task.status === 'DONE') {
-      done++;
-      let statusDelivery = '';
-      if (task.statusDelivery) {
-        statusDelivery =
-          typeof task.statusDelivery === 'string'
-            ? task.statusDelivery.split(',')[0].trim().toLowerCase()
-            : task.statusDelivery.toLowerCase();
-      }
+      inc('done', isDry, isFrozen);
+      const statusDelivery = (task.statusDelivery || '').split(',')[0].trim().toLowerCase();
+
       if (statusDelivery === 'sukses') {
-        successList.push(baseData);
-        success++;
+        res.successList.push(baseData);
+        inc('success', isDry, isFrozen);
       } else if (statusDelivery === 'terima sebagian' || statusDelivery === 'partial') {
-        partialList.push(baseData);
-        partial++;
+        res.partialList.push(baseData);
+        inc('partial', isDry, isFrozen);
       } else if (statusDelivery === 'batal') {
-        cancelList.push(baseData);
-        cancel++;
+        res.cancelList.push(baseData);
+        inc('cancel', isDry, isFrozen);
       } else if (statusDelivery === 'pending') {
-        pendingList.push(baseData);
-        pending++;
+        res.pendingList.push(baseData);
+        inc('pending', isDry, isFrozen);
       } else if (statusDelivery === 'pending gr') {
-        pendingGrList.push(baseData);
-        pendingGr++;
+        res.pendingGrList.push(baseData);
+        inc('pendingGr', isDry, isFrozen);
       }
     } else if (task.status === 'ONGOING') {
-      ongoingList.push(baseData);
-      ongoing++;
+      res.ongoingList.push(baseData);
+      inc('ongoing', isDry, isFrozen);
     } else if (task.status === 'UNASSIGNED') {
-      unassigned++;
-      unassignedList.push(baseData);
-    }
-
-    const isAssigned = task.status !== 'UNASSIGNED';
-
-    if (isAssigned) {
-      if (isDry) assignedDry++;
-      if (isFrozen) assignedFrozen++;
+      res.unassignedList.push(baseData);
+      inc('unassigned', isDry, isFrozen);
     }
 
     const manualCategory = !task.routePlannedOrder || !task.eta || !task.etd;
     if (manualCategory && isAssigned) {
-      manualAssignList.push(baseData);
+      res.manualAssignList.push(baseData);
+      inc('manualAssign', isDry, isFrozen);
     }
 
-    if (flow === 'Delivery') flowDelivery++;
-    else if (flow.includes('Re Delivery')) flowReDelivery++;
+    const flow = task.flow || '';
+    if (flow === 'Delivery') {
+      inc('flowDelivery', isDry, isFrozen);
+    } else if (flow.includes('Re Delivery')) {
+      inc('flowReDelivery', isDry, isFrozen);
+    }
 
     if (task.status === 'DONE' && task.startTime && task.doneTime) {
       const startDateWIB = formatDateUniversal(task.startTime);
-      const doneDateWIB = formatDateUniversal(task.doneTimes);
+      const doneDateWIB = formatDateUniversal(task.doneTime);
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {
         const startDate = new Date(task.startTime);
         const doneDate = new Date(task.doneTime);
-        const diffInMs = doneDate.getTime() - startDate.getTime();
-        const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-        const datePlusText = isIndonesian ? 'H+' : 'D+';
-        diffDayList.push({
+        const diffInDays = Math.ceil((doneDate - startDate) / (1000 * 60 * 60 * 24));
+        res.diffDayList.push({
           ...baseData,
-          doneDateDisplay: `${doneDateWIB} (${datePlusText}${diffInDays})`,
+          doneDateDisplay: `${doneDateWIB} (${isIndonesian ? 'H+' : 'D+'}${diffInDays})`,
         });
+        inc('diffDay', isDry, isFrozen);
       }
     }
   }
 
-  unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
-  ongoingList.sort((a, b) => a.driver.localeCompare(b.driver));
-  manualAssignList.sort((a, b) => a.driver.localeCompare(b.driver));
-  diffDayList.sort((a, b) => a.driver.localeCompare(b.driver));
-  successList.sort((a, b) => a.driver.localeCompare(b.driver));
-  partialList.sort((a, b) => a.driver.localeCompare(b.driver));
-  cancelList.sort((a, b) => a.driver.localeCompare(b.driver));
-  pendingList.sort((a, b) => a.driver.localeCompare(b.driver));
-  pendingGrList.sort((a, b) => a.driver.localeCompare(b.driver));
+  const sortList = (list) => list.sort((a, b) => a.driver.localeCompare(b.driver));
+  res.unassignedList.sort((a, b) => a.flow.localeCompare(b.flow));
+  [
+    'ongoingList',
+    'manualAssignList',
+    'diffDayList',
+    'successList',
+    'partialList',
+    'cancelList',
+    'pendingList',
+    'pendingGrList',
+  ].forEach((k) => sortList(res[k]));
 
-  return {
-    totalTasks: tasksArray.length,
-    unassigned,
-    ongoingList,
-    manualAssignList,
-    unassignedList,
-    diffDayList,
-    successList,
-    partialList,
-    cancelList,
-    pendingList,
-    pendingGrList,
-    done,
-    ongoing,
-    assignedTasks: done + ongoing,
-    flowDelivery,
-    flowReDelivery,
-    totalDry,
-    totalFrozen,
-    assignedDry,
-    assignedFrozen,
-    success,
-    partial,
-    cancel,
-    pending,
-    pendingGr,
-  };
+  res.assignedTasks = res.done + res.ongoing;
+  return res;
 };
 
 export const getStatusBadge = (pct, t) => {
