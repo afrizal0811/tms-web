@@ -167,6 +167,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSecret, setIsSecret] = useState(false);
+  const [sessionTick, setSessionTick] = useState(0);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
@@ -191,12 +192,23 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    const handleSessionUpdate = () => setSessionTick((prev) => prev + 1);
+    window.addEventListener('session_update', handleSessionUpdate);
+    window.addEventListener('storage', handleSessionUpdate);
+
+    return () => {
+      window.removeEventListener('session_update', handleSessionUpdate);
+      window.removeEventListener('storage', handleSessionUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-      setIsLoggedIn(!!storedUser);
+      setIsLoggedIn(!!getLocalStorage().storedUser);
     }, 0);
     return () => clearTimeout(timer);
-  }, [storedUser]);
+  }, [sessionTick]);
 
   const vehicle = isIndonesian ? `Data ${t('common.vehicle')}` : `${t('common.vehicle')} Data`;
 
