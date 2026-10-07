@@ -4,13 +4,6 @@ import { formatDateUniversal } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { toastError, toastSuccess } from '../../lib/toast';
 
-export const formatVolume = (vol) => {
-  if (vol === null || vol === undefined) return null;
-  const num = parseFloat(vol);
-  if (isNaN(num)) return null;
-  return parseFloat(num.toFixed(12));
-};
-
 const COLOR_INCOMPLETE = 'FFD9D9';
 const COLOR_DUPLICATE = 'FFF2CC';
 
@@ -147,7 +140,7 @@ export const handleConfirmDownload = ({
         v.minWeight || 0,
         v.maxWeight || 0,
         v.minVolume || 0,
-        formatVolume(v.maxVolume),
+        Number(v.maxVolume) || 0,
       ]);
       const ws2 = XLSX.utils.aoa_to_sheet([headers2, ...data2]);
       ws2['!cols'] = Array(headers2.length).fill({ wch: 20 });

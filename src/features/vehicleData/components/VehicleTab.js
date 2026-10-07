@@ -2,7 +2,7 @@
 
 import HighlightText from '@/components/HighlightText';
 import TableData from '@/components/table/TableData';
-import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
+import { getCachedHubs } from '@/lib/localStorageHandler';
 import { formatOdometer } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 
@@ -18,8 +18,6 @@ const getRowClassName = (v) => {
 
 export default function VehicleTab({ localeCode, paginatedData, searchQuery, t }) {
   const [sortConfig, setSortConfig] = useState({ key: 'type', direction: 'asc' });
-
-  const { storedLocation } = getLocalStorage();
   const hubs = getCachedHubs();
   const hasVms = hubs ? hubs.activeHub?.hasVms : false;
 
