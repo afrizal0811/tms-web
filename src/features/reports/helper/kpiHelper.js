@@ -318,7 +318,7 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, d
     wb,
     `Manual KPI - ${formatDateUniversal(dateObj, 'DD.MM.YYYY')} - ${hubAcronym}.xlsx`
   );
-  toastSuccess('File berhasil diunduh (Mode Manual)');
+  toastSuccess('File berhasil diunduh');
 };
 
 export const handleSingleDownload = async ({
@@ -404,7 +404,6 @@ export const handleManualDownload = async ({
       taskFiles: selectedDeliveryFiles,
       hubAcronym,
       drivers: driverData,
-      s,
     });
 
     setIsModalOpen(false);

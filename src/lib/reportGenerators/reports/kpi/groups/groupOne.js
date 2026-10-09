@@ -15,7 +15,12 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
           if (tripsCount === 0) return;
 
-          const driverName = route.driverName || '';
+          let driverName = route.driverName || '';
+          if (!driverName && route.assignee) {
+            const rawAssignee = typeof route.assignee === 'string' ? route.assignee.split(',')[0].trim() : route.assignee;
+            driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
+          }
+
           const category = getStorageType(driverName).toUpperCase();
           const truckId = route.basePlat || route.vehicleName || '-';
 

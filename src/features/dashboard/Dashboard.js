@@ -51,7 +51,7 @@ export default function Dashboard({ driverData }) {
     const fetchHubSettings = async () => {
       try {
         const hubs = getCachedHubs();
-        const activeHub = hubs.activeHub;
+        const activeHub = hubs?.activeHub;
         if (activeHub) {
           setHasPendingGR(activeHub.hasPendingGR || false);
         }

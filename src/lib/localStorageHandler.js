@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
-import { toastError } from './toast';
 import { getHubs } from './api/mileapp';
+import { toastError } from './toast';
 const SECRET_KEY = process.env.NEXT_PUBLIC_STORAGE_KEY || '@frizaL_TaMpaN_B@ngEeTTH_2026!!';
 const CURRENT_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 let hubsFetchLock = null;
@@ -20,6 +20,7 @@ const decryptData = (ciphertext) => {
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
     return decrypted || ciphertext;
   } catch (error) {
+    toastError(error.message, error);
     return ciphertext;
   }
 };
@@ -35,18 +36,21 @@ export function setLocalStorage(name, value) {
       const encryptedValue = encryptData(stringifiedValue);
       localStorage.setItem(name, encryptedValue);
     } catch (e) {
+      toastError(e.message, e);
       const encryptedValue = encryptData(value);
       localStorage.setItem(name, encryptedValue);
     }
   } else {
     localStorage.setItem(name, value);
   }
+  window.dispatchEvent(new Event('session_update'));
 }
 
 export function removeLocalStorage(name) {
   if (typeof window === 'undefined') return;
 
   localStorage.removeItem(name);
+  window.dispatchEvent(new Event('session_update'));
 }
 
 export function getLocalStorage() {
@@ -111,6 +115,7 @@ export function getSuperadminRoleId() {
       const parsed = JSON.parse(decrypted);
       return parsed.superadminRoleId || null;
     } catch (e) {
+      toastError(e.message, e);
       return null;
     }
   }
@@ -126,7 +131,10 @@ export function setSuperadminRoleId(roleId) {
       const parsed = JSON.parse(decrypted);
       parsed.superadminRoleId = roleId;
       setLocalStorage('data', parsed);
-    } catch (e) {}
+    } catch (e) {
+      toastError(e.message, e);
+      return null;
+    }
   }
 }
 
@@ -139,6 +147,7 @@ export function getCachedHubs() {
       const parsed = JSON.parse(decrypted);
       return parsed.cachedHubs || null;
     } catch (e) {
+      toastError(e.message, e);
       return null;
     }
   }
@@ -155,7 +164,10 @@ function setCachedHubs(hubs) {
       parsed.cachedHubs = hubs;
       parsed.cachedHubsTimestamp = new Date().getTime();
       setLocalStorage('data', parsed);
-    } catch (e) {}
+    } catch (e) {
+      toastError(e.message, e);
+      return null;
+    }
   }
 }
 
@@ -168,6 +180,7 @@ function getCachedHubsTimestamp() {
       const parsed = JSON.parse(decrypted);
       return parsed.cachedHubsTimestamp || null;
     } catch (e) {
+      toastError(e.message, e);
       return null;
     }
   }
@@ -220,7 +233,10 @@ export function updateActiveHub(id, name, acronym) {
       }
 
       setLocalStorage('data', parsed);
-    } catch (e) {}
+    } catch (e) {
+      toastError(e.message, e);
+      return null;
+    }
   }
 }
 
@@ -239,6 +255,9 @@ export function updateUserPaths(paths) {
       }
 
       setLocalStorage('data', parsed);
-    } catch (e) {}
+    } catch (e) {
+      toastError(e.message, e);
+      return null;
+    }
   }
 }

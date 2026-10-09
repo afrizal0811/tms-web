@@ -5,7 +5,6 @@ import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { isEmpty } from '@/lib/utils';
 import { useMemo } from 'react';
-import { formatVolume } from '../help';
 
 const getRowClassName = (v) => {
   if (v.isIncomplete) {
@@ -184,7 +183,7 @@ export default function TemplateTab({ paginatedData, searchQuery, t }) {
       width: 'w-[5%]',
       sortable: false,
       label: t('common.volume_max'),
-      render: (row) => <div className="text-center w-full">{formatVolume(row.maxVolume)}</div>,
+      render: (row) => <div className="text-center w-full">{row.maxVolume.toFixed(2)}</div>,
     },
   ];
 

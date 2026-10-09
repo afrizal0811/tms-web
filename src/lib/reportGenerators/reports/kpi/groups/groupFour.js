@@ -52,7 +52,16 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
 
           const email = normalizeEmail(route.assignee || '');
           const info = driverInfoMap[email];
-          const driverName = route.driverName || '';
+          let driverName = route.driverName || '';
+
+          if (!driverName && route.assignee) {
+            const rawAssignee =
+              typeof route.assignee === 'string'
+                ? route.assignee.split(',')[0].trim()
+                : route.assignee;
+            driverName = driverInfoMap[normalizeEmail(rawAssignee)]?.name || rawAssignee;
+          }
+
           const category = getStorageType(driverName).toUpperCase();
           const truckId = (route.basePlat || route.vehicleName || 'Unknown').toUpperCase().trim();
 
