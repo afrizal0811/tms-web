@@ -3,6 +3,7 @@
 import ToggleButton from '@/components/button/ToggleButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Dropdown from '@/components/dropdown/Dropdown';
+import StorageTypeFilter from '@/components/dropdown/StorageTypeFilter';
 import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
@@ -14,7 +15,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks } from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
-import { formatDateUniversal, parseCustomerString, toApiDateString } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  getStorageType,
+  parseCustomerString,
+  toApiDateString,
+} from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function TaskPage() {
@@ -29,6 +35,7 @@ export default function TaskPage() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [statusDeliveryFilter, setStatusDeliveryFilter] = useState(t('common.all'));
   const [statusTaskFilter, setStatusTaskFilter] = useState(t('common.all'));
+  const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isAllHub, setIsAllHub] = useState(false);
@@ -182,6 +189,20 @@ export default function TaskPage() {
         return true;
       });
     }
+
+    if (storageFilter.length === 0) {
+      result = [];
+    } else if (storageFilter.length === 1) {
+      result = result.filter((task) => {
+        const storage = (
+          getStorageType(task.typeStorage) !== '-'
+            ? getStorageType(task.typeStorage)
+            : getStorageType(task.driverName || '')
+        ).toUpperCase();
+        return storageFilter.includes(storage);
+      });
+    }
+
     const q = searchQuery.toLowerCase();
     if (q) {
       result = result.filter((task) => {
@@ -192,7 +213,7 @@ export default function TaskPage() {
     }
 
     return result;
-  }, [tasks, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, t]);
+  }, [tasks, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, storageFilter, t]);
 
   const handleApplyDate = () => {
     if (!tempStart) return;
@@ -405,6 +426,17 @@ export default function TaskPage() {
           onChange={setStatusTaskFilter}
           options={statusTaskOptions}
           value={statusTaskFilter}
+        />
+      ),
+    },
+    {
+      label: t('common.storage_type'),
+      component: (
+        <StorageTypeFilter
+          className="w-full"
+          disabled={loading}
+          onApply={setStorageFilter}
+          selectedTypes={storageFilter}
         />
       ),
     },
