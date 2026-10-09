@@ -25,12 +25,7 @@ const isValidPlate = (plate) => {
     return false;
   }
   const clean = cleanPlat(trimmed);
-  if (
-    !clean ||
-    clean === '-' ||
-    clean.includes('unknown') ||
-    clean.includes('demo')
-  ) {
+  if (!clean || clean === '-' || clean.includes('unknown') || clean.includes('demo')) {
     return false;
   }
   return true;
@@ -58,7 +53,7 @@ export async function calculateTaskSummaryMetrics({
   hasPendingGR,
   fetchWithTracker,
   t,
-  isManualMode = false
+  isManualMode = false,
 }) {
   const taskToRoutingDate = new Map();
   (allResults || []).forEach((res) => {
@@ -447,8 +442,7 @@ export async function calculateTaskSummaryMetrics({
       tempMetrics[dateKey].unknown.tv_details = [];
 
       const isManual =
-        isManualMode ||
-        (Array.isArray(allTasks) && allTasks.some((t) => Boolean(t.typeStorage)));
+        isManualMode || (Array.isArray(allTasks) && allTasks.some((t) => Boolean(t.typeStorage)));
 
       const dailyTaskVehicles = {
         dry: new Map(),
@@ -460,7 +454,7 @@ export async function calculateTaskSummaryMetrics({
         const dObj = new Date(task.startTime || task.doneTime || task.createdTime);
         if (isNaN(dObj.getTime())) return;
         const taskDateKey = formatDateUniversal(dObj);
-        
+
         if (taskDateKey === dateKey) {
           if (!isManual) {
             const statusRaw = (task.status || task.statusDelivery || '').toUpperCase().trim();
@@ -475,8 +469,8 @@ export async function calculateTaskSummaryMetrics({
               typeof task.assignee === 'string'
                 ? task.assignee.split(',')[0].trim()
                 : Array.isArray(task.assignee)
-                ? task.assignee[0]
-                : task.assignee;
+                  ? task.assignee[0]
+                  : task.assignee;
           } else if (task.assignedTo && task.assignedTo.email) {
             rawEmail = task.assignedTo.email;
           } else if (task.email) {
@@ -512,23 +506,33 @@ export async function calculateTaskSummaryMetrics({
             const storage = foundDriver
               ? (foundDriver.storage || 'DRY').toUpperCase()
               : task.typeStorage
-              ? task.typeStorage.toUpperCase()
-              : 'DRY';
+                ? task.typeStorage.toUpperCase()
+                : 'DRY';
             type = storage.includes('FROZEN') ? 'frozen' : 'dry';
           }
 
+          const rawCust = task.customerOrder || task.customerName || task.title || '';
+          const parsedCust = parseCustomerString(rawCust);
+          const custName = task.customerName || parsedCust.name || task.title || '-';
+          const invNum =
+            task.content || parsedCust.invoiceNumber || task.orderId || task.customerOrder || '-';
+
           tempMetrics[dateKey][type].dp += 1;
           tempMetrics[dateKey][type].dp_tasks.push({
-            taskId: task._id,
+            ...task,
+            flow: task.flow || 'DELIVERY',
+            customerOrder: task.customerOrder || invNum,
+            customerName: custName,
+            content: task.content || invNum,
+            title: task.title || custName,
+            taskId: task._id || task.id || task.taskId,
             visitName: task.customerOrder || task.title || task._id,
-            visitId: task._id,
+            visitId: task._id || task.id || task.taskId,
           });
 
           // TV & tv_details: Only count and display paired driver & vehicle (having valid license plate)
           const finalPlate =
-            strictBasePlate ||
-            (foundDriver ? foundDriver.plat || foundDriver.basePlat : '') ||
-            '-';
+            strictBasePlate || (foundDriver ? foundDriver.plat || foundDriver.basePlat : '') || '-';
 
           const finalDriverName =
             task.driverName && task.driverName !== 'N/A' && task.driverName !== '-'
@@ -631,9 +635,7 @@ export async function calculateTaskSummaryMetrics({
 
     const currHasExecutedTasks = (currM.actual_tasks_count || 0) > 0;
     const currHasRouting =
-      currM.routingNames.length > 0 ||
-      currM.dry.dt_sum > 0 ||
-      currM.frozen.dt_sum > 0;
+      currM.routingNames.length > 0 || currM.dry.dt_sum > 0 || currM.frozen.dt_sum > 0;
 
     if (currHasExecutedTasks && !currHasRouting) {
       for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
@@ -645,9 +647,7 @@ export async function calculateTaskSummaryMetrics({
         if (prevM) {
           const prevHasExecutedTasks = (prevM.actual_tasks_count || 0) > 0;
           const prevHasRouting =
-            prevM.routingNames.length > 0 ||
-            prevM.dry.dt_sum > 0 ||
-            prevM.frozen.dt_sum > 0;
+            prevM.routingNames.length > 0 || prevM.dry.dt_sum > 0 || prevM.frozen.dt_sum > 0;
 
           if (prevHasRouting && !prevHasExecutedTasks) {
             ['dry', 'frozen'].forEach((type) => {

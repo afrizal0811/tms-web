@@ -95,11 +95,23 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
       ) : tasks && tasks.length > 0 ? (
         <div className="divide-y divide-gray-200 dark:divide-slate-600">
           {tasks.map((task, idx) => {
-            const flow = task.flow;
-            const customerData = parseCustomerString(task.customerOrder || '');
-            const invoice = customerData.invoiceNumber || task.content || '-';
-            const finalCustomerName = customerData.name || task.customerName;
-            const pickupCustomerName = `${task.title} (${finalCustomerName})`;
+            const flow = task.flow || 'DELIVERY';
+            const customerData = parseCustomerString(
+              task.customerOrder || task.customerName || task.title || ''
+            );
+            const invoice =
+              customerData.invoiceNumber ||
+              task.content ||
+              task.orderId ||
+              task.customerOrder ||
+              '-';
+            const finalCustomerName =
+              task.customerName ||
+              customerData.name ||
+              task.title ||
+              translate('common.no_data') ||
+              '-';
+            const pickupCustomerName = `${task.title || '-'} (${finalCustomerName})`;
 
             return (
               <div
