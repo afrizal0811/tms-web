@@ -15,7 +15,8 @@ export function generateTaskSummarySheet(
   startDateStr,
   endDateStr,
   masterTruckData,
-  translate
+  translate,
+  isDailyReport = false
 ) {
   const headers = [
     translate('common.date'),
@@ -187,8 +188,8 @@ export function generateTaskSummarySheet(
 
   const range = XLSX.utils.decode_range(ws['!ref']);
   const headerFills = {
-    0: FILL_STYLES.taskYellow,
-    1: FILL_STYLES.taskYellow,
+    0: FILL_STYLES.dry,
+    1: FILL_STYLES.dry,
     2: FILL_STYLES.taskPink,
     3: FILL_STYLES.taskGreen,
     4: FILL_STYLES.taskGreen,
@@ -200,9 +201,9 @@ export function generateTaskSummarySheet(
     10: FILL_STYLES.taskBlue,
     11: FILL_STYLES.taskGray,
     12: FILL_STYLES.taskGray,
-    13: FILL_STYLES.taskYellow,
-    14: FILL_STYLES.taskYellow,
-    15: FILL_STYLES.taskYellow,
+    13: FILL_STYLES.dry,
+    14: FILL_STYLES.dry,
+    15: FILL_STYLES.dry,
     16: FILL_STYLES.taskViolet,
     17: FILL_STYLES.taskViolet,
   };
@@ -244,7 +245,7 @@ export function generateTaskSummarySheet(
               case 'mt':
               case 'tv':
               case 'va':
-                legendFill = FILL_STYLES.taskYellow;
+                legendFill = FILL_STYLES.dry;
                 break;
               case 'tvu':
                 legendFill = FILL_STYLES.taskViolet;
@@ -293,6 +294,8 @@ export function generateTaskSummarySheet(
             cell.t = 'n';
             cell.s.numFmt = '0.00%';
             cell.s.fill = headerFills[C];
+          } else if (isDailyReport && [2, 3, 5, 7, 9, 11, 14, 15].includes(C)) {
+            cell.s.fill = FILL_STYLES.taskYellow;
           }
         }
       }

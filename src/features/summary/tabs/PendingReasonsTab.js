@@ -123,10 +123,8 @@ export default function PendingReasonsTab({
     translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
-    translate('common.status.cancel'),
-    translate('common.status.partial'),
-    translate('common.status.pending'),
-    ...(hasPendingGR ? [translate('common.status.pending_gr')] : []),
+    translate('common.customer_name'),
+    translate('common.status.delivery_status'),
     translate('summary.tabs.pending_reasons.reason'),
     translate('summary.tabs.pending_reasons.category'),
     translate('summary.tabs.pending_reasons.detail_reason'),
@@ -186,19 +184,7 @@ export default function PendingReasonsTab({
                 ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
               const tdClass = `${baseTdClass} ${borderBottomClass}`;
-
               const isWrongGR = !hasPendingGR && item.status === 'PENDING GR';
-              const errorMsg = <span>{translate('summary.tabs.pending_reasons.warning')}</span>;
-
-              const textBatal = item.status === 'BATAL' ? customerName : '';
-              const textParsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
-              let textPending = item.status === 'PENDING' ? customerName : '';
-
-              if (isWrongGR) {
-                textPending = item.customerName;
-              }
-
-              const textPendingGR = item.status === 'PENDING GR' ? customerName : '';
               const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
               const isAllEmpty =
                 !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
@@ -215,20 +201,13 @@ export default function PendingReasonsTab({
                 { type: 'text', val: item.dateStr },
                 { type: 'text', val: getBasePlate(item.licensePlate) },
                 { type: 'text', val: item.driverName, cls: 'text-left' },
-                { type: 'so', val: textBatal, content: invoiceNumber, id: item._id },
-                { type: 'so', val: textParsial, content: invoiceNumber, id: item._id },
+                { type: 'so', val: customerName || '-', content: invoiceNumber, id: item._id, cls: 'text-left' },
                 {
-                  type: 'so',
-                  val: textPending,
-                  content: invoiceNumber,
-                  isError: isWrongGR,
-                  errorMsg,
-                  id: item._id,
+                  type: 'text',
+                  val: item.status || '-',
+                  cls: `text-left ${isWrongGR ? 'text-[#FF0000] dark:text-red-400 font-bold' : ''}`,
                 },
-                ...(hasPendingGR
-                  ? [{ type: 'so', val: textPendingGR, content: invoiceNumber, id: item._id }]
-                  : []),
-                { type: 'reason', val: item.alasan },
+                { type: 'reason', val: item.alasan, cls: 'text-left' },
                 { type: 'action', val: pd.internalExternal, cls: actionCellClass },
                 { type: 'action', val: pd.detailReason, cls: actionCellClass },
                 { type: 'action', val: pd.groupReason, cls: actionCellClass },

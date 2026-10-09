@@ -97,7 +97,8 @@ export async function generateSummaryWorkbook(
   translate,
   localeCode,
   hasPendingGR,
-  pendingDetails
+  pendingDetails,
+  isDailyReport = false
 ) {
   const wb = XLSX.utils.book_new();
   const hubsList = getCachedHubs() || [];
@@ -110,7 +111,8 @@ export async function generateSummaryWorkbook(
     startDateStr,
     endDateStr,
     masterTruckData,
-    translate
+    translate,
+    isDailyReport
   );
 
   generatePendingReasonSheet(
@@ -121,7 +123,8 @@ export async function generateSummaryWorkbook(
     startDateStr,
     endDateStr,
     hasPendingGR,
-    pendingDetails
+    pendingDetails,
+    isDailyReport
   );
 
   generateTimeDriverSheet(
@@ -166,7 +169,8 @@ export async function generateSummaryWorkbook(
     localeCode,
     driverData,
     taskData,
-    locationHistoryData
+    locationHistoryData,
+    isDailyReport
   );
   generateServiceLevelSheet(wb, taskData, startDateStr, endDateStr, translate);
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');

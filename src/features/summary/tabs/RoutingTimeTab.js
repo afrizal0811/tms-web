@@ -183,22 +183,22 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   ))}
                 </tr>
                 <tr>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
                     Dry
                   </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
                     Frozen
                   </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
                     Dry
                   </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
                     Frozen
                   </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
                     Dry
                   </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-purple-200 dark:bg-[#34205c]">
+                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
                     Frozen
                   </th>
                 </tr>

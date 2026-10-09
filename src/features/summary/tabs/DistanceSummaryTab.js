@@ -10,6 +10,8 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
   const defaultClass =
     'border border-gray-300 dark:border-slate-600 px-4 py-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap';
   const defaultVioletClass = `${defaultClass} bg-violet-300 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30`;
+  const dryHeaderClass = `${defaultClass} bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 font-bold text-slate-800`;
+  const frozenHeaderClass = `${defaultClass} bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 font-bold text-slate-800`;
   const greenHeaderClass = `${defaultClass} bg-green-200 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-green-900/40 dark:to-green-900/40 font-bold`;
   const orangeHeaderClass = `${defaultClass} bg-orange-200 dark:bg-slate-800 dark:bg-gradient-to-t dark:from-orange-900/40 dark:to-orange-900/40 font-bold`;
   const wrapVioletClass =
@@ -165,10 +167,10 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
                   </th>
                 </tr>
                 <tr>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800">
@@ -229,14 +231,14 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
                   </th>
                 </tr>
                 <tr>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
-                  <th className={defaultVioletClass}>Dry</th>
-                  <th className={defaultVioletClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
+                  <th className={dryHeaderClass}>Dry</th>
+                  <th className={frozenHeaderClass}>Frozen</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800">

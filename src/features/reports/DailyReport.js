@@ -47,15 +47,18 @@ export default function DailyReport({
       driverData,
       setIsLoading,
       t,
+      isIndonesian,
     });
 
   const triggerBulkDownload = () =>
     handleBulkDownload({
+      hubName,
       startDate,
       endDate,
       driverData,
       setIsLoading,
       t,
+      isIndonesian,
     });
 
   const triggerManualDownload = () =>

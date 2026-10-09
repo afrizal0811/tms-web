@@ -4,13 +4,13 @@ import {
   getResults,
   getTasks,
   getVehicleTypes,
+  getPendingDetails,
 } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
-import {
-  generateAutoReportWorkbook,
-  generateManualReportWorkbook,
-} from '@/lib/reportGenerators/reports';
+import { generateManualReportWorkbook } from '@/lib/reportGenerators/reports';
+import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
+import { calculateTaskSummaryMetrics } from '@/lib/reportGenerators/summary/taskSummaryMetrics';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -19,8 +19,7 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkZipDownloader, getPreviousRoutingDate } from './help';
-
+import { getPreviousRoutingDate } from './help';
 const detectRoutingDateFromTasks = (allTasks, fallbackBaseDate) => {
   const dates = [];
   allTasks.forEach((task) => {
@@ -101,12 +100,6 @@ export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
   }
 };
 
-const fetchVehicleMetadata = async () => {
-  const vehicleTypes = await getVehicleTypes();
-  const allVehicleTypes = vehicleTypes.allTypes;
-  return allVehicleTypes;
-};
-
 export const handleSingleDownload = async ({
   hubName,
   selectedDate,
@@ -116,7 +109,9 @@ export const handleSingleDownload = async ({
   driverData,
   setIsLoading,
   t,
+  isIndonesian,
 }) => {
+  const localeCode = isIndonesian ? 'id' : 'en';
   try {
     setIsLoading(true);
 
@@ -124,9 +119,6 @@ export const handleSingleDownload = async ({
 
     const timeFromTasks = new Date(`${selectedDateString}T00:00:00`).toISOString();
     const timeToTasks = new Date(`${selectedDateString}T23:59:59`).toISOString();
-
-    const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
-      calculateStartFinishDates(selectedDateString);
 
     const allTasks = await getTasks({
       status: 'DONE,ONGOING',
@@ -146,18 +138,25 @@ export const handleSingleDownload = async ({
       targetRoutingStr = detectRoutingDateFromTasks(allTasks, selectedDate);
     }
 
+    const locStartObj = new Date(selectedDateString);
+    locStartObj.setDate(locStartObj.getDate() - 3);
+    locStartObj.setHours(0, 0, 0, 0);
+
+    const locEndObj = new Date(selectedDateString);
+    locEndObj.setDate(locEndObj.getDate() + 2);
+    locEndObj.setHours(23, 59, 59, 999);
+
     const { storedLocationAcronym } = getLocalStorage();
-    const [filteredResults, hubsData, locationHistoriesRes, allVehicleTypes] = await Promise.all([
+    const [filteredResults, hubsData, locationHistoriesRes] = await Promise.all([
       getResults({
         dateFrom: `${targetRoutingStr} 00:00:00`,
         dateTo: `${targetRoutingStr} 23:59:59`,
       }),
       getCachedHubs(),
       getLocationHistories({
-        timeFrom: timeFromHistories,
-        timeTo: timeToHistories,
-      }),
-      fetchVehicleMetadata(),
+        timeFrom: toApiDateString(locStartObj),
+        timeTo: toApiDateString(locEndObj),
+      }).catch(() => []),
     ]);
 
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
@@ -175,20 +174,39 @@ export const handleSingleDownload = async ({
     const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
     const hubLabel = storedLocationAcronym || hubName;
 
-    const { wb, excelFileName } = await generateAutoReportWorkbook({
-      driverData,
-      filteredResults,
+    const [pendingDetails, masterTruckData] = await Promise.all([
+      getPendingDetails(selectedDateString, selectedDateString).catch(() => []),
+      getVehicleTypes(),
+    ]);
+    const taskSummaryMetrics = await calculateTaskSummaryMetrics({
       allTasks,
-      timeData: timeDataObjects,
-      vehicleTypes: allVehicleTypes,
-      targetRoutingStr,
-      selectedDateString,
-      hubLabel,
+      allResults: filteredResults,
+      fetchedDrivers: driverData,
       hasPendingGR,
       t,
     });
 
-    XLSX.writeFile(wb, excelFileName);
+    const { wb } = await generateSummaryWorkbook(
+      driverData,
+      allTasks,
+      filteredResults,
+      singleDateHistories,
+      selectedDateString,
+      selectedDateString,
+      taskSummaryMetrics,
+      masterTruckData,
+      t,
+      localeCode,
+      hasPendingGR,
+      pendingDetails,
+      true
+    );
+
+    const baseDailyReport = t('navbar.daily_report');
+    const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
+    const singleExcelFileName = `${baseDailyReport} - ${formattedDate} - ${hubLabel}.xlsx`;
+
+    XLSX.writeFile(wb, singleExcelFileName);
     toastSuccess(t('common.toast.success'));
   } catch (err) {
     toastError(t('common.toast.error', { err: err.message }), err);
@@ -197,89 +215,164 @@ export const handleSingleDownload = async ({
   }
 };
 
-export const handleBulkDownload = async ({ startDate, endDate, driverData, setIsLoading, t }) => {
-  let hubs = {};
-  let vehicleTypes = [];
+export const handleBulkDownload = async ({
+  hubName,
+  startDate,
+  endDate,
+  driverData,
+  setIsLoading,
+  t,
+  isIndonesian,
+}) => {
+  const localeCode = isIndonesian ? 'id' : 'en';
   try {
     setIsLoading(true);
-    const [allVehicleTypes, hubsDB] = await Promise.all([fetchVehicleMetadata(), getCachedHubs()]);
-    vehicleTypes = allVehicleTypes;
-    hubs = hubsDB;
-  } catch (e) {
-    toastError(t('common.toast.error', { err: e.message }), e);
-    setIsLoading(false);
-    return;
+
+    const startStr = formatDateUniversal(startDate);
+    const endStr = formatDateUniversal(endDate);
+
+    const taskStartObj = new Date(startDate);
+    taskStartObj.setDate(taskStartObj.getDate() - 4);
+    taskStartObj.setHours(0, 0, 0, 0);
+
+    const taskEndObj = new Date(endDate);
+    taskEndObj.setDate(taskEndObj.getDate() + 4);
+    taskEndObj.setHours(23, 59, 59, 999);
+
+    const routingStartObj = new Date(startDate);
+    routingStartObj.setDate(routingStartObj.getDate() - 4);
+    routingStartObj.setHours(0, 0, 0, 0);
+
+    const routingEndObj = new Date(endDate);
+    routingEndObj.setDate(routingEndObj.getDate() + 2);
+    routingEndObj.setHours(23, 59, 59, 999);
+
+    const locStartObj = new Date(startDate);
+    locStartObj.setDate(locStartObj.getDate() - 3);
+    locStartObj.setHours(0, 0, 0, 0);
+
+    const locEndObj = new Date(endDate);
+    locEndObj.setDate(locEndObj.getDate() + 2);
+    locEndObj.setHours(23, 59, 59, 999);
+
+    const createDateChunks = (start, end, maxDays) => {
+      const chunks = [];
+      let curr = new Date(start);
+      while (curr <= end) {
+        let next = new Date(curr);
+        next.setDate(next.getDate() + maxDays - 1);
+        next.setHours(23, 59, 59, 999);
+        if (next > end) next = new Date(end);
+        chunks.push({ from: toApiDateString(curr), to: toApiDateString(next) });
+        curr = new Date(next);
+        curr.setDate(curr.getDate() + 1);
+        curr.setHours(0, 0, 0, 0);
+      }
+      return chunks;
+    };
+
+    const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
+    const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
+    const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
+
+    const mergeResults = (resArray) => {
+      let merged = [];
+      resArray.forEach((res) => {
+        if (Array.isArray(res)) merged = [...merged, ...res];
+        else if (res?.data) merged = [...merged, ...res.data];
+        else if (res?.tasks?.data) merged = [...merged, ...res.tasks.data];
+      });
+      return merged;
+    };
+
+    const pTasks = (async () => {
+      const rawResults = [];
+      for (const range of taskRanges) {
+        const res = await getTasks({
+          status: 'ONGOING,DONE',
+          timeFrom: range.from,
+          timeTo: range.to,
+        });
+        rawResults.push(res);
+      }
+      return mergeResults(rawResults);
+    })();
+
+    const pRouting = (async () => {
+      const rawResults = [];
+      for (const range of routingRanges) {
+        const res = await getResults({
+          routingDateObj: new Date(range.from),
+          deliveryDateObj: new Date(range.to),
+        });
+        rawResults.push(res);
+      }
+      return mergeResults(rawResults);
+    })();
+
+    const pHistory = (async () => {
+      const rawResults = [];
+      for (const range of historyRanges) {
+        const res = await getLocationHistories({ timeFrom: range.from, timeTo: range.to });
+        rawResults.push(res);
+      }
+      return mergeResults(rawResults);
+    })();
+
+    const [tasksRes, resultsRes, locRes, hubsDB, masterRes, pendingDetails] = await Promise.all([
+      pTasks,
+      pRouting,
+      pHistory,
+      getCachedHubs(),
+      getVehicleTypes(),
+      getPendingDetails(startStr, endStr).catch(() => []),
+    ]);
+
+    const hasPendingGR = hubsDB?.activeHub?.hasPendingGR || false;
+
+    if (isEmpty(tasksRes) && isEmpty(resultsRes)) {
+      throw new Error(t('common.no_data'));
+    }
+
+    const taskSummaryMetrics = await calculateTaskSummaryMetrics({
+      allTasks: tasksRes,
+      allResults: resultsRes,
+      fetchedDrivers: driverData,
+      hasPendingGR,
+      t,
+    });
+
+    const { wb } = await generateSummaryWorkbook(
+      driverData,
+      tasksRes,
+      resultsRes,
+      locRes,
+      startStr,
+      endStr,
+      taskSummaryMetrics,
+      masterRes,
+      t,
+      localeCode,
+      hasPendingGR,
+      pendingDetails,
+      true
+    );
+
+    const { storedLocationAcronym } = getLocalStorage();
+    const hubLabel = storedLocationAcronym || hubName;
+    const baseDailyReport = t('report.daily_report');
+    const bulkLabel = t('common.bulk');
+    const formattedStart = formatDateUniversal(startStr, 'DD.MM.YYYY');
+    const formattedEnd = formatDateUniversal(endStr, 'DD.MM.YYYY');
+
+    const bulkExcelFileName = `${baseDailyReport} (${bulkLabel})- (${formattedStart} - ${formattedEnd}) - ${hubLabel}.xlsx`;
+    XLSX.writeFile(wb, bulkExcelFileName);
+    toastSuccess(t('common.toast.success'));
+  } catch (err) {
+    toastError(t('common.toast.error', { err: err.message }), err);
   } finally {
     setIsLoading(false);
   }
-  bulkZipDownloader({
-    startDate,
-    endDate,
-    driverData,
-    zipPrefix: `${t('report.daily_report')} (${t('common.bulk')})`,
-    setIsLoading,
-    processDateCallback: async ({ dateForFile, hubName }) => {
-      const deliveryDateObj = formatDateUniversal(dateForFile);
-      const startD = new Date(deliveryDateObj);
-      startD.setHours(0, 0, 0, 0);
-      const endD = new Date(deliveryDateObj);
-      endD.setHours(23, 59, 59, 999);
-
-      const timeFromTasks = toApiDateString(startD);
-      const timeToTasks = toApiDateString(endD);
-
-      const allTasks = await getTasks({
-        status: 'DONE,ONGOING',
-        timeFrom: timeFromTasks,
-        timeTo: timeToTasks,
-      });
-
-      if (isEmpty(allTasks)) return null;
-
-      const targetRoutingStr = detectRoutingDateFromTasks(allTasks, deliveryDateObj);
-
-      const summaryPayload = {
-        dateFrom: `${targetRoutingStr} 00:00:00`,
-        dateTo: `${targetRoutingStr} 23:59:59`,
-      };
-
-      const { timeFrom: timeFromHistories, timeTo: timeToHistories } =
-        calculateStartFinishDates(dateForFile);
-
-      const [filteredResults, locationHistoriesRes] = await Promise.all([
-        getResults(summaryPayload),
-        getLocationHistories({
-          timeFrom: timeFromHistories,
-          timeTo: timeToHistories,
-        }),
-      ]);
-
-      const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
-        return item.startTime?.startsWith(dateForFile);
-      });
-      const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
-      const filteredTimeData = timeDataObjects.filter(
-        (item) => !isEmpty(item.startTimeFmt) && !isEmpty(item.finishTimeFmt)
-      );
-      const hasPendingGR = hubs?.activeHub ? hubs?.activeHub?.hasPendingGR : false;
-      if (!isEmpty(filteredResults) && !isEmpty(allTasks) && !isEmpty(filteredTimeData)) {
-        return await generateAutoReportWorkbook({
-          driverData,
-          filteredResults,
-          allTasks,
-          timeData: timeDataObjects,
-          vehicleTypes,
-          targetRoutingStr,
-          selectedDateString: dateForFile,
-          hubLabel: hubName,
-          hasPendingGR,
-          t,
-        });
-      }
-      return null;
-    },
-    t,
-  });
 };
 
 export const handleManualDownload = async ({

@@ -5,7 +5,7 @@ import {
   formatMinutesToHHMM,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { BASE_STYLES, COLORS, HEADER_STYLES } from './reportStyles';
+import { BASE_STYLES, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 const isValidAssignedTimeWIB = (createdIso, assignedIso) => {
   if (!createdIso || !assignedIso) return false;
@@ -61,8 +61,19 @@ export function generateRoutingTimeSheet(
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
-  const current = new Date(start);
-  while (current <= end) {
+  const getPrevRouting = (d) => {
+    const nd = new Date(d);
+    nd.setDate(nd.getDate() - (nd.getDay() === 1 ? 2 : 1));
+    return nd;
+  };
+
+  const mappedStart = getPrevRouting(start);
+  const mappedEnd = getPrevRouting(end);
+  const actualStart = mappedStart <= mappedEnd ? mappedStart : mappedEnd;
+  const actualEnd = mappedStart <= mappedEnd ? mappedEnd : mappedStart;
+
+  const current = new Date(actualStart);
+  while (current <= actualEnd) {
     const key = formatDateUniversal(current, 'YYYY-MM-DD');
     dataMap[key] = {
       dateDisplay: formatLongDate(current, localeCode),
@@ -235,7 +246,16 @@ export function generateRoutingTimeSheet(
   for (let R = 0; R <= (isSeparated ? 1 : 0); R++) {
     for (let C = 0; C <= (isSeparated ? 6 : 3); C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-      if (cell) cell.s = HEADER_STYLES.main;
+      if (cell) {
+        cell.s = { ...HEADER_STYLES.main };
+        if (isSeparated && R === 1) {
+          if (excelData[R][C] === 'Dry') {
+            cell.s.fill = FILL_STYLES.dry;
+          } else if (excelData[R][C] === 'Frozen') {
+            cell.s.fill = FILL_STYLES.frozen;
+          }
+        }
+      }
     }
   }
 

@@ -534,7 +534,7 @@ export function generateTruckDetailSheet(
         const weightPct = metrics.maxWeight > 0 ? metrics.weight / metrics.maxWeight : '-';
         const volPct = metrics.maxVolume > 0 ? metrics.volume / metrics.maxVolume : '-';
         const delPct = metrics.outlets > 0 ? metrics.delivered / metrics.outlets : '-';
-        const distKm = metrics.dist > 0 ? Number((metrics.dist / 1000).toFixed(2)) : '-';
+        const distKm = metrics.dist > 0 ? metrics.dist : '-';
         const duration = metrics.duration > 0 ? formatMinutesToHHMM(metrics.duration) : '-';
         row.push(weightPct, volPct, distKm, metrics.outlets, metrics.delivered, duration, delPct);
       } else {
@@ -551,7 +551,7 @@ export function generateTruckDetailSheet(
   excelData.push(['', translate('summary.tabs.truck_detail.blue')]);
   excelData.push(['', translate('summary.tabs.truck_detail.magenta')]);
   excelData.push(['', translate('summary.tabs.truck_detail.indigo')]);
-  excelData.push([translate('summary.tabs.truck_detail.more_exp')]);
+  excelData.push(['Text', translate('summary.tabs.truck_detail.red_text')]);
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   const merges = [];
@@ -580,7 +580,7 @@ export function generateTruckDetailSheet(
   merges.push({ s: { r: legendStartRow + 2, c: 1 }, e: { r: legendStartRow + 2, c: 6 } });
   merges.push({ s: { r: legendStartRow + 3, c: 1 }, e: { r: legendStartRow + 3, c: 6 } });
   merges.push({ s: { r: legendStartRow + 4, c: 1 }, e: { r: legendStartRow + 4, c: 6 } });
-  merges.push({ s: { r: legendStartRow + 5, c: 0 }, e: { r: legendStartRow + 5, c: 6 } });
+  merges.push({ s: { r: legendStartRow + 5, c: 1 }, e: { r: legendStartRow + 5, c: 6 } });
 
   ws['!merges'] = merges;
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -724,18 +724,32 @@ export function generateTruckDetailSheet(
         const relR = R - legendStartRow;
         if (relR === 0 && C === 0) {
           cell.s = { font: { bold: true, underline: true } };
-        } else if (relR >= 1 && relR <= 4) {
+        } else if (relR >= 1 && relR <= 5) {
           if (C === 0) {
-            cell.s = { border: BORDERS.thin };
-            if (relR === 1) cell.s.fill = ERROR_STYLES.split.fill;
-            if (relR === 2) cell.s.fill = ERROR_STYLES.manual.fill;
-            if (relR === 3) cell.s.fill = ERROR_STYLES.date.fill;
-            if (relR === 4) cell.s.fill = ERROR_STYLES.both.fill;
+            if (relR === 1) {
+              const splitBorder = { style: 'medium', color: { rgb: 'ff8904' } };
+              cell.s = {
+                border: {
+                  top: splitBorder,
+                  bottom: splitBorder,
+                  left: splitBorder,
+                  right: splitBorder,
+                },
+              };
+            } else if (relR === 5) {
+              cell.s = {
+                font: { color: { rgb: 'FFB3B3' } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+              };
+            } else {
+              cell.s = { border: BORDERS.thin };
+              if (relR === 2) cell.s.fill = ERROR_STYLES.manual.fill;
+              if (relR === 3) cell.s.fill = ERROR_STYLES.date.fill;
+              if (relR === 4) cell.s.fill = ERROR_STYLES.both.fill;
+            }
           } else if (C === 1) {
             cell.s = { alignment: { horizontal: 'left', vertical: 'center' } };
           }
-        } else if (relR === 4 && C === 0) {
-          cell.s = { font: { italic: true } };
         }
       }
     }

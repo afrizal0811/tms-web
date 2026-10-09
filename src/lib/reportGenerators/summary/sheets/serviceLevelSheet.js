@@ -88,40 +88,47 @@ export function generateServiceLevelSheet(wb, tasks, startDateStr, endDateStr, t
   const excelData = [];
   const merges = [];
 
-  excelData.push([translate('summary.tabs.service_level.summary_tab'), '', '', '', '']);
-  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+  const isSingleDay = startDateStr === endDateStr;
+  let sumStartR = null;
+  let sumTotalR = null;
+  let detTitleR = null;
 
-  const sumStartR = excelData.length;
-  excelData.push([translate('common.day'), 'DRY', '', 'FROZEN', '']);
-  excelData.push(['', translate('common.task'), '%', translate('common.task'), '%']);
+  if (!isSingleDay) {
+    excelData.push([translate('summary.tabs.service_level.summary_tab'), '', '', '', '']);
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-  merges.push({ s: { r: sumStartR, c: 0 }, e: { r: sumStartR + 1, c: 0 } });
-  merges.push({ s: { r: sumStartR, c: 1 }, e: { r: sumStartR, c: 2 } });
-  merges.push({ s: { r: sumStartR, c: 3 }, e: { r: sumStartR, c: 4 } });
+    sumStartR = excelData.length;
+    excelData.push([translate('common.day'), 'DRY', '', 'FROZEN', '']);
+    excelData.push(['', translate('common.task'), '%', translate('common.task'), '%']);
 
-  summaryDataRows.forEach((row) => {
-    const dryPct = totalDrySummary > 0 ? row.dryCount / totalDrySummary : 0;
-    const frzPct = totalFrozenSummary > 0 ? row.frozenCount / totalFrozenSummary : 0;
+    merges.push({ s: { r: sumStartR, c: 0 }, e: { r: sumStartR + 1, c: 0 } });
+    merges.push({ s: { r: sumStartR, c: 1 }, e: { r: sumStartR, c: 2 } });
+    merges.push({ s: { r: sumStartR, c: 3 }, e: { r: sumStartR, c: 4 } });
 
-    excelData.push([
-      row.dayNum,
-      row.dryCount || null,
-      row.dryCount > 0 ? dryPct : null,
-      row.frozenCount || null,
-      row.frozenCount > 0 ? frzPct : null,
-    ]);
-  });
+    summaryDataRows.forEach((row) => {
+      const dryPct = totalDrySummary > 0 ? row.dryCount / totalDrySummary : 0;
+      const frzPct = totalFrozenSummary > 0 ? row.frozenCount / totalFrozenSummary : 0;
 
-  const sumTotalR = excelData.length;
-  excelData.push(['Total', totalDrySummary || 0, null, totalFrozenSummary || 0, null]);
-  merges.push({ s: { r: sumTotalR, c: 1 }, e: { r: sumTotalR, c: 2 } });
-  merges.push({ s: { r: sumTotalR, c: 3 }, e: { r: sumTotalR, c: 4 } });
+      excelData.push([
+        row.dayNum,
+        row.dryCount || null,
+        row.dryCount > 0 ? dryPct : null,
+        row.frozenCount || null,
+        row.frozenCount > 0 ? frzPct : null,
+      ]);
+    });
 
-  excelData.push([]);
+    sumTotalR = excelData.length;
+    excelData.push(['Total', totalDrySummary || 0, null, totalFrozenSummary || 0, null]);
+    merges.push({ s: { r: sumTotalR, c: 1 }, e: { r: sumTotalR, c: 2 } });
+    merges.push({ s: { r: sumTotalR, c: 3 }, e: { r: sumTotalR, c: 4 } });
 
-  const detTitleR = excelData.length;
-  excelData.push([translate('summary.tabs.service_level.detail_tab'), '', '', '', '']);
-  merges.push({ s: { r: detTitleR, c: 0 }, e: { r: detTitleR, c: 4 } });
+    excelData.push([]);
+
+    detTitleR = excelData.length;
+    excelData.push([translate('summary.tabs.service_level.detail_tab'), '', '', '', '']);
+    merges.push({ s: { r: detTitleR, c: 0 }, e: { r: detTitleR, c: 4 } });
+  }
 
   const detStartR = excelData.length;
 
@@ -235,12 +242,12 @@ export function generateServiceLevelSheet(wb, tasks, startDateStr, endDateStr, t
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 
-      if (R === 0 || R === detTitleR) {
+      if (!isSingleDay && (R === 0 || R === detTitleR)) {
         cell.s = { font: { bold: true }, alignment: { horizontal: 'left', vertical: 'center' } };
         continue;
       }
 
-      if (R >= sumStartR && R <= sumTotalR) {
+      if (!isSingleDay && R >= sumStartR && R <= sumTotalR) {
         if (C > 4) {
           cell.v = '';
           cell.s = {};

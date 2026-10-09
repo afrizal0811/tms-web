@@ -36,6 +36,7 @@ const LoadingSpinner = () => (
 
 const COLORS = {
   yellow: 'bg-[#fff2cc] dark:bg-[#42311c]',
+  dryColor: 'bg-[#fae2d5] dark:bg-[#4a2438]',
   pink: 'bg-[#ead1dc] dark:bg-[#4a2438]',
   green: 'bg-[#d9ead3] dark:bg-[#1a3d28]',
   red: 'bg-[#f4cccc] dark:bg-[#4a1c1c]',
@@ -57,9 +58,9 @@ const HEADER_COLUMNS = [
   { key: 'co_persentage', color: COLORS.blue, text: '% CO' },
   { key: 'pr', color: COLORS.gray, text: 'PR' },
   { key: 'pr_persentage', color: COLORS.gray, text: '% PR' },
-  { key: 'mt', color: COLORS.yellow, text: 'MT' },
-  { key: 'tv', color: COLORS.yellow, text: 'TV' },
-  { key: 'va', color: COLORS.yellow, text: 'VA' },
+  { key: 'mt', color: COLORS.dryColor, text: 'MT' },
+  { key: 'tv', color: COLORS.dryColor, text: 'TV' },
+  { key: 'va', color: COLORS.dryColor, text: 'VA' },
   { key: 'tvu', color: COLORS.violet, text: 'TVU' },
   { key: 'tvu_persentage', color: COLORS.violet, text: '% TVU' },
 ];
@@ -307,12 +308,12 @@ export default function TaskSummaryTab({
           <thead className="text-xs text-gray-700 dark:text-slate-200 capitalize sticky top-0 z-10 font-bold">
             <tr>
               <th
-                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.yellow}`}
+                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.dryColor}`}
               >
                 {translate('common.routing_date')}
               </th>
               <th
-                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.yellow}`}
+                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.dryColor}`}
               >
                 {translate('common.type')}
               </th>

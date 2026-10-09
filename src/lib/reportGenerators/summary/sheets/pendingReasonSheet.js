@@ -41,8 +41,8 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       const status = task.statusDelivery
         ? task.statusDelivery.split(',')[0].trim().toUpperCase()
         : '';
-      if (TARGET_STATUSES.includes(status)) {
-        let emailRaw = '';
+      
+      let emailRaw = '';
         if (task.assignee) {
           emailRaw =
             typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
@@ -94,17 +94,16 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
           flow: flow,
           content: task.content,
           sortDateNum: sortDateNum,
-          sortArrTimestamp: arrObj ? arrObj.getTime() : 9999999999999,
+          sortDoneTimestamp: dateObj ? dateObj.getTime() : 9999999999999,
           dateStr: formatDateUniversal(dateObj, 'DD-MM-YYYY'),
           openStr: formatDateUniversal(`${startDateStr} ${task.openTime}`, 'HH:mm'),
           closeStr: formatDateUniversal(`${startDateStr} ${task.closeTime}`, 'HH:mm'),
           etaStr: formatDateUniversal(`${startDateStr} ${task.eta}`, 'HH:mm'),
           etdStr: formatDateUniversal(`${startDateStr} ${task.etd}` || task.ETD, 'HH:mm'),
-          arrStr: formatDateUniversal(arrObj, 'HH:mm'),
-          depStr: formatDateUniversal(depObj, 'HH:mm'),
+          arrStr: arrObj ? arrObj.toISOString().substring(11, 16) : '-',
+          depStr: depObj ? depObj.toISOString().substring(11, 16) : '-',
           actualVisitMins: actualVisitMins,
         });
-      }
     });
   }
   const groupedByDriverDate = {};
@@ -114,23 +113,20 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
     groupedByDriverDate[key].push(item);
   });
   Object.values(groupedByDriverDate).forEach((group) => {
-    group.sort((a, b) => a.sortArrTimestamp - b.sortArrTimestamp);
+    group.sort((a, b) => a.sortDoneTimestamp - b.sortDoneTimestamp);
     group.forEach((item, index) => {
       item.realSequence = index + 1;
-      processedData.push(item);
+      if (TARGET_STATUSES.includes(item.status)) {
+        processedData.push(item);
+      }
     });
   });
-  const getGroupPriority = (plat) => {
-    const p = (plat || '').toUpperCase();
-    if (p.includes('DM')) return 3;
-    if (p.includes('SEWA')) return 2;
-    return 1;
-  };
   processedData.sort((a, b) => {
     if (a.sortDateNum !== b.sortDateNum) return a.sortDateNum - b.sortDateNum;
-    const prioA = getGroupPriority(a.licensePlate);
-    const prioB = getGroupPriority(b.licensePlate);
-    if (prioA !== prioB) return prioA - prioB;
+    const statusA = (a.status || '').trim().toLowerCase();
+    const statusB = (b.status || '').trim().toLowerCase();
+    if (statusA !== statusB) return statusA.localeCompare(statusB);
+
     const nameA = (a.driverName || '').trim().toLowerCase();
     const nameB = (b.driverName || '').trim().toLowerCase();
     return nameA.localeCompare(nameB);
@@ -146,7 +142,8 @@ export function generatePendingReasonSheet(
   startDateStr,
   endDateStr,
   hasPendingGR,
-  pendingDetails
+  pendingDetails,
+  isDailyReport = false
 ) {
   const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
   const shouldShowPendingGR = hasPendingGR;
@@ -156,17 +153,35 @@ export function generatePendingReasonSheet(
     translate('common.delivery_date'),
     translate('common.license_number'),
     translate('common.driver'),
-    translate('common.status.cancel'),
-    translate('common.status.partial'),
-    translate('common.status.pending'),
-  ];
-  if (shouldShowPendingGR) headers.push(translate('common.status.pending_gr'));
-  headers.push(
+    translate('common.customer_name'),
+    translate('common.status.delivery_status'),
     translate('summary.tabs.pending_reasons.reason'),
-    translate('summary.tabs.pending_reasons.category'),
-    translate('summary.tabs.pending_reasons.detail_reason'),
-    translate('summary.tabs.pending_reasons.group_reason'),
-    'PIC',
+  ];
+
+  let currentIdx = headers.length;
+  let idxSeparator = -1;
+
+  if (isDailyReport) {
+    headers.push('');
+    idxSeparator = currentIdx;
+    currentIdx++;
+  } else {
+    headers.push(
+      translate('summary.tabs.pending_reasons.category'),
+      translate('summary.tabs.pending_reasons.detail_reason'),
+      translate('summary.tabs.pending_reasons.group_reason'),
+      'PIC'
+    );
+    currentIdx += 4;
+  }
+
+  const idxPending = 5;
+  const idxETA = currentIdx + 2;
+  const idxETD = currentIdx + 3;
+  const idxVisitTime = currentIdx + 7;
+  const idxRO = currentIdx + 9;
+
+  headers.push(
     translate('common.open_time'),
     translate('common.close_time'),
     translate('common.eta'),
@@ -187,13 +202,8 @@ export function generatePendingReasonSheet(
   data.forEach((item, idx) => {
     const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
     if (isWrongGR) errorRows.add(idx + 1);
-    const { id, name: customerName } = parseCustomerString(item.customerName);
-    const batal = item.status === 'BATAL' ? customerName : '';
-    const parsial = item.status === 'TERIMA SEBAGIAN' ? customerName : '';
-    let pending = '';
-    if (item.status === 'PENDING' || isWrongGR) pending = customerName;
-    const pendingGR = item.status === 'PENDING GR' ? customerName : '';
 
+    const { id, name: customerName } = parseCustomerString(item.customerName);
     const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
 
     const row = [
@@ -201,18 +211,23 @@ export function generatePendingReasonSheet(
       item.dateStr,
       item.licensePlate,
       item.driverName,
-      batal,
-      parsial,
-      pending,
+      customerName || '-',
+      item.status || '-',
+      item.alasan || '-',
     ];
-    if (shouldShowPendingGR) row.push(pendingGR);
+
+    if (isDailyReport) {
+      row.push('');
+    } else {
+      row.push(
+        pd.internalExternal || '-',
+        pd.detailReason || '-',
+        pd.groupReason || '-',
+        pd.pic || '-'
+      );
+    }
 
     row.push(
-      item.alasan || '-',
-      pd.internalExternal || '-',
-      pd.detailReason || '-',
-      pd.groupReason || '-',
-      pd.pic || '-',
       item.openStr || '-',
       item.closeStr || '-',
       item.etaStr || '-',
@@ -241,14 +256,6 @@ export function generatePendingReasonSheet(
     },
   ];
 
-  const shift = shouldShowPendingGR ? 0 : -1;
-  const shiftNew = 4;
-  const idxPending = 6;
-  const idxETA = 11 + shift + shiftNew;
-  const idxETD = 12 + shift + shiftNew;
-  const idxVisitTime = 16 + shift + shiftNew;
-  const idxRO = 18 + shift + shiftNew;
-
   const range = XLSX.utils.decode_range(ws['!ref']);
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -259,6 +266,9 @@ export function generatePendingReasonSheet(
 
       if (R === 0) {
         cell.s = HEADER_STYLES.blueHeader;
+        if (isDailyReport && C === idxSeparator) {
+          cell.s = { ...HEADER_STYLES.blueHeader, fill: FILL_STYLES.alertRed };
+        }
       } else {
         const dataIdx = R - 1;
         const item = data[dataIdx];
@@ -278,6 +288,10 @@ export function generatePendingReasonSheet(
           },
         };
 
+        if (C === 3 || C === 4 || C === 5 || C === 6) {
+          currentStyle.alignment = { ...currentStyle.alignment, horizontal: 'left' };
+        }
+
         const val = cell.v;
 
         if (C === idxPending && errorRows.has(R)) {
@@ -291,6 +305,9 @@ export function generatePendingReasonSheet(
           if (val === 0 || val === '0')
             currentStyle = { ...currentStyle, fill: FILL_STYLES.yellow };
         }
+        if (isDailyReport && C === idxSeparator) {
+          currentStyle = { ...currentStyle, fill: FILL_STYLES.alertRed };
+        }
         cell.s = currentStyle;
       }
     }
@@ -301,18 +318,18 @@ export function generatePendingReasonSheet(
     { wch: 12 },
     { wch: 12 },
     { wch: 25 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 20 },
+    { wch: 25 },
+    { wch: 15 },
+    { wch: 25 },
   ];
-  if (shouldShowPendingGR) widths.push({ wch: 20 });
+
+  if (isDailyReport) {
+    widths.push({ wch: 4 });
+  } else {
+    widths.push({ wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 20 });
+  }
 
   widths.push(
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 30 },
-    { wch: 20 },
-    { wch: 20 },
     { wch: 10 },
     { wch: 10 },
     { wch: 10 },

@@ -1,7 +1,7 @@
 import { getDrivers, getTruckNonTms } from '@/lib/api/mileapp';
 import {
-  formatDateUniversal,
   formatLongDate,
+  formatDateUniversal,
   getBasePlate,
   getDeliveryDateFromRouting,
   getStorageType,
@@ -590,98 +590,116 @@ export async function generateTruckUsageSheet(
     return { patternType: 'solid', fgColor: { rgb: 'F4CCCC' } };
   };
 
-  excelData.push([
-    `${translate('summary.tabs.truck_usage.subtitle_1')} - ${monthName}`,
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-  ]);
-  excelData.push([
-    translate('common.vehicle_type'),
-    'TMS',
-    'Non TMS',
-    'TVU',
-    'TV',
-    '% TVU',
-    'V',
-    'VU',
-    'IV',
-  ]);
+  let summaryCountEndRow = 0;
+  let summaryPctStartRow = 0;
+  let summaryPctEndRow = 0;
 
-  const addSummarySection = (cat, isPercentage = false) => {
-    activeTypes.forEach((type) => {
-      const d = summaryData[cat].types[type];
+  const isSingleDay = startDateStr === endDateStr;
+
+  if (!isSingleDay) {
+    excelData.push([
+      `${translate('summary.tabs.truck_usage.subtitle_1')} - ${monthName}`,
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
+    excelData.push([
+      translate('common.vehicle_type'),
+      'TMS',
+      'Non TMS',
+      'TVU',
+      'TV',
+      '% TVU',
+      'V',
+      'VU',
+      'IV',
+    ]);
+
+    const addSummarySection = (cat, isPercentage = false) => {
+      activeTypes.forEach((type) => {
+        const d = summaryData[cat].types[type];
+        if (isPercentage) {
+          excelData.push([type, d.PctTMS, d.PctManual, d.PctTVU]);
+        } else {
+          excelData.push([
+            type,
+            d.TMS || 0,
+            d.Manual || 0,
+            d.TVU || 0,
+            d.TV || 0,
+            d.PctTVU,
+            null,
+            null,
+            null,
+          ]);
+        }
+      });
+
+      const t = summaryData[cat].total;
       if (isPercentage) {
-        excelData.push([type, d.PctTMS, d.PctManual, d.PctTVU]);
+        excelData.push([
+          translate('summary.tabs.truck_usage.total_used'),
+          t.PctTMS,
+          t.PctManual,
+          t.PctTVU,
+        ]);
       } else {
         excelData.push([
-          type,
-          d.TMS || 0,
-          d.Manual || 0,
-          d.TVU || 0,
-          d.TV || 0,
-          d.PctTVU,
-          null,
-          null,
-          null,
+          translate('summary.tabs.truck_usage.total_used'),
+          t.TMS,
+          t.Manual,
+          t.TVU,
+          t.TV,
+          t.PctTVU,
+          t.V,
+          t.VU,
+          t.IV,
         ]);
       }
-    });
+    };
 
-    const t = summaryData[cat].total;
-    if (isPercentage) {
-      excelData.push([
-        translate('summary.tabs.truck_usage.total_used'),
-        t.PctTMS,
-        t.PctManual,
-        t.PctTVU,
-      ]);
-    } else {
-      excelData.push([
-        translate('summary.tabs.truck_usage.total_used'),
-        t.TMS,
-        t.Manual,
-        t.TVU,
-        t.TV,
-        t.PctTVU,
-        t.V,
-        t.VU,
-        t.IV,
-      ]);
-    }
-  };
+    addSummarySection('Dry', false);
+    addSummarySection('Frozen', false);
 
-  addSummarySection('Dry', false);
-  addSummarySection('Frozen', false);
+    const otv = summaryData.OTV;
+    excelData.push([
+      'OTV',
+      otv.TMS,
+      otv.Manual,
+      otv.TVU,
+      otv.TV,
+      otv.PctTVU,
+      otv.V,
+      otv.VU,
+      otv.IV,
+    ]);
 
-  const otv = summaryData.OTV;
-  excelData.push(['OTV', otv.TMS, otv.Manual, otv.TVU, otv.TV, otv.PctTVU, otv.V, otv.VU, otv.IV]);
+    summaryCountEndRow = excelData.length;
+    excelData.push([]);
+    summaryPctStartRow = excelData.length;
 
-  const summaryCountEndRow = excelData.length;
-  excelData.push([]);
-  const summaryPctStartRow = excelData.length;
+    excelData.push([
+      `${translate('summary.tabs.truck_usage.subtitle_2')} - ${monthName}`,
+      '',
+      '',
+      '',
+    ]);
+    excelData.push([translate('common.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
 
-  excelData.push([
-    `${translate('summary.tabs.truck_usage.subtitle_2')} - ${monthName}`,
-    '',
-    '',
-    '',
-  ]);
-  excelData.push([translate('common.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
+    addSummarySection('Dry', true);
+    addSummarySection('Frozen', true);
+    excelData.push(['OTV', otv.PctTMS, otv.PctManual, otv.PctTVU]);
 
-  addSummarySection('Dry', true);
-  addSummarySection('Frozen', true);
-  excelData.push(['OTV', otv.PctTMS, otv.PctManual, otv.PctTVU]);
+    summaryPctEndRow = excelData.length;
+    excelData.push([]);
+  }
 
-  const summaryPctEndRow = excelData.length;
-  excelData.push([]);
-
-  const table1StartRow = summaryPctEndRow + 1;
+  const table1StartRow = excelData.length;
 
   const buildTableData = (isPercentage, startRowIndex) => {
     const tableRows = [];
@@ -804,8 +822,10 @@ export async function generateTruckUsageSheet(
     const frzTot = frzInter + 1;
     const otvRow = frzTot + 1;
 
-    merges.push({ s: { r: dryStart, c: 0 }, e: { r: dryInter - 1, c: 0 } });
-    merges.push({ s: { r: frzStart, c: 0 }, e: { r: frzInter - 1, c: 0 } });
+    if (activeTypes.length > 1) {
+      merges.push({ s: { r: dryStart, c: 0 }, e: { r: dryInter - 1, c: 0 } });
+      merges.push({ s: { r: frzStart, c: 0 }, e: { r: frzInter - 1, c: 0 } });
+    }
     merges.push({ s: { r: dryInter, c: 0 }, e: { r: dryInter, c: 1 } });
     merges.push({ s: { r: dryTot, c: 0 }, e: { r: dryTot, c: 1 } });
     merges.push({ s: { r: frzInter, c: 0 }, e: { r: frzInter, c: 1 } });
@@ -848,10 +868,12 @@ export async function generateTruckUsageSheet(
 
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
-  merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
-  merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
-  merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
-  merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
+  if (!isSingleDay) {
+    merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+    merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
+    merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
+  }
 
   ws['!merges'] = merges;
   ws['!views'] = [{ state: 'frozen', xSplit: 3, ySplit: table1StartRow + 2 }];
@@ -927,7 +949,7 @@ export async function generateTruckUsageSheet(
         continue;
       }
 
-      if (R === summaryCountEndRow || R === summaryPctEndRow) continue;
+      if (!isSingleDay && (R === summaryCountEndRow || R === summaryPctEndRow)) continue;
 
       let isTable1 = false,
         isTable2 = false,

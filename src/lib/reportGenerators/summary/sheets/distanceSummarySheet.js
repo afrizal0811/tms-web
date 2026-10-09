@@ -449,7 +449,8 @@ export function generateDistanceSummarySheet(
   localeCode,
   driverData,
   taskData,
-  locationHistoryData
+  locationHistoryData,
+  isDailyReport = false
 ) {
   const { summaryData, monthTotals } = calculateDistanceSummaryData(
     resultsData,
@@ -542,16 +543,22 @@ export function generateDistanceSummarySheet(
     '',
   ];
 
-  const excelRows = [
-    monthHeader1,
-    monthHeader2,
-    monthHeader3,
-    monthDataRow,
-    [''],
+  const isSingleDay = startDateStr === endDateStr;
+  const excelRows = [];
+  if (!isSingleDay) {
+    excelRows.push(
+      monthHeader1,
+      monthHeader2,
+      monthHeader3,
+      monthDataRow,
+      ['']
+    );
+  }
+  excelRows.push(
     dailyHeader1,
     dailyHeader2,
-    dailyHeader3,
-  ];
+    dailyHeader3
+  );
   summaryData.forEach((row) => {
     const [y, m, d] = row.date.split('-').map(Number);
     const displayDate = formatLongDate(new Date(y, m - 1, d), localeCode);
@@ -591,33 +598,39 @@ export function generateDistanceSummarySheet(
   });
 
   const ws = XLSX.utils.aoa_to_sheet(excelRows);
-  const staticMerges = [
-    { s: { r: 0, c: 0 }, e: { r: 2, c: 0 } },
-    { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } },
-    { s: { r: 0, c: 5 }, e: { r: 0, c: 8 } },
-    { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } },
-    { s: { r: 1, c: 3 }, e: { r: 2, c: 3 } },
-    { s: { r: 1, c: 4 }, e: { r: 2, c: 4 } },
-    { s: { r: 1, c: 5 }, e: { r: 1, c: 6 } },
-    { s: { r: 1, c: 7 }, e: { r: 2, c: 7 } },
-    { s: { r: 1, c: 8 }, e: { r: 2, c: 8 } },
-    { s: { r: 5, c: 0 }, e: { r: 7, c: 0 } },
-    { s: { r: 5, c: 1 }, e: { r: 5, c: 6 } },
-    { s: { r: 5, c: 7 }, e: { r: 5, c: 12 } },
-    { s: { r: 6, c: 1 }, e: { r: 6, c: 2 } },
-    { s: { r: 6, c: 3 }, e: { r: 6, c: 4 } },
-    { s: { r: 6, c: 5 }, e: { r: 7, c: 5 } },
-    { s: { r: 6, c: 6 }, e: { r: 7, c: 6 } },
-    { s: { r: 6, c: 7 }, e: { r: 6, c: 8 } },
-    { s: { r: 6, c: 9 }, e: { r: 6, c: 10 } },
-    { s: { r: 6, c: 11 }, e: { r: 7, c: 11 } },
-    { s: { r: 6, c: 12 }, e: { r: 7, c: 12 } },
-  ];
+  const offset = isSingleDay ? 0 : 5;
+  const staticMerges = [];
+  if (!isSingleDay) {
+    staticMerges.push(
+      { s: { r: 0, c: 0 }, e: { r: 2, c: 0 } },
+      { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } },
+      { s: { r: 0, c: 5 }, e: { r: 0, c: 8 } },
+      { s: { r: 1, c: 1 }, e: { r: 1, c: 2 } },
+      { s: { r: 1, c: 3 }, e: { r: 2, c: 3 } },
+      { s: { r: 1, c: 4 }, e: { r: 2, c: 4 } },
+      { s: { r: 1, c: 5 }, e: { r: 1, c: 6 } },
+      { s: { r: 1, c: 7 }, e: { r: 2, c: 7 } },
+      { s: { r: 1, c: 8 }, e: { r: 2, c: 8 } }
+    );
+  }
+  staticMerges.push(
+    { s: { r: offset, c: 0 }, e: { r: offset + 2, c: 0 } },
+    { s: { r: offset, c: 1 }, e: { r: offset, c: 6 } },
+    { s: { r: offset, c: 7 }, e: { r: offset, c: 12 } },
+    { s: { r: offset + 1, c: 1 }, e: { r: offset + 1, c: 2 } },
+    { s: { r: offset + 1, c: 3 }, e: { r: offset + 1, c: 4 } },
+    { s: { r: offset + 1, c: 5 }, e: { r: offset + 2, c: 5 } },
+    { s: { r: offset + 1, c: 6 }, e: { r: offset + 2, c: 6 } },
+    { s: { r: offset + 1, c: 7 }, e: { r: offset + 1, c: 8 } },
+    { s: { r: offset + 1, c: 9 }, e: { r: offset + 1, c: 10 } },
+    { s: { r: offset + 1, c: 11 }, e: { r: offset + 2, c: 11 } },
+    { s: { r: offset + 1, c: 12 }, e: { r: offset + 2, c: 12 } }
+  );
 
   ws['!merges'] = staticMerges.slice();
   summaryData.forEach((row, idx) => {
     if (row.isSunday || row.isDynamicHoliday) {
-      const rowIndex = 8 + idx;
+      const rowIndex = offset + 3 + idx;
       ws['!merges'].push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 12 } });
       const dateCellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
       ws[dateCellRef].s = {
@@ -657,40 +670,56 @@ export function generateDistanceSummarySheet(
 
       let cellStyle = { ...BASE_STYLES.cellCenter };
 
-      if (R < 4) {
+      if (R < offset) {
         if (C > 8) continue;
-        if (R < 3) cellStyle = { ...HEADER_STYLES.main };
+        if (R < 3) {
+          cellStyle = { ...HEADER_STYLES.main };
+          if (R === 2) {
+            if (excelRows[R][C] === 'Dry') cellStyle.fill = FILL_STYLES.dry;
+            if (excelRows[R][C] === 'Frozen') cellStyle.fill = FILL_STYLES.frozen;
+          }
+        }
         if (R === 0 && C === 0) cellStyle.fill = orangeFill;
         if (R === 0 && (C === 1 || C === 5)) cellStyle.fill = greenFill;
 
         if (R === 3 && C > 0) {
           cell.t = 'n';
           cellStyle.numFmt = '#,##0.00';
+          if (isDailyReport && (C === 3 || C === 4)) {
+            cellStyle.fill = FILL_STYLES.taskYellow;
+          }
         }
-      } else if (R >= 5) {
-        if (R >= 5 && R <= 7) {
+      } else if (R >= offset) {
+        if (R >= offset && R <= offset + 2) {
           cellStyle = { ...HEADER_STYLES.main };
-          if (R === 5 && C === 0) cellStyle.fill = orangeFill;
-          if (R === 5 && (C === 1 || C === 7)) cellStyle.fill = greenFill;
+          if (R === offset + 2) {
+            if (excelRows[R][C] === 'Dry') cellStyle.fill = FILL_STYLES.dry;
+            if (excelRows[R][C] === 'Frozen') cellStyle.fill = FILL_STYLES.frozen;
+          }
+          if (R === offset && C === 0) cellStyle.fill = orangeFill;
+          if (R === offset && (C === 1 || C === 7)) cellStyle.fill = greenFill;
         } else {
-          const rowData = summaryData[R - 8];
+          const rowData = summaryData[R - (offset + 3)];
           if (rowData && (rowData.isSunday || rowData.isDynamicHoliday)) {
             cellStyle.fill = FILL_STYLES.red;
           } else if (C > 0) {
             cell.t = 'n';
             cellStyle.numFmt = C === 1 || C === 2 || C === 7 || C === 8 ? '0' : '#,##0.00';
+            if (isDailyReport && (C === 3 || C === 4)) {
+              cellStyle.fill = FILL_STYLES.taskYellow;
+            }
           }
         }
       }
 
-      if ((R < 4 && C === 4) || (R >= 5 && C === 6)) {
+      if ((R < offset && C === 4) || (R >= offset && C === 6)) {
         cellStyle.border = { ...cellStyle.border, right: separatorBorder };
       }
 
       if ((R === 1 || R === 2) && (C === 3 || C === 4 || C === 7 || C === 8)) {
         cellStyle.alignment = { wrapText: true, horizontal: 'center', vertical: 'center' };
       }
-      if ((R === 6 || R === 7) && (C === 5 || C === 6 || C === 11 || C === 12)) {
+      if ((R === offset + 1 || R === offset + 2) && (C === 5 || C === 6 || C === 11 || C === 12)) {
         cellStyle.alignment = { wrapText: true, horizontal: 'center', vertical: 'center' };
       }
 
