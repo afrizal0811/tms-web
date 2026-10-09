@@ -98,7 +98,8 @@ export async function generateSummaryWorkbook(
   localeCode,
   hasPendingGR,
   pendingDetails,
-  isDailyReport = false
+  isDailyReport = false,
+  isManualMode = false
 ) {
   const wb = XLSX.utils.book_new();
   const hubsList = getCachedHubs() || [];
@@ -112,7 +113,8 @@ export async function generateSummaryWorkbook(
     endDateStr,
     masterTruckData,
     translate,
-    isDailyReport
+    isDailyReport,
+    isManualMode
   );
 
   generatePendingReasonSheet(

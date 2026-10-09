@@ -3,7 +3,6 @@
 import Spinner from '@/components/Spinner';
 import Tooltip from '@/components/Tooltip';
 import { useMemo, useState } from 'react';
-import RoutingDropdown from './components/RoutingDropdown';
 import TaskSummaryModal from './modals/TaskSummaryModal';
 
 const TableHeader = ({ tooltip, colorClass, text }) => (
@@ -75,7 +74,6 @@ export default function TaskSummaryTab({
   masterTruckData = { Dry: { Total: 0 }, Frozen: { Total: 0 } },
 }) {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
-  const [openDropdown, setOpenDropdown] = useState(null);
 
   const allDates = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -180,20 +178,7 @@ export default function TaskSummaryTab({
     );
   };
 
-  const renderArmadaRow = (
-    data,
-    mtTotal,
-    dateObj,
-    isFrozen,
-    isFirstRow,
-    rowSpanProps,
-    isZeroDP,
-    routingNames
-  ) => {
-    const dateCellClass = isZeroDP
-      ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
-      : 'bg-white dark:bg-slate-800 font-medium';
-
+  const renderArmadaRow = (data, mtTotal, dateObj, isFrozen, isFirstRow, rowSpanProps) => {
     return (
       <tr
         key={isFrozen ? 'frozen' : 'dry'}
@@ -202,24 +187,9 @@ export default function TaskSummaryTab({
         {isFirstRow && (
           <td
             rowSpan={2}
-            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center relative ${dateCellClass}`}
+            className={`px-2 py-2 border border-gray-300 dark:border-slate-700 align-middle text-center relative bg-white dark:bg-slate-800 font-medium`}
           >
-            {routingNames && routingNames.length > 0 && !isZeroDP ? (
-              <RoutingDropdown
-                displayText={rowSpanProps.display}
-                routingNames={routingNames}
-                translate={translate}
-                position="right"
-                isOpen={openDropdown === rowSpanProps.display}
-                onToggle={() =>
-                  setOpenDropdown(
-                    openDropdown === rowSpanProps.display ? null : rowSpanProps.display
-                  )
-                }
-              />
-            ) : (
-              <span>{rowSpanProps.display}</span>
-            )}
+            <span>{rowSpanProps.display}</span>
           </td>
         )}
 
@@ -308,9 +278,9 @@ export default function TaskSummaryTab({
           <thead className="text-xs text-gray-700 dark:text-slate-200 capitalize sticky top-0 z-10 font-bold">
             <tr>
               <th
-                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-[100px] ${COLORS.dryColor}`}
+                className={`px-2 py-3 border border-gray-300 dark:border-slate-700 max-w-10 ${COLORS.dryColor}`}
               >
-                {translate('common.routing_date')}
+                {translate('common.delivery_date')}
               </th>
               <th
                 className={`px-2 py-3 border border-gray-300 dark:border-slate-700 min-w-20 ${COLORS.dryColor}`}
@@ -340,9 +310,6 @@ export default function TaskSummaryTab({
               const f = data?.frozen || {};
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
-
-              const rNames = data?.routingNames || [];
-
               const isPast =
                 new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
@@ -362,20 +329,9 @@ export default function TaskSummaryTab({
               if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
               if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
 
-              const isZeroDP = (d.dp || 0) === 0 && (f.dp || 0) === 0 && isPast;
-
               return [
-                renderArmadaRow(
-                  d,
-                  mtDry,
-                  item.dateObj,
-                  false,
-                  true,
-                  { display: item.display },
-                  isZeroDP,
-                  rNames
-                ),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}, isZeroDP, rNames),
+                renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
+                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
               ];
             })}
           </tbody>

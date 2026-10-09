@@ -310,7 +310,7 @@ export const dictionary = {
         note_two: '  Total perhitungan tugas yang terhapus bisa menjadi tidak akurat.',
       },
       manual_input: {
-        upload_title: 'Tekan untuk unggah atau seret berkas di sini',
+        upload_title: 'Tekan untuk unggah berkas',
         upload_subtitle: 'Berkas hanya diperbolehkan dalam format .xlsx atau .xls',
         routing_guide: {
           step_1:
@@ -1049,7 +1049,7 @@ export const dictionary = {
         note_two: ' Deleted task counts may be inaccurate.',
       },
       manual_input: {
-        upload_title: 'Click to upload or drag and drop file here',
+        upload_title: 'Click to upload files',
         upload_subtitle: 'Only .xlsx or .xls files are allowed',
         routing_guide: {
           step_1:

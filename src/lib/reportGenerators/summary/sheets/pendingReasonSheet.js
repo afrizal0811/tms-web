@@ -5,13 +5,19 @@ import {
   normalizeEmail,
   parseApiDateString,
   parseCustomerString,
+  getBasePlate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 
-export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
+export function calculatePendingReasonData(
+  driverData,
+  allTasks,
+  startDateStr,
+  endDateStr,
+) {
   const processedData = [];
   const driverMap = new Map();
   if (driverData && Array.isArray(driverData)) {
@@ -20,14 +26,14 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       if (!plat || isEmpty(plat.trim()) || plat.toUpperCase().includes('DEMO')) return;
       const email = normalizeEmail(d.email);
       if (email && !driverMap.has(email)) {
-        driverMap.set(email, { name: d.name, plat: plat, type: getStorageType(d) });
+        driverMap.set(email, { name: d.name, plat: getBasePlate(plat), type: getStorageType(d) });
       }
     });
   }
   const rawTasks = [];
   if (allTasks && Array.isArray(allTasks)) {
     allTasks.forEach((task) => {
-      const dObj = new Date(task.doneTime || task.createdTime);
+      const dObj = new Date(task.startTime || task.doneTime);
       if (startDateStr && endDateStr) {
         if (!isNaN(dObj.getTime())) {
           const wibDate = formatDateUniversal(dObj);
@@ -41,69 +47,66 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       const status = task.statusDelivery
         ? task.statusDelivery.split(',')[0].trim().toUpperCase()
         : '';
-      
+
       let emailRaw = '';
-        if (task.assignee) {
-          emailRaw =
-            typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
-        }
-        const email = normalizeEmail(emailRaw);
-        if (!driverMap.has(email)) return;
-        const driverInfo = driverMap.get(email);
-        const flow = task.flow || '';
-        const isGR = flow.toUpperCase().includes('GR');
-        let arrivalSource, departureSource;
-        if (isGR) {
-          arrivalSource = task.page1DoneTime;
-          departureSource = task.doneTime;
+      if (task.assignee) {
+        emailRaw = typeof task.assignee === 'string' ? task.assignee.split(',')[0] : task.assignee;
+      }
+      const email = normalizeEmail(emailRaw);
+      if (!driverMap.has(email)) return;
+      const driverInfo = driverMap.get(email);
+      const flow = task.flow || '';
+      const isGR = flow.toUpperCase().includes('GR');
+      let arrivalSource, departureSource;
+      if (isGR) {
+        arrivalSource = task.page1DoneTime;
+        departureSource = task.doneTime;
+      } else {
+        arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
+        departureSource = task.page3DoneTime;
+      }
+      const dateObj = parseApiDateString(task.startTime || task.doneTime);
+      let actualVisitMins = 0;
+      if (arrivalSource && departureSource) {
+        const tArr = new Date(arrivalSource);
+        const tDep = new Date(departureSource);
+        tArr.setSeconds(0, 0);
+        tDep.setSeconds(0, 0);
+        const diff = tDep.getTime() - tArr.getTime();
+        if (diff > 0) {
+          actualVisitMins = Math.floor(diff / (1000 * 60));
+        } else if (diff === 0) {
+          actualVisitMins = 0;
         } else {
-          arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
-          departureSource = task.page3DoneTime;
+          actualVisitMins = 0;
         }
-        const dateObj = parseApiDateString(task.doneTime || task.createdTime);
-        const arrObj = parseApiDateString(arrivalSource);
-        const depObj = parseApiDateString(departureSource);
-        let actualVisitMins = 0;
-        if (arrObj && depObj) {
-          const tArr = new Date(arrObj);
-          const tDep = new Date(depObj);
-          tArr.setSeconds(0, 0);
-          tDep.setSeconds(0, 0);
-          const diff = tDep.getTime() - tArr.getTime();
-          if (diff > 0) {
-            actualVisitMins = Math.floor(diff / (1000 * 60));
-          } else if (diff === 0) {
-            actualVisitMins = 0;
-          } else {
-            actualVisitMins = 0;
-          }
-        }
-        let sortDateNum = 0;
-        if (dateObj) {
-          const wibTime = dateObj.getTime() + 7 * 60 * 60 * 1000;
-          const d = new Date(wibTime);
-          sortDateNum = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
-        }
-        rawTasks.push({
-          ...task,
-          email: email,
-          driverName: driverInfo.name,
-          licensePlate: driverInfo.plat,
-          temp: driverInfo.type,
-          status: status,
-          flow: flow,
-          content: task.content,
-          sortDateNum: sortDateNum,
-          sortDoneTimestamp: dateObj ? dateObj.getTime() : 9999999999999,
-          dateStr: formatDateUniversal(dateObj, 'DD-MM-YYYY'),
-          openStr: formatDateUniversal(`${startDateStr} ${task.openTime}`, 'HH:mm'),
-          closeStr: formatDateUniversal(`${startDateStr} ${task.closeTime}`, 'HH:mm'),
-          etaStr: formatDateUniversal(`${startDateStr} ${task.eta}`, 'HH:mm'),
-          etdStr: formatDateUniversal(`${startDateStr} ${task.etd}` || task.ETD, 'HH:mm'),
-          arrStr: arrObj ? arrObj.toISOString().substring(11, 16) : '-',
-          depStr: depObj ? depObj.toISOString().substring(11, 16) : '-',
-          actualVisitMins: actualVisitMins,
-        });
+      }
+      let sortDateNum = 0;
+      if (dateObj) {
+        const wibTime = dateObj.getTime() + 7 * 60 * 60 * 1000;
+        const d = new Date(wibTime);
+        sortDateNum = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+      }
+      rawTasks.push({
+        ...task,
+        email: email,
+        driverName: driverInfo.name,
+        licensePlate: driverInfo.plat,
+        temp: driverInfo.type,
+        status: status,
+        flow: flow,
+        content: task.content,
+        sortDateNum: sortDateNum,
+        sortDoneTimestamp: dateObj ? dateObj.getTime() : 9999999999999,
+        dateStr: formatDateUniversal(dateObj, 'DD-MM-YYYY'),
+        openStr: formatDateUniversal(`${startDateStr} ${task.openTime}`, 'HH:mm'),
+        closeStr: formatDateUniversal(`${startDateStr} ${task.closeTime}`, 'HH:mm'),
+        etaStr: formatDateUniversal(`${startDateStr} ${task.eta}`, 'HH:mm'),
+        etdStr: formatDateUniversal(`${startDateStr} ${task.etd}` || task.ETD, 'HH:mm'),
+        arrStr: arrivalSource ? formatDateUniversal(arrivalSource, 'HH:mm') : '-',
+        depStr: departureSource ? formatDateUniversal(departureSource, 'HH:mm') : '-',
+        actualVisitMins: actualVisitMins,
+      });
     });
   }
   const groupedByDriverDate = {};
@@ -143,9 +146,14 @@ export function generatePendingReasonSheet(
   endDateStr,
   hasPendingGR,
   pendingDetails,
-  isDailyReport = false
+  isDailyReport = false,
 ) {
-  const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
+  const data = calculatePendingReasonData(
+    driverData,
+    allTasks,
+    startDateStr,
+    endDateStr,
+  );
   const shouldShowPendingGR = hasPendingGR;
 
   let headers = [

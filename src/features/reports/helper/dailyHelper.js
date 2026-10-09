@@ -1,5 +1,4 @@
 import {
-  getDrivers,
   getLocationHistories,
   getResults,
   getTasks,
@@ -8,7 +7,10 @@ import {
 } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
-import { generateManualReportWorkbook } from '@/lib/reportGenerators/reports';
+import {
+  parseDeliveryToTasks,
+  parseRoutingToResults,
+} from '@/lib/reportGenerators/reports/daily/parseManualToApi';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { calculateTaskSummaryMetrics } from '@/lib/reportGenerators/summary/taskSummaryMetrics';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -377,10 +379,7 @@ export const handleBulkDownload = async ({
 
 export const handleManualDownload = async ({
   hubName,
-  selectedDate,
   selectedDateString,
-  isCustomRouting,
-  routingDate,
   selectedRoutingFiles,
   selectedDeliveryFiles,
   driverData,
@@ -389,22 +388,14 @@ export const handleManualDownload = async ({
   setSelectedRoutingFiles,
   setSelectedDeliveryFiles,
   t,
+  isIndonesian,
 }) => {
+  const localeCode = isIndonesian ? 'id' : 'en';
   try {
     setIsLoading(true);
 
     const { storedLocationAcronym } = getLocalStorage();
     const hubLabel = storedLocationAcronym || hubName;
-
-    let targetRoutingDateObj;
-    if (isCustomRouting) {
-      if (!routingDate) throw new Error(t('common.invalid_date'));
-      targetRoutingDateObj = new Date(routingDate);
-    } else {
-      if (!selectedDate) throw new Error(t('common.invalid_date'));
-      targetRoutingDateObj = getPreviousRoutingDate(selectedDate);
-    }
-    const targetRoutingStr = formatDateUniversal(targetRoutingDateObj);
 
     const routingBuffers = await Promise.all(
       selectedRoutingFiles.map((file) => file.arrayBuffer())
@@ -416,9 +407,9 @@ export const handleManualDownload = async ({
     const extractedStartDate = getManualDate('starttime', deliveryBuffers, selectedDateString);
     const { timeFrom, timeTo } = calculateStartFinishDates(extractedStartDate);
     const [vehicleTypes, [hubsData, locationHistoriesRes]] = await Promise.all([
-      fetchVehicleMetadata(),
+      getVehicleTypes(),
       Promise.all([
-        getDrivers(),
+        getCachedHubs(),
         getLocationHistories({
           timeFrom,
           timeTo,
@@ -429,20 +420,48 @@ export const handleManualDownload = async ({
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
       return item.startTime?.startsWith(extractedStartDate);
     });
-    const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
-    const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
-    const { wb, excelFileName } = await generateManualReportWorkbook({
+
+    const allTasks = await parseDeliveryToTasks(deliveryBuffers);
+    const filteredResults = await parseRoutingToResults(
       routingBuffers,
-      deliveryBuffers,
-      driverData,
-      timeData: timeDataObjects,
-      vehicleTypes,
-      targetRoutingStr: getManualDate('assignedtime', deliveryBuffers, targetRoutingStr),
-      selectedDateString: extractedStartDate,
-      hubLabel,
+      extractedStartDate,
+      allTasks
+    );
+    const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
+
+    const taskSummaryMetrics = await calculateTaskSummaryMetrics({
+      allTasks,
+      allResults: filteredResults,
+      fetchedDrivers: driverData,
       hasPendingGR,
       t,
+      isManualMode: true,
     });
+
+    const pendingDetails = await getPendingDetails(extractedStartDate, extractedStartDate).catch(
+      () => []
+    );
+
+    const { wb } = await generateSummaryWorkbook(
+      driverData,
+      allTasks,
+      filteredResults,
+      singleDateHistories,
+      extractedStartDate,
+      extractedStartDate,
+      taskSummaryMetrics,
+      vehicleTypes,
+      t,
+      localeCode,
+      hasPendingGR,
+      pendingDetails,
+      true, // isDailyReport
+      true // isManualMode
+    );
+
+    const baseDailyReport = t('report.daily_report') || t('navbar.daily_report') || 'Daily Report';
+    const formattedDate = formatDateUniversal(extractedStartDate, 'DD.MM.YYYY');
+    const excelFileName = `${baseDailyReport} (Manual) - ${formattedDate} - ${hubLabel}.xlsx`;
 
     XLSX.writeFile(wb, excelFileName);
     toastSuccess(t('common.toast.success'));

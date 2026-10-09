@@ -16,10 +16,11 @@ export function generateTaskSummarySheet(
   endDateStr,
   masterTruckData,
   translate,
-  isDailyReport = false
+  isDailyReport = false,
+  isManualMode = false
 ) {
   const headers = [
-    translate('common.date'),
+    translate('common.delivery_date'),
     translate('common.type'),
     'DP',
     'DT',
@@ -104,10 +105,10 @@ export function generateTaskSummarySheet(
         displayDate,
         'Dry',
         d.dp || 0,
-        d.dt_total || 0,
-        calculatePct(d.dt_total, d.dp),
-        d.ma_total || 0,
-        calculatePct(d.ma_total, d.dp),
+        isManualMode ? 0 : d.dt_total || 0,
+        isManualMode ? '-' : calculatePct(d.dt_total, d.dp),
+        isManualMode ? 0 : d.ma_total || 0,
+        isManualMode ? '-' : calculatePct(d.ma_total, d.dp),
         d.rt || 0,
         calculatePct(d.rt, d.dp),
         d.co || 0,
@@ -125,10 +126,10 @@ export function generateTaskSummarySheet(
         '',
         'Frozen',
         f.dp || 0,
-        f.dt_total || 0,
-        calculatePct(f.dt_total, f.dp),
-        f.ma_total || 0,
-        calculatePct(f.ma_total, f.dp),
+        isManualMode ? 0 : f.dt_total || 0,
+        isManualMode ? '-' : calculatePct(f.dt_total, f.dp),
+        isManualMode ? 0 : f.ma_total || 0,
+        isManualMode ? '-' : calculatePct(f.ma_total, f.dp),
         f.rt || 0,
         calculatePct(f.rt, f.dp),
         f.co || 0,
@@ -296,6 +297,9 @@ export function generateTaskSummarySheet(
             cell.s.fill = headerFills[C];
           } else if (isDailyReport && [2, 3, 5, 7, 9, 11, 14, 15].includes(C)) {
             cell.s.fill = FILL_STYLES.taskYellow;
+          }
+          if (isManualMode && [3, 4, 5, 6].includes(C)) {
+            cell.s.fill = { patternType: 'solid', fgColor: { rgb: 'FFC7CE' } };
           }
         }
       }

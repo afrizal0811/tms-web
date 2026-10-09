@@ -64,10 +64,7 @@ export default function DailyReport({
   const triggerManualDownload = () =>
     handleManualDownload({
       hubName,
-      selectedDate,
       selectedDateString,
-      isCustomRouting,
-      routingDate,
       selectedRoutingFiles,
       selectedDeliveryFiles,
       driverData,
@@ -76,6 +73,7 @@ export default function DailyReport({
       setSelectedRoutingFiles,
       setSelectedDeliveryFiles,
       t,
+      isIndonesian,
     });
 
   const handleAction = () => {

@@ -1,7 +1,55 @@
 import { getResultHistories } from '@/lib/api/mileapp';
-import { formatDateUniversal, getDeliveryDateFromRouting, parseCustomerString } from '@/lib/utils';
+import {
+  formatDateUniversal,
+  getBasePlate,
+  getDeliveryDateFromRouting,
+  parseCustomerString,
+} from '@/lib/utils';
 
-const cleanPlat = (str) => (str || '').replace(/\s+/g, '').toLowerCase();
+const cleanPlat = (str) => {
+  if (!str) return '';
+  const base = getBasePlate(str) || str;
+  return String(base).replace(/\s+/g, '').toLowerCase();
+};
+
+const isValidPlate = (plate) => {
+  if (!plate || typeof plate !== 'string') return false;
+  const trimmed = plate.trim();
+  if (
+    !trimmed ||
+    trimmed === '-' ||
+    trimmed.toLowerCase() === 'n/a' ||
+    trimmed.toLowerCase() === 'null' ||
+    trimmed.toLowerCase() === 'undefined'
+  ) {
+    return false;
+  }
+  const clean = cleanPlat(trimmed);
+  if (
+    !clean ||
+    clean === '-' ||
+    clean.includes('unknown') ||
+    clean.includes('demo')
+  ) {
+    return false;
+  }
+  return true;
+};
+
+const isValidDriver = (driver) => {
+  if (!driver || typeof driver !== 'string') return false;
+  const trimmed = driver.trim();
+  if (
+    !trimmed ||
+    trimmed === '-' ||
+    trimmed.toLowerCase() === 'n/a' ||
+    trimmed.toLowerCase() === 'null' ||
+    trimmed.toLowerCase() === 'undefined'
+  ) {
+    return false;
+  }
+  return true;
+};
 
 export async function calculateTaskSummaryMetrics({
   allTasks,
@@ -10,6 +58,7 @@ export async function calculateTaskSummaryMetrics({
   hasPendingGR,
   fetchWithTracker,
   t,
+  isManualMode = false
 }) {
   const taskToRoutingDate = new Map();
   (allResults || []).forEach((res) => {
@@ -174,7 +223,8 @@ export async function calculateTaskSummaryMetrics({
     allTasks.forEach((task) => {
       const dateKey =
         formatDateUniversal(task.startTime, 'YYYY-MM-DD') ||
-        formatDateUniversal(task.doneTime, 'YYYY-MM-DD');
+        formatDateUniversal(task.doneTime, 'YYYY-MM-DD') ||
+        formatDateUniversal(task.createdTime, 'YYYY-MM-DD');
       if (!dateKey) return;
 
       initDate(dateKey);
@@ -341,6 +391,8 @@ export async function calculateTaskSummaryMetrics({
         });
       }
 
+      if (!isValidPlate(finalPlate) || !isValidDriver(driverName)) return;
+
       if (!routingDateVehicles[dateKey].has(baseCanonical)) {
         routingDateVehicles[dateKey].set(baseCanonical, {
           plate: finalPlate,
@@ -377,6 +429,161 @@ export async function calculateTaskSummaryMetrics({
       tempMetrics[dateKey].frozen.tv_details.sort((a, b) =>
         (a.driverName || '').localeCompare(b.driverName || '')
       );
+    }
+
+    if (Array.isArray(allTasks)) {
+      tempMetrics[dateKey].dry.dp = 0;
+      tempMetrics[dateKey].frozen.dp = 0;
+      tempMetrics[dateKey].unknown.dp = 0;
+      tempMetrics[dateKey].dry.dp_tasks = [];
+      tempMetrics[dateKey].frozen.dp_tasks = [];
+      tempMetrics[dateKey].unknown.dp_tasks = [];
+
+      tempMetrics[dateKey].dry.tv = 0;
+      tempMetrics[dateKey].frozen.tv = 0;
+      tempMetrics[dateKey].unknown.tv = 0;
+      tempMetrics[dateKey].dry.tv_details = [];
+      tempMetrics[dateKey].frozen.tv_details = [];
+      tempMetrics[dateKey].unknown.tv_details = [];
+
+      const isManual =
+        isManualMode ||
+        (Array.isArray(allTasks) && allTasks.some((t) => Boolean(t.typeStorage)));
+
+      const dailyTaskVehicles = {
+        dry: new Map(),
+        frozen: new Map(),
+        unknown: new Map(),
+      };
+
+      allTasks.forEach((task) => {
+        const dObj = new Date(task.startTime || task.doneTime || task.createdTime);
+        if (isNaN(dObj.getTime())) return;
+        const taskDateKey = formatDateUniversal(dObj);
+        
+        if (taskDateKey === dateKey) {
+          if (!isManual) {
+            const statusRaw = (task.status || task.statusDelivery || '').toUpperCase().trim();
+            const isOngoing = statusRaw.includes('ONGOING');
+            const isDone = statusRaw.includes('DONE') || statusRaw.includes('SELESAI');
+            if (!isOngoing && !isDone) return;
+          }
+
+          let rawEmail = '';
+          if (task.assignee) {
+            rawEmail =
+              typeof task.assignee === 'string'
+                ? task.assignee.split(',')[0].trim()
+                : Array.isArray(task.assignee)
+                ? task.assignee[0]
+                : task.assignee;
+          } else if (task.assignedTo && task.assignedTo.email) {
+            rawEmail = task.assignedTo.email;
+          } else if (task.email) {
+            rawEmail = task.email;
+          }
+          rawEmail = (rawEmail || '').toLowerCase().trim();
+
+          const strictBasePlate = (
+            task.basePlat ||
+            task.vehicleName ||
+            task.assignedVehicleName ||
+            task.plat ||
+            ''
+          ).trim();
+          const baseCanonical = cleanPlat(strictBasePlate);
+
+          const foundDriver =
+            (fetchedDrivers || []).find(
+              (d) => rawEmail && (d.email || '').toLowerCase().trim() === rawEmail
+            ) ||
+            (fetchedDrivers || []).find((d) => {
+              if (!baseCanonical) return false;
+              const dPlatClean = cleanPlat(d.plat);
+              const dBasePlatClean = cleanPlat(d.basePlat);
+              return dPlatClean === baseCanonical || dBasePlatClean === baseCanonical;
+            });
+
+          let type = 'dry';
+          if (isManual) {
+            const tStorage = (task.typeStorage || '').toUpperCase();
+            type = tStorage.includes('FROZEN') ? 'frozen' : 'dry';
+          } else {
+            const storage = foundDriver
+              ? (foundDriver.storage || 'DRY').toUpperCase()
+              : task.typeStorage
+              ? task.typeStorage.toUpperCase()
+              : 'DRY';
+            type = storage.includes('FROZEN') ? 'frozen' : 'dry';
+          }
+
+          tempMetrics[dateKey][type].dp += 1;
+          tempMetrics[dateKey][type].dp_tasks.push({
+            taskId: task._id,
+            visitName: task.customerOrder || task.title || task._id,
+            visitId: task._id,
+          });
+
+          // TV & tv_details: Only count and display paired driver & vehicle (having valid license plate)
+          const finalPlate =
+            strictBasePlate ||
+            (foundDriver ? foundDriver.plat || foundDriver.basePlat : '') ||
+            '-';
+
+          const finalDriverName =
+            task.driverName && task.driverName !== 'N/A' && task.driverName !== '-'
+              ? task.driverName
+              : (foundDriver ? foundDriver.name : null) ||
+                task.driver ||
+                (typeof task.assignee === 'string' && !task.assignee.includes('@')
+                  ? task.assignee.trim()
+                  : null) ||
+                (rawEmail ? rawEmail : '-');
+
+          if (isValidPlate(finalPlate) && isValidDriver(finalDriverName)) {
+            const canonicalPlate = cleanPlat(finalPlate);
+            const displayPlate = getBasePlate(finalPlate) || finalPlate;
+            const otherType = type === 'dry' ? 'frozen' : 'dry';
+
+            if (dailyTaskVehicles[otherType].has(canonicalPlate)) {
+              if (foundDriver && foundDriver.storage) {
+                const masterIsFrozen = foundDriver.storage.toUpperCase().includes('FROZEN');
+                const masterType = masterIsFrozen ? 'frozen' : 'dry';
+                if (masterType !== otherType) {
+                  dailyTaskVehicles[otherType].delete(canonicalPlate);
+                  dailyTaskVehicles[type].set(canonicalPlate, {
+                    plate: displayPlate,
+                    driverName: finalDriverName,
+                  });
+                }
+              }
+            } else if (!dailyTaskVehicles[type].has(canonicalPlate)) {
+              dailyTaskVehicles[type].set(canonicalPlate, {
+                plate: displayPlate,
+                driverName: finalDriverName,
+              });
+            } else {
+              const existing = dailyTaskVehicles[type].get(canonicalPlate);
+              if (existing.driverName.includes('@') && !finalDriverName.includes('@')) {
+                existing.driverName = finalDriverName;
+              }
+            }
+          }
+        }
+      });
+
+      ['dry', 'frozen'].forEach((tKey) => {
+        const vList = Array.from(dailyTaskVehicles[tKey].values());
+        tempMetrics[dateKey][tKey].tv = vList.length;
+        tempMetrics[dateKey][tKey].tv_details = vList.map((v) => ({
+          plate: v.plate,
+          driverName: v.driverName,
+        }));
+
+        tempMetrics[dateKey][tKey].tv_details.sort((a, b) =>
+          (a.driverName || '').localeCompare(b.driverName || '')
+        );
+      });
     }
 
     const m = tempMetrics[dateKey];
@@ -424,11 +631,9 @@ export async function calculateTaskSummaryMetrics({
 
     const currHasExecutedTasks = (currM.actual_tasks_count || 0) > 0;
     const currHasRouting =
-      currM.dry.tv > 0 ||
-      currM.frozen.tv > 0 ||
       currM.routingNames.length > 0 ||
-      currM.dry.dp > 0 ||
-      currM.frozen.dp > 0;
+      currM.dry.dt_sum > 0 ||
+      currM.frozen.dt_sum > 0;
 
     if (currHasExecutedTasks && !currHasRouting) {
       for (let back = 1; back <= LOOKBACK_LIMIT; back++) {
@@ -440,16 +645,16 @@ export async function calculateTaskSummaryMetrics({
         if (prevM) {
           const prevHasExecutedTasks = (prevM.actual_tasks_count || 0) > 0;
           const prevHasRouting =
-            prevM.dry.tv > 0 ||
-            prevM.frozen.tv > 0 ||
             prevM.routingNames.length > 0 ||
-            prevM.dry.dp > 0 ||
-            prevM.frozen.dp > 0;
+            prevM.dry.dt_sum > 0 ||
+            prevM.frozen.dt_sum > 0;
 
           if (prevHasRouting && !prevHasExecutedTasks) {
             ['dry', 'frozen'].forEach((type) => {
-              currM[type].dp = prevM[type].dp;
-              currM[type].dp_tasks = [...prevM[type].dp_tasks];
+              if (currM[type].dp === 0) {
+                currM[type].dp = prevM[type].dp;
+                currM[type].dp_tasks = [...prevM[type].dp_tasks];
+              }
 
               currM[type].dt_total = prevM[type].dt_total;
               currM[type].dt_sum = prevM[type].dt_sum;
@@ -460,10 +665,12 @@ export async function calculateTaskSummaryMetrics({
               currM[type].ma_hist = prevM[type].ma_hist;
               currM[type].ma_tasks = [...prevM[type].ma_tasks];
 
-              currM[type].tv = prevM[type].tv;
-              currM[type].va = prevM[type].va;
-              currM[type].tvu = prevM[type].tvu;
-              currM[type].tv_details = [...prevM[type].tv_details];
+              if (currM[type].tv === 0) {
+                currM[type].tv = prevM[type].tv;
+                currM[type].va = prevM[type].va;
+                currM[type].tvu = prevM[type].tvu;
+                currM[type].tv_details = [...prevM[type].tv_details];
+              }
 
               prevM[type].dp = 0;
               prevM[type].dp_tasks = [];

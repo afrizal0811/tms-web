@@ -7,6 +7,7 @@ import {
   isEmpty,
   isPastDate,
   normalizeEmail,
+  getBasePlate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
@@ -52,7 +53,7 @@ export function calculateTimeDriverData(
       if (email && !driverMap.has(email)) {
         driverMap.set(email, {
           name: d.name,
-          plat: plat,
+          plat: getBasePlate(plat),
           type: getStorageType(d),
           workingTime: d.workingTime,
         });
