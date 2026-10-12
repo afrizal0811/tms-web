@@ -906,7 +906,7 @@ export default function DeliveryPage() {
         isLoading={isLoading}
         isEmpty={!isLoading && (isEmpty(filteredVehicleRoutes) || !activeRoute)}
         footer={{ text: t('common.click_for_detail') }}
-        bodyProps={{ className: 'min-h-[400px]', routingData: routingResults }}
+        bodyProps={{ className: 'min-h-[400px]' }}
       >
         {!isLoading && activeRoute && (
           <CustomTable

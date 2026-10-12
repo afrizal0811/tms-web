@@ -482,7 +482,6 @@ export default function SummaryPage() {
         footer={getFooterConfig()}
         bodyProps={{
           longLoadingContent: longLoading,
-          routingData: rawData.results,
         }}
       >
         {!isLoading && renderContent()}

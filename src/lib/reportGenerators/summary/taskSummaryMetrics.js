@@ -546,27 +546,26 @@ export async function calculateTaskSummaryMetrics({
           if (isValidPlate(finalPlate) && isValidDriver(finalDriverName)) {
             const canonicalPlate = cleanPlat(finalPlate);
             const displayPlate = getBasePlate(finalPlate) || finalPlate;
-            const otherType = type === 'dry' ? 'frozen' : 'dry';
 
-            if (dailyTaskVehicles[otherType].has(canonicalPlate)) {
-              if (foundDriver && foundDriver.storage) {
-                const masterIsFrozen = foundDriver.storage.toUpperCase().includes('FROZEN');
-                const masterType = masterIsFrozen ? 'frozen' : 'dry';
-                if (masterType !== otherType) {
-                  dailyTaskVehicles[otherType].delete(canonicalPlate);
-                  dailyTaskVehicles[type].set(canonicalPlate, {
-                    plate: displayPlate,
-                    driverName: finalDriverName,
-                  });
-                }
-              }
-            } else if (!dailyTaskVehicles[type].has(canonicalPlate)) {
-              dailyTaskVehicles[type].set(canonicalPlate, {
+            const vehicleType =
+              foundDriver && foundDriver.storage
+                ? foundDriver.storage.toUpperCase().includes('FROZEN')
+                  ? 'frozen'
+                  : 'dry'
+                : type;
+            const otherVehicleType = vehicleType === 'dry' ? 'frozen' : 'dry';
+
+            if (dailyTaskVehicles[otherVehicleType].has(canonicalPlate)) {
+              dailyTaskVehicles[otherVehicleType].delete(canonicalPlate);
+            }
+
+            if (!dailyTaskVehicles[vehicleType].has(canonicalPlate)) {
+              dailyTaskVehicles[vehicleType].set(canonicalPlate, {
                 plate: displayPlate,
                 driverName: finalDriverName,
               });
             } else {
-              const existing = dailyTaskVehicles[type].get(canonicalPlate);
+              const existing = dailyTaskVehicles[vehicleType].get(canonicalPlate);
               if (existing.driverName.includes('@') && !finalDriverName.includes('@')) {
                 existing.driverName = finalDriverName;
               }

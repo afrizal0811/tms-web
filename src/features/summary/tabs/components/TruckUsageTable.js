@@ -1,7 +1,6 @@
 import Tooltip from '@/components/Tooltip';
 import { formatDateUniversal } from '@/lib/utils';
-import { Fragment, useState } from 'react';
-import RoutingDropdown from './RoutingDropdown';
+import { Fragment } from 'react';
 
 export default function TruckUsageTable({
   dateMap,
@@ -12,8 +11,6 @@ export default function TruckUsageTable({
   translate,
   onCellClick,
 }) {
-  const [openDropdown, setOpenDropdown] = useState(null);
-
   const bgHeader =
     'bg-[#d9d2e9] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-violet-900/30 dark:to-violet-900/30';
   const bgDry =
@@ -533,35 +530,9 @@ export default function TruckUsageTable({
                     </span>
                   </Tooltip>
                 );
-              } else if (d.routingNames && d.routingNames.length > 0 && !isHoliday) {
-                headerContent = (
-                  <RoutingDropdown
-                    displayText={formatDateUniversal(d.str, 'DD-MM-YYYY')}
-                    routingNames={d.routingNames}
-                    translate={translate}
-                    position="bottom"
-                    isOpen={openDropdown === d.str}
-                    onToggle={() => setOpenDropdown(openDropdown === d.str ? null : d.str)}
-                  />
-                );
-              } else if (
-                (!d.routingNames || d.routingNames.length === 0) &&
-                dateMap[d.str]?.OTV > 0 &&
-                !isHoliday
-              ) {
-                headerContent = (
-                  <Tooltip
-                    tooltipContent={`${translate('common.no_data')} ${translate('common.routing').toLowerCase()}`}
-                  >
-                    <span className="cursor-help border-b-2 border-dotted border-slate-700 dark:border-slate-400 pb-0.5">
-                      {formatDateUniversal(d.str, 'DD-MM-YYYY')}
-                    </span>
-                  </Tooltip>
-                );
               } else {
                 headerContent = <span>{formatDateUniversal(d.str, 'DD-MM-YYYY')}</span>;
               }
-
               return (
                 <th
                   key={i}

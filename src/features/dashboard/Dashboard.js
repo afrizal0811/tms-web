@@ -409,7 +409,6 @@ export default function Dashboard({ driverData }) {
       }
       bodyProps={{
         timerStartTime: fetchStartTimeRef.current,
-        routingData: rawData.results,
       }}
     >
       <div className="flex-1 flex flex-col p-3 overflow-hidden dark:bg-slate-800">

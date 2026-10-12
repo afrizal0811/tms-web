@@ -4,7 +4,6 @@ import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import RouteInfoButton from '../button/RouteInfoButton';
 
 export default function BodyCard({
   children,
@@ -16,7 +15,6 @@ export default function BodyCard({
   onTabClick,
   customHeader = null,
   longLoadingContent = null,
-  routingData = null,
   footer = null,
   isScroll = true,
   timerStartTime,
@@ -235,7 +233,6 @@ export default function BodyCard({
           </div>
         )}
       </div>
-      {routingData && <RouteInfoButton resultsData={routingData} />}
     </div>
   );
 }
