@@ -11,6 +11,10 @@ import {
   isPastDate,
   parseCustomerString,
 } from '@/lib/utils';
+import {
+  getRoutingTimeFromTasks,
+  getTargetRoutingDate,
+} from '@/lib/reportGenerators/summary/sheets/routingTimeSheet';
 import { useMemo } from 'react';
 
 const headerClass =
@@ -59,6 +63,7 @@ const isValidRoutingTimeWIB = (utcString) => {
 export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, translate, localeCode }) {
   const processedData = useMemo(() => {
     const dataMap = {};
+    const tasksByDate = {};
     const start = new Date(startDateStr);
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDateStr);
@@ -76,27 +81,33 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
         dry: {
           start: { time: null, name: null, soNumber: null },
           finish: { time: null, name: null, soNumber: null },
+          batches: [],
+          mainBatch: null,
         },
         frozen: {
           start: { time: null, name: null, soNumber: null },
           finish: { time: null, name: null, soNumber: null },
+          batches: [],
+          mainBatch: null,
         },
       };
+      tasksByDate[dateKey] = { dry: [], frozen: [] };
       current.setDate(current.getDate() + 1);
     }
 
     if (tasks && Array.isArray(tasks)) {
       tasks.forEach((task) => {
-        if (task.createdFrom !== 'API') return;
+        const isApi = !task.createdFrom || task.createdFrom === 'API';
+        if (!isApi) return;
         if (task.flow !== 'Delivery') return;
         if (!task.createdTime) return;
         if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-        const taskDateKey = formatDateUniversal(task.createdTime);
+        const taskDateKey = getTargetRoutingDate(task.startTime, task.createdTime);
 
-        const targetRow = dataMap[taskDateKey];
+        const targetRow = taskDateKey ? dataMap[taskDateKey] : null;
 
-        if (targetRow) {
+        if (targetRow && tasksByDate[taskDateKey]) {
           const {
             name: taskName,
             invoiceNumber,
@@ -112,33 +123,60 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
             isValidAssignedTimeWIB(task.createdTime, task.assignedTime);
 
           if (isValidRoutedTask) {
-            const taskCreatedTimeMs = new Date(task.createdTime).getTime();
-            const taskAssignedTimeMs = new Date(task.assignedTime).getTime();
             const type = (task.typeStorage || '').toUpperCase().includes('FROZEN')
               ? 'frozen'
               : 'dry';
-            const target = targetRow[type];
-
-            if (!target.start.time || taskCreatedTimeMs < new Date(target.start.time).getTime()) {
-              target.start.time = task.createdTime;
-              target.start.name = taskName;
-              target.start.soNumber = invoiceNumber;
-              target.start.truncateInvoice = truncateInvoice;
-            }
-
-            if (
-              !target.finish.time ||
-              taskAssignedTimeMs > new Date(target.finish.time).getTime()
-            ) {
-              target.finish.time = task.assignedTime;
-              target.finish.name = taskName;
-              target.finish.soNumber = invoiceNumber;
-              target.finish.truncateInvoice = truncateInvoice;
-            }
+            tasksByDate[taskDateKey][type].push({
+              ...task,
+              name: taskName,
+              soNumber: invoiceNumber,
+              truncateInvoice: truncateInvoice,
+            });
           }
         }
       });
     }
+
+    Object.keys(dataMap).forEach((dateKey) => {
+      ['dry', 'frozen'].forEach((type) => {
+        const typeTasks = tasksByDate[dateKey] ? tasksByDate[dateKey][type] : [];
+        const result = getRoutingTimeFromTasks(typeTasks);
+        if (result.startTime && result.finishTime) {
+          let actualRoutingDay = null;
+          if (result.startTask?.createdTime) {
+            const actualDateKey = formatDateUniversal(
+              new Date(result.startTask.createdTime),
+              'YYYY-MM-DD'
+            );
+            if (actualDateKey !== dateKey) {
+              const cTime = new Date(result.startTask.createdTime).getTime();
+              const wibDate = new Date(cTime + 7 * 60 * 60 * 1000);
+              actualRoutingDay = wibDate.toLocaleDateString(
+                localeCode === 'en' ? 'en-US' : 'id-ID',
+                { weekday: 'long', timeZone: 'UTC' }
+              );
+            }
+          }
+
+          dataMap[dateKey][type].start = {
+            time: result.startTime,
+            name: result.startTask?.name || null,
+            soNumber: result.startTask?.soNumber || null,
+            truncateInvoice: result.startTask?.truncateInvoice || null,
+            actualRoutingDay,
+          };
+          dataMap[dateKey][type].finish = {
+            time: result.finishTime,
+            name: result.finishTask?.name || null,
+            soNumber: result.finishTask?.soNumber || null,
+            truncateInvoice: result.finishTask?.truncateInvoice || null,
+            actualRoutingDay,
+          };
+          dataMap[dateKey][type].batches = result.batches;
+          dataMap[dateKey][type].mainBatch = result.mainBatch;
+        }
+      });
+    });
 
     return Object.keys(dataMap)
       .sort()
@@ -323,18 +361,41 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   : '';
                 const display = hasTime ? formatDateUniversal(target.time, 'HH:mm') : '-';
 
+                let tooltipContent = '';
+                if (errClass !== '') {
+                  tooltipContent = translate(
+                    `summary.tabs.routing_time.tooltip.${timeType}_time_error`
+                  );
+                } else if (hasTime) {
+                  const invoiceText = target.truncateInvoice || '';
+                  const typeData = row[type];
+                  let batchInfo = '';
+                  if (typeData?.batches && typeData.batches.length > 1) {
+                    const mainCount = typeData.mainBatch?.tasks?.length || 0;
+                    const otherBatches = typeData.batches.filter((b) => b !== typeData.mainBatch);
+                    const otherTasksCount = otherBatches.reduce(
+                      (acc, b) => acc + b.tasks.length,
+                      0
+                    );
+                    batchInfo = `Batch Utama: ${mainCount} Task (${otherBatches.length} sesi lain: ${otherTasksCount} task)`;
+                  }
+
+                  const routingDayText = target.actualRoutingDay
+                    ? translate
+                      ? translate('summary.tabs.routing_time.tooltip.routing_done_on', {
+                          day: target.actualRoutingDay,
+                        })
+                      : `Routing dilakukan pada hari ${target.actualRoutingDay}`
+                    : '';
+
+                  const parts = [invoiceText, batchInfo, routingDayText].filter(Boolean);
+                  tooltipContent = parts.join(' • ');
+                }
+
                 return (
                   <td className={`${dataClass} ${errClass}`}>
                     <div className="flex items-center justify-center gap-1">
-                      <Tooltip
-                        tooltipContent={
-                          errClass !== ''
-                            ? translate(`summary.tabs.routing_time.tooltip.${timeType}_time_error`)
-                            : hasTime
-                              ? target.truncateInvoice
-                              : ''
-                        }
-                      >
+                      <Tooltip tooltipContent={tooltipContent}>
                         <span
                           className={
                             errClass !== ''
@@ -354,7 +415,8 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
               };
 
               const renderUnifiedTimeCell = (timeType) => {
-                const target = row.dry[timeType].time ? row.dry[timeType] : row.frozen[timeType];
+                const activeType = row.dry[timeType].time ? 'dry' : 'frozen';
+                const target = row[activeType][timeType];
                 const hasTime = !!target.time;
                 const hasAnyOpposite =
                   timeType === 'start'
@@ -367,18 +429,41 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                     : '';
                 const display = hasTime ? formatDateUniversal(target.time, 'HH:mm') : '-';
 
+                let tooltipContent = '';
+                if (errClass !== '') {
+                  tooltipContent = translate(
+                    `summary.tabs.routing_time.tooltip.${timeType}_time_error`
+                  );
+                } else if (hasTime) {
+                  const invoiceText = target.truncateInvoice || '';
+                  const typeData = row[activeType];
+                  let batchInfo = '';
+                  if (typeData?.batches && typeData.batches.length > 1) {
+                    const mainCount = typeData.mainBatch?.tasks?.length || 0;
+                    const otherBatches = typeData.batches.filter((b) => b !== typeData.mainBatch);
+                    const otherTasksCount = otherBatches.reduce(
+                      (acc, b) => acc + b.tasks.length,
+                      0
+                    );
+                    batchInfo = `Batch Utama: ${mainCount} Task (${otherBatches.length} sesi lain: ${otherTasksCount} task)`;
+                  }
+
+                  const routingDayText = target.actualRoutingDay
+                    ? translate
+                      ? translate('summary.tabs.routing_time.tooltip.routing_done_on', {
+                          day: target.actualRoutingDay,
+                        })
+                      : `Routing dilakukan pada hari ${target.actualRoutingDay}`
+                    : '';
+
+                  const parts = [invoiceText, batchInfo, routingDayText].filter(Boolean);
+                  tooltipContent = parts.join(' • ');
+                }
+
                 return (
                   <td className={`${dataClass} ${errClass}`}>
                     <div className="flex items-center justify-center gap-1">
-                      <Tooltip
-                        tooltipContent={
-                          errClass !== ''
-                            ? translate(`summary.tabs.routing_time.tooltip.${timeType}_time_error`)
-                            : hasTime
-                              ? target.truncateInvoice
-                              : ''
-                        }
-                      >
+                      <Tooltip tooltipContent={tooltipContent}>
                         <span
                           className={
                             errClass !== ''

@@ -530,7 +530,6 @@ export async function calculateTaskSummaryMetrics({
             visitId: task._id || task.id || task.taskId,
           });
 
-          // TV & tv_details: Only count and display paired driver & vehicle (having valid license plate)
           const finalPlate =
             strictBasePlate || (foundDriver ? foundDriver.plat || foundDriver.basePlat : '') || '-';
 

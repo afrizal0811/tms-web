@@ -49,6 +49,143 @@ const createSafeDate = (dateStr) => {
   return new Date(y, m - 1, d, 12, 0, 0);
 };
 
+export function getTargetRoutingDate(deliveryDateInput, fallbackCreatedTime) {
+  const deliveryStr = deliveryDateInput
+    ? formatDateUniversal(deliveryDateInput, 'YYYY-MM-DD')
+    : null;
+
+  if (deliveryStr && deliveryStr !== '-') {
+    const [y, m, d] = deliveryStr.split('-').map(Number);
+    const deliveryDate = new Date(y, m - 1, d, 12, 0, 0);
+    const day = deliveryDate.getDay();
+    const daysToSubtract = day === 1 ? 2 : 1;
+    deliveryDate.setDate(deliveryDate.getDate() - daysToSubtract);
+
+    return formatDateUniversal(deliveryDate, 'YYYY-MM-DD');
+  }
+
+  if (fallbackCreatedTime) {
+    const createdStr = formatDateUniversal(fallbackCreatedTime, 'YYYY-MM-DD');
+    if (createdStr && createdStr !== '-') {
+      return createdStr;
+    }
+  }
+
+  return null;
+}
+
+export function getRoutingTimeFromTasks(taskList) {
+  if (!taskList || taskList.length === 0) {
+    return {
+      startTime: null,
+      finishTime: null,
+      startTask: null,
+      finishTask: null,
+      batches: [],
+      mainBatch: null,
+    };
+  }
+
+  const validTasks = taskList.filter((t) => {
+    return (
+      t.createdTime &&
+      t.assignedTime &&
+      !isNaN(new Date(t.createdTime).getTime()) &&
+      !isNaN(new Date(t.assignedTime).getTime())
+    );
+  });
+
+  if (validTasks.length === 0) {
+    return {
+      startTime: null,
+      finishTime: null,
+      startTask: null,
+      finishTask: null,
+      batches: [],
+      mainBatch: null,
+    };
+  }
+
+  const sortedTasks = [...validTasks].sort(
+    (a, b) => new Date(a.assignedTime).getTime() - new Date(b.assignedTime).getTime()
+  );
+
+  const GAP_THRESHOLD_MS = 60 * 60 * 1000;
+  const MAX_TASK_DURATION_MS = 3 * 60 * 60 * 1000;
+
+  const batches = [];
+  let currentBatch = null;
+
+  sortedTasks.forEach((task) => {
+    const taskAssignedMs = new Date(task.assignedTime).getTime();
+    const taskCreatedMs = new Date(task.createdTime).getTime();
+
+    if (!currentBatch) {
+      currentBatch = {
+        tasks: [task],
+        minCreatedMs: taskCreatedMs,
+        maxCreatedMs: taskCreatedMs,
+        minAssignedMs: taskAssignedMs,
+        maxAssignedMs: taskAssignedMs,
+      };
+      batches.push(currentBatch);
+      return;
+    }
+
+    const assignedDiff = taskAssignedMs - currentBatch.maxAssignedMs;
+    const isAssignedClose = assignedDiff <= GAP_THRESHOLD_MS;
+
+    const isCreatedSoonAfterPreviousDispatch =
+      taskCreatedMs >= currentBatch.maxAssignedMs &&
+      taskCreatedMs - currentBatch.maxAssignedMs <= GAP_THRESHOLD_MS &&
+      taskAssignedMs - taskCreatedMs <= MAX_TASK_DURATION_MS;
+
+    if (isAssignedClose || isCreatedSoonAfterPreviousDispatch) {
+      currentBatch.tasks.push(task);
+      if (taskCreatedMs < currentBatch.minCreatedMs) currentBatch.minCreatedMs = taskCreatedMs;
+      if (taskCreatedMs > currentBatch.maxCreatedMs) currentBatch.maxCreatedMs = taskCreatedMs;
+      if (taskAssignedMs > currentBatch.maxAssignedMs) currentBatch.maxAssignedMs = taskAssignedMs;
+    } else {
+      currentBatch = {
+        tasks: [task],
+        minCreatedMs: taskCreatedMs,
+        maxCreatedMs: taskCreatedMs,
+        minAssignedMs: taskAssignedMs,
+        maxAssignedMs: taskAssignedMs,
+      };
+      batches.push(currentBatch);
+    }
+  });
+
+  let mainBatch = batches[0];
+  batches.forEach((b) => {
+    if (b.tasks.length > mainBatch.tasks.length) {
+      mainBatch = b;
+    }
+  });
+
+  let startTask = mainBatch.tasks[0];
+  let finishTask = mainBatch.tasks[0];
+
+  mainBatch.tasks.forEach((t) => {
+    if (new Date(t.createdTime).getTime() < new Date(startTask.createdTime).getTime()) {
+      startTask = t;
+    }
+    if (new Date(t.assignedTime).getTime() > new Date(finishTask.assignedTime).getTime()) {
+      finishTask = t;
+    }
+  });
+
+  return {
+    startTime: startTask.createdTime,
+    finishTime: finishTask.assignedTime,
+    startTask,
+    finishTask,
+    batches,
+    mainBatch,
+  };
+}
+
 export function generateRoutingTimeSheet(
   wb,
   tasks,
@@ -58,6 +195,7 @@ export function generateRoutingTimeSheet(
   localeCode
 ) {
   const dataMap = {};
+  const tasksByDate = {};
   const start = createSafeDate(startDateStr);
   const end = createSafeDate(endDateStr);
 
@@ -81,19 +219,21 @@ export function generateRoutingTimeSheet(
       frozen: { firstCreatedTime: null, lastAssignedTime: null },
       isSunday: current.getDay() === 0,
     };
+    tasksByDate[key] = { dry: [], frozen: [] };
     current.setDate(current.getDate() + 1);
   }
 
   if (Array.isArray(tasks)) {
     tasks.forEach((task) => {
-      if (task.createdFrom !== 'API') return;
+      const isApi = !task.createdFrom || task.createdFrom === 'API';
+      if (!isApi) return;
       if (task.flow !== 'Delivery') return;
       if (!task.createdTime) return;
       if (!isValidRoutingTimeWIB(task.createdTime)) return;
 
-      let taskDateKey = formatDateUniversal(new Date(task.createdTime), 'YYYY-MM-DD');
+      const taskDateKey = getTargetRoutingDate(task.startTime, task.createdTime);
 
-      if (dataMap[taskDateKey]) {
+      if (taskDateKey && dataMap[taskDateKey] && tasksByDate[taskDateKey]) {
         const isValidRoutedTask =
           task.assignedTime &&
           task.routingResultId &&
@@ -102,25 +242,22 @@ export function generateRoutingTimeSheet(
 
         if (isValidRoutedTask) {
           const type = (task.typeStorage || '').toUpperCase().includes('FROZEN') ? 'frozen' : 'dry';
-          const target = dataMap[taskDateKey][type];
-
-          if (
-            !target.firstCreatedTime ||
-            new Date(task.createdTime) < new Date(target.firstCreatedTime)
-          ) {
-            target.firstCreatedTime = task.createdTime;
-          }
-
-          if (
-            !target.lastAssignedTime ||
-            new Date(task.assignedTime) > new Date(target.lastAssignedTime)
-          ) {
-            target.lastAssignedTime = task.assignedTime;
-          }
+          tasksByDate[taskDateKey][type].push(task);
         }
       }
     });
   }
+
+  Object.keys(dataMap).forEach((dateKey) => {
+    ['dry', 'frozen'].forEach((type) => {
+      const typeTasks = tasksByDate[dateKey] ? tasksByDate[dateKey][type] : [];
+      const result = getRoutingTimeFromTasks(typeTasks);
+      if (result.startTime && result.finishTime) {
+        dataMap[dateKey][type].firstCreatedTime = result.startTime;
+        dataMap[dateKey][type].lastAssignedTime = result.finishTime;
+      }
+    });
+  });
 
   const isTimeDifferent = (t1, t2) => {
     if (!t1 && !t2) return false;
@@ -144,10 +281,7 @@ export function generateRoutingTimeSheet(
   const isDurationSeparated = isStartSeparated || isFinishSeparated;
   const hasAnySeparation = isStartSeparated || isFinishSeparated;
   const totalCols =
-    1 +
-    (isStartSeparated ? 2 : 1) +
-    (isFinishSeparated ? 2 : 1) +
-    (isDurationSeparated ? 2 : 1);
+    1 + (isStartSeparated ? 2 : 1) + (isFinishSeparated ? 2 : 1) + (isDurationSeparated ? 2 : 1);
 
   let excelData = [];
   let merges = [];
@@ -157,13 +291,11 @@ export function generateRoutingTimeSheet(
     const headerRow1 = [];
     let currentCol = 0;
 
-    // Routing Date
     headerRow0.push(translate('common.routing_date'));
     headerRow1.push('');
     merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
     currentCol += 1;
 
-    // Start Time
     if (isStartSeparated) {
       headerRow0.push(translate('common.start_time'), '');
       headerRow1.push('Dry', 'Frozen');
@@ -176,7 +308,6 @@ export function generateRoutingTimeSheet(
       currentCol += 1;
     }
 
-    // Finish Time
     if (isFinishSeparated) {
       headerRow0.push(translate('common.finish_time'), '');
       headerRow1.push('Dry', 'Frozen');
@@ -189,7 +320,6 @@ export function generateRoutingTimeSheet(
       currentCol += 1;
     }
 
-    // Duration
     if (isDurationSeparated) {
       headerRow0.push(translate('common.duration'), '');
       headerRow1.push('Dry', 'Frozen');
@@ -260,7 +390,6 @@ export function generateRoutingTimeSheet(
 
         const rowData = [row.dateDisplay];
 
-        // Start Time
         const dryStartStr = hasDryStart
           ? formatDateUniversal(row.dry.firstCreatedTime, 'HH:mm')
           : '-';
@@ -275,10 +404,7 @@ export function generateRoutingTimeSheet(
           rowData.push(unifiedStartStr);
         }
 
-        // Finish Time
-        const dryEndStr = hasDryEnd
-          ? formatDateUniversal(row.dry.lastAssignedTime, 'HH:mm')
-          : '-';
+        const dryEndStr = hasDryEnd ? formatDateUniversal(row.dry.lastAssignedTime, 'HH:mm') : '-';
         const frzEndStr = hasFrzEnd
           ? formatDateUniversal(row.frozen.lastAssignedTime, 'HH:mm')
           : '-';
@@ -290,7 +416,6 @@ export function generateRoutingTimeSheet(
           rowData.push(unifiedEndStr);
         }
 
-        // Duration
         const unifiedDur = dryDur !== '-' ? dryDur : frzDur;
         if (isDurationSeparated) {
           rowData.push(dryDur, frzDur);
@@ -359,9 +484,17 @@ export function generateRoutingTimeSheet(
         let isErrorCell = false;
 
         if (isStartSeparated) {
-          if (C === colStartDry && dryStartVal === '-' && (isFinishSeparated ? dryEndVal !== '-' : dryEndVal !== '-')) {
+          if (
+            C === colStartDry &&
+            dryStartVal === '-' &&
+            (isFinishSeparated ? dryEndVal !== '-' : dryEndVal !== '-')
+          ) {
             isErrorCell = true;
-          } else if (C === colStartFrz && frzStartVal === '-' && (isFinishSeparated ? frzEndVal !== '-' : dryEndVal !== '-')) {
+          } else if (
+            C === colStartFrz &&
+            frzStartVal === '-' &&
+            (isFinishSeparated ? frzEndVal !== '-' : dryEndVal !== '-')
+          ) {
             isErrorCell = true;
           }
         } else {
@@ -374,9 +507,17 @@ export function generateRoutingTimeSheet(
         }
 
         if (isFinishSeparated) {
-          if (C === colEndDry && dryEndVal === '-' && (isStartSeparated ? dryStartVal !== '-' : dryStartVal !== '-')) {
+          if (
+            C === colEndDry &&
+            dryEndVal === '-' &&
+            (isStartSeparated ? dryStartVal !== '-' : dryStartVal !== '-')
+          ) {
             isErrorCell = true;
-          } else if (C === colEndFrz && frzEndVal === '-' && (isStartSeparated ? frzStartVal !== '-' : dryStartVal !== '-')) {
+          } else if (
+            C === colEndFrz &&
+            frzEndVal === '-' &&
+            (isStartSeparated ? frzStartVal !== '-' : dryStartVal !== '-')
+          ) {
             isErrorCell = true;
           }
         } else {

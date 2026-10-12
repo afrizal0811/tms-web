@@ -34,7 +34,7 @@ export async function parseDeliveryToTasks(deliveryBuffers) {
         isSplitTask: getVal('splitNum') ? 'true' : 'false',
         weightKg: parseToNum(getVal('Weight (Kg)') || getVal('Weight')),
         volumeCbm: parseToNum(getVal('Volume (CBM)') || getVal('Volume')),
-        distance: parseToNum(getVal('distance')) / 1000, // Convert to KM for tasks!
+        distance: parseToNum(getVal('distance')) / 1000,
         page1DoneTime: getVal('page1DoneTime'),
         page3DoneTime: getVal('page3DoneTime') || getVal('page1DoneTime'),
         openTime: getVal('Open Time'),
@@ -70,6 +70,17 @@ export async function parseDeliveryToTasks(deliveryBuffers) {
         statusGr: getVal('Status GR') ? [getVal('Status GR')] : [],
         content: getVal('content') || getVal('Order ID'),
         createdTime: getVal('createdTime'),
+        createdFrom: getVal('createdFrom') || getVal('created_from') || 'API',
+        assignedTime:
+          getVal('assignedTime') ||
+          getVal('assigned_time') ||
+          getVal('assignTime') ||
+          getVal('Dispatch Time'),
+        routingResultId:
+          getVal('routingResultId') ||
+          getVal('routing_result_id') ||
+          getVal('Routing Result ID') ||
+          'manual-routing',
         basePlat:
           getVal('assignedVehicleName') ||
           getVal('assignedVehicle') ||

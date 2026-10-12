@@ -501,6 +501,7 @@ export const dictionary = {
             routing_date: 'Tanggal proses ruting',
             start_time: 'Waktu pembuatan tugas pertama',
             start_time_error: 'Tidak ada tugas yang dibuat melalui proses impor',
+            routing_done_on: 'Routing dilakukan pada hari {day}',
           },
         },
         task_summary: {
@@ -1241,6 +1242,7 @@ export const dictionary = {
             routing_date: 'Date of routing process',
             start_time: 'First task creation time',
             start_time_error: 'No tasks created through import process',
+            routing_done_on: 'Routing was done on {day}',
           },
         },
         task_summary: {

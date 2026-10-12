@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api/mileapp';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
+import { getTargetRoutingDate } from '@/lib/reportGenerators/summary/sheets/routingTimeSheet';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
@@ -226,9 +227,10 @@ export default function SummaryPage() {
       case 'Routing Time': {
         const { startStr, endStr } = parseDateRange(dateRange);
         return !rawData.tasks?.some((t) => {
-          if (t.createdFrom !== 'API') return false;
+          const isApi = !t.createdFrom || t.createdFrom === 'API';
+          if (!isApi) return false;
           if (!startStr || !endStr) return true;
-          const assignedDate = t.createdTime ? formatDateUniversal(t.createdTime) : null;
+          const assignedDate = getTargetRoutingDate(t.startTime, t.createdTime);
           return assignedDate && isInDateRange(assignedDate, startStr, endStr);
         });
       }
