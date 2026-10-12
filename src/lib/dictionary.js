@@ -474,8 +474,6 @@ export const dictionary = {
             title: 'Tingkat Servis',
           },
           sequence: {
-            actual: 'Aktual',
-            routing: 'Ruting',
             subtitle: 'Kesesuaian urutan',
             title: 'Akurasi Urutan',
             total_accuracy: 'Total Akurasi',
@@ -1216,8 +1214,6 @@ export const dictionary = {
             title: 'Service Level',
           },
           sequence: {
-            actual: 'Actual',
-            routing: 'Routing',
             subtitle: 'Sequence conformity',
             title: 'Sequence Accuracy',
             total_accuracy: 'Total Accuracy',

@@ -137,11 +137,11 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
         <p className="text-sm text-gray-500 dark:text-slate-400">
           {t('summary.tabs.diagram.sequence.subtitle')}{' '}
           <span className="font-bold text-green-600 dark:text-green-300">
-            {t('summary.tabs.diagram.sequence.routing')}
+            {t('common.routing')}
           </span>{' '}
           vs{' '}
           <span className="font-bold  text-red-600 dark:text-red-300">
-            {t('summary.tabs.diagram.sequence.actual')}
+            {t('common.actual')}
           </span>
         </p>
       </div>
