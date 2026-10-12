@@ -9,7 +9,7 @@ import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
 import { getResults, getTasks } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastWarning } from '@/lib/toast';
+import { toastError } from '@/lib/toast';
 import {
   getBaseVehicleType,
   isEmpty,
@@ -19,7 +19,6 @@ import {
 } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateDashboard } from './help';
-import DiagramTab from './tab/DiagramTab';
 
 export default function Dashboard({ driverData }) {
   const { t, isIndonesian } = useLanguage();
@@ -29,20 +28,13 @@ export default function Dashboard({ driverData }) {
   const [typeFilter, setTypeFilter] = useState('');
   const [masterVehicleTypes, setMasterVehicleTypes] = useState([]);
   const [rawData, setRawData] = useState({ tasks: [], results: [] });
-  const [yearlyTasks, setYearlyTasks] = useState([]);
-  const [isYearlyLoading, setIsYearlyLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('Detail');
   const [hasPendingGR, setHasPendingGR] = useState(false);
   const [dismissedDots, setDismissedDots] = useState({
-    Diagram: false,
     Detail: false,
     RoutingVsActual: false,
   });
 
-  const lastFetchedYear = useRef(null);
-  const lastFetchedLocation = useRef(null);
-  const inFlightYearFetchKey = useRef(null);
-  const yearlyCacheRef = useRef({});
   const fetchStartTimeRef = useRef(null);
 
   const { storedLocation: hubId } = getLocalStorage();
@@ -64,23 +56,15 @@ export default function Dashboard({ driverData }) {
 
   const handleDateChange = (date) => {
     if (!date) return;
-    if (activeTab === 'Diagram') {
-      const newYear = date.getFullYear();
-      const updatedDate = new Date(selectedDate);
-      updatedDate.setFullYear(newYear);
-      setSelectedDate(updatedDate);
-    } else {
-      setSelectedDate(date);
-    }
+    setSelectedDate(date);
   };
 
   const getPingDot = (tabId) => {
-    const isTabLoading = tabId === 'Diagram' ? isYearlyLoading : loading;
     const dismissed = dismissedDots[tabId];
-    if (!isTabLoading && dismissed) return null;
+    if (!loading && dismissed) return null;
     return (
       <span className="inline-flex items-center ml-2" aria-hidden>
-        {isTabLoading ? (
+        {loading ? (
           <span className="relative flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75 animate-ping" />
             <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
@@ -94,8 +78,7 @@ export default function Dashboard({ driverData }) {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    const isTabLoading = tabId === 'Diagram' ? isYearlyLoading : loading;
-    if (!isTabLoading) {
+    if (!loading) {
       setDismissedDots((prev) => ({ ...prev, [tabId]: true }));
     }
   };
@@ -105,10 +88,6 @@ export default function Dashboard({ driverData }) {
       setDismissedDots((prev) => ({ ...prev, Detail: false, RoutingVsActual: false }));
     }
   }, [loading]);
-
-  useEffect(() => {
-    if (isYearlyLoading) setDismissedDots((prev) => ({ ...prev, Diagram: false }));
-  }, [isYearlyLoading]);
 
   const fetchData = useCallback(async () => {
     if (isEmpty(driverData) || selectedDate.getDay() === 0) {
@@ -163,100 +142,6 @@ export default function Dashboard({ driverData }) {
     fetchData();
   }, [fetchData]);
 
-  const fetchYearlyData = useCallback(
-    async (hubId, year) => {
-      setIsYearlyLoading(true);
-      setYearlyTasks([]);
-
-      const monthlyRanges = [];
-      for (let i = 0; i < 12; i++) {
-        const lastDayOfThisMonth = new Date(year, i + 1, 0).getDate();
-        const localStart = new Date(year, i, 1, 0, 0, 0);
-        const localEnd = new Date(year, i, lastDayOfThisMonth, 23, 59, 59);
-
-        monthlyRanges.push({
-          start: toApiDateString(localStart),
-          end: toApiDateString(localEnd),
-        });
-      }
-
-      let allTasks = [];
-      try {
-        const promises = monthlyRanges.map((range) =>
-          getTasks({
-            hubId,
-            status: 'DONE',
-            timeFrom: range.start,
-            timeTo: range.end,
-          })
-        );
-
-        const results = await Promise.allSettled(promises);
-        let failureCount = 0;
-        results.forEach((res) => {
-          if (res.status === 'fulfilled') {
-            const data = res.value;
-            if (Array.isArray(data)) {
-              allTasks = [...allTasks, ...data];
-            } else if (data?.data) {
-              allTasks = [...allTasks, ...data.data];
-            }
-          } else {
-            toastWarning('dashboard.toast.partial_warning', { err: res.reason });
-            failureCount++;
-          }
-        });
-
-        if (failureCount === 12) {
-          throw new Error('Gagal mengambil seluruh data tahunan.');
-        }
-
-        setYearlyTasks(allTasks);
-        lastFetchedYear.current = year;
-        lastFetchedLocation.current = hubId;
-
-        const cacheKey = `${hubId}:${year}`;
-        yearlyCacheRef.current[cacheKey] = allTasks;
-      } catch (err) {
-        toastError(t('common.toast.error', { err: err.message }), err);
-      } finally {
-        setIsYearlyLoading(false);
-      }
-    },
-    [t]
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (activeTab !== 'Diagram') return;
-    if (!hubId || isEmpty(driverData)) return;
-
-    const year = selectedDate.getFullYear();
-    const cacheKey = `${hubId}:${year}`;
-
-    const cached = yearlyCacheRef.current[cacheKey];
-    if (cached) {
-      setYearlyTasks(cached);
-      lastFetchedYear.current = year;
-      lastFetchedLocation.current = hubId;
-      return;
-    }
-
-    const alreadyFetched =
-      lastFetchedYear.current === year && lastFetchedLocation.current === hubId;
-    if (alreadyFetched) {
-      return;
-    }
-
-    if (inFlightYearFetchKey.current === cacheKey) return;
-
-    inFlightYearFetchKey.current = cacheKey;
-
-    fetchYearlyData(hubId, year, cacheKey).finally(() => {
-      inFlightYearFetchKey.current = null;
-    });
-  }, [selectedDate, activeTab, fetchYearlyData, hubId, driverData]);
-
   const driverMap = useMemo(() => {
     const map = new Map();
     if (driverData) {
@@ -305,14 +190,10 @@ export default function Dashboard({ driverData }) {
     () => applyFilters(rawData.tasks),
     [applyFilters, rawData.tasks]
   );
-  const filteredYearlyTasks = useMemo(() => applyFilters(yearlyTasks), [applyFilters, yearlyTasks]);
 
   const summaryData = useMemo(() => {
     return calculateDashboard(filteredDailyTasks, driverMap, isIndonesian, hasPendingGR);
   }, [filteredDailyTasks, driverMap, isIndonesian, hasPendingGR]);
-
-  const isDiagramTab = activeTab === 'Diagram';
-  const isLoadingSelected = isDiagramTab ? isYearlyLoading : loading;
 
   let isCardEmpty = false;
   let emptyMessage = t('common.no_data');
@@ -320,8 +201,6 @@ export default function Dashboard({ driverData }) {
   if (isEmpty(driverData) && !loading) {
     isCardEmpty = true;
     emptyMessage = t('common.no_driver');
-  } else if (activeTab === 'Diagram') {
-    isCardEmpty = !isYearlyLoading && (!filteredYearlyTasks || isEmpty(filteredYearlyTasks));
   } else if (activeTab === 'Detail') {
     isCardEmpty =
       !loading &&
@@ -340,7 +219,7 @@ export default function Dashboard({ driverData }) {
       label: t('common.storage_type'),
       component: (
         <StorageTypeFilter
-          disabled={isLoadingSelected}
+          disabled={loading}
           onApply={setStorageFilter}
           selectedTypes={storageFilter}
         />
@@ -352,7 +231,7 @@ export default function Dashboard({ driverData }) {
       hideLabel: false,
       component: (
         <VehicleTypeFilter
-          disabled={isLoadingSelected}
+          disabled={loading}
           onApply={setTypeFilter}
           onMasterTypesLoad={setMasterVehicleTypes}
           selectedType={typeFilter}
@@ -360,17 +239,15 @@ export default function Dashboard({ driverData }) {
       ),
     },
     {
-      label: isDiagramTab ? t('dashboard.year_performance') : t('common.delivery_date'),
+      label: t('common.delivery_date'),
       component: (
         <CustomDatePicker
           selected={selectedDate}
           onChange={handleDateChange}
-          isLoading={isDiagramTab ? isYearlyLoading : loading}
-          dateFormat={isDiagramTab ? 'yyyy' : 'dd MMMM yyyy'}
-          showYearPicker={isDiagramTab}
-          className="custom-year-picker"
-          maxDate={isDiagramTab ? new Date() : tomorrowDate()}
-          disableSunday={!isDiagramTab}
+          isLoading={loading}
+          dateFormat="dd MMMM yyyy"
+          maxDate={tomorrowDate()}
+          disableSunday={true}
         />
       ),
       hideLabel: false,
@@ -379,7 +256,6 @@ export default function Dashboard({ driverData }) {
 
   const cardTabs = [
     { id: 'Detail', label: t('dashboard.tabs.detail'), extraContent: getPingDot('Detail') },
-    { id: 'Diagram', label: t('dashboard.tabs.diagram'), extraContent: getPingDot('Diagram') },
     {
       id: 'RoutingVsActual',
       label: t('dashboard.tabs.routing_vs_actual'),
@@ -399,7 +275,7 @@ export default function Dashboard({ driverData }) {
       activeTabId={activeTab}
       onTabClick={handleTabClick}
       tabs={cardTabs}
-      isLoading={isLoadingSelected}
+      isLoading={loading}
       isEmpty={isCardEmpty}
       emptyMessage={emptyMessage}
       footer={
@@ -422,15 +298,6 @@ export default function Dashboard({ driverData }) {
             tasks={filteredDailyTasks}
             results={rawData.results}
             drivers={driverData}
-            selectedDate={selectedDate}
-            hasPendingGR={hasPendingGR}
-          />
-        )}
-
-        {activeTab === 'Diagram' && !isYearlyLoading && (
-          <DiagramTab
-            yearlyTasks={filteredYearlyTasks}
-            driverData={driverData}
             selectedDate={selectedDate}
             hasPendingGR={hasPendingGR}
           />

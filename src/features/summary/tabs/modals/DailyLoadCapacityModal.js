@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { getStatusBadge, loadCapacityData } from '../help';
+import { getStatusBadge, loadCapacityData } from '../components/chart/diagramHelp';
 
 const DailyTooltip = ({ active, payload, label, t, localeCode, monthData, isDarkMode }) => {
   if (active && payload && payload.length) {
@@ -49,7 +49,7 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, monthData, isDark
               className="flex justify-between gap-4 mb-1"
               style={{ color: isDarkMode ? item.dark_color : item.light_color }}
             >
-              <span>● {t(`dashboard.charts.load_capacity.${item.tKey}`)}</span>
+              <span>● {t(`summary.tabs.diagram.load_capacity.${item.tKey}`)}</span>
               <span className="font-mono">{value || 0}</span>
             </div>
           );
@@ -200,7 +200,7 @@ const DailyLoadCapacityModal = ({
                   return (
                     <Bar
                       key={item.name}
-                      name={t(`dashboard.charts.load_capacity.${item.tKey}`)}
+                      name={t(`summary.tabs.diagram.load_capacity.${item.tKey}`)}
                       dataKey={item.name}
                       stackId="a"
                       fill={isDarkMode ? item.dark_color : item.light_color}
@@ -266,7 +266,7 @@ const DailyLoadCapacityModal = ({
                           </span>
                         </Tooltip>
                         <span className="text-[10px] text-slate-400 mt-1 text-right dark:text-slate-400">
-                          {t('dashboard.charts.load_capacity.bound_by')}: {trip.boundBy}
+                          {t('summary.tabs.diagram.load_capacity.bound_by')}: {trip.boundBy}
                         </span>
                       </div>
 

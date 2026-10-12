@@ -21,6 +21,7 @@ import TaskSummaryTab from './tabs/TaskSummaryTab';
 import TimeDriverTab from './tabs/TimeDriverTab';
 import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
+import DiagramTab from './tabs/DiagramTab';
 
 const colorLegend = [
   {
@@ -65,7 +66,7 @@ export default function SummaryPage() {
     setDismissedDots,
     activeHubLocation,
   } = useSummaryData();
-  const [activeTab, setActiveTab] = useState('Routing Time');
+  const [activeTab, setActiveTab] = useState('Diagram');
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingDateRange, setPendingDateRange] = useState([null, null]);
   const [tempDateRange, setTempDateRange] = useState(dateRange || [null, null]);
@@ -276,6 +277,8 @@ export default function SummaryPage() {
       }
       case 'Service Level':
         return isEmpty(rawData.tasks);
+      case 'Diagram':
+        return isEmpty(rawData.tasks);
       default:
         return false;
     }
@@ -361,6 +364,14 @@ export default function SummaryPage() {
           translate: t,
           localeCode: localeCode,
         });
+      case 'Diagram':
+        return renderTab(DiagramTab, {
+          tasks: rawData.tasks,
+          driverData,
+          startDateStr: startStr,
+          endDateStr: endStr,
+          dateRange,
+        });
     }
   };
 
@@ -413,6 +424,10 @@ export default function SummaryPage() {
   ];
 
   const tabConfig = [
+    {
+      id: 'Diagram',
+      label: 'Diagram',
+    },
     { id: 'Routing Time', label: t('summary.tabs.routing_time.title') },
     { id: 'Task Summary', label: t('summary.tabs.task_summary.title') },
     { id: 'Pending Reasons', label: t('summary.tabs.pending_reasons.title') },
@@ -450,6 +465,10 @@ export default function SummaryPage() {
       case 'Service Level':
         return {
           text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
+        };
+      case 'Diagram':
+        return {
+          text: t('common.click_for_detail'),
         };
       default:
         return {

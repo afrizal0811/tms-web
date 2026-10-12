@@ -1,6 +1,8 @@
-// File: features/dashboard/components/SequenceAccuracyChart.js
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext';
+import DailyServiceLevelModal from '@/features/summary/tabs/modals/DailyServiceLevelModal';
+import { formatLongDate, isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -12,19 +14,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-
-import { useLanguage } from '@/context/LanguageContext';
-import DailySequenceAccuracyModal from '@/features/dashboard/modals/DailySequenceAccuracyModal';
-import { formatLongDate, isEmpty } from '@/lib/utils';
-import { processSequenceAccuracyData, seqAccuracyData } from '../../help';
+import { processServiceLevelData, serviceLevelData } from './diagramHelp';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
-        {seqAccuracyData.map((item) => {
+        {serviceLevelData.map((item) => {
           const value = data[item.name];
           if (!(value > 0)) return null;
           return (
@@ -44,11 +43,9 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
         </div>
 
         <div className="border-slate-600 font-bold flex justify-between text-white">
-          <span>{t('dashboard.charts.sequence.total_accuracy')}</span>
+          <span>{t('summary.tabs.diagram.service_level.success_rate')}</span>
           <span>{data.rate}%</span>
         </div>
-
-        <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
@@ -56,7 +53,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   return null;
 };
 
-function SequenceAccuracyChart({ allTasks, isDarkMode }) {
+function ServiceLevelChart({ allTasks, isDarkMode }) {
   const { t, localeCode } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
@@ -64,6 +61,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
   const [dailyData, setDailyData] = useState([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // === Hitung data bulanan ===
   useEffect(() => {
     if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -72,7 +70,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
       setSelectedMonth(null);
       return;
     }
-    const result = processSequenceAccuracyData(allTasks, 'monthly', null, localeCode);
+    const result = processServiceLevelData(allTasks, 'monthly', null, localeCode);
     setMonthlyData(result);
   }, [allTasks, localeCode]);
 
@@ -84,13 +82,14 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          name: date.toLocaleDateString(localeCode, { month: 'short' }),
+          label: date.toLocaleDateString(localeCode, { month: 'short' }),
         };
       }
       return item;
     });
   }, [monthlyData, localeCode]);
 
+  // === Hitung data harian ===
   useEffect(() => {
     if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -106,16 +105,17 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
     }
     setIsModalLoading(true);
     setTimeout(() => {
-      const result = processSequenceAccuracyData(allTasks, 'daily', key, localeCode);
+      const result = processServiceLevelData(allTasks, 'daily', key, localeCode);
       setDailyData(result);
       setIsModalLoading(false);
     }, 150);
   }, [selectedMonth, allTasks, localeCode]);
 
-  const handleBarClick = (data) => {
+  const handleBarClick = (data, index) => {
     const payload = data && data.payload ? data.payload : data;
-    if (!payload || !payload.key) return;
-    setSelectedMonth(payload);
+    const entry = payload ?? (monthlyData && monthlyData[index]) ?? null;
+    if (!entry || !entry.key) return;
+    setSelectedMonth(entry);
   };
 
   const selectedDateObj = useMemo(() => {
@@ -135,17 +135,14 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-          {t('dashboard.charts.sequence.title')}
+          {t('summary.tabs.diagram.service_level.title')}
         </h3>
         <p className="text-sm text-gray-500 dark:text-slate-400">
-          {t('dashboard.charts.sequence.subtitle')}{' '}
+          {t('summary.tabs.diagram.service_level.subtitle')}{' '}
           <span className="font-bold text-green-600 dark:text-green-300">
-            {t('dashboard.charts.sequence.routing')}
+            {t('common.status.success')}
           </span>{' '}
-          vs{' '}
-          <span className="font-bold  text-red-600 dark:text-red-300">
-            {t('dashboard.charts.sequence.actual')}
-          </span>
+          vs <span className="font-bold text-red-600 dark:text-red-300">{t('common.others')}</span>
         </p>
       </div>
 
@@ -167,7 +164,7 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
             <BarChart data={localizedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
-                dataKey="name"
+                dataKey="label"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
@@ -189,8 +186,10 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
                 align="right"
                 wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
               />
-              {seqAccuracyData.map((item, index) => {
-                const isTopBar = index === seqAccuracyData.length - 1;
+
+              {serviceLevelData.map((item, index) => {
+                const isTopBar = index === serviceLevelData.length - 1;
+
                 return (
                   <Bar
                     key={item.name}
@@ -209,14 +208,11 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
           </ResponsiveContainer>
         )}
       </div>
-      <p className="text-xs text-gray-400 mt-4 text-center italic">
-        {t('common.click_for_detail')}
-      </p>
 
-      <DailySequenceAccuracyModal
+      <DailyServiceLevelModal
         isOpen={!!selectedMonth}
         onClose={() => setSelectedMonth(null)}
-        title={t('dashboard.charts.sequence.title')}
+        title={t('summary.tabs.diagram.service_level.title')}
         subtitle={formatLongDate(selectedDateObj, localeCode, false)}
         data={dailyData}
         isLoading={isModalLoading}
@@ -229,4 +225,4 @@ function SequenceAccuracyChart({ allTasks, isDarkMode }) {
   );
 }
 
-export default memo(SequenceAccuracyChart);
+export default memo(ServiceLevelChart);

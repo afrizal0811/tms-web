@@ -1,8 +1,7 @@
-// File: src/features/dashboard/components/chart/LoadCapacityChart.js
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import DailyLoadCapacityModal from '@/features/dashboard/modals/DailyLoadCapacityModal';
+import DailyLoadCapacityModal from '@/features/summary/tabs/modals/DailyLoadCapacityModal';
 import { formatLongDate, isEmpty } from '@/lib/utils';
 import { memo, useMemo, useState } from 'react';
 import {
@@ -15,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { loadCapacityData, processLoadCapacityData } from '../../help';
+import { loadCapacityData, processLoadCapacityData } from './diagramHelp';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
@@ -33,13 +32,11 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
               className="flex justify-between gap-4 mb-1"
               style={{ color: isDarkMode ? item.dark_color : item.light_color }}
             >
-              <span>● {t(`dashboard.charts.load_capacity.${item.tKey}`)}</span>
+              <span>● {t(`summary.tabs.diagram.load_capacity.${item.tKey}`)}</span>
               <span className="font-mono">{value || 0}</span>
             </div>
           );
         })}
-
-        <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
@@ -52,11 +49,18 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
   const [selectedMonth, setSelectedMonth] = useState(null);
 
   const chartData = useMemo(() => {
-    const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
-    const rawData = processLoadCapacityData(tasks, driverData, year);
+    const rawData = processLoadCapacityData(
+      tasks,
+      driverData,
+      selectedYear ? selectedYear.getFullYear() : null
+    );
     const localizedData = rawData.map((item) => {
-      const dateObj = new Date(year, item.monthIndex, 1);
-      const monthShortName = dateObj.toLocaleDateString(localeCode, { month: 'short' });
+      let monthShortName = item.key;
+      if (item.key && item.key.includes('-')) {
+        const [year, month] = item.key.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, 1);
+        monthShortName = dateObj.toLocaleDateString(localeCode, { month: 'short' });
+      }
       return { ...item, name: monthShortName };
     });
 
@@ -69,22 +73,16 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
     setSelectedMonth(payload);
   };
 
-  const selectedDateObj = useMemo(() => {
-    if (!selectedMonth) return null;
-    const year = selectedYear ? selectedYear.getFullYear() : new Date().getFullYear();
-    return new Date(year, selectedMonth.monthIndex, 1);
-  }, [selectedMonth, selectedYear]);
-
   return (
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-          {t('dashboard.charts.load_capacity.title')}
+          {t('summary.tabs.diagram.load_capacity.title')}
         </h3>
         <p className="text-sm text-gray-500 dark:text-slate-400">
-          {t('dashboard.charts.load_capacity.subtitle')}{' '}
+          {t('summary.tabs.diagram.load_capacity.subtitle')}{' '}
           <span className="font-bold text-green-600 dark:text-green-300">
-            {t('dashboard.charts.load_capacity.highlight')}
+            {t('summary.tabs.diagram.load_capacity.highlight')}
           </span>
         </p>
       </div>
@@ -131,7 +129,7 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
                       dataKey={item.name}
                       fill={isDarkMode ? item.dark_color : item.light_color}
                       maxBarSize={50}
-                      name={t(`dashboard.charts.load_capacity.${item.tKey}`)}
+                      name={t(`summary.tabs.diagram.load_capacity.${item.tKey}`)}
                       onClick={handleBarClick}
                       radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                       stackId="a"
@@ -143,14 +141,10 @@ const LoadCapacityChart = ({ tasks, driverData, selectedYear, isDarkMode }) => {
           )}
         </div>
 
-        {!isEmpty(chartData) && (
-          <p className="text-xs text-gray-400 text-center italic">{t('common.click_for_detail')}</p>
-        )}
-
         <DailyLoadCapacityModal
           isOpen={!!selectedMonth}
           onClose={() => setSelectedMonth(null)}
-          title={t('dashboard.charts.load_capacity.title')}
+          title={t('summary.tabs.diagram.load_capacity.title')}
           subtitle={selectedMonth ? formatLongDate(selectedMonth.key, localeCode, false) : null}
           monthData={selectedMonth}
           isDarkMode={isDarkMode}

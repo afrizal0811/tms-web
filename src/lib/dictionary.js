@@ -200,31 +200,6 @@ export const dictionary = {
         diagram: 'Diagram',
         routing_vs_actual: 'Ruting vs Aktual',
       },
-      charts: {
-        service_level: {
-          subtitle: 'Persentase Tugas',
-          success_rate: 'Berhasil (%)',
-          title: 'Tingkat Servis',
-        },
-        sequence: {
-          actual: 'Aktual',
-          routing: 'Ruting',
-          subtitle: 'Kesesuaian urutan',
-          title: 'Akurasi Urutan',
-          total_accuracy: 'Total Akurasi',
-        },
-        load_capacity: {
-          bound_by: 'Dibatasi oleh',
-          full: 'Penuh',
-          highlight: 'kapasitas kendaraan',
-          low: 'Rendah',
-          normal: 'Normal',
-          overload: 'Lebih Muatan',
-          subtitle: 'Persentase pemakaian',
-          title: 'Kapasitas Muatan',
-          very_low: 'Sangat Rendah',
-        },
-      },
       tab: {
         detail: {
           delivery: 'Alur Pengiriman',
@@ -492,6 +467,31 @@ export const dictionary = {
       subtitle_highlight: 'performa tugas',
       title: 'Rangkuman',
       tabs: {
+        diagram: {
+          service_level: {
+            subtitle: 'Persentase Tugas',
+            success_rate: 'Berhasil (%)',
+            title: 'Tingkat Servis',
+          },
+          sequence: {
+            actual: 'Aktual',
+            routing: 'Ruting',
+            subtitle: 'Kesesuaian urutan',
+            title: 'Akurasi Urutan',
+            total_accuracy: 'Total Akurasi',
+          },
+          load_capacity: {
+            bound_by: 'Dibatasi oleh',
+            full: 'Penuh',
+            highlight: 'kapasitas kendaraan',
+            low: 'Rendah',
+            normal: 'Normal',
+            overload: 'Lebih Muatan',
+            subtitle: 'Persentase pemakaian',
+            title: 'Kapasitas Muatan',
+            very_low: 'Sangat Rendah',
+          },
+        },
         routing_time: {
           title: 'Waktu Ruting',
           tooltip: {
@@ -941,31 +941,7 @@ export const dictionary = {
         diagram: 'Diagram',
         routing_vs_actual: 'Routing vs Actual',
       },
-      charts: {
-        service_level: {
-          subtitle: 'Task percentage',
-          success_rate: 'Success (%)',
-          title: 'Service Level',
-        },
-        sequence: {
-          actual: 'Actual',
-          routing: 'Routing',
-          subtitle: 'Sequence conformity',
-          title: 'Sequence Accuracy',
-          total_accuracy: 'Total Accuracy',
-        },
-        load_capacity: {
-          bound_by: 'Bound by',
-          full: 'Full',
-          highlight: 'vehicle capacity',
-          low: 'Low',
-          normal: 'Normal',
-          overload: 'Overload',
-          subtitle: 'Usage percentage of',
-          title: 'Load Capacity',
-          very_low: 'Very Low',
-        },
-      },
+
       tab: {
         detail: {
           delivery: 'Flow Delivery',
@@ -1233,6 +1209,31 @@ export const dictionary = {
       subtitle_highlight: 'task performance',
       title: 'Summary',
       tabs: {
+        diagram: {
+          service_level: {
+            subtitle: 'Task percentage',
+            success_rate: 'Success (%)',
+            title: 'Service Level',
+          },
+          sequence: {
+            actual: 'Actual',
+            routing: 'Routing',
+            subtitle: 'Sequence conformity',
+            title: 'Sequence Accuracy',
+            total_accuracy: 'Total Accuracy',
+          },
+          load_capacity: {
+            bound_by: 'Bound by',
+            full: 'Full',
+            highlight: 'vehicle capacity',
+            low: 'Low',
+            normal: 'Normal',
+            overload: 'Overload',
+            subtitle: 'Usage percentage of',
+            title: 'Load Capacity',
+            very_low: 'Very Low',
+          },
+        },
         routing_time: {
           title: 'Routing Time',
           tooltip: {

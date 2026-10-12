@@ -1,9 +1,5 @@
-// File: features/dashboard/components/ServiceLevelChart.js
 'use client';
 
-import { useLanguage } from '@/context/LanguageContext';
-import DailyServiceLevelModal from '@/features/dashboard/modals/DailyServiceLevelModal';
-import { formatLongDate, isEmpty } from '@/lib/utils';
 import { memo, useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -15,16 +11,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { processServiceLevelData, serviceLevelData } from '../../help';
+
+import { useLanguage } from '@/context/LanguageContext';
+import DailySequenceAccuracyModal from '@/features/summary/tabs/modals/DailySequenceAccuracyModal';
+import { formatLongDate, isEmpty } from '@/lib/utils';
+import { processSequenceAccuracyData, seqAccuracyData } from './diagramHelp';
 
 const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-
     return (
       <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-600 z-50 w-45">
         <p className="font-bold mb-2 text-sm border-b border-slate-600 pb-1">{label}</p>
-        {serviceLevelData.map((item) => {
+        {seqAccuracyData.map((item) => {
           const value = data[item.name];
           if (!(value > 0)) return null;
           return (
@@ -44,11 +43,9 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
         </div>
 
         <div className="border-slate-600 font-bold flex justify-between text-white">
-          <span>{t('dashboard.charts.service_level.success_rate')}</span>
+          <span>{t('summary.tabs.diagram.sequence.total_accuracy')}</span>
           <span>{data.rate}%</span>
         </div>
-
-        <p className="mt-2 text-[10px] text-slate-400 italic">*{t('common.click_for_detail')}</p>
       </div>
     );
   }
@@ -56,7 +53,7 @@ const CustomTooltip = ({ active, payload, label, t, isDarkMode }) => {
   return null;
 };
 
-function ServiceLevelChart({ allTasks, isDarkMode }) {
+function SequenceAccuracyChart({ allTasks, isDarkMode }) {
   const { t, localeCode } = useLanguage();
 
   const [monthlyData, setMonthlyData] = useState(null);
@@ -64,7 +61,6 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
   const [dailyData, setDailyData] = useState([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // === Hitung data bulanan ===
   useEffect(() => {
     if (!allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -73,7 +69,7 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
       setSelectedMonth(null);
       return;
     }
-    const result = processServiceLevelData(allTasks, 'monthly', null, localeCode);
+    const result = processSequenceAccuracyData(allTasks, 'monthly', null, localeCode);
     setMonthlyData(result);
   }, [allTasks, localeCode]);
 
@@ -85,14 +81,13 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
         const date = new Date(year, month - 1, 1);
         return {
           ...item,
-          label: date.toLocaleDateString(localeCode, { month: 'short' }),
+          name: date.toLocaleDateString(localeCode, { month: 'short' }),
         };
       }
       return item;
     });
   }, [monthlyData, localeCode]);
 
-  // === Hitung data harian ===
   useEffect(() => {
     if (!selectedMonth || !allTasks || isEmpty(allTasks)) {
       //eslint-disable-next-line
@@ -108,17 +103,16 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
     }
     setIsModalLoading(true);
     setTimeout(() => {
-      const result = processServiceLevelData(allTasks, 'daily', key, localeCode);
+      const result = processSequenceAccuracyData(allTasks, 'daily', key, localeCode);
       setDailyData(result);
       setIsModalLoading(false);
     }, 150);
   }, [selectedMonth, allTasks, localeCode]);
 
-  const handleBarClick = (data, index) => {
+  const handleBarClick = (data) => {
     const payload = data && data.payload ? data.payload : data;
-    const entry = payload ?? (monthlyData && monthlyData[index]) ?? null;
-    if (!entry || !entry.key) return;
-    setSelectedMonth(entry);
+    if (!payload || !payload.key) return;
+    setSelectedMonth(payload);
   };
 
   const selectedDateObj = useMemo(() => {
@@ -138,14 +132,17 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
     <div className="w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
       <div className="mb-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-          {t('dashboard.charts.service_level.title')}
+          {t('summary.tabs.diagram.sequence.title')}
         </h3>
         <p className="text-sm text-gray-500 dark:text-slate-400">
-          {t('dashboard.charts.service_level.subtitle')}{' '}
+          {t('summary.tabs.diagram.sequence.subtitle')}{' '}
           <span className="font-bold text-green-600 dark:text-green-300">
-            {t('common.status.success')}
+            {t('summary.tabs.diagram.sequence.routing')}
           </span>{' '}
-          vs <span className="font-bold text-red-600 dark:text-red-300">{t('common.others')}</span>
+          vs{' '}
+          <span className="font-bold  text-red-600 dark:text-red-300">
+            {t('summary.tabs.diagram.sequence.actual')}
+          </span>
         </p>
       </div>
 
@@ -167,7 +164,7 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
             <BarChart data={localizedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
-                dataKey="label"
+                dataKey="name"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
@@ -189,10 +186,8 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
                 align="right"
                 wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
               />
-
-              {serviceLevelData.map((item, index) => {
-                const isTopBar = index === serviceLevelData.length - 1;
-
+              {seqAccuracyData.map((item, index) => {
+                const isTopBar = index === seqAccuracyData.length - 1;
                 return (
                   <Bar
                     key={item.name}
@@ -212,14 +207,10 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-4 text-center italic">
-        {t('common.click_for_detail')}
-      </p>
-
-      <DailyServiceLevelModal
+      <DailySequenceAccuracyModal
         isOpen={!!selectedMonth}
         onClose={() => setSelectedMonth(null)}
-        title={t('dashboard.charts.service_level.title')}
+        title={t('summary.tabs.diagram.sequence.title')}
         subtitle={formatLongDate(selectedDateObj, localeCode, false)}
         data={dailyData}
         isLoading={isModalLoading}
@@ -232,4 +223,4 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
   );
 }
 
-export default memo(ServiceLevelChart);
+export default memo(SequenceAccuracyChart);

@@ -1,11 +1,11 @@
-// File: src/features/dashboard/modals/DailyServiceLevelModal.js
 'use client';
 
 import Modal from '@/components/modal/Modal';
 import Spinner from '@/components/Spinner';
+import { toastError } from '@/lib/toast';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { serviceLevelData } from '../help';
+import { seqAccuracyData } from '../components/chart/diagramHelp';
 
 const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isDarkMode }) => {
   if (active && payload && payload.length) {
@@ -30,9 +30,9 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isD
           {t('common.date')} {label} {dayName && `(${dayName})`}
         </p>
 
-        {serviceLevelData.map((item) => {
+        {seqAccuracyData.map((item) => {
           const value = data[item.name];
-          if (!item.alwaysShow && !(value > 0)) return null;
+          if (!(value > 0)) return null;
           return (
             <div
               key={item.name}
@@ -46,7 +46,7 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isD
         })}
 
         <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
-          <span>{t('dashboard.charts.service_level.success_rate')}</span>
+          <span>{t('common.accuracy')}</span>
           <span>{data.rate}%</span>
         </div>
       </div>
@@ -55,7 +55,7 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isD
   return null;
 };
 
-function DailyServiceLevelModal({
+function DailySequenceAccuracyModal({
   isOpen,
   onClose,
   title,
@@ -70,11 +70,10 @@ function DailyServiceLevelModal({
   if (!isOpen) return null;
 
   const hasData = Array.isArray(data) && data.length > 0;
-  const hasPendingGR = hasData && data.some((d) => d.PENDING_GR > 0);
 
   const footerContent = (
     <div className="flex flex-wrap gap-4 font-medium text-xs text-gray-500">
-      {serviceLevelData.map((item) => {
+      {seqAccuracyData.map((item) => {
         return (
           <div key={item.name} className="flex items-center gap-1.5">
             <span
@@ -99,7 +98,7 @@ function DailyServiceLevelModal({
       maxWidth="max-w-5xl"
       footer={footerContent}
     >
-      <div className="h-[400px] w-full bg-white dark:bg-slate-900">
+      <div className="h-[400px] w-full">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <Spinner />
@@ -109,7 +108,8 @@ function DailyServiceLevelModal({
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
               <XAxis
-                dataKey="label"
+                dataKey="name"
+                name={t('common.date')}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: `${isDarkMode ? '#90a1b9' : '#64748b'}`, fontSize: 12 }}
@@ -131,22 +131,20 @@ function DailyServiceLevelModal({
                 }
                 cursor={{ fill: `${isDarkMode ? '#1d293d' : '#f1f5f9'}` }}
               />
-              {serviceLevelData
-                .filter((item) => item.name !== 'PENDING_GR' || hasPendingGR)
-                .map((item, index, filteredArray) => {
-                  const isTopBar = index === filteredArray.length - 1;
-                  return (
-                    <Bar
-                      key={item.name}
-                      name={t(`common.status.${item.tKey}`)}
-                      dataKey={item.name}
-                      stackId="a"
-                      fill={isDarkMode ? item.dark_color : item.light_color}
-                      radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                      maxBarSize={40}
-                    />
-                  );
-                })}
+              {seqAccuracyData.map((item, index) => {
+                const isTopBar = index === seqAccuracyData.length - 1;
+                return (
+                  <Bar
+                    key={item.name}
+                    name={t(`common.status.${item.tKey}`)}
+                    dataKey={item.name}
+                    stackId="a"
+                    fill={isDarkMode ? item.dark_color : item.light_color}
+                    radius={isTopBar ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    maxBarSize={40}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -159,4 +157,4 @@ function DailyServiceLevelModal({
   );
 }
 
-export default memo(DailyServiceLevelModal);
+export default memo(DailySequenceAccuracyModal);
