@@ -134,7 +134,7 @@ export async function GET(request) {
           task.travelDistance = Number((task.travelDistance / 1000).toFixed(2));
 
         if (task.travelDuration != null)
-          task.travelDuration = formatMinutesToHHMM(task.travelDuration, false);
+          task.travelDuration = formatMinutesToHHMM(task.travelDuration);
 
         if (task.eta && typeof task.eta === 'string') task.eta = task.eta.substring(0, 5);
         if (task.etd && typeof task.etd === 'string') task.etd = task.etd.substring(0, 5);

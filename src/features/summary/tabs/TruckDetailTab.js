@@ -121,7 +121,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
     {
       key: 'ship_duration',
       getValue: (m) => {
-        const val = m?.duration ? formatMinutesToHHMM(m.duration, false) : '-';
+        const val = m?.duration ? formatMinutesToHHMM(m.duration) : '-';
         return (
           <span className={`${m.hasManualError ? 'text-red-200! dark:text-red-300!' : ''}`}>
             {val}

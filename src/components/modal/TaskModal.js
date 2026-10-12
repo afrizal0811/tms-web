@@ -394,7 +394,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                   taskData?.travelDuration > 60
                     ? `${taskData?.travelDuration} ${translate('common.minute')}`
                     : '';
-                const actualVisitHour = formatMinutesToHHMM(actualVisitMins, false);
+                const actualVisitHour = formatMinutesToHHMM(actualVisitMins, true);
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />

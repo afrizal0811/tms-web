@@ -123,7 +123,7 @@ export async function GET(request, { params }) {
       data.travelDistance = Number((data.travelDistance / 1000).toFixed(2));
 
     if (data.travelDuration != null)
-      data.travelDurationHour = formatMinutesToHHMM(Number(data.travelDuration), false);
+      data.travelDurationHour = formatMinutesToHHMM(Number(data.travelDuration), true);
 
     if (data.eta && typeof data.eta === 'string') data.eta = data.eta.substring(0, 5);
     if (data.etd && typeof data.etd === 'string') data.etd = data.etd.substring(0, 5);

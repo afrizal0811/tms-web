@@ -92,9 +92,11 @@ export async function GET(request, { params }) {
     const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
     const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));
     const toHr = (mins) => {
-      const h = Math.floor((mins || 0) / 60);
-      const m = Math.floor((mins || 0) % 60);
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      const totalSec = Math.max(0, Math.round((mins || 0) * 60));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
     let gDist = 0,

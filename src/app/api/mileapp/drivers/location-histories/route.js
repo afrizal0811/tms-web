@@ -104,7 +104,7 @@ export async function GET(request) {
           startTime: formatUTC7(item.startTime, 'YYYY-MM-DD HH:mm:ss'),
           finish: parsedFinish,
           durationHour: item.finish?.totalDuration
-            ? formatMinutesToHHMM(item.finish.totalDuration, false)
+            ? formatMinutesToHHMM(item.finish.totalDuration)
             : null,
         });
       }

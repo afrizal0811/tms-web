@@ -78,15 +78,25 @@ export function calculateTargetDates(selectedDateStr) {
 }
 
 // Mengonversi total menit menjadi string jam:menit dengan format text excel ('HH:mm)
-export function formatMinutesToHHMM(totalMinutes, needQuote = true) {
+export function formatMinutesToHHMM(totalMinutes, second = false) {
   if (totalMinutes == null || isNaN(totalMinutes) || totalMinutes < 0) {
     return '-';
   }
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60);
+
+  const totalSeconds = Math.round(totalMinutes * 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
   const formattedHours = String(hours).padStart(2, '0');
   const formattedMinutes = String(minutes).padStart(2, '0');
-  return `${needQuote ? "'" : ''}${formattedHours}:${formattedMinutes}`;
+
+  if (second) {
+    const formattedSeconds = String(seconds).padStart(2, '0');
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  }
+
+  return `${formattedHours}:${formattedMinutes}`;
 }
 
 // Menghitung selisih waktu dalam satuan menit antara dua timestamp

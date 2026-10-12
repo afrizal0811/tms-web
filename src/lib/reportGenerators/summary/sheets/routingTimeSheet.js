@@ -379,13 +379,11 @@ export function generateRoutingTimeSheet(
           frzDur = '-';
         if (hasDryStart && hasDryEnd)
           dryDur = formatMinutesToHHMM(
-            calculateMinuteDifference(row.dry.firstCreatedTime, row.dry.lastAssignedTime),
-            false
+            calculateMinuteDifference(row.dry.firstCreatedTime, row.dry.lastAssignedTime)
           );
         if (hasFrzStart && hasFrzEnd)
           frzDur = formatMinutesToHHMM(
-            calculateMinuteDifference(row.frozen.firstCreatedTime, row.frozen.lastAssignedTime),
-            false
+            calculateMinuteDifference(row.frozen.firstCreatedTime, row.frozen.lastAssignedTime)
           );
 
         const rowData = [row.dateDisplay];

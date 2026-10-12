@@ -75,7 +75,7 @@ export function buildTimeDriverSheet(wb, timeDataObjects, t, driverData = []) {
     headers,
     ...sortTime.map((i) => {
       const timeDur = calculateMinuteDifference(i.rawStart, i.rawFinish);
-      let dur = formatMinutesToHHMM(timeDur, false);
+      let dur = formatMinutesToHHMM(timeDur);
       if (dur === "'-'" || dur === '-' || !dur) dur = null;
 
       return [

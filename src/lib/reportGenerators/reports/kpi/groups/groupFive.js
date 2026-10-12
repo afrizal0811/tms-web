@@ -61,7 +61,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
               const diffMins = (finishObj.getTime() - startObj.getTime()) / 60000;
               if (diffMins > 0) {
                 totalActMinutes += diffMins;
-                durasiStr = formatMinutesToHHMM(diffMins, false);
+                durasiStr = formatMinutesToHHMM(diffMins);
               }
             }
           }

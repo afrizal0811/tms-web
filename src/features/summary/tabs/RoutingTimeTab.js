@@ -486,13 +486,11 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                 frzDur = '-';
               if (hasDryStart && hasDryFinish)
                 dryDur = formatMinutesToHHMM(
-                  calculateMinuteDifference(row.dry.start.time, row.dry.finish.time),
-                  false
+                  calculateMinuteDifference(row.dry.start.time, row.dry.finish.time)
                 );
               if (hasFrzStart && hasFrzFinish)
                 frzDur = formatMinutesToHHMM(
-                  calculateMinuteDifference(row.frozen.start.time, row.frozen.finish.time),
-                  false
+                  calculateMinuteDifference(row.frozen.start.time, row.frozen.finish.time)
                 );
               const unifiedDur = dryDur !== '-' ? dryDur : frzDur;
 
