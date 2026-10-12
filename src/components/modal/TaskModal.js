@@ -125,83 +125,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
     }
   };
 
-  const extractReassignInfo = (historiesList) => {
-    if (!historiesList || historiesList.length === 0) return {};
-
-    const sorted = [...historiesList].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    const getAssigneeInfo = (history) => {
-      const cData = history?.changeData || {};
-      let name = null;
-      let email = null;
-
-      if (cData.assignedTo) {
-        if (typeof cData.assignedTo === 'object') {
-          name = cData.assignedTo.name || null;
-          email = cData.assignedTo.email || null;
-        } else {
-          name = String(cData.assignedTo);
-        }
-      }
-
-      if (!email && cData.assignee) {
-        if (Array.isArray(cData.assignee) && cData.assignee.length > 0) {
-          email = cData.assignee[0];
-        } else if (typeof cData.assignee === 'string') {
-          email = cData.assignee;
-        }
-      }
-
-      if (!name && history?.notes) {
-        const note = String(history.notes).trim();
-        const byMatch = note.match(/^Task assigned to (.+?)\s+by\s+.+$/i);
-        const directMatch = note.match(/^Task assigned to (.+)$/i);
-        if (byMatch && byMatch[1]) {
-          name = byMatch[1].trim();
-        } else if (directMatch && directMatch[1]) {
-          name = directMatch[1].trim();
-        }
-      }
-
-      return {
-        name: name || email || null,
-        email: email || null,
-      };
-    };
-
-    let currentAssignee = null;
-    const reassignMap = {};
-
-    sorted.forEach((history) => {
-      const action = (history.action || '').toLowerCase();
-      const hasAssignedTo = !!history.changeData?.assignedTo;
-      const isReassign =
-        action === 're-assign' || action === 'reassign' || (action === 'assign' && hasAssignedTo);
-
-      const targetInfo = getAssigneeInfo(history);
-
-      if (isReassign) {
-        reassignMap[history._id || history.createdAt] = {
-          isReassign: true,
-          from: currentAssignee?.name || '-',
-          fromEmail: currentAssignee?.email || null,
-          to: targetInfo?.name || '-',
-          toEmail: targetInfo?.email || null,
-        };
-      }
-
-      if (action === 'unassign') {
-        currentAssignee = null;
-      } else if (targetInfo && targetInfo.name) {
-        currentAssignee = targetInfo;
-      }
-    });
-
-    return reassignMap;
-  };
-
   const extractPutDifferences = (historiesList) => {
     if (!historiesList || historiesList.length === 0) return [];
 
@@ -270,7 +193,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
     });
 
     const putDiffs = extractPutDifferences(taskData.histories || []);
-    const reassignMap = extractReassignInfo(taskData.histories || []);
 
     const hasMap = !!taskData.doneCoordinate;
     const goToMapTab = hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined;
@@ -647,8 +569,9 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                 {histories.length > 0 ? (
                   <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
                     {histories.map((h, i) => {
-                      const reassignInfo = reassignMap[h._id || h.createdAt];
-                      const isReassign = !!reassignInfo?.isReassign;
+                      const act = (h.action || '').toLowerCase();
+                      const isReassign =
+                        act === 're-assign' || act === 'reassign' || (act === 'assign' && !!h.changeData?.assignedTo);
                       const displayAction = isReassign ? 're-assign' : h.action || '-';
 
                       return (
@@ -669,23 +592,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
                           </div>
                           <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
                             {h.notes || '-'}
-                            {isReassign && (
-                              <div className="mt-2 p-2.5 rounded-md bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/50 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
-                                <span
-                                  className="font-semibold text-red-600 dark:text-red-400"
-                                  title={reassignInfo.fromEmail || undefined}
-                                >
-                                  {reassignInfo.from || '-'}
-                                </span>
-                                <span className="text-indigo-500 font-bold mx-0.5">→</span>
-                                <span
-                                  className="font-semibold text-emerald-600 dark:text-emerald-400"
-                                  title={reassignInfo.toEmail || undefined}
-                                >
-                                  {reassignInfo.to || '-'}
-                                </span>
-                              </div>
-                            )}
                             {h.action &&
                               h.action.toLowerCase() === 'put' &&
                               (() => {
