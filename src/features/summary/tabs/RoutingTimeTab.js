@@ -145,62 +145,108 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
       .map((key) => dataMap[key]);
   }, [tasks, startDateStr, endDateStr, localeCode]);
 
-  const isSeparated = useMemo(() => {
-    const isTimeDifferent = (t1, t2) => {
-      if (!t1 && !t2) return false;
-      if (!t1 || !t2) return true;
-      return Math.abs(new Date(t1).getTime() - new Date(t2).getTime()) > 60000;
-    };
-    return processedData.some((row) => {
-      return (
-        isTimeDifferent(row.dry.start.time, row.frozen.start.time) ||
+  const isTimeDifferent = (t1, t2) => {
+    if (!t1 && !t2) return false;
+    if (!t1 || !t2) return true;
+    return Math.abs(new Date(t1).getTime() - new Date(t2).getTime()) > 60000;
+  };
+
+  const { isStartSeparated, isFinishSeparated, isDurationSeparated, hasAnySeparation, totalCols } =
+    useMemo(() => {
+      const isStartDiff = processedData.some((row) =>
+        isTimeDifferent(row.dry.start.time, row.frozen.start.time)
+      );
+      const isFinishDiff = processedData.some((row) =>
         isTimeDifferent(row.dry.finish.time, row.frozen.finish.time)
       );
-    });
-  }, [processedData]);
+      const isDurDiff = isStartDiff || isFinishDiff;
+      const anySeparation = isStartDiff || isFinishDiff;
+      const cols = 1 + (isStartDiff ? 2 : 1) + (isFinishDiff ? 2 : 1) + (isDurDiff ? 2 : 1);
+
+      return {
+        isStartSeparated: isStartDiff,
+        isFinishSeparated: isFinishDiff,
+        isDurationSeparated: isDurDiff,
+        hasAnySeparation: anySeparation,
+        totalCols: cols,
+      };
+    }, [processedData]);
+
+  const subheaderDryClass =
+    'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200';
+  const subheaderFrozenClass =
+    'px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200';
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 shadow-sm p-0 overflow-auto">
       <div className="flex-1 overflow-auto">
         <table className="min-w-full text-sm text-left border-collapse">
           <thead className="text-xs text-slate-900 dark:text-slate-200 uppercase sticky top-0 z-10 bg-purple-200 dark:bg-[#34205c]">
-            {isSeparated ? (
+            {hasAnySeparation ? (
               <>
                 <tr>
                   <th rowSpan={2} className={headerClass}>
                     {translate('common.routing_date')}
                   </th>
-                  {['start_time', 'finish_time', 'duration'].map((header, index) => (
-                    <th key={index} colSpan={2} className={headerClass}>
-                      <Tooltip
-                        tooltipContent={translate(`summary.tabs.routing_time.tooltip.${header}`)}
-                      >
-                        <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
-                          {translate(`common.${header}`)}
-                        </span>
-                      </Tooltip>
-                    </th>
-                  ))}
+                  <th
+                    rowSpan={isStartSeparated ? undefined : 2}
+                    colSpan={isStartSeparated ? 2 : undefined}
+                    className={headerClass}
+                  >
+                    <Tooltip
+                      tooltipContent={translate('summary.tabs.routing_time.tooltip.start_time')}
+                    >
+                      <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                        {translate('common.start_time')}
+                      </span>
+                    </Tooltip>
+                  </th>
+                  <th
+                    rowSpan={isFinishSeparated ? undefined : 2}
+                    colSpan={isFinishSeparated ? 2 : undefined}
+                    className={headerClass}
+                  >
+                    <Tooltip
+                      tooltipContent={translate('summary.tabs.routing_time.tooltip.finish_time')}
+                    >
+                      <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                        {translate('common.finish_time')}
+                      </span>
+                    </Tooltip>
+                  </th>
+                  <th
+                    rowSpan={isDurationSeparated ? undefined : 2}
+                    colSpan={isDurationSeparated ? 2 : undefined}
+                    className={headerClass}
+                  >
+                    <Tooltip
+                      tooltipContent={translate('summary.tabs.routing_time.tooltip.duration')}
+                    >
+                      <span className="cursor-help border-b-2 border-dotted border-slate-900 dark:border-slate-200 pb-0.5">
+                        {translate('common.duration')}
+                      </span>
+                    </Tooltip>
+                  </th>
                 </tr>
                 <tr>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
-                    Dry
-                  </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
-                    Frozen
-                  </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
-                    Dry
-                  </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
-                    Frozen
-                  </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#fae2d5] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#fae2d5]/10 dark:to-[#fae2d5]/10 text-slate-800 dark:text-slate-200">
-                    Dry
-                  </th>
-                  <th className="px-6 py-3 border-r border-b border-gray-300 dark:border-slate-700 font-bold text-center bg-[#dbe9f7] dark:bg-slate-800 dark:bg-gradient-to-t dark:from-[#dbe9f7]/10 dark:to-[#dbe9f7]/10 text-slate-800 dark:text-slate-200">
-                    Frozen
-                  </th>
+                  {isStartSeparated && (
+                    <>
+                      <th className={subheaderDryClass}>Dry</th>
+                      <th className={subheaderFrozenClass}>Frozen</th>
+                    </>
+                  )}
+                  {isFinishSeparated && (
+                    <>
+                      <th className={subheaderDryClass}>Dry</th>
+                      <th className={subheaderFrozenClass}>Frozen</th>
+                    </>
+                  )}
+                  {isDurationSeparated && (
+                    <>
+                      <th className={subheaderDryClass}>Dry</th>
+                      <th className={subheaderFrozenClass}>Frozen</th>
+                    </>
+                  )}
                 </tr>
               </>
             ) : (
@@ -256,7 +302,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                       {row.dateDisplay}
                     </td>
                     <td
-                      colSpan={isSeparated ? 6 : 3}
+                      colSpan={totalCols - 1}
                       className="px-6 py-4 font-bold text-center border-b border-gray-300 dark:border-slate-700"
                     >
                       {content}
@@ -271,10 +317,54 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                 const errClass = (
                   timeType === 'start'
                     ? !hasTime && !!row[type].finish.time
-                    : hasTime && !row[type].finish.time
+                    : !hasTime && !!row[type].start.time
                 )
                   ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
                   : '';
+                const display = hasTime ? formatDateUniversal(target.time, 'HH:mm') : '-';
+
+                return (
+                  <td className={`${dataClass} ${errClass}`}>
+                    <div className="flex items-center justify-center gap-1">
+                      <Tooltip
+                        tooltipContent={
+                          errClass !== ''
+                            ? translate(`summary.tabs.routing_time.tooltip.${timeType}_time_error`)
+                            : hasTime
+                              ? target.truncateInvoice
+                              : ''
+                        }
+                      >
+                        <span
+                          className={
+                            errClass !== ''
+                              ? 'cursor-help w-full inline-block'
+                              : hasTime
+                                ? 'cursor-help border-b-2 border-dotted pb-0.5'
+                                : ''
+                          }
+                        >
+                          {display}
+                        </span>
+                      </Tooltip>
+                      {hasTime && <CopyButton text={target.soNumber} />}
+                    </div>
+                  </td>
+                );
+              };
+
+              const renderUnifiedTimeCell = (timeType) => {
+                const target = row.dry[timeType].time ? row.dry[timeType] : row.frozen[timeType];
+                const hasTime = !!target.time;
+                const hasAnyOpposite =
+                  timeType === 'start'
+                    ? !!row.dry.finish.time || !!row.frozen.finish.time
+                    : !!row.dry.start.time || !!row.frozen.start.time;
+
+                const errClass =
+                  !hasTime && hasAnyOpposite
+                    ? 'bg-red-100 dark:bg-[#4a1c1c] text-red-600 dark:text-red-400 font-bold'
+                    : '';
                 const display = hasTime ? formatDateUniversal(target.time, 'HH:mm') : '-';
 
                 return (
@@ -319,20 +409,7 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   calculateMinuteDifference(row.frozen.start.time, row.frozen.finish.time),
                   false
                 );
-
-              if (!isSeparated) {
-                return (
-                  <tr
-                    key={idx}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
-                  >
-                    <td className={dataClass}>{row.dateDisplay}</td>
-                    {renderTimeCell('dry', 'start')}
-                    {renderTimeCell('dry', 'finish')}
-                    <td className={dataClass}>{dryDur}</td>
-                  </tr>
-                );
-              }
+              const unifiedDur = dryDur !== '-' ? dryDur : frzDur;
 
               return (
                 <tr
@@ -340,12 +417,33 @@ export default function RoutingTimeTab({ tasks, startDateStr, endDateStr, transl
                   className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className={dataClass}>{row.dateDisplay}</td>
-                  {renderTimeCell('dry', 'start')}
-                  {renderTimeCell('frozen', 'start')}
-                  {renderTimeCell('dry', 'finish')}
-                  {renderTimeCell('frozen', 'finish')}
-                  <td className={dataClass}>{dryDur}</td>
-                  <td className={dataClass}>{frzDur}</td>
+
+                  {isStartSeparated ? (
+                    <>
+                      {renderTimeCell('dry', 'start')}
+                      {renderTimeCell('frozen', 'start')}
+                    </>
+                  ) : (
+                    renderUnifiedTimeCell('start')
+                  )}
+
+                  {isFinishSeparated ? (
+                    <>
+                      {renderTimeCell('dry', 'finish')}
+                      {renderTimeCell('frozen', 'finish')}
+                    </>
+                  ) : (
+                    renderUnifiedTimeCell('finish')
+                  )}
+
+                  {isDurationSeparated ? (
+                    <>
+                      <td className={dataClass}>{dryDur}</td>
+                      <td className={dataClass}>{frzDur}</td>
+                    </>
+                  ) : (
+                    <td className={dataClass}>{unifiedDur}</td>
+                  )}
                 </tr>
               );
             })}

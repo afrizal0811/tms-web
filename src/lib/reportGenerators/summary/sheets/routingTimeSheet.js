@@ -128,39 +128,81 @@ export function generateRoutingTimeSheet(
     return Math.abs(new Date(t1).getTime() - new Date(t2).getTime()) > 60000;
   };
 
-  let isSeparated = false;
+  let isStartSeparated = false;
+  let isFinishSeparated = false;
+
   Object.keys(dataMap).forEach((key) => {
     const row = dataMap[key];
-    if (
-      isTimeDifferent(row.dry.firstCreatedTime, row.frozen.firstCreatedTime) ||
-      isTimeDifferent(row.dry.lastAssignedTime, row.frozen.lastAssignedTime)
-    ) {
-      isSeparated = true;
+    if (isTimeDifferent(row.dry.firstCreatedTime, row.frozen.firstCreatedTime)) {
+      isStartSeparated = true;
+    }
+    if (isTimeDifferent(row.dry.lastAssignedTime, row.frozen.lastAssignedTime)) {
+      isFinishSeparated = true;
     }
   });
+
+  const isDurationSeparated = isStartSeparated || isFinishSeparated;
+  const hasAnySeparation = isStartSeparated || isFinishSeparated;
+  const totalCols =
+    1 +
+    (isStartSeparated ? 2 : 1) +
+    (isFinishSeparated ? 2 : 1) +
+    (isDurationSeparated ? 2 : 1);
 
   let excelData = [];
   let merges = [];
 
-  if (isSeparated) {
-    excelData = [
-      [
-        translate('common.routing_date'),
-        translate('common.start_time'),
-        '',
-        translate('common.finish_time'),
-        '',
-        translate('common.duration'),
-        '',
-      ],
-      ['', 'Dry', 'Frozen', 'Dry', 'Frozen', 'Dry', 'Frozen'],
-    ];
-    merges = [
-      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
-      { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } },
-      { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } },
-      { s: { r: 0, c: 5 }, e: { r: 0, c: 6 } },
-    ];
+  if (hasAnySeparation) {
+    const headerRow0 = [];
+    const headerRow1 = [];
+    let currentCol = 0;
+
+    // Routing Date
+    headerRow0.push(translate('common.routing_date'));
+    headerRow1.push('');
+    merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
+    currentCol += 1;
+
+    // Start Time
+    if (isStartSeparated) {
+      headerRow0.push(translate('common.start_time'), '');
+      headerRow1.push('Dry', 'Frozen');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 1 } });
+      currentCol += 2;
+    } else {
+      headerRow0.push(translate('common.start_time'));
+      headerRow1.push('');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
+      currentCol += 1;
+    }
+
+    // Finish Time
+    if (isFinishSeparated) {
+      headerRow0.push(translate('common.finish_time'), '');
+      headerRow1.push('Dry', 'Frozen');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 1 } });
+      currentCol += 2;
+    } else {
+      headerRow0.push(translate('common.finish_time'));
+      headerRow1.push('');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
+      currentCol += 1;
+    }
+
+    // Duration
+    if (isDurationSeparated) {
+      headerRow0.push(translate('common.duration'), '');
+      headerRow1.push('Dry', 'Frozen');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 1 } });
+      currentCol += 2;
+    } else {
+      headerRow0.push(translate('common.duration'));
+      headerRow1.push('');
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
+      currentCol += 1;
+    }
+
+    excelData = [headerRow0, headerRow1];
   } else {
     excelData = [
       [
@@ -196,13 +238,12 @@ export function generateRoutingTimeSheet(
           ? translate('common.holiday_sunday')
           : translate('common.holiday');
 
-        if (isSeparated) {
-          excelData.push([row.dateDisplay, textLibur, '', '', '', '', '']);
-          merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 6 } });
-        } else {
-          excelData.push([row.dateDisplay, textLibur, '', '']);
-          merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: 3 } });
+        const holidayRow = [row.dateDisplay, textLibur];
+        for (let i = 2; i < totalCols; i++) {
+          holidayRow.push('');
         }
+        excelData.push(holidayRow);
+        merges.push({ s: { r: rowIndex, c: 1 }, e: { r: rowIndex, c: totalCols - 1 } });
       } else {
         let dryDur = '-',
           frzDur = '-';
@@ -217,24 +258,47 @@ export function generateRoutingTimeSheet(
             false
           );
 
-        if (isSeparated) {
-          excelData.push([
-            row.dateDisplay,
-            hasDryStart ? formatDateUniversal(row.dry.firstCreatedTime, 'HH:mm') : '-',
-            hasFrzStart ? formatDateUniversal(row.frozen.firstCreatedTime, 'HH:mm') : '-',
-            hasDryEnd ? formatDateUniversal(row.dry.lastAssignedTime, 'HH:mm') : '-',
-            hasFrzEnd ? formatDateUniversal(row.frozen.lastAssignedTime, 'HH:mm') : '-',
-            dryDur,
-            frzDur,
-          ]);
+        const rowData = [row.dateDisplay];
+
+        // Start Time
+        const dryStartStr = hasDryStart
+          ? formatDateUniversal(row.dry.firstCreatedTime, 'HH:mm')
+          : '-';
+        const frzStartStr = hasFrzStart
+          ? formatDateUniversal(row.frozen.firstCreatedTime, 'HH:mm')
+          : '-';
+        const unifiedStartStr = hasDryStart ? dryStartStr : frzStartStr;
+
+        if (isStartSeparated) {
+          rowData.push(dryStartStr, frzStartStr);
         } else {
-          excelData.push([
-            row.dateDisplay,
-            hasDryStart ? formatDateUniversal(row.dry.firstCreatedTime, 'HH:mm') : '-',
-            hasDryEnd ? formatDateUniversal(row.dry.lastAssignedTime, 'HH:mm') : '-',
-            dryDur,
-          ]);
+          rowData.push(unifiedStartStr);
         }
+
+        // Finish Time
+        const dryEndStr = hasDryEnd
+          ? formatDateUniversal(row.dry.lastAssignedTime, 'HH:mm')
+          : '-';
+        const frzEndStr = hasFrzEnd
+          ? formatDateUniversal(row.frozen.lastAssignedTime, 'HH:mm')
+          : '-';
+        const unifiedEndStr = hasDryEnd ? dryEndStr : frzEndStr;
+
+        if (isFinishSeparated) {
+          rowData.push(dryEndStr, frzEndStr);
+        } else {
+          rowData.push(unifiedEndStr);
+        }
+
+        // Duration
+        const unifiedDur = dryDur !== '-' ? dryDur : frzDur;
+        if (isDurationSeparated) {
+          rowData.push(dryDur, frzDur);
+        } else {
+          rowData.push(unifiedDur);
+        }
+
+        excelData.push(rowData);
       }
     });
 
@@ -243,12 +307,12 @@ export function generateRoutingTimeSheet(
 
   const range = XLSX.utils.decode_range(ws['!ref']);
 
-  for (let R = 0; R <= (isSeparated ? 1 : 0); R++) {
-    for (let C = 0; C <= (isSeparated ? 6 : 3); C++) {
+  for (let R = 0; R <= (hasAnySeparation ? 1 : 0); R++) {
+    for (let C = 0; C < totalCols; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (cell) {
         cell.s = { ...HEADER_STYLES.main };
-        if (isSeparated && R === 1) {
+        if (hasAnySeparation && R === 1) {
           if (excelData[R][C] === 'Dry') {
             cell.s.fill = FILL_STYLES.dry;
           } else if (excelData[R][C] === 'Frozen') {
@@ -264,17 +328,23 @@ export function generateRoutingTimeSheet(
     font: { color: { rgb: '9C0006' }, bold: true },
   };
 
-  for (let R = isSeparated ? 2 : 1; R <= range.e.r; R++) {
-    const dryStartVal = excelData[R][1];
-    const frzStartVal = isSeparated ? excelData[R][2] : null;
-    const dryEndVal = excelData[R][isSeparated ? 3 : 2];
-    const frzEndVal = isSeparated ? excelData[R][4] : null;
+  const colStartDry = 1;
+  const colStartFrz = isStartSeparated ? 2 : null;
+  const colEndDry = isStartSeparated ? 3 : 2;
+  const colEndFrz = isFinishSeparated ? (isStartSeparated ? 4 : 3) : null;
 
+  for (let R = hasAnySeparation ? 2 : 1; R <= range.e.r; R++) {
+    const col1Val = excelData[R][1];
     const textLiburSunday = translate('common.holiday_sunday');
     const textLiburDynamic = translate('common.holiday');
-    const isHolidayRow = dryStartVal === textLiburSunday || dryStartVal === textLiburDynamic;
+    const isHolidayRow = col1Val === textLiburSunday || col1Val === textLiburDynamic;
 
-    for (let C = 0; C <= (isSeparated ? 6 : 3); C++) {
+    const dryStartVal = excelData[R][colStartDry];
+    const frzStartVal = colStartFrz !== null ? excelData[R][colStartFrz] : null;
+    const dryEndVal = excelData[R][colEndDry];
+    const frzEndVal = colEndFrz !== null ? excelData[R][colEndFrz] : null;
+
+    for (let C = 0; C < totalCols; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (!cell) continue;
 
@@ -286,20 +356,40 @@ export function generateRoutingTimeSheet(
           currentStyle.font = { bold: true, color: { rgb: '990000' } };
         }
       } else {
-        if (isSeparated) {
-          if (C === 1 && dryStartVal === '-' && dryEndVal !== '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
-          else if (C === 2 && frzStartVal === '-' && frzEndVal !== '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
-          else if (C === 3 && dryStartVal !== '-' && dryEndVal === '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
-          else if (C === 4 && frzStartVal !== '-' && frzEndVal === '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
+        let isErrorCell = false;
+
+        if (isStartSeparated) {
+          if (C === colStartDry && dryStartVal === '-' && (isFinishSeparated ? dryEndVal !== '-' : dryEndVal !== '-')) {
+            isErrorCell = true;
+          } else if (C === colStartFrz && frzStartVal === '-' && (isFinishSeparated ? frzEndVal !== '-' : dryEndVal !== '-')) {
+            isErrorCell = true;
+          }
         } else {
-          if (C === 1 && dryStartVal === '-' && dryEndVal !== '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
-          else if (C === 2 && dryStartVal !== '-' && dryEndVal === '-')
-            currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
+          const anyFinishExists = isFinishSeparated
+            ? dryEndVal !== '-' || frzEndVal !== '-'
+            : dryEndVal !== '-';
+          if (C === colStartDry && dryStartVal === '-' && anyFinishExists) {
+            isErrorCell = true;
+          }
+        }
+
+        if (isFinishSeparated) {
+          if (C === colEndDry && dryEndVal === '-' && (isStartSeparated ? dryStartVal !== '-' : dryStartVal !== '-')) {
+            isErrorCell = true;
+          } else if (C === colEndFrz && frzEndVal === '-' && (isStartSeparated ? frzStartVal !== '-' : dryStartVal !== '-')) {
+            isErrorCell = true;
+          }
+        } else {
+          const anyStartExists = isStartSeparated
+            ? dryStartVal !== '-' || frzStartVal !== '-'
+            : dryStartVal !== '-';
+          if (C === colEndDry && dryEndVal === '-' && anyStartExists) {
+            isErrorCell = true;
+          }
+        }
+
+        if (isErrorCell) {
+          currentStyle = { ...currentStyle, ...ERROR_CELL_STYLE };
         }
       }
 
@@ -307,9 +397,23 @@ export function generateRoutingTimeSheet(
     }
   }
 
-  ws['!cols'] = isSeparated
-    ? [{ wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]
-    : [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+  const colsConfig = [{ wch: 22 }];
+  if (isStartSeparated) {
+    colsConfig.push({ wch: 10 }, { wch: 10 });
+  } else {
+    colsConfig.push({ wch: 14 });
+  }
+  if (isFinishSeparated) {
+    colsConfig.push({ wch: 10 }, { wch: 10 });
+  } else {
+    colsConfig.push({ wch: 14 });
+  }
+  if (isDurationSeparated) {
+    colsConfig.push({ wch: 10 }, { wch: 10 });
+  } else {
+    colsConfig.push({ wch: 14 });
+  }
+  ws['!cols'] = colsConfig;
 
   XLSX.utils.book_append_sheet(wb, ws, translate('summary.tabs.routing_time.title'));
 }
