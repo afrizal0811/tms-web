@@ -111,6 +111,9 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
         return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
       case 'put':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400';
+      case 're-assign':
+      case 'reassign':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400';
       case 'assign':
         return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400';
       case 'unassign':
@@ -120,6 +123,83 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
       default:
         return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
     }
+  };
+
+  const extractReassignInfo = (historiesList) => {
+    if (!historiesList || historiesList.length === 0) return {};
+
+    const sorted = [...historiesList].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const getAssigneeInfo = (history) => {
+      const cData = history?.changeData || {};
+      let name = null;
+      let email = null;
+
+      if (cData.assignedTo) {
+        if (typeof cData.assignedTo === 'object') {
+          name = cData.assignedTo.name || null;
+          email = cData.assignedTo.email || null;
+        } else {
+          name = String(cData.assignedTo);
+        }
+      }
+
+      if (!email && cData.assignee) {
+        if (Array.isArray(cData.assignee) && cData.assignee.length > 0) {
+          email = cData.assignee[0];
+        } else if (typeof cData.assignee === 'string') {
+          email = cData.assignee;
+        }
+      }
+
+      if (!name && history?.notes) {
+        const note = String(history.notes).trim();
+        const byMatch = note.match(/^Task assigned to (.+?)\s+by\s+.+$/i);
+        const directMatch = note.match(/^Task assigned to (.+)$/i);
+        if (byMatch && byMatch[1]) {
+          name = byMatch[1].trim();
+        } else if (directMatch && directMatch[1]) {
+          name = directMatch[1].trim();
+        }
+      }
+
+      return {
+        name: name || email || null,
+        email: email || null,
+      };
+    };
+
+    let currentAssignee = null;
+    const reassignMap = {};
+
+    sorted.forEach((history) => {
+      const action = (history.action || '').toLowerCase();
+      const hasAssignedTo = !!history.changeData?.assignedTo;
+      const isReassign =
+        action === 're-assign' || action === 'reassign' || (action === 'assign' && hasAssignedTo);
+
+      const targetInfo = getAssigneeInfo(history);
+
+      if (isReassign) {
+        reassignMap[history._id || history.createdAt] = {
+          isReassign: true,
+          from: currentAssignee?.name || '-',
+          fromEmail: currentAssignee?.email || null,
+          to: targetInfo?.name || '-',
+          toEmail: targetInfo?.email || null,
+        };
+      }
+
+      if (action === 'unassign') {
+        currentAssignee = null;
+      } else if (targetInfo && targetInfo.name) {
+        currentAssignee = targetInfo;
+      }
+    });
+
+    return reassignMap;
   };
 
   const extractPutDifferences = (historiesList) => {
@@ -190,6 +270,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
     });
 
     const putDiffs = extractPutDifferences(taskData.histories || []);
+    const reassignMap = extractReassignInfo(taskData.histories || []);
 
     const hasMap = !!taskData.doneCoordinate;
     const goToMapTab = hasMap ? () => setActiveTab(translate('task_detail.modal.map')) : undefined;
@@ -565,77 +646,100 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
               <div className="py-2 max-h-[60vh] overflow-y-auto pr-2">
                 {histories.length > 0 ? (
                   <div className="border-l-2 border-sky-300 dark:border-sky-700 ml-4 space-y-6">
-                    {histories.map((h, i) => (
-                      <div key={i} className="relative pl-6">
-                        <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-slate-800" />
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                          <span
-                            className={`text-[11px] px-2 py-0.5 rounded-md font-bold capitalize w-fit tracking-wide ${getActionStyle(h.action)}`}
-                          >
-                            {h.action || '-'}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
-                            {formatDateUniversal(h.createdAt, 'DD/MM/YYYY HH:mm')}
-                          </span>
-                        </div>
-                        <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
-                          {h.changedBy || '-'}
-                        </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
-                          {h.notes || '-'}
-                          {h.action &&
-                            h.action.toLowerCase() === 'put' &&
-                            (() => {
-                              const diffMatch = putDiffs.find(
-                                (d) => d.id === (h._id || h.createdAt)
-                              );
-                              if (diffMatch && diffMatch.diffs.length > 0) {
-                                const formatVal = (v) => {
-                                  if (typeof v === 'object') return JSON.stringify(v);
-                                  const str = String(v);
-                                  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
-                                    return formatDateUniversal(str, 'DD-MM-YYYY HH:mm');
-                                  }
-                                  return str;
-                                };
-                                return (
-                                  <details className="mt-1.5 group">
-                                    <summary className="text-[11px] text-sky-600 dark:text-sky-400 cursor-pointer select-none font-medium hover:underline outline-none w-fit">
-                                      {translate('task_detail.modal.view_changes')} (
-                                      {diffMatch.diffs.length})
-                                    </summary>
-                                    <div className="mt-1.5 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5 max-h-[150px] overflow-y-auto">
-                                      {diffMatch.diffs.map((d, idx) => (
-                                        <div
-                                          key={idx}
-                                          className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded"
-                                        >
-                                          <div className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">
-                                            {ProperCaseText(d.key)}
-                                          </div>
-                                          <div
-                                            className="text-red-500 dark:text-red-400 truncate"
-                                            title={formatVal(d.oldVal)}
-                                          >
-                                            - {formatVal(d.oldVal)}
-                                          </div>
-                                          <div
-                                            className="text-emerald-600 dark:text-emerald-400 truncate"
-                                            title={formatVal(d.newVal)}
-                                          >
-                                            + {formatVal(d.newVal)}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
+                    {histories.map((h, i) => {
+                      const reassignInfo = reassignMap[h._id || h.createdAt];
+                      const isReassign = !!reassignInfo?.isReassign;
+                      const displayAction = isReassign ? 're-assign' : h.action || '-';
+
+                      return (
+                        <div key={i} className="relative pl-6">
+                          <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-slate-800" />
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-md font-bold capitalize w-fit tracking-wide ${getActionStyle(displayAction)}`}
+                            >
+                              {isReassign ? 'Re-Assign' : h.action || '-'}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400 mt-1 sm:mt-0">
+                              {formatDateUniversal(h.createdAt, 'DD/MM/YYYY HH:mm')}
+                            </span>
+                          </div>
+                          <div className="text-xs font-medium text-sky-600 dark:text-sky-400 mb-1">
+                            {h.changedBy || '-'}
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300 wrap-break-words">
+                            {h.notes || '-'}
+                            {isReassign && (
+                              <div className="mt-2 p-2.5 rounded-md bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/50 text-xs flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span
+                                  className="font-semibold text-red-600 dark:text-red-400"
+                                  title={reassignInfo.fromEmail || undefined}
+                                >
+                                  {reassignInfo.from || '-'}
+                                </span>
+                                <span className="text-indigo-500 font-bold mx-0.5">→</span>
+                                <span
+                                  className="font-semibold text-emerald-600 dark:text-emerald-400"
+                                  title={reassignInfo.toEmail || undefined}
+                                >
+                                  {reassignInfo.to || '-'}
+                                </span>
+                              </div>
+                            )}
+                            {h.action &&
+                              h.action.toLowerCase() === 'put' &&
+                              (() => {
+                                const diffMatch = putDiffs.find(
+                                  (d) => d.id === (h._id || h.createdAt)
                                 );
-                              }
-                              return null;
-                            })()}
+                                if (diffMatch && diffMatch.diffs.length > 0) {
+                                  const formatVal = (v) => {
+                                    if (typeof v === 'object') return JSON.stringify(v);
+                                    const str = String(v);
+                                    if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
+                                      return formatDateUniversal(str, 'DD-MM-YYYY HH:mm');
+                                    }
+                                    return str;
+                                  };
+                                  return (
+                                    <details className="mt-1.5 group">
+                                      <summary className="text-[11px] text-sky-600 dark:text-sky-400 cursor-pointer select-none font-medium hover:underline outline-none w-fit">
+                                        {translate('task_detail.modal.view_changes')} (
+                                        {diffMatch.diffs.length})
+                                      </summary>
+                                      <div className="mt-1.5 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5 max-h-[150px] overflow-y-auto">
+                                        {diffMatch.diffs.map((d, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded"
+                                          >
+                                            <div className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">
+                                              {ProperCaseText(d.key)}
+                                            </div>
+                                            <div
+                                              className="text-red-500 dark:text-red-400 truncate"
+                                              title={formatVal(d.oldVal)}
+                                            >
+                                              - {formatVal(d.oldVal)}
+                                            </div>
+                                            <div
+                                              className="text-emerald-600 dark:text-emerald-400 truncate"
+                                              title={formatVal(d.newVal)}
+                                            >
+                                              + {formatVal(d.newVal)}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </details>
+                                  );
+                                }
+                                return null;
+                              })()}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center text-sm text-gray-500 p-4">
