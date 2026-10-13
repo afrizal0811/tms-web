@@ -162,8 +162,19 @@ export default function PendingReasonModal({
     }
   };
 
+  const initialIntExt = data?.pendingDetail?.internalExternal || '';
+  const initialDetail = data?.pendingDetail?.detailReason || '';
+  const initialGroupReason = data?.pendingDetail?.groupReason || '';
+  const initialPic = data?.pendingDetail?.pic || '';
+
+  const isChanged =
+    intExt !== initialIntExt ||
+    detail !== initialDetail ||
+    groupReason !== initialGroupReason ||
+    pic !== initialPic;
+
   const isEmptyData = !groupReason || !pic;
-  const isSaveDisabled = isLoading.save || isEmptyData;
+  const isSaveDisabled = isLoading.save || isEmptyData || !isChanged;
 
   const hasExistingData =
     data?.pendingDetail &&
