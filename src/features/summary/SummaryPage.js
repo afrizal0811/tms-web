@@ -9,9 +9,9 @@ import { getHubs, getPendingDetails, getReasons } from '@/lib/api/mileapp';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { getTargetRoutingDate } from '@/lib/reportGenerators/summary/sheets/routingTimeSheet';
-import { toastError, toastSuccess } from '@/lib/toast';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import DistanceSummaryTab from './tabs/DistanceSummaryTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
@@ -94,6 +94,53 @@ export default function SummaryPage() {
       .then(setReasons)
       .catch(() => {});
   }, [driverData, driverChecker, t]);
+
+  const isInitialMountRef = useRef(true);
+  const userChangedDateRef = useRef(false);
+  const prevDateRangeRef = useRef(dateRange);
+
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      prevDateRangeRef.current = dateRange;
+      return;
+    }
+
+    if (
+      dateRange &&
+      prevDateRangeRef.current &&
+      (dateRange[0]?.getTime() !== prevDateRangeRef.current[0]?.getTime() ||
+        dateRange[1]?.getTime() !== prevDateRangeRef.current[1]?.getTime())
+    ) {
+      userChangedDateRef.current = true;
+      prevDateRangeRef.current = dateRange;
+    }
+  }, [dateRange]);
+
+  useEffect(() => {
+    if (!isLoading && userChangedDateRef.current) {
+      userChangedDateRef.current = false;
+      const pendingData = reportPreview?.pendingReasonsData || [];
+      const uncompletedCount = pendingData.filter((item) => {
+        const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+        const hasAnyData = Boolean(
+          (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
+            (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
+            (pd.internalExternal && !isEmpty(pd.internalExternal) && pd.internalExternal !== '-') ||
+            (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
+        );
+        return !hasAnyData;
+      }).length;
+
+      if (uncompletedCount > 0) {
+        const template =
+          t('summary.tabs.pending_reasons.toast_uncompleted', { count: uncompletedCount }) ||
+          'Terdapat {count} data pending yang perlu dilengkapi!';
+        const message = template.replace('{count}', uncompletedCount);
+        toastWarning(message);
+      }
+    }
+  }, [isLoading, reportPreview, pendingDetails, t]);
 
   useEffect(() => {
     driverChecker(driverData);

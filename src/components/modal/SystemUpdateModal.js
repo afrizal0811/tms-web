@@ -28,6 +28,8 @@ export default function SystemUpdateModal() {
 
   const handleApplyUpdate = async () => {
     const { storedSession, storedLanguage } = getLocalStorage();
+    const storedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
+
     localStorage.clear();
     sessionStorage.clear();
 
@@ -35,17 +37,21 @@ export default function SystemUpdateModal() {
       const userToSave = storedSession.user ? { ...storedSession.user } : null;
       if (userToSave) delete userToSave.paths;
 
-      setLocalStorage(
-        'data',
-        JSON.stringify({
-          user: userToSave,
-          superadminRoleId: storedSession.superadminRoleId || null,
-        })
-      );
+      const newSessionData = {
+        ...storedSession,
+        user: userToSave,
+        superadminRoleId: storedSession.superadminRoleId || null,
+      };
+
+      setLocalStorage('data', JSON.stringify(newSessionData));
     }
 
     if (storedLanguage) {
       setLocalStorage('language', storedLanguage);
+    }
+
+    if (storedTheme) {
+      localStorage.setItem('theme', storedTheme);
     }
 
     if ('caches' in window) {

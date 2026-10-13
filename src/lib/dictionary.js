@@ -534,6 +534,7 @@ export const dictionary = {
           reason: 'Alasan',
           title: 'Alasan Pending',
           modal_title: 'Alasan Penolakan',
+          toast_uncompleted: 'Terdapat {count} data pending yang perlu dilengkapi!',
           warning:
             'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
         },
@@ -1274,6 +1275,7 @@ export const dictionary = {
           reason: 'Reason',
           title: 'Pending Reasons',
           modal_title: 'Rejection Reasons',
+          toast_uncompleted: 'There are {count} pending data that need to be completed!',
           warning:
             'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },

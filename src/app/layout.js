@@ -1,3 +1,4 @@
+import PendingReasonNotifier from '@/components/PendingReasonNotifier';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import SessionGuard from '@/components/page/SessionGuard';
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <LanguageProvider>
             <SystemUpdateModal />
+            <PendingReasonNotifier />
             <Toaster
               position="top-right"
               containerStyle={{
