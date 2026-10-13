@@ -137,6 +137,7 @@ export default function SettingPage() {
       case 'sync':
         return (
           <SyncDataTab
+            hubs={hubs}
             lastUpdated={lastUpdated}
             onRefresh={triggerRefresh}
             isReadOnly={isReadOnlySync}

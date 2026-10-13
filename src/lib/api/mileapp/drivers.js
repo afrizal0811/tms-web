@@ -4,10 +4,11 @@ import { apiFetch } from '../base';
 import { getVehiclesStatuses } from '../mceasy';
 import { fields } from './fields';
 
-export async function getDrivers() {
+export async function getDrivers(customHubId) {
   const { storedLocation } = getLocalStorage();
+  const hubId = customHubId !== undefined ? customHubId : storedLocation;
   const params = new URLSearchParams();
-  if (storedLocation) params.append('hubId', storedLocation);
+  if (hubId && hubId !== 'all') params.append('hubId', hubId);
   return await apiFetch(
     `/api/mileapp/drivers?${params.toString()}`,
     'Gagal mengambil data drivers dari DB'
@@ -60,8 +61,8 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
     return { success: true };
   }
 
-  const targetLocation =
-    storedLocationName?.toUpperCase() === 'GIIC' ? 'Cikarang' : storedLocationName;
+  const rawLoc = (storedLocationName || '').replace(/^Hub\s+/i, '').trim();
+  const targetLocation = rawLoc.toUpperCase() === 'GIIC' ? 'Cikarang' : rawLoc;
   const [mceasyData, dbDrivers] = await Promise.all([
     getVehiclesStatuses({ location: targetLocation }),
     getDrivers(activeHubId),
@@ -99,28 +100,44 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
       const mcPlat = mcMatch.licensePlate?.replace(/\s+/g, '')?.toUpperCase();
       const mcName = mcMatch.driver1?.fullname?.toLowerCase()?.trim();
 
+      const driverKey = ma._id || ma.id;
+      const vehicleKey = mcMatch.vehicleId || mcMatch.id;
+
       if (mcPlat !== maBasePlat || mcName !== maCleanName) {
         const isPlatMismatch = mcPlat !== maBasePlat;
-        mismatched.push({
-          id: ma._id || ma.id,
-          maName: ma.name,
-          maNameClean: maCleanName,
-          maPlat: ma.plat,
-          maPlatBase: maBasePlat,
-          mcName: mcMatch.driver1?.fullname || '-',
-          mcPlat: mcMatch.licensePlate || '-',
-          mcVehicleId: mcMatch.vehicleId || mcMatch.id,
-          vmsDriverId: mcMatch.driverId,
-          updatedPlat: isPlatMismatch ? ma.plat : undefined,
-          isUpdated: isPlatMismatch,
-        });
+        const alreadyInMismatched = mismatched.some(
+          (m) =>
+            m.id === driverKey ||
+            (m.mcVehicleId && m.mcVehicleId === vehicleKey) ||
+            (m.maPlatBase && m.maPlatBase === maBasePlat)
+        );
+        if (!alreadyInMismatched) {
+          mismatched.push({
+            id: driverKey,
+            maName: ma.name,
+            maNameClean: maCleanName,
+            maPlat: ma.plat,
+            maPlatBase: maBasePlat,
+            mcName: mcMatch.driver1?.fullname || '-',
+            mcPlat: mcMatch.licensePlate || '-',
+            mcVehicleId: vehicleKey,
+            vmsDriverId: mcMatch.driverId,
+            updatedPlat: isPlatMismatch ? ma.plat : undefined,
+            isUpdated: isPlatMismatch,
+          });
+        }
       } else {
-        matched.push({
-          id: ma._id || ma.id,
-          imei: mcMatch.imei,
-          vms_id: mcMatch.vehicleId || mcMatch.id,
-          vms_driver_id: mcMatch.driverId,
-        });
+        const alreadyInMatched = matched.some(
+          (m) => m.id === driverKey || (m.vms_id && m.vms_id === vehicleKey)
+        );
+        if (!alreadyInMatched) {
+          matched.push({
+            id: driverKey,
+            imei: mcMatch.imei,
+            vms_id: vehicleKey,
+            vms_driver_id: mcMatch.driverId,
+          });
+        }
       }
     }
   });

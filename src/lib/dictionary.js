@@ -692,7 +692,8 @@ export const dictionary = {
           title: 'Sinkronisasi',
         },
         button: {
-          btn_sync: 'Sinkronkan',
+          btn_sync: 'Sinkronisasi',
+          btn_sync_hub: 'Sinkronisasi ({hub})',
         },
         modal: {
           blank_driver: 'Tanpa Sopir',
@@ -1437,6 +1438,7 @@ export const dictionary = {
         },
         button: {
           btn_sync: 'Synchronize',
+          btn_sync_hub: 'Synchronize ({hub})',
         },
         modal: {
           blank_driver: 'No Driver',

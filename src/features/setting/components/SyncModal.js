@@ -57,7 +57,16 @@ export default function SyncModal({
                   label: translate('common.driver'),
                   key: 'maNameClean',
                   width: 'w-[25%]',
-                  render: (row) => <span>{capitalizeText(row.maNameClean)}</span>,
+                  render: (row) => (
+                    <div className="flex flex-col">
+                      <span>{capitalizeText(row.maNameClean)}</span>
+                      {row.hubName && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                          {row.hubName}
+                        </span>
+                      )}
+                    </div>
+                  ),
                 },
                 { label: translate('common.license_number'), key: 'maPlat', width: 'w-[20%]' },
               ],
