@@ -45,33 +45,79 @@ export default function PendingReasonModal({
     if (!reasons || reasons.length === 0) return { sortedReasons: [], reasonCounts: {} };
 
     const counts = reasons.reduce((acc, curr) => {
-      acc[curr.reasons] = (acc[curr.reasons] || 0) + 1;
+      if (curr.reasons) {
+        acc[curr.reasons] = (acc[curr.reasons] || 0) + 1;
+      }
       return acc;
     }, {});
 
-    const sorted = [...reasons].sort((a, b) => a.reasons.localeCompare(b.reasons));
+    const sorted = [...reasons].sort((a, b) => (a.reasons || '').localeCompare(b.reasons || ''));
 
     return { sortedReasons: sorted, reasonCounts: counts };
   }, [reasons]);
 
-  const availableReasons = useMemo(() => {
-    if (!intExt) return [];
-    return sortedReasons.filter(
-      (r) => r.category === intExt || r.internalExternal === intExt || r.type === intExt
+  const reasonOptions = useMemo(() => {
+    return sortedReasons.map((r) => {
+      const isDuplicate = (reasonCounts[r.reasons] || 0) > 1;
+      const cat = r.category || r.internalExternal || '';
+      const displayLabel = isDuplicate ? `${r.reasons} (${r.pic})` : r.reasons;
+      return {
+        label: displayLabel,
+        value: `${r.reasons}|${r.pic}|${cat}`,
+      };
+    });
+  }, [sortedReasons, reasonCounts]);
+
+  const currentDropdownValue = useMemo(() => {
+    if (!groupReason) return '';
+    const match = sortedReasons.find(
+      (r) =>
+        r.reasons === groupReason &&
+        (pic ? r.pic === pic : true) &&
+        (intExt ? (r.category || r.internalExternal) === intExt : true)
     );
-  }, [sortedReasons, intExt]);
+    if (match) {
+      return `${match.reasons}|${match.pic}|${match.category || match.internalExternal || ''}`;
+    }
+    return `${groupReason}|${pic}|${intExt || ''}`;
+  }, [groupReason, pic, intExt, sortedReasons]);
 
   if (!data) return null;
 
   const handleGroupReasonChange = (val) => {
     if (val) {
-      const [gReason, gPic] = val.split('|');
-      setGroupReason(gReason);
-      setPic(gPic);
+      const match = sortedReasons.find(
+        (r) => `${r.reasons}|${r.pic}|${r.category || r.internalExternal || ''}` === val
+      );
+      if (match) {
+        setGroupReason(match.reasons);
+        setPic(match.pic);
+        setIntExt(match.category || match.internalExternal || '');
+      } else {
+        const [gReason, gPic, gCat] = val.split('|');
+        setGroupReason(gReason || '');
+        setPic(gPic || '');
+        setIntExt(gCat || '');
+      }
     } else {
       setGroupReason('');
       setPic('');
+      setIntExt('');
     }
+  };
+
+  const getDropdownLabel = (val) => {
+    if (!val) {
+      return `${translate('common.select')} ${translate('summary.tabs.pending_reasons.group_reason')}`;
+    }
+    const match = sortedReasons.find(
+      (r) => `${r.reasons}|${r.pic}|${r.category || r.internalExternal || ''}` === val
+    );
+    if (match) {
+      const isDuplicate = (reasonCounts[match.reasons] || 0) > 1;
+      return isDuplicate ? `${match.reasons} (${match.pic})` : match.reasons;
+    }
+    return groupReason || val;
   };
 
   const handleSave = async () => {
@@ -116,7 +162,7 @@ export default function PendingReasonModal({
     }
   };
 
-  const isEmptyData = !intExt || !groupReason || !pic;
+  const isEmptyData = !groupReason || !pic;
   const isSaveDisabled = isLoading.save || isEmptyData;
 
   const hasExistingData =
@@ -151,7 +197,8 @@ export default function PendingReasonModal({
       <Modal
         isOpen={isOpen && !isConfirmOpen}
         onClose={onClose}
-        maxWidth="max-w-lg"
+        maxWidth="max-w-2xl"
+        maxHeight="min-h-[500px] max-h-[100vh]"
         title={translate('summary.tabs.pending_reasons.modal_title')}
         subtitle={`${capitalizeText(statusText)} | ${data.customer}`}
         footer={
@@ -178,80 +225,64 @@ export default function PendingReasonModal({
           </div>
         }
       >
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {translate('summary.tabs.pending_reasons.category')}
-            </label>
-            <Dropdown
-              value={intExt}
-              onChange={(val) => {
-                setIntExt(val);
-                setGroupReason('');
-                setPic('');
-              }}
-              options={[
-                { label: 'Internal', value: 'Internal' },
-                { label: 'External', value: 'External' },
-              ]}
-              getLabel={(val) =>
-                val ||
-                `${translate('common.select')} ${translate('summary.tabs.pending_reasons.category')}`
-              }
-              className="w-full"
-            />
-          </div>
-
+        <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.pending_reasons.group_reason')}
             </label>
             <Dropdown
-              value={groupReason && pic ? `${groupReason}|${pic}` : ''}
+              value={currentDropdownValue}
               onChange={handleGroupReasonChange}
-              disabled={!intExt}
-              options={availableReasons.map((r) => {
-                const isDuplicate = reasonCounts[r.reasons] > 1;
-                const displayLabel = isDuplicate ? `${r.reasons} (${r.pic})` : r.reasons;
-                return { label: displayLabel, value: `${r.reasons}|${r.pic}` };
-              })}
-              getLabel={(val) => {
-                if (!val)
-                  return `${translate('common.select')} ${translate('summary.tabs.pending_reasons.group_reason')}`;
-                const match = sortedReasons.find((r) => `${r.reasons}|${r.pic}` === val);
-                if (!match) return val;
-                const isDuplicate = reasonCounts[match.reasons] > 1;
-                return isDuplicate ? `${match.reasons} (${match.pic})` : match.reasons;
-              }}
+              options={reasonOptions}
+              getLabel={getDropdownLabel}
               isAutocomplete={true}
               className="w-full"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              PIC
-            </label>
-            <input
-              type="text"
-              readOnly
-              value={pic}
-              placeholder="PIC"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-slate-500 rounded-md outline-none cursor-not-allowed"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {translate('summary.tabs.pending_reasons.category')}
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={intExt}
+                placeholder={translate('summary.tabs.pending_reasons.category')}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                PIC
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={pic}
+                placeholder="PIC"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {translate('summary.tabs.pending_reasons.detail_reason')}
+              {translate('summary.tabs.pending_reasons.detail')}
             </label>
             <textarea
               rows="3"
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
               placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
-              className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800`}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
             />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 italic">
+              {translate('summary.tabs.pending_reasons.detail_optional_hint') ||
+                '*Diisi jika diperlukan (opsional)'}
+            </p>
           </div>
         </div>
       </Modal>

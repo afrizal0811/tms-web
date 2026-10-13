@@ -3,6 +3,7 @@ import Tooltip from '@/components/Tooltip';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
+
 const ReasonCell = ({ text, className }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const textRef = useRef(null);
@@ -30,7 +31,7 @@ const ReasonCell = ({ text, className }) => {
   );
 };
 
-const ActionCell = ({ text, className, onClick }) => {
+const ActionCell = ({ text, className, onClick, isAllEmpty = false }) => {
   const [isTruncated, setIsTruncated] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const textRef = useRef(null);
@@ -61,7 +62,7 @@ const ActionCell = ({ text, className, onClick }) => {
         <Tooltip tooltipContent={isTruncated ? text : ''}>{innerContent}</Tooltip>
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
-          {isHovered ? (
+          {isAllEmpty && isHovered ? (
             <span className="relative text-slate-600/30 dark:text-slate-400/30 text-lg font-bold">
               +
             </span>
@@ -126,9 +127,9 @@ export default function PendingReasonsTab({
     translate('common.customer_name'),
     translate('common.status.delivery_status'),
     translate('summary.tabs.pending_reasons.reason'),
-    translate('summary.tabs.pending_reasons.category'),
-    translate('summary.tabs.pending_reasons.detail_reason'),
     translate('summary.tabs.pending_reasons.group_reason'),
+    translate('summary.tabs.pending_reasons.detail'),
+    translate('summary.tabs.pending_reasons.category'),
     'PIC',
     translate('common.open_time'),
     translate('common.close_time'),
@@ -186,8 +187,15 @@ export default function PendingReasonsTab({
               const tdClass = `${baseTdClass} ${borderBottomClass}`;
               const isWrongGR = !hasPendingGR && item.status === 'PENDING GR';
               const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
-              const isAllEmpty =
-                !pd.internalExternal && !pd.detailReason && !pd.groupReason && !pd.pic;
+              const hasAnyData = Boolean(
+                (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
+                  (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
+                  (pd.internalExternal &&
+                    !isEmpty(pd.internalExternal) &&
+                    pd.internalExternal !== '-') ||
+                  (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
+              );
+              const isAllEmpty = !hasAnyData;
               const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
               const actionCellClass = isAllEmpty
                 ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
@@ -201,17 +209,23 @@ export default function PendingReasonsTab({
                 { type: 'text', val: item.dateStr },
                 { type: 'text', val: getBasePlate(item.licensePlate) },
                 { type: 'text', val: item.driverName, cls: 'text-left' },
-                { type: 'so', val: customerName || '-', content: invoiceNumber, id: item._id, cls: 'text-left' },
+                {
+                  type: 'so',
+                  val: customerName || '-',
+                  content: invoiceNumber,
+                  id: item._id,
+                  cls: 'text-left',
+                },
                 {
                   type: 'text',
                   val: item.status || '-',
                   cls: `text-left ${isWrongGR ? 'text-[#FF0000] dark:text-red-400 font-bold' : ''}`,
                 },
                 { type: 'reason', val: item.alasan, cls: 'text-left' },
-                { type: 'action', val: pd.internalExternal, cls: actionCellClass },
-                { type: 'action', val: pd.detailReason, cls: actionCellClass },
-                { type: 'action', val: pd.groupReason, cls: actionCellClass },
-                { type: 'action', val: pd.pic, cls: actionCellClass },
+                { type: 'action', val: pd.groupReason, cls: actionCellClass, isAllEmpty },
+                { type: 'action', val: pd.detailReason, cls: actionCellClass, isAllEmpty },
+                { type: 'action', val: pd.internalExternal, cls: actionCellClass, isAllEmpty },
+                { type: 'action', val: pd.pic, cls: actionCellClass, isAllEmpty },
                 { type: 'text', val: item.openStr || '-' },
                 { type: 'text', val: item.closeStr || '-' },
                 { type: 'redEmpty', val: item.etaStr },
@@ -258,6 +272,7 @@ export default function PendingReasonsTab({
                           key={cIdx}
                           text={cell.val}
                           className={cell.cls}
+                          isAllEmpty={cell.isAllEmpty}
                           onClick={openModal}
                         />
                       );

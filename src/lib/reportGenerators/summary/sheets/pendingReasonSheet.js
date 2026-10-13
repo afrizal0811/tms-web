@@ -12,12 +12,7 @@ import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './repo
 
 const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
 
-export function calculatePendingReasonData(
-  driverData,
-  allTasks,
-  startDateStr,
-  endDateStr,
-) {
+export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
   const processedData = [];
   const driverMap = new Map();
   if (driverData && Array.isArray(driverData)) {
@@ -146,14 +141,9 @@ export function generatePendingReasonSheet(
   endDateStr,
   hasPendingGR,
   pendingDetails,
-  isDailyReport = false,
+  isDailyReport = false
 ) {
-  const data = calculatePendingReasonData(
-    driverData,
-    allTasks,
-    startDateStr,
-    endDateStr,
-  );
+  const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
   const shouldShowPendingGR = hasPendingGR;
 
   let headers = [
@@ -175,9 +165,9 @@ export function generatePendingReasonSheet(
     currentIdx++;
   } else {
     headers.push(
-      translate('summary.tabs.pending_reasons.category'),
-      translate('summary.tabs.pending_reasons.detail_reason'),
       translate('summary.tabs.pending_reasons.group_reason'),
+      translate('summary.tabs.pending_reasons.detail'),
+      translate('summary.tabs.pending_reasons.category'),
       'PIC'
     );
     currentIdx += 4;

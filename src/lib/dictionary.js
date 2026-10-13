@@ -528,7 +528,8 @@ export const dictionary = {
         pending_reasons: {
           category: 'Kategori',
           detail_placeholder: 'Tuliskan secara jelas',
-          detail_reason: 'Detail Alasan',
+          detail: 'Detail Alasan',
+          detail_optional_hint: '*Diisi jika diperlukan (opsional)',
           group_reason: 'Kelompok Alasan',
           reason: 'Alasan',
           title: 'Alasan Pending',
@@ -1267,7 +1268,8 @@ export const dictionary = {
         pending_reasons: {
           category: 'Category',
           detail_placeholder: 'Write a detail reason',
-          detail_reason: 'Detail Reason',
+          detail: 'Detail Reason',
+          detail_optional_hint: '*Fill in if needed (optional)',
           group_reason: 'Group Reason',
           reason: 'Reason',
           title: 'Pending Reasons',
