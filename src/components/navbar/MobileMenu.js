@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
+import { APP_NAVIGATION } from '@/lib/navigation';
 import { isEmpty } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -9,6 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 import LanguageToggle from '../button/LanguageToggle';
 import ThemeToggle from '../button/ThemeToggle';
 import { LocationSwitcher } from '../dropdown/LocationDropdown';
+
+const operationalGroup = APP_NAVIGATION.find((g) => g.group === 'Operational');
 
 function MobileNavLink({ href, children, target = '', rel = '' }) {
   const pathname = usePathname();
@@ -88,6 +91,7 @@ export default function MobileMenu({
   userPaths,
   handleLogout,
   reportLinks,
+  hasVms = true,
 }) {
   const { t, isIndonesian } = useLanguage();
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -149,11 +153,15 @@ export default function MobileMenu({
   const primaryVehicle = isIndonesian ? 'Data' : t('common.vehicle');
   const secondaryVehicle = isIndonesian ? t('common.vehicle') : 'Data';
 
-  const mobileLinkVehicle = (
-    <MobileNavLink href="/vehicles">
-      {primaryVehicle} {secondaryVehicle}
-    </MobileNavLink>
-  );
+  const getMobileLabel = (item) => {
+    if (item.isCoordinate) {
+      return `${t('navbar.update')} ${t(item.labelKey)}`;
+    }
+    if (item.isVehicle) {
+      return `${primaryVehicle} ${secondaryVehicle}`;
+    }
+    return t(item.labelKey);
+  };
 
   return (
     <div ref={menuRef} className="lg:hidden">
@@ -207,24 +215,15 @@ export default function MobileMenu({
               {reportLinks.length > 0 && (
                 <MobileNavGroup label={t('navbar.report')} links={reportLinks} />
               )}
-              {(isAllPath || userPaths.some((p) => '/task'.startsWith(p))) && (
-                <MobileNavLink href="/task">{t('navbar.task')}</MobileNavLink>
-              )}
-              {(isAllPath || userPaths.some((p) => '/tracking'.startsWith(p))) && (
-                <MobileNavLink href="/tracking">{t('navbar.tracking')}</MobileNavLink>
-              )}
-              {(isAllPath || userPaths.some((p) => '/summary'.startsWith(p))) && (
-                <MobileNavLink href="/summary">{t('navbar.summary')}</MobileNavLink>
-              )}
-              {(isAllPath || userPaths.some((p) => '/coordinate'.startsWith(p))) && (
-                <MobileNavLink href="/coordinate">
-                  {t('navbar.update')} {t('navbar.coordinate')}
-                </MobileNavLink>
-              )}
-              {(isAllPath || userPaths.some((p) => '/delivery'.startsWith(p))) && (
-                <MobileNavLink href="/delivery">{t('navbar.delivery')}</MobileNavLink>
-              )}
-              {(isAllPath || userPaths.some((p) => '/vehicles'.startsWith(p))) && mobileLinkVehicle}
+              {(operationalGroup?.items || []).map((item) => {
+                if (item.requiresVms && !hasVms) return null;
+                if (!isAllPath && !userPaths.some((p) => item.href.startsWith(p))) return null;
+                return (
+                  <MobileNavLink key={item.href} href={item.href}>
+                    {getMobileLabel(item)}
+                  </MobileNavLink>
+                );
+              })}
               <Divider />
             </>
           ) : null}

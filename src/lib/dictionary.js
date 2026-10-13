@@ -675,9 +675,13 @@ export const dictionary = {
           vms_data_title: 'Data VMS',
         },
         permission: {
-          title: 'Hak Akses',
           access: 'Akses',
-          unsave_changes: 'Perubahan belum disimpan',
+          default_hint: 'Memiliki akses ke seluruh menu & fitur.',
+          deselect_all: 'Hapus Semua',
+          select_all: 'Pilih Semua',
+          selected_count: '{count} dari {total} dipilih',
+          title: 'Hak Akses',
+          unsave_changes: 'Belum disimpan',
         },
         sync_data: {
           driver_vehicles: 'Data Sopir & Kendaraan',
@@ -1418,6 +1422,10 @@ export const dictionary = {
           title: 'Permissions',
           access: 'Access',
           unsave_changes: 'Unsaved changes',
+          select_all: 'Select All',
+          deselect_all: 'Deselect All',
+          selected_count: '{count} of {total} selected',
+          default_hint: 'Has access to all menus and features.',
         },
         sync_data: {
           driver_vehicles: 'Driver & Vehicle Data',

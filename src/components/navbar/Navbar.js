@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getCachedHubs, getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
+import { APP_NAVIGATION } from '@/lib/navigation';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -31,13 +32,9 @@ function NavLink({ href, children, className }) {
   );
 }
 
-const REPORT_LINKS = [
-  { href: '/report/daily', labelKey: 'navbar.daily_report' },
-  { href: '/report/kpi', labelKey: 'navbar.kpi' },
-  { href: '/report/bread', labelKey: 'navbar.bread_report' },
-  { href: '/report/custom', labelKey: 'navbar.custom_report' },
-  { href: '/report/counter', labelKey: 'navbar.task_counter_report' },
-];
+const reportGroup = APP_NAVIGATION.find((g) => g.group === 'Report');
+const operationalGroup = APP_NAVIGATION.find((g) => g.group === 'Operational');
+const REPORT_LINKS = reportGroup?.items || [];
 
 function DynamicNavMenu({ children, moreLabel = 'More' }) {
   const containerRef = useRef(null);
@@ -235,25 +232,33 @@ export default function Navbar() {
   const checkAccess = (href) => userPaths.length === 0 || userPaths.some((p) => href.startsWith(p));
   const filteredReportLinks = REPORT_LINKS.filter((link) => checkAccess(link.href));
 
+  const getOperationalLabel = (item) => {
+    if (item.isCoordinate) {
+      return `${t('navbar.update')} ${t(item.labelKey)}`;
+    }
+    if (item.isVehicle) {
+      return <span> {vehicle} </span>;
+    }
+    return t(item.labelKey);
+  };
+
   const LoggedInComps = (
     <>
       {filteredReportLinks.length > 0 && (
-        <NavDropdown label={t('navbar.report')} links={filteredReportLinks} />
+        <NavDropdown
+          label={t(reportGroup?.groupLabelKey || 'navbar.report')}
+          links={filteredReportLinks}
+        />
       )}
-      {checkAccess('/task') && <NavLink href="/task">{t('navbar.task')}</NavLink>}
-      {hasVms && checkAccess('/tracking') && (
-        <NavLink href="/tracking">{t('navbar.tracking')}</NavLink>
-      )}
-      {checkAccess('/summary') && <NavLink href="/summary">{t('navbar.summary')}</NavLink>}
-      {checkAccess('/coordinate') && (
-        <NavLink href="/coordinate">{`${t('navbar.update')} ${t('navbar.coordinate')}`}</NavLink>
-      )}
-      {checkAccess('/delivery') && <NavLink href="/delivery">{t('navbar.delivery')}</NavLink>}
-      {checkAccess('/vehicles') && (
-        <NavLink href="/vehicles">
-          <span> {vehicle} </span>
-        </NavLink>
-      )}
+      {(operationalGroup?.items || []).map((item) => {
+        if (item.requiresVms && !hasVms) return null;
+        if (!checkAccess(item.href)) return null;
+        return (
+          <NavLink key={item.href} href={item.href}>
+            {getOperationalLabel(item)}
+          </NavLink>
+        );
+      })}
       <NavLink href="/help">{t('navbar.help')}</NavLink>
     </>
   );
@@ -274,6 +279,7 @@ export default function Navbar() {
       userPaths={userPaths}
       handleLogout={handleLogout}
       reportLinks={filteredReportLinks}
+      hasVms={hasVms}
     />
   );
 
