@@ -1,9 +1,11 @@
 'use client';
 
+import HighlightText from '@/components/HighlightText';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import SearchBar from '@/components/SearchBar';
 import { patchHubs } from '@/lib/api/mileapp';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Card from './Card';
 import CustomTable from './CustomTable';
 
@@ -30,7 +32,25 @@ const RenderEdit = ({ value, onChange }) => (
 );
 
 export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: null, name: null });
+
+  const filteredHubs = useMemo(() => {
+    const list = hubs?.allHub || [];
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = !q
+      ? list
+      : list.filter((h) => {
+          const name = (h.name || '').toLowerCase();
+          const acronym = (h.acronym || '').toLowerCase();
+          return name.includes(q) || acronym.includes(q);
+        });
+
+    return filtered.map((item, idx) => ({
+      ...item,
+      _index: idx + 1,
+    }));
+  }, [hubs, searchQuery]);
 
   const handleSaveSettings = async (id, editValues) => {
     try {
@@ -76,69 +96,76 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
     }
   };
 
-  const columns = [
-    {
-      header: 'Status',
-      field: 'isActive',
-      align: 'center',
-      cellClassName: 'text-center',
-      render: (item) => <RenderData item={item.isActive} />,
-      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
-    },
-    {
-      header: translate('common.branch'),
-      field: 'name',
-      render: (item) => (
-        <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
-          {item.name}
-        </span>
-      ),
-    },
-    {
-      header: translate('setting.tab.general.acronym_title'),
-      field: 'acronym',
-      render: (item) => (
-        <span
-          className={`text-[10px] md:text-sm font-bold ${item.acronym ? 'text-sky-700 dark:text-sky-400' : 'text-red-500 dark:text-red-400'}`}
-        >
-          {item.acronym || '-'}
-        </span>
-      ),
-      renderEdit: (value, onChange) => (
-        <input
-          type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full min-w-0 px-2 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none uppercase"
-          autoFocus
-        />
-      ),
-    },
-    {
-      header: 'Pending GR',
-      field: 'hasPendingGR',
-      align: 'center',
-      cellClassName: 'text-center',
-      render: (item) => <RenderData item={item.hasPendingGR} />,
-      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
-    },
-    // {
-    //   header: translate('setting.tab.general.partial_routing_title'),
-    //   field: 'hasPartialRouting',
-    //   align: 'center',
-    //   cellClassName: 'text-center',
-    //   render: (item) => <RenderData item={item.hasPartialRouting} />,
-    //   renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
-    // },
-    {
-      header: translate('setting.tab.general.vms_data_title'),
-      field: 'hasVms',
-      align: 'center',
-      cellClassName: 'text-center',
-      render: (item) => <RenderData item={item.hasVms} />,
-      renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
-    },
-  ];
+  const columns = useMemo(
+    () => [
+      {
+        header: '#',
+        field: '_index',
+        headerClassName: 'w-10 sm:w-12 text-center',
+        align: 'center',
+        cellClassName: 'text-center',
+        render: (item) => (
+          <span className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400">
+            {item._index}
+          </span>
+        ),
+      },
+      {
+        header: 'Status',
+        field: 'isActive',
+        align: 'center',
+        cellClassName: 'text-center',
+        render: (item) => <RenderData item={item.isActive} />,
+        renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
+      },
+      {
+        header: translate('common.branch'),
+        field: 'name',
+        render: (item) => (
+          <span className="font-semibold text-slate-700 dark:text-slate-200 text-[10px] md:text-sm">
+            <HighlightText text={item.name} highlight={searchQuery} />
+          </span>
+        ),
+      },
+      {
+        header: translate('setting.tab.general.acronym_title'),
+        field: 'acronym',
+        render: (item) => (
+          <span
+            className={`text-[10px] md:text-sm font-bold ${item.acronym ? 'text-sky-700 dark:text-sky-400' : 'text-red-500 dark:text-red-400'}`}
+          >
+            <HighlightText text={item.acronym || '-'} highlight={searchQuery} />
+          </span>
+        ),
+        renderEdit: (value, onChange) => (
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full min-w-0 px-2 py-1 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded outline-none uppercase"
+            autoFocus
+          />
+        ),
+      },
+      {
+        header: 'Pending GR',
+        field: 'hasPendingGR',
+        align: 'center',
+        cellClassName: 'text-center',
+        render: (item) => <RenderData item={item.hasPendingGR} />,
+        renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
+      },
+      {
+        header: translate('setting.tab.general.vms_data_title'),
+        field: 'hasVms',
+        align: 'center',
+        cellClassName: 'text-center',
+        render: (item) => <RenderData item={item.hasVms} />,
+        renderEdit: (value, onChange) => <RenderEdit value={value} onChange={onChange} />,
+      },
+    ],
+    [searchQuery, translate]
+  );
 
   const msgParts = translate('common.modal.reset_message', { text: '|||' }).split('|||');
 
@@ -168,20 +195,33 @@ export default function BranchManager({ hubs, onRefresh, isReadOnly, translate }
         }
       />
 
-      <div className="mb-4 border-b border-gray-100 dark:border-slate-800 pb-3">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
-          {translate('setting.tab.general.branch_title')}
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          {translate('setting.tab.general.branch_subtitle')}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b border-gray-100 dark:border-slate-800 pb-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
+            {translate('setting.tab.general.branch_title')}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {translate('setting.tab.general.branch_subtitle')}
+          </p>
+        </div>
+        <div className="w-full sm:w-64 shrink-0">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={translate('common.search')}
+            size="md"
+            width="w-full"
+            tooltip={`${translate('common.branch')}, ${translate('setting.tab.general.acronym_title')}`}
+          />
+        </div>
       </div>
 
       <CustomTable
-        data={hubs.allHub}
+        data={filteredHubs}
         columns={columns}
         isReadOnly={isReadOnly}
         containerHeight="h-[408px]"
+        emptyMessage={translate('common.no_data')}
         translate={translate}
         onSave={handleSaveSettings}
         onDelete={(item) =>

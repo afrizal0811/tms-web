@@ -14,7 +14,7 @@ export default function GeneralTab({
   translate,
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
       <BranchManager
         hubs={hubs}
         onRefresh={onRefresh}

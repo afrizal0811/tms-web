@@ -1,13 +1,3 @@
-export const CAT_OPTIONS = ['Internal', 'External'];
-export const PIC_OPTIONS = [
-  'Sales',
-  'Warehouse',
-  'Customer',
-  'Expedition',
-  'Back Office',
-  'Others',
-];
-
 export const AVAILABLE_PATHS = [
   { id: '/report/daily', label: 'Daily Report' },
   { id: '/report/kpi', label: 'KPI Report' },
