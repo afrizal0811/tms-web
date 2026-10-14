@@ -347,7 +347,7 @@ export default function DeliveryPage() {
           }
         });
 
-        const taskIdToPlat = new Map();
+        const taskIdToRoutingInfo = new Map();
         const activePlatsByEmail = new Map();
 
         resultsData.forEach((res) => {
@@ -362,7 +362,10 @@ export default function DeliveryPage() {
                   let tid = trip.visitId;
                   if (tid) {
                     if (tid.includes('taskId-')) tid = tid.split('taskId-')[1];
-                    taskIdToPlat.set(tid, routePlat);
+                    taskIdToRoutingInfo.set(String(tid), {
+                      plat: routePlat,
+                      assignee: routeEmail,
+                    });
                   }
                 });
               }
@@ -373,11 +376,16 @@ export default function DeliveryPage() {
         const tasksByPlat = filteredTasks.reduce((groups, task) => {
           const email = normalizeEmail(task?.assignee);
           const taskId = task._id || task.taskId || task.id;
-          const platFromRouting = taskId ? taskIdToPlat.get(String(taskId)) : null;
+          const routingInfo = taskId ? taskIdToRoutingInfo.get(String(taskId)) : null;
           const activeRoutingPlat = activePlatsByEmail.get(email);
 
-          const rawTaskPlat = platFromRouting || activeRoutingPlat || task.basePlat || null;
-          const plat = rawTaskPlat || t('common.others');
+          let plat = null;
+          if (email) {
+            plat = activeRoutingPlat || task.basePlat || routingInfo?.plat;
+          } else {
+            plat = routingInfo?.plat || task.basePlat;
+          }
+          plat = plat || t('common.others');
           const groupKey = `${email}_${plat}`;
 
           if (!groups[groupKey])
@@ -395,7 +403,7 @@ export default function DeliveryPage() {
 
         const resultHubsByPlat = new Map();
         resultsData
-          .flatMap((i) => i.result.routing)
+          .flatMap((i) => (i?.result && Array.isArray(i.result.routing) ? i.result.routing : []))
           .forEach((route) => {
             const plat = route.basePlat;
             const email = normalizeEmail(route.assignee);
@@ -412,9 +420,17 @@ export default function DeliveryPage() {
 
         const finalRoutes = Object.values(tasksByPlat).map(
           ({ vehicleId, plat, tasks, email, assigneeName, vehicleType }) => {
-            tasks.sort(
-              (a, b) => (a.routePlannedOrder ?? Infinity) - (b.routePlannedOrder ?? Infinity)
-            );
+            tasks.sort((a, b) => {
+              const aId = a._id || a.taskId || a.id;
+              const bId = b._id || b.taskId || b.id;
+              const aInfo = aId ? taskIdToRoutingInfo.get(String(aId)) : null;
+              const bInfo = bId ? taskIdToRoutingInfo.get(String(bId)) : null;
+              const aReassigned = Boolean(aInfo && aInfo.assignee && aInfo.assignee !== email);
+              const bReassigned = Boolean(bInfo && bInfo.assignee && bInfo.assignee !== email);
+              const aOrder = aReassigned ? Infinity : (a.routePlannedOrder ?? Infinity);
+              const bOrder = bReassigned ? Infinity : (b.routePlannedOrder ?? Infinity);
+              return aOrder - bOrder;
+            });
 
             const taskTrips = tasks.map((task) => {
               const sos = (task.orderId || '')
@@ -423,10 +439,17 @@ export default function DeliveryPage() {
                 .filter(Boolean);
 
               const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
+              const taskId = task._id || task.taskId || task.id;
+              const routingInfo = taskId ? taskIdToRoutingInfo.get(String(taskId)) : null;
+              const isReassigned = Boolean(
+                routingInfo && routingInfo.assignee && routingInfo.assignee !== email
+              );
+              const effectiveOrder = isReassigned ? null : task.routePlannedOrder;
+              const isManual = effectiveOrder == null;
 
               return {
-                visitId: task._id || task.taskId,
-                routePlannedOrder: task.routePlannedOrder,
+                visitId: taskId,
+                routePlannedOrder: effectiveOrder,
                 visitName: task.customerOrder || task.customerName || '',
                 orderId: task.orderId,
                 flow: task.flow,
@@ -438,7 +461,7 @@ export default function DeliveryPage() {
                 eta: startFormat ? `${startFormat} ${task.eta}` : task.eta,
                 etd: startFormat ? `${startFormat} ${task.etd}` : task.etd,
                 isHub: false,
-                isManual: task.routePlannedOrder == null,
+                isManual: isManual,
                 isReDelivery: task.flow?.toLowerCase().includes('re delivery'),
                 soWarehouseMapping: sos.map((so) => ({ so, wh: soToWarehouseMap.get(so) || '' })),
                 typeStorage: task.typeStorage,
