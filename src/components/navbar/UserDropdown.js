@@ -2,7 +2,6 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
-import { toastError } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -18,20 +17,8 @@ export default function UserDropdown({ isDarkMode }) {
   const { setTheme } = useTheme();
   const dropdownRef = useRef(null);
 
-  const [userName, setUserName] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const { storedUser } = getLocalStorage();
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          return capitalizeText(user.name || '');
-        }
-      } catch (e) {
-        toastError(t('common.toast.error', { err: e.message }), e);
-      }
-    }
-    return '';
-  });
+  const { storedUser } = getLocalStorage();
+  const userName = capitalizeText(storedUser?.name);
 
   useEffect(() => {
     const timer = setTimeout(() => {

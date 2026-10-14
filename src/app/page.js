@@ -37,16 +37,16 @@ export default function Home() {
         processedHubs = await getSyncHubs();
         setAllHubsList(processedHubs);
       } catch (e) {
+        toastError(e.message, e);
         setPageError('Gagal terhubung ke database.');
         setIsLoading(false);
         return;
       }
 
       try {
-        const { storedLocation, storedUser, storedSession } = getLocalStorage();
+        const { storedLocation, storedUser: user, storedSession } = getLocalStorage();
 
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
+        if (user) {
           setSelectedUser(user);
           setSelectedLocation(user.activeHubId || '');
           const userHubIds = user.hubId || [];

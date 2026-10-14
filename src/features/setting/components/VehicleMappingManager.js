@@ -23,8 +23,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
     let hubId = storedLocation;
     if (storedUser) {
       try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.activeHub) hubId = parsed.activeHub;
+        if (storedUser.activeHub) hubId = storedUser.activeHub;
       } catch (e) {
         toastError(translate('common.toast.error', { err: e.message }), e);
       }

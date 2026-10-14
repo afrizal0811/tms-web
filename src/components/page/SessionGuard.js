@@ -34,13 +34,11 @@ export default function SessionGuard({ children }) {
           return;
         }
 
-        const parsedUser = JSON.parse(storedUser);
-        let userPaths = parsedUser.paths || [];
-
+        let userPaths = storedUser.paths || [];
         await getRoles()
           .then((roles) => {
             const myRole = (roles || []).find(
-              (r) => String(r._id || r.id) === String(parsedUser.roleId)
+              (r) => String(r._id || r.id) === String(storedUser.roleId)
             );
             const freshPaths = myRole?.paths || [];
             if (JSON.stringify(userPaths) !== JSON.stringify(freshPaths)) {

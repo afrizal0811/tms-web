@@ -65,9 +65,8 @@ export function LocationSwitcher() {
   const { t } = useLanguage();
 
   useEffect(() => {
-    async function fetchHubsFromDatabase(userStr) {
+    async function fetchHubsFromDatabase(user) {
       try {
-        const user = JSON.parse(userStr);
         setCurrentUser(user);
 
         const cached = (await getSyncHubs()) || [];
@@ -87,14 +86,14 @@ export function LocationSwitcher() {
 
     const timer = setTimeout(() => {
       const {
-        storedUser: userStr,
+        storedUser: user,
         storedLocationName: locName,
         storedLocation: locId,
       } = getLocalStorage();
 
       if (locName) setCurrentLocationName(locName);
       if (locId) setCurrentLocationId(locId);
-      if (userStr) fetchHubsFromDatabase(userStr);
+      if (user) fetchHubsFromDatabase(user);
     }, 0);
 
     return () => clearTimeout(timer);

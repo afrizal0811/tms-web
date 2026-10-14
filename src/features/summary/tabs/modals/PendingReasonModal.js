@@ -132,7 +132,7 @@ export default function PendingReasonModal({
       const dateParts = data.dateStr.split('-');
       const dbDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
       const { storedUser } = getLocalStorage();
-      const userName = JSON.parse(storedUser).name;
+      const userName = storedUser.name;
 
       const payload = {
         taskId: data._id,

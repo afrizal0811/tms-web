@@ -45,14 +45,7 @@ export default function PendingReasonNotifier() {
       const { storedUser, storedLocation } = getLocalStorage();
       if (!storedUser || !storedLocation) return;
 
-      let parsedUser = null;
-      try {
-        parsedUser = JSON.parse(storedUser);
-      } catch {
-        return;
-      }
-
-      const userPaths = parsedUser?.paths || [];
+      const userPaths = storedUser?.paths || [];
       const hasSummaryAccess =
         userPaths.length === 0 ||
         userPaths.some((p) => '/summary'.startsWith(p) || p.startsWith('/summary'));

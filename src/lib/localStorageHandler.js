@@ -86,7 +86,7 @@ export function getLocalStorage() {
       appVersion = storedSession.app_version || null;
 
       if (userData._id) {
-        storedUser = JSON.stringify(userData);
+        storedUser = userData
       }
     } catch (e) {
       toastError(e.message, e);

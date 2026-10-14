@@ -169,10 +169,9 @@ export default function Navbar() {
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
   const { storedUser } = getLocalStorage();
-  const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-  const userPaths = parsedUser?.paths || [];
-  const userName = parsedUser?.name || '';
-  const userEmail = storedUser ? JSON.parse(storedUser).email : 'email@example.com';
+  const userPaths = storedUser?.paths || [];
+  const userName = storedUser?.name || '';
+  const userEmail = storedUser?.email || 'email@example.com';
   const hubs = getCachedHubs();
   const hasVms = hubs ? hubs.activeHub?.hasVms : false;
 

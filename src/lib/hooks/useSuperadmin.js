@@ -21,13 +21,12 @@ export function useSuperadmin() {
 
     const verifySuperadmin = async () => {
       try {
-        const { storedUser } = getLocalStorage();
-        if (!storedUser) {
+        const { storedUser: user } = getLocalStorage();
+        if (!user) {
           if (isMounted) setIsSuperadmin(false);
           return;
         }
 
-        const user = JSON.parse(storedUser);
         const currentId = String(user.roleId);
         const superadminId = getSuperadminRoleId();
         const adminIdsStr = localStorage.getItem('adminRoleIds');
@@ -72,6 +71,7 @@ export function useSuperadmin() {
           setIsAdmin(adminIds.includes(currentId));
         }
       } catch (e) {
+        console.error(e);
         if (isMounted) {
           setIsSuperadmin(false);
           setIsAdmin(false);
