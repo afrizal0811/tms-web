@@ -1,3 +1,4 @@
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -11,14 +12,7 @@ export function generateSheetPendingSO(tasksData, driverData) {
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let statusDeliv = '';
-      if (task.statusDelivery) {
-        statusDeliv =
-          typeof task.statusDelivery === 'string'
-            ? task.statusDelivery.split(',')[0].trim()
-            : task.statusDelivery;
-      }
-      let isPending = String(statusDeliv || '').toUpperCase() === 'PENDING';
+      let isPending = normalizeDeliveryStatus(task.statusDelivery) === 'PENDING';
 
       if (!isPending) {
         let statusGr = '';
@@ -26,7 +20,7 @@ export function generateSheetPendingSO(tasksData, driverData) {
           statusGr =
             typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
         }
-        isPending = String(statusGr || '').toUpperCase() === 'PENDING';
+        isPending = normalizeDeliveryStatus(statusGr) === 'PENDING';
       }
 
       if (isPending) {

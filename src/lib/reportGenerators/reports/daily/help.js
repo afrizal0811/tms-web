@@ -1,6 +1,12 @@
 'use client';
 
-export const FAILED_STATUSES = ['PENDING', 'BATAL', 'TERIMA SEBAGIAN'];
+export const FAILED_STATUSES = [
+  'PENDING',
+  'BATAL',
+  'CANCEL',
+  'TERIMA SEBAGIAN',
+  'PARTIAL',
+];
 export const PENDING_SHEET_STATUSES_BASE = [...FAILED_STATUSES];
 
 export const reportStyles = {

@@ -13,6 +13,7 @@ import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getTasks } from '@/lib/api/mileapp';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
 import {
@@ -26,6 +27,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 export default function TaskPage() {
   const { t } = useLanguage();
   const { isSuperadmin } = useSuperadmin();
+  const {
+    formatStatus: formatDeliveryStatus,
+    normalizeStatus: normalizeDeliveryStatus,
+    statusOptions: deliveryStatusOptions,
+    getStatusLabel: getDeliveryStatusLabel,
+  } = useDeliveryStatus();
 
   const [dateRange, setDateRange] = useState([new Date(), new Date()]);
   const [startDate, endDate] = dateRange;
@@ -33,8 +40,8 @@ export default function TaskPage() {
   const [tempDateRange, setTempDateRange] = useState([new Date(), new Date()]);
   const [tempStart, tempEnd] = tempDateRange;
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [statusDeliveryFilter, setStatusDeliveryFilter] = useState(t('common.all'));
-  const [statusTaskFilter, setStatusTaskFilter] = useState(t('common.all'));
+  const [statusDeliveryFilter, setStatusDeliveryFilter] = useState('ALL');
+  const [statusTaskFilter, setStatusTaskFilter] = useState('ALL');
   const [storageFilter, setStorageFilter] = useState(['DRY', 'FROZEN']);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -46,22 +53,13 @@ export default function TaskPage() {
 
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
-  const statusOptions = [
-    { label: t('common.all'), value: t('common.all') },
-    { label: t('common.status.success'), value: t('common.status.success') },
-    { label: t('common.status.partial'), value: t('common.status.partial') },
-    { label: t('common.status.pending'), value: t('common.status.pending') },
-    { label: t('common.status.cancel'), value: t('common.status.cancel') },
-    { label: t('common.status.pending_gr'), value: t('common.status.pending_gr') },
-  ];
-
   const statusTaskOptions = [
-    { label: t('common.all'), value: t('common.all') },
-    { label: t('common.status.done'), value: t('common.status.done') },
-    { label: t('common.status.unassigned'), value: t('common.status.unassigned') },
-    { label: t('common.status.ongoing'), value: t('common.status.ongoing') },
-    { label: t('common.status.manual_assign'), value: t('common.status.manual_assign') },
-    { label: t('common.status.diff_day'), value: t('common.status.diff_day') },
+    { label: t('common.all'), value: 'ALL' },
+    { label: t('common.status.done'), value: 'DONE' },
+    { label: t('common.status.unassigned'), value: 'UNASSIGNED' },
+    { label: t('common.status.ongoing'), value: 'ONGOING' },
+    { label: t('common.status.manual_assign'), value: 'MANUAL_ASSIGN' },
+    { label: t('common.status.diff_day'), value: 'DIFF_DAY' },
   ];
 
   useEffect(() => {
@@ -130,15 +128,6 @@ export default function TaskPage() {
   }, [hubsData]);
 
   const processedData = useMemo(() => {
-    const statusMap = {
-      SUKSES: t('common.status.success'),
-      'TERIMA SEBAGIAN': t('common.status.partial'),
-      PENDING: t('common.status.pending'),
-      CANCEL: t('common.status.cancel'),
-      BATAL: t('common.status.cancel'),
-      'PENDING GR': t('common.status.pending_gr'),
-    };
-
     let result = tasks.map((task) => {
       const custInfo = parseCustomerString(task.customerOrder);
       const hubName = hubMap.get(task.hubId) || '-';
@@ -153,35 +142,30 @@ export default function TaskPage() {
         _invoiceNumber: custInfo.invoiceNumber || '-',
         _truncateInvoice: custInfo.truncateInvoice || '-',
         _isTruncated: custInfo.isTruncated,
-        _statusDel: task.statusDelivery
-          ? statusMap[task.statusDelivery.toUpperCase()] || task.statusDelivery
-          : '-',
+        _statusDel: task.statusDelivery ? formatDeliveryStatus(task.statusDelivery) : '-',
       };
     });
 
-    if (statusDeliveryFilter !== t('common.all')) {
-      const targetStatus =
-        statusMap[statusDeliveryFilter.toUpperCase()] || statusDeliveryFilter.toUpperCase();
-
+    if (statusDeliveryFilter !== 'ALL') {
       result = result.filter(
-        (task) => (task._statusDel || '').toUpperCase() === targetStatus.toUpperCase()
+        (task) => normalizeDeliveryStatus(task.statusDelivery) === statusDeliveryFilter
       );
     }
 
-    if (statusTaskFilter !== t('common.all')) {
+    if (statusTaskFilter !== 'ALL') {
       result = result.filter((task) => {
-        if (statusTaskFilter === t('common.status.done')) return !!task.statusDelivery;
-        if (statusTaskFilter === t('common.status.unassigned'))
+        if (statusTaskFilter === 'DONE') return !!task.statusDelivery;
+        if (statusTaskFilter === 'UNASSIGNED')
           return !task.assignee || task.assignee === '';
-        if (statusTaskFilter === t('common.status.ongoing'))
+        if (statusTaskFilter === 'ONGOING')
           return task.status?.toLowerCase() === 'ongoing';
-        if (statusTaskFilter === t('common.status.manual_assign'))
+        if (statusTaskFilter === 'MANUAL_ASSIGN')
           return (
             task.assignee &&
             task.assignee !== '' &&
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
-        if (statusTaskFilter === t('common.status.diff_day')) {
+        if (statusTaskFilter === 'DIFF_DAY') {
           const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
           const doneFormat = task.doneTime ? formatDateUniversal(task.doneTime) : null;
           return startFormat && doneFormat && startFormat !== doneFormat;
@@ -213,7 +197,16 @@ export default function TaskPage() {
     }
 
     return result;
-  }, [tasks, hubMap, searchQuery, statusDeliveryFilter, statusTaskFilter, storageFilter, t]);
+  }, [
+    tasks,
+    hubMap,
+    searchQuery,
+    statusDeliveryFilter,
+    statusTaskFilter,
+    storageFilter,
+    formatDeliveryStatus,
+    normalizeDeliveryStatus,
+  ]);
 
   const handleApplyDate = () => {
     if (!tempStart) return;
@@ -412,8 +405,9 @@ export default function TaskPage() {
           className="w-full"
           disabled={loading}
           onChange={setStatusDeliveryFilter}
-          options={statusOptions}
+          options={deliveryStatusOptions}
           value={statusDeliveryFilter}
+          getLabel={getDeliveryStatusLabel}
         />
       ),
     },
@@ -426,6 +420,7 @@ export default function TaskPage() {
           onChange={setStatusTaskFilter}
           options={statusTaskOptions}
           value={statusTaskFilter}
+          getLabel={(val) => statusTaskOptions.find((o) => o.value === val)?.label || val}
         />
       ),
     },

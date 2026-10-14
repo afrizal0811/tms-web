@@ -1,16 +1,25 @@
+import { formatDeliveryStatus, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
+  getBasePlate,
   getStorageType,
   isEmpty,
   normalizeEmail,
   parseApiDateString,
   parseCustomerString,
-  getBasePlate,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
 
-const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
+const TARGET_STATUSES = [
+  'BATAL',
+  'CANCEL',
+  'TERIMA SEBAGIAN',
+  'PARTIAL',
+  'PENDING',
+  'PENDING GR',
+  'PENDING_GR',
+];
 
 export function calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr) {
   const processedData = [];
@@ -114,7 +123,11 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
     group.sort((a, b) => a.sortDoneTimestamp - b.sortDoneTimestamp);
     group.forEach((item, index) => {
       item.realSequence = index + 1;
-      if (TARGET_STATUSES.includes(item.status)) {
+      const norm = normalizeDeliveryStatus(item.status);
+      if (
+        TARGET_STATUSES.includes(item.status) ||
+        ['CANCEL', 'PARTIAL', 'PENDING', 'PENDING_GR'].includes(norm)
+      ) {
         processedData.push(item);
       }
     });
@@ -198,11 +211,14 @@ export function generatePendingReasonSheet(
   const errorRows = new Set();
 
   data.forEach((item, idx) => {
-    const isWrongGR = !shouldShowPendingGR && item.status === 'PENDING GR';
+    const isWrongGR = !shouldShowPendingGR && normalizeDeliveryStatus(item.status) === 'PENDING_GR';
     if (isWrongGR) errorRows.add(idx + 1);
 
     const { id, name: customerName } = parseCustomerString(item.customerName);
     const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+
+    const formattedStatus =
+      formatDeliveryStatus(item.status, translate)?.toUpperCase() || item.status || '-';
 
     const row = [
       item.flow || '-',
@@ -210,7 +226,7 @@ export function generatePendingReasonSheet(
       item.licensePlate,
       item.driverName,
       customerName || '-',
-      item.status || '-',
+      formattedStatus,
       item.alasan || '-',
     ];
 

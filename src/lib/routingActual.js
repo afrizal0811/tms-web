@@ -2,6 +2,7 @@
 
 import { toastError, toastSuccess } from '@/lib/toast';
 import * as XLSX from 'xlsx-js-style';
+import { formatDeliveryStatus, normalizeDeliveryStatus } from './deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -56,14 +57,16 @@ export function routingActual({ tasks, drivers, dateStr }) {
 
     let statusLabel = null;
     if (t.statusDelivery) {
-      statusLabel =
-        typeof t.statusDelivery === 'string'
-          ? t.statusDelivery.split(',')[0].trim().toUpperCase()
-          : t.statusDelivery.toUpperCase();
+      statusLabel = normalizeDeliveryStatus(t.statusDelivery);
     }
 
-    if (flow === 'Pickup') statusLabel = t.status ? t.status.toUpperCase() : statusLabel;
-    if (flow === 'Pickup' && statusLabel === 'DONE') statusLabel = 'SUKSES';
+    if (flow === 'Pickup') {
+      statusLabel = t.status
+        ? normalizeDeliveryStatus(t.status) || t.status.toUpperCase()
+        : statusLabel;
+    }
+    if (flow === 'Pickup' && (statusLabel === 'DONE' || statusLabel === 'SUCCESS'))
+      statusLabel = 'SUCCESS';
     if (t.status !== 'ONGOING' && flow !== 'Pickup') statusLabel = statusLabel || '-';
 
     const rawCustStr = t.customerOrder || t.customerName || '';
@@ -365,7 +368,7 @@ export const getRoutingActualColumns = (t) => {
       header: 'Status',
       align: 'center',
       excelWidth: 15,
-      getValue: (row) => row.statusLabel || '-',
+      getValue: (row) => formatDeliveryStatus(row.statusLabel, t),
     },
 
     {

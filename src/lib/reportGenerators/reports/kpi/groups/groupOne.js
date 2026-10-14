@@ -1,3 +1,4 @@
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { getStorageType, normalizeEmail } from '@/lib/utils';
 
 export function calculateGroupOne(resultsData, tasksData, driverMap) {
@@ -17,7 +18,10 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
           let driverName = route.driverName || '';
           if (!driverName && route.assignee) {
-            const rawAssignee = typeof route.assignee === 'string' ? route.assignee.split(',')[0].trim() : route.assignee;
+            const rawAssignee =
+              typeof route.assignee === 'string'
+                ? route.assignee.split(',')[0].trim()
+                : route.assignee;
             driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
           }
 
@@ -47,18 +51,15 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let statusDelivery = '';
-      if (task.statusDelivery) {
-        statusDelivery = typeof task.statusDelivery === 'string' ? task.statusDelivery.split(',')[0].trim() : task.statusDelivery;
-      }
-      let isRedelivery = String(statusDelivery || '').toUpperCase() === 'PENDING';
+      let isRedelivery = normalizeDeliveryStatus(task.statusDelivery) === 'PENDING';
 
       if (!isRedelivery) {
         let statusGr = '';
         if (task.statusGr) {
-          statusGr = typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
+          statusGr =
+            typeof task.statusGr === 'string' ? task.statusGr.split(',')[0].trim() : task.statusGr;
         }
-        isRedelivery = String(statusGr || '').toUpperCase() === 'PENDING';
+        isRedelivery = normalizeDeliveryStatus(statusGr) === 'PENDING';
       }
 
       if (isRedelivery) {
@@ -66,9 +67,9 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
         let category = task.typeStorage === '-' ? '' : task.typeStorage || '';
 
         if (!driverName && task.assignee) {
-          const rawAssignee = typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
-          driverName =
-            driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
+          const rawAssignee =
+            typeof task.assignee === 'string' ? task.assignee.split(',')[0].trim() : task.assignee;
+          driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
         }
 
         if (!category && driverName) {

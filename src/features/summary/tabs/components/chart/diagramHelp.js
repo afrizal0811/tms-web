@@ -1,3 +1,4 @@
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { isEmpty } from '@/lib/utils';
 
 export const serviceLevelData = [
@@ -296,23 +297,17 @@ export function processServiceLevelData(
     }
     grouped[key].total += 1;
     if (task.statusDelivery) {
-      let rawStatus = String(task.statusDelivery).toUpperCase();
-      if (rawStatus.includes(',')) rawStatus = rawStatus.split(',')[0].trim();
-      const status = rawStatus.replace('_', ' ').trim();
+      const status = normalizeDeliveryStatus(task.statusDelivery);
 
-      if (status.startsWith('SUKSES')) {
+      if (status === 'SUCCESS') {
         grouped[key].SUKSES += 1;
-      } else if (
-        status.startsWith('PENDING GR') ||
-        status === 'PENDING GR' ||
-        status === 'PENDING_GR'
-      ) {
+      } else if (status === 'PENDING_GR') {
         grouped[key].PENDING_GR += 1;
-      } else if (status.startsWith('PENDING')) {
+      } else if (status === 'PENDING') {
         grouped[key].PENDING += 1;
-      } else if (status.startsWith('BATAL')) {
+      } else if (status === 'CANCEL') {
         grouped[key].BATAL += 1;
-      } else if (status.startsWith('TERIMA SEBAGIAN') || status.startsWith('PARTIAL')) {
+      } else if (status === 'PARTIAL') {
         grouped[key].PARTIAL += 1;
       }
     }

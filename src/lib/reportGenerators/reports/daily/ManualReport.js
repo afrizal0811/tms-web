@@ -1,3 +1,4 @@
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { routingActualSheet } from '@/lib/routingActual';
 import {
   calculateMinuteDifference,
@@ -195,7 +196,7 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
   }
 
   const PENDING_SHEET_STATUSES = [...PENDING_SHEET_STATUSES_BASE];
-  if (hasPendingGR) PENDING_SHEET_STATUSES.push('PENDING GR');
+  if (hasPendingGR) PENDING_SHEET_STATUSES.push('PENDING GR', 'PENDING_GR');
 
   const emailToDriverMap = driverData.reduce((acc, driver) => {
     const normalizedEmail = normalizeEmail(driver.email);
@@ -370,10 +371,11 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
         pending = null,
         pendingGR = null,
         isMigrated = false;
-      if (statusLabel === 'BATAL') fakturBatal = customerName;
-      else if (statusLabel === 'TERIMA SEBAGIAN') terkirimSebagian = customerName;
-      else if (statusLabel === 'PENDING') pending = customerName;
-      else if (statusLabel === 'PENDING GR') {
+      const normStatus = normalizeDeliveryStatus(statusLabel);
+      if (normStatus === 'CANCEL') fakturBatal = customerName;
+      else if (normStatus === 'PARTIAL') terkirimSebagian = customerName;
+      else if (normStatus === 'PENDING') pending = customerName;
+      else if (normStatus === 'PENDING_GR') {
         if (hasPendingGR) pendingGR = customerName;
         else {
           pending = customerName;
@@ -448,7 +450,10 @@ async function parseManualDelivery(deliveryBuffers, driverData, hasPendingGR, se
   });
 
   const pendingSOData = allTaskDataForSequence.filter(
-    (r) => PENDING_SHEET_STATUSES.includes(r.statusLabel) || r.isMigrated
+    (r) =>
+      PENDING_SHEET_STATUSES.includes(r.statusLabel) ||
+      PENDING_SHEET_STATUSES.includes(normalizeDeliveryStatus(r.statusLabel)) ||
+      r.isMigrated
   );
 
   return { deliveryMap, hubTimesMap, allTaskDataForSequence, updateLonglatData, pendingSOData };

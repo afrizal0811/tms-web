@@ -1,3 +1,4 @@
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import {
   calculateReturnHubDistance,
   formatDateUniversal,
@@ -13,7 +14,7 @@ import {
 import * as XLSX from 'xlsx-js-style';
 import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, FONT_STYLES } from './reportStyles';
 
-const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'TERIMA SEBAGIAN']);
+const FAILED_STATUSES = new Set(['PENDING', 'BATAL', 'CANCEL', 'TERIMA SEBAGIAN', 'PARTIAL']);
 
 const ERROR_STYLES = {
   split: {
@@ -229,7 +230,14 @@ export function calculateTruckDetailData(
         statusDelivery = task.status && task.status.toUpperCase();
       }
       statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
-      if (!FAILED_STATUSES.has(statusDelivery) && task.status !== 'ONGOING') entry.delivered += 1;
+      const normDelivery = normalizeDeliveryStatus(statusDelivery);
+      if (
+        !FAILED_STATUSES.has(statusDelivery) &&
+        !FAILED_STATUSES.has(normDelivery) &&
+        task.status !== 'ONGOING'
+      ) {
+        entry.delivered += 1;
+      }
 
       const isManual = !task.eta || !task.etd || !task.routePlannedOrder;
       const hasSplitTask = task.isSplitTask === 'true';

@@ -5,6 +5,7 @@ import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { capitalizeText } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,6 +18,7 @@ export default function PendingReasonModal({
   onSuccess,
   translate,
 }) {
+  const { formatStatus } = useDeliveryStatus();
   const [intExt, setIntExt] = useState('');
   const [detail, setDetail] = useState('');
   const [groupReason, setGroupReason] = useState('');
@@ -211,7 +213,7 @@ export default function PendingReasonModal({
         maxWidth="max-w-2xl"
         maxHeight="min-h-[500px] max-h-[100vh]"
         title={translate('summary.tabs.pending_reasons.modal_title')}
-        subtitle={`${capitalizeText(statusText)} | ${data.customer}`}
+        subtitle={`${capitalizeText(formatStatus(statusText))} | ${data.customer}`}
         footer={
           <div className="flex justify-end w-full">
             <div className="flex items-center gap-2 w-fit">

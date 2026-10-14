@@ -3,6 +3,7 @@
 import Map from '@/components/Map';
 import Modal from '@/components/modal/Modal';
 import Tooltip from '@/components/Tooltip';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import {
   formatDateUniversal,
   formatLongDate,
@@ -21,42 +22,16 @@ export default function TruckDetailModal({
   isIndonesian,
 }) {
   const [selectedTask, setSelectedTask] = useState(null);
+  const { formatStatus, getStatusClass } = useDeliveryStatus();
 
   if (!isOpen || !data) return null;
 
   const { driverName, dateStr, tasks } = data;
 
-  const STATUS_COLORS = {
-    SUKSES: 'bg-[#16a34a] text-white',
-    PENDING: 'bg-[#ca8a04] text-white',
-    'TERIMA SEBAGIAN': 'bg-[#ea580c] text-white',
-    BATAL: 'bg-[#dc2626] text-white',
-    'PENDING GR': 'bg-[#b45309] text-white',
-    DEFAULT: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-    DONE: 'bg-[#16a34a] text-white',
-    ONGOING: 'bg-[#7C3AED] text-white',
-  };
-
-  const STATUS_LANGUAGE = {
-    SUKSES: translate('common.status.success'),
-    PENDING: translate('common.status.pending'),
-    'TERIMA SEBAGIAN': translate('common.status.partial'),
-    BATAL: translate('common.status.cancel'),
-    'PENDING GR': translate('common.status.pending_gr'),
-    DONE: translate('common.status.done'),
-    ONGOING: translate('common.status.ongoing'),
-  };
-
   const ERROR_COLORS = {
     MANUAL: 'bg-[#4F76C7] text-white',
     DATE_DIFF: 'bg-[#C85D86] text-white',
     SPLIT: 'border border-orange-400 text-orange-400 dark:border-orange-400 dark:text-orange-400',
-  };
-
-  const getStatusClass = (status) => {
-    if (!status) return STATUS_COLORS.DEFAULT;
-    const s = status.toUpperCase();
-    return STATUS_COLORS[s] || STATUS_COLORS.DEFAULT;
   };
 
   const getSeqColor = (ro, real) => {
@@ -141,9 +116,7 @@ export default function TruckDetailModal({
                       <span
                         className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)}`}
                       >
-                        {STATUS_LANGUAGE[task.status]
-                          ? STATUS_LANGUAGE[task.status].toUpperCase()
-                          : '-'}
+                        {formatStatus(task.status).toUpperCase()}
                       </span>
                     )}
                     {task.isManual && (

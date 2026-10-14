@@ -4,7 +4,15 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const TARGET_STATUSES = ['BATAL', 'TERIMA SEBAGIAN', 'PENDING', 'PENDING GR'];
+const TARGET_STATUSES = [
+  'BATAL',
+  'CANCEL',
+  'TERIMA SEBAGIAN',
+  'PARTIAL',
+  'PENDING',
+  'PENDING GR',
+  'PENDING_GR',
+];
 
 const checkCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache
@@ -184,7 +192,9 @@ export async function GET(request) {
         Boolean(
           (pd.groupReason && pd.groupReason.trim() !== '' && pd.groupReason !== '-') ||
             (pd.detailReason && pd.detailReason.trim() !== '' && pd.detailReason !== '-') ||
-            (pd.internalExternal && pd.internalExternal.trim() !== '' && pd.internalExternal !== '-') ||
+            (pd.internalExternal &&
+              pd.internalExternal.trim() !== '' &&
+              pd.internalExternal !== '-') ||
             (pd.pic && pd.pic.trim() !== '' && pd.pic !== '-')
         );
 

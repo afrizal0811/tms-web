@@ -1,4 +1,5 @@
 // File: src/features/dashboard/help.js
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { formatDateUniversal, isEmpty, normalizeEmail, parseCustomerString } from '@/lib/utils';
 
 export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
@@ -92,21 +93,21 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
 
     if (task.status === 'DONE') {
       inc('done', isDry, isFrozen);
-      const statusDelivery = (task.statusDelivery || '').split(',')[0].trim().toLowerCase();
+      const statusDelivery = normalizeDeliveryStatus(task.statusDelivery);
 
-      if (statusDelivery === 'sukses') {
+      if (statusDelivery === 'SUCCESS') {
         res.successList.push(baseData);
         inc('success', isDry, isFrozen);
-      } else if (statusDelivery === 'terima sebagian' || statusDelivery === 'partial') {
+      } else if (statusDelivery === 'PARTIAL') {
         res.partialList.push(baseData);
         inc('partial', isDry, isFrozen);
-      } else if (statusDelivery === 'batal') {
+      } else if (statusDelivery === 'CANCEL') {
         res.cancelList.push(baseData);
         inc('cancel', isDry, isFrozen);
-      } else if (statusDelivery === 'pending') {
+      } else if (statusDelivery === 'PENDING') {
         res.pendingList.push(baseData);
         inc('pending', isDry, isFrozen);
-      } else if (statusDelivery === 'pending gr') {
+      } else if (statusDelivery === 'PENDING_GR') {
         res.pendingGrList.push(baseData);
         inc('pendingGr', isDry, isFrozen);
       }

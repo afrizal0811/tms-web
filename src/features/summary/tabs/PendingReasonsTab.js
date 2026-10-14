@@ -1,5 +1,6 @@
 import TaskModal from '@/components/modal/TaskModal';
 import Tooltip from '@/components/Tooltip';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useRef, useState } from 'react';
 import PendingReasonModal from './modals/PendingReasonModal';
@@ -100,6 +101,7 @@ export default function PendingReasonsTab({
   translate,
   onUpdatePendingDetail,
 }) {
+  const { formatStatus } = useDeliveryStatus();
   const [modalData, setModalData] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -218,7 +220,7 @@ export default function PendingReasonsTab({
                 },
                 {
                   type: 'text',
-                  val: item.status || '-',
+                  val: item.status ? formatStatus(item.status) : '-',
                   cls: `text-left ${isWrongGR ? 'text-[#FF0000] dark:text-red-400 font-bold' : ''}`,
                 },
                 { type: 'reason', val: item.alasan, cls: 'text-left' },

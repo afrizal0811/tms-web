@@ -1,4 +1,5 @@
 import { getResultHistories } from '@/lib/api/mileapp';
+import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -235,20 +236,21 @@ export async function calculateTaskSummaryMetrics({
 
       const sDeliv = task.statusDelivery;
       const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
+      const normStatuses = statusArr.map((s) => normalizeDeliveryStatus(s));
 
-      if (statusArr.some((s) => s === 'PENDING')) {
+      if (normStatuses.includes('PENDING')) {
         tempMetrics[dateKey][type].rt += 1;
         tempMetrics[dateKey][type].rt_tasks.push(task);
-      } else if (!hasPendingGR && statusArr.some((s) => s === 'PENDING GR')) {
+      } else if (!hasPendingGR && normStatuses.includes('PENDING_GR')) {
         tempMetrics[dateKey][type].rt += 1;
         tempMetrics[dateKey][type].rt_tasks.push({ ...task, isWrongGR: true });
       }
 
-      if (statusArr.some((s) => s === 'BATAL')) {
+      if (normStatuses.includes('CANCEL')) {
         tempMetrics[dateKey][type].co += 1;
         tempMetrics[dateKey][type].co_tasks.push(task);
       }
-      if (statusArr.some((s) => s === 'TERIMA SEBAGIAN')) {
+      if (normStatuses.includes('PARTIAL')) {
         tempMetrics[dateKey][type].pr += 1;
         tempMetrics[dateKey][type].pr_tasks.push(task);
       }
