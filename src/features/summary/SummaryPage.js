@@ -73,6 +73,7 @@ export default function SummaryPage() {
   const [hasPendingGR, setHasPendingGR] = useState(false);
   const [reasons, setReasons] = useState([]);
   const [pendingDetails, setPendingDetails] = useState([]);
+  const [pendingDetailsRange, setPendingDetailsRange] = useState(null);
   const [isDownload, setIsDownload] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState('');
 
@@ -95,63 +96,75 @@ export default function SummaryPage() {
       .catch(() => {});
   }, [driverData, driverChecker, t]);
 
-  const isInitialMountRef = useRef(true);
-  const userChangedDateRef = useRef(false);
-  const prevDateRangeRef = useRef(dateRange);
+  const warnedRangeKeyRef = useRef(null);
 
   useEffect(() => {
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      prevDateRangeRef.current = dateRange;
-      return;
-    }
-
-    if (
-      dateRange &&
-      prevDateRangeRef.current &&
-      (dateRange[0]?.getTime() !== prevDateRangeRef.current[0]?.getTime() ||
-        dateRange[1]?.getTime() !== prevDateRangeRef.current[1]?.getTime())
-    ) {
-      userChangedDateRef.current = true;
-      prevDateRangeRef.current = dateRange;
-    }
-  }, [dateRange]);
-
-  useEffect(() => {
-    if (!isLoading && userChangedDateRef.current) {
-      userChangedDateRef.current = false;
-      const pendingData = reportPreview?.pendingReasonsData || [];
-      const uncompletedCount = pendingData.filter((item) => {
-        const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
-        const hasAnyData = Boolean(
-          (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
-            (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
-            (pd.internalExternal && !isEmpty(pd.internalExternal) && pd.internalExternal !== '-') ||
-            (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
-        );
-        return !hasAnyData;
-      }).length;
-
-      if (uncompletedCount > 0) {
-        const template =
-          t('summary.tabs.pending_reasons.toast_uncompleted', { count: uncompletedCount }) ||
-          'Terdapat {count} data pending yang perlu dilengkapi!';
-        const message = template.replace('{count}', uncompletedCount);
-        toastWarning(message);
-      }
-    }
-  }, [isLoading, reportPreview, pendingDetails, t]);
-
-  useEffect(() => {
+    let isCancelled = false;
     driverChecker(driverData);
     if (dateRange && dateRange[0] && dateRange[1]) {
-      const start = formatDateUniversal(new Date(dateRange[0]), 'YYYY-MM-DD');
-      const end = formatDateUniversal(new Date(dateRange[1]), 'YYYY-MM-DD');
+      const start = formatDateUniversal(new Date(dateRange[0]));
+      const end = formatDateUniversal(new Date(dateRange[1]));
+      setPendingDetailsRange(null);
       getPendingDetails(start, end)
-        .then(setPendingDetails)
-        .catch(() => {});
+        .then((res) => {
+          if (!isCancelled) {
+            setPendingDetails(res || []);
+            setPendingDetailsRange(`${start}_${end}`);
+          }
+        })
+        .catch(() => {
+          if (!isCancelled) {
+            setPendingDetails([]);
+            setPendingDetailsRange(`${start}_${end}`);
+          }
+        });
     }
+    return () => {
+      isCancelled = true;
+    };
   }, [dateRange, driverChecker, driverData, t]);
+
+  useEffect(() => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
+
+    const start = formatDateUniversal(new Date(dateRange[0]));
+    const end = formatDateUniversal(new Date(dateRange[1]));
+    const currentRangeKey = `${start}_${end}`;
+
+    const isReportReady =
+      !isLoading &&
+      reportPreview &&
+      reportPreview.startDateStr === start &&
+      reportPreview.endDateStr === end;
+
+    const isPendingDetailsReady = pendingDetailsRange === currentRangeKey;
+
+    if (!isReportReady || !isPendingDetailsReady) return;
+
+    if (warnedRangeKeyRef.current === currentRangeKey) return;
+
+    warnedRangeKeyRef.current = currentRangeKey;
+
+    const pendingData = reportPreview?.pendingReasonsData || [];
+    const uncompletedCount = pendingData.filter((item) => {
+      const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+      const hasAnyData = Boolean(
+        (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
+          (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
+          (pd.internalExternal && !isEmpty(pd.internalExternal) && pd.internalExternal !== '-') ||
+          (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
+      );
+      return !hasAnyData;
+    }).length;
+
+    if (uncompletedCount > 0) {
+      const template =
+        t('summary.tabs.pending_reasons.toast_uncompleted', { count: uncompletedCount }) ||
+        'Terdapat {count} data pending yang perlu dilengkapi!';
+      const message = template.replace('{count}', uncompletedCount);
+      toastWarning(message);
+    }
+  }, [isLoading, reportPreview, pendingDetails, pendingDetailsRange, dateRange, t]);
 
   const handleUpdatePendingDetail = (updatedDetail) => {
     setPendingDetails((prev) => {

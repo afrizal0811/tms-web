@@ -101,7 +101,7 @@ export default function PendingReasonsTab({
   translate,
   onUpdatePendingDetail,
 }) {
-  const { formatStatus } = useDeliveryStatus();
+  const { formatStatus, isPendingGr } = useDeliveryStatus();
   const [modalData, setModalData] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -187,7 +187,7 @@ export default function PendingReasonsTab({
                 ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
               const tdClass = `${baseTdClass} ${borderBottomClass}`;
-              const isWrongGR = !hasPendingGR && item.status === 'PENDING GR';
+              const isWrongGR = !hasPendingGR && isPendingGr(item.status);
               const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
               const hasAnyData = Boolean(
                 (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||

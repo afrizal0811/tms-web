@@ -76,6 +76,8 @@ export async function generateSummaryDataPreview(
   );
 
   return {
+    startDateStr,
+    endDateStr,
     distanceSummaryData: summaryData,
     monthTotals: monthTotals,
     truckUsageData: truckUsageData,
