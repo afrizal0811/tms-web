@@ -28,12 +28,49 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { taskId, date, internalExternal, detailReason, groupReason, pic } = body;
+    const {
+      taskId,
+      date,
+      internalExternal,
+      detailReason,
+      groupReason,
+      pic,
+      userName,
+      created_by,
+      updated_by,
+    } = body;
+
+    const currentUser = updated_by || created_by || userName || null;
+
+    const existing = await prisma.pendingDetail.findUnique({
+      where: { taskId },
+    });
+
+    const updateData = {
+      internalExternal,
+      detailReason,
+      groupReason,
+      pic,
+      updated_by: currentUser,
+    };
+
+    if (existing && !existing.created_by && currentUser) {
+      updateData.created_by = currentUser;
+    }
 
     const upserted = await prisma.pendingDetail.upsert({
       where: { taskId },
-      update: { internalExternal, detailReason, groupReason, pic },
-      create: { taskId, date, internalExternal, detailReason, groupReason, pic },
+      update: updateData,
+      create: {
+        taskId,
+        date,
+        internalExternal,
+        detailReason,
+        groupReason,
+        pic,
+        created_by: currentUser,
+        updated_by: currentUser,
+      },
     });
     return NextResponse.json({ message: 'Success', data: upserted }, { status: 200 });
   } catch (error) {

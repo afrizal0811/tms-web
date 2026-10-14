@@ -1,9 +1,11 @@
 import Tooltip from '../Tooltip';
 
-export default function InformationButton({ infoText = '', size = '4' }) {
+export default function InformationButton({ infoText = '', size = '4', className = '' }) {
   return (
     <Tooltip tooltipContent={infoText}>
-      <span className="flex items-center">
+      <span
+        className={`inline-flex items-center cursor-help text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors ${className}`}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

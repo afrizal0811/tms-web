@@ -1,13 +1,16 @@
 'use client';
 
+import InformationButton from '@/components/button/InformationButton';
 import Button from '@/components/button/Button';
 import Dropdown from '@/components/dropdown/Dropdown';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
 import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
+import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { capitalizeText } from '@/lib/utils';
+import { capitalizeText, formatUTC7 } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function PendingReasonModal({
@@ -19,6 +22,7 @@ export default function PendingReasonModal({
   translate,
 }) {
   const { formatStatus } = useDeliveryStatus();
+  const { isSuperadmin } = useSuperadmin();
   const [intExt, setIntExt] = useState('');
   const [detail, setDetail] = useState('');
   const [groupReason, setGroupReason] = useState('');
@@ -127,6 +131,8 @@ export default function PendingReasonModal({
     try {
       const dateParts = data.dateStr.split('-');
       const dbDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      const { storedUser } = getLocalStorage();
+      const userName = JSON.parse(storedUser).name;
 
       const payload = {
         taskId: data._id,
@@ -135,6 +141,9 @@ export default function PendingReasonModal({
         detailReason: detail,
         groupReason: groupReason,
         pic: pic,
+        userName,
+        created_by: data?.pendingDetail?.created_by || userName,
+        updated_by: userName,
       };
 
       const res = await postPendingDetail(payload);
@@ -186,6 +195,46 @@ export default function PendingReasonModal({
 
   const statusText = data.statusDelivery ? data.statusDelivery : data.status;
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
+  const reason = data?.alasan || data?.reason || '';
+  const pd = data?.pendingDetail;
+  const hasAuditData = Boolean(
+    pd && (pd.created_by || pd.updated_by || pd.createdAt || pd.updatedAt)
+  );
+
+  const auditInfoContent =
+    hasAuditData && pd ? (
+      <div className="flex flex-col gap-1 text-left min-w-[190px]">
+        <div>
+          <span className="text-slate-400 font-semibold">{translate('common.created_by')}: </span>
+          <span className="font-medium text-white">{pd.created_by || '-'}</span>
+        </div>
+        <div>
+          <span className="text-slate-400 font-semibold">{translate('common.created_time')}: </span>
+          <span className="font-medium text-white">
+            {pd.createdAt ? formatUTC7(pd.createdAt, 'DD/MM/YYYY HH:mm:ss') : '-'}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-400 font-semibold">{translate('common.updated_by')}: </span>
+          <span className="font-medium text-white">{pd.updated_by || '-'}</span>
+        </div>
+        <div>
+          <span className="text-slate-400 font-semibold">{translate('common.updated_at')}: </span>
+          <span className="font-medium text-white">
+            {pd.updatedAt ? formatUTC7(pd.updatedAt, 'DD/MM/YYYY HH:mm:ss') : '-'}
+          </span>
+        </div>
+      </div>
+    ) : (
+      ''
+    );
+
+  const modalTitle = (
+    <div className="flex items-center gap-2">
+      <span>{translate('summary.tabs.pending_reasons.modal_title')}</span>
+      {hasAuditData && <InformationButton infoText={auditInfoContent} size="4" />}
+    </div>
+  );
 
   return (
     <>
@@ -212,12 +261,12 @@ export default function PendingReasonModal({
         onClose={onClose}
         maxWidth="max-w-2xl"
         maxHeight="min-h-[500px] max-h-[100vh]"
-        title={translate('summary.tabs.pending_reasons.modal_title')}
+        title={modalTitle}
         subtitle={`${capitalizeText(formatStatus(statusText))} | ${data.customer}`}
         footer={
           <div className="flex justify-end w-full">
             <div className="flex items-center gap-2 w-fit">
-              {hasExistingData && (
+              {hasExistingData && isSuperadmin && (
                 <Button
                   disabled={isLoading.delete}
                   isLoading={isLoading.delete}
@@ -241,7 +290,20 @@ export default function PendingReasonModal({
         <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              {translate('summary.tabs.pending_reasons.reason')}
+            </label>
+            <input
+              type="text"
+              readOnly
+              value={reason}
+              placeholder={translate('summary.tabs.pending_reasons.reason')}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-md outline-none cursor-not-allowed text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.pending_reasons.group_reason')}
+              <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <Dropdown
               value={currentDropdownValue}
