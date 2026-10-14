@@ -28,17 +28,19 @@ export default function ManualUploadModal({
       title={t('common.upload')}
       maxWidth="max-w-7xl w-[95%]"
       footer={
-        <button
-          onClick={onDownload}
-          disabled={isEmptyUploadedFile || isLoading}
-          className={`w-full sm:w-auto min-w-[150px] ml-auto px-4 py-2 rounded-md font-medium text-white ${
-            isEmptyUploadedFile || isLoading
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-sky-600 hover:bg-sky-700'
-          }`}
-        >
-          {isLoading ? t('common.loading') : t('common.download')}
-        </button>
+        <div className="flex justify-end w-full">
+          <button
+            onClick={onDownload}
+            disabled={isEmptyUploadedFile || isLoading}
+            className={`w-full sm:w-auto min-w-[150px] px-4 py-2 rounded-md font-medium text-white ${
+              isEmptyUploadedFile || isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-sky-600 hover:bg-sky-700'
+            }`}
+          >
+            {isLoading ? t('common.loading') : t('common.download')}
+          </button>
+        </div>
       }
     >
       <div className="p-4">
