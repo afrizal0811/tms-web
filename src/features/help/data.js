@@ -1,7 +1,7 @@
 // File: src/features/help/data.js
 
-import { helpTopics as tmsTopics } from './tms/data';
-import { helpTopics as vmsTopics } from './vms/data';
+import { helpTopics as tmsTopics } from './tms/TmsData';
+import { helpTopics as vmsTopics } from './vms/VmsData';
 
 export const helpTopicsBySystem = {
   tms: tmsTopics,
