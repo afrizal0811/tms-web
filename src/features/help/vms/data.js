@@ -1,7 +1,6 @@
-// File: src/features/help/data.js
+// File: src/features/help/vms/data.js
 
 import { plannerTopics } from './data/planner/dataPlanner';
-import { driverTopics } from './data/driver/dataDriver';
 
-// Gabungkan semua topik menjadi satu array utama
-export const helpTopics = [...plannerTopics, ...driverTopics];
+// Topik bantuan VMS (hanya planner)
+export const helpTopics = [...plannerTopics];

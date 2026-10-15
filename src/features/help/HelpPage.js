@@ -78,13 +78,30 @@ export default function HelpPage({ system }) {
     () => getAllExpandedIds('planner', helpTopics).level2
   );
 
+  const categories = useMemo(() => {
+    const cats = new Set((helpTopics || []).map((t) => t.category));
+    const all = [
+      { label: t('help.planner_guide'), value: 'planner' },
+      { label: t('help.driver_guide'), value: 'driver' },
+    ];
+    return all.filter((c) => cats.has(c.value));
+  }, [helpTopics, t]);
+
   useEffect(() => {
     setManualSelection(null);
     setSearchQuery('');
-    const { level1, level2 } = getAllExpandedIds(activeCategory, helpTopics);
+    const targetCategory =
+      categories.length > 0 && !categories.some((c) => c.value === activeCategory)
+        ? categories[0].value
+        : activeCategory;
+
+    if (targetCategory !== activeCategory) {
+      setActiveCategory(targetCategory);
+    }
+    const { level1, level2 } = getAllExpandedIds(targetCategory, helpTopics);
     setExpandedIds(level1);
     setExpandedSubIds(level2);
-  }, [currentSystem, helpTopics, activeCategory, getAllExpandedIds]);
+  }, [currentSystem, helpTopics, categories, activeCategory, getAllExpandedIds]);
 
   const filteredTopics = useMemo(() => {
     let topics = helpTopics.filter((topic) => topic.category === activeCategory);
@@ -249,10 +266,6 @@ export default function HelpPage({ system }) {
   };
 
   const LAST_UPDATE = '10/15/2026';
-  const categories = [
-    { label: t('help.planner_guide'), value: 'planner' },
-    { label: t('help.driver_guide'), value: 'driver' },
-  ];
   const colorMap = {
     planner: 'bg-sky-200 dark:bg-sky-900 text-sky-700 dark:text-sky-300',
     driver: 'bg-amber-200 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
@@ -293,24 +306,26 @@ export default function HelpPage({ system }) {
               </span>
             </p>
           </div>
-          <div className="flex bg-gray-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1 rounded-lg">
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat.value;
-              return (
-                <button
-                  key={cat.value}
-                  onClick={() => handleCategoryChange(cat.value)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize ${
-                    isActive
-                      ? `${colorMap[cat.value] || 'bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200'} shadow`
-                      : 'text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'
-                  }`}
-                >
-                  {cat.value}
-                </button>
-              );
-            })}
-          </div>
+          {categories.length > 1 && (
+            <div className="flex bg-gray-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1 rounded-lg">
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat.value;
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => handleCategoryChange(cat.value)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all capitalize ${
+                      isActive
+                        ? `${colorMap[cat.value] || 'bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200'} shadow`
+                        : 'text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 cursor-pointer'
+                    }`}
+                  >
+                    {cat.value}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
