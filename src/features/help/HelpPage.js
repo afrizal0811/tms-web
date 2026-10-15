@@ -227,7 +227,7 @@ export default function HelpPage() {
     }
   };
 
-  const LAST_UPDATE = '02/12/2026';
+  const LAST_UPDATE = '10/15/2026';
   const categories = [
     { label: t('help.planner_guide'), value: 'planner' },
     { label: t('help.driver_guide'), value: 'driver' },
@@ -263,11 +263,14 @@ export default function HelpPage() {
             <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
               {t('help.last_update', { date: formatLongDate(LAST_UPDATE, localeCode) })}
             </p>
-            {!isIndonesian && (
-              <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
-                <span className="text-red-600 dark:text-red-300">*{t('help.notice')}</span>
-              </p>
-            )}
+            <p
+              className={`text-slate-400 mt-1 text-xs italic ${isIndonesian ? 'hidden' : ''}`}
+              suppressHydrationWarning
+            >
+              <span className="text-red-600 dark:text-red-300" suppressHydrationWarning>
+                *{t('help.notice')}
+              </span>
+            </p>
           </div>
           <div className="flex bg-gray-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 p-1 rounded-lg">
             {categories.map((cat) => {
@@ -434,7 +437,10 @@ export default function HelpPage() {
               </div>
 
               <div className="space-y-2 pl-1">
-                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                <p
+                  className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2"
+                  suppressHydrationWarning
+                >
                   {t('common.download')}
                 </p>
                 {categories.map((category) => {
@@ -443,6 +449,7 @@ export default function HelpPage() {
 
                   return (
                     <button
+                      suppressHydrationWarning
                       key={value}
                       onClick={() => handleDownload(value)}
                       disabled={isGenerating}
@@ -484,6 +491,7 @@ export default function HelpPage() {
                           ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-600/20 dark:ring-amber-400/20'
                           : 'bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 ring-gray-500/10 dark:ring-slate-500/20'
                     }`}
+                    suppressHydrationWarning
                   >
                     {t('help.module', { category: activeCategory })}
                   </span>

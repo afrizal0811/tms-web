@@ -39,7 +39,7 @@ export const startTripTopic = [
             </div>
           </li>
           <li>
-            <p><strong>Lakukan</strong> sinkronisasi data (<em>synchronize data</em>) untuk menyamakan/menyelaraskan konfigurasi dan tugas yang diberikan oleh admin. Sinkronisasi data dapat dilakukan di menu Tugas dan menu Pengaturan.</p>
+            <p>Sebelum memulai pekerjaan, setiap harinya <em>driver</em> wajib melakukan sinkronisasi data (<em>synchronize data</em>) untuk menyamakan/menyelaraskan konfigurasi dan tugas yang diberikan oleh admin. Sinkronisasi data dapat dilakukan di menu Tugas dan menu Pengaturan.</p>
             <p>Untuk menu Tugas, <em>driver</em> menggeser layar ke arah bawah (<em>swipe down</em>), sedangkan untuk menu Pengaturan, tekan tombol Sinkronisasi Data.</p></p>
             <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                 <img src="/images/tutorial/driver/sync-data-1.png" alt="Sinkronisasi Data di menu Tugas" style="width: 100%; border-radius: 4px;" />

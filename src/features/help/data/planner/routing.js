@@ -57,7 +57,7 @@ export const routingTopic = [
           {
             type: 'text',
             content: `
-              <p>Selain filter di kolom pencarian, filter dapat dilakukan berdasarkan status tugas (<em>Unassigned</em> atau <em>Ongoing</em>), tanggal mulai, alur, dan <em>tag</em> yang digunakan dalam tugas.</p>
+              <p>Selain filter di kolom pencarian, filter dapat dilakukan berdasarkan status tugas (<em>Unassigned</em> atau <em>Ongoing</em>), tanggal mulai, alur, dan <em>geotag</em> yang digunakan dalam tugas.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-visit-3.png" alt="Filter Kunjungan" style="width: 100%; border-radius: 4px;" />
               </div>
@@ -66,7 +66,7 @@ export const routingTopic = [
           {
             type: 'text',
             content: `
-              <p>Saat menekan salah satu tugas, akan muncul detail dari tugas tersebut, yaitu nama tugas, alamat pelanggan, titik koordinat pelanggan, jam operasional pelanggan, lama kunjungan, <em>tag</em>, pengelompokan kunjungan, prioritas, tonase, dan volume barang. Data-data tersebut dapat diubah oleh <em>planner</em>, namun hanya bersifat <strong>sementara</strong>.</p>
+              <p>Saat menekan salah satu tugas, akan muncul detail dari tugas tersebut, yaitu nama tugas, alamat pelanggan, titik koordinat pelanggan, jam operasional pelanggan, lama kunjungan, <em>geotag</em>, pengelompokan kunjungan, prioritas, tonase, dan volume barang. Data-data tersebut dapat diubah oleh <em>planner</em>, namun hanya bersifat <strong>sementara</strong>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-visit-4.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
@@ -82,7 +82,7 @@ export const routingTopic = [
             type: 'text',
             content: `
             <p>Pada bagian ini akan dijelaskan mengenai submenu <strong>Konfigurasi</strong> (<em>Configuration</em>) yang digunakan untuk pemilihan kendaraan dan parameter untuk menghitung rute terbaik. </p>
-            <p>Semua parameter dan kendaraan yang digunakan dapat <u>diubah-ubah</u> sesuai kebutuhan untuk membandingkan antar hasilnya, sehingga proses optimalisasi ini dapat dilakukan <u>sebanyak mungkin</u> sampai menemukan hasil yang paling optimal untuk digunakan.</p>
+            <p>Semua parameter dan kendaraan yang digunakan dapat <strong>diubah-ubah</strong> sesuai kebutuhan untuk membandingkan antar hasilnya, sehingga proses optimalisasi ini dapat dilakukan <strong>sebanyak mungkin</strong> sampai menemukan hasil yang paling optimal untuk digunakan.</p>
             <p class='underline mb-2'>Perhatikan video berikut ini:</p>
             `,
           },
@@ -112,7 +112,7 @@ export const routingTopic = [
               <ul class="list-decimal pl-5 space-y-2 mt-2 section-list">
                 <li>
                   <p class="section-title font-bold underline mb-2">Pengaturan Kendaraan</p>           
-                    <p>Di dalam bagian ini ditampilkan daftar kendaraan yang tersedia. Kolom pencarian berdasarkan pelat nomor kendaraan atau <em>tag</em> yang dimiliki tiap kendaraan. <em>Planner</em> hanya dapat mengubah status (aktif/non-aktif) pada kendaraan yang akan digunakan dalam proses pengiriman. <strong> Untuk menghapus atau mengubah detail kendaraan, harap hubungi admin</strong>. Kendaraan yang sudah melalui proses <em>routing</em>, akan bertanda <u>box biru</u> dengan keterangan jumlah tugas yang dikerjakan.</p>
+                    <p>Di dalam bagian ini ditampilkan daftar kendaraan yang tersedia. Kolom pencarian berdasarkan pelat nomor kendaraan atau <em>geotag</em> yang dimiliki tiap kendaraan. <em>Planner</em> hanya dapat mengubah status (aktif/non-aktif) pada kendaraan yang akan digunakan dalam proses pengiriman. <strong> Untuk mengubah detail atau menghapus data kendaraan, harap hubungi admin</strong>. Kendaraan yang sudah melalui proses <em>routing</em>, akan bertanda <u>box biru</u> dengan keterangan jumlah tugas yang dikerjakan.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
                         <img src="/images/tutorial/planner/route-conf-3.png" alt="Pengaturan Kendaraan" style="width: 100%; border-radius: 4px;" />
                     </div>
@@ -188,15 +188,15 @@ export const routingTopic = [
                 </li>
                 <li>
                   <p class='section-title font-bold underline mb-2 italic'>Geotagging</p>             
-                  <p>Di dalam bagian ini ditampilkan pengaturan <em>geotagging</em> yang memungkinkan untuk menetapkan <em>tag</em> berdasarkan area geografis. <em>Planner</em> dapat menambahkan dan mengubah lokasi dari <em>tag</em> tersebut. <strong>Untuk menghapus <em>tag</em> yang sudah ada, harap hubungi admin.</strong></p>
+                  <p>Di dalam bagian ini ditampilkan pengaturan <em>geotagging</em> yang memungkinkan untuk menetapkan <em>geotag</em> berdasarkan area geografis. <em>Planner</em> dapat menambahkan dan mengubah lokasi dari <em>geotag</em> tersebut. <strong>Untuk menghapus <em>geotag</em>, harap hubungi admin.</strong></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-conf-6.png" alt="Pengaturan Geotagging" style="width: 100%; border-radius: 4px;" />
                   </div>
-                  <p>Saat ingin membuat <em>tag</em> baru, masukkan nama <em>tag</em> dan tekan tombol yang tersedia, lalu muncul jendela penambahan <em>geotagging</em>. Tentukan area yang dibutuhkan, lalu tekan tombol <em>Submit</em> untuk menyimpan, tekan tombol <em>Reset</em> untuk mengulangi, dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
+                  <p>Saat ingin membuat <em>geotag</em> baru, masukkan nama <em>geotag</em> dan tekan tombol yang tersedia, lalu muncul jendela penambahan <em>geotagging</em>. Tentukan area yang dibutuhkan, lalu tekan tombol <em>Submit</em> untuk menyimpan, tekan tombol <em>Reset</em> untuk mengulangi, dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-conf-7.png" alt="Tambah Area Geotagging" style="width: 100%; border-radius: 4px;" />
                   </div>
-                  <p>Setelah <em>tag</em> berhasil terbuat, tambahkan <em>geotagging</em> tersebut di kendaraan yang diinginkan. <strong>Harap hubungi admin.</strong></p>
+                  <p>Setelah <em>geotag</em> berhasil terbuat, tambahkan <em>geotagging</em> tersebut di kendaraan yang diinginkan. <strong>Harap hubungi admin.</strong></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-conf-8.png" alt="Tambah Geotagging di Kendaraan" style="width: 100%; border-radius: 4px;" />
                   </div>
@@ -249,7 +249,7 @@ export const routingTopic = [
             type: 'text',
             content: `
               <p class=" font-bold text-2xl underline mb-2">Detail Tugas</p>  
-              <p>Saat salah satu kendaraan ditekan, maka akan muncul detail dari tugas-tugas yang akan akan dikerjakan oleh kendaraan tersebut. Terdapat informasi kendaraan, rangkuman serta detail tugasnya. Tiap tugas memiliki tombol aksi yang bisa digunakan oleh <em>planner</em>, yaitu tombol ubah (<em>edit</em>), pindah (<em>move</em>), dan riwayat (<em>history</em>).</p>
+              <p>Saat salah satu kendaraan ditekan, maka akan muncul detail dari tugas-tugas yang akan dikerjakan oleh kendaraan tersebut. Terdapat informasi kendaraan, rangkuman serta detail tugasnya. Tiap tugas memiliki tombol aksi yang bisa digunakan oleh <em>planner</em>, yaitu tombol ubah (<em>edit</em>), pindah (<em>move</em>), dan riwayat (<em>history</em>).</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-3.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
@@ -261,7 +261,7 @@ export const routingTopic = [
             <ul class="list-decimal pl-5 space-y-2 mt-2 section-list">
               <li>
                 <p class="section-title font-bold underline mb-2">Sunting Tugas (<em>Edit Task</em>)</p>   
-                <p>Saat terdapat detail tugas yang ingin diperbaiki di dalam hasil optimalisasi yang dipilih untuk di-<em>dispatch</em>, maka tugas tersebut dapat diubah detailnya dengan cara: </p>
+                <p>Tugas yang akan ditugaskan (<em>dispatch</em>) dapat diubah detailnya, tetapi perubahaan ini <strong>hanya berlaku pada hasil optimalisasi tersebut</strong>. Tugas-tugas tersebut dapat diubah detailnya dengan cara: </p>
                 <ol class="list-[lower-alpha] pl-5 space-y-2 mt-2">
                   <li>
                   <p>Tekan tombol <em>Edit Task</em> (nomor 1) pada tugas yang ingin diubah.</p>
@@ -294,7 +294,7 @@ export const routingTopic = [
                   </div>
                   </li>
                   <li>
-                    <p>Perpindahan ini tetap bisa dilakukan meskipun tonase dan volume barang yang diterima oleh kendaraan penerima sudah melebihi kapasitas maksimalnya. Sehingga, <em>planner</em> harus <u>mempertimbangkan kemampuan</u> dari kendaraan tersebut serta harus bisa memperkirakan kalau tipe kendaraan penerima <u>bisa melewati rute</u> untuk menuju lokasi pelanggan.</p>
+                    <p>Perpindahan ini tetap bisa dilakukan meskipun tonase dan volume barang yang diterima oleh kendaraan penerima sudah melebihi kapasitas maksimalnya. Sehingga, <em>planner</em> harus <strong>mempertimbangkan kemampuan</strong> dari kendaraan tersebut serta harus bisa memperkirakan kalau tipe kendaraan penerima <strong>bisa melewati rute</strong> untuk menuju lokasi pelanggan.</p>
                   </li>
                 </ol> 
               </li>   
@@ -323,7 +323,7 @@ export const routingTopic = [
             type: 'text',
             content: `
               <p class=" font-bold text-2xl underline mb-2">Tugas Tidak Terbawa (<em>Dropped Tasks</em>)</p>  
-              <p>Jika terdapat tugas yang tidak memenuhi kriteria yang sudah ditentukan sebelumnya (<em>tag</em> kendaraan tidak cocok, tonase atau volume barang melebihi batasan, atau melebihi jam operasional pelanggan), maka tugas tersebut akan termasuk ke kelompok tugas “Tidak Terbawa” (<em>Dropped</em>).</p>
+              <p>Jika terdapat tugas yang tidak memenuhi kriteria yang sudah ditentukan sebelumnya (<em>geotag</em> kendaraan tidak cocok, tonase atau volume barang melebihi batasan, atau melebihi jam operasional pelanggan), maka tugas tersebut akan termasuk ke kelompok tugas “Tidak Terbawa” (<em>Dropped</em>).</p>
               <p>Tugas yang tidak terbawa ini dapat dipindahkan manual ke kendaraan yang tersedia dengan cara yang sama seperti pindah tugas pada bagian <em>Move Task</em>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-8.png" alt="Tugas Tidak Terbawa (Dropped Tasks)" style="width: 100%; border-radius: 4px;" />
@@ -344,7 +344,7 @@ export const routingTopic = [
                   </div>
                 </li>
                 <li>
-                  <p>Pilih kendaraan yang ingin ditukarkan. Pastikan untuk kedua kendaraan tersebut memiliki kapasitas yang cukup untuk menampung tugas yang ditukarkan.Tekan tombol <em>Submit</em> untuk menyimpan perubahan dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
+                  <p>Pilih kendaraan yang ingin ditukarkan. Pastikan untuk kedua kendaraan tersebut memiliki kapasitas yang cukup untuk menampung barang yang akan ditukarkan.Tekan tombol <em>Submit</em> untuk menyimpan perubahan dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
                       <img src="/images/tutorial/planner/route-result-10.png" alt="Tukar Kendaraan (Switch Vehicle) - 2" style="width: 100%; border-radius: 4px;" />
                   </div>
@@ -375,11 +375,11 @@ export const routingTopic = [
             type: 'text',
             content: `
               <p class=" font-bold text-2xl underline mb-2">Tugaskan (<em>Dispatch</em>)</p>    
-              <p>Saat dirasa puas dengan hasil optimalisasinya, maka <em>planner</em> dapat melakukan proses <em>dispatch</em>, yaitu proses penugasan ke masing-masing <em>driver</em> berdasarkan dengan hasil optimalisasi. <strong>Pastikan memilih hasil yang tepat untuk di-<em>dispatch</em></strong>.</p>
+              <p>Jika <em>planner</em> sudah puas dengan hasil optimalisasinya, maka <em>planner</em> dapat melakukan proses <em>dispatch</em>, yaitu proses penugasan ke masing-masing <em>driver</em> berdasarkan dengan hasil optimalisasi. <strong>Pastikan memilih hasil yang tepat untuk di-<em>dispatch</em></strong>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-11.png" alt="Tugaskan (Dispatch)" style="width: 100%; border-radius: 4px;" />
               </div>
-              <p>Setelah proses <em>dispatch</em> telah selesai, maka akan muncul keterangan dan <em>planner</em> <strong>harus mengubah</strong> judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
+              <p>Setelah proses <em>dispatch</em> selesai, maka akan muncul keterangan berhasil dan <em>planner</em> <strong>harus mengubah</strong> judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
                   <img src="/images/tutorial/planner/route-result-12.png" alt="Keterangan dan Ubah Judul" style="width: 100%; border-radius: 4px;" />
               </div>

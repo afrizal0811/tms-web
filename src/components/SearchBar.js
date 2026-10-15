@@ -42,6 +42,7 @@ export default function SearchBar({
       </div>
       <Tooltip tooltipContent={tooltip ? tooltip : ''}>
         <input
+        suppressHydrationWarning
           type="text"
           className={`w-full pl-10 pr-10 ${sizeClasses[size].input} border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800/50 disabled:text-gray-400 dark:disabled:text-slate-500`}
           placeholder={placeholder}
@@ -61,6 +62,7 @@ export default function SearchBar({
           onClick={() => onChange('')}
           className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
           aria-label="Clear search"
+          
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
