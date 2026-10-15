@@ -75,3 +75,8 @@ export const AVAILABLE_PATHS = APP_NAVIGATION.flatMap((group) =>
     group: group.group,
   }))
 );
+
+export const HELP_LINKS = [
+  { id: '/help/tms', href: '/help/tms', label: 'TMS', labelKey: 'TMS' },
+  { id: '/help/vms', href: '/help/vms', label: 'VMS', labelKey: 'VMS' },
+];

@@ -19,7 +19,8 @@ export default function SessionGuard({ children }) {
   const isSecret = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
   const publicPaths = ['/', '/help', '/setting'];
   if (isSecret) publicPaths.push('/setting');
-  const isPublicPage = publicPaths.includes(pathname);
+  const isPublicPage =
+    publicPaths.includes(pathname) || (pathname && pathname.startsWith('/help'));
 
   useEffect(() => {
     if (isPublicPage) return;

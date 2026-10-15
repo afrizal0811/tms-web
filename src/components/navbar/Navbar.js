@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import { getCachedHubs, getLocalStorage, removeLocalStorage } from '@/lib/localStorageHandler';
-import { APP_NAVIGATION } from '@/lib/navigation';
+import { APP_NAVIGATION, HELP_LINKS } from '@/lib/navigation';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -258,7 +258,7 @@ export default function Navbar() {
           </NavLink>
         );
       })}
-      <NavLink href="/help">{t('navbar.help')}</NavLink>
+      <NavDropdown label={t('navbar.help')} links={HELP_LINKS} />
     </>
   );
 
@@ -305,7 +305,7 @@ export default function Navbar() {
             ) : (
               <div className="flex items-center space-x-4 sm:space-x-6">
                 {isSecret && <NavLink href="/setting">{t('setting.title')}</NavLink>}
-                <NavLink href="/help">{t('navbar.help')}</NavLink>
+                <NavDropdown label={t('navbar.help')} links={HELP_LINKS} />
               </div>
             )}
           </div>

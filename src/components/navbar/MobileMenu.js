@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext';
-import { APP_NAVIGATION } from '@/lib/navigation';
+import { APP_NAVIGATION, HELP_LINKS } from '@/lib/navigation';
 import { isEmpty } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -234,7 +234,7 @@ export default function MobileMenu({
             className="text-md px-3"
           />
           <LanguageToggle showLabel={true} className="text-base px-3 py-2.5 mb-1 " />
-          <MobileNavLink href="/help">{t('navbar.help')}</MobileNavLink>
+          <MobileNavGroup label={t('navbar.help')} links={HELP_LINKS} />
           {!isLoggedIn && isSecret && (
             <MobileNavLink href="/setting">{t('setting.title')}</MobileNavLink>
           )}

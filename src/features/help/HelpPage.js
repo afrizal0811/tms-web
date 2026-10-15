@@ -7,12 +7,18 @@ import ImageLightbox from '@/features/help/components/ImageLightbox';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
-import { useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PdfDocument } from './components/PdfDocument';
-import { helpTopics } from './data';
+import { getHelpTopics } from './data';
 
-export default function HelpPage() {
+export default function HelpPage({ system }) {
   const { t, localeCode, isIndonesian } = useLanguage();
+  const pathname = usePathname();
+
+  const currentSystem = (system || (pathname?.includes('/vms') ? 'vms' : 'tms')).toLowerCase();
+  const systemName = currentSystem.toUpperCase();
+  const helpTopics = useMemo(() => getHelpTopics(currentSystem), [currentSystem]);
 
   const [activeCategory, setActiveCategory] = useState('planner');
   const [manualSelection, setManualSelection] = useState(null);
@@ -46,24 +52,39 @@ export default function HelpPage() {
 
   const currentTheme = themeStyles[activeCategory] || themeStyles.slate;
 
-  const getAllExpandedIds = (category) => {
-    const catTopics = helpTopics.filter((t) => t.category === category);
-    const level1Ids = new Set(catTopics.map((t) => t.id));
-    const level2Ids = new Set();
-    catTopics.forEach((topic) => {
-      if (topic.subTopics) {
-        topic.subTopics.forEach((sub) => {
-          if (sub.subSubTopics && sub.subSubTopics.length > 0) {
-            level2Ids.add(sub.id);
-          }
-        });
-      }
-    });
-    return { level1: level1Ids, level2: level2Ids };
-  };
+  const getAllExpandedIds = useCallback(
+    (category, topicsList = helpTopics) => {
+      const catTopics = (topicsList || []).filter((t) => t.category === category);
+      const level1Ids = new Set(catTopics.map((t) => t.id));
+      const level2Ids = new Set();
+      catTopics.forEach((topic) => {
+        if (topic.subTopics) {
+          topic.subTopics.forEach((sub) => {
+            if (sub.subSubTopics && sub.subSubTopics.length > 0) {
+              level2Ids.add(sub.id);
+            }
+          });
+        }
+      });
+      return { level1: level1Ids, level2: level2Ids };
+    },
+    [helpTopics]
+  );
 
-  const [expandedIds, setExpandedIds] = useState(() => getAllExpandedIds('planner').level1);
-  const [expandedSubIds, setExpandedSubIds] = useState(() => getAllExpandedIds('planner').level2);
+  const [expandedIds, setExpandedIds] = useState(
+    () => getAllExpandedIds('planner', helpTopics).level1
+  );
+  const [expandedSubIds, setExpandedSubIds] = useState(
+    () => getAllExpandedIds('planner', helpTopics).level2
+  );
+
+  useEffect(() => {
+    setManualSelection(null);
+    setSearchQuery('');
+    const { level1, level2 } = getAllExpandedIds(activeCategory, helpTopics);
+    setExpandedIds(level1);
+    setExpandedSubIds(level2);
+  }, [currentSystem, helpTopics, activeCategory, getAllExpandedIds]);
 
   const filteredTopics = useMemo(() => {
     let topics = helpTopics.filter((topic) => topic.category === activeCategory);
@@ -107,7 +128,7 @@ export default function HelpPage() {
     }
 
     return topics;
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, helpTopics]);
 
   const handleSearchChange = (val) => {
     const query = val;
@@ -214,7 +235,7 @@ export default function HelpPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Manual ${capitalizedCategory} TMS.pdf`;
+      link.download = `Manual ${capitalizedCategory} ${systemName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -255,10 +276,10 @@ export default function HelpPage() {
               className="text-3xl font-bold text-gray-900 dark:text-slate-200"
               suppressHydrationWarning
             >
-              {t('help.title')}
+              {t('help.title', { system: systemName })}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-              {t('help.subtitle')}
+              {t(`help.subtitle_${currentSystem}`) || t('help.subtitle', { system: systemName })}
             </p>
             <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
               {t('help.last_update', { date: formatLongDate(LAST_UPDATE, localeCode) })}

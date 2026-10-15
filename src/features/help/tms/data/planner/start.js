@@ -38,7 +38,7 @@ export const startTopic = [
               <li>
                 <p>Masukkan surel dan kata sandi yang sudah diberikan oleh admin. Jika belum ada, <strong>silahkan hubungi admin</strong>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 55%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/login.png" alt="Tampilan Login" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/tms/login.png" alt="Tampilan Login" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ol>
@@ -63,13 +63,13 @@ export const startTopic = [
               <li>
                 <p>Tekan ikon profil di pojok kanan atas. Lalu, pilih <em>Profile</em>.</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/setting-1.png" alt="Pengaturan Profil" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/tms/setting-1.png" alt="Pengaturan Profil" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
               <li>
                 <p>Pada bagian Bahasa (<em>Language</em>), pilih bahasa yang diinginkan. Lalu tekan tombol Simpan (<em>Save</em>)</p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 55%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/setting-2.png" alt="Pilih Bahasa" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/tms/setting-2.png" alt="Pilih Bahasa" style="width: 100%; border-radius: 4px;" />
                 </div>
               </li>
             </ol>

@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const DROPDOWN_LINK_CLASS =
@@ -9,6 +10,7 @@ const DROPDOWN_LINK_CLASS =
 
 export default function NavDropdown({ label, links, isSuperadmin, isAdmin }) {
   const { t } = useLanguage();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -32,6 +34,10 @@ export default function NavDropdown({ label, links, isSuperadmin, isAdmin }) {
 
   if (filteredLinks.length === 0) return null;
 
+  const isActive = filteredLinks.some(
+    (l) => pathname === l.href || (l.href !== '/' && pathname.startsWith(l.href + '/'))
+  );
+
   return (
     <div ref={dropdownRef} className="relative">
       <button
@@ -39,7 +45,7 @@ export default function NavDropdown({ label, links, isSuperadmin, isAdmin }) {
         aria-expanded={isOpen}
         onClick={() => setIsOpen((s) => !s)}
         className={`flex items-center gap-1 text-sm font-medium transition-colors px-1 py-2 rounded-md cursor-pointer ${
-          isOpen
+          isOpen || isActive
             ? 'text-sky-600 dark:text-sky-400 font-semibold'
             : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100'
         }`}
@@ -61,16 +67,24 @@ export default function NavDropdown({ label, links, isSuperadmin, isAdmin }) {
         }`}
       >
         <div>
-          {filteredLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={DROPDOWN_LINK_CLASS}
-              onClick={() => setIsOpen(false)}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
+          {filteredLinks.map((link) => {
+            const isLinkActive =
+              pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href + '/'));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${DROPDOWN_LINK_CLASS} ${
+                  isLinkActive
+                    ? 'font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-700/60'
+                    : ''
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                {link.labelKey ? t(link.labelKey) : link.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

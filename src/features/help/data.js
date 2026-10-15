@@ -1,7 +1,16 @@
 // File: src/features/help/data.js
 
-import { plannerTopics } from './data/planner/dataPlanner';
-import { driverTopics } from './data/driver/dataDriver';
+import { helpTopics as tmsTopics } from './tms/data';
+import { helpTopics as vmsTopics } from './vms/data';
 
-// Gabungkan semua topik menjadi satu array utama
-export const helpTopics = [...plannerTopics, ...driverTopics];
+export const helpTopicsBySystem = {
+  tms: tmsTopics,
+  vms: vmsTopics,
+};
+
+export const getHelpTopics = (system = 'tms') => {
+  return helpTopicsBySystem[system?.toLowerCase()] || tmsTopics;
+};
+
+export { tmsTopics, vmsTopics };
+export const helpTopics = tmsTopics;

@@ -1,13 +1,6 @@
 // File: src/app/help/page.js
-'use client';
-
-import SelectionLayout from '@/components/page/SelectionLayout';
-import HelpPage from '@/features/help/HelpPage';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return (
-    <SelectionLayout>
-      <HelpPage />
-    </SelectionLayout>
-  );
+  redirect('/help/tms');
 }

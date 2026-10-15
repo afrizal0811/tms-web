@@ -648,9 +648,11 @@ export const dictionary = {
       module: 'Modul {category}',
       notice: 'Semua informasi dalam Bahasa Indonesia',
       planner_guide: 'Panduan Perencana',
-      subtitle:
+      subtitle_tms:
         'Dokumentasi teknis terpadu untuk membantu Perencana dalam optimalisasi rute dan Sopir dalam pelaksanaan tugas lapangan secara efisien dan akurat.',
-      title: 'Tutorial untuk TMS',
+      subtitle_vms:
+        'Dokumentasi teknis terpadu untuk membantu Perencana dalam pemantauan armada VMS.',
+      title: 'Tutorial untuk {system}',
     },
     setting: {
       last_updated: 'Terakhir diperbarui:',
@@ -1393,9 +1395,11 @@ export const dictionary = {
       module: '{category} Module',
       notice: 'All information in Indonesian',
       planner_guide: 'Planner Guide',
-      subtitle:
+      subtitle_tms:
         'Integrated technical documentation to assist Planners in route optimization and Drivers in efficient and accurate field task execution',
-      title: 'Tutorial for TMS',
+      subtitle_vms:
+        'Integrated technical documentation to assist Planners in VMS fleet monitoring',
+      title: 'Tutorial for {system}',
     },
     setting: {
       last_updated: 'Last updated:',

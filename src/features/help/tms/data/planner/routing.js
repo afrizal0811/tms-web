@@ -13,13 +13,13 @@ export const routingTopic = [
         type: 'text',
         content: `<p>Di menu ini terdapat beberapa submenu untuk membantu memperoleh hasil perencanaan yang efisien dan optimal, yaitu submenu <strong>Kunjungan</strong> (<em>Visit</em>), <strong>Konfigurasi</strong> (<em>Configuration</em>), dan <strong>Hasil</strong> (<em>Result</em>)</p>
         <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-            <img src="/images/tutorial/planner/route-visit-1.png" alt="Submodul Visit" style="width: 100%; border-radius: 4px;" />
+            <img src="/images/tutorial/planner/tms/route-visit-1.png" alt="Submodul Visit" style="width: 100%; border-radius: 4px;" />
         </div>
         <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-            <img src="/images/tutorial/planner/route-conf-1.png" alt="Submodul Configuration" style="width: 100%; border-radius: 4px;" />
+            <img src="/images/tutorial/planner/tms/route-conf-1.png" alt="Submodul Configuration" style="width: 100%; border-radius: 4px;" />
         </div>
         <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-            <img src="/images/tutorial/planner/route-result-1.png" alt="Submodul Result" style="width: 100%; border-radius: 4px;" />
+            <img src="/images/tutorial/planner/tms/route-result-1.png" alt="Submodul Result" style="width: 100%; border-radius: 4px;" />
         </div>
         `,
       },
@@ -50,7 +50,7 @@ export const routingTopic = [
               </div>
               <p>Di dalam submenu ini, ditampilkan daftar tugas yang aktif pada tanggal terpilih. <em>Planner</em> dapat melakukan filter di kolom pencarian berdasarkan nama pelanggan, id pelanggan, atau nomor faktur. Tugas-tugas tersebut dapat dinonaktifkan supaya tidak terbawa proses <em>routing</em>. Tugas yang sudah melalui proses <em>routing</em>, akan bertanda <u>truk biru</u> dengan keterangan pelat nomor kendaraan yang membawa. <em>Planner</em> dapat melihat persebaran tugas untuk memeriksa bahwa tugas tersebut berada di lokasi yang sewajarnya. Tekan tombol Optimalisasi (<em>Optimize</em>) untuk melakukan proses <em>routing</em>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-visit-2.png" alt="Submodul Kunjungan" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-visit-2.png" alt="Submodul Kunjungan" style="width: 100%; border-radius: 4px;" />
               </div>
             `,
           },
@@ -59,7 +59,7 @@ export const routingTopic = [
             content: `
               <p>Selain filter di kolom pencarian, filter dapat dilakukan berdasarkan status tugas (<em>Unassigned</em> atau <em>Ongoing</em>), tanggal mulai, alur, dan <em>geotag</em> yang digunakan dalam tugas.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-visit-3.png" alt="Filter Kunjungan" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-visit-3.png" alt="Filter Kunjungan" style="width: 100%; border-radius: 4px;" />
               </div>
             `,
           },
@@ -68,7 +68,7 @@ export const routingTopic = [
             content: `
               <p>Saat menekan salah satu tugas, akan muncul detail dari tugas tersebut, yaitu nama tugas, alamat pelanggan, titik koordinat pelanggan, jam operasional pelanggan, lama kunjungan, <em>geotag</em>, pengelompokan kunjungan, prioritas, tonase, dan volume barang. Data-data tersebut dapat diubah oleh <em>planner</em>, namun hanya bersifat <strong>sementara</strong>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-visit-4.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-visit-4.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
             `,
           },
@@ -102,7 +102,7 @@ export const routingTopic = [
                 </div>
                 <p>Di dalam submenu ini akan dibagi menjadi beberapa bagian, yaitu pengaturan kendaraan, kecepatan, restriksi, dan <em>cross docking</em>, parameter <em>routing</em>, serta <em>geotagging</em>. </p>
                 <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/route-conf-2.png" alt="Submodul Konfigurasi" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/tms/route-conf-2.png" alt="Submodul Konfigurasi" style="width: 100%; border-radius: 4px;" />
                 </div>
               `,
           },
@@ -114,21 +114,21 @@ export const routingTopic = [
                   <p class="section-title font-bold underline mb-2">Pengaturan Kendaraan</p>           
                     <p>Di dalam bagian ini ditampilkan daftar kendaraan yang tersedia. Kolom pencarian berdasarkan pelat nomor kendaraan atau <em>geotag</em> yang dimiliki tiap kendaraan. <em>Planner</em> hanya dapat mengubah status (aktif/non-aktif) pada kendaraan yang akan digunakan dalam proses pengiriman. <strong> Untuk mengubah detail atau menghapus data kendaraan, harap hubungi admin</strong>. Kendaraan yang sudah melalui proses <em>routing</em>, akan bertanda <u>box biru</u> dengan keterangan jumlah tugas yang dikerjakan.</p>
                     <div style="margin-top: 10px; margin-bottom: 10px; width: 45%;" class="mx-auto">
-                        <img src="/images/tutorial/planner/route-conf-3.png" alt="Pengaturan Kendaraan" style="width: 100%; border-radius: 4px;" />
+                        <img src="/images/tutorial/planner/tms/route-conf-3.png" alt="Pengaturan Kendaraan" style="width: 100%; border-radius: 4px;" />
                     </div>
                 </li>
                 <li>
                   <p class='section-title font-bold underline mb-2'>Pengaturan Kecepatan, Restriksi, dan <em>Cross Docking</em></p>             
                   <p>Di dalam bagian ini ditampilkan pengaturan kecepatan, restriksi/batasan, serta <em>cross docking</em> yang digunakan dalam proses <em>routing</em>. Pengaturan yang digunakan saat ini (seperti di gambar) adalah pengaturan <em>default</em>, namun dapat diubah sesuai kebutuhan. <strong> Untuk mengubah pengaturan ini, harap konfirmasi dengan admin</strong>. </p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 50%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-conf-4.png" alt="Pengaturan Kecepatan, Restriksi, dan Cross Docking" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-conf-4.png" alt="Pengaturan Kecepatan, Restriksi, dan Cross Docking" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p class='section-title font-bold underline mb-2'>Pengaturan Parameter</p>             
                   <p>Di dalam bagian ini ditampilkan pengaturan paramater yang dapat diatur untuk memperoleh rute terbaik. Sesuaikan konfigurasi ini sesuai kebutuhan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 80%;" class="mx-auto">
-                    <img src="/images/tutorial/planner/route-conf-5.png" alt="Pengaturan Kecepatan, Restriksi, dan Cross Docking" style="width: 100%; border-radius: 4px;" />
+                    <img src="/images/tutorial/planner/tms/route-conf-5.png" alt="Pengaturan Kecepatan, Restriksi, dan Cross Docking" style="width: 100%; border-radius: 4px;" />
                   </div>
                   <p>Berikut penjelasan untuk masing-masing parameter:</p>
                   <ol class="list-decimal pl-5 space-y-2 mt-2">
@@ -190,15 +190,15 @@ export const routingTopic = [
                   <p class='section-title font-bold underline mb-2 italic'>Geotagging</p>             
                   <p>Di dalam bagian ini ditampilkan pengaturan <em>geotagging</em> yang memungkinkan untuk menetapkan <em>geotag</em> berdasarkan area geografis. <em>Planner</em> dapat menambahkan dan mengubah lokasi dari <em>geotag</em> tersebut. <strong>Untuk menghapus <em>geotag</em>, harap hubungi admin.</strong></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-conf-6.png" alt="Pengaturan Geotagging" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-conf-6.png" alt="Pengaturan Geotagging" style="width: 100%; border-radius: 4px;" />
                   </div>
                   <p>Saat ingin membuat <em>geotag</em> baru, masukkan nama <em>geotag</em> dan tekan tombol yang tersedia, lalu muncul jendela penambahan <em>geotagging</em>. Tentukan area yang dibutuhkan, lalu tekan tombol <em>Submit</em> untuk menyimpan, tekan tombol <em>Reset</em> untuk mengulangi, dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-conf-7.png" alt="Tambah Area Geotagging" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-conf-7.png" alt="Tambah Area Geotagging" style="width: 100%; border-radius: 4px;" />
                   </div>
                   <p>Setelah <em>geotag</em> berhasil terbuat, tambahkan <em>geotagging</em> tersebut di kendaraan yang diinginkan. <strong>Harap hubungi admin.</strong></p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-conf-8.png" alt="Tambah Geotagging di Kendaraan" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-conf-8.png" alt="Tambah Geotagging di Kendaraan" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ul>
@@ -231,7 +231,7 @@ export const routingTopic = [
               </div>
               <p>Di dalam submenu ini, ditampilkan daftar hasil optimalisasi saat <em>planner</em> menekan tombol <em>Optimize</em> di submenu <strong>Kunjungan</strong> atau <strong>Konfigurasi</strong>. Terdapat persebaran tugas, rangkuman secara keselurahan, detail tugas untuk tiap kendaraan, serta riwayat perubahaannya. Hasil optimalisasi yang terbaik harus ditugaskan (<em>dispatch</em>) supaya <em>driver</em> dapat mengerjakannya. Selain itu, hasil ini dapat di-<em>export</em> dalam bentuk Excel.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-2.png" alt="Submodul Hasil" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-2.png" alt="Submodul Hasil" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
           },
@@ -241,7 +241,7 @@ export const routingTopic = [
               <p class=" font-bold text-2xl underline mb-2 italic">Gantt Chart</p>  
               <p>Selain dalam bentuk rangkuman dan detail, hasil optimalisasi dapat ditampilkan dalam bentuk <em>Gantt Chart</em>. <em>Gantt Chart</em> ini berfungsi untuk menampilkan jadwal pekerjaan dalam bentuk <em>timeline</em> supaya mudah melihat urutan, durasi, dan ketergantungan tugas.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-13.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-13.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
           },
@@ -251,7 +251,7 @@ export const routingTopic = [
               <p class=" font-bold text-2xl underline mb-2">Detail Tugas</p>  
               <p>Saat salah satu kendaraan ditekan, maka akan muncul detail dari tugas-tugas yang akan dikerjakan oleh kendaraan tersebut. Terdapat informasi kendaraan, rangkuman serta detail tugasnya. Tiap tugas memiliki tombol aksi yang bisa digunakan oleh <em>planner</em>, yaitu tombol ubah (<em>edit</em>), pindah (<em>move</em>), dan riwayat (<em>history</em>).</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-3.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-3.png" alt="Detail Tugas" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
           },
@@ -266,13 +266,13 @@ export const routingTopic = [
                   <li>
                   <p>Tekan tombol <em>Edit Task</em> (nomor 1) pada tugas yang ingin diubah.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                   <li>
                   <p>Ubah detail tugas sesuai kebutuhan. Tekan tombol <em>Submit</em> untuk menyimpan perubahan dan tekan tombol <em>Cancel</em> untuk membatalkan. <strong>Tiap perubahaan yang dilakukan hanya berlaku di hasil optimalisasi tersebut</strong>.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-5.png" alt="Sunting Tugas (Edit Task)" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-5.png" alt="Sunting Tugas (Edit Task)" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                 </ol> 
@@ -284,13 +284,13 @@ export const routingTopic = [
                   <li>
                   <p>Tekan tombol <em>Move Task</em> (nomor 2) pada tugas yang ingin dipindahkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                   <li>
                   <p>Pilih kendaraan penerima. Tekan tombol <em>Submit</em> untuk menyimpan perubahan dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-6.png" alt="Pindah Tugas (Move Task)" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-6.png" alt="Pindah Tugas (Move Task)" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                   <li>
@@ -305,13 +305,13 @@ export const routingTopic = [
                   <li>
                   <p>Tekan tombol <em>History Task</em> (nomor 3) pada tugas yang ingin dilihat.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-4.png" alt="Aksi Tugas" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                   <li>
                   <p>Semua perubahaan yang berkaitan dengan tugas tersebut di dalam hasil optimalisasi dapat dilihat di riwayat tugas.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 55%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-7.png" alt="Riwayat Tugas (Task History)" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-7.png" alt="Riwayat Tugas (Task History)" style="width: 100%; border-radius: 4px;" />
                   </div>
                   </li>
                 </ol> 
@@ -326,7 +326,7 @@ export const routingTopic = [
               <p>Jika terdapat tugas yang tidak memenuhi kriteria yang sudah ditentukan sebelumnya (<em>geotag</em> kendaraan tidak cocok, tonase atau volume barang melebihi batasan, atau melebihi jam operasional pelanggan), maka tugas tersebut akan termasuk ke kelompok tugas “Tidak Terbawa” (<em>Dropped</em>).</p>
               <p>Tugas yang tidak terbawa ini dapat dipindahkan manual ke kendaraan yang tersedia dengan cara yang sama seperti pindah tugas pada bagian <em>Move Task</em>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-8.png" alt="Tugas Tidak Terbawa (Dropped Tasks)" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-8.png" alt="Tugas Tidak Terbawa (Dropped Tasks)" style="width: 100%; border-radius: 4px;" />
               </div>
               
             `,
@@ -340,13 +340,13 @@ export const routingTopic = [
                 <li>
                   <p>Tekan tombol <em>Switch</em> di sebelah kiri nama kendaraan yang ingin ditukarkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-9.png" alt="Tukar Kendaraan (Switch Vehicle) - 1" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-9.png" alt="Tukar Kendaraan (Switch Vehicle) - 1" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
                 <li>
                   <p>Pilih kendaraan yang ingin ditukarkan. Pastikan untuk kedua kendaraan tersebut memiliki kapasitas yang cukup untuk menampung barang yang akan ditukarkan.Tekan tombol <em>Submit</em> untuk menyimpan perubahan dan tekan tombol <em>Cancel</em> untuk membatalkan.</p>
                   <div style="margin-top: 10px; margin-bottom: 10px; width: 60%;" class="mx-auto">
-                      <img src="/images/tutorial/planner/route-result-10.png" alt="Tukar Kendaraan (Switch Vehicle) - 2" style="width: 100%; border-radius: 4px;" />
+                      <img src="/images/tutorial/planner/tms/route-result-10.png" alt="Tukar Kendaraan (Switch Vehicle) - 2" style="width: 100%; border-radius: 4px;" />
                   </div>
                 </li>
               </ol>
@@ -358,7 +358,7 @@ export const routingTopic = [
               <p class=" font-bold text-2xl underline mb-2">Riwayat</p>  
               <p>Tombol riwayat menampilkan semua perubahan yang pernah dilakukan <em>planner</em> pada tugas dan kendaraan dalam hasil optimalisasi yang dipilih.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-14.png" alt="History - 1" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-14.png" alt="History - 1" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
           },
@@ -367,7 +367,7 @@ export const routingTopic = [
             content: `
               <p>Di dalam jendela riwayat, <em>planner</em> dapat melihat semua riwayat serta dapat melakukan pembatalan (<em>reset</em>) perubahan yang telah dilakukan. <em>Reset</em> ini dapat dilakukan secara satu per satu pada versi terpilih atau secara keseluruhan. Hasil optimalisasi yang sudah di-<em>reset</em> <strong>tidak dapat dikembalikan.</strong></p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 70%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-15.png" alt="History - 2" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-15.png" alt="History - 2" style="width: 100%; border-radius: 4px;" />
               </div>
               `,
           },
@@ -377,11 +377,11 @@ export const routingTopic = [
               <p class=" font-bold text-2xl underline mb-2">Tugaskan (<em>Dispatch</em>)</p>    
               <p>Jika <em>planner</em> sudah puas dengan hasil optimalisasinya, maka <em>planner</em> dapat melakukan proses <em>dispatch</em>, yaitu proses penugasan ke masing-masing <em>driver</em> berdasarkan dengan hasil optimalisasi. <strong>Pastikan memilih hasil yang tepat untuk di-<em>dispatch</em></strong>.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 100%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-11.png" alt="Tugaskan (Dispatch)" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-11.png" alt="Tugaskan (Dispatch)" style="width: 100%; border-radius: 4px;" />
               </div>
               <p>Setelah proses <em>dispatch</em> selesai, maka akan muncul keterangan berhasil dan <em>planner</em> <strong>harus mengubah</strong> judul hasil optimalisasi tersebut sesuai dengan tanggal pengiriman untuk mempermudah dalam pencarian.</p>
               <div style="margin-top: 10px; margin-bottom: 10px; width: 40%;" class="mx-auto">
-                  <img src="/images/tutorial/planner/route-result-12.png" alt="Keterangan dan Ubah Judul" style="width: 100%; border-radius: 4px;" />
+                  <img src="/images/tutorial/planner/tms/route-result-12.png" alt="Keterangan dan Ubah Judul" style="width: 100%; border-radius: 4px;" />
               </div>
             `,
           },
