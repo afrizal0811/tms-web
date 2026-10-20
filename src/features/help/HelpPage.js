@@ -265,7 +265,7 @@ export default function HelpPage({ system }) {
     }
   };
 
-  const LAST_UPDATE = '10/15/2026';
+  const LAST_UPDATE = '10/20/2026';
   const colorMap = {
     planner: 'bg-sky-200 dark:bg-sky-900 text-sky-700 dark:text-sky-300',
     driver: 'bg-amber-200 dark:bg-amber-900 text-amber-700 dark:text-amber-300',
@@ -292,7 +292,7 @@ export default function HelpPage({ system }) {
               {t('help.title', { system: systemName })}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-              {t(`help.subtitle_${currentSystem}`) || t('help.subtitle', { system: systemName })}
+              {t(`help.subtitle_${currentSystem}`)}
             </p>
             <p className="text-slate-400 mt-1 text-xs italic" suppressHydrationWarning>
               {t('help.last_update', { date: formatLongDate(LAST_UPDATE, localeCode) })}

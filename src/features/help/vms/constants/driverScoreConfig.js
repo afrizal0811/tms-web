@@ -5,6 +5,9 @@
  * Mudah disesuaikan jika terdapat perubahan kebijakan / bobot di masa mendatang
  */
 export const DRIVER_SCORE_CONFIG = {
+  // Jarak tempuh minimum untuk penilaian (300 km)
+  MIN_DISTANCE: 300,
+
   // Persentase batas peringatan terhadap jarak tempuh (5%)
   WARNING_THRESHOLD_PERCENT: 0.05,
 
@@ -41,7 +44,7 @@ export const DRIVER_SCORE_CONFIG = {
     {
       id: 'idleOvertime',
       label: 'Melebihi Batas Waktu Diam',
-      weight: 0.10,
+      weight: 0.1,
       weightPercent: 10,
       description: 'Kendaraan diam > 15 menit',
     },
@@ -100,7 +103,8 @@ export function getScoreIndex(score) {
     return {
       grade: '-',
       label: '-',
-      badgeClass: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+      badgeClass:
+        'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700',
       pillClass: 'bg-slate-400 text-white',
     };
   }
