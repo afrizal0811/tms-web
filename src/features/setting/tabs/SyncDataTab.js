@@ -74,6 +74,41 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
     setSyncLoading(syncScope.mode === 'global' ? 'drivers-global' : 'drivers-active');
     try {
       const updates = mismatchedData.filter((m) => m.isUpdated);
+
+      // Kumpulkan ID driver yang akan dipasangkan
+      const targetDriverIds = new Set(
+        updates
+          .map((u) => u.updatedDriverId)
+          .filter((id) => id && id !== '-')
+          .map((id) => String(id))
+      );
+
+      // Kumpulkan ID kendaraan yang perlu dilepas (unassign) driver-nya terlebih dahulu
+      // agar tidak terkena validasi "Driver is already assigned in another vehicle" dari McEasy
+      const vehiclesToClear = new Set();
+      updates.forEach((u) => {
+        if (u.mcVehicleId && u.updatedDriverId !== undefined) {
+          vehiclesToClear.add(u.mcVehicleId);
+        }
+      });
+      mismatchedData.forEach((m) => {
+        if (m.mcVehicleId && m.vmsDriverId && targetDriverIds.has(String(m.vmsDriverId))) {
+          vehiclesToClear.add(m.mcVehicleId);
+        }
+      });
+
+      // Tahap 1: Lepaskan driver sementara menggunakan '-' (format McEasy untuk unassign)
+      for (const vehicleId of vehiclesToClear) {
+        try {
+          const clearPayload = new URLSearchParams();
+          clearPayload.append('driver1Id', '-');
+          await patchMceasyVehicle(vehicleId, clearPayload.toString());
+        } catch (clearErr) {
+          console.warn(`[Unassign Driver] Gagal melepas driver pada vehicle ${vehicleId}:`, clearErr.message);
+        }
+      }
+
+      // Tahap 2: Pasang driver baru dan/atau perbarui plat nomor
       const seenVehicleIds = new Set();
       for (const update of updates) {
         if (!update.mcVehicleId || seenVehicleIds.has(update.mcVehicleId)) continue;
@@ -83,7 +118,9 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
         if (update.updatedDriverId !== undefined) {
           payload.append(
             'driver1Id',
-            update.updatedDriverId !== null ? update.updatedDriverId : ''
+            update.updatedDriverId && update.updatedDriverId !== '-'
+              ? update.updatedDriverId
+              : '-'
           );
         }
         if (update.updatedPlat) {
@@ -434,7 +471,7 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {syncData.map((item, index) => (
             <div key={index} className="col-span-1">
               {renderCardContent(item.type, item.label)}

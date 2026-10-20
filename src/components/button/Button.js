@@ -80,13 +80,14 @@ export default function Button({
   // Render Split Button
   if (isSplit) {
     return (
-      <div ref={menuRef} className={`relative inline-flex ${width} rounded-md shadow-sm`}>
+      <div ref={menuRef} className={`relative inline-flex ${width} max-w-full rounded-md shadow-sm`}>
         <button
           type="button"
           onClick={onClick}
           disabled={isDisabled}
+          title={typeof text === 'string' ? text : undefined}
           {...rest}
-          className={`flex-1 flex items-center justify-center gap-2 font-semibold rounded-l-md transition-all cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${sizeClasses[size]} ${className}`}
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 font-semibold rounded-l-md transition-all cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${sizeClasses[size]} ${className}`}
         >
           {isLoading ? (
             <>
@@ -117,7 +118,7 @@ export default function Button({
           aria-expanded={isMenuOpen}
           aria-haspopup="true"
           aria-label="Opsi lainnya"
-          className={`flex items-center justify-center rounded-r-md transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${chevronPadding[size]} ${className}`}
+          className={`shrink-0 flex items-center justify-center rounded-r-md transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${chevronPadding[size]} ${className}`}
         >
           <svg
             className={`w-4 h-4 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : 'rotate-0'}`}
@@ -177,8 +178,9 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={isDisabled}
+      title={typeof text === 'string' ? text : undefined}
       {...rest}
-      className={`${width} cursor-pointer py-2 ${sizeClasses[size]} flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold shadow-sm transition-all dark:shadow-sky-950/40 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${className}`}
+      className={`${width} max-w-full cursor-pointer ${sizeClasses[size]} flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold shadow-sm transition-all dark:shadow-sky-950/40 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:border-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-500 ${className}`}
     >
       {isLoading ? (
         <>
@@ -192,8 +194,8 @@ export default function Button({
         </>
       ) : (
         <>
-          {icon && <span className="flex items-center justify-center">{icon}</span>}
-          <span>{text}</span>
+          {icon && <span className="flex items-center justify-center shrink-0">{icon}</span>}
+          <span className="truncate">{text}</span>
         </>
       )}
     </button>

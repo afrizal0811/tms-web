@@ -23,17 +23,16 @@ export default function SyncModal({
       noClose={true}
       title={translate('common.warning')}
       subtitle={translate('setting.tab.modal.sync_subtitle')}
-      maxWidth="max-w-6xl"
+      maxWidth="max-w-4xl"
       footer={
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            disabled={isSaving}
+          <Button
             onClick={onBypass}
-            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 font-medium text-sm cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Bypass
-          </button>
+            text="Bypass"
+            width="w-auto"
+            disabled={isSaving}
+            className="bg-amber-500 dark:bg-amber-600 text-white hover:bg-amber-600 dark:hover:bg-amber-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          />
           <Button
             onClick={onSave}
             isLoading={isSaving}
