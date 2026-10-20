@@ -656,6 +656,7 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Terakhir diperbarui:',
+      updated_by: 'Diperbarui oleh:',
       title: 'Pengaturan',
       tab: {
         general: {
@@ -1403,6 +1404,7 @@ export const dictionary = {
     },
     setting: {
       last_updated: 'Last updated:',
+      updated_by: 'Updated by:',
       title: 'Setting',
       tab: {
         general: {

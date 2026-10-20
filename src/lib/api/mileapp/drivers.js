@@ -43,11 +43,13 @@ export async function getLocationHistories({ timeFrom, timeTo }) {
   );
 }
 
-export async function postDrivers(hubIds = []) {
+export async function postDrivers(hubIds = [], customUpdateBy) {
+  const { storedUser } = getLocalStorage();
+  const updateBy = customUpdateBy !== undefined ? customUpdateBy : storedUser?.name;
   return await apiFetch('/api/mileapp/drivers', 'Gagal sinkronisasi data drivers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hubIds }),
+    body: JSON.stringify({ hubIds, updateBy }),
   });
 }
 

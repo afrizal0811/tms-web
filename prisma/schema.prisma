@@ -19,6 +19,7 @@ model Hub {
   has_vms      Boolean @default(false)
   lat          Float?
   lng          Float?  
+  updateBy     String?
   updatedAt    DateTime @updatedAt
   drivers      Driver[] 
   is_active    Boolean @default(true)
@@ -48,6 +49,7 @@ model Driver {
   minVolume      Float?
   maxVolume      Float?
   storage        String?
+  updateBy       String?
   updatedAt      DateTime @updatedAt
 
   hubs           Hub[]    
@@ -59,6 +61,7 @@ model Role {
   id        String   @id
   name      String
   paths     String[] @default([])
+  updateBy  String?
   updatedAt DateTime @updatedAt
 }
 

@@ -14,6 +14,7 @@ export async function GET() {
       name: role.name,
       paths: role.paths || [],
       updatedAt: role.updatedAt,
+      updateBy: role.updateBy,
     }));
 
     return NextResponse.json(formattedRoles, { status: 200 });
@@ -28,7 +29,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const apiToken = process.env.API_TOKEN;
 
@@ -37,6 +38,9 @@ export async function POST() {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const updateBy = body?.updateBy || null;
+
     const externalResponse = await fetch(`${apiUrl}/roles`, {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -54,8 +58,8 @@ export async function POST() {
       const upsertPromises = rolesArray.map((role) => {
         return prisma.role.upsert({
           where: { id: String(role._id) },
-          update: { name: role.name },
-          create: { id: String(role._id), name: role.name },
+          update: { name: role.name, ...(updateBy ? { updateBy } : {}) },
+          create: { id: String(role._id), name: role.name, ...(updateBy ? { updateBy } : {}) },
         });
       });
       await prisma.$transaction(upsertPromises);

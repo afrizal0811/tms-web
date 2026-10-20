@@ -18,6 +18,7 @@ export default function SettingPage() {
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
   const [lastUpdated, setLastUpdated] = useState({ hubs: '-', roles: '-', drivers: '-' });
+  const [updatedBy, setUpdatedBy] = useState({ hubs: '-', roles: '-', drivers: '-' });
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
   const [reasons, setReasons] = useState([]);
@@ -44,8 +45,10 @@ export default function SettingPage() {
         getReasons(),
       ]);
       let maxDriverDate = null;
+      let driverUpdateBy = '-';
       if (dStatus && dStatus._max && dStatus._max.updatedAt) {
         maxDriverDate = new Date(dStatus._max.updatedAt);
+        driverUpdateBy = dStatus._max.updateBy || '-';
       }
 
       const latestDriverSync = maxDriverDate
@@ -66,6 +69,11 @@ export default function SettingPage() {
             ? formatDateUniversal(new Date(rolesDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
             : '-',
         drivers: latestDriverSync,
+      });
+      setUpdatedBy({
+        hubs: (hubsDb?.activeHub && hubsDb.activeHub.updateBy) || '-',
+        roles: (rolesDb?.length > 0 && rolesDb[0].updateBy) || '-',
+        drivers: driverUpdateBy,
       });
 
       setVehicleTypes(vTypes.allTypes);
@@ -139,6 +147,7 @@ export default function SettingPage() {
           <SyncDataTab
             hubs={hubs}
             lastUpdated={lastUpdated}
+            updatedBy={updatedBy}
             onRefresh={triggerRefresh}
             isReadOnly={isReadOnlySync}
             translate={t}

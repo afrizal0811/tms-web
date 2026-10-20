@@ -18,6 +18,7 @@ export async function GET(request) {
       lat: hub.lat,
       lng: hub.lng,
       updatedAt: hub.updatedAt,
+      updateBy: hub.updateBy,
       hasVms: hub.has_vms || false,
       isActive: hub.is_active || false,
     }));
@@ -41,7 +42,7 @@ export async function GET(request) {
   }
 }
 
-export async function POST() {
+export async function POST(request) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const apiToken = process.env.API_TOKEN;
 
@@ -50,6 +51,9 @@ export async function POST() {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const updateBy = body?.updateBy || null;
+
     const externalResponse = await fetch(`${apiUrl}/hubs`, {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -86,12 +90,14 @@ export async function POST() {
           name: hub.name,
           lat: parsedLat,
           lng: parsedLng,
+          ...(updateBy ? { updateBy } : {}),
         },
         create: {
           id: String(hub._id),
           name: hub.name,
           lat: parsedLat,
           lng: parsedLng,
+          ...(updateBy ? { updateBy } : {}),
         },
       });
     });

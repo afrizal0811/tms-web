@@ -104,6 +104,7 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
     let hubIds = body.hubIds || [];
+    const updateBy = body?.updateBy || null;
 
     if (hubIds.length === 0) {
       const hubs = await prisma.hub.findMany();
@@ -220,6 +221,7 @@ export async function POST(request) {
             maxVolume: vMax,
             storage: storage,
             vehicle_id: vehicle._id,
+            ...(updateBy ? { updateBy } : {}),
           };
 
           uniquePayloads.set(uniqueId, dataPayload);

@@ -12,7 +12,7 @@ export async function GET(request) {
         drivers: {
           orderBy: { updatedAt: 'desc' },
           take: 1,
-          select: { updatedAt: true },
+          select: { updatedAt: true, updateBy: true },
         },
       },
     });
@@ -22,11 +22,28 @@ export async function GET(request) {
         hubId: hub.id,
         _max: {
           updatedAt: hub.drivers.length > 0 ? hub.drivers[0].updatedAt : null,
+          updateBy: hub.drivers.length > 0 ? hub.drivers[0].updateBy : null,
         },
       };
     });
-    const selectedStatus = status.find((s) => s.hubId === hubId);
-    return NextResponse.json(selectedStatus, { status: 200 });
+    let selectedStatus = status.find((s) => s.hubId === hubId);
+    if (!selectedStatus || !selectedStatus._max?.updatedAt) {
+      const latestDriver = await prisma.driver.findFirst({
+        where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : undefined,
+        orderBy: { updatedAt: 'desc' },
+        select: { updatedAt: true, updateBy: true },
+      });
+      if (latestDriver) {
+        selectedStatus = {
+          hubId: hubId || 'all',
+          _max: {
+            updatedAt: latestDriver.updatedAt,
+            updateBy: latestDriver.updateBy,
+          },
+        };
+      }
+    }
+    return NextResponse.json(selectedStatus || null, { status: 200 });
   } catch (error) {
     console.error('Error Status Driver:', error);
     const errorMessage =

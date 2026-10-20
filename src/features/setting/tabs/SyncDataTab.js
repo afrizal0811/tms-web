@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Card from '../components/Card';
 import SyncModal from '../components/SyncModal';
 
-export default function SyncDataTab({ hubs, lastUpdated, onRefresh, isReadOnly, translate }) {
+export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefresh, isReadOnly, translate }) {
   const [syncLoading, setSyncLoading] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mismatchedData, setMismatchedData] = useState([]);
@@ -356,6 +356,13 @@ export default function SyncDataTab({ hubs, lastUpdated, onRefresh, isReadOnly, 
                 {lastUpdated[type]}
               </span>
             </div>
+
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {translate('setting.updated_by')} <br />
+              <span className="font-medium text-slate-600 dark:text-slate-500">
+                {updatedBy[type] || '-'}
+              </span>
+            </div>
           </div>
 
           {!isReadOnly && (
@@ -389,6 +396,12 @@ export default function SyncDataTab({ hubs, lastUpdated, onRefresh, isReadOnly, 
             {translate('setting.last_updated')} <br />
             <span className="font-medium text-slate-600 dark:text-slate-500">
               {lastUpdated[type]}
+            </span>
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+            {translate('setting.updated_by')} <br />
+            <span className="font-medium text-slate-600 dark:text-slate-500">
+              {updatedBy[type] || '-'}
             </span>
           </div>
         </div>
