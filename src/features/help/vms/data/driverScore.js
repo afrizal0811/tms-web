@@ -1,4 +1,4 @@
-import Button from '@/components/button/Button';
+import DriverScoreActionButtons from '../components/ScoreButton';
 export const driverScore = [
   {
     id: 'driver-score',
@@ -108,22 +108,7 @@ export const driverScore = [
           },
           {
             type: 'button',
-            component: (
-              <div className="flex gap-3 mt-3">
-                <Button
-                  text="Auto Calculate"
-                  onClick={() => {
-                    alert('Tombol Auto berhasil diklik!');
-                  }}
-                />
-                <Button
-                  text="Manual Calculate"
-                  onClick={() => {
-                    alert('Tombol Manual berhasil diklik!');
-                  }}
-                />
-              </div>
-            ),
+            component: <DriverScoreActionButtons />,
           },
         ],
       },
