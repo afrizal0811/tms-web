@@ -1,6 +1,15 @@
-import { routeTransactionTopic } from './data/routeTransaction';
-import { routingTopic } from './data/routing';
 import { startTopic } from './data/start';
-import { taskTopic } from './data/task';
+import { liveViewTopic } from './data/liveView';
+import { costManagementTopic } from './data/costManagement';
+import { serviceTopic } from './data/service';
+import { driverScore } from './data/driverScore';
+import { reportTopic } from './data/report';
 
-export const helpTopics = [...startTopic, ...taskTopic, ...routingTopic, ...routeTransactionTopic];
+export const helpTopics = [
+  ...startTopic,
+  ...liveViewTopic,
+  ...costManagementTopic,
+  ...serviceTopic,
+  ...driverScore,
+  ...reportTopic,
+];

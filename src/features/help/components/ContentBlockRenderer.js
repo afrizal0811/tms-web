@@ -1,6 +1,7 @@
 // File: src/components/ContentBlockRenderer.js
 'use client';
 
+import Button from '@/components/button/Button';
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
@@ -8,7 +9,7 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
   const textContentRef = useRef(null);
 
   useEffect(() => {
-    if (block.type === 'text' && textContentRef.current) {
+    if (block.type === 'text' && typeof block.content === 'string' && textContentRef.current) {
       const images = textContentRef.current.querySelectorAll('img');
 
       images.forEach((img) => {
@@ -51,8 +52,16 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
     );
   }
 
-  // 2. Handler untuk Teks HTML
+  // 2. Handler untuk Teks HTML / Komponen JSX
   if (block.type === 'text') {
+    if (typeof block.content !== 'string') {
+      return (
+        <div className="prose prose-slate max-w-none text-slate-600 dark:text-slate-200 leading-relaxed mb-4">
+          {typeof block.content === 'function' ? block.content() : block.content}
+        </div>
+      );
+    }
+
     return (
       <div
         ref={textContentRef}
@@ -84,6 +93,38 @@ export default function ContentBlockRenderer({ block, onImageClick }) {
         />
       </div>
     );
+  }
+
+  // 4. Handler untuk Button
+  if (block.type === 'button') {
+    if (block.component) {
+      return <div className="my-3">{block.component}</div>;
+    }
+
+    return (
+      <div className="my-3">
+        <Button
+          text={block.text || 'Button'}
+          onClick={block.onClick}
+          width={block.width || 'w-fit'}
+          size={block.size || 'md'}
+          icon={block.icon}
+          className={block.className}
+          disabled={block.disabled}
+          isLoading={block.isLoading}
+          type={block.buttonType || 'button'}
+          options={block.options}
+          {...block.props}
+        />
+      </div>
+    );
+  }
+
+  // 5. Handler untuk Komponen Kustom
+  if (block.type === 'component' || block.type === 'custom') {
+    const ComponentContent =
+      block.component || (typeof block.content === 'function' ? block.content() : block.content);
+    return <div className="my-3">{ComponentContent}</div>;
   }
 
   return null;

@@ -7,7 +7,7 @@ export const startTopic = [
     blocks: [
       {
         type: 'text',
-        content: `<p><em>Transportation Management System </em> (TMS) adalah solusi untuk memudahkan pengelolaan transportasi di perusahaan. Berikut ini adalah beberapa manfaat untuk <em>planner</em> saat menggunakan TMS:</p>
+        content: `<p><em>Transportation Management System </em> (TMS) adalah solusi untuk memudahkan pengelolaan pengiriman barang ke pelanggan. Berikut ini adalah beberapa manfaat untuk <em>planner</em> saat menggunakan TMS:</p>
         <ul <ul class="list-decimal pl-5 space-y-2 mt-2">
           <li>
               <p class="font-bold">Optimasi Rute & Penjadwalan</p>

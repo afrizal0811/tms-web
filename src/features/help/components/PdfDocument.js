@@ -420,6 +420,15 @@ const renderBlockNodes = (elements, isInsideList = false) => {
       );
     }
 
+    // --- BUTTONS (Direct BUTTON) ---
+    if (el.nodeName === 'BUTTON') {
+      return (
+        <View key={index} style={styles.videoBox} wrap={false}>
+          <Text style={styles.videoText}>Proses hanya bisa dilakukan di website</Text>
+        </View>
+      );
+    }
+
     // --- Fallback text ---
     if (el.nodeName === '#text' && el.textContent.trim()) {
       const blockStyle = isInsideList ? { ...styles.paragraph, marginBottom: 0 } : styles.paragraph;
@@ -438,6 +447,7 @@ const renderBlockNodes = (elements, isInsideList = false) => {
 // --- 3. HTML PARSER WRAPPER ---
 const HtmlToPdf = ({ htmlContent }) => {
   if (typeof window === 'undefined') return null;
+  if (typeof htmlContent !== 'string') return null;
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -470,6 +480,14 @@ const BlockRenderer = ({ block }) => {
     return (
       <View style={styles.videoBox} wrap={false}>
         <Text style={styles.videoText}>Video hanya bisa dilihat di website</Text>
+      </View>
+    );
+  }
+
+  if (block.type === 'button' || block.type === 'component' || block.type === 'custom') {
+    return (
+      <View style={styles.videoBox} wrap={false}>
+        <Text style={styles.videoText}>Proses hanya bisa dilakukan di website</Text>
       </View>
     );
   }
