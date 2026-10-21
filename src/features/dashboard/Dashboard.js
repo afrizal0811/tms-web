@@ -6,7 +6,7 @@ import VehicleTypeFilter from '@/components/dropdown/VehicleTypeFilter';
 import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
-import RoutingVsActualTab from '@/features/dashboard/tab/RoutingVsActualTab';
+import RoutingActualTab from '@/features/dashboard/tab/RoutingActualTab';
 import { getResults, getTasks } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
@@ -293,7 +293,7 @@ export default function Dashboard({ driverData }) {
         )}
 
         {activeTab === 'RoutingVsActual' && (
-          <RoutingVsActualTab
+          <RoutingActualTab
             loading={loading}
             tasks={filteredDailyTasks}
             results={rawData.results}

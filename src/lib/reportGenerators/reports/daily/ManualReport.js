@@ -15,7 +15,7 @@ import * as XLSX from 'xlsx-js-style';
 import { buildDriverMaps, FAILED_STATUSES, PENDING_SHEET_STATUSES_BASE } from './help';
 import {
   buildDistanceSummary,
-  buildPendingSOSheet,
+  buildPendingReasonSheet,
   buildRoutingDateSheet,
   buildTimeDriverSheet,
   buildTruckDetailSheet,
@@ -546,7 +546,7 @@ export async function generateManualReportWorkbook({
   routingActualSheet(wb, manualRoVsRealData, t);
   buildTruckUsageSheet(wb, truckUsageCount, vehicleTypes, t);
   buildDistanceSummary(wb, driverData, routingMap, timeData, t);
-  buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t);
+  buildPendingReasonSheet(wb, pendingSOData, hasPendingGR, t);
   buildUpdateLonglatSheet(wb, updateLonglatData, t);
   const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
   const excelFileName = `Manual ${t('report.daily_report')} - ${formattedDate} - ${hubLabel}.xlsx`;

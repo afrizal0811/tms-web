@@ -1,4 +1,4 @@
-// File: src/features/dashboard/tab/RoutingVsActualTab.js
+// File: src/features/dashboard/tab/RoutingActualTab.js
 'use client';
 
 import Button from '@/components/button/Button';
@@ -18,7 +18,7 @@ import { formatDateUniversal, isEmpty } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import RoutingMapModal from '../modals/RoutingMapModal';
 
-export default function RoutingVsActualTab({ loading, tasks, results, drivers, selectedDate }) {
+export default function RoutingActualTab({ loading, tasks, results, drivers, selectedDate }) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -164,7 +164,9 @@ export default function RoutingVsActualTab({ loading, tasks, results, drivers, s
                 : 'hover:bg-gray-50 dark:hover:bg-slate-700/10';
 
               const cellContent = columns.map((col, colIndex) => {
-                const baseColClass = col.getCellClassName ? col.getCellClassName(row) : (col.className || '');
+                const baseColClass = col.getCellClassName
+                  ? col.getCellClassName(row)
+                  : col.className || '';
                 const colClass = row.isManualAssign
                   ? baseColClass.replace(/\S*bg-\S+/g, '').trim()
                   : baseColClass;

@@ -2,7 +2,7 @@ import { getBasePlate } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import { STYLES } from './shared';
 
-export function buildPendingSOSheet(wb, pendingSOData, hasPendingGR, t) {
+export function buildPendingReasonSheet(wb, pendingSOData, hasPendingGR, t) {
   const headers = [
     t('common.flow'),
     t('common.invoice_number'),
