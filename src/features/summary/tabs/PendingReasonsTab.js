@@ -64,7 +64,7 @@ const ActionCell = ({ text, className, onClick, isAllEmpty = false }) => {
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
           {isAllEmpty && isHovered ? (
-            <span className="relative text-slate-600/30 dark:text-slate-400/30 text-lg font-bold">
+            <span className="relative text-slate-600/30 dark:text-slate-400/30 font-bold">
               +
             </span>
           ) : (
@@ -248,7 +248,7 @@ export default function PendingReasonsTab({
                   cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
                 },
                 { type: 'redEmpty', val: item.routePlannedOrder },
-                { type: 'text', val: item.realSequence },
+                { type: 'text', val: item.realSequence || '-' },
                 { type: 'text', val: item.temp },
               ];
 

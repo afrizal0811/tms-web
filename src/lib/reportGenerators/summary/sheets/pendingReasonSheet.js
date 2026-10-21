@@ -69,6 +69,11 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
         arrivalSource = task.klikJikaSudahSampai || task.klikJikaAndaSudahSampai;
         departureSource = task.page3DoneTime;
       }
+      const depDate = departureSource ? new Date(departureSource) : null;
+      const actualDepTimestamp = depDate && !isNaN(depDate.getTime()) ? depDate.getTime() : null;
+      const arrDate = arrivalSource ? new Date(arrivalSource) : null;
+      const actualArrTimestamp = arrDate && !isNaN(arrDate.getTime()) ? arrDate.getTime() : null;
+
       const dateObj = parseApiDateString(task.startTime || task.doneTime);
       let actualVisitMins = 0;
       if (arrivalSource && departureSource) {
@@ -101,7 +106,10 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
         flow: flow,
         content: task.content,
         sortDateNum: sortDateNum,
-        sortDoneTimestamp: dateObj ? dateObj.getTime() : 9999999999999,
+        actualDepTimestamp: actualDepTimestamp,
+        actualArrTimestamp: actualArrTimestamp,
+        sortDoneTimestamp:
+          actualDepTimestamp || actualArrTimestamp || (dateObj ? dateObj.getTime() : 9999999999999),
         dateStr: formatDateUniversal(dateObj, 'DD-MM-YYYY'),
         openStr: formatDateUniversal(`${startDateStr} ${task.openTime}`, 'HH:mm'),
         closeStr: formatDateUniversal(`${startDateStr} ${task.closeTime}`, 'HH:mm'),
@@ -120,9 +128,18 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
     groupedByDriverDate[key].push(item);
   });
   Object.values(groupedByDriverDate).forEach((group) => {
-    group.sort((a, b) => a.sortDoneTimestamp - b.sortDoneTimestamp);
-    group.forEach((item, index) => {
-      item.realSequence = index + 1;
+    group.sort((a, b) => {
+      const depA = a.actualDepTimestamp || a.actualArrTimestamp || Infinity;
+      const depB = b.actualDepTimestamp || b.actualArrTimestamp || Infinity;
+      return depA - depB;
+    });
+    let rank = 1;
+    group.forEach((item) => {
+      const hasActualTime = item.actualDepTimestamp || item.actualArrTimestamp;
+      const fallbackRank = hasActualTime ? rank++ : null;
+      const hasDoneOrder = item.doneOrder && Number(item.doneOrder) > 0;
+      item.realSequence = hasDoneOrder ? Number(item.doneOrder) : fallbackRank;
+
       const norm = normalizeDeliveryStatus(item.status);
       if (
         TARGET_STATUSES.includes(item.status) ||
@@ -214,7 +231,8 @@ export function generatePendingReasonSheet(
     const isWrongGR = !shouldShowPendingGR && normalizeDeliveryStatus(item.status) === 'PENDING_GR';
     if (isWrongGR) errorRows.add(idx + 1);
 
-    const { name: customerName } = parseCustomerString(item.customerName);
+    const { name: customerName } = parseCustomerString(item.customerName || item.customerOrder);
+    const { invoiceNumber } = parseCustomerString(item.customerOrder || item.customerName);
     const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
 
     const formattedStatus =
@@ -226,7 +244,7 @@ export function generatePendingReasonSheet(
       item.licensePlate,
       item.driverName,
       customerName || '-',
-      item.customerOrder || item.content || '-',
+      invoiceNumber || item.content || '-',
       formattedStatus,
       item.alasan || '-',
     ];
@@ -235,9 +253,9 @@ export function generatePendingReasonSheet(
       row.push('');
     } else {
       row.push(
-        pd.internalExternal || '-',
-        pd.detailReason || '-',
         pd.groupReason || '-',
+        pd.detailReason || '-',
+        pd.internalExternal || '-',
         pd.pic || '-'
       );
     }
