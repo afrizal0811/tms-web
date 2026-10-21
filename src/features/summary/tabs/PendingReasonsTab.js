@@ -127,6 +127,7 @@ export default function PendingReasonsTab({
     translate('common.license_number'),
     translate('common.driver'),
     translate('common.customer_name'),
+    translate('common.invoice_number'),
     translate('common.status.delivery_status'),
     translate('summary.tabs.pending_reasons.reason'),
     translate('summary.tabs.pending_reasons.group_reason'),
@@ -141,7 +142,6 @@ export default function PendingReasonsTab({
     translate('common.actual_departure'),
     translate('common.plan_visit'),
     translate('common.actual_visit'),
-    translate('common.customer_id'),
     translate('common.plan_seq'),
     translate('common.actual_seq'),
     translate('common.storage_type'),
@@ -179,8 +179,9 @@ export default function PendingReasonsTab({
             {data.map((item, idx) => {
               const {
                 name: customerName,
-                id: customerId,
                 invoiceNumber,
+                truncateInvoice,
+                isTruncated,
               } = parseCustomerString(item.customerOrder || item.customerName);
               const isLastInDate = data[idx + 1]?.dateStr !== item.dateStr;
               const borderBottomClass = isLastInDate
@@ -212,11 +213,17 @@ export default function PendingReasonsTab({
                 { type: 'text', val: getBasePlate(item.licensePlate) },
                 { type: 'text', val: item.driverName, cls: 'text-left' },
                 {
-                  type: 'so',
+                  type: 'detail',
                   val: customerName || '-',
-                  content: invoiceNumber,
                   id: item._id,
                   cls: 'text-left',
+                },
+                {
+                  type: 'text',
+                  val: truncateInvoice || '-',
+                  content: invoiceNumber,
+                  isTruncated: isTruncated,
+                  cls: `text-left ${isTruncated && 'cursor-help'}`,
                 },
                 {
                   type: 'text',
@@ -240,7 +247,6 @@ export default function PendingReasonsTab({
                   val: item.actualVisitMins,
                   cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
                 },
-                { type: 'text', val: customerId },
                 { type: 'redEmpty', val: item.routePlannedOrder },
                 { type: 'text', val: item.realSequence },
                 { type: 'text', val: item.temp },
@@ -254,7 +260,7 @@ export default function PendingReasonsTab({
                   {rowCells.map((cell, cIdx) => {
                     const cellClass = `${tdClass} ${cell.cls || ''}`;
 
-                    if (cell.type === 'so') {
+                    if (cell.type === 'detail') {
                       return (
                         <SOCell
                           key={cIdx}
@@ -290,9 +296,9 @@ export default function PendingReasonsTab({
                       );
                     }
                     return (
-                      <td key={cIdx} className={cellClass}>
-                        {cell.val}
-                      </td>
+                      <Tooltip key={cIdx} tooltipContent={cell.isTruncated ? cell.content : ''}>
+                        <td className={cellClass}>{cell.val}</td>
+                      </Tooltip>
                     );
                   })}
                 </tr>

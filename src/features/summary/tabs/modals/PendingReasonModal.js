@@ -127,6 +127,7 @@ export default function PendingReasonModal({
   };
 
   const handleSave = async () => {
+    if (isEmptyData) return;
     setIsLoading((prev) => ({ ...prev, save: true }));
     try {
       const dateParts = data.dateStr.split('-');
@@ -138,7 +139,7 @@ export default function PendingReasonModal({
         taskId: data._id,
         date: dbDate,
         internalExternal: intExt,
-        detailReason: detail,
+        detailReason: detail.trim(),
         groupReason: groupReason,
         pic: pic,
         userName,
@@ -184,14 +185,15 @@ export default function PendingReasonModal({
     groupReason !== initialGroupReason ||
     pic !== initialPic;
 
-  const isEmptyData = !groupReason || !pic;
+  const isEmptyData = !groupReason || !pic || !detail?.trim();
   const isSaveDisabled = isLoading.save || isEmptyData || !isChanged;
 
   const hasExistingData =
     data?.pendingDetail &&
     (data.pendingDetail.internalExternal ||
       data.pendingDetail.groupReason ||
-      data.pendingDetail.pic);
+      data.pendingDetail.pic ||
+      data.pendingDetail.detailReason);
 
   const statusText = data.statusDelivery ? data.statusDelivery : data.status;
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
@@ -346,6 +348,7 @@ export default function PendingReasonModal({
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               {translate('summary.tabs.pending_reasons.detail')}
+              <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <textarea
               rows="3"
@@ -354,10 +357,6 @@ export default function PendingReasonModal({
               placeholder={translate('summary.tabs.pending_reasons.detail_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 italic">
-              {translate('summary.tabs.pending_reasons.detail_optional_hint') ||
-                '*Diisi jika diperlukan (opsional)'}
-            </p>
           </div>
         </div>
       </Modal>

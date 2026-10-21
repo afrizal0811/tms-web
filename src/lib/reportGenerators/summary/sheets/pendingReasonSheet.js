@@ -165,6 +165,7 @@ export function generatePendingReasonSheet(
     translate('common.license_number'),
     translate('common.driver'),
     translate('common.customer_name'),
+    translate('common.invoice_number'),
     translate('common.status.delivery_status'),
     translate('summary.tabs.pending_reasons.reason'),
   ];
@@ -201,7 +202,6 @@ export function generatePendingReasonSheet(
     translate('common.actual_departure'),
     translate('common.plan_visit'),
     translate('common.actual_visit'),
-    translate('common.customer_id'),
     translate('common.plan_seq'),
     translate('common.actual_seq'),
     translate('common.storage_type')
@@ -214,7 +214,7 @@ export function generatePendingReasonSheet(
     const isWrongGR = !shouldShowPendingGR && normalizeDeliveryStatus(item.status) === 'PENDING_GR';
     if (isWrongGR) errorRows.add(idx + 1);
 
-    const { id, name: customerName } = parseCustomerString(item.customerName);
+    const { name: customerName } = parseCustomerString(item.customerName);
     const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
 
     const formattedStatus =
@@ -226,6 +226,7 @@ export function generatePendingReasonSheet(
       item.licensePlate,
       item.driverName,
       customerName || '-',
+      item.customerOrder || item.content || '-',
       formattedStatus,
       item.alasan || '-',
     ];
@@ -250,7 +251,6 @@ export function generatePendingReasonSheet(
       item.depStr || '-',
       item.visitTime || '-',
       item.actualVisitMins,
-      id || '-',
       item.routePlannedOrder || '-',
       item.realSequence || '-',
       item.temp
@@ -302,7 +302,7 @@ export function generatePendingReasonSheet(
           },
         };
 
-        if (C === 3 || C === 4 || C === 5 || C === 6) {
+        if (C === 3 || C === 4 || C === 5 || C === 7) {
           currentStyle.alignment = { ...currentStyle.alignment, horizontal: 'left' };
         }
 
@@ -332,13 +332,14 @@ export function generatePendingReasonSheet(
     { wch: 12 },
     { wch: 12 },
     { wch: 25 },
-    { wch: 25 },
+    { wch: 30 },
     { wch: 15 },
-    { wch: 25 },
+    { wch: 15 },
+    { wch: 45 },
   ];
 
   if (isDailyReport) {
-    widths.push({ wch: 4 });
+    widths.push({ wch: 2 });
   } else {
     widths.push({ wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 20 });
   }
