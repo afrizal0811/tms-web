@@ -5,6 +5,7 @@ import Spinner from '@/components/Spinner';
 import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
 import { getResult, getTask } from '@/lib/api/mileapp';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
 import {
@@ -34,11 +35,16 @@ const renderCoordinate = (val) => {
   return `${lat}, ${lng}`;
 };
 
-const getSubtitle = (taskData) => {
+const getSubtitle = (taskData, formatStatus) => {
   if (!taskData) return '';
   const status = taskData.status || '-';
   const statusDelivery = taskData.statusDelivery;
-  const subtitleText = statusDelivery ? `${status} | ${statusDelivery}` : status;
+  const formattedDelivery = statusDelivery
+    ? formatStatus
+      ? formatStatus(statusDelivery)
+      : statusDelivery
+    : null;
+  const subtitleText = formattedDelivery ? `${status} | ${formattedDelivery}` : status;
   return subtitleText.toUpperCase();
 };
 
@@ -661,6 +667,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
 
   const { t: translate, isIndonesian } = useLanguage();
   const { isSuperadmin } = useSuperadmin();
+  const { formatStatus } = useDeliveryStatus();
 
   useEffect(() => {
     if (!isOpen || !taskId || taskId === '-') {
@@ -750,7 +757,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
       isOpen={isOpen}
       onClose={onClose}
       title={translate('task_detail.modal.title')}
-      subtitle={getSubtitle(taskData)}
+      subtitle={getSubtitle(taskData, formatStatus)}
       maxWidth="max-w-5xl lg:max-w-6xl"
       bodyClassName="p-6 overflow-y-auto"
     >
