@@ -2,18 +2,89 @@
 
 import Button from '@/components/button/Button';
 import Modal from '@/components/modal/Modal';
+import { useLanguage } from '@/context/LanguageContext';
 import { getVehicleTypes, postVehicleMappings } from '@/lib/api/mileapp';
+import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
-import { useEffect, useState } from 'react';
+import { getBasePlate } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export default function VehicleTagMappingModal({ unmappedData, onCompleted, t }) {
+export default function VehicleTagMappingModal({
+  unmappedData: propUnmappedData,
+  onCompleted: propOnCompleted,
+  t: propT,
+}) {
+  const { t: contextT } = useLanguage();
+  const t = propT || contextT;
+
+  const {
+    showModal: internalShowModal,
+    unmappedData: internalUnmappedData,
+    triggerCheck,
+    handleMappingCompleted: internalOnCompleted,
+  } = useVehicleTagCheck();
+
+  const isControlled = propUnmappedData !== undefined;
+  const showModal = isControlled ? true : internalShowModal;
+  const unmappedData = isControlled ? propUnmappedData : internalUnmappedData;
+  const onCompleted = isControlled ? propOnCompleted : internalOnCompleted;
+
+  const pathname = usePathname();
+  const isCheckingRef = useRef(false);
+  const lastCheckTimeRef = useRef(0);
+
+  const performCheck = useCallback(
+    async (force = false) => {
+      if (typeof window === 'undefined' || isControlled) return;
+      if (isCheckingRef.current || internalShowModal) return;
+
+      const now = Date.now();
+      if (!force && now - lastCheckTimeRef.current < 3000) return;
+
+      const { storedUser, storedLocation } = getLocalStorage();
+      if (!storedUser || !storedLocation) return;
+
+      isCheckingRef.current = true;
+      lastCheckTimeRef.current = now;
+
+      try {
+        await triggerCheck(() => {});
+      } finally {
+        isCheckingRef.current = false;
+      }
+    },
+    [internalShowModal, isControlled, triggerCheck]
+  );
+
+  useEffect(() => {
+    if (!isControlled) performCheck();
+  }, [pathname, isControlled, performCheck]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    const handleTrigger = () => performCheck(true);
+
+    window.addEventListener('session_update', handleTrigger);
+    window.addEventListener('tms-check-vehicle-tags', handleTrigger);
+
+    return () => {
+      window.removeEventListener('session_update', handleTrigger);
+      window.removeEventListener('tms-check-vehicle-tags', handleTrigger);
+    };
+  }, [isControlled, performCheck]);
+
   const [mappings, setMappings] = useState({});
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (!showModal || !unmappedData || unmappedData.length === 0) return;
+
     async function fetchVehicleTypes() {
+      setIsLoading(true);
       try {
         const types = await getVehicleTypes();
         setVehicleTypes(types.allTypes.map((type) => type.name));
@@ -24,15 +95,20 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       }
     }
     fetchVehicleTypes();
-  }, [t]);
+  }, [showModal, unmappedData, t]);
+
+  if (!showModal || !unmappedData || unmappedData.length === 0) {
+    return null;
+  }
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const payload = unmappedData.reduce((acc, item) => {
-        const selectedType = mappings[item.plat];
-        if (selectedType) {
-          acc.push({ plat: item.plat, mappedType: selectedType });
+        const basePlat = getBasePlate(item.plat);
+        const selectedType = mappings[item.plat] || mappings[basePlat];
+        if (selectedType && !acc.some((x) => x.plat === basePlat)) {
+          acc.push({ plat: basePlat, mappedType: selectedType });
         }
         return acc;
       }, []);
@@ -40,7 +116,9 @@ export default function VehicleTagMappingModal({ unmappedData, onCompleted, t })
       if (payload.length > 0) {
         await postVehicleMappings(payload);
       }
-      onCompleted();
+      if (typeof onCompleted === 'function') {
+        onCompleted();
+      }
     } catch (error) {
       toastError(t('common.toast.error', { err: error.message }), error);
     } finally {

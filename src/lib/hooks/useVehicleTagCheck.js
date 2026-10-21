@@ -3,14 +3,17 @@
 import { useLanguage } from '@/context/LanguageContext';
 import { useCallback, useState } from 'react';
 import { getDrivers, getVehicleTypes } from '../api/mileapp';
+import { getLocalStorage } from '../localStorageHandler';
 import { toastError } from '../toast';
-import { isEmpty } from '../utils';
+import { getBasePlate, isEmpty } from '../utils';
 
 async function checkUnmappedVehicles() {
-  let vehicleTypesPromise = null;
   try {
-    if (!vehicleTypesPromise) vehicleTypesPromise = getVehicleTypes();
-    const [vehicleTypesObj, drivers] = await Promise.all([vehicleTypesPromise, getDrivers()]);
+    const { storedLocation, storedUser } = getLocalStorage();
+    if (!storedLocation || !storedUser) return [];
+
+    const [vehicleTypesObj, drivers] = await Promise.all([getVehicleTypes(), getDrivers()]);
+    if (!vehicleTypesObj?.allTypes || !Array.isArray(drivers)) return [];
     const VEHICLE_TYPES = vehicleTypesObj.allTypes.map((v) => v.name);
     const unmappedList = [];
     const processedPlates = new Set();
@@ -19,8 +22,11 @@ async function checkUnmappedVehicles() {
       const rawTag = v._rawType ? String(v._rawType).toUpperCase() : null;
       if (isEmpty(rawTag)) return;
 
-      const plat = v.plat || '';
-      if (isEmpty(plat) || processedPlates.has(plat)) return;
+      const rawPlat = v.plat || '';
+      if (isEmpty(rawPlat)) return;
+
+      const basePlat = getBasePlate(rawPlat);
+      if (isEmpty(basePlat) || processedPlates.has(basePlat)) return;
 
       const parseType = (tag) => {
         if (!tag) return '';
@@ -43,12 +49,12 @@ async function checkUnmappedVehicles() {
       const isMappedInDB = VEHICLE_TYPES.includes(mappedType);
 
       if (isStandard || isMappedInDB) {
-        processedPlates.add(plat);
+        processedPlates.add(basePlat);
         return;
       }
 
-      unmappedList.push({ plat, fullTag: rawTag, tag: specificType });
-      processedPlates.add(plat);
+      unmappedList.push({ plat: basePlat, fullTag: rawTag, tag: specificType });
+      processedPlates.add(basePlat);
     });
 
     return unmappedList;
@@ -73,11 +79,11 @@ export function useVehicleTagCheck() {
           setOnSuccessCallback(() => onSuccess);
           setShowModal(true);
         } else {
-          onSuccess();
+          if (typeof onSuccess === 'function') onSuccess();
         }
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);
-        onSuccess();
+        if (typeof onSuccess === 'function') onSuccess();
       }
     },
     [t]
@@ -86,7 +92,10 @@ export function useVehicleTagCheck() {
   const handleMappingCompleted = useCallback(() => {
     setShowModal(false);
     setUnmappedData([]);
-    if (onSuccessCallback) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('tms-vehicle-mapping-completed'));
+    }
+    if (typeof onSuccessCallback === 'function') {
       onSuccessCallback();
       setOnSuccessCallback(null);
     }

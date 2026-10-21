@@ -1,6 +1,7 @@
 import PendingReasonNotifier from '@/components/PendingReasonNotifier';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
+import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import SessionGuard from '@/components/page/SessionGuard';
 import { LanguageProvider } from '@/context/LanguageContext';
 import ThemeProvider from '@/context/ThemeProvider';
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
           <LanguageProvider>
             <SystemUpdateModal />
             <PendingReasonNotifier />
+            <VehicleTagMappingModal />
             <Toaster
               position="top-right"
               containerStyle={{

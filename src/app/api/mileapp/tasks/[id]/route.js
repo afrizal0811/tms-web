@@ -80,14 +80,17 @@ export async function GET(request, { params }) {
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
       acc[curr.plat] = curr.mappedType;
+      acc[getBasePlate(curr.plat)] = curr.mappedType;
       return acc;
     }, {});
 
     const driversByEmail = {};
     rawDrivers.forEach((d) => {
+      const basePlat = getBasePlate(d.plat);
+      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
       let mappedTypeStr = d.type;
-      if (d.plat && mappingsObj[d.plat]) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
+      if (mappedType) {
+        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
       }
 
       const email = (d.email || '').toLowerCase().trim();
@@ -95,7 +98,7 @@ export async function GET(request, { params }) {
         driversByEmail[email] = {
           ...d,
           type: mappedTypeStr,
-          basePlat: getBasePlate(d.plat),
+          basePlat,
         };
       }
     });

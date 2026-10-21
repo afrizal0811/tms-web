@@ -1,6 +1,5 @@
 'use client';
 
-import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
 import ErrorPage from '@/components/page/ErrorPage';
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
@@ -8,7 +7,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
 import { getDrivers } from '@/lib/api/mileapp';
-import { useVehicleTagCheck } from '@/lib/hooks/useVehicleTagCheck';
 import { getLocalStorage, getSyncHubs, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -23,7 +21,6 @@ export default function Home() {
   const [allHubsList, setAllHubsList] = useState(null);
   const [currentHubListView, setCurrentHubListView] = useState(null);
 
-  const { showModal, unmappedData, triggerCheck, handleMappingCompleted } = useVehicleTagCheck();
   const { t } = useLanguage();
   const toastShownRef = useRef(false);
 
@@ -97,9 +94,17 @@ export default function Home() {
     }
     if (selectedLocation) {
       fetchDriverData();
-      triggerCheck(() => {});
+      window.dispatchEvent(new CustomEvent('tms-check-vehicle-tags'));
     }
-  }, [selectedLocation, t, triggerCheck]);
+
+    const handleMappingCompleted = () => {
+      fetchDriverData();
+    };
+    window.addEventListener('tms-vehicle-mapping-completed', handleMappingCompleted);
+    return () => {
+      window.removeEventListener('tms-vehicle-mapping-completed', handleMappingCompleted);
+    };
+  }, [selectedLocation, t]);
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
@@ -130,13 +135,6 @@ export default function Home() {
   return (
     <SelectionLayout>
       <Dashboard driverData={driverData.data} />
-      {showModal && (
-        <VehicleTagMappingModal
-          onCompleted={handleMappingCompleted}
-          t={t}
-          unmappedData={unmappedData}
-        />
-      )}
     </SelectionLayout>
   );
 }

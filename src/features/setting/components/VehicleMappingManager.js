@@ -7,6 +7,7 @@ import SearchBar from '@/components/SearchBar';
 import { deleteVehicleMapping, getVehicleMappings, updateVehicleMapping } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
+import { getBasePlate } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from './Card';
 import CustomTable from './CustomTable';
@@ -51,9 +52,20 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   const filteredMappings = useMemo(() => {
     const list = mappings || [];
     const q = searchQuery.toLowerCase().trim();
+
+    const seen = new Set();
+    const uniqueList = [];
+    for (const m of list) {
+      const base = getBasePlate(m.plat);
+      if (!seen.has(base)) {
+        seen.add(base);
+        uniqueList.push({ ...m, plat: base });
+      }
+    }
+
     const filtered = !q
-      ? list
-      : list.filter((m) => {
+      ? uniqueList
+      : uniqueList.filter((m) => {
           const plat = (m.plat || '').toLowerCase();
           const mappedType = (m.mappedType || '').toLowerCase();
           return plat.includes(q) || mappedType.includes(q);
@@ -68,7 +80,8 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
   const handleUpdateMapping = async (id, editValues, item) => {
     if (!editValues.mappedType || isReadOnly) return;
     try {
-      await updateVehicleMapping(id, item.plat, editValues.mappedType);
+      const basePlat = getBasePlate(item.plat);
+      await updateVehicleMapping(id, basePlat, editValues.mappedType);
       toastSuccess(translate('common.toast.success'));
       await loadMappings();
     } catch (e) {
@@ -191,7 +204,7 @@ export default function VehicleMappingManager({ vehicleTypes, isReadOnly, transl
         emptyMessage={translate('common.no_data')}
         translate={translate}
         onSave={handleUpdateMapping}
-        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, plat: item.plat })}
+        onDelete={(item) => setDeleteConfig({ isOpen: true, id: item.id, plat: getBasePlate(item.plat) })}
       />
     </Card>
   );

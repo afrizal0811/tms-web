@@ -17,13 +17,16 @@ export async function GET(request) {
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
       acc[curr.plat] = curr.mappedType;
+      acc[getBasePlate(curr.plat)] = curr.mappedType;
       return acc;
     }, {});
 
     const parsed = rawDrivers.map((d) => {
+      const basePlat = getBasePlate(d.plat);
+      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
       let mappedTypeStr = d.type;
-      if (d.plat && mappingsObj[d.plat]) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappingsObj[d.plat]}` : mappingsObj[d.plat];
+      if (mappedType) {
+        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
       }
 
       return {

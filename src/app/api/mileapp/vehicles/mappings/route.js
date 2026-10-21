@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { getBasePlate } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +16,9 @@ export async function GET(request) {
         select: { plat: true },
       });
       
-      const platsInHub = [...new Set(driversInHub.map((d) => d.plat).filter(Boolean))];
+      const basePlatsInHub = [...new Set(driversInHub.map((d) => getBasePlate(d.plat)).filter(Boolean))];
       mappings = await prisma.vehicleMapping.findMany({
-        where: { plat: { in: platsInHub } },
+        where: { plat: { in: basePlatsInHub } },
         orderBy: [{ plat: 'asc' }, { mappedType: 'asc' }],
       });
     } else {
@@ -26,7 +27,18 @@ export async function GET(request) {
       });
     }
 
-    return NextResponse.json(mappings, { status: 200 });
+    // Deduplicate / normalize mappings ke base plate saja
+    const seen = new Set();
+    const dedupedMappings = [];
+    for (const m of mappings) {
+      const base = getBasePlate(m.plat);
+      if (!seen.has(base)) {
+        seen.add(base);
+        dedupedMappings.push({ ...m, plat: base });
+      }
+    }
+
+    return NextResponse.json(dedupedMappings, { status: 200 });
   } catch (error) {
     console.error('Error Get Vehicle Mapping:', error);
     const errorMessage =
@@ -47,15 +59,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Format data tidak valid' }, { status: 400 });
     }
 
-    const transactions = body.map((item) =>
+    const baseMap = new Map();
+    body.forEach((item) => {
+      const basePlat = getBasePlate(item.plat);
+      if (basePlat && item.mappedType) {
+        baseMap.set(basePlat, item.mappedType);
+      }
+    });
+
+    const transactions = Array.from(baseMap.entries()).map(([plat, mappedType]) =>
       prisma.vehicleMapping.upsert({
-        where: { plat: item.plat },
-        update: { mappedType: item.mappedType },
-        create: { plat: item.plat, mappedType: item.mappedType },
+        where: { plat },
+        update: { mappedType },
+        create: { plat, mappedType },
       })
     );
 
-    await prisma.$transaction(transactions);
+    if (transactions.length > 0) {
+      await prisma.$transaction(transactions);
+    }
     return NextResponse.json({ message: 'Mapping berhasil disimpan' }, { status: 200 });
   } catch (error) {
     console.error('Error Upsert Vehicle Mapping:', error);
@@ -76,9 +98,11 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Plat dan Tipe dibutuhkan' }, { status: 400 });
     }
 
-    const updated = await prisma.vehicleMapping.update({
-      where: { plat: body.plat },
-      data: { mappedType: body.mappedType },
+    const basePlat = getBasePlate(body.plat);
+    const updated = await prisma.vehicleMapping.upsert({
+      where: { plat: basePlat },
+      update: { mappedType: body.mappedType },
+      create: { plat: basePlat, mappedType: body.mappedType },
     });
 
     return NextResponse.json(updated, { status: 200 });
