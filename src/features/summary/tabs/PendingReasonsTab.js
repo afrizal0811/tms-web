@@ -1,3 +1,4 @@
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import TaskModal from '@/components/modal/TaskModal';
 import Tooltip from '@/components/Tooltip';
 import { deletePendingDetail, postPendingDetail } from '@/lib/api/mileapp';
@@ -100,6 +101,8 @@ const StatusCell = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingTargetKey, setPendingTargetKey] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, placeTop: false });
   const cellRef = useRef(null);
   const menuRef = useRef(null);
@@ -176,12 +179,7 @@ const StatusCell = ({
     });
   }
 
-  const handleSelectStatus = async (targetKey) => {
-    if (normalizeStatus(currentStatus) === normalizeStatus(targetKey)) {
-      setIsOpen(false);
-      return;
-    }
-
+  const executeStatusChange = async (targetKey) => {
     setIsUpdating(true);
     try {
       const isOriginal = normalizeStatus(targetKey) === normalizeStatus(originalStatus);
@@ -235,11 +233,43 @@ const StatusCell = ({
       }
       toastSuccess(translate('common.toast.success'));
       setIsOpen(false);
+      setIsConfirmOpen(false);
+      setPendingTargetKey(null);
     } catch (err) {
       toastError(translate('common.toast.error', { err: err.message }), err);
+      setIsConfirmOpen(false);
+      setPendingTargetKey(null);
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleSelectStatus = (targetKey) => {
+    if (normalizeStatus(currentStatus) === normalizeStatus(targetKey)) {
+      setIsOpen(false);
+      return;
+    }
+
+    const isOriginal = normalizeStatus(targetKey) === normalizeStatus(originalStatus);
+    if (isOriginal && isModified) {
+      setPendingTargetKey(targetKey);
+      setIsOpen(false);
+      setIsConfirmOpen(true);
+      return;
+    }
+
+    executeStatusChange(targetKey);
+  };
+
+  const handleCancelConfirm = () => {
+    if (isUpdating) return;
+    setIsConfirmOpen(false);
+    setPendingTargetKey(null);
+  };
+
+  const handleConfirmRevert = () => {
+    if (isUpdating) return;
+    executeStatusChange(pendingTargetKey || originalStatus);
   };
 
   const textStyle = isModified
@@ -317,6 +347,30 @@ const StatusCell = ({
                 </button>
               );
             })}
+          </div>,
+          document.body
+        )}
+
+      {isConfirmOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div onClick={(e) => e.stopPropagation()}>
+            <ConfirmModal
+              isOpen={isConfirmOpen}
+              onCancel={handleCancelConfirm}
+              onConfirm={handleConfirmRevert}
+              loading={isUpdating}
+              title={
+                translate('summary.tabs.pending_reasons.confirm_revert_title') ||
+                'Konfirmasi Pengembalian Status'
+              }
+              message={
+                translate('summary.tabs.pending_reasons.confirm_revert_message', {
+                  status: formatStatus(originalStatus),
+                }) ||
+                `Apakah Anda yakin ingin mengembalikan status pengiriman ke status awal (${formatStatus(originalStatus)})? Data penyesuaian akan dihapus dari database.`
+              }
+            />
           </div>,
           document.body
         )}

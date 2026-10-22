@@ -538,6 +538,9 @@ export const dictionary = {
           toast_uncompleted: 'Terdapat {count} data pending yang perlu dilengkapi!',
           status_modified: 'Status diubah dari {from}',
           show_success: 'Tampilkan Sukses',
+          confirm_revert_title: 'Konfirmasi Pengembalian Status',
+          confirm_revert_message:
+            'Apakah Anda yakin ingin mengembalikan status pengiriman ke status awal ({status})?',
           warning:
             'Driver memilih status yang salah. Seharusnya memilih Pending, bukan Pending GR!',
         },
@@ -1289,6 +1292,9 @@ export const dictionary = {
           toast_uncompleted: 'There are {count} pending data that need to be completed!',
           status_modified: 'Status changed from {from}',
           show_success: 'Show Success',
+          confirm_revert_title: 'Confirm Status Reversion',
+          confirm_revert_message:
+            'Are you sure you want to revert the delivery status to the original status ({status})?',
           warning:
             'The driver selected the wrong status. They should have selected Pending, not Pending GR!',
         },
