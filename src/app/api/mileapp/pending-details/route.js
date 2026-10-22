@@ -1,15 +1,24 @@
 // File: app/api/pending-details/route.js
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { clearPendingCheckCache } from './check/route';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+  const taskId = searchParams.get('taskId');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
 
   try {
+    if (taskId) {
+      const item = await prisma.pendingDetail.findUnique({
+        where: { taskId },
+      });
+      return NextResponse.json(item || {}, { status: 200 });
+    }
+
     const data = await prisma.pendingDetail.findMany({
       where: {
         date: { gte: startDate, lte: endDate },
@@ -31,6 +40,7 @@ export async function POST(request) {
     const {
       taskId,
       date,
+      new_status,
       internalExternal,
       detailReason,
       groupReason,
@@ -47,12 +57,16 @@ export async function POST(request) {
     });
 
     const updateData = {
-      internalExternal,
-      detailReason,
-      groupReason,
-      pic,
+      internalExternal: internalExternal ?? null,
+      detailReason: detailReason ?? null,
+      groupReason: groupReason ?? null,
+      pic: pic ?? null,
       updated_by: currentUser,
     };
+
+    if (new_status !== undefined) {
+      updateData.new_status = new_status;
+    }
 
     if (existing && !existing.created_by && currentUser) {
       updateData.created_by = currentUser;
@@ -64,14 +78,16 @@ export async function POST(request) {
       create: {
         taskId,
         date,
-        internalExternal,
-        detailReason,
-        groupReason,
-        pic,
+        new_status: new_status || null,
+        internalExternal: internalExternal || null,
+        detailReason: detailReason || null,
+        groupReason: groupReason || null,
+        pic: pic || null,
         created_by: currentUser,
         updated_by: currentUser,
       },
     });
+    clearPendingCheckCache();
     return NextResponse.json({ message: 'Success', data: upserted }, { status: 200 });
   } catch (error) {
     console.error('Error Upsert Pending Details:', error);
@@ -93,6 +109,7 @@ export async function DELETE(request) {
     await prisma.pendingDetail.delete({
       where: { taskId: taskId },
     });
+    clearPendingCheckCache();
 
     return NextResponse.json({ message: 'Detail pending berhasil dihapus' }, { status: 200 });
   } catch (error) {

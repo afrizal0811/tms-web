@@ -179,11 +179,28 @@ export default function RoutingActualTab({ loading, tasks, results, drivers, sel
                   finalUI = <HighlightText text={String(rawVal)} highlight={searchQuery} />;
                 }
 
+                const isStatusCell = col.id === 'statusLabel';
+                const isModifiedStatus =
+                  isStatusCell &&
+                  Boolean(
+                    row.isModified ||
+                      (row.pendingDetail?.new_status &&
+                        row.originalStatus &&
+                        row.pendingDetail.new_status !== row.originalStatus)
+                  );
+                const cursorClass = isModifiedStatus ? 'cursor-help' : 'cursor-pointer';
+
                 return (
                   <td
                     key={colIndex}
-                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass} cursor-pointer`}
-                    onClick={() => handleRowClick && handleRowClick(row._id)}
+                    className={`px-4 py-2 ${col.align === 'center' ? 'text-center' : 'text-left'} ${colClass} ${cursorClass}`}
+                    onClick={(e) => {
+                      if (isModifiedStatus) {
+                        e.stopPropagation();
+                        return;
+                      }
+                      handleRowClick && handleRowClick(row._id);
+                    }}
                   >
                     {finalUI}
                   </td>

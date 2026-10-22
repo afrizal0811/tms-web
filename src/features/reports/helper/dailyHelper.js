@@ -13,6 +13,7 @@ import {
 } from '@/lib/reportGenerators/reports/daily/parseManualToApi';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
 import { calculateTaskSummaryMetrics } from '@/lib/reportGenerators/summary/taskSummaryMetrics';
+import { applyPendingDetailsToTasks } from '@/lib/deliveryStatus';
 import { toastError, toastSuccess } from '@/lib/toast';
 import {
   calculateStartFinishDates,
@@ -180,8 +181,9 @@ export const handleSingleDownload = async ({
       getPendingDetails(selectedDateString, selectedDateString).catch(() => []),
       getVehicleTypes(),
     ]);
+    const effectiveTasks = applyPendingDetailsToTasks(allTasks, pendingDetails);
     const taskSummaryMetrics = await calculateTaskSummaryMetrics({
-      allTasks,
+      allTasks: effectiveTasks,
       allResults: filteredResults,
       fetchedDrivers: driverData,
       hasPendingGR,
@@ -190,7 +192,7 @@ export const handleSingleDownload = async ({
 
     const { wb } = await generateSummaryWorkbook(
       driverData,
-      allTasks,
+      effectiveTasks,
       filteredResults,
       singleDateHistories,
       selectedDateString,
@@ -336,8 +338,10 @@ export const handleBulkDownload = async ({
       throw new Error(t('common.no_data'));
     }
 
+    const effectiveTasks = applyPendingDetailsToTasks(tasksRes, pendingDetails);
+
     const taskSummaryMetrics = await calculateTaskSummaryMetrics({
-      allTasks: tasksRes,
+      allTasks: effectiveTasks,
       allResults: resultsRes,
       fetchedDrivers: driverData,
       hasPendingGR,
@@ -346,7 +350,7 @@ export const handleBulkDownload = async ({
 
     const { wb } = await generateSummaryWorkbook(
       driverData,
-      tasksRes,
+      effectiveTasks,
       resultsRes,
       locRes,
       startStr,
@@ -429,8 +433,14 @@ export const handleManualDownload = async ({
     );
     const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
 
+    const pendingDetails = await getPendingDetails(extractedStartDate, extractedStartDate).catch(
+      () => []
+    );
+
+    const effectiveTasks = applyPendingDetailsToTasks(allTasks, pendingDetails);
+
     const taskSummaryMetrics = await calculateTaskSummaryMetrics({
-      allTasks,
+      allTasks: effectiveTasks,
       allResults: filteredResults,
       fetchedDrivers: driverData,
       hasPendingGR,
@@ -438,13 +448,9 @@ export const handleManualDownload = async ({
       isManualMode: true,
     });
 
-    const pendingDetails = await getPendingDetails(extractedStartDate, extractedStartDate).catch(
-      () => []
-    );
-
     const { wb } = await generateSummaryWorkbook(
       driverData,
-      allTasks,
+      effectiveTasks,
       filteredResults,
       singleDateHistories,
       extractedStartDate,

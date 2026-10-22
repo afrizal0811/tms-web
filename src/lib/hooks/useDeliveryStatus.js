@@ -23,30 +23,15 @@ import {
 export function useDeliveryStatus() {
   const { t, lang, isIndonesian, localeCode } = useLanguage();
 
-  const formatStatus = useCallback(
-    (status) => formatDeliveryStatus(status, t),
-    [t]
-  );
+  const formatStatus = useCallback((status) => formatDeliveryStatus(status, t), [t]);
 
-  const normalizeStatus = useCallback(
-    (status) => normalizeDeliveryStatus(status),
-    []
-  );
+  const normalizeStatus = useCallback((status) => normalizeDeliveryStatus(status), []);
 
-  const isStatus = useCallback(
-    (status, targetKey) => isDeliveryStatus(status, targetKey),
-    []
-  );
+  const isStatus = useCallback((status, targetKey) => isDeliveryStatus(status, targetKey), []);
 
-  const getStatusClass = useCallback(
-    (status) => getDeliveryStatusClass(status),
-    []
-  );
+  const getStatusClass = useCallback((status) => getDeliveryStatusClass(status), []);
 
-  const statusOptions = useMemo(
-    () => getDeliveryStatusOptions(t),
-    [t]
-  );
+  const statusOptions = useMemo(() => getDeliveryStatusOptions(t), [t]);
 
   const statusMap = useMemo(
     () => ({

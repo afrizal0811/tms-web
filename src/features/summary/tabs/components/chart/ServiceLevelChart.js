@@ -72,6 +72,10 @@ function ServiceLevelChart({ allTasks, isDarkMode }) {
     }
     const result = processServiceLevelData(allTasks, 'monthly', null, localeCode);
     setMonthlyData(result);
+    setSelectedMonth((prev) => {
+      if (!prev || !prev.key) return null;
+      return result.find((item) => item.key === prev.key) || prev;
+    });
   }, [allTasks, localeCode]);
 
   const localizedData = useMemo(() => {

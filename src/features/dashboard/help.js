@@ -91,9 +91,18 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       taskId: task._id || '-',
     };
 
-    if (task.status === 'DONE') {
+    const normDelivery = normalizeDeliveryStatus(task.statusDelivery || task.status);
+    const isDeliveryStatus = [
+      'SUCCESS',
+      'PARTIAL',
+      'CANCEL',
+      'PENDING',
+      'PENDING_GR',
+    ].includes(normDelivery);
+
+    if (task.status === 'DONE' || isDeliveryStatus) {
       inc('done', isDry, isFrozen);
-      const statusDelivery = normalizeDeliveryStatus(task.statusDelivery);
+      const statusDelivery = normDelivery;
 
       if (statusDelivery === 'SUCCESS') {
         res.successList.push(baseData);
@@ -132,7 +141,7 @@ export const calculateDashboard = (tasksArray, driverMap, isIndonesian) => {
       inc('flowReDelivery', isDry, isFrozen);
     }
 
-    if (task.status === 'DONE' && task.startTime && task.doneTime) {
+    if ((task.status === 'DONE' || isDeliveryStatus) && task.startTime && task.doneTime) {
       const startDateWIB = formatDateUniversal(task.startTime);
       const doneDateWIB = formatDateUniversal(task.doneTime);
       if (startDateWIB && doneDateWIB && startDateWIB !== doneDateWIB) {

@@ -12,22 +12,26 @@ export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
       /(^|\s|T)(\d+):(\d{2})(?::(\d{2}))?/,
       (match, prefix, hoursStr, minutesStr, secondsStr) => {
         const hours = parseInt(hoursStr, 10);
+
         if (!isNaN(hours) && hours >= 24) {
           extraDays = Math.floor(hours / 24);
           const modHours = String(hours % 24).padStart(2, '0');
           const secPart = secondsStr !== undefined ? `:${secondsStr}` : '';
           return `${prefix}${modHours}:${minutesStr}${secPart}`;
         }
+
         return match;
       }
     );
   }
 
   let date;
+
   if (typeof processedInput === 'string') {
     const dmyMatch = processedInput.match(
       /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
     );
+
     if (dmyMatch) {
       const [, dd, mm, yyyy, HH = '00', min = '00', ss = '00'] = dmyMatch;
       date = new Date(`${yyyy}-${mm}-${dd}T${HH}:${min}:${ss}`);
@@ -42,8 +46,11 @@ export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
 
   if (isNaN(date.getTime())) return '-';
 
+  const fullYear = date.getFullYear();
+
   const map = {
-    YYYY: date.getFullYear(),
+    YYYY: fullYear,
+    YY: String(fullYear).slice(-2),
     MM: String(date.getMonth() + 1).padStart(2, '0'),
     DD: String(date.getDate()).padStart(2, '0'),
     HH: String(date.getHours()).padStart(2, '0'),
@@ -51,7 +58,8 @@ export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
     ss: String(date.getSeconds()).padStart(2, '0'),
   };
 
-  const result = pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+  const result = pattern.replace(/YYYY|YY|MM|DD|HH|mm|ss/g, (matched) => map[matched]);
+
   return extraDays > 0 ? `${result} (+${extraDays})` : result;
 }
 // Menentukan tanggal otomatis (H-1) dengan penyesuaian jika hari tersebut adalah Minggu (mundur ke Sabtu)
@@ -325,7 +333,21 @@ export function formatLongDate(dateInput, language = 'id-ID', withDate = true) {
     year: 'numeric',
   };
   if (withDate) config.day = 'numeric';
-  return new Date(dateInput).toLocaleDateString(language, config);
+  let d = dateInput instanceof Date ? dateInput : null;
+  if (!d && typeof dateInput === 'string') {
+    const isoMatch = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      d = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    } else {
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) d = parsed;
+    }
+  } else if (!d) {
+    const parsed = new Date(dateInput);
+    if (!isNaN(parsed.getTime())) d = parsed;
+  }
+  if (!d || isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString(language, config);
 }
 
 // Mengecek nilai kosong

@@ -1,8 +1,9 @@
 'use client';
 
+import Tooltip from '@/components/Tooltip';
 import { toastError, toastSuccess } from '@/lib/toast';
 import * as XLSX from 'xlsx-js-style';
-import { formatDeliveryStatus, normalizeDeliveryStatus } from './deliveryStatus';
+import { formatDeliveryStatus, deliveryTooltip, normalizeDeliveryStatus } from './deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -126,6 +127,15 @@ export function routingActual({ tasks, drivers, dateStr }) {
       actualDepartureTimestamp: actualDepTimestamp,
       roSequence: t.routePlannedOrder || 0,
       statusLabel,
+      isModified: Boolean(
+        t.isModified ||
+          (t.pendingDetail?.new_status &&
+            t.originalStatus &&
+            normalizeDeliveryStatus(t.pendingDetail.new_status) !==
+              normalizeDeliveryStatus(t.originalStatus))
+      ),
+      originalStatus: t.originalStatus || null,
+      pendingDetail: t.pendingDetail || null,
       flow,
       customerName: cName || fullCustomerName || t.customerName,
       originalCustomerString: rawCustStr,
@@ -369,6 +379,35 @@ export const getRoutingActualColumns = (t) => {
       align: 'center',
       excelWidth: 15,
       getValue: (row) => formatDeliveryStatus(row.statusLabel, t),
+      getUI: (val, row) => {
+        const isModified =
+          row.isModified ||
+          Boolean(
+            row.pendingDetail?.new_status &&
+              row.originalStatus &&
+              normalizeDeliveryStatus(row.pendingDetail.new_status) !==
+                normalizeDeliveryStatus(row.originalStatus)
+          );
+        if (!isModified) return val;
+        const tooltip = deliveryTooltip({
+          originalStatus: row.originalStatus,
+          pendingDetail: row.pendingDetail,
+          formatStatus: (s) => formatDeliveryStatus(s, t),
+          t,
+        });
+        return (
+          <Tooltip tooltipContent={tooltip} zIndex="z-[100002]">
+            <span
+              className="inline-block cursor-help font-bold text-red-600 dark:text-red-400 border-b border-dotted border-red-500"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {val}
+            </span>
+          </Tooltip>
+        );
+      },
     },
 
     {

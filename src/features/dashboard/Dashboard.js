@@ -7,10 +7,12 @@ import PageTemplate from '@/components/page/PageTemplate';
 import { useLanguage } from '@/context/LanguageContext';
 import DetailTab from '@/features/dashboard/tab/DetailTab';
 import RoutingActualTab from '@/features/dashboard/tab/RoutingActualTab';
-import { getResults, getTasks } from '@/lib/api/mileapp';
+import { getPendingDetails, getResults, getTasks } from '@/lib/api/mileapp';
+import { applyPendingDetailsToTasks } from '@/lib/deliveryStatus';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import {
+  formatDateUniversal,
   getBaseVehicleType,
   isEmpty,
   normalizeEmail,
@@ -116,7 +118,9 @@ export default function Dashboard({ driverData }) {
         routingStart.setDate(routingStart.getDate() - 1);
       }
 
-      const [tasksData, resultsData] = await Promise.all([
+      const dateStr = formatDateUniversal(localStart, 'YYYY-MM-DD');
+
+      const [tasksData, resultsData, pendingDetailsData] = await Promise.all([
         getTasks({
           status: 'DONE,ONGOING,UNASSIGNED',
           timeFrom,
@@ -126,11 +130,18 @@ export default function Dashboard({ driverData }) {
           routingDateObj: routingStart,
           deliveryDateObj: localStart,
         }),
+        getPendingDetails(dateStr, dateStr).catch(() => []),
       ]);
 
       const tasksArray = Array.isArray(tasksData) ? tasksData : tasksData?.data || [];
+      const pdList = Array.isArray(pendingDetailsData)
+        ? pendingDetailsData
+        : Array.isArray(pendingDetailsData?.data)
+          ? pendingDetailsData.data
+          : [];
+      const effectiveTasks = applyPendingDetailsToTasks(tasksArray, pdList);
 
-      setRawData({ tasks: tasksArray, results: resultsData });
+      setRawData({ tasks: effectiveTasks, results: resultsData });
     } catch (err) {
       toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
@@ -140,6 +151,23 @@ export default function Dashboard({ driverData }) {
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const handlePendingUpdated = () => {
+      fetchData();
+    };
+    const handleStorage = (e) => {
+      if (e.key === 'tms_pending_details_last_update') {
+        fetchData();
+      }
+    };
+    window.addEventListener('tms-pending-details-updated', handlePendingUpdated);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('tms-pending-details-updated', handlePendingUpdated);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [fetchData]);
 
   const driverMap = useMemo(() => {

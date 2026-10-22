@@ -259,7 +259,7 @@ export function processServiceLevelData(
     }
     const email = rawEmail ? rawEmail.toLowerCase() : null;
     if (!email) return;
-    const dateStr = task.doneTime || task.createdTime;
+    const dateStr = task.doneTime || task.finishTime || task.startTime || task.createdTime;
     const wibTime = new Date(dateStr);
     if (isNaN(wibTime.getTime())) return;
 
@@ -295,20 +295,26 @@ export function processServiceLevelData(
         PENDING_GR: 0,
       };
     }
-    grouped[key].total += 1;
-    if (task.statusDelivery) {
-      const status = normalizeDeliveryStatus(task.statusDelivery);
+
+    const rawDelivery = task.statusDelivery || task.status;
+    if (rawDelivery) {
+      const status = normalizeDeliveryStatus(rawDelivery);
 
       if (status === 'SUCCESS') {
         grouped[key].SUKSES += 1;
+        grouped[key].total += 1;
       } else if (status === 'PENDING_GR') {
         grouped[key].PENDING_GR += 1;
+        grouped[key].total += 1;
       } else if (status === 'PENDING') {
         grouped[key].PENDING += 1;
+        grouped[key].total += 1;
       } else if (status === 'CANCEL') {
         grouped[key].BATAL += 1;
+        grouped[key].total += 1;
       } else if (status === 'PARTIAL') {
         grouped[key].PARTIAL += 1;
+        grouped[key].total += 1;
       }
     }
   });

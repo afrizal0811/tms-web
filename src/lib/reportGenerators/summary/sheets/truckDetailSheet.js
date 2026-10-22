@@ -218,22 +218,27 @@ export function calculateTruckDetailData(
       entry.outlets += 1;
       const flow = task.flow || '-';
       let statusDelivery = '';
+      const rawStatusDelivery = Array.isArray(task.statusDelivery)
+        ? task.statusDelivery[0]
+        : task.statusDelivery;
       if (flow !== 'Pickup') {
-        if (task.statusDelivery && task.statusDelivery.length > 0) {
-          statusDelivery = task.statusDelivery.toUpperCase();
+        if (rawStatusDelivery && String(rawStatusDelivery).length > 0) {
+          statusDelivery = String(rawStatusDelivery).toUpperCase();
         } else if (flow.includes('GR')) {
-          if (task.statusGr && task.statusGr.length > 0) {
-            statusDelivery = task.statusGr[0].toUpperCase();
+          const rawStatusGr = Array.isArray(task.statusGr) ? task.statusGr[0] : task.statusGr;
+          if (rawStatusGr && String(rawStatusGr).length > 0) {
+            statusDelivery = String(rawStatusGr).toUpperCase();
           }
         }
       } else {
-        statusDelivery = task.status && task.status.toUpperCase();
+        statusDelivery = task.status ? String(task.status).toUpperCase() : '';
       }
       statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
       const normDelivery = normalizeDeliveryStatus(statusDelivery);
       if (
         !FAILED_STATUSES.has(statusDelivery) &&
         !FAILED_STATUSES.has(normDelivery) &&
+        normDelivery !== 'PENDING_GR' &&
         task.status !== 'ONGOING'
       ) {
         entry.delivered += 1;
@@ -307,6 +312,9 @@ export function calculateTruckDetailData(
         soNumber: finalSO,
         flow: flow,
         status: statusDelivery,
+        isModified: Boolean(task.isModified),
+        originalStatus: task.originalStatus || null,
+        pendingDetail: task.pendingDetail || null,
         isManual: isManual,
         isDateDiff: isDateDiff,
         dayDiff: dayDiffCount,

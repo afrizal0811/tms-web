@@ -324,7 +324,7 @@ export default function TruckDetailTab({ data, translate, localeCode, isIndonesi
                   {dateKeys.map((d, i) => {
                     const metrics = dataMatrix[d.str][email];
                     const outletData = metrics?.outlets;
-                    const onClick = () => handleCellClick(metrics, driver.name, d.display);
+                    const onClick = () => handleCellClick(metrics, driver.name, d.str);
 
                     const { isHoliday, isSunday } = checkHolidayStatus(d.str);
                     const dayIsEmpty = isDayEmpty(d.str);

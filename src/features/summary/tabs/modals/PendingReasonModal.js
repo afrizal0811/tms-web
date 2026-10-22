@@ -10,7 +10,7 @@ import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { capitalizeText, formatUTC7 } from '@/lib/utils';
+import { capitalizeText, formatDateUniversal } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function PendingReasonModal({
@@ -138,6 +138,7 @@ export default function PendingReasonModal({
       const payload = {
         taskId: data._id,
         date: dbDate,
+        new_status: data?.pendingDetail?.new_status ?? null,
         internalExternal: intExt,
         detailReason: detail.trim(),
         groupReason: groupReason,
@@ -149,7 +150,14 @@ export default function PendingReasonModal({
 
       const res = await postPendingDetail(payload);
       toastSuccess(translate('common.toast.success'));
-      onSuccess(res.data || res);
+      const savedData = res.data || res;
+      onSuccess(savedData);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tms-pending-details-updated', { detail: savedData }));
+        try {
+          localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
+        } catch {}
+      }
       onClose();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
@@ -162,10 +170,52 @@ export default function PendingReasonModal({
     setIsConfirmOpen(false);
     setIsLoading((prev) => ({ ...prev, delete: true }));
     try {
+      if (data?.pendingDetail?.new_status) {
+        const dateParts = data.dateStr.split('-');
+        const dbDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+        const { storedUser } = getLocalStorage();
+        const userName = storedUser?.name || 'User';
+
+        const payload = {
+          taskId: data._id,
+          date: dbDate,
+          new_status: data.pendingDetail.new_status,
+          internalExternal: null,
+          detailReason: null,
+          groupReason: null,
+          pic: null,
+          userName,
+          created_by: data?.pendingDetail?.created_by || userName,
+          updated_by: userName,
+        };
+
+        const res = await postPendingDetail(payload);
+        toastSuccess(translate('common.toast.success'));
+        const savedData = res.data || res;
+        onSuccess(savedData);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('tms-pending-details-updated', { detail: savedData })
+          );
+          try {
+            localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
+          } catch {}
+        }
+        onClose();
+        return;
+      }
+
       await deletePendingDetail(data._id);
       toastSuccess(translate('common.toast.success'));
 
-      onSuccess({ taskId: data._id, deleted: true });
+      const delData = { taskId: data._id, deleted: true };
+      onSuccess(delData);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tms-pending-details-updated', { detail: delData }));
+        try {
+          localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
+        } catch {}
+      }
       onClose();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
@@ -195,7 +245,8 @@ export default function PendingReasonModal({
       data.pendingDetail.pic ||
       data.pendingDetail.detailReason);
 
-  const statusText = data.statusDelivery ? data.statusDelivery : data.status;
+  const statusText =
+    data?.pendingDetail?.new_status || (data.statusDelivery ? data.statusDelivery : data.status);
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
   const reason = data?.alasan || data?.reason || '';
   const pd = data?.pendingDetail;
@@ -208,23 +259,11 @@ export default function PendingReasonModal({
       <div className="flex flex-col gap-1 text-left min-w-[190px]">
         <div>
           <span className="text-slate-400 font-semibold">{translate('common.created_by')}: </span>
-          <span className="font-medium text-white">{pd.created_by || '-'}</span>
-        </div>
-        <div>
-          <span className="text-slate-400 font-semibold">{translate('common.created_time')}: </span>
-          <span className="font-medium text-white">
-            {pd.createdAt ? formatUTC7(pd.createdAt, 'DD/MM/YYYY HH:mm:ss') : '-'}
-          </span>
+          <span className="font-medium text-white">{`${pd.created_by} (${formatDateUniversal(pd.createdAt, 'DD/MM/YY HH:mm:ss')})`}</span>
         </div>
         <div>
           <span className="text-slate-400 font-semibold">{translate('common.updated_by')}: </span>
-          <span className="font-medium text-white">{pd.updated_by || '-'}</span>
-        </div>
-        <div>
-          <span className="text-slate-400 font-semibold">{translate('common.updated_at')}: </span>
-          <span className="font-medium text-white">
-            {pd.updatedAt ? formatUTC7(pd.updatedAt, 'DD/MM/YYYY HH:mm:ss') : '-'}
-          </span>
+          <span className="font-medium text-white">{`${pd.updated_by} (${formatDateUniversal(pd.updatedAt, 'DD/MM/YY HH:mm:ss')})`}</span>
         </div>
       </div>
     ) : (

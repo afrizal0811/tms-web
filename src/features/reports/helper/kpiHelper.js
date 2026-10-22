@@ -1,4 +1,5 @@
-import { getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
+import { getLocationHistories, getResults, getTasks, getPendingDetails } from '@/lib/api/mileapp';
+import { applyPendingDetailsToTasks } from '@/lib/deliveryStatus';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import { generateKpiWorkbook } from '@/lib/reportGenerators/reports';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
@@ -92,7 +93,7 @@ const processSingleKpiDate = async (
     ? new Date(customRoutingDateObj)
     : getPreviousRoutingDate(validDeliveryDate);
 
-  const [tasks, rawResults, histories] = await Promise.all([
+  const [tasks, rawResults, histories, pendingDetails] = await Promise.all([
     getTasks({
       status: 'DONE,ONGOING',
       timeFrom,
@@ -106,9 +107,11 @@ const processSingleKpiDate = async (
       timeFrom: histFrom,
       timeTo: histTo,
     }),
+    getPendingDetails(dateString, dateString).catch(() => []),
   ]);
 
-  const taskList = tasks?.data || tasks?.tasks?.data || tasks || [];
+  const rawTaskList = tasks?.data || tasks?.tasks?.data || tasks || [];
+  const taskList = applyPendingDetailsToTasks(rawTaskList, pendingDetails);
   const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
   const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
@@ -296,21 +299,25 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, d
   const formattedDate = formatDateUniversal(dateObj);
   const { timeFrom, timeTo } = calculateStartFinishDates(formattedDate);
 
-  const histories = await getLocationHistories({
-    timeFrom,
-    timeTo,
-  });
+  const [histories, pendingDetails] = await Promise.all([
+    getLocationHistories({
+      timeFrom,
+      timeTo,
+    }),
+    getPendingDetails(formattedDate, formattedDate).catch(() => []),
+  ]);
 
   const singleDateHistories = (histories || []).filter((item) => {
     return item.startTime?.startsWith(formattedDate);
   });
   const { kpiHistories: historiesData } = convertLocationHistories(singleDateHistories, drivers);
+  const effectiveTasks = applyPendingDetailsToTasks(tasks, pendingDetails);
   const { wb } = generateKpiWorkbook(
     formattedDate,
     hubAcronym,
     drivers,
     routing,
-    tasks,
+    effectiveTasks,
     historiesData
   );
 

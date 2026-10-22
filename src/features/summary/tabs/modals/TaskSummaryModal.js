@@ -1,13 +1,17 @@
 'use client';
 
+import InformationButton from '@/components/button/InformationButton';
 import Modal from '@/components/modal/Modal';
 import TableData from '@/components/table/TableData';
 import { useLanguage } from '@/context/LanguageContext';
+import { deliveryTooltip, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { formatLongDate, getBasePlate, parseCustomerString } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 
 export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
   const { localeCode } = useLanguage();
+  const { formatStatus } = useDeliveryStatus();
   const [sortConfig, setSortConfig] = useState({ key: 'driverName', direction: 'asc' });
 
   const vehicleEntries = useMemo(() => {
@@ -113,6 +117,23 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
               '-';
             const pickupCustomerName = `${task.title || '-'} (${finalCustomerName})`;
 
+            const isModified = Boolean(
+              task.isModified ||
+                (task.pendingDetail?.new_status &&
+                  task.originalStatus &&
+                  normalizeDeliveryStatus(task.pendingDetail.new_status) !==
+                    normalizeDeliveryStatus(task.originalStatus))
+            );
+
+            const tooltipContent = isModified
+              ? deliveryTooltip({
+                  originalStatus: task.originalStatus || task.statusDelivery,
+                  pendingDetail: task.pendingDetail,
+                  formatStatus,
+                  t: translate,
+                })
+              : '';
+
             return (
               <div
                 key={idx}
@@ -123,9 +144,18 @@ export default function TaskSummaryModal({ isOpen, onClose, data, translate }) {
                     {task.flow} <span className="text-slate-300 dark:text-slate-500 mx-1">|</span>{' '}
                     {invoice}
                   </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight">
-                    {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`text-sm leading-tight ${
+                        isModified
+                          ? 'font-bold text-red-600 dark:text-red-400'
+                          : 'font-semibold text-slate-800 dark:text-slate-100'
+                      }`}
+                    >
+                      {flow === 'Pickup' ? pickupCustomerName : finalCustomerName}
+                    </span>
+                    {isModified && <InformationButton infoText={tooltipContent} size="4" />}
+                  </div>
                   {(task.isWrongGR || task.isNoRouting) && (
                     <div className="mt-1 flex flex-col gap-1.5 items-start">
                       {task.isWrongGR && (

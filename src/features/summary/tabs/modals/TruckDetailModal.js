@@ -3,6 +3,7 @@
 import Map from '@/components/Map';
 import Modal from '@/components/modal/Modal';
 import Tooltip from '@/components/Tooltip';
+import { deliveryTooltip } from '@/lib/deliveryStatus';
 import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import {
   formatDateUniversal,
@@ -12,7 +13,7 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import { useState } from 'react';
-
+import InformationButton from '@/components/button/InformationButton';
 export default function TruckDetailModal({
   isOpen,
   onClose,
@@ -112,12 +113,20 @@ export default function TruckDetailModal({
                     </Tooltip>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {task.status && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)}`}
-                      >
-                        {formatStatus(task.status).toUpperCase()}
-                      </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm ${getStatusClass(task.status)} ${task.isModified ? 'ring-offset-1 ring-3 ring-red-600 dark:ring-red-400 mr-1' : ''}`}
+                    >
+                      {formatStatus(task.status).toUpperCase()}
+                    </span>
+                    {task.status && task.isModified && (
+                      <InformationButton
+                        infoText={deliveryTooltip({
+                          originalStatus: task.originalStatus || task.status,
+                          pendingDetail: task.pendingDetail,
+                          formatStatus,
+                          t: translate,
+                        })}
+                      />
                     )}
                     {task.isManual && (
                       <span

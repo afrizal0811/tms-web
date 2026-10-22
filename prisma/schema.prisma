@@ -115,6 +115,7 @@ model PendingDetail {
   id               String   @id @default(cuid())
   taskId           String   @unique
   date             String  
+  new_status       String?
   internalExternal String?
   detailReason     String?  @db.Text
   groupReason      String?

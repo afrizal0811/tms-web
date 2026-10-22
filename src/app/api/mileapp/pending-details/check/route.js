@@ -1,3 +1,4 @@
+import { DELIVERY_STATUS_KEYS, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import prisma from '@/lib/prisma';
 import { formatDateUniversal, normalizeEmail, toApiDateString } from '@/lib/utils';
 import { NextResponse } from 'next/server';
@@ -16,6 +17,10 @@ const TARGET_STATUSES = [
 
 const checkCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache
+
+export function clearPendingCheckCache() {
+  checkCache.clear();
+}
 
 function getActiveMonthDateRange() {
   const now = new Date();
@@ -187,6 +192,8 @@ export async function GET(request) {
     let uncompletedCount = 0;
     targetTaskIds.forEach((id) => {
       const pd = detailsMap.get(id);
+      if (pd && normalizeDeliveryStatus(pd.new_status) === DELIVERY_STATUS_KEYS.SUCCESS) return;
+
       const hasAnyData =
         pd &&
         Boolean(

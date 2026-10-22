@@ -4,14 +4,22 @@ import Button from '@/components/button/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import PageTemplate from '@/components/page/PageTemplate';
+import ToggleButton from '@/components/button/ToggleButton';
 import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getReasons } from '@/lib/api/mileapp';
+import {
+  applyPendingDetailsToTasks,
+  applyPendingDetailsToTaskSummaryMetrics,
+  DELIVERY_STATUS_KEYS,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
+import { calculateTruckDetailData } from '@/lib/reportGenerators/summary/sheets/truckDetailSheet';
 import { getTargetRoutingDate } from '@/lib/reportGenerators/summary/sheets/routingTimeSheet';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal, isEmpty } from '@/lib/utils';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import DistanceSummaryTab from './tabs/DistanceSummaryTab';
 import PendingReasonsTab from './tabs/PendingReasonsTab';
@@ -76,6 +84,7 @@ export default function SummaryPage() {
   const [pendingDetailsRange, setPendingDetailsRange] = useState(null);
   const [isDownload, setIsDownload] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState('');
+  const [showConvertedSuccess, setShowConvertedSuccess] = useState(false);
 
   const driverChecker = useCallback(
     (data) => {
@@ -148,6 +157,10 @@ export default function SummaryPage() {
     const pendingData = reportPreview?.pendingReasonsData || [];
     const uncompletedCount = pendingData.filter((item) => {
       const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+      const status = pd.new_status
+        ? normalizeDeliveryStatus(pd.new_status)
+        : normalizeDeliveryStatus(item.status);
+      if (status === DELIVERY_STATUS_KEYS.SUCCESS) return false;
       const hasAnyData = Boolean(
         (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
           (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
@@ -220,6 +233,91 @@ export default function SummaryPage() {
     fetchData();
   }, [fetchData]);
 
+  const effectiveTasks = useMemo(() => {
+    return applyPendingDetailsToTasks(rawData.tasks, pendingDetails);
+  }, [rawData.tasks, pendingDetails]);
+
+  useEffect(() => {
+    const handlePendingUpdated = (e) => {
+      const saved = e?.detail;
+      if (saved && saved.taskId) {
+        handleUpdatePendingDetail(saved);
+      } else if (dateRange && dateRange[0] && dateRange[1]) {
+        const start = formatDateUniversal(new Date(dateRange[0]));
+        const end = formatDateUniversal(new Date(dateRange[1]));
+        getPendingDetails(start, end)
+          .then((res) => setPendingDetails(res || []))
+          .catch(() => {});
+      }
+    };
+    const handleStorage = (e) => {
+      if (
+        e.key === 'tms_pending_details_last_update' &&
+        dateRange &&
+        dateRange[0] &&
+        dateRange[1]
+      ) {
+        const start = formatDateUniversal(new Date(dateRange[0]));
+        const end = formatDateUniversal(new Date(dateRange[1]));
+        getPendingDetails(start, end)
+          .then((res) => setPendingDetails(res || []))
+          .catch(() => {});
+      }
+    };
+    window.addEventListener('tms-pending-details-updated', handlePendingUpdated);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('tms-pending-details-updated', handlePendingUpdated);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [dateRange]);
+
+  const effectiveTaskSummaryMetrics = useMemo(() => {
+    return applyPendingDetailsToTaskSummaryMetrics(
+      taskSummaryMetrics,
+      effectiveTasks,
+      pendingDetails,
+      hasPendingGR,
+      driverData
+    );
+  }, [taskSummaryMetrics, effectiveTasks, pendingDetails, hasPendingGR, driverData]);
+
+  const effectiveTruckDetailData = useMemo(() => {
+    if (!reportPreview?.truckDetailData) return null;
+    if (!pendingDetails || pendingDetails.length === 0) {
+      return reportPreview.truckDetailData;
+    }
+    const [start, end] = dateRange || [];
+    if (!start || !end) return reportPreview.truckDetailData;
+    const startStr = formatDateUniversal(new Date(start));
+    const endStr = formatDateUniversal(new Date(end));
+    const activeHubCoordsStr = activeHubLocation
+      ? `${activeHubLocation.lat},${activeHubLocation.lng}`
+      : null;
+    const truckDetailRaw = calculateTruckDetailData(
+      driverData,
+      rawData.results,
+      effectiveTasks,
+      startStr,
+      endStr,
+      localeCode,
+      activeHubCoordsStr
+    );
+    return {
+      ...truckDetailRaw,
+      driverMap: Object.fromEntries(truckDetailRaw.driverMap),
+    };
+  }, [
+    reportPreview?.truckDetailData,
+    pendingDetails,
+    dateRange,
+    effectiveTasks,
+    rawData.results,
+    driverData,
+    localeCode,
+    activeHubLocation,
+  ]);
+
   const handleDownloadExcel = async () => {
     try {
       if (!dateRange || !dateRange[0] || !dateRange[1]) return;
@@ -227,14 +325,15 @@ export default function SummaryPage() {
       setIsDownload(true);
       const startDate = new Date(dateRange[0]);
       const endDate = new Date(dateRange[1]);
+      const effectiveTasks = applyPendingDetailsToTasks(rawData.tasks, pendingDetails);
       const { wb, excelFileName } = await generateSummaryWorkbook(
         driverData,
-        rawData.tasks,
+        effectiveTasks,
         rawData.results,
         rawData.locations,
         formatDateUniversal(startDate),
         formatDateUniversal(endDate),
-        taskSummaryMetrics,
+        effectiveTaskSummaryMetrics,
         masterTruckData,
         t,
         localeCode,
@@ -313,7 +412,7 @@ export default function SummaryPage() {
         );
       }
       case 'Truck Detail': {
-        const dataMatrix = reportPreview?.truckDetailData?.dataMatrix;
+        const dataMatrix = (effectiveTruckDetailData || reportPreview?.truckDetailData)?.dataMatrix;
         if (!dataMatrix || isEmpty(Object.keys(dataMatrix))) return true;
         const { startStr, endStr } = parseDateRange(dateRange);
         if (!startStr || !endStr) return false;
@@ -357,7 +456,7 @@ export default function SummaryPage() {
     switch (activeTab) {
       case 'Routing Time':
         return renderTab(RoutingTimeTab, {
-          tasks: rawData.tasks,
+          tasks: effectiveTasks,
           startDateStr: startStr,
           endDateStr: endStr,
           translate: t,
@@ -365,12 +464,12 @@ export default function SummaryPage() {
         });
       case 'Task Summary':
         return renderTab(TaskSummaryTab, {
-          metrics: taskSummaryMetrics,
+          metrics: effectiveTaskSummaryMetrics,
           isLoading: isCalculatingMetrics,
           progress: historyProgress,
           startDateStr: startStr,
           endDateStr: endStr,
-          isHasData: Object.entries(taskSummaryMetrics).length > 0,
+          isHasData: Object.entries(effectiveTaskSummaryMetrics).length > 0,
           translate: t,
           masterTruckData: masterTruckData.masterData,
         });
@@ -383,6 +482,7 @@ export default function SummaryPage() {
           hasPendingGR: hasPendingGR,
           translate: t,
           driverData: driverData,
+          showConvertedSuccess: showConvertedSuccess,
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {
@@ -393,7 +493,7 @@ export default function SummaryPage() {
         });
       case 'Truck Detail':
         return renderTab(TruckDetailTab, {
-          data: reportPreview.truckDetailData,
+          data: effectiveTruckDetailData || reportPreview.truckDetailData,
           translate: t,
           localeCode: localeCode,
           isIndonesian: isIndonesian,
@@ -417,7 +517,7 @@ export default function SummaryPage() {
         });
       case 'Service Level':
         return renderTab(ServiceLevelTab, {
-          tasks: rawData.tasks,
+          tasks: effectiveTasks,
           driverData,
           startDateStr: startStr,
           endDateStr: endStr,
@@ -426,7 +526,7 @@ export default function SummaryPage() {
         });
       case 'Diagram':
         return renderTab(DiagramTab, {
-          tasks: rawData.tasks,
+          tasks: effectiveTasks,
           driverData,
           startDateStr: startStr,
           endDateStr: endStr,
@@ -529,6 +629,37 @@ export default function SummaryPage() {
       case 'Diagram':
         return {
           text: t('common.click_for_detail'),
+        };
+      case 'Pending Reasons':
+        return {
+          text: '',
+          data: (
+            <div className="flex justify-between items-center w-full">
+              <span className="text-xs text-slate-500 dark:text-slate-400 italic">
+                *{t('common.click_for_detail_param', { parameter: t('summary.underline') })}
+              </span>
+              <div className="flex items-center gap-2">
+                <p className="text-slate-500 dark:text-slate-400 text-xs">
+                  {t('common.all')} {t('common.task')}
+                </p>
+                <ToggleButton
+                  size="sm"
+                  value={showConvertedSuccess}
+                  onChange={(val) => setShowConvertedSuccess(val)}
+                  options={[
+                    {
+                      label: t('common.button.btn_no'),
+                      value: false,
+                    },
+                    {
+                      label: t('common.button.btn_yes'),
+                      value: true,
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          ),
         };
       default:
         return {

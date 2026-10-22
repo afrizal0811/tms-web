@@ -11,6 +11,17 @@ export async function getPendingDetails(startDate, endDate) {
   );
 }
 
+export async function getPendingDetailByTaskId(taskId) {
+  if (!taskId) return null;
+  const params = new URLSearchParams();
+  params.append('taskId', taskId);
+
+  return await apiFetch(
+    `/api/mileapp/pending-details?${params.toString()}`,
+    'Gagal mengambil data detail pending'
+  );
+}
+
 export async function postPendingDetail(data) {
   return await apiFetch('/api/mileapp/pending-details', 'Gagal menyimpan detail pending', {
     method: 'POST',

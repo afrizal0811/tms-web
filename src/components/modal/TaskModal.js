@@ -16,6 +16,9 @@ import {
   ProperCaseText,
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { getPendingDetailByTaskId } from '@/lib/api/mileapp/pendingDetails';
+import { deliveryTooltip, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import InformationButton from '../button/InformationButton';
 import CopyButton from '../button/CopyButton';
 import JsonTree from '../JsonTree';
 import MapView from '../Map';
@@ -35,16 +38,42 @@ const renderCoordinate = (val) => {
   return `${lat}, ${lng}`;
 };
 
-const getSubtitle = (taskData, formatStatus) => {
+const getSubtitle = (taskData, pendingDetail, formatStatus, translate) => {
   if (!taskData) return '';
-  const status = taskData.status || '-';
-  const statusDelivery = taskData.statusDelivery;
-  const formattedDelivery = statusDelivery
-    ? formatStatus
-      ? formatStatus(statusDelivery)
-      : statusDelivery
-    : null;
-  const subtitleText = formattedDelivery ? `${status} | ${formattedDelivery}` : status;
+  const status = (taskData.status || '-').toUpperCase();
+  const originalDelivery = taskData.statusDelivery || taskData.status;
+  const isModified = Boolean(
+    pendingDetail?.new_status &&
+      originalDelivery &&
+      normalizeDeliveryStatus(pendingDetail.new_status) !==
+        normalizeDeliveryStatus(originalDelivery)
+  );
+
+  const effectiveDelivery = isModified ? pendingDetail.new_status : taskData.statusDelivery;
+  if (!effectiveDelivery) return status;
+
+  const formattedDelivery = formatStatus ? formatStatus(effectiveDelivery) : effectiveDelivery;
+
+  if (isModified) {
+    const tooltipContent = deliveryTooltip({
+      originalStatus: originalDelivery,
+      pendingDetail,
+      formatStatus,
+      t: translate,
+    });
+
+    return (
+      <span className="inline-flex items-center gap-1.5 flex-wrap">
+        <span>{status} |</span>
+        <span className="font-bold text-red-600 dark:text-red-400">
+          {formattedDelivery.toUpperCase()}
+        </span>
+        <InformationButton infoText={tooltipContent} size="4" />
+      </span>
+    );
+  }
+
+  const subtitleText = `${status} | ${formattedDelivery}`;
   return subtitleText.toUpperCase();
 };
 
@@ -262,7 +291,7 @@ function TaskOverview({ taskData, translate }) {
           copyValue={taskData.updatedBy}
         />
         <Field
-          label={translate('common.updated_at')}
+          label={translate('common.updated_time')}
           value={formatDateUniversal(taskData.updatedTime, 'DD/MM/YYYY HH:mm')}
         />
       </div>
@@ -662,6 +691,7 @@ function JsonTab({ data, expandAll = false }) {
 export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false }) {
   const [loading, setLoading] = useState(false);
   const [taskData, setTaskData] = useState(null);
+  const [pendingDetail, setPendingDetail] = useState(null);
   const [activeTab, setActiveTab] = useState('Data');
   const [resultData, setResultData] = useState(null);
 
@@ -672,6 +702,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
   useEffect(() => {
     if (!isOpen || !taskId || taskId === '-') {
       setTaskData(null);
+      setPendingDetail(null);
       setResultData(null);
       setActiveTab('Data');
       return;
@@ -680,9 +711,20 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
     const loadData = async () => {
       setLoading(true);
       try {
-        const response = await getTask(taskId, isAllHub);
-        const task = response?.task || response;
+        const [taskRes, pendingRes] = await Promise.allSettled([
+          getTask(taskId, isAllHub),
+          getPendingDetailByTaskId(taskId),
+        ]);
+
+        const task =
+          taskRes.status === 'fulfilled' && taskRes.value
+            ? taskRes.value?.task || taskRes.value
+            : null;
         setTaskData(task);
+
+        const pd =
+          pendingRes.status === 'fulfilled' && pendingRes.value?.taskId ? pendingRes.value : null;
+        setPendingDetail(pd);
 
         const [resultRes] = await Promise.allSettled([
           task?.routingResultId ? getResult(task.routingResultId) : Promise.resolve(null),
@@ -705,7 +747,6 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
         isOpen={isOpen}
         onClose={onClose}
         title={translate('task_detail.modal.title')}
-        subtitle=""
         maxWidth="max-w-5xl lg:max-w-6xl"
         bodyClassName="p-6 overflow-y-auto"
       >
@@ -757,7 +798,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
       isOpen={isOpen}
       onClose={onClose}
       title={translate('task_detail.modal.title')}
-      subtitle={getSubtitle(taskData, formatStatus)}
+      subtitle={getSubtitle(taskData, pendingDetail, formatStatus, translate)}
       maxWidth="max-w-5xl lg:max-w-6xl"
       bodyClassName="p-6 overflow-y-auto"
     >

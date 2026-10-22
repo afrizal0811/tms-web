@@ -1,5 +1,9 @@
 import { getResultHistories } from '@/lib/api/mileapp';
-import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import {
+  applyPendingDetailsToTasks,
+  DELIVERY_STATUS_KEYS,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -55,7 +59,11 @@ export async function calculateTaskSummaryMetrics({
   fetchWithTracker,
   t,
   isManualMode = false,
+  pendingDetails,
 }) {
+  const effectiveTasks = pendingDetails
+    ? applyPendingDetailsToTasks(allTasks, pendingDetails)
+    : allTasks;
   const taskToRoutingDate = new Map();
   (allResults || []).forEach((res) => {
     const rDate = getDeliveryDateFromRouting(res.createdTime);
@@ -215,8 +223,8 @@ export async function calculateTaskSummaryMetrics({
     });
   }
 
-  if (allTasks && Array.isArray(allTasks)) {
-    allTasks.forEach((task) => {
+  if (effectiveTasks && Array.isArray(effectiveTasks)) {
+    effectiveTasks.forEach((task) => {
       const dateKey =
         formatDateUniversal(task.startTime, 'YYYY-MM-DD') ||
         formatDateUniversal(task.doneTime, 'YYYY-MM-DD') ||
@@ -227,30 +235,30 @@ export async function calculateTaskSummaryMetrics({
 
       tempMetrics[dateKey].actual_tasks_count = (tempMetrics[dateKey].actual_tasks_count || 0) + 1;
 
-      const typeRaw = (task.typeStorage || '').toUpperCase();
-      let type = typeRaw.includes('FROZEN')
-        ? 'frozen'
-        : typeRaw.includes('DRY')
-          ? 'dry'
-          : 'unknown';
+      const rawEmail = (Array.isArray(task.assignee) ? task.assignee[0] : task.assignee || '')
+        .toLowerCase()
+        .trim();
+      const storageFromDriver = driverMapStorage[rawEmail] || '';
+      const typeRaw = (task.typeStorage || storageFromDriver || '').toUpperCase();
+      let type = typeRaw.includes('FROZEN') ? 'frozen' : 'dry';
 
       const sDeliv = task.statusDelivery;
       const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
       const normStatuses = statusArr.map((s) => normalizeDeliveryStatus(s));
 
-      if (normStatuses.includes('PENDING')) {
+      if (normStatuses.includes(DELIVERY_STATUS_KEYS.PENDING)) {
         tempMetrics[dateKey][type].rt += 1;
         tempMetrics[dateKey][type].rt_tasks.push(task);
-      } else if (!hasPendingGR && normStatuses.includes('PENDING_GR')) {
+      } else if (!hasPendingGR && normStatuses.includes(DELIVERY_STATUS_KEYS.PENDING_GR)) {
         tempMetrics[dateKey][type].rt += 1;
         tempMetrics[dateKey][type].rt_tasks.push({ ...task, isWrongGR: true });
       }
 
-      if (normStatuses.includes('CANCEL')) {
+      if (normStatuses.includes(DELIVERY_STATUS_KEYS.CANCEL)) {
         tempMetrics[dateKey][type].co += 1;
         tempMetrics[dateKey][type].co_tasks.push(task);
       }
-      if (normStatuses.includes('PARTIAL')) {
+      if (normStatuses.includes(DELIVERY_STATUS_KEYS.PARTIAL)) {
         tempMetrics[dateKey][type].pr += 1;
         tempMetrics[dateKey][type].pr_tasks.push(task);
       }

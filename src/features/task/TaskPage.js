@@ -1,5 +1,6 @@
 'use client';
 
+import InformationButton from '@/components/button/InformationButton';
 import ToggleButton from '@/components/button/ToggleButton';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import Dropdown from '@/components/dropdown/Dropdown';
@@ -12,7 +13,8 @@ import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { getHubs, getTasks } from '@/lib/api/mileapp';
+import { getHubs, getPendingDetails, getTasks } from '@/lib/api/mileapp';
+import { applyPendingDetailsToTasks, deliveryTooltip } from '@/lib/deliveryStatus';
 import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { toastError } from '@/lib/toast';
@@ -97,17 +99,29 @@ export default function TaskPage() {
     setLoading(true);
     try {
       const isShowAll = isSuperadmin && isAllHub;
+      const startDateStr = formatDateUniversal(localStart, 'YYYY-MM-DD');
+      const endDateStr = formatDateUniversal(localEnd, 'YYYY-MM-DD');
 
-      const res = await getTasks({
-        isShowAll: isShowAll,
-        status: 'DONE,UNASSIGNED,ONGOING',
-        timeFrom: toApiDateString(localStart),
-        timeTo: toApiDateString(localEnd),
-      });
+      const [res, pendingDetailsData] = await Promise.all([
+        getTasks({
+          isShowAll: isShowAll,
+          status: 'DONE,UNASSIGNED,ONGOING',
+          timeFrom: toApiDateString(localStart),
+          timeTo: toApiDateString(localEnd),
+        }),
+        getPendingDetails(startDateStr, endDateStr).catch(() => []),
+      ]);
 
       const dataArray = Array.isArray(res) ? res : res?.data || [];
-      cacheRef.current[mode] = dataArray;
-      setTasks(dataArray);
+      const pdList = Array.isArray(pendingDetailsData)
+        ? pendingDetailsData
+        : Array.isArray(pendingDetailsData?.data)
+          ? pendingDetailsData.data
+          : [];
+      const effectiveTasks = applyPendingDetailsToTasks(dataArray, pdList);
+
+      cacheRef.current[mode] = effectiveTasks;
+      setTasks(effectiveTasks);
     } catch (err) {
       toastError(t('common.toast.error', { err: err.message }), err);
     } finally {
@@ -117,6 +131,25 @@ export default function TaskPage() {
 
   useEffect(() => {
     fetchTasksData();
+  }, [fetchTasksData]);
+
+  useEffect(() => {
+    const handlePendingUpdated = () => {
+      cacheRef.current = { ONE: null, ALL: null, dateKey: '' };
+      fetchTasksData();
+    };
+    const handleStorage = (e) => {
+      if (e.key === 'tms_pending_details_last_update') {
+        cacheRef.current = { ONE: null, ALL: null, dateKey: '' };
+        fetchTasksData();
+      }
+    };
+    window.addEventListener('tms-pending-details-updated', handlePendingUpdated);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('tms-pending-details-updated', handlePendingUpdated);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [fetchTasksData]);
 
   const hubMap = useMemo(() => {
@@ -143,6 +176,13 @@ export default function TaskPage() {
         _truncateInvoice: custInfo.truncateInvoice || '-',
         _isTruncated: custInfo.isTruncated,
         _statusDel: task.statusDelivery ? formatDeliveryStatus(task.statusDelivery) : '-',
+        _isStatusModified: Boolean(
+          task.isModified ||
+            (task.pendingDetail?.new_status &&
+              task.originalStatus &&
+              normalizeDeliveryStatus(task.pendingDetail.new_status) !==
+                normalizeDeliveryStatus(task.originalStatus))
+        ),
       };
     });
 
@@ -307,6 +347,30 @@ export default function TaskPage() {
       label: t('common.status.delivery_status'),
       width: cw.stat,
       sortable: true,
+      render: (row) => {
+        const isModified = Boolean(row._isStatusModified || row.isModified);
+        if (isModified) {
+          const tooltipContent = deliveryTooltip({
+            originalStatus: row.originalStatus || row.statusDelivery,
+            pendingDetail: row.pendingDetail,
+            formatStatus: formatDeliveryStatus,
+            t,
+          });
+
+          return (
+            <div className="inline-flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-red-600 dark:text-red-400">
+                {row._statusDel}
+              </span>
+              <span onClick={(e) => e.stopPropagation()}>
+                <InformationButton infoText={tooltipContent} size="4" />
+              </span>
+            </div>
+          );
+        }
+
+        return row._statusDel;
+      },
     },
     {
       key: 'assignedTime',

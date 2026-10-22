@@ -45,7 +45,12 @@ const DailyTooltip = ({ active, payload, label, t, localeCode, selectedDate, isD
           );
         })}
 
-        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between">
+        <div className="mt-2 pt-1 border-t border-slate-600 font-bold flex justify-between text-white">
+          <span>{t('common.total_task')}</span>
+          <span>{data.total}</span>
+        </div>
+
+        <div className="border-slate-600 font-bold flex justify-between text-white">
           <span>{t('summary.tabs.diagram.service_level.success_rate')}</span>
           <span>{data.rate}%</span>
         </div>
