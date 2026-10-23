@@ -253,7 +253,12 @@ export function generatePendingReasonSheet(
 
     const { name: customerName } = parseCustomerString(item.customerName || item.customerOrder);
     const { invoiceNumber } = parseCustomerString(item.customerOrder || item.customerName);
-    const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+    const pd =
+      (pendingDetails || []).find(
+        (d) => String(d.taskId) === String(item._id || item.id || item.taskId)
+      ) ||
+      item.pendingDetail ||
+      {};
 
     const formattedStatus =
       formatDeliveryStatus(item.status, translate)?.toUpperCase() || item.status || '-';
@@ -361,7 +366,11 @@ export function generatePendingReasonSheet(
         };
 
         const pd =
-          (pendingDetails || []).find((d) => d.taskId === item._id) || item.pendingDetail || {};
+          (pendingDetails || []).find(
+            (d) => String(d.taskId) === String(item._id || item.id || item.taskId)
+          ) ||
+          item.pendingDetail ||
+          {};
         const origStatus = item.originalStatus || item.status;
         const isStatusModified = Boolean(
           item.isModified ||

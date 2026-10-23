@@ -257,7 +257,7 @@ export default function PendingReasonModal({
           : (item?.pendingDetail?.new_status ?? null);
 
         const payload = {
-          taskId: item._id,
+          taskId: item._id || item.id || item.taskId,
           date: formatDateUniversal(item.dateStr),
           new_status: newStatusVal,
           internalExternal: f.intExt,
@@ -288,12 +288,17 @@ export default function PendingReasonModal({
     setIsConfirmOpen(false);
     setIsLoading((prev) => ({ ...prev, delete: true }));
     try {
+      const targetTaskId = currentItem._id || currentItem.id || currentItem.taskId;
       let resultData;
       if (currentItem?.pendingDetail?.new_status) {
         const userName = getUserName();
+        const [d, m, y] = (currentItem.dateStr || '').split('-');
+        const dbDate =
+          y && y.length === 4 ? `${y}-${m}-${d}` : formatDateUniversal(currentItem.dateStr);
+
         const payload = {
-          taskId: currentItem._id,
-          date: formatDateUniversal(currentItem.dateStr),
+          taskId: targetTaskId,
+          date: dbDate,
           new_status: currentItem.pendingDetail.new_status,
           internalExternal: null,
           detailReason: null,
@@ -307,8 +312,8 @@ export default function PendingReasonModal({
         const res = await postPendingDetail(payload);
         resultData = res.data || res;
       } else {
-        await deletePendingDetail(currentItem._id);
-        resultData = { taskId: currentItem._id, deleted: true };
+        await deletePendingDetail(targetTaskId);
+        resultData = { taskId: targetTaskId, deleted: true };
       }
 
       toastSuccess(translate('common.toast.success'));

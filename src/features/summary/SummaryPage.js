@@ -335,9 +335,12 @@ export default function SummaryPage() {
 
     const hasAnyStatusChange = (pendingDetails || []).some((pd) => {
       if (!pd.new_status) return false;
-      const task = (rawData.tasks || []).find((t) => t._id === pd.taskId);
-      if (!task) return false;
-      const orig = task.statusDelivery || task.status;
+      const task = (rawData.tasks || []).find(
+        (t) => String(t._id || t.id || t.taskId) === String(pd.taskId)
+      );
+      if (!task) return true;
+      const rawOrig = task.originalStatus || task.statusDelivery || task.status;
+      const orig = Array.isArray(rawOrig) ? rawOrig[0] : rawOrig;
       return normalizeDeliveryStatus(orig) !== normalizeDeliveryStatus(pd.new_status);
     });
 

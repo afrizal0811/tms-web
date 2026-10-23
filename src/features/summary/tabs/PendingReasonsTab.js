@@ -234,7 +234,7 @@ const StatusCell = ({
       const isNowSuccess = targetKey === DELIVERY_STATUS_KEYS.SUCCESS;
 
       const [d, m, y] = (item.dateStr || '').split('-');
-      const dbDate = y ? `${y}-${m}-${d}` : item.dateStr;
+      const dbDate = y && y.length === 4 ? `${y}-${m}-${d}` : formatDateUniversal(item.dateStr);
       const userName = getUserName();
 
       const hasReasons = Boolean(
@@ -451,7 +451,7 @@ export default function PendingReasonsTab({
     const map = new Map();
     if (pendingDetails) {
       for (const d of pendingDetails) {
-        if (d?.taskId) map.set(d.taskId, d);
+        if (d?.taskId) map.set(String(d.taskId), d);
       }
     }
     return map;
@@ -461,7 +461,8 @@ export default function PendingReasonsTab({
     const map = new Map();
     if (allTasks) {
       for (const t of allTasks) {
-        if (t?._id) map.set(t._id, t);
+        const id = t?._id || t?.id || t?.taskId;
+        if (id) map.set(String(id), t);
       }
     }
     return map;
@@ -504,10 +505,20 @@ export default function PendingReasonsTab({
 
   const filteredData = useMemo(() => {
     return (data || []).filter((item) => {
-      const pd = pendingDetailsMap.get(item._id) || item.pendingDetail || {};
+      const taskId = String(item._id || item.id || item.taskId);
+      const pd = pendingDetailsMap.get(taskId) || item.pendingDetail || {};
       const effectiveDelivery = pd.new_status || item.statusDelivery || item.status;
-      const rawTask = allTasksMap.get(item._id);
-      const rawOrig = item.originalStatus || rawTask?.statusDelivery || item.status;
+      const rawTask = allTasksMap.get(taskId);
+      const rawOrig =
+        item.originalStatus ||
+        (rawTask
+          ? (Array.isArray(rawTask.statusDelivery)
+              ? rawTask.statusDelivery[0]
+              : rawTask.statusDelivery
+            )
+              ?.split(',')[0]
+              .trim() || rawTask.status
+          : item.status);
       const isConvertedSuccess =
         normalizeStatus(effectiveDelivery) === DELIVERY_STATUS_KEYS.SUCCESS &&
         normalizeStatus(rawOrig) !== DELIVERY_STATUS_KEYS.SUCCESS;
@@ -599,12 +610,18 @@ export default function PendingReasonsTab({
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
               const tdClass = `${BASE_TD_CLASS} ${borderBottomClass}`;
 
-              const pd = pendingDetailsMap.get(item._id) || item.pendingDetail || {};
-              const rawTask = allTasksMap.get(item._id);
+              const taskId = String(item._id || item.id || item.taskId);
+              const pd = pendingDetailsMap.get(taskId) || item.pendingDetail || {};
+              const rawTask = allTasksMap.get(taskId);
               const origStatus =
                 item.originalStatus ||
                 (rawTask
-                  ? rawTask.statusDelivery?.split(',')[0].trim() || rawTask.status
+                  ? (Array.isArray(rawTask.statusDelivery)
+                      ? rawTask.statusDelivery[0]
+                      : rawTask.statusDelivery
+                    )
+                      ?.split(',')[0]
+                      .trim() || rawTask.status
                   : item.status);
               const currentStatus = pd.new_status || item.status;
 

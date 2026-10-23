@@ -94,10 +94,15 @@ function AddSuccessTaskModalContent({
         const taskDate = getTaskDateStr(task);
         if (taskDate !== targetDateStr) return false;
 
-        const pd = (pendingDetails || []).find((p) => p.taskId === task._id);
+        const taskId = String(task._id || task.id || task.taskId);
+        const pd = (pendingDetails || []).find((p) => String(p.taskId) === taskId);
+        const rawStatus = task.statusDelivery
+          ? Array.isArray(task.statusDelivery)
+            ? task.statusDelivery[0]
+            : task.statusDelivery
+          : task.status;
         const effectiveStatus =
-          pd?.new_status ||
-          (task.statusDelivery ? task.statusDelivery.split(',')[0].trim() : task.status);
+          pd?.new_status || (rawStatus ? String(rawStatus).split(',')[0].trim() : '');
 
         return normalizeStatus(effectiveStatus) === DELIVERY_STATUS_KEYS.SUCCESS;
       })

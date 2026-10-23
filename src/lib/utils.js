@@ -29,7 +29,7 @@ export function formatDateUniversal(dateInput, pattern = 'YYYY-MM-DD') {
 
   if (typeof processedInput === 'string') {
     const dmyMatch = processedInput.match(
-      /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+      /^(\d{2})[\/\-](\d{2})[\/\-](\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
     );
 
     if (dmyMatch) {
