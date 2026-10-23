@@ -1,4 +1,4 @@
-import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import { DELIVERY_STATUS_KEYS, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import {
   calculateReturnHubDistance,
   formatDateUniversal,
@@ -235,12 +235,14 @@ export function calculateTruckDetailData(
       }
       statusDelivery = task.status !== 'ONGOING' ? statusDelivery : 'ONGOING';
       const normDelivery = normalizeDeliveryStatus(statusDelivery);
-      if (
+      const isDelivered =
+        (normDelivery === DELIVERY_STATUS_KEYS.SUCCESS ||
+          normDelivery === DELIVERY_STATUS_KEYS.PENDING_GR ||
+          (flow === 'Pickup' && (normDelivery === DELIVERY_STATUS_KEYS.DONE || task.status === 'DONE'))) &&
         !FAILED_STATUSES.has(statusDelivery) &&
         !FAILED_STATUSES.has(normDelivery) &&
-        normDelivery !== 'PENDING_GR' &&
-        task.status !== 'ONGOING'
-      ) {
+        task.status !== 'ONGOING';
+      if (isDelivered) {
         entry.delivered += 1;
       }
 

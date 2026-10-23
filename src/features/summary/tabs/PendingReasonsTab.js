@@ -655,7 +655,7 @@ export default function PendingReasonsTab({
                   key={item._id || idx}
                   className={
                     isConvertedFromSuccess
-                      ? 'bg-amber-100/60 dark:bg-amber-950/30 hover:bg-amber-100/90 dark:hover:bg-amber-900/40 transition-colors'
+                      ? 'bg-amber-100 dark:bg-amber-400/30 hover:bg-amber-100/90 dark:hover:bg-amber-900/40 transition-colors'
                       : 'hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
                   }
                 >

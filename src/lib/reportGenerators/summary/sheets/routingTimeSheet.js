@@ -425,6 +425,13 @@ export function generateRoutingTimeSheet(
       }
     });
 
+  const footerText = translate('summary.tabs.routing_time.footer_text');
+  excelData.push([]);
+  const spacerRowIdx = excelData.length - 1;
+  excelData.push([footerText]);
+  const footerRowIdx = excelData.length - 1;
+  merges.push({ s: { r: footerRowIdx, c: 0 }, e: { r: footerRowIdx, c: totalCols - 1 } });
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
   if (merges.length > 0) ws['!merges'] = merges;
 
@@ -457,6 +464,31 @@ export function generateRoutingTimeSheet(
   const colEndFrz = isFinishSeparated ? (isStartSeparated ? 4 : 3) : null;
 
   for (let R = hasAnySeparation ? 2 : 1; R <= range.e.r; R++) {
+    if (R === spacerRowIdx) {
+      for (let C = 0; C < totalCols; C++) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        if (ws[cellRef]) delete ws[cellRef];
+      }
+      continue;
+    }
+
+    if (R === footerRowIdx) {
+      for (let C = 0; C < totalCols; C++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell) {
+          if (C === 0) {
+            cell.s = {
+              font: { italic: true, name: 'Calibri', sz: 10 },
+              alignment: { horizontal: 'left', vertical: 'center' },
+            };
+          } else {
+            cell.s = {};
+          }
+        }
+      }
+      continue;
+    }
+
     const col1Val = excelData[R][1];
     const textLiburSunday = translate('common.holiday_sunday');
     const textLiburDynamic = translate('common.holiday');

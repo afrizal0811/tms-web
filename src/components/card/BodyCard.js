@@ -25,7 +25,7 @@ export default function BodyCard({
   const [prevIsLoading, setPrevIsLoading] = useState(isLoading);
   const cardWrapperRef = useRef(null);
   const isHintDismissedRef = useRef(false);
-
+  const { text, colorData, data } = footer || {};
   if (isLoading !== prevIsLoading) {
     setPrevIsLoading(isLoading);
     if (!isLoading) {
@@ -201,35 +201,26 @@ export default function BodyCard({
         )}
         {!isLoading && footer && (
           <div className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
-            <div
-              className={`${footer.text && footer.title ? 'flex flex-col justify-between gap-2 pb-1' : ''}`}
-            >
-              {footer.text && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-                  *{footer.text}
-                </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0">
+              {text && (
+                <span className="flex-1 text-xs text-slate-500 dark:text-slate-400 italic">
+                  *{text}
+                </span>
               )}
-              {footer.title && (
-                <h4 className="text-xs font-bold mb-3 text-slate-700 dark:text-slate-200">
-                  {footer.title}
-                </h4>
-              )}
+              {data && data}
             </div>
-            {footer.data &&
-              (footer.isColorLegend ? (
-                <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs mt-3 text-slate-600 dark:text-slate-300">
-                  {footer.data.map((color, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span
-                        className={`w-4 h-4 border border-gray-400 dark:border-slate-600 rounded-sm ${color.colors}`}
-                      />
-                      <span>{`${t(color.text)}`}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                footer.data
-              ))}
+            {colorData && (
+              <div className="flex flex-col lg:flex-row lg:justify-start gap-x-6 gap-y-2 text-xs mt-3 text-slate-600 dark:text-slate-300">
+                {colorData.map((color, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 border border-gray-400 dark:border-slate-600 rounded-sm ${color.colors}`}
+                    />
+                    <span>{`${t(color.text)}`}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

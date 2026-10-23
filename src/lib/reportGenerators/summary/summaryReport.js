@@ -162,7 +162,8 @@ export async function generateSummaryWorkbook(
     translate,
     localeCode,
     taskData,
-    masterTruckData
+    masterTruckData,
+    isDailyReport
   );
   generateDistanceSummarySheet(
     wb,
@@ -176,7 +177,9 @@ export async function generateSummaryWorkbook(
     locationHistoryData,
     isDailyReport
   );
-  generateServiceLevelSheet(wb, taskData, startDateStr, endDateStr, translate);
+  if (!isDailyReport) {
+    generateServiceLevelSheet(wb, taskData, startDateStr, endDateStr, translate);
+  }
   const formattedStart = formatDateUniversal(startDateStr, 'DD.MM.YYYY');
   const formattedEnd = formatDateUniversal(endDateStr, 'DD.MM.YYYY');
   const { storedLocationAcronym: locationName } = getLocalStorage() || '-';

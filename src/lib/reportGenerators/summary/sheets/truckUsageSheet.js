@@ -574,8 +574,10 @@ export async function generateTruckUsageSheet(
   translate,
   localeCode,
   taskData,
-  masterTruckData
+  masterTruckData,
+  isDailyReport = false
 ) {
+  const hidePercentageTable = Boolean(isDailyReport);
   const { dateMap, dateKeys, activeTypes, hubMasterData, summaryData } =
     await calculateTruckUsageData(resultsData, startDateStr, endDateStr, taskData, masterTruckData);
 
@@ -681,22 +683,25 @@ export async function generateTruckUsageSheet(
 
     summaryCountEndRow = excelData.length;
     excelData.push([]);
-    summaryPctStartRow = excelData.length;
 
-    excelData.push([
-      `${translate('summary.tabs.truck_usage.subtitle_2')} - ${monthName}`,
-      '',
-      '',
-      '',
-    ]);
-    excelData.push([translate('common.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
+    if (!hidePercentageTable) {
+      summaryPctStartRow = excelData.length;
 
-    addSummarySection('Dry', true);
-    addSummarySection('Frozen', true);
-    excelData.push(['OTV', otv.PctTMS, otv.PctManual, otv.PctTVU]);
+      excelData.push([
+        `${translate('summary.tabs.truck_usage.subtitle_2')} - ${monthName}`,
+        '',
+        '',
+        '',
+      ]);
+      excelData.push([translate('common.vehicle_type'), 'TMS', 'Non TMS', 'TVU']);
 
-    summaryPctEndRow = excelData.length;
-    excelData.push([]);
+      addSummarySection('Dry', true);
+      addSummarySection('Frozen', true);
+      excelData.push(['OTV', otv.PctTMS, otv.PctManual, otv.PctTVU]);
+
+      summaryPctEndRow = excelData.length;
+      excelData.push([]);
+    }
   }
 
   const table1StartRow = excelData.length;
@@ -839,10 +844,14 @@ export async function generateTruckUsageSheet(
   excelData.push(...table1.tableRows);
   excelData.push([]);
 
-  const table2StartRow = excelData.length;
-  const table2 = buildTableData(true, table2StartRow);
-  excelData.push(...table2.tableRows);
-  excelData.push([]);
+  let table2StartRow = -1;
+  let table2 = null;
+  if (!hidePercentageTable) {
+    table2StartRow = excelData.length;
+    table2 = buildTableData(true, table2StartRow);
+    excelData.push(...table2.tableRows);
+    excelData.push([]);
+  }
   excelData.push([translate('summary.tabs.truck_usage.explanation')]);
 
   const legendTitleRow = excelData.length - 1;
@@ -871,8 +880,10 @@ export async function generateTruckUsageSheet(
   if (!isSingleDay) {
     merges.push({ s: { r: 0, c: 1 }, e: { r: 0, c: 8 } });
     merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
-    merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
-    merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
+    if (!hidePercentageTable && summaryPctStartRow > 0) {
+      merges.push({ s: { r: summaryPctStartRow, c: 1 }, e: { r: summaryPctStartRow, c: 3 } });
+      merges.push({ s: { r: summaryPctStartRow, c: 0 }, e: { r: summaryPctStartRow + 1, c: 0 } });
+    }
   }
 
   ws['!merges'] = merges;
@@ -903,7 +914,11 @@ export async function generateTruckUsageSheet(
       }
 
       const isSum1 = R < summaryCountEndRow;
-      const isSum2 = R >= summaryPctStartRow && R < summaryPctEndRow;
+      const isSum2 =
+        !hidePercentageTable &&
+        summaryPctStartRow > 0 &&
+        R >= summaryPctStartRow &&
+        R < summaryPctEndRow;
 
       if (isSum1 || isSum2) {
         const startRow = isSum1 ? 0 : summaryPctStartRow;
@@ -949,7 +964,12 @@ export async function generateTruckUsageSheet(
         continue;
       }
 
-      if (!isSingleDay && (R === summaryCountEndRow || R === summaryPctEndRow)) continue;
+      if (
+        !isSingleDay &&
+        (R === summaryCountEndRow ||
+          (!hidePercentageTable && summaryPctEndRow > 0 && R === summaryPctEndRow))
+      )
+        continue;
 
       let isTable1 = false,
         isTable2 = false,
@@ -958,13 +978,13 @@ export async function generateTruckUsageSheet(
       if (R >= table1StartRow && R < table1StartRow + tableHeight) {
         isTable1 = true;
         relR = R - table1StartRow;
-      } else if (R >= table2StartRow && R < table2StartRow + tableHeight) {
+      } else if (table2StartRow !== -1 && R >= table2StartRow && R < table2StartRow + tableHeight) {
         isTable2 = true;
         relR = R - table2StartRow;
       }
 
       if (relR !== -1) {
-        const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2.rowMasterTotals;
+        const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2?.rowMasterTotals || {};
         const startDry = 2;
         const dryInter = startDry + activeTypes.length;
         const dryTot = dryInter + 1;

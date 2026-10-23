@@ -213,6 +213,10 @@ export function generateTaskSummarySheet(
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      if (R === legendTitleRow - 1) {
+        if (ws[cellRef]) delete ws[cellRef];
+        continue;
+      }
       if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
       const cell = ws[cellRef];
 

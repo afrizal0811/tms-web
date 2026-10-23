@@ -32,28 +32,37 @@ import TruckDetailTab from './tabs/TruckDetailTab';
 import TruckUsageTab from './tabs/TruckUsageTab';
 import DiagramTab from './tabs/DiagramTab';
 
-const colorLegend = [
-  {
-    name: 'orange',
-    colors: 'bg-orange-400 text-white dark:bg-orange-600',
-    text: 'summary.tabs.truck_detail.orange',
-  },
-  {
-    name: 'blue',
-    colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
-    text: 'summary.tabs.truck_detail.blue',
-  },
-  {
-    name: 'magenta',
-    colors: 'bg-[#C85D86] text-white dark:bg-[#964263]',
-    text: 'summary.tabs.truck_detail.magenta',
-  },
-  {
-    name: 'indigo',
-    colors: 'bg-[#5C5FB2] text-white dark:bg-[#45488c]',
-    text: 'summary.tabs.truck_detail.indigo',
-  },
-];
+const colorLegend = {
+  truckDetail: [
+    {
+      name: 'orange',
+      colors: 'bg-orange-400 text-white dark:bg-orange-600',
+      text: 'summary.tabs.truck_detail.orange',
+    },
+    {
+      name: 'blue',
+      colors: 'bg-[#4F76C7] text-white dark:bg-[#325296]',
+      text: 'summary.tabs.truck_detail.blue',
+    },
+    {
+      name: 'magenta',
+      colors: 'bg-[#C85D86] text-white dark:bg-[#964263]',
+      text: 'summary.tabs.truck_detail.magenta',
+    },
+    {
+      name: 'indigo',
+      colors: 'bg-[#5C5FB2] text-white dark:bg-[#45488c]',
+      text: 'summary.tabs.truck_detail.indigo',
+    },
+  ],
+  pendingReasons: [
+    {
+      name: 'orange',
+      colors: 'bg-amber-100 dark:bg-amber-400/30 text-white',
+      text: 'summary.tabs.pending_reasons.legend_orange',
+    },
+  ],
+};
 
 export default function SummaryPage() {
   const { t, localeCode, isIndonesian } = useLanguage();
@@ -86,7 +95,7 @@ export default function SummaryPage() {
   const [isDownload, setIsDownload] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState('');
   const [showConvertedSuccess, setShowConvertedSuccess] = useState(false);
-  const [isAddPendingModalOpen, setisAddPendingModalOpen] = useState(false);
+  const [isAddPendingModalOpen, setIsAddPendingModalOpen] = useState(false);
 
   const driverChecker = useCallback(
     (data) => {
@@ -517,8 +526,8 @@ export default function SummaryPage() {
           allTasks: rawData.tasks,
           dateRange: dateRange,
           isAddPendingModalOpen: isAddPendingModalOpen,
-          onCloseAddSuccessModal: () => setisAddPendingModalOpen(false),
-          onOpenAddSuccessModal: () => setisAddPendingModalOpen(true),
+          onCloseAddSuccessModal: () => setIsAddPendingModalOpen(false),
+          onOpenAddSuccessModal: () => setIsAddPendingModalOpen(true),
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {
@@ -533,7 +542,7 @@ export default function SummaryPage() {
           translate: t,
           localeCode: localeCode,
           isIndonesian: isIndonesian,
-          colorLegend: colorLegend,
+          colorLegend: colorLegend.truckDetail,
         });
       case 'Truck Usage':
         return renderTab(TruckUsageTab, {
@@ -647,18 +656,17 @@ export default function SummaryPage() {
   const getFooterConfig = () => {
     switch (activeTab) {
       case 'Routing Time':
-        return null;
+        return {
+          text: t('summary.tabs.routing_time.footer_text'),
+        };
       case 'Truck Detail':
         return {
           text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
-          data: colorLegend,
-          isColorLegend: true,
+          colorData: colorLegend.truckDetail,
         };
       case 'Time Driver':
         return {
           text: t('common.click_for_detail_param', { parameter: t('summary.row') }),
-          data: colorLegend,
-          isColorLegend: true,
         };
       case 'Service Level':
         return {
@@ -670,40 +678,36 @@ export default function SummaryPage() {
         };
       case 'Pending Reasons':
         return {
-          text: '',
+          colorData: colorLegend.pendingReasons,
+          text: t('common.click_for_detail_param', { parameter: t('summary.underline') }),
           data: (
-            <div className="flex justify-between items-center w-full">
-              <span className="text-xs text-slate-500 dark:text-slate-400 italic truncate mr-2">
-                *{t('common.click_for_detail_param', { parameter: t('summary.underline') })}
-              </span>
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 shrink-0">
-                  <p className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
-                    {t('common.all')} {t('common.task')}
-                  </p>
-                  <ToggleButton
-                    size="sm"
-                    value={showConvertedSuccess}
-                    onChange={(val) => setShowConvertedSuccess(val)}
-                    options={[
-                      {
-                        label: t('common.button.btn_no'),
-                        value: false,
-                      },
-                      {
-                        label: t('common.button.btn_yes'),
-                        value: true,
-                      },
-                    ]}
-                  />
-                </div>
-                <Button
-                  text={t('common.button.btn_add')}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
+                <p className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
+                  {t('common.all')} {t('common.task')}
+                </p>
+                <ToggleButton
                   size="sm"
-                  onClick={() => setisAddPendingModalOpen(true)}
-                  disabled={isLoading || isEmpty(rawData.tasks)}
+                  value={showConvertedSuccess}
+                  onChange={(val) => setShowConvertedSuccess(val)}
+                  options={[
+                    {
+                      label: t('common.button.btn_no'),
+                      value: false,
+                    },
+                    {
+                      label: t('common.button.btn_yes'),
+                      value: true,
+                    },
+                  ]}
                 />
               </div>
+              <Button
+                text={t('common.button.btn_add')}
+                size="sm"
+                onClick={() => setIsAddPendingModalOpen(true)}
+                disabled={isLoading || isEmpty(rawData.tasks)}
+              />
             </div>
           ),
         };

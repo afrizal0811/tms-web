@@ -494,6 +494,7 @@ export const dictionary = {
           },
         },
         routing_time: {
+          footer_text: 'Periksa kembali data sebelum digunakan.',
           title: 'Waktu Ruting',
           tooltip: {
             duration: 'Durasi proses ruting',
@@ -535,7 +536,7 @@ export const dictionary = {
           detail_optional_hint: '*Diisi jika diperlukan (opsional)',
           group_reason: 'Kelompok Alasan',
           legend_red: 'Ada perubahaan status pengiriman',
-          legend_orange: 'Perubahaan status pengiriman dari Suksesasas',
+          legend_orange: 'Perubahaan status pengiriman dari Sukses',
           reason: 'Alasan',
           title: 'Alasan Pending',
           modal_title: 'Alasan Penolakan',
@@ -584,7 +585,7 @@ export const dictionary = {
             inaccurate_data: 'Ada penugasan manual, data tidak akurat',
             no_route_dist: 'Sebagian/seluruh jarak menggunakan data tugas (data ruting kosong)',
             no_routing: 'Tidak ada ruting untuk kendaraan ini',
-            pct_info: 'Hanya untuk tugas yang sukses terkirim',
+            pct_info: 'Hanya untuk tugas yang berstatus Sukses dan Pending GR',
             split_task: 'Ada tugas yang dipecah',
           },
           modal: {
@@ -1254,6 +1255,7 @@ export const dictionary = {
           },
         },
         routing_time: {
+          footer_text: 'Please verify the routing data before use.',
           title: 'Routing Time',
           tooltip: {
             duration: 'Duration of routing process',
@@ -1342,7 +1344,7 @@ export const dictionary = {
             inaccurate_data: 'Has manual assign, data is inaccurate',
             no_route_dist: 'Partial/full distance uses task data (routing data is empty)',
             no_routing: 'No routing found for this vehicle',
-            pct_info: 'Only for success deliveries',
+            pct_info: 'Only for tasks with Success and Pending GR status',
             split_task: 'Has split tasks',
           },
           modal: {

@@ -310,11 +310,7 @@ export default function VehicleData() {
     ],
     [t, conditionalData.length]
   );
-  const footerData = {
-    title: t('common.color_exp'),
-    data: colorLegend,
-    isColorLegend: true,
-  };
+
   return (
     <PageTemplate
       title={t('vehicle.title')}
@@ -330,7 +326,7 @@ export default function VehicleData() {
       tabs={tabs}
       isLoading={isLoading}
       isEmpty={!isLoading && totalItems === 0}
-      footer={footerData}
+      footer={{ colorData: colorLegend }}
     >
       <div className="flex-1 flex flex-col m-0 overflow-auto">
         {(activeTab === 'master' || activeTab === 'conditional') && (
