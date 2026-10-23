@@ -1,9 +1,16 @@
-import { isEmpty, sortRows } from '@/lib/utils';
+import { getBasePlate, isEmpty, sortRows } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) {
   const rrMap = new Map();
-  routeReviewRows.forEach((r) => rrMap.set(`${r.driver}|${r.plat}`, Number(r.estOpHours) || 0));
+  routeReviewRows.forEach((r) =>
+    rrMap.set(
+      `${(r.driver || '').toUpperCase().trim()}|${getBasePlate(r.plat || '')
+        .toUpperCase()
+        .trim()}`,
+      Number(r.estOpHours) || 0
+    )
+  );
 
   const dedupeMap = new Map();
   let totalDurasiHour = 0;
@@ -18,7 +25,11 @@ export function generateSheetStartFinish(startFinishRows, routeReviewRows = []) 
       durasiHour = Math.round(totalMenit / 60);
     }
 
-    const estOp = rrMap.get(`${row.driver}|${row.plat}`) || 0;
+    const driverUp = (row.driver || '').toUpperCase().trim();
+    const platUp = getBasePlate(row.plat || '')
+      .toUpperCase()
+      .trim();
+    const estOp = rrMap.get(`${driverUp}|${platUp}`) || 0;
     const isDateDiff =
       !isEmpty(row.startDate) && !isEmpty(row.finishDate) && row.startDate !== row.finishDate;
     const processedRow = {

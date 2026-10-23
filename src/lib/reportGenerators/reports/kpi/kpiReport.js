@@ -54,7 +54,7 @@ export function generateKpiWorkbook(
   XLSX.utils.book_append_sheet(wb, wsKPI, 'Data KPI');
 
   const wsPendingSO = generateSheetPendingSO(tasksData, driverData);
-  XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Pending SO');
+  XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Faktur Pending');
 
   if (g2.dataRoutingExists) {
     const wsRouting = generateSheetDataRouting(g2);

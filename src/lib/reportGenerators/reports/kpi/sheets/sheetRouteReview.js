@@ -4,7 +4,9 @@ import * as XLSX from 'xlsx-js-style';
 export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], g2DetailRows = []) {
   const sfMap = new Map();
   startFinishRows.forEach((r) => {
-    const key = `${(r.driver || '').toUpperCase().trim()}|${(r.plat || '').toUpperCase().trim()}`;
+    const key = `${(r.driver || '').toUpperCase().trim()}|${getBasePlate(r.plat || '')
+      .toUpperCase()
+      .trim()}`;
     if (!sfMap.has(key)) sfMap.set(key, []);
     sfMap.get(key).push(r);
   });
@@ -27,8 +29,14 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
 
   routeReviewRows.forEach((row) => {
     const driverUp = (row.driver || '').toUpperCase().trim();
-    const platUp = (row.plat || '').toUpperCase().trim();
-    const sfRows = sfMap.get(`${driverUp}|${platUp}`) || [];
+    const platUp = getBasePlate(row.plat || '')
+      .toUpperCase()
+      .trim();
+    let sfRows = sfMap.get(`${driverUp}|${platUp}`);
+    if (!sfRows || sfRows.length === 0) {
+      sfRows = startFinishRows.filter((sf) => (sf.driver || '').toUpperCase().trim() === driverUp);
+    }
+    if (!sfRows) sfRows = [];
 
     let estOp = g2Map.has(driverUp) ? Math.round(g2Map.get(driverUp) / 60) : '';
     if (estOp === '' && !isEmpty(row.estOpHours)) estOp = Number(row.estOpHours);
@@ -66,8 +74,16 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
       overtime = null;
     }
 
-    const key = `${row.tipe}|${row.driver}|${estOp}|${actOp}|${overtime}`;
-    dedupeMap.set(key, {
+    const distinctSessions = sfRows.filter(
+      (sf, idx, arr) =>
+        !isEmpty(sf.startTime) &&
+        idx === arr.findIndex((t) => t.startTime === sf.startTime && t.finishTime === sf.finishTime)
+    );
+    const isMultipleSessions =
+      sfRows.some((sf) => sf.isMultipleSessions) || distinctSessions.length > 1;
+
+    const rowKey = `${platUp}|${driverUp}`;
+    const processedRow = {
       ...row,
       estOp,
       actOp,
@@ -76,8 +92,17 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
       isNoRouting:
         sfRows.some((sf) => !isEmpty(sf.startTime) || !isEmpty(sf.finishTime)) &&
         (estOp === '' || estOp === null || estOp === 0),
-      isMultipleSessions: sfRows.some((sf) => sf.isMultipleSessions) || sfRows.length > 1,
-    });
+      isMultipleSessions,
+    };
+
+    if (!dedupeMap.has(rowKey)) {
+      dedupeMap.set(rowKey, processedRow);
+    } else {
+      const existing = dedupeMap.get(rowKey);
+      if (typeof processedRow.estOp === 'number' && typeof existing.estOp !== 'number') {
+        dedupeMap.set(rowKey, processedRow);
+      }
+    }
   });
 
   const uniqueProcessed = [];
@@ -154,7 +179,7 @@ export function generateSheetRouteReview(routeReviewRows, startFinishRows = [], 
     font: { color: { rgb: '000000' } },
   };
 
-  const totalRowIdx = sheetData.length - 7;
+  const totalRowIdx = sortedRows.length + 1;
   for (let R = 0; R < sheetData.length; ++R) {
     for (let C = 0; C < 6; ++C) {
       const cell = XLSX.utils.encode_cell({ r: R, c: C });

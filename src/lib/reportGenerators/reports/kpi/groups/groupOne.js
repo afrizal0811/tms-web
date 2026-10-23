@@ -48,6 +48,7 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
 
   let rtDry = 0;
   let rtFrz = 0;
+  const pendingTasks = [];
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
@@ -63,6 +64,7 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
       }
 
       if (isRedelivery) {
+        pendingTasks.push(task);
         let driverName = task.driverName === '-' ? '' : task.driverName || '';
         let category = task.typeStorage === '-' ? '' : task.typeStorage || '';
 
@@ -86,5 +88,79 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
     });
   }
 
-  return { countDry, countFrz, countTotal, ttDry, ttFrz, rtDry, rtFrz };
+  let rtRouting = null;
+  let rtDriver = null;
+  let rtSales = null;
+  let rtCustomer = null;
+  let rtOther = null;
+
+  const hasPendingDetails = pendingTasks.some(
+    (t) =>
+      t.pendingDetail &&
+      Boolean(
+        (t.pendingDetail.pic && t.pendingDetail.pic.trim() !== '' && t.pendingDetail.pic !== '-') ||
+          (t.pendingDetail.groupReason &&
+            t.pendingDetail.groupReason.trim() !== '' &&
+            t.pendingDetail.groupReason !== '-') ||
+          (t.pendingDetail.detailReason &&
+            t.pendingDetail.detailReason.trim() !== '' &&
+            t.pendingDetail.detailReason !== '-') ||
+          (t.pendingDetail.internalExternal &&
+            t.pendingDetail.internalExternal.trim() !== '' &&
+            t.pendingDetail.internalExternal !== '-')
+      )
+  );
+
+  if (hasPendingDetails) {
+    rtRouting = 0;
+    rtDriver = 0;
+    rtSales = 0;
+    rtCustomer = 0;
+    rtOther = 0;
+
+    pendingTasks.forEach((task) => {
+      const rawPic = task.pendingDetail?.pic;
+      const pic = typeof rawPic === 'string' ? rawPic.trim().toLowerCase() : '';
+
+      if (pic === 'expedition') {
+        rtRouting++;
+      } else if (pic === 'driver') {
+        rtDriver++;
+      } else if (pic === 'sales') {
+        rtSales++;
+      } else if (pic === 'customer') {
+        rtCustomer++;
+      } else if (pic.includes('back office') || pic.includes('warehouse') || pic === 'other') {
+        rtOther++;
+      }
+    });
+  }
+
+  const hasIncompletePendingDetail = pendingTasks.some((t) => {
+    const pd = t.pendingDetail;
+    const hasDetail = Boolean(
+      pd &&
+        ((pd.detailReason && pd.detailReason.trim() !== '' && pd.detailReason !== '-') ||
+          (pd.groupReason && pd.groupReason.trim() !== '' && pd.groupReason !== '-') ||
+          (pd.pic && pd.pic.trim() !== '' && pd.pic !== '-') ||
+          (pd.internalExternal && pd.internalExternal.trim() !== '' && pd.internalExternal !== '-'))
+    );
+    return !hasDetail;
+  });
+
+  return {
+    countDry,
+    countFrz,
+    countTotal,
+    ttDry,
+    ttFrz,
+    rtDry,
+    rtFrz,
+    rtRouting,
+    rtDriver,
+    rtSales,
+    rtCustomer,
+    rtOther,
+    hasIncompletePendingDetail,
+  };
 }

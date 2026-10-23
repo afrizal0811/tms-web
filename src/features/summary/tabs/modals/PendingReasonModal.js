@@ -31,11 +31,8 @@ function getUserName() {
   return storedUser?.name || 'User';
 }
 
-function isConversionItem(item, normalizeStatus) {
-  return Boolean(
-    item?.isSuccessConversion ||
-      normalizeStatus(item?.originalStatus || item?.status) === DELIVERY_STATUS_KEYS.SUCCESS
-  );
+function isConversionItem(item) {
+  return Boolean(item?.isSuccessConversion);
 }
 
 export default function PendingReasonModal({
@@ -48,7 +45,7 @@ export default function PendingReasonModal({
   hasPendingGR = false,
   onBack,
 }) {
-  const { formatStatus, isPendingGr, normalizeStatus } = useDeliveryStatus();
+  const { formatStatus, isPendingGr } = useDeliveryStatus();
   const { isSuperadmin } = useSuperadmin();
 
   const items = useMemo(() => {
@@ -73,10 +70,11 @@ export default function PendingReasonModal({
     setCurrentIndex(0);
     const initialForms = {};
     for (const item of items) {
-      const isConversion = isConversionItem(item, normalizeStatus);
+      const isConversion = isConversionItem(item);
       const pd = item.pendingDetail || {};
+      const initStatus = pd.new_status || (isConversion ? '' : item.status || '');
       initialForms[item._id] = {
-        statusDelivery: pd.new_status || (isConversion ? '' : item.status || ''),
+        statusDelivery: initStatus,
         intExt: pd.internalExternal || '',
         detail: pd.detailReason || '',
         groupReason: pd.groupReason || '',
@@ -85,16 +83,16 @@ export default function PendingReasonModal({
         initialDetail: pd.detailReason || '',
         initialGroupReason: pd.groupReason || '',
         initialPic: pd.pic || '',
-        initialStatusDelivery: pd.new_status || '',
+        initialStatusDelivery: initStatus,
       };
     }
     setForms(initialForms);
-  }, [items, normalizeStatus]);
+  }, [items]);
 
   const currentItem = items[currentIndex] || items[0] || null;
   const currentForm = (currentItem && forms[currentItem._id]) || {};
 
-  const isSuccessConversion = isConversionItem(currentItem, normalizeStatus);
+  const isSuccessConversion = isConversionItem(currentItem);
 
   const updateCurrentForm = (fieldObj) => {
     if (!currentItem) return;
@@ -222,13 +220,13 @@ export default function PendingReasonModal({
     const allFilled = items.every((item) => {
       const f = forms[item._id];
       if (!f) return false;
-      if (isConversionItem(item, normalizeStatus) && !f.statusDelivery) return false;
+      if (isConversionItem(item) && !f.statusDelivery) return false;
       return Boolean(f.groupReason && f.pic && f.detail?.trim());
     });
 
     if (!allFilled) return true;
 
-    if (items.length === 1 && !currentItem?.isSuccessConversion) {
+    if (items.length === 1 && !isSuccessConversion) {
       const f = forms[currentItem?._id];
       if (!f) return true;
       const isUnchanged =
@@ -241,7 +239,7 @@ export default function PendingReasonModal({
     }
 
     return false;
-  }, [isLoading.save, items, forms, currentItem, normalizeStatus]);
+  }, [isLoading.save, items, forms, currentItem, isSuccessConversion]);
 
   const handleSave = async () => {
     if (isSaveDisabled) return;
@@ -251,7 +249,7 @@ export default function PendingReasonModal({
 
       for (const item of items) {
         const f = forms[item._id];
-        const isConversion = isConversionItem(item, normalizeStatus);
+        const isConversion = isConversionItem(item);
         const newStatusVal = isConversion
           ? f.statusDelivery
           : (item?.pendingDetail?.new_status ?? null);

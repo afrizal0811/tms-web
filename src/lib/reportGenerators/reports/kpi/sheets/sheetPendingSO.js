@@ -48,33 +48,54 @@ export function generateSheetPendingSO(tasksData, driverData) {
           formattedStartTime = formatDateUniversal(task.startTime);
         }
 
-        pendingRows.push([
-          task.flow || '-',
-          formattedStartTime,
-          finalPlat,
-          finalDriver,
-          custInfo.fullCustomerName || custInfo.name || '-',
-          custInfo.invoiceNumber || '-',
-          task.alasan || '-',
-        ]);
+        const alasan =
+          task.pendingDetail?.detailReason && task.pendingDetail.detailReason.trim() !== ''
+            ? task.pendingDetail.detailReason
+            : task.alasan || '-';
+
+        const pd = task.pendingDetail;
+        const hasPendingDetail = Boolean(
+          pd &&
+            ((pd.detailReason && pd.detailReason.trim() !== '' && pd.detailReason !== '-') ||
+              (pd.groupReason && pd.groupReason.trim() !== '' && pd.groupReason !== '-') ||
+              (pd.pic && pd.pic.trim() !== '' && pd.pic !== '-') ||
+              (pd.internalExternal &&
+                pd.internalExternal.trim() !== '' &&
+                pd.internalExternal !== '-'))
+        );
+
+        const isReasonEmpty =
+          !hasPendingDetail || !alasan || alasan === '-' || alasan.trim() === '';
+
+        pendingRows.push({
+          row: [
+            task.flow || '-',
+            formattedStartTime,
+            finalPlat,
+            finalDriver,
+            custInfo.fullCustomerName || custInfo.name || '-',
+            custInfo.invoiceNumber || '-',
+            alasan,
+          ],
+          isReasonEmpty,
+          driver: finalDriver,
+        });
       }
     });
   }
 
   pendingRows.sort((a, b) =>
-    String(a[3] || '')
+    String(a.driver || '')
       .toUpperCase()
-      .localeCompare(String(b[3] || '').toUpperCase())
+      .localeCompare(String(b.driver || '').toUpperCase())
   );
 
   const sheetData = [
     ['Flow', 'Tanggal', 'Plat Nomor', 'Driver', 'Customer', 'Nomor Faktur', 'Alasan'],
-    ...pendingRows,
+    ...pendingRows.map((p) => p.row),
     [],
     ['NOTE'],
-    [
-      'Berdasarkan alasan tersebut, tentukan kategorinya untuk mengisikan data di RT by Routing/Driver/Sales/Customer/Other',
-    ],
+    ['', 'data detail alasan pending belum lengkap'],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
@@ -91,6 +112,24 @@ export function generateSheetPendingSO(tasksData, driverData) {
   };
   const styleCenter = { alignment: { horizontal: 'center', vertical: 'center' } };
   const styleLeft = { alignment: { horizontal: 'left', vertical: 'center' } };
+  const styleCenterError = {
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
+  };
+  const styleLeftError = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F6C5C0' } },
+  };
+  const styleNoteTitle = {
+    font: { color: { rgb: 'FF0000' }, underline: true, bold: true },
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
+  const styleLegendColor = {
+    fill: { fgColor: { rgb: 'F6C5C0' } },
+  };
+  const styleLegendText = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
 
   const totalRows = sheetData.length;
   for (let R = 0; R < totalRows; ++R) {
@@ -98,24 +137,30 @@ export function generateSheetPendingSO(tasksData, driverData) {
       const cell = XLSX.utils.encode_cell({ r: R, c: C });
       if (!ws[cell]) ws[cell] = { v: '', t: 's' };
 
-      if (R === 0) ws[cell].s = styleHeader;
-      else if (R === totalRows - 2 && C === 0)
-        ws[cell].s = {
-          font: { color: { rgb: 'FF0000' }, underline: true, bold: true },
-          alignment: { horizontal: 'left', vertical: 'center' },
-        };
-      else if (R === totalRows - 1 && C === 0)
-        ws[cell].s = {
-          font: { italic: true, color: { rgb: '000000' } },
-          alignment: { horizontal: 'left', vertical: 'center' },
-        };
-      else if (R > 0 && R < totalRows - 3) ws[cell].s = C <= 2 ? styleCenter : styleLeft;
+      if (R === 0) {
+        ws[cell].s = styleHeader;
+      } else if (R === totalRows - 2 && C === 0) {
+        ws[cell].s = styleNoteTitle;
+      } else if (R === totalRows - 1 && C === 0) {
+        ws[cell].s = styleLegendColor;
+      } else if (R === totalRows - 1 && C === 1) {
+        ws[cell].s = styleLegendText;
+      } else if (R > 0 && R < totalRows - 3) {
+        const isError = pendingRows[R - 1]?.isReasonEmpty;
+        ws[cell].s = isError
+          ? C <= 2
+            ? styleCenterError
+            : styleLeftError
+          : C <= 2
+            ? styleCenter
+            : styleLeft;
+      }
     }
   }
 
   ws['!merges'] = [
     { s: { r: totalRows - 2, c: 0 }, e: { r: totalRows - 2, c: 6 } },
-    { s: { r: totalRows - 1, c: 0 }, e: { r: totalRows - 1, c: 6 } },
+    { s: { r: totalRows - 1, c: 1 }, e: { r: totalRows - 1, c: 6 } },
   ];
   ws['!cols'] = [
     { wch: 15 },

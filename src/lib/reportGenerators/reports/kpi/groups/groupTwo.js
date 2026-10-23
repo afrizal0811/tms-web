@@ -14,9 +14,12 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
 
           const truckId = route.basePlat || route.vehicleName || 'No Plat';
           let driverName = route.driverName || '';
-          
+
           if (!driverName && route.assignee) {
-            const rawAssignee = typeof route.assignee === 'string' ? route.assignee.split(',')[0].trim() : route.assignee;
+            const rawAssignee =
+              typeof route.assignee === 'string'
+                ? route.assignee.split(',')[0].trim()
+                : route.assignee;
             driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
           }
 
@@ -56,6 +59,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
       if (!dPlat || dPlat === 'No Plat' || dPlat.trim() === '') return;
 
       if (dName && !processedDrivers.has(dName.toUpperCase().trim())) {
+        processedDrivers.add(dName.toUpperCase().trim());
         detailRows.push({
           routing: '-',
           vehicle: dPlat,

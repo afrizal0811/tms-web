@@ -102,14 +102,22 @@ const ActionCell = ({ text, className, onClick, isAllEmpty = false, disabled = f
   );
 };
 
-const SOCell = ({ text, className, isError, onClick, isConvertedFromSuccess = false }) => {
+const SOCell = ({
+  text,
+  className,
+  isError,
+  onClick,
+  isConvertedFromSuccess = false,
+  isAmberRow = false,
+}) => {
   if (!text) return <td className={className}></td>;
 
   const textStyle = `inline-block border-b-2 border-dotted pb-0.5 border-red-700 dark:border-red-300 ${isError ? 'text-[#FF0000] dark:text-red-400 font-bold' : ''}`;
 
-  const hoverClass = isConvertedFromSuccess
-    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
-    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
+  const hoverClass =
+    isAmberRow || isConvertedFromSuccess
+      ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+      : 'hover:bg-blue-50 dark:hover:bg-slate-700';
 
   return (
     <td
@@ -145,6 +153,7 @@ const StatusCell = ({
   onUpdatePendingDetail,
   className,
   isConvertedFromSuccess = false,
+  isAmberRow = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -322,9 +331,10 @@ const StatusCell = ({
     zIndex: 9999,
   };
 
-  const hoverClass = isConvertedFromSuccess
-    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
-    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
+  const hoverClass =
+    isAmberRow || isConvertedFromSuccess
+      ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+      : 'hover:bg-blue-50 dark:hover:bg-slate-700';
 
   return (
     <>
@@ -632,6 +642,12 @@ export default function PendingReasonsTab({
                   normalizeStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
                   normalizeStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS
               );
+              const isConvertedToSuccess = Boolean(
+                pd.new_status &&
+                  normalizeStatus(origStatus) !== DELIVERY_STATUS_KEYS.SUCCESS &&
+                  normalizeStatus(pd.new_status) === DELIVERY_STATUS_KEYS.SUCCESS
+              );
+              const isAmberRow = isConvertedFromSuccess || isConvertedToSuccess;
               const isStatusModified = Boolean(
                 pd.new_status && normalizeStatus(pd.new_status) !== normalizeStatus(origStatus)
               );
@@ -645,7 +661,7 @@ export default function PendingReasonsTab({
               );
               const isAllEmpty = !hasAnyData;
 
-              const actionCellHover = isConvertedFromSuccess
+              const actionCellHover = isAmberRow
                 ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
                 : 'hover:bg-sky-50 dark:hover:bg-slate-700/80';
               const actionCellBase = `${BASE_TD_CLASS} ${borderBottomClass} cursor-pointer transition-colors`;
@@ -660,10 +676,9 @@ export default function PendingReasonsTab({
                   ...item,
                   pendingDetail: pd,
                   customer: customerName,
-                  isSuccessConversion: isConvertedFromSuccess,
                 });
 
-              const reasonValue = isConvertedFromSuccess
+              const reasonValue = isAmberRow
                 ? pd.detailReason || item.alasan || '-'
                 : item.alasan || '-';
 
@@ -671,7 +686,7 @@ export default function PendingReasonsTab({
                 <tr
                   key={item._id || idx}
                   className={
-                    isConvertedFromSuccess
+                    isAmberRow
                       ? 'bg-amber-100 dark:bg-amber-400/30 hover:bg-amber-100/90 dark:hover:bg-amber-900/40 transition-colors'
                       : 'hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
                   }
@@ -683,7 +698,7 @@ export default function PendingReasonsTab({
                   <SOCell
                     text={customerName || '-'}
                     className={`${tdClass} text-left`}
-                    isConvertedFromSuccess={isConvertedFromSuccess}
+                    isAmberRow={isAmberRow}
                     onClick={() => handleRowClick(item._id)}
                   />
                   <Tooltip tooltipContent={isTruncated ? invoiceNumber : ''}>
@@ -705,7 +720,7 @@ export default function PendingReasonsTab({
                     translate={translate}
                     onUpdatePendingDetail={onUpdatePendingDetail}
                     className={`${tdClass} text-left`}
-                    isConvertedFromSuccess={isConvertedFromSuccess}
+                    isAmberRow={isAmberRow}
                   />
                   <ReasonCell text={reasonValue} className={`${tdClass} text-left`} />
                   <ActionCell

@@ -263,17 +263,16 @@ export function generatePendingReasonSheet(
     const formattedStatus =
       formatDeliveryStatus(item.status, translate)?.toUpperCase() || item.status || '-';
 
-    const isConvertedFromSuccess = Boolean(
-      (item.originalStatus &&
-        normalizeDeliveryStatus(item.originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
-        normalizeDeliveryStatus(item.statusDelivery || item.status || pd.new_status) !==
-          DELIVERY_STATUS_KEYS.SUCCESS) ||
-        (pd.new_status &&
-          normalizeDeliveryStatus(item.originalStatus || item.status) ===
-            DELIVERY_STATUS_KEYS.SUCCESS &&
-          normalizeDeliveryStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS)
+    const origStatus = item.originalStatus || item.status;
+    const currentDelivery = item.statusDelivery || item.status || pd.new_status;
+    const isOrigSuccess = normalizeDeliveryStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS;
+    const isCurrentSuccess =
+      normalizeDeliveryStatus(currentDelivery) === DELIVERY_STATUS_KEYS.SUCCESS;
+    const isConvertedStatus = Boolean(
+      (pd.new_status || item.isModified) &&
+        ((isOrigSuccess && !isCurrentSuccess) || (!isOrigSuccess && isCurrentSuccess))
     );
-    const displayReason = isConvertedFromSuccess
+    const displayReason = isConvertedStatus
       ? pd.detailReason || item.alasan || '-'
       : item.alasan || '-';
 
@@ -377,16 +376,15 @@ export function generatePendingReasonSheet(
             (pd.new_status &&
               normalizeDeliveryStatus(pd.new_status) !== normalizeDeliveryStatus(origStatus))
         );
-        const isConvertedFromSuccess = Boolean(
-          (item.originalStatus &&
-            normalizeDeliveryStatus(item.originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
-            normalizeDeliveryStatus(item.statusDelivery || item.status || pd.new_status) !==
-              DELIVERY_STATUS_KEYS.SUCCESS) ||
-            (pd.new_status &&
-              normalizeDeliveryStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
-              normalizeDeliveryStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS)
+        const currentDelivery = item.statusDelivery || item.status || pd.new_status;
+        const isOrigSuccess = normalizeDeliveryStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS;
+        const isCurrentSuccess =
+          normalizeDeliveryStatus(currentDelivery) === DELIVERY_STATUS_KEYS.SUCCESS;
+        const isConvertedStatus = Boolean(
+          (pd.new_status || item.isModified) &&
+            ((isOrigSuccess && !isCurrentSuccess) || (!isOrigSuccess && isCurrentSuccess))
         );
-        if (isConvertedFromSuccess) {
+        if (isConvertedStatus) {
           currentStyle.fill = { fgColor: { rgb: 'FFF2CC' } };
         }
 

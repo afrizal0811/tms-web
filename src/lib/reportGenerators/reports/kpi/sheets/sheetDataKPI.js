@@ -41,7 +41,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   ];
 
   const separatorIndices = [8, 16, 20, 32];
-  const rtOrangeIndices = [9, 10, 11, 12, 13];
+  const rtIndices = [9, 10, 11, 12, 13];
 
   let totalMenitEstDry = 0;
   let totalMenitEstFrz = 0;
@@ -114,11 +114,11 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
       g1.rtDry,
       g1.rtFrz,
       '',
-      null,
-      null,
-      null,
-      null,
-      null,
+      g1.rtRouting ?? null,
+      g1.rtDriver ?? null,
+      g1.rtSales ?? null,
+      g1.rtCustomer ?? null,
+      g1.rtOther ?? null,
       finalEstOpDry,
       finalEstOpFrz,
       '',
@@ -143,8 +143,8 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
     ],
     [],
     ['NOTE'],
-    ['1. Saat paste di google sheet, tekan kombinasi CTRL+SHIFT+V'],
-    ['2. Pengisian RT by Routing/Driver/Sales/Customer/Other hanya bisa dilakukan SECARA MANUAL'],
+    ['Saat paste di google sheet, tekan kombinasi CTRL+SHIFT+V'],
+    ['', 'data detail alasan pending belum lengkap'],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
@@ -161,8 +161,8 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
     },
   };
   const styleSeparator = { fill: { fgColor: { rgb: 'FF0000' } } };
-  const styleOrange = {
-    fill: { fgColor: { rgb: 'FFC000' } },
+  const styleRtError = {
+    fill: { fgColor: { rgb: 'F6C5C0' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
   const styleCenter = { alignment: { horizontal: 'center', vertical: 'center' } };
@@ -174,6 +174,12 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
     font: { italic: true, color: { rgb: '000000' } },
     alignment: { horizontal: 'left', vertical: 'center' },
   };
+  const styleLegendColor = {
+    fill: { fgColor: { rgb: 'F6C5C0' } },
+  };
+  const styleLegendText = {
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
 
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -182,11 +188,18 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
       if (!ws[cell]) ws[cell] = { v: '', t: 's' };
 
       if (R === 3 && C === 0) ws[cell].s = styleNoteTitle;
-      else if ((R === 4 || R === 5) && C === 0) ws[cell].s = styleNoteText;
+      else if (R === 4 && C === 0) ws[cell].s = styleNoteText;
+      else if (R === 5 && C === 0) ws[cell].s = styleLegendColor;
+      else if (R === 5 && C === 1) ws[cell].s = styleLegendText;
       else if (R <= 1) {
         if (separatorIndices.includes(C)) ws[cell].s = styleSeparator;
-        else if (rtOrangeIndices.includes(C) && R === 1) ws[cell].s = styleOrange;
-        else if (R === 0) ws[cell].s = styleHeader;
+        else if (rtIndices.includes(C) && R === 1) {
+          ws[cell].s = g1?.hasIncompletePendingDetail ? styleRtError : styleCenter;
+          if (typeof ws[cell].v === 'number') {
+            ws[cell].t = 'n';
+            ws[cell].z = '0';
+          }
+        } else if (R === 0) ws[cell].s = styleHeader;
         else {
           ws[cell].s = styleCenter;
           if (typeof ws[cell].v === 'number') {
@@ -205,7 +218,7 @@ export function generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvert
   ws['!merges'] = [
     { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
     { s: { r: 4, c: 0 }, e: { r: 4, c: 6 } },
-    { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } },
+    { s: { r: 5, c: 1 }, e: { r: 5, c: 6 } },
   ];
 
   return ws;
