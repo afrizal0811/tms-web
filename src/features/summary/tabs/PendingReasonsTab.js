@@ -7,10 +7,34 @@ import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AddPendingModal from './modals/AddPendingModal';
 import PendingReasonModal from './modals/PendingReasonModal';
+
+const TH_CLASS =
+  'border border-gray-300 dark:border-slate-700 px-2 py-2 bg-sky-600 dark:bg-sky-900 text-white text-xs font-bold whitespace-nowrap';
+const BASE_TD_CLASS =
+  'px-2 py-2 text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap text-center border-r border-r-gray-200 dark:border-r-slate-700 border-l border-l-gray-200 dark:border-l-slate-700';
+const RED_CELL_STYLE = 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-[#4a1c1c] font-bold';
+const YELLOW_CELL_STYLE = 'bg-red-500 text-white dark:bg-red-600 font-bold';
+
+function emitPendingUpdate(detail) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('tms-pending-details-updated', { detail }));
+  try {
+    localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
+  } catch {}
+}
+
+function getUserName() {
+  const { storedUser } = getLocalStorage();
+  return storedUser?.name || 'User';
+}
+
+function hasValidText(val) {
+  return Boolean(val && !isEmpty(val) && val !== '-');
+}
 
 const ReasonCell = ({ text, className }) => {
   const [isTruncated, setIsTruncated] = useState(false);
@@ -22,18 +46,14 @@ const ReasonCell = ({ text, className }) => {
     }
   };
 
-  const innerContent = (
-    <div ref={textRef} className="truncate w-full " onMouseEnter={checkOverflow}>
-      {text}
-    </div>
-  );
-
   return (
     <Tooltip tooltipContent={isTruncated ? text : ''}>
       <td
         className={`${className} text-left max-w-[200px] p-0 ${isTruncated ? 'cursor-help' : 'cursor-default'}`}
       >
-        {innerContent}
+        <div ref={textRef} className="truncate w-full" onMouseEnter={checkOverflow}>
+          {text}
+        </div>
       </td>
     </Tooltip>
   );
@@ -46,22 +66,11 @@ const ActionCell = ({ text, className, onClick, isAllEmpty = false, disabled = f
 
   const checkOverflow = () => {
     if (textRef.current) {
-      const isOverflow = textRef.current.scrollWidth > textRef.current.clientWidth;
-      setIsTruncated(isOverflow);
+      setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth);
     }
   };
 
-  const innerContent = (
-    <div
-      ref={textRef}
-      className={`truncate w-full ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
-      onMouseEnter={checkOverflow}
-    >
-      {text}
-    </div>
-  );
-
-  const hasData = text && !isEmpty(text) && text !== '-';
+  const hasData = hasValidText(text);
 
   return (
     <td
@@ -71,7 +80,15 @@ const ActionCell = ({ text, className, onClick, isAllEmpty = false, disabled = f
       onMouseLeave={() => !disabled && setIsHovered(false)}
     >
       {hasData ? (
-        <Tooltip tooltipContent={isTruncated ? text : ''}>{innerContent}</Tooltip>
+        <Tooltip tooltipContent={isTruncated ? text : ''}>
+          <div
+            ref={textRef}
+            className={`truncate w-full ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
+            onMouseEnter={checkOverflow}
+          >
+            {text}
+          </div>
+        </Tooltip>
       ) : (
         <div className="w-full h-full flex items-center justify-center transition-colors">
           {!disabled && isAllEmpty && isHovered ? (
@@ -81,6 +98,34 @@ const ActionCell = ({ text, className, onClick, isAllEmpty = false, disabled = f
           )}
         </div>
       )}
+    </td>
+  );
+};
+
+const SOCell = ({ text, className, isError, onClick, isConvertedFromSuccess = false }) => {
+  if (!text) return <td className={className}></td>;
+
+  const textStyle = `inline-block border-b-2 border-dotted pb-0.5 border-red-700 dark:border-red-300 ${isError ? 'text-[#FF0000] dark:text-red-400 font-bold' : ''}`;
+
+  const hoverClass = isConvertedFromSuccess
+    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
+
+  return (
+    <td
+      className={`${className} ${hoverClass} transition-colors relative group cursor-pointer`}
+      onClick={onClick}
+    >
+      <span className={textStyle}>{text}</span>
+    </td>
+  );
+};
+
+const EmptyAlertCell = ({ value, className, alertStyle }) => {
+  const isValEmpty = isEmpty(value);
+  return (
+    <td className={isValEmpty ? `${className} ${alertStyle}` : className}>
+      {isValEmpty ? '-' : value}
     </td>
   );
 };
@@ -188,10 +233,9 @@ const StatusCell = ({
       const newStatusVal = isOriginal ? null : targetKey;
       const isNowSuccess = targetKey === DELIVERY_STATUS_KEYS.SUCCESS;
 
-      const dateParts = item.dateStr.split('-');
-      const dbDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-      const { storedUser } = getLocalStorage();
-      const userName = storedUser?.name || 'User';
+      const [d, m, y] = (item.dateStr || '').split('-');
+      const dbDate = y ? `${y}-${m}-${d}` : item.dateStr;
+      const userName = getUserName();
 
       const hasReasons = Boolean(
         pd.groupReason || pd.detailReason || pd.internalExternal || pd.pic
@@ -199,16 +243,10 @@ const StatusCell = ({
 
       const isOriginalSuccess = normalizeStatus(originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS;
 
+      let resultData;
       if (newStatusVal === null && (!hasReasons || isOriginalSuccess)) {
         await deletePendingDetail(item._id);
-        const delData = { taskId: item._id, deleted: true };
-        onUpdatePendingDetail(delData);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('tms-pending-details-updated', { detail: delData }));
-          try {
-            localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
-          } catch {}
-        }
+        resultData = { taskId: item._id, deleted: true };
       } else {
         const payload = {
           taskId: item._id,
@@ -224,26 +262,18 @@ const StatusCell = ({
         };
 
         const res = await postPendingDetail(payload);
-        const savedData = res.data || res;
-        onUpdatePendingDetail(savedData);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('tms-pending-details-updated', { detail: savedData })
-          );
-          try {
-            localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
-          } catch {}
-        }
+        resultData = res.data || res;
       }
+
+      onUpdatePendingDetail(resultData);
+      emitPendingUpdate(resultData);
       toastSuccess(translate('common.toast.success'));
+    } catch (err) {
+      toastError(translate('common.toast.error', { err: err.message }), err);
+    } finally {
       setIsOpen(false);
       setIsConfirmOpen(false);
       setPendingTargetKey(null);
-    } catch (err) {
-      toastError(translate('common.toast.error', { err: err.message }), err);
-      setIsConfirmOpen(false);
-      setPendingTargetKey(null);
-    } finally {
       setIsUpdating(false);
     }
   };
@@ -276,12 +306,13 @@ const StatusCell = ({
     executeStatusChange(pendingTargetKey || originalStatus);
   };
 
-  const textStyle = isModified
-    ? 'inline-block border-b-2 border-dotted border-red-500 font-bold text-red-600 dark:text-red-400 pb-0.5'
-    : isWrongGR
-      ? 'inline-block border-b-2 border-dotted border-red-500 font-bold text-[#FF0000] dark:text-red-400 pb-0.5'
-      : 'inline-block border-b-2 border-dotted pb-0.5';
-
+  const textStyle = `inline-block border-b-2 border-dotted pb-0.5 border-red-700 dark:border-red-300 ${
+    isModified
+      ? 'font-bold text-red-600 dark:text-red-400'
+      : isWrongGR
+        ? 'font-bold text-[#FF0000] dark:text-red-400'
+        : ''
+  }`;
   const dropdownStyle = {
     position: 'fixed',
     top: `${menuPos.top}px`,
@@ -383,27 +414,6 @@ const StatusCell = ({
   );
 };
 
-const SOCell = ({ text, className, isError, onClick, isConvertedFromSuccess = false }) => {
-  if (!text) return <td className={className}></td>;
-
-  const textStyle = isError
-    ? 'text-[#FF0000] dark:text-red-400 font-bold border-b border-dotted border-red-500'
-    : 'inline-block border-b-2 border-dotted pb-0.5';
-
-  const hoverClass = isConvertedFromSuccess
-    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
-    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
-
-  return (
-    <td
-      className={`${className} ${hoverClass} transition-colors relative group cursor-pointer`}
-      onClick={onClick}
-    >
-      <span className={textStyle}>{text}</span>
-    </td>
-  );
-};
-
 export default function PendingReasonsTab({
   data,
   pendingDetails,
@@ -437,62 +447,78 @@ export default function PendingReasonsTab({
     }
   }
 
+  const pendingDetailsMap = useMemo(() => {
+    const map = new Map();
+    if (pendingDetails) {
+      for (const d of pendingDetails) {
+        if (d?.taskId) map.set(d.taskId, d);
+      }
+    }
+    return map;
+  }, [pendingDetails]);
+
+  const allTasksMap = useMemo(() => {
+    const map = new Map();
+    if (allTasks) {
+      for (const t of allTasks) {
+        if (t?._id) map.set(t._id, t);
+      }
+    }
+    return map;
+  }, [allTasks]);
+
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-') return;
-
     setSelectedTaskId(taskId);
     setIsTaskModalOpen(true);
   };
 
-  const thClass =
-    'border border-gray-300 dark:border-slate-700 px-2 py-2 bg-sky-600 dark:bg-sky-900 text-white text-xs font-bold whitespace-nowrap';
-  const baseTdClass =
-    'px-2 py-2 text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap text-center border-r border-r-gray-200 dark:border-r-slate-700 border-l border-l-gray-200 dark:border-l-slate-700';
-  const redCellStyle = 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-[#4a1c1c] font-bold';
-  const yellowCellStyle = 'bg-red-500 text-white dark:bg-red-600 font-bold';
+  const tableHeaders = useMemo(
+    () => [
+      translate('common.flow'),
+      translate('common.delivery_date'),
+      translate('common.license_number'),
+      translate('common.driver'),
+      translate('common.customer_name'),
+      translate('common.invoice_number'),
+      translate('common.status.delivery_status'),
+      translate('summary.tabs.pending_reasons.reason'),
+      translate('summary.tabs.pending_reasons.group_reason'),
+      translate('summary.tabs.pending_reasons.detail'),
+      translate('summary.tabs.pending_reasons.category'),
+      'PIC',
+      translate('common.open_time'),
+      translate('common.close_time'),
+      translate('common.eta'),
+      translate('common.etd'),
+      translate('common.actual_arrival'),
+      translate('common.actual_departure'),
+      translate('common.plan_visit'),
+      translate('common.actual_visit'),
+      translate('common.plan_seq'),
+      translate('common.actual_seq'),
+      translate('common.storage_type'),
+    ],
+    [translate]
+  );
 
-  const tableHeaders = [
-    translate('common.flow'),
-    translate('common.delivery_date'),
-    translate('common.license_number'),
-    translate('common.driver'),
-    translate('common.customer_name'),
-    translate('common.invoice_number'),
-    translate('common.status.delivery_status'),
-    translate('summary.tabs.pending_reasons.reason'),
-    translate('summary.tabs.pending_reasons.group_reason'),
-    translate('summary.tabs.pending_reasons.detail'),
-    translate('summary.tabs.pending_reasons.category'),
-    'PIC',
-    translate('common.open_time'),
-    translate('common.close_time'),
-    translate('common.eta'),
-    translate('common.etd'),
-    translate('common.actual_arrival'),
-    translate('common.actual_departure'),
-    translate('common.plan_visit'),
-    translate('common.actual_visit'),
-    translate('common.plan_seq'),
-    translate('common.actual_seq'),
-    translate('common.storage_type'),
-  ];
+  const filteredData = useMemo(() => {
+    return (data || []).filter((item) => {
+      const pd = pendingDetailsMap.get(item._id) || item.pendingDetail || {};
+      const effectiveDelivery = pd.new_status || item.statusDelivery || item.status;
+      const rawTask = allTasksMap.get(item._id);
+      const rawOrig = item.originalStatus || rawTask?.statusDelivery || item.status;
+      const isConvertedSuccess =
+        normalizeStatus(effectiveDelivery) === DELIVERY_STATUS_KEYS.SUCCESS &&
+        normalizeStatus(rawOrig) !== DELIVERY_STATUS_KEYS.SUCCESS;
 
-  const filteredData = (data || []).filter((item) => {
-    const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || item.pendingDetail || {};
-    const effectiveDelivery = pd.new_status || item.statusDelivery || item.status;
-    const rawOrig =
-      item.originalStatus ||
-      (allTasks || []).find((t) => t._id === item._id)?.statusDelivery ||
-      item.status;
-    const isConvertedSuccess =
-      normalizeStatus(effectiveDelivery) === DELIVERY_STATUS_KEYS.SUCCESS &&
-      normalizeStatus(rawOrig) !== DELIVERY_STATUS_KEYS.SUCCESS;
+      return !(!showConvertedSuccess && isConvertedSuccess);
+    });
+  }, [data, pendingDetailsMap, allTasksMap, normalizeStatus, showConvertedSuccess]);
 
-    if (!showConvertedSuccess && isConvertedSuccess) {
-      return false;
-    }
-    return true;
-  });
+  const hasConversionModalData = Array.isArray(modalData)
+    ? modalData.some((t) => t.isSuccessConversion)
+    : Boolean(modalData?.isSuccessConversion);
 
   return (
     <Fragment>
@@ -519,7 +545,7 @@ export default function PendingReasonsTab({
         />
 
         <PendingReasonModal
-          isOpen={!!modalData}
+          isOpen={Boolean(modalData)}
           onClose={() => {
             setModalData(null);
             setSelectedSuccessTasksMap(new Map());
@@ -533,11 +559,7 @@ export default function PendingReasonsTab({
           translate={translate}
           hasPendingGR={hasPendingGR}
           onBack={
-            (
-              Array.isArray(modalData)
-                ? modalData.some((t) => t.isSuccessConversion)
-                : Boolean(modalData?.isSuccessConversion)
-            )
+            hasConversionModalData
               ? () => {
                   setModalData(null);
                   onOpenAddSuccessModal();
@@ -556,7 +578,7 @@ export default function PendingReasonsTab({
           <thead className="sticky top-0 z-20">
             <tr>
               {tableHeaders.map((header, idx) => (
-                <th key={idx} className={thClass}>
+                <th key={idx} className={TH_CLASS}>
                   {header}
                 </th>
               ))}
@@ -570,19 +592,22 @@ export default function PendingReasonsTab({
                 truncateInvoice,
                 isTruncated,
               } = parseCustomerString(item.customerOrder || item.customerName);
+
               const isLastInDate = filteredData[idx + 1]?.dateStr !== item.dateStr;
               const borderBottomClass = isLastInDate
                 ? 'border-b-[4px] border-b-slate-400 dark:border-b-slate-600'
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
-              const tdClass = `${baseTdClass} ${borderBottomClass}`;
-              const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
-              const rawTask = (allTasks || []).find((t) => t._id === item._id);
+              const tdClass = `${BASE_TD_CLASS} ${borderBottomClass}`;
+
+              const pd = pendingDetailsMap.get(item._id) || item.pendingDetail || {};
+              const rawTask = allTasksMap.get(item._id);
               const origStatus =
                 item.originalStatus ||
                 (rawTask
                   ? rawTask.statusDelivery?.split(',')[0].trim() || rawTask.status
                   : item.status);
               const currentStatus = pd.new_status || item.status;
+
               const isConvertedSuccess =
                 normalizeStatus(pd.new_status) === DELIVERY_STATUS_KEYS.SUCCESS;
               const isConvertedFromSuccess = Boolean(
@@ -596,20 +621,19 @@ export default function PendingReasonsTab({
               const isWrongGR = !hasPendingGR && isPendingGr(currentStatus);
 
               const hasAnyData = Boolean(
-                (pd.groupReason && !isEmpty(pd.groupReason) && pd.groupReason !== '-') ||
-                  (pd.detailReason && !isEmpty(pd.detailReason) && pd.detailReason !== '-') ||
-                  (pd.internalExternal &&
-                    !isEmpty(pd.internalExternal) &&
-                    pd.internalExternal !== '-') ||
-                  (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
+                hasValidText(pd.groupReason) ||
+                  hasValidText(pd.detailReason) ||
+                  hasValidText(pd.internalExternal) ||
+                  hasValidText(pd.pic)
               );
               const isAllEmpty = !hasAnyData;
+
               const actionCellHover = isConvertedFromSuccess
                 ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
                 : 'hover:bg-sky-50 dark:hover:bg-slate-700/80';
-              const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
+              const actionCellBase = `${BASE_TD_CLASS} ${borderBottomClass} cursor-pointer transition-colors`;
               const actionCellClass = isConvertedSuccess
-                ? `${baseTdClass} ${borderBottomClass}`
+                ? `${BASE_TD_CLASS} ${borderBottomClass}`
                 : isAllEmpty
                   ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
                   : `${actionCellBase} ${actionCellHover}`;
@@ -622,164 +646,106 @@ export default function PendingReasonsTab({
                   isSuccessConversion: isConvertedFromSuccess,
                 });
 
-              const rowCells = [
-                { type: 'text', val: item.flow || '-' },
-                { type: 'text', val: item.dateStr },
-                { type: 'text', val: getBasePlate(item.licensePlate) },
-                { type: 'text', val: item.driverName, cls: 'text-left' },
-                {
-                  type: 'detail',
-                  val: customerName || '-',
-                  id: item._id,
-                  cls: 'text-left',
-                  isConvertedFromSuccess,
-                },
-                {
-                  type: 'text',
-                  val: truncateInvoice || '-',
-                  content: invoiceNumber,
-                  isTruncated: isTruncated,
-                  cls: `text-left ${isTruncated && 'cursor-help'}`,
-                },
-                {
-                  type: 'status',
-                  item: item,
-                  pd: pd,
-                  originalStatus: origStatus,
-                  currentStatus: currentStatus,
-                  isModified: isStatusModified,
-                  isWrongGR: isWrongGR,
-                  cls: 'text-left',
-                  isConvertedFromSuccess,
-                },
-                {
-                  type: 'reason',
-                  val: isConvertedFromSuccess
-                    ? pd.detailReason || item.alasan || '-'
-                    : item.alasan || '-',
-                  cls: 'text-left',
-                },
-                {
-                  type: 'action',
-                  val: isConvertedSuccess ? '-' : pd.groupReason,
-                  cls: actionCellClass,
-                  isAllEmpty,
-                  disabled: isConvertedSuccess,
-                },
-                {
-                  type: 'action',
-                  val: isConvertedSuccess ? '-' : pd.detailReason,
-                  cls: actionCellClass,
-                  isAllEmpty,
-                  disabled: isConvertedSuccess,
-                },
-                {
-                  type: 'action',
-                  val: isConvertedSuccess ? '-' : pd.internalExternal,
-                  cls: actionCellClass,
-                  isAllEmpty,
-                  disabled: isConvertedSuccess,
-                },
-                {
-                  type: 'action',
-                  val: isConvertedSuccess ? '-' : pd.pic,
-                  cls: actionCellClass,
-                  isAllEmpty,
-                  disabled: isConvertedSuccess,
-                },
-                { type: 'text', val: item.openStr || '-' },
-                { type: 'text', val: item.closeStr || '-' },
-                { type: 'redEmpty', val: item.etaStr },
-                { type: 'redEmpty', val: item.etdStr },
-                { type: 'text', val: item.arrStr || '-' },
-                { type: 'text', val: item.depStr || '-' },
-                { type: 'text', val: item.visitTime || '-' },
-                {
-                  type: 'text',
-                  val: item.actualVisitMins,
-                  cls: item.actualVisitMins === 0 ? yellowCellStyle : '',
-                },
-                { type: 'redEmpty', val: item.routePlannedOrder },
-                { type: 'text', val: item.realSequence || '-' },
-                { type: 'text', val: item.temp },
-              ];
+              const reasonValue = isConvertedFromSuccess
+                ? pd.detailReason || item.alasan || '-'
+                : item.alasan || '-';
 
               return (
                 <tr
-                  key={idx}
+                  key={item._id || idx}
                   className={
                     isConvertedFromSuccess
                       ? 'bg-amber-100/60 dark:bg-amber-950/30 hover:bg-amber-100/90 dark:hover:bg-amber-900/40 transition-colors'
                       : 'hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
                   }
                 >
-                  {rowCells.map((cell, cIdx) => {
-                    const cellClass = `${tdClass} ${cell.cls || ''}`;
-
-                    if (cell.type === 'detail') {
-                      return (
-                        <SOCell
-                          key={cIdx}
-                          text={cell.val}
-                          className={cellClass}
-                          isError={cell.isError}
-                          isConvertedFromSuccess={cell.isConvertedFromSuccess}
-                          onClick={() => handleRowClick(cell.id)}
-                        />
-                      );
-                    }
-                    if (cell.type === 'status') {
-                      return (
-                        <StatusCell
-                          key={cIdx}
-                          item={cell.item}
-                          pd={cell.pd}
-                          originalStatus={cell.originalStatus}
-                          currentStatus={cell.currentStatus}
-                          isModified={cell.isModified}
-                          isWrongGR={cell.isWrongGR}
-                          hasPendingGR={hasPendingGR}
-                          formatStatus={formatStatus}
-                          normalizeStatus={normalizeStatus}
-                          isPendingGr={isPendingGr}
-                          translate={translate}
-                          onUpdatePendingDetail={onUpdatePendingDetail}
-                          className={cellClass}
-                          isConvertedFromSuccess={cell.isConvertedFromSuccess}
-                        />
-                      );
-                    }
-                    if (cell.type === 'reason') {
-                      return <ReasonCell key={cIdx} text={cell.val} className={cellClass} />;
-                    }
-                    if (cell.type === 'action') {
-                      return (
-                        <ActionCell
-                          key={cIdx}
-                          text={cell.val}
-                          className={cell.cls}
-                          isAllEmpty={cell.isAllEmpty}
-                          disabled={cell.disabled}
-                          onClick={openModal}
-                        />
-                      );
-                    }
-                    if (cell.type === 'redEmpty') {
-                      return (
-                        <td
-                          key={cIdx}
-                          className={isEmpty(cell.val) ? `${cellClass} ${redCellStyle}` : cellClass}
-                        >
-                          {isEmpty(cell.val) ? '-' : cell.val}
-                        </td>
-                      );
-                    }
-                    return (
-                      <Tooltip key={cIdx} tooltipContent={cell.isTruncated ? cell.content : ''}>
-                        <td className={cellClass}>{cell.val}</td>
-                      </Tooltip>
-                    );
-                  })}
+                  <td className={tdClass}>{item.flow || '-'}</td>
+                  <td className={tdClass}>{item.dateStr}</td>
+                  <td className={tdClass}>{getBasePlate(item.licensePlate)}</td>
+                  <td className={`${tdClass} text-left`}>{item.driverName}</td>
+                  <SOCell
+                    text={customerName || '-'}
+                    className={`${tdClass} text-left`}
+                    isConvertedFromSuccess={isConvertedFromSuccess}
+                    onClick={() => handleRowClick(item._id)}
+                  />
+                  <Tooltip tooltipContent={isTruncated ? invoiceNumber : ''}>
+                    <td className={`${tdClass} text-left ${isTruncated ? 'cursor-help' : ''}`}>
+                      {truncateInvoice || '-'}
+                    </td>
+                  </Tooltip>
+                  <StatusCell
+                    item={item}
+                    pd={pd}
+                    originalStatus={origStatus}
+                    currentStatus={currentStatus}
+                    isModified={isStatusModified}
+                    isWrongGR={isWrongGR}
+                    hasPendingGR={hasPendingGR}
+                    formatStatus={formatStatus}
+                    normalizeStatus={normalizeStatus}
+                    isPendingGr={isPendingGr}
+                    translate={translate}
+                    onUpdatePendingDetail={onUpdatePendingDetail}
+                    className={`${tdClass} text-left`}
+                    isConvertedFromSuccess={isConvertedFromSuccess}
+                  />
+                  <ReasonCell text={reasonValue} className={`${tdClass} text-left`} />
+                  <ActionCell
+                    text={isConvertedSuccess ? '-' : pd.groupReason}
+                    className={actionCellClass}
+                    isAllEmpty={isAllEmpty}
+                    disabled={isConvertedSuccess}
+                    onClick={openModal}
+                  />
+                  <ActionCell
+                    text={isConvertedSuccess ? '-' : pd.detailReason}
+                    className={actionCellClass}
+                    isAllEmpty={isAllEmpty}
+                    disabled={isConvertedSuccess}
+                    onClick={openModal}
+                  />
+                  <ActionCell
+                    text={isConvertedSuccess ? '-' : pd.internalExternal}
+                    className={actionCellClass}
+                    isAllEmpty={isAllEmpty}
+                    disabled={isConvertedSuccess}
+                    onClick={openModal}
+                  />
+                  <ActionCell
+                    text={isConvertedSuccess ? '-' : pd.pic}
+                    className={actionCellClass}
+                    isAllEmpty={isAllEmpty}
+                    disabled={isConvertedSuccess}
+                    onClick={openModal}
+                  />
+                  <td className={tdClass}>{item.openStr || '-'}</td>
+                  <td className={tdClass}>{item.closeStr || '-'}</td>
+                  <EmptyAlertCell
+                    value={item.etaStr}
+                    className={tdClass}
+                    alertStyle={RED_CELL_STYLE}
+                  />
+                  <EmptyAlertCell
+                    value={item.etdStr}
+                    className={tdClass}
+                    alertStyle={RED_CELL_STYLE}
+                  />
+                  <td className={tdClass}>{item.arrStr || '-'}</td>
+                  <td className={tdClass}>{item.depStr || '-'}</td>
+                  <td className={tdClass}>{item.visitTime || '-'}</td>
+                  <td
+                    className={`${tdClass} ${item.actualVisitMins === 0 ? YELLOW_CELL_STYLE : ''}`}
+                  >
+                    {item.actualVisitMins}
+                  </td>
+                  <EmptyAlertCell
+                    value={item.routePlannedOrder}
+                    className={tdClass}
+                    alertStyle={RED_CELL_STYLE}
+                  />
+                  <td className={tdClass}>{item.realSequence || '-'}</td>
+                  <td className={tdClass}>{item.temp}</td>
                 </tr>
               );
             })}

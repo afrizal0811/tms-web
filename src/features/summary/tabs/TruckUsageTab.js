@@ -1,16 +1,18 @@
 import { calculateUsageSummary } from '@/lib/reportGenerators/summary/sheets/truckUsageSheet';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import TruckUsageSummaryTable from './components/TruckUsageSummaryTable';
 import TruckUsageTable from './components/TruckUsageTable';
 import TruckUsageModal from './modals/TruckUsageModal';
 
 export default function TruckUsageTab({ data, translate, hubId, driverData, localeCode }) {
   const [localData, setLocalData] = useState(data);
+  const [prevData, setPrevData] = useState(data);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
 
-  useEffect(() => {
+  if (data !== prevData) {
+    setPrevData(data);
     setLocalData(data);
-  }, [data]);
+  }
 
   const { summaryData, activeTypes, dateMap, dateKeys, hubMasterData, masterVehicleList } =
     localData || {};
@@ -31,7 +33,7 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
     const oldManualObj = dayData[manualKey][updatedCell.type] || {};
     const oldCount = oldManualObj.count || 0;
 
-    const newCount = resData.isDelete ? 0 : parseInt(resData.count) || 0;
+    const newCount = resData.isDelete ? 0 : parseInt(resData.count, 10) || 0;
     dayData[manualKey][updatedCell.type] = {
       count: newCount,
       desc: resData.isDelete ? '' : resData.description,
@@ -48,44 +50,14 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
 
     const newSummary = calculateUsageSummary(newDateMap, dateKeys, hubMasterData, activeTypes);
 
-    setLocalData({
-      ...localData,
+    setLocalData((prev) => ({
+      ...prev,
       dateMap: newDateMap,
       summaryData: newSummary,
-    });
+    }));
   };
 
   if (!localData) return null;
-
-  const tableSections = [
-    {
-      title: 'summary.tabs.truck_usage.subtitle_1',
-      Component: TruckUsageSummaryTable,
-      props: { summaryData, activeTypes, isPercentage: false },
-    },
-    {
-      title: 'summary.tabs.truck_usage.subtitle_2',
-      Component: TruckUsageSummaryTable,
-      props: { summaryData, activeTypes, isPercentage: true },
-    },
-    {
-      title: 'summary.tabs.truck_usage.subtitle_3',
-      Component: TruckUsageTable,
-      props: {
-        ...localData,
-        isPercentage: false,
-        onCellClick: handleCellClick,
-      },
-    },
-    {
-      title: 'summary.tabs.truck_usage.subtitle_4',
-      Component: TruckUsageTable,
-      props: {
-        ...localData,
-        isPercentage: true,
-      },
-    },
-  ];
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
@@ -103,27 +75,58 @@ export default function TruckUsageTab({ data, translate, hubId, driverData, loca
       />
 
       <div className="flex-1 flex flex-col gap-8 overflow-y-auto p-0 pt-2 pb-6 relative">
-        {tableSections.slice(0, 2).map(({ title, Component, props }, index) => (
-          <div key={index} className="flex flex-col gap-2 w-full">
-            <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
-              {translate(title)}
-            </h3>
-            <div className="w-full overflow-x-auto relative">
-              <Component translate={translate} {...props} />
-            </div>
+        <div className="flex flex-col gap-2 w-full">
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
+            {translate('summary.tabs.truck_usage.subtitle_1')}
+          </h3>
+          <div className="w-full overflow-x-auto relative">
+            <TruckUsageSummaryTable
+              translate={translate}
+              summaryData={summaryData}
+              activeTypes={activeTypes}
+              isPercentage={false}
+            />
           </div>
-        ))}
+        </div>
+
+        <div className="flex flex-col gap-2 w-full">
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0">
+            {translate('summary.tabs.truck_usage.subtitle_2')}
+          </h3>
+          <div className="w-full overflow-x-auto relative">
+            <TruckUsageSummaryTable
+              translate={translate}
+              summaryData={summaryData}
+              activeTypes={activeTypes}
+              isPercentage={true}
+            />
+          </div>
+        </div>
 
         <div className="w-full overflow-x-auto shrink-0 pb-4">
           <div className="flex flex-col gap-8 w-max min-w-full">
-            {tableSections.slice(2, 4).map(({ title, Component, props }, index) => (
-              <div key={index + 2} className="flex flex-col gap-2 w-full">
-                <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0 w-fit z-30">
-                  {translate(title)}
-                </h3>
-                <Component translate={translate} {...props} />
-              </div>
-            ))}
+            <div className="flex flex-col gap-2 w-full">
+              <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0 w-fit z-30">
+                {translate('summary.tabs.truck_usage.subtitle_3')}
+              </h3>
+              <TruckUsageTable
+                translate={translate}
+                {...localData}
+                isPercentage={false}
+                onCellClick={handleCellClick}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 w-full">
+              <h3 className="font-bold text-slate-700 dark:text-slate-200 px-1 sticky left-0 w-fit z-30">
+                {translate('summary.tabs.truck_usage.subtitle_4')}
+              </h3>
+              <TruckUsageTable
+                translate={translate}
+                {...localData}
+                isPercentage={true}
+              />
+            </div>
           </div>
         </div>
       </div>

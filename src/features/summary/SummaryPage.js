@@ -216,16 +216,14 @@ export default function SummaryPage() {
 
   const handleApplyDate = () => {
     const [start, end] = tempDateRange;
-    if (start && end) {
-      const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if (!start || !end) return;
 
-      if (diffDays > 14) {
-        setPendingDateRange(tempDateRange);
-        setShowWarningModal(true);
-      } else {
-        setDateRange(tempDateRange);
-      }
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    if (diffDays > 14) {
+      setPendingDateRange(tempDateRange);
+      setShowWarningModal(true);
     } else {
       setDateRange(tempDateRange);
     }
@@ -648,6 +646,8 @@ export default function SummaryPage() {
 
   const getFooterConfig = () => {
     switch (activeTab) {
+      case 'Routing Time':
+        return null;
       case 'Truck Detail':
         return {
           text: t('common.click_for_detail_param', { parameter: t('summary.row') }),

@@ -42,18 +42,15 @@ export default function Dashboard({ driverData }) {
   const { storedLocation: hubId } = getLocalStorage();
 
   useEffect(() => {
-    const fetchHubSettings = async () => {
-      try {
-        const hubs = getCachedHubs();
-        const activeHub = hubs?.activeHub;
-        if (activeHub) {
-          setHasPendingGR(activeHub.hasPendingGR || false);
-        }
-      } catch (error) {
-        console.error('Error Hubs:', error);
+    try {
+      const hubs = getCachedHubs();
+      const activeHub = hubs?.activeHub;
+      if (activeHub) {
+        setHasPendingGR(activeHub.hasPendingGR || false);
       }
-    };
-    fetchHubSettings();
+    } catch (error) {
+      console.error('Error Hubs:', error);
+    }
   }, [hubId, driverData]);
 
   const handleDateChange = (date) => {
@@ -172,14 +169,23 @@ export default function Dashboard({ driverData }) {
 
   const driverMap = useMemo(() => {
     const map = new Map();
-    if (driverData) {
-      driverData.forEach((driver) => {
-        if (driver.email && driver.name) {
-          map.set(normalizeEmail(driver.email), driver.name);
-        }
-      });
-    }
+    driverData?.forEach((driver) => {
+      if (driver.email && driver.name) {
+        map.set(normalizeEmail(driver.email), driver.name);
+      }
+    });
     return map;
+  }, [driverData]);
+
+  const driverTypeLookup = useMemo(() => {
+    if (!driverData) return { byEmail: new Map(), byPlat: new Map() };
+    const byEmail = new Map();
+    const byPlat = new Map();
+    driverData.forEach((dr) => {
+      if (dr.email) byEmail.set(normalizeEmail(dr.email), dr);
+      if (dr.plat) byPlat.set((dr.plat || '').replace(/\s+/g, '').toLowerCase(), dr);
+    });
+    return { byEmail, byPlat };
   }, [driverData]);
 
   const applyFilters = useCallback(
@@ -194,24 +200,26 @@ export default function Dashboard({ driverData }) {
       }
       if (typeFilter && typeFilter !== 'all') {
         filtered = filtered.filter((t) => {
-          let rawEmail = t.assignee || t.assignedTo?.email || t.doneBy;
-          let email =
+          const rawEmail = t.assignee || t.assignedTo?.email || t.doneBy;
+          const email =
             typeof rawEmail === 'string' && rawEmail.includes(',')
               ? rawEmail.split(',')[0].trim()
               : rawEmail;
-          email = normalizeEmail(email);
+          const normalizedEmail = normalizeEmail(email);
           const plat = t.basePlat || t.vehicleName || t.plat;
           const platNorm = (plat || '').replace(/\s+/g, '').toLowerCase();
-          const d = driverData?.find(
-            (dr) => normalizeEmail(dr.email) === email || (dr.plat || '').toLowerCase() === platNorm
-          );
+
+          const d =
+            (normalizedEmail && driverTypeLookup.byEmail.get(normalizedEmail)) ||
+            (platNorm && driverTypeLookup.byPlat.get(platNorm));
+
           if (!d) return false;
           return getBaseVehicleType(d.type, masterVehicleTypes) === typeFilter;
         });
       }
       return filtered;
     },
-    [storageFilter, typeFilter, driverData, masterVehicleTypes]
+    [storageFilter, typeFilter, driverTypeLookup, masterVehicleTypes]
   );
 
   const filteredDailyTasks = useMemo(

@@ -3,7 +3,6 @@
 import Tooltip from '@/components/Tooltip';
 import { formatLongDate } from '@/lib/utils';
 import { useState } from 'react';
-import RoutingDropdown from './components/RoutingDropdown';
 import DistanceSummaryModal from './modals/DistanceSummaryModal';
 
 export default function DistanceSummaryTab({ data, monthTotals, translate, localeCode }) {
@@ -22,7 +21,6 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState([]);
   const [modalHeader, setModalHeader] = useState({ title: '', subtitle: '' });
-  const [openDropdown, setOpenDropdown] = useState(null);
 
   const handleCellClick = (details, dateStr, type) => {
     const validDetails = details || [];
@@ -86,18 +84,6 @@ export default function DistanceSummaryTab({ data, monthTotals, translate, local
             {formatLongDate(row.dateStr || row.date, localeCode)}
           </span>
         </Tooltip>
-      );
-    } else if (row.routingNames && row.routingNames.length > 0 && !row.isSunday) {
-      const dateVal = row.dateStr || row.date;
-      return (
-        <RoutingDropdown
-          displayText={formatLongDate(dateVal, localeCode)}
-          routingNames={row.routingNames}
-          translate={translate}
-          position="right"
-          isOpen={openDropdown === dateVal}
-          onToggle={() => setOpenDropdown(openDropdown === dateVal ? null : dateVal)}
-        />
       );
     } else if (
       (!row.routingNames || row.routingNames.length === 0) &&

@@ -4,10 +4,32 @@ import { useLanguage } from '@/context/LanguageContext';
 import enUS from 'date-fns/locale/en-US';
 import id from 'date-fns/locale/id';
 import { useRef } from 'react';
-import DatePicker, { registerLocale } from 'react-datepicker';
+import DatePicker, { CalendarContainer, registerLocale } from 'react-datepicker';
 
 registerLocale('id', id);
 registerLocale('en', enUS);
+
+function CustomCalendarContainer({ className, children, ...rest }) {
+  return (
+    <CalendarContainer
+      className={className}
+      onMouseDown={(e) => {
+        if (e.detail > 1) {
+          e.preventDefault();
+          window.getSelection?.()?.removeAllRanges?.();
+        }
+      }}
+      onSelectStart={(e) => {
+        if (e.target && e.target.tagName !== 'INPUT') {
+          e.preventDefault();
+        }
+      }}
+      {...rest}
+    >
+      {children}
+    </CalendarContainer>
+  );
+}
 
 export default function CustomDatePicker({
   className = 'w-full xl:w-[250px]!',
@@ -34,6 +56,7 @@ export default function CustomDatePicker({
   const { localeCode, isIndonesian } = useLanguage();
   const datePickerRef = useRef(null);
   const isDisabled = isLoading || disabled;
+  const isApplyDisabled = isDisabled || (selectsRange ? !startDate || !endDate : !selected);
 
   const stateClasses = isDisabled
     ? 'bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 cursor-not-allowed border-gray-200 dark:border-slate-700'
@@ -91,16 +114,20 @@ export default function CustomDatePicker({
       popperPlacement="bottom"
       fixedHeight
       {...props}
+      calendarClassName={`select-none ${props.calendarClassName || ''}`.trim()}
+      calendarContainer={props.calendarContainer || CustomCalendarContainer}
     >
       {showApplyButton && (
         <div className="flex justify-end pt-2 -mb-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-lg">
           <button
             type="button"
+            disabled={isApplyDisabled}
             onClick={() => {
+              if (isApplyDisabled) return;
               onApply?.();
               datePickerRef.current?.setOpen(false);
             }}
-            className="px-3 py-1.5 bg-sky-600 dark:bg-sky-700 text-white text-xs font-medium rounded-md hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors shadow-sm cursor-pointer"
+            className="px-3 py-1.5 bg-sky-600 dark:bg-sky-700 text-white text-xs font-medium rounded-md hover:bg-sky-700 dark:hover:bg-sky-600 disabled:hover:bg-sky-600 dark:disabled:hover:bg-sky-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {applyText}
           </button>

@@ -12,7 +12,6 @@ import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import TableData from '@/components/table/TableData';
 import Tooltip from '@/components/Tooltip';
-import { useLanguage } from '@/context/LanguageContext';
 import { getHubs, getPendingDetails, getTasks } from '@/lib/api/mileapp';
 import { applyPendingDetailsToTasks, deliveryTooltip } from '@/lib/deliveryStatus';
 import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
@@ -27,13 +26,13 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function TaskPage() {
-  const { t } = useLanguage();
   const { isSuperadmin } = useSuperadmin();
   const {
+    t,
     formatStatus: formatDeliveryStatus,
-    normalizeStatus: normalizeDeliveryStatus,
     statusOptions: deliveryStatusOptions,
     getStatusLabel: getDeliveryStatusLabel,
+    isStatus,
   } = useDeliveryStatus();
 
   const [dateRange, setDateRange] = useState([new Date(), new Date()]);
@@ -55,14 +54,17 @@ export default function TaskPage() {
 
   const cacheRef = useRef({ ONE: null, ALL: null, dateKey: '' });
 
-  const statusTaskOptions = [
-    { label: t('common.all'), value: 'ALL' },
-    { label: t('common.status.done'), value: 'DONE' },
-    { label: t('common.status.unassigned'), value: 'UNASSIGNED' },
-    { label: t('common.status.ongoing'), value: 'ONGOING' },
-    { label: t('common.status.manual_assign'), value: 'MANUAL_ASSIGN' },
-    { label: t('common.status.diff_day'), value: 'DIFF_DAY' },
-  ];
+  const statusTaskOptions = useMemo(
+    () => [
+      { label: t('common.all'), value: 'ALL' },
+      { label: t('common.status.done'), value: 'DONE' },
+      { label: t('common.status.unassigned'), value: 'UNASSIGNED' },
+      { label: t('common.status.ongoing'), value: 'ONGOING' },
+      { label: t('common.status.manual_assign'), value: 'MANUAL_ASSIGN' },
+      { label: t('common.status.diff_day'), value: 'DIFF_DAY' },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     if (isSuperadmin) {
@@ -152,13 +154,10 @@ export default function TaskPage() {
     };
   }, [fetchTasksData]);
 
-  const hubMap = useMemo(() => {
-    const map = new Map();
-    hubsData.forEach((hub) => {
-      map.set(hub._id, hub.name);
-    });
-    return map;
-  }, [hubsData]);
+  const hubMap = useMemo(
+    () => new Map(hubsData?.map((hub) => [hub._id, hub.name])),
+    [hubsData]
+  );
 
   const processedData = useMemo(() => {
     let result = tasks.map((task) => {
@@ -180,31 +179,26 @@ export default function TaskPage() {
           task.isModified ||
             (task.pendingDetail?.new_status &&
               task.originalStatus &&
-              normalizeDeliveryStatus(task.pendingDetail.new_status) !==
-                normalizeDeliveryStatus(task.originalStatus))
+              !isStatus(task.originalStatus, task.pendingDetail.new_status))
         ),
       };
     });
 
     if (statusDeliveryFilter !== 'ALL') {
-      result = result.filter(
-        (task) => normalizeDeliveryStatus(task.statusDelivery) === statusDeliveryFilter
-      );
+      result = result.filter((task) => isStatus(task.statusDelivery, statusDeliveryFilter));
     }
 
     if (statusTaskFilter !== 'ALL') {
       result = result.filter((task) => {
         if (statusTaskFilter === 'DONE') return !!task.statusDelivery;
-        if (statusTaskFilter === 'UNASSIGNED')
-          return !task.assignee || task.assignee === '';
-        if (statusTaskFilter === 'ONGOING')
-          return task.status?.toLowerCase() === 'ongoing';
-        if (statusTaskFilter === 'MANUAL_ASSIGN')
+        if (statusTaskFilter === 'UNASSIGNED') return !task.assignee;
+        if (statusTaskFilter === 'ONGOING') return task.status?.toLowerCase() === 'ongoing';
+        if (statusTaskFilter === 'MANUAL_ASSIGN') {
           return (
             task.assignee &&
-            task.assignee !== '' &&
             (!task.routingResultId || !task.routePlannedOrder || !task.eta || !task.etd)
           );
+        }
         if (statusTaskFilter === 'DIFF_DAY') {
           const startFormat = task.startTime ? formatDateUniversal(task.startTime) : null;
           const doneFormat = task.doneTime ? formatDateUniversal(task.doneTime) : null;
@@ -227,11 +221,11 @@ export default function TaskPage() {
       });
     }
 
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     if (q) {
       result = result.filter((task) => {
         const strToSearch =
-          `${task._hubName} ${task._custInfo.name} ${task._custInfo.id} ${task._custInfo.invoiceNumber} ${task.driverName}`.toLowerCase();
+          `${task._hubName} ${task._custName} ${task._custId} ${task._invoiceNumber} ${task.driverName || ''}`.toLowerCase();
         return strToSearch.includes(q);
       });
     }
@@ -245,165 +239,166 @@ export default function TaskPage() {
     statusTaskFilter,
     storageFilter,
     formatDeliveryStatus,
-    normalizeDeliveryStatus,
+    isStatus,
   ]);
 
   const handleApplyDate = () => {
-    if (!tempStart) return;
-    const validEnd = tempEnd || tempStart;
-    const diffDays = Math.ceil(Math.abs(validEnd - tempStart) / (1000 * 60 * 60 * 24));
+    if (!tempStart || !tempEnd) return;
+    const diffDays = Math.ceil(Math.abs(tempEnd - tempStart) / (1000 * 60 * 60 * 24));
 
     if (diffDays > 14) {
       setShowWarningModal(true);
     } else {
-      setDateRange([tempStart, validEnd]);
+      setDateRange([tempStart, tempEnd]);
     }
   };
 
-  const cw = isAllHub
-    ? {
-        hub: 'w-[10%]',
-        flow: 'w-[8%]',
-        name: 'w-[12%]',
-        id: 'w-[8%]',
-        loc: 'w-[8%]',
-        inv: 'w-[12%]',
-        stat: 'w-[8%]',
-        start: 'w-[8%]',
-        assign: 'w-[8%]',
-        done: 'w-[8%]',
-        assignee: 'w-[10%]',
-      }
-    : {
-        flow: 'w-[8%]',
-        name: 'w-[15%]',
-        id: 'w-[8%]',
-        loc: 'w-[10%]',
-        inv: 'w-[15%]',
-        stat: 'w-[10%]',
-        start: 'w-[8%]',
-        assign: 'w-[8%]',
-        done: 'w-[8%]',
-        assignee: 'w-[10%]',
-      };
-
-  const columns = [
-    ...(isAllHub
-      ? [
-          {
-            key: '_hubName',
-            label: t('common.branch'),
-            width: cw.hub,
-            sortable: true,
-            render: (row) => <HighlightText text={row._hubName} highlight={searchQuery} />,
-          },
-        ]
-      : []),
-    {
-      key: 'flow',
-      label: t('common.flow'),
-      width: cw.flow,
-      sortable: true,
-      render: (row) => row.flow || '-',
-    },
-    {
-      key: '_custName',
-      label: t('common.customer_name'),
-      width: cw.name,
-      sortable: true,
-      render: (row) => <HighlightText text={row._custName} highlight={searchQuery} />,
-    },
-    {
-      key: '_custId',
-      label: t('common.customer_id'),
-      width: cw.id,
-      sortable: true,
-      render: (row) => <HighlightText text={row._custId} highlight={searchQuery} />,
-    },
-    {
-      key: '_custLocation',
-      label: t('common.location_id'),
-      width: cw.loc,
-      sortable: true,
-    },
-    {
-      key: '_invoiceNumber',
-      label: t('common.invoice_number'),
-      width: cw.inv,
-      sortable: true,
-      render: (row) =>
-        row._isTruncated ? (
-          <Tooltip tooltipContent={row._invoiceNumber}>
-            <span className="cursor-help block">
-              <HighlightText text={row._truncateInvoice || '-'} highlight={searchQuery} />
-            </span>
-          </Tooltip>
-        ) : (
-          <HighlightText text={row._invoiceNumber || '-'} highlight={searchQuery} />
-        ),
-    },
-    {
-      key: '_statusDel',
-      label: t('common.status.delivery_status'),
-      width: cw.stat,
-      sortable: true,
-      render: (row) => {
-        const isModified = Boolean(row._isStatusModified || row.isModified);
-        if (isModified) {
-          const tooltipContent = deliveryTooltip({
-            originalStatus: row.originalStatus || row.statusDelivery,
-            pendingDetail: row.pendingDetail,
-            formatStatus: formatDeliveryStatus,
-            t,
-          });
-
-          return (
-            <div className="inline-flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-red-600 dark:text-red-400">
-                {row._statusDel}
-              </span>
-              <span onClick={(e) => e.stopPropagation()}>
-                <InformationButton infoText={tooltipContent} size="4" />
-              </span>
-            </div>
-          );
+  const columns = useMemo(() => {
+    const cw = isAllHub
+      ? {
+          hub: 'w-[10%]',
+          flow: 'w-[8%]',
+          name: 'w-[12%]',
+          id: 'w-[8%]',
+          loc: 'w-[8%]',
+          inv: 'w-[12%]',
+          stat: 'w-[8%]',
+          start: 'w-[8%]',
+          assign: 'w-[8%]',
+          done: 'w-[8%]',
+          assignee: 'w-[10%]',
         }
+      : {
+          flow: 'w-[8%]',
+          name: 'w-[15%]',
+          id: 'w-[8%]',
+          loc: 'w-[10%]',
+          inv: 'w-[15%]',
+          stat: 'w-[10%]',
+          start: 'w-[8%]',
+          assign: 'w-[8%]',
+          done: 'w-[8%]',
+          assignee: 'w-[10%]',
+        };
 
-        return row._statusDel;
+    return [
+      ...(isAllHub
+        ? [
+            {
+              key: '_hubName',
+              label: t('common.branch'),
+              width: cw.hub,
+              sortable: true,
+              render: (row) => <HighlightText text={row._hubName} highlight={searchQuery} />,
+            },
+          ]
+        : []),
+      {
+        key: 'flow',
+        label: t('common.flow'),
+        width: cw.flow,
+        sortable: true,
+        render: (row) => row.flow || '-',
       },
-    },
-    {
-      key: 'assignedTime',
-      label: t('common.assigned_time'),
-      width: cw.assign,
-      sortable: true,
-      render: (row) =>
-        row.startTime ? formatDateUniversal(row.assignedTime, 'DD/MM/YYYY HH:mm') : '-',
-    },
-    {
-      key: 'startTime',
-      label: t('common.start_time'),
-      width: cw.start,
-      sortable: true,
-      render: (row) =>
-        row.startTime ? formatDateUniversal(row.startTime, 'DD/MM/YYYY HH:mm') : '-',
-    },
-    {
-      key: 'doneTime',
-      label: t('common.done_time'),
-      width: cw.done,
-      sortable: true,
-      render: (row) =>
-        row.startTime ? formatDateUniversal(row.doneTime, 'DD/MM/YYYY HH:mm') : '-',
-    },
-    {
-      key: 'driverName',
-      label: t('common.driver'),
-      width: cw.assignee,
-      sortable: true,
-      render: (row) => <HighlightText text={row.driverName} highlight={searchQuery} />,
-    },
-  ];
+      {
+        key: '_custName',
+        label: t('common.customer_name'),
+        width: cw.name,
+        sortable: true,
+        render: (row) => <HighlightText text={row._custName} highlight={searchQuery} />,
+      },
+      {
+        key: '_custId',
+        label: t('common.customer_id'),
+        width: cw.id,
+        sortable: true,
+        render: (row) => <HighlightText text={row._custId} highlight={searchQuery} />,
+      },
+      {
+        key: '_custLocation',
+        label: t('common.location_id'),
+        width: cw.loc,
+        sortable: true,
+      },
+      {
+        key: '_invoiceNumber',
+        label: t('common.invoice_number'),
+        width: cw.inv,
+        sortable: true,
+        render: (row) =>
+          row._isTruncated ? (
+            <Tooltip tooltipContent={row._invoiceNumber}>
+              <span className="cursor-help block">
+                <HighlightText text={row._truncateInvoice || '-'} highlight={searchQuery} />
+              </span>
+            </Tooltip>
+          ) : (
+            <HighlightText text={row._invoiceNumber || '-'} highlight={searchQuery} />
+          ),
+      },
+      {
+        key: '_statusDel',
+        label: t('common.status.delivery_status'),
+        width: cw.stat,
+        sortable: true,
+        render: (row) => {
+          const isModified = Boolean(row._isStatusModified || row.isModified);
+          if (isModified) {
+            const tooltipContent = deliveryTooltip({
+              originalStatus: row.originalStatus || row.statusDelivery,
+              pendingDetail: row.pendingDetail,
+              formatStatus: formatDeliveryStatus,
+              t,
+            });
+
+            return (
+              <div className="inline-flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-red-600 dark:text-red-400">
+                  {row._statusDel}
+                </span>
+                <span onClick={(e) => e.stopPropagation()}>
+                  <InformationButton infoText={tooltipContent} size="4" />
+                </span>
+              </div>
+            );
+          }
+
+          return row._statusDel;
+        },
+      },
+      {
+        key: 'assignedTime',
+        label: t('common.assigned_time'),
+        width: cw.assign,
+        sortable: true,
+        render: (row) =>
+          row.startTime ? formatDateUniversal(row.assignedTime, 'DD/MM/YYYY HH:mm') : '-',
+      },
+      {
+        key: 'startTime',
+        label: t('common.start_time'),
+        width: cw.start,
+        sortable: true,
+        render: (row) =>
+          row.startTime ? formatDateUniversal(row.startTime, 'DD/MM/YYYY HH:mm') : '-',
+      },
+      {
+        key: 'doneTime',
+        label: t('common.done_time'),
+        width: cw.done,
+        sortable: true,
+        render: (row) =>
+          row.startTime ? formatDateUniversal(row.doneTime, 'DD/MM/YYYY HH:mm') : '-',
+      },
+      {
+        key: 'driverName',
+        label: t('common.driver'),
+        width: cw.assignee,
+        sortable: true,
+        render: (row) => <HighlightText text={row.driverName} highlight={searchQuery} />,
+      },
+    ];
+  }, [isAllHub, searchQuery, t, formatDeliveryStatus]);
 
   const searchPlaceholder = `${t('common.customer_name')}, ${t('common.customer_id')}, ${t('common.invoice_number')} ${t('common.driver')} ${isAllHub ? `, ${t('common.branch')}` : ''}`;
 

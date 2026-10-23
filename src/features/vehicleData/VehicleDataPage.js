@@ -10,7 +10,7 @@ import { getOdometer } from '@/lib/api/mceasy/odometer';
 import { getDrivers } from '@/lib/api/mileapp';
 import { formatDateUniversal, getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toastError } from '../../lib/toast';
+import { toastError } from '@/lib/toast';
 import TemplateTab from './components/TemplateTab';
 import VehicleTab from './components/VehicleTab';
 import { handleConfirmDownload } from './help';
@@ -23,11 +23,17 @@ const sortData = (a, b) => {
 };
 
 const processVehicleData = (rawDriversData, odometer) => {
+  const odoMap = new Map();
+  if (Array.isArray(odometer)) {
+    odometer.forEach((o) => {
+      if (o.vehicleId != null) odoMap.set(String(o.vehicleId), o.odometer);
+    });
+  }
+
   const processedData = rawDriversData.map((v) => {
     let odoValue = '-';
-    if (v.vmsVehicleId && Array.isArray(odometer)) {
-      const match = odometer.find((o) => String(o.vehicleId) === String(v.vmsVehicleId));
-      if (match) odoValue = match.odometer;
+    if (v.vmsVehicleId && odoMap.has(String(v.vmsVehicleId))) {
+      odoValue = odoMap.get(String(v.vmsVehicleId));
     }
 
     let parsedTags = [];
@@ -294,13 +300,16 @@ export default function VehicleData() {
   ];
 
   const totalItems = filteredData.length;
-  const tabs = [
-    { id: 'master', label: t('vehicle.tabs.master_title') },
-    ...(conditionalData.length > 0
-      ? [{ id: 'conditional', label: t('vehicle.tabs.conditional_title') }]
-      : []),
-    { id: 'template', label: t('vehicle.tabs.template_title') },
-  ];
+  const tabs = useMemo(
+    () => [
+      { id: 'master', label: t('vehicle.tabs.master_title') },
+      ...(conditionalData.length > 0
+        ? [{ id: 'conditional', label: t('vehicle.tabs.conditional_title') }]
+        : []),
+      { id: 'template', label: t('vehicle.tabs.template_title') },
+    ],
+    [t, conditionalData.length]
+  );
   const footerData = {
     title: t('common.color_exp'),
     data: colorLegend,

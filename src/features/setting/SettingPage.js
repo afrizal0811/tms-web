@@ -8,7 +8,7 @@ import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import GeneralTab from './tabs/GeneralTab';
 import PermissionTab from './tabs/PermissionTab';
 import SyncDataTab from './tabs/SyncDataTab';
@@ -30,11 +30,16 @@ export default function SettingPage() {
   const isSecretMode = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
   const isReadOnlyGeneral = !isSuperadmin && !isSecretMode;
   const isReadOnlySync = !isSuperadmin && !isSecretMode;
-  const buttonData = [
-    { tab: 'general', label: t('setting.tab.general.title') },
-    ...(isSuperadmin ? [{ tab: 'permission', label: t('setting.tab.permission.title') }] : []),
-    { tab: 'sync', label: t('setting.tab.sync_data.title') },
-  ];
+
+  const buttonData = useMemo(
+    () => [
+      { tab: 'general', label: t('setting.tab.general.title') },
+      ...(isSuperadmin ? [{ tab: 'permission', label: t('setting.tab.permission.title') }] : []),
+      { tab: 'sync', label: t('setting.tab.sync_data.title') },
+    ],
+    [isSuperadmin, t]
+  );
+
   const fetchAllData = useCallback(async () => {
     try {
       const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
@@ -44,9 +49,10 @@ export default function SettingPage() {
         getVehicleTypes(),
         getReasons(),
       ]);
+
       let maxDriverDate = null;
       let driverUpdateBy = '-';
-      if (dStatus && dStatus._max && dStatus._max.updatedAt) {
+      if (dStatus?._max?.updatedAt) {
         maxDriverDate = new Date(dStatus._max.updatedAt);
         driverUpdateBy = dStatus._max.updateBy || '-';
       }
@@ -60,23 +66,21 @@ export default function SettingPage() {
       setHubs(hubsDb);
       setRolesList(filteredRoles);
       setLastUpdated({
-        hubs:
-          hubsDb.activeHub && hubsDb.activeHub.updatedAt
-            ? formatDateUniversal(new Date(hubsDb.activeHub.updatedAt), 'DD/MM/YYYY HH:mm:ss')
-            : '-',
-        roles:
-          rolesDb.length > 0 && rolesDb[0].updatedAt
-            ? formatDateUniversal(new Date(rolesDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
-            : '-',
+        hubs: hubsDb?.activeHub?.updatedAt
+          ? formatDateUniversal(new Date(hubsDb.activeHub.updatedAt), 'DD/MM/YYYY HH:mm:ss')
+          : '-',
+        roles: rolesDb?.[0]?.updatedAt
+          ? formatDateUniversal(new Date(rolesDb[0].updatedAt), 'DD/MM/YYYY HH:mm:ss')
+          : '-',
         drivers: latestDriverSync,
       });
       setUpdatedBy({
-        hubs: (hubsDb?.activeHub && hubsDb.activeHub.updateBy) || '-',
-        roles: (rolesDb?.length > 0 && rolesDb[0].updateBy) || '-',
+        hubs: hubsDb?.activeHub?.updateBy || '-',
+        roles: rolesDb?.[0]?.updateBy || '-',
         drivers: driverUpdateBy,
       });
 
-      setVehicleTypes(vTypes.allTypes);
+      setVehicleTypes(vTypes?.allTypes || []);
       setReasons(reasonsDb || []);
     } catch (e) {
       toastError(t('common.toast.error', { err: e.message }), e);
@@ -87,7 +91,7 @@ export default function SettingPage() {
     const checkAuthAndLoadData = async () => {
       try {
         const { storedUser } = getLocalStorage();
-        const secret = window.SECRET_MODE_ACTIVE === true;
+        const secret = typeof window !== 'undefined' && window.SECRET_MODE_ACTIVE === true;
 
         if (!storedUser && !secret) {
           toastError(t('home.toast.no_session'));
@@ -117,10 +121,6 @@ export default function SettingPage() {
   if (!isAuthorized) return null;
 
   const renderTabContent = () => {
-    const triggerRefresh = () => {
-      fetchAllData();
-    };
-
     switch (activeTab) {
       case 'general':
         return (
@@ -128,7 +128,7 @@ export default function SettingPage() {
             vehicleTypes={vehicleTypes}
             hubs={hubs}
             reasons={reasons}
-            onRefresh={triggerRefresh}
+            onRefresh={fetchAllData}
             isReadOnly={isReadOnlyGeneral}
             translate={t}
           />
@@ -137,7 +137,7 @@ export default function SettingPage() {
         return (
           <PermissionTab
             roles={rolesList}
-            onRefresh={triggerRefresh}
+            onRefresh={fetchAllData}
             isReadOnly={isReadOnlyGeneral}
             translate={t}
           />
@@ -148,7 +148,7 @@ export default function SettingPage() {
             hubs={hubs}
             lastUpdated={lastUpdated}
             updatedBy={updatedBy}
-            onRefresh={triggerRefresh}
+            onRefresh={fetchAllData}
             isReadOnly={isReadOnlySync}
             translate={t}
           />

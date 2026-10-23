@@ -26,15 +26,16 @@ export default function ServiceLevelTab({
 
     const isDateRange = typeof displayDate === 'string' && displayDate.includes(' - ');
     const formattedDate = isDateRange ? displayDate : formatLongDate(displayDate, localeCode);
-    const dayLabel =
-      leadTime !== '' && leadTime !== null && leadTime !== undefined
-        ? ` | ${leadTime} ${translate('common.day')}`
-        : '';
+    const dayLabel = leadTime != null && leadTime !== '' ? ` | ${leadTime} ${translate('common.day')}` : '';
+
+    const tabTypeKey = isDateRange
+      ? 'summary.tabs.service_level.summary_tab'
+      : 'summary.tabs.service_level.detail_tab';
 
     setModalConfig({
       isOpen: true,
       tasks: taskList,
-      title: `${isDateRange ? translate('summary.tabs.service_level.summary_tab') : translate('summary.tabs.service_level.detail_tab')} - ${storageType}`,
+      title: `${translate(tabTypeKey)} - ${storageType}`,
       subtitle: `${formattedDate}${dayLabel}`,
     });
   };
@@ -66,16 +67,16 @@ export default function ServiceLevelTab({
 
     let detectedMaxDay = 7;
 
-    (tasks || []).forEach((t) => {
-      if (t.status !== 'DONE' || !t.createdTime || !t.doneTime) return;
+    for (const t of tasks || []) {
+      if (t.status !== 'DONE' || !t.createdTime || !t.doneTime) continue;
 
       const cDate = new Date(t.createdTime);
       const dDate = new Date(t.doneTime);
 
-      if (isNaN(cDate.getTime()) || isNaN(dDate.getTime())) return;
+      if (isNaN(cDate.getTime()) || isNaN(dDate.getTime())) continue;
       const doneWib = formatDateUniversal(dDate);
 
-      if (!map[doneWib]) return;
+      if (!map[doneWib]) continue;
 
       const cDateMid = new Date(
         Date.UTC(cDate.getUTCFullYear(), cDate.getUTCMonth(), cDate.getUTCDate())
@@ -89,35 +90,34 @@ export default function ServiceLevelTab({
       if (diffDays > detectedMaxDay) detectedMaxDay = diffDays;
 
       const storageType = (t.typeStorage || '').toUpperCase().includes('FROZEN') ? 'Frozen' : 'Dry';
-
       const dayObj = map[doneWib];
-      if (!dayObj[storageType][diffDays]) {
-        dayObj[storageType][diffDays] = [];
+
+      (dayObj[storageType][diffDays] ??= []).push(t);
+
+      if (storageType === 'Dry') {
+        dayObj.dryTasks.push(t);
+      } else {
+        dayObj.frozenTasks.push(t);
       }
-      dayObj[storageType][diffDays].push(t);
+    }
 
-      if (storageType === 'Dry') dayObj.dryTasks.push(t);
-      else dayObj.frozenTasks.push(t);
-    });
-
-    keys.forEach((k) => {
+    for (const k of keys) {
       const dm = map[k.str];
       const isZero = dm.dryTasks.length === 0 && dm.frozenTasks.length === 0;
       k.isPast = isPastDate(k.str);
       k.isDynamicHoliday = !k.isSunday && k.isPast && isZero;
       k.isHoliday = k.isSunday || k.isDynamicHoliday;
-    });
+    }
 
     return { dateKeys: keys, dateMap: map, maxDay: detectedMaxDay };
   }, [tasks, startDateStr, endDateStr]);
 
   const daysList = useMemo(() => {
-    const list = [];
-    for (let i = 1; i <= maxDay; i++) list.push(i);
-    return list;
+    return Array.from({ length: maxDay }, (_, i) => i + 1);
   }, [maxDay]);
 
   const totalRowsCount = daysList.length + 1;
+  const dateRangeStr = `${formatLongDate(startDateStr, localeCode)} - ${formatLongDate(endDateStr, localeCode)}`;
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 p-0 overflow-auto">
@@ -133,7 +133,7 @@ export default function ServiceLevelTab({
 
       <div className="flex-1 overflow-auto p-0 flex flex-col gap-6">
         <div className="w-full">
-          <h3 className="font-bold text-slate-700 dark:text-slate-200 my-2 px-2 ">
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 my-2 px-2">
             {translate('summary.tabs.service_level.summary_tab')}
           </h3>
           <div className="w-full overflow-x-auto">
@@ -143,7 +143,7 @@ export default function ServiceLevelTab({
               daysList={daysList}
               translate={translate}
               onCellClick={handleOpenModal}
-              dateRangeStr={`${formatLongDate(startDateStr, localeCode)} - ${formatLongDate(endDateStr, localeCode)}`}
+              dateRangeStr={dateRangeStr}
             />
           </div>
         </div>

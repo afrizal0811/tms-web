@@ -25,9 +25,8 @@ import {
   tomorrowDate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getHubs, getLocationHistories, getResults, getTasks } from '../../lib/api/mileapp';
-
-import { toastError, toastWarning } from '../../lib/toast';
+import { getHubs, getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
+import { toastError, toastWarning } from '@/lib/toast';
 import CustomTable from './components/CustomTable';
 import {
   driverTime,
@@ -886,31 +885,41 @@ export default function DeliveryPage() {
     },
   ];
 
-  const tabData = filteredVehicleRoutes.map((r) => {
-    const dName = r.assigneeName || '-';
-    const isManual = r.hasManual;
-    const hasMT = r.trips?.some((t) => t.isMiddleHub);
-    const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
+  const getBunExcludeList = () =>
+    downloadType === 'routeTransaction' && isNoBun
+      ? bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so)
+      : [];
 
-    return {
-      id: r.vehicleId,
-      label: (
-        <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
-          <span
-            className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
-          >
-            {r.basePlat || r.vehicleName}{' '}
-            {hasMT && (
-              <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
-            )}
-            {r.isRedelivery && (
-              <span className="text-red-600 dark:text-red-400 font-bold">[R]</span>
-            )}
-          </span>
-        </Tooltip>
-      ),
-    };
-  });
+  const tabData = useMemo(
+    () =>
+      filteredVehicleRoutes.map((r) => {
+        const dName = r.assigneeName || '-';
+        const isManual = r.hasManual;
+        const hasMT = r.trips?.some((t) => t.isMiddleHub);
+        const textClass = r.hasInvalidSo ? 'text-red-600 dark:text-red-400 font-bold' : '';
+
+        return {
+          id: r.vehicleId,
+          label: (
+            <Tooltip tooltipContent={isEmpty(dName) ? t('common.no_driver') : dName}>
+              <span
+                className={`block w-full h-full rounded px-2 py-0.5 border-2 transition-all relative ${isManual ? 'bg-[#E6EEFF] border-[#b3cbfe] dark:bg-blue-900/40 dark:border-blue-900' : 'bg-transparent border-transparent'} ${textClass}`}
+              >
+                {r.basePlat || r.vehicleName}{' '}
+                {hasMT && (
+                  <span className="text-violet-600 dark:text-violet-400 font-bold mr-1">[MT]</span>
+                )}
+                {r.isRedelivery && (
+                  <span className="text-red-600 dark:text-red-400 font-bold">[R]</span>
+                )}
+              </span>
+            </Tooltip>
+          ),
+        };
+      }),
+    [filteredVehicleRoutes, t]
+  );
+
   if (!isClient) return null;
   return (
     <>
@@ -951,20 +960,20 @@ export default function DeliveryPage() {
         onClose={() => setIsRoutingModalOpen(false)}
         onPartial={(e) => {
           if (e) e.preventDefault();
-          let excludeList = [];
-          if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
-          }
-          runPartialDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
+          runPartialDownload(
+            downloadType,
+            getStoragePrefix(storageFilter),
+            getBunExcludeList()
+          );
           setIsRoutingModalOpen(false);
         }}
         onFull={(e) => {
           if (e) e.preventDefault();
-          let excludeList = [];
-          if (downloadType === 'routeTransaction' && isNoBun) {
-            excludeList = bunSoList.filter((b) => !b.hasNonBun).map((b) => b.so);
-          }
-          runFullDownload(downloadType, getStoragePrefix(storageFilter), excludeList);
+          runFullDownload(
+            downloadType,
+            getStoragePrefix(storageFilter),
+            getBunExcludeList()
+          );
           setIsRoutingModalOpen(false);
         }}
         translate={t}

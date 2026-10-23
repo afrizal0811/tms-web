@@ -30,6 +30,8 @@ body > div[style*='z-index: 9999'],
 
 /* 2. Datepicker Base & Layout (Light) */
 .react-datepicker {
+  user-select: none;
+  -webkit-user-select: none;
   font-family: inherit;
   border: none !important;
   border-radius: 0.75rem !important;
@@ -42,6 +44,16 @@ body > div[style*='z-index: 9999'],
   display: flex !important;
   flex-direction: column;
   align-items: center;
+}
+
+.react-datepicker * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.react-datepicker input {
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 .custom-year-picker .react-datepicker,

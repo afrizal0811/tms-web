@@ -30,13 +30,13 @@ export default function UpdateCoordinatePage() {
   const processHistoryRawData = (rawTasks, targetCustomerSet) => {
     const tempMap = new Map();
 
-    rawTasks.sort((a, b) => {
+    const sortedTasks = [...rawTasks].sort((a, b) => {
       const timeA = new Date(a.doneTime || 0).getTime();
       const timeB = new Date(b.doneTime || 0).getTime();
       return timeA - timeB;
     });
 
-    rawTasks.forEach((task) => {
+    sortedTasks.forEach((task) => {
       if (!task.klikLokasiClient) return;
       const name = task.customerName || '';
       if (!name) return;
@@ -72,8 +72,6 @@ export default function UpdateCoordinatePage() {
       }
 
       try {
-        if (typeof window === 'undefined') return;
-
         const localStart = new Date(selectedDate);
         localStart.setHours(0, 0, 0, 0);
 
@@ -83,13 +81,11 @@ export default function UpdateCoordinatePage() {
         const timeFrom = toApiDateString(localStart);
         const timeTo = toApiDateString(localEnd);
 
-        const [todayTasks] = await Promise.all([
-          getTasks({
-            status: 'DONE',
-            timeFrom,
-            timeTo,
-          }),
-        ]);
+        const todayTasks = await getTasks({
+          status: 'DONE',
+          timeFrom,
+          timeTo,
+        });
 
         if (mountedContext && !mountedContext.isMounted) return;
 

@@ -6,7 +6,7 @@ import Spinner from '@/components/Spinner';
 import { getRoles, getUsers } from '@/lib/api/mileapp';
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { capitalizeText, isEmpty } from '@/lib/utils';
+import { capitalizeText } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 export default function UserLoginPage({ t, allHubsList, currentHubListView, handleUserSelect }) {
@@ -104,50 +104,26 @@ export default function UserLoginPage({ t, allHubsList, currentHubListView, hand
     setLoading(true);
     try {
       const response = await getUsers(emailInput);
-      let usersArray = [];
-      if (Array.isArray(response)) {
-        usersArray = response;
-      } else if (response && Array.isArray(response.data)) {
-        usersArray = response.data;
-      }
-
-      if (isEmpty(usersArray)) {
-        toastError(t('home.toast.no_email_inactive'));
-        setLoading(false);
-        return;
-      }
-
+      const usersArray = Array.isArray(response) ? response : response?.data || [];
       const foundUser = usersArray[0];
+
       if (!foundUser) {
         toastError(t('home.toast.no_email_inactive'));
-        setLoading(false);
         return;
       }
+
       const roles = await getRoles();
-      const driverRole = roles.find((r) => r.name.toLowerCase() === 'driver');
-      const driverJktRole = roles.find((r) => r.name.toLowerCase() === 'driver jkt');
+      const roleNameMap = new Map((roles || []).map((r) => [r._id, r.name?.toLowerCase()]));
+      const userRoleName = roleNameMap.get(foundUser.roleId);
 
-      if (
-        (driverRole && foundUser.roleId === driverRole._id) ||
-        (driverJktRole && foundUser.roleId === driverJktRole._id)
-      ) {
+      if (userRoleName === 'driver' || userRoleName === 'driver jkt') {
         toastError(t('home.toast.driver_error'));
-        setLoading(false);
         return;
       }
 
-      if (!isSecretMode) {
-        const superadminRole = roles.find((r) => r.name.toLowerCase() === 'superadmin');
-        const ownerRole = roles.find((r) => r.name.toLowerCase() === 'owner');
-
-        if (
-          (superadminRole && foundUser.roleId === superadminRole._id) ||
-          (ownerRole && foundUser.roleId === ownerRole._id)
-        ) {
-          toastError(t('home.toast.no_email_inactive'));
-          setLoading(false);
-          return;
-        }
+      if (!isSecretMode && (userRoleName === 'superadmin' || userRoleName === 'owner')) {
+        toastError(t('home.toast.no_email_inactive'));
+        return;
       }
 
       setUserToConfirm(foundUser);

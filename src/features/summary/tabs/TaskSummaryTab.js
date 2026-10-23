@@ -64,6 +64,9 @@ const HEADER_COLUMNS = [
   { key: 'tvu_persentage', color: COLORS.violet, text: '% TVU' },
 ];
 
+const METRIC_KEYS = ['dp', 'dt_total', 'ma_total', 'rt', 'co', 'pr', 'tv', 'va', 'tvu'];
+const isMetricZero = (obj = {}) => METRIC_KEYS.every((key) => !obj[key]);
+
 export default function TaskSummaryTab({
   metrics,
   isLoading,
@@ -90,7 +93,7 @@ export default function TaskSummaryTab({
       dates.push({
         key: `${year}-${month}-${day}`,
         display: `${day}-${month}-${year}`,
-        dateObj: new Date(current),
+        dateObj,
         isSunday: dateObj.getDay() === 0,
       });
       current.setDate(current.getDate() + 1);
@@ -304,42 +307,33 @@ export default function TaskSummaryTab({
             </tr>
           </thead>
           <tbody>
-            {allDates.map((item) => {
-              const data = metrics ? metrics[item.key] : null;
-              const d = data?.dry || {};
-              const f = data?.frozen || {};
+            {(() => {
+              const todayMidnight = new Date().setHours(0, 0, 0, 0);
               const mtDry = masterTruckData?.Dry?.Total || 0;
               const mtFrozen = masterTruckData?.Frozen?.Total || 0;
-              const isPast =
-                new Date(item.dateObj).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
-              const checkZero = (obj) =>
-                (obj.dp || 0) === 0 &&
-                (obj.dt_total || 0) === 0 &&
-                (obj.ma_total || 0) === 0 &&
-                (obj.rt || 0) === 0 &&
-                (obj.co || 0) === 0 &&
-                (obj.pr || 0) === 0 &&
-                (obj.tv || 0) === 0 &&
-                (obj.va || 0) === 0 &&
-                (obj.tvu || 0) === 0;
+              return allDates.map((item) => {
+                const data = metrics ? metrics[item.key] : null;
+                const d = data?.dry || {};
+                const f = data?.frozen || {};
+                const isPast = new Date(item.dateObj).setHours(0, 0, 0, 0) < todayMidnight;
+                const isDynamicHoliday = isPast && isMetricZero(d) && isMetricZero(f);
 
-              const isDynamicHoliday = isPast && checkZero(d) && checkZero(f);
+                if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
+                if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
 
-              if (item.isSunday) return renderHolidayRows(item.key, item.display, true);
-              if (isDynamicHoliday) return renderHolidayRows(item.key, item.display, false);
-
-              return [
-                renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
-                renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
-              ];
-            })}
+                return [
+                  renderArmadaRow(d, mtDry, item.dateObj, false, true, { display: item.display }),
+                  renderArmadaRow(f, mtFrozen, item.dateObj, true, false, {}),
+                ];
+              });
+            })()}
           </tbody>
         </table>
       </div>
       <TaskSummaryModal
         isOpen={modalConfig.isOpen}
-        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
         data={modalConfig.data}
         translate={translate}
       />
