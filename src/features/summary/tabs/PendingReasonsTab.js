@@ -9,6 +9,7 @@ import { toastError, toastSuccess } from '@/lib/toast';
 import { getBasePlate, isEmpty, parseCustomerString } from '@/lib/utils';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import AddPendingModal from './modals/AddPendingModal';
 import PendingReasonModal from './modals/PendingReasonModal';
 
 const ReasonCell = ({ text, className }) => {
@@ -98,6 +99,7 @@ const StatusCell = ({
   translate,
   onUpdatePendingDetail,
   className,
+  isConvertedFromSuccess = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -195,7 +197,9 @@ const StatusCell = ({
         pd.groupReason || pd.detailReason || pd.internalExternal || pd.pic
       );
 
-      if (newStatusVal === null && !hasReasons) {
+      const isOriginalSuccess = normalizeStatus(originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS;
+
+      if (newStatusVal === null && (!hasReasons || isOriginalSuccess)) {
         await deletePendingDetail(item._id);
         const delData = { taskId: item._id, deleted: true };
         onUpdatePendingDetail(delData);
@@ -287,11 +291,15 @@ const StatusCell = ({
     zIndex: 9999,
   };
 
+  const hoverClass = isConvertedFromSuccess
+    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
+
   return (
     <>
       <td
         ref={cellRef}
-        className={`${className} hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group select-none relative`}
+        className={`${className} ${hoverClass} transition-colors cursor-pointer group select-none relative`}
         onClick={handleCellClick}
       >
         <Tooltip tooltipContent={!isOpen && isModified ? tooltipContent : ''}>
@@ -364,12 +372,9 @@ const StatusCell = ({
                 translate('summary.tabs.pending_reasons.confirm_revert_title') ||
                 'Konfirmasi Pengembalian Status'
               }
-              message={
-                translate('summary.tabs.pending_reasons.confirm_revert_message', {
-                  status: formatStatus(originalStatus),
-                }) ||
-                `Apakah Anda yakin ingin mengembalikan status pengiriman ke status awal (${formatStatus(originalStatus)})? Data penyesuaian akan dihapus dari database.`
-              }
+              message={translate('summary.tabs.pending_reasons.confirm_revert_message', {
+                status: formatStatus(originalStatus),
+              })}
             />
           </div>,
           document.body
@@ -378,16 +383,20 @@ const StatusCell = ({
   );
 };
 
-const SOCell = ({ text, className, isError, onClick }) => {
+const SOCell = ({ text, className, isError, onClick, isConvertedFromSuccess = false }) => {
   if (!text) return <td className={className}></td>;
 
   const textStyle = isError
     ? 'text-[#FF0000] dark:text-red-400 font-bold border-b border-dotted border-red-500'
     : 'inline-block border-b-2 border-dotted pb-0.5';
 
+  const hoverClass = isConvertedFromSuccess
+    ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+    : 'hover:bg-blue-50 dark:hover:bg-slate-700';
+
   return (
     <td
-      className={`${className} hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors relative group cursor-pointer`}
+      className={`${className} ${hoverClass} transition-colors relative group cursor-pointer`}
       onClick={onClick}
     >
       <span className={textStyle}>{text}</span>
@@ -403,11 +412,30 @@ export default function PendingReasonsTab({
   translate,
   onUpdatePendingDetail,
   showConvertedSuccess = false,
+  allTasks = [],
+  dateRange = [null, null],
+  driverData = [],
+  isAddPendingModalOpen = false,
+  onCloseAddSuccessModal = () => {},
+  onOpenAddSuccessModal = () => {},
 }) {
   const { formatStatus, isPendingGr, normalizeStatus } = useDeliveryStatus();
   const [modalData, setModalData] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [selectedSuccessTasksMap, setSelectedSuccessTasksMap] = useState(() => new Map());
+  const [successModalDate, setSuccessModalDate] = useState(() =>
+    dateRange && dateRange[0] ? new Date(dateRange[0]) : new Date()
+  );
+  const [prevDateRange, setPrevDateRange] = useState(dateRange);
+
+  if (dateRange !== prevDateRange) {
+    setPrevDateRange(dateRange);
+    setSelectedSuccessTasksMap(new Map());
+    if (dateRange && dateRange[0]) {
+      setSuccessModalDate(new Date(dateRange[0]));
+    }
+  }
 
   const handleRowClick = (taskId) => {
     if (!taskId || taskId === '-') return;
@@ -421,8 +449,7 @@ export default function PendingReasonsTab({
   const baseTdClass =
     'px-2 py-2 text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap text-center border-r border-r-gray-200 dark:border-r-slate-700 border-l border-l-gray-200 dark:border-l-slate-700';
   const redCellStyle = 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-[#4a1c1c] font-bold';
-  const yellowCellStyle =
-    'text-slate-900 dark:text-slate-100 bg-yellow-200 dark:bg-[#42311c] font-bold';
+  const yellowCellStyle = 'bg-red-500 text-white dark:bg-red-600 font-bold';
 
   const tableHeaders = [
     translate('common.flow'),
@@ -451,8 +478,16 @@ export default function PendingReasonsTab({
   ];
 
   const filteredData = (data || []).filter((item) => {
-    const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
-    const isConvertedSuccess = normalizeStatus(pd.new_status) === DELIVERY_STATUS_KEYS.SUCCESS;
+    const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || item.pendingDetail || {};
+    const effectiveDelivery = pd.new_status || item.statusDelivery || item.status;
+    const rawOrig =
+      item.originalStatus ||
+      (allTasks || []).find((t) => t._id === item._id)?.statusDelivery ||
+      item.status;
+    const isConvertedSuccess =
+      normalizeStatus(effectiveDelivery) === DELIVERY_STATUS_KEYS.SUCCESS &&
+      normalizeStatus(rawOrig) !== DELIVERY_STATUS_KEYS.SUCCESS;
+
     if (!showConvertedSuccess && isConvertedSuccess) {
       return false;
     }
@@ -462,13 +497,53 @@ export default function PendingReasonsTab({
   return (
     <Fragment>
       <div className="rounded-b-xl overflow-auto m-0 relative">
+        <AddPendingModal
+          isOpen={isAddPendingModalOpen}
+          onClose={() => {
+            setSelectedSuccessTasksMap(new Map());
+            onCloseAddSuccessModal();
+          }}
+          allTasks={allTasks}
+          dateRange={dateRange}
+          driverData={driverData}
+          pendingDetails={pendingDetails}
+          translate={translate}
+          selectedTasksMap={selectedSuccessTasksMap}
+          setSelectedTasksMap={setSelectedSuccessTasksMap}
+          selectedDate={successModalDate}
+          setSelectedDate={setSuccessModalDate}
+          onProceed={(selectedTasks) => {
+            onCloseAddSuccessModal();
+            setModalData(selectedTasks);
+          }}
+        />
+
         <PendingReasonModal
           isOpen={!!modalData}
-          onClose={() => setModalData(null)}
+          onClose={() => {
+            setModalData(null);
+            setSelectedSuccessTasksMap(new Map());
+          }}
           data={modalData}
           reasons={reasons || []}
-          onSuccess={onUpdatePendingDetail}
+          onSuccess={(res) => {
+            setSelectedSuccessTasksMap(new Map());
+            onUpdatePendingDetail(res);
+          }}
           translate={translate}
+          hasPendingGR={hasPendingGR}
+          onBack={
+            (
+              Array.isArray(modalData)
+                ? modalData.some((t) => t.isSuccessConversion)
+                : Boolean(modalData?.isSuccessConversion)
+            )
+              ? () => {
+                  setModalData(null);
+                  onOpenAddSuccessModal();
+                }
+              : undefined
+          }
         />
 
         <TaskModal
@@ -501,11 +576,22 @@ export default function PendingReasonsTab({
                 : 'border-b border-b-gray-200 dark:border-b-slate-700';
               const tdClass = `${baseTdClass} ${borderBottomClass}`;
               const pd = (pendingDetails || []).find((d) => d.taskId === item._id) || {};
+              const rawTask = (allTasks || []).find((t) => t._id === item._id);
+              const origStatus =
+                item.originalStatus ||
+                (rawTask
+                  ? rawTask.statusDelivery?.split(',')[0].trim() || rawTask.status
+                  : item.status);
               const currentStatus = pd.new_status || item.status;
               const isConvertedSuccess =
                 normalizeStatus(pd.new_status) === DELIVERY_STATUS_KEYS.SUCCESS;
+              const isConvertedFromSuccess = Boolean(
+                pd.new_status &&
+                  normalizeStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
+                  normalizeStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS
+              );
               const isStatusModified = Boolean(
-                pd.new_status && normalizeStatus(pd.new_status) !== normalizeStatus(item.status)
+                pd.new_status && normalizeStatus(pd.new_status) !== normalizeStatus(origStatus)
               );
               const isWrongGR = !hasPendingGR && isPendingGr(currentStatus);
 
@@ -518,18 +604,22 @@ export default function PendingReasonsTab({
                   (pd.pic && !isEmpty(pd.pic) && pd.pic !== '-')
               );
               const isAllEmpty = !hasAnyData;
+              const actionCellHover = isConvertedFromSuccess
+                ? 'hover:bg-amber-200/80 dark:hover:bg-amber-900/60'
+                : 'hover:bg-sky-50 dark:hover:bg-slate-700/80';
               const actionCellBase = `${baseTdClass} ${borderBottomClass} cursor-pointer transition-colors`;
               const actionCellClass = isConvertedSuccess
                 ? `${baseTdClass} ${borderBottomClass}`
                 : isAllEmpty
                   ? `${actionCellBase} bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60`
-                  : `${actionCellBase} hover:bg-sky-50 dark:hover:bg-slate-700/80`;
+                  : `${actionCellBase} ${actionCellHover}`;
 
               const openModal = () =>
                 setModalData({
                   ...item,
                   pendingDetail: pd,
                   customer: customerName,
+                  isSuccessConversion: isConvertedFromSuccess,
                 });
 
               const rowCells = [
@@ -542,6 +632,7 @@ export default function PendingReasonsTab({
                   val: customerName || '-',
                   id: item._id,
                   cls: 'text-left',
+                  isConvertedFromSuccess,
                 },
                 {
                   type: 'text',
@@ -554,13 +645,20 @@ export default function PendingReasonsTab({
                   type: 'status',
                   item: item,
                   pd: pd,
-                  originalStatus: item.status,
+                  originalStatus: origStatus,
                   currentStatus: currentStatus,
                   isModified: isStatusModified,
                   isWrongGR: isWrongGR,
                   cls: 'text-left',
+                  isConvertedFromSuccess,
                 },
-                { type: 'reason', val: item.alasan, cls: 'text-left' },
+                {
+                  type: 'reason',
+                  val: isConvertedFromSuccess
+                    ? pd.detailReason || item.alasan || '-'
+                    : item.alasan || '-',
+                  cls: 'text-left',
+                },
                 {
                   type: 'action',
                   val: isConvertedSuccess ? '-' : pd.groupReason,
@@ -609,7 +707,11 @@ export default function PendingReasonsTab({
               return (
                 <tr
                   key={idx}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  className={
+                    isConvertedFromSuccess
+                      ? 'bg-amber-100/60 dark:bg-amber-950/30 hover:bg-amber-100/90 dark:hover:bg-amber-900/40 transition-colors'
+                      : 'hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
+                  }
                 >
                   {rowCells.map((cell, cIdx) => {
                     const cellClass = `${tdClass} ${cell.cls || ''}`;
@@ -621,6 +723,7 @@ export default function PendingReasonsTab({
                           text={cell.val}
                           className={cellClass}
                           isError={cell.isError}
+                          isConvertedFromSuccess={cell.isConvertedFromSuccess}
                           onClick={() => handleRowClick(cell.id)}
                         />
                       );
@@ -642,6 +745,7 @@ export default function PendingReasonsTab({
                           translate={translate}
                           onUpdatePendingDetail={onUpdatePendingDetail}
                           className={cellClass}
+                          isConvertedFromSuccess={cell.isConvertedFromSuccess}
                         />
                       );
                     }

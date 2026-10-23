@@ -17,7 +17,7 @@ import {
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { getPendingDetailByTaskId } from '@/lib/api/mileapp/pendingDetails';
-import { deliveryTooltip, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import { DELIVERY_STATUS_KEYS, deliveryTooltip, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import InformationButton from '../button/InformationButton';
 import CopyButton from '../button/CopyButton';
 import JsonTree from '../JsonTree';
@@ -234,12 +234,13 @@ const Field = ({
   isTruncated,
   onValueClick,
   needEmpty = false,
+  valueClassName = '',
 }) => (
   <div className="mb-3">
     <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
     <Tooltip tooltipContent={tooltip}>
       <div
-        className={`text-sm font-medium text-slate-800 dark:text-slate-200 ${onValueClick ? ' cursor-pointer underline decoration-dotted decoration-2 underline-offset-5' : ''} ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'} ${tooltip && 'cursor-help'}`}
+        className={`text-sm font-medium ${valueClassName || 'text-slate-800 dark:text-slate-200'} ${onValueClick ? ' cursor-pointer underline decoration-dotted decoration-2 underline-offset-5' : ''} ${isCopy && 'flex items-center gap-1'} ${isTruncated && 'truncate'} ${tooltip && 'cursor-help'}`}
         onClick={onValueClick}
       >
         {!needEmpty && isEmpty(value) ? '-' : String(value)}{' '}
@@ -349,7 +350,7 @@ function TaskOverview({ taskData, translate }) {
   );
 }
 
-function DataTab({ taskData, goToMapTab, translate, isIndonesian }) {
+function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian }) {
   let arrivalSource, departureSource;
   const isGrOrPickup =
     taskData.flow?.toUpperCase().includes('GR') || taskData.flow?.toUpperCase().includes('PICKUP');
@@ -391,6 +392,41 @@ function DataTab({ taskData, goToMapTab, translate, isIndonesian }) {
       TIDAK: isIndonesian ? 'Tidak' : 'No',
     }[taskData.gpsSesuai] ?? '-';
 
+  const activePendingDetail = pendingDetail || taskData?.pendingDetail || null;
+  const originalDelivery = taskData.originalStatus || taskData.statusDelivery || taskData.status;
+  const originalNorm = normalizeDeliveryStatus(originalDelivery);
+  const newNorm = activePendingDetail?.new_status
+    ? normalizeDeliveryStatus(activePendingDetail.new_status)
+    : null;
+
+  const isConvertedFromSuccess = Boolean(
+    newNorm &&
+      originalNorm === DELIVERY_STATUS_KEYS.SUCCESS &&
+      newNorm !== DELIVERY_STATUS_KEYS.SUCCESS
+  );
+
+  const isConvertedToSuccess = Boolean(
+    newNorm &&
+      originalNorm !== DELIVERY_STATUS_KEYS.SUCCESS &&
+      newNorm === DELIVERY_STATUS_KEYS.SUCCESS
+  );
+
+  let showReason = false;
+  let reasonValue = '';
+  let isReasonRed = false;
+
+  if (isConvertedToSuccess) {
+    showReason = false;
+  } else if (isConvertedFromSuccess) {
+    showReason = true;
+    reasonValue = activePendingDetail.detailReason || activePendingDetail.groupReason || '-';
+    isReasonRed = true;
+  } else if (taskData.alasan || activePendingDetail?.detailReason) {
+    showReason = true;
+    reasonValue = taskData.alasan || activePendingDetail?.detailReason || '-';
+    isReasonRed = false;
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
@@ -431,12 +467,13 @@ function DataTab({ taskData, goToMapTab, translate, isIndonesian }) {
           onValueClick={goToMapTab}
         />
       )}
-      {taskData.alasan && (
+      {showReason && (
         <Field
           label={translate('task_detail.modal.reason')}
-          value={taskData.alasan}
+          value={reasonValue}
+          valueClassName={isReasonRed ? 'text-red-600 dark:text-red-400 font-bold' : ''}
           isTruncated={true}
-          tooltip={taskData.alasan.length > 40 ? taskData.alasan : ''}
+          tooltip={reasonValue && String(reasonValue).length > 40 ? String(reasonValue) : ''}
         />
       )}
       <Field label={translate('common.actual_travel_distance')} value={taskData.travelDistance} />
@@ -826,6 +863,7 @@ export default function TaskModal({ isOpen, onClose, taskId, isAllHub = false })
             {activeTab === 'Data' && (
               <DataTab
                 taskData={taskData}
+                pendingDetail={pendingDetail}
                 goToMapTab={goToMapTab}
                 translate={translate}
                 isIndonesian={isIndonesian}

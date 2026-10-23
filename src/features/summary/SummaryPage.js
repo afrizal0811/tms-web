@@ -15,6 +15,7 @@ import {
 } from '@/lib/deliveryStatus';
 import useSummaryData from '@/lib/hooks/useSummaryData';
 import { generateSummaryWorkbook } from '@/lib/reportGenerators/summary/summaryReport';
+import { calculatePendingReasonData } from '@/lib/reportGenerators/summary/sheets/pendingReasonSheet';
 import { calculateTruckDetailData } from '@/lib/reportGenerators/summary/sheets/truckDetailSheet';
 import { getTargetRoutingDate } from '@/lib/reportGenerators/summary/sheets/routingTimeSheet';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
@@ -85,6 +86,7 @@ export default function SummaryPage() {
   const [isDownload, setIsDownload] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState('');
   const [showConvertedSuccess, setShowConvertedSuccess] = useState(false);
+  const [isAddPendingModalOpen, setisAddPendingModalOpen] = useState(false);
 
   const driverChecker = useCallback(
     (data) => {
@@ -318,6 +320,37 @@ export default function SummaryPage() {
     activeHubLocation,
   ]);
 
+  const effectivePendingReasonsData = useMemo(() => {
+    if (!reportPreview?.pendingReasonsData) return [];
+    if (!pendingDetails || pendingDetails.length === 0) {
+      return reportPreview.pendingReasonsData;
+    }
+
+    const hasAnyStatusChange = (pendingDetails || []).some((pd) => {
+      if (!pd.new_status) return false;
+      const task = (rawData.tasks || []).find((t) => t._id === pd.taskId);
+      if (!task) return false;
+      const orig = task.statusDelivery || task.status;
+      return normalizeDeliveryStatus(orig) !== normalizeDeliveryStatus(pd.new_status);
+    });
+
+    if (!hasAnyStatusChange) {
+      return reportPreview.pendingReasonsData;
+    }
+
+    const startStr = dateRange && dateRange[0] ? formatDateUniversal(new Date(dateRange[0])) : '';
+    const endStr = dateRange && dateRange[1] ? formatDateUniversal(new Date(dateRange[1])) : '';
+
+    return calculatePendingReasonData(driverData, effectiveTasks, startStr, endStr);
+  }, [
+    reportPreview?.pendingReasonsData,
+    pendingDetails,
+    rawData.tasks,
+    dateRange,
+    driverData,
+    effectiveTasks,
+  ]);
+
   const handleDownloadExcel = async () => {
     try {
       if (!dateRange || !dateRange[0] || !dateRange[1]) return;
@@ -402,7 +435,7 @@ export default function SummaryPage() {
         return !metricKeys.some((dateKey) => isInDateRange(dateKey, startStr, endStr));
       }
       case 'Pending Reasons':
-        return isEmpty(reportPreview?.pendingReasonsData || []);
+        return isEmpty(effectivePendingReasonsData || reportPreview?.pendingReasonsData || []);
       case 'Time Driver': {
         const { dataMatrix, driverEmails } = reportPreview?.timeDriverData || {};
         return !(
@@ -475,7 +508,7 @@ export default function SummaryPage() {
         });
       case 'Pending Reasons':
         return renderTab(PendingReasonsTab, {
-          data: reportPreview?.pendingReasonsData || [],
+          data: effectivePendingReasonsData || reportPreview?.pendingReasonsData || [],
           pendingDetails: pendingDetails,
           reasons: reasons,
           onUpdatePendingDetail: handleUpdatePendingDetail,
@@ -483,6 +516,11 @@ export default function SummaryPage() {
           translate: t,
           driverData: driverData,
           showConvertedSuccess: showConvertedSuccess,
+          allTasks: rawData.tasks,
+          dateRange: dateRange,
+          isAddPendingModalOpen: isAddPendingModalOpen,
+          onCloseAddSuccessModal: () => setisAddPendingModalOpen(false),
+          onOpenAddSuccessModal: () => setisAddPendingModalOpen(true),
         });
       case 'Time Driver':
         return renderTab(TimeDriverTab, {
@@ -635,27 +673,35 @@ export default function SummaryPage() {
           text: '',
           data: (
             <div className="flex justify-between items-center w-full">
-              <span className="text-xs text-slate-500 dark:text-slate-400 italic">
+              <span className="text-xs text-slate-500 dark:text-slate-400 italic truncate mr-2">
                 *{t('common.click_for_detail_param', { parameter: t('summary.underline') })}
               </span>
-              <div className="flex items-center gap-2">
-                <p className="text-slate-500 dark:text-slate-400 text-xs">
-                  {t('common.all')} {t('common.task')}
-                </p>
-                <ToggleButton
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
+                  <p className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
+                    {t('common.all')} {t('common.task')}
+                  </p>
+                  <ToggleButton
+                    size="sm"
+                    value={showConvertedSuccess}
+                    onChange={(val) => setShowConvertedSuccess(val)}
+                    options={[
+                      {
+                        label: t('common.button.btn_no'),
+                        value: false,
+                      },
+                      {
+                        label: t('common.button.btn_yes'),
+                        value: true,
+                      },
+                    ]}
+                  />
+                </div>
+                <Button
+                  text={t('common.button.btn_add')}
                   size="sm"
-                  value={showConvertedSuccess}
-                  onChange={(val) => setShowConvertedSuccess(val)}
-                  options={[
-                    {
-                      label: t('common.button.btn_no'),
-                      value: false,
-                    },
-                    {
-                      label: t('common.button.btn_yes'),
-                      value: true,
-                    },
-                  ]}
+                  onClick={() => setisAddPendingModalOpen(true)}
+                  disabled={isLoading || isEmpty(rawData.tasks)}
                 />
               </div>
             </div>

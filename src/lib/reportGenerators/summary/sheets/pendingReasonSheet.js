@@ -1,4 +1,8 @@
-import { formatDeliveryStatus, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import {
+  DELIVERY_STATUS_KEYS,
+  formatDeliveryStatus,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import {
   formatDateUniversal,
   getBasePlate,
@@ -9,7 +13,14 @@ import {
   parseCustomerString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { BASE_STYLES, BORDERS, COLORS, FILL_STYLES, HEADER_STYLES } from './reportStyles';
+import {
+  BASE_STYLES,
+  BORDERS,
+  COLORS,
+  FILL_STYLES,
+  HEADER_STYLES,
+  FONT_STYLES,
+} from './reportStyles';
 
 const TARGET_STATUSES = [
   'BATAL',
@@ -141,9 +152,17 @@ export function calculatePendingReasonData(driverData, allTasks, startDateStr, e
       item.realSequence = hasDoneOrder ? Number(item.doneOrder) : fallbackRank;
 
       const norm = normalizeDeliveryStatus(item.status);
+      const rawOrig = item.originalStatus || item.pendingDetail?.old_status || null;
+      const origNorm = rawOrig ? normalizeDeliveryStatus(rawOrig) : null;
+      const isOriginalTargetStatus =
+        origNorm &&
+        (TARGET_STATUSES.includes(String(rawOrig).toUpperCase()) ||
+          ['CANCEL', 'PARTIAL', 'PENDING', 'PENDING_GR'].includes(origNorm));
+
       if (
         TARGET_STATUSES.includes(item.status) ||
-        ['CANCEL', 'PARTIAL', 'PENDING', 'PENDING_GR'].includes(norm)
+        ['CANCEL', 'PARTIAL', 'PENDING', 'PENDING_GR'].includes(norm) ||
+        isOriginalTargetStatus
       ) {
         processedData.push(item);
       }
@@ -172,6 +191,7 @@ export function generatePendingReasonSheet(
   hasPendingGR,
   pendingDetails,
   isDailyReport = false
+  
 ) {
   const data = calculatePendingReasonData(driverData, allTasks, startDateStr, endDateStr);
   const shouldShowPendingGR = hasPendingGR;
@@ -204,7 +224,7 @@ export function generatePendingReasonSheet(
     currentIdx += 4;
   }
 
-  const idxPending = 5;
+  const idxDeliveryStatus = 6;
   const idxETA = currentIdx + 2;
   const idxETD = currentIdx + 3;
   const idxVisitTime = currentIdx + 7;
@@ -238,6 +258,20 @@ export function generatePendingReasonSheet(
     const formattedStatus =
       formatDeliveryStatus(item.status, translate)?.toUpperCase() || item.status || '-';
 
+    const isConvertedFromSuccess = Boolean(
+      (item.originalStatus &&
+        normalizeDeliveryStatus(item.originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
+        normalizeDeliveryStatus(item.statusDelivery || item.status || pd.new_status) !==
+          DELIVERY_STATUS_KEYS.SUCCESS) ||
+        (pd.new_status &&
+          normalizeDeliveryStatus(item.originalStatus || item.status) ===
+            DELIVERY_STATUS_KEYS.SUCCESS &&
+          normalizeDeliveryStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS)
+    );
+    const displayReason = isConvertedFromSuccess
+      ? pd.detailReason || item.alasan || '-'
+      : item.alasan || '-';
+
     const row = [
       item.flow || '-',
       item.dateStr,
@@ -246,7 +280,7 @@ export function generatePendingReasonSheet(
       customerName || '-',
       invoiceNumber || item.content || '-',
       formattedStatus,
-      item.alasan || '-',
+      displayReason,
     ];
 
     if (isDailyReport) {
@@ -276,6 +310,12 @@ export function generatePendingReasonSheet(
     excelData.push(row);
   });
 
+  excelData.push([]);
+  const legendRow1Idx = excelData.length;
+  excelData.push(['Text', translate('summary.tabs.pending_reasons.legend_red')]);
+  const legendRow2Idx = excelData.length;
+  excelData.push(['', translate('summary.tabs.pending_reasons.legend_orange')]);
+
   const ws = XLSX.utils.aoa_to_sheet(excelData);
 
   ws['!views'] = [
@@ -301,7 +341,7 @@ export function generatePendingReasonSheet(
         if (isDailyReport && C === idxSeparator) {
           cell.s = { ...HEADER_STYLES.blueHeader, fill: FILL_STYLES.alertRed };
         }
-      } else {
+      } else if (R <= data.length) {
         const dataIdx = R - 1;
         const item = data[dataIdx];
         const nextItem = data[dataIdx + 1];
@@ -320,14 +360,38 @@ export function generatePendingReasonSheet(
           },
         };
 
+        const pd =
+          (pendingDetails || []).find((d) => d.taskId === item._id) || item.pendingDetail || {};
+        const origStatus = item.originalStatus || item.status;
+        const isStatusModified = Boolean(
+          item.isModified ||
+            (pd.new_status &&
+              normalizeDeliveryStatus(pd.new_status) !== normalizeDeliveryStatus(origStatus))
+        );
+        const isConvertedFromSuccess = Boolean(
+          (item.originalStatus &&
+            normalizeDeliveryStatus(item.originalStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
+            normalizeDeliveryStatus(item.statusDelivery || item.status || pd.new_status) !==
+              DELIVERY_STATUS_KEYS.SUCCESS) ||
+            (pd.new_status &&
+              normalizeDeliveryStatus(origStatus) === DELIVERY_STATUS_KEYS.SUCCESS &&
+              normalizeDeliveryStatus(pd.new_status) !== DELIVERY_STATUS_KEYS.SUCCESS)
+        );
+        if (isConvertedFromSuccess) {
+          currentStyle.fill = { fgColor: { rgb: 'FFF2CC' } };
+        }
+
         if (C === 3 || C === 4 || C === 5 || C === 7) {
           currentStyle.alignment = { ...currentStyle.alignment, horizontal: 'left' };
         }
 
         const val = cell.v;
 
-        if (C === idxPending && errorRows.has(R)) {
-          currentStyle = { ...currentStyle, font: { color: COLORS.alert, bold: true } };
+        if (C === idxDeliveryStatus && (isStatusModified || errorRows.has(R))) {
+          currentStyle = {
+            ...currentStyle,
+            font: { ...currentStyle.font, color: COLORS.alert, bold: true },
+          };
         }
         if ([idxETA, idxETD, idxRO].includes(C)) {
           if (isEmpty(val) || val === '-')
@@ -335,12 +399,52 @@ export function generatePendingReasonSheet(
         }
         if (C === idxVisitTime) {
           if (val === 0 || val === '0')
-            currentStyle = { ...currentStyle, fill: FILL_STYLES.yellow };
+            currentStyle = {
+              ...currentStyle,
+              fill: FILL_STYLES.alertRed,
+              font: { ...currentStyle.font, ...FONT_STYLES.whiteBold },
+            };
         }
         if (isDailyReport && C === idxSeparator) {
           currentStyle = { ...currentStyle, fill: FILL_STYLES.alertRed };
         }
         cell.s = currentStyle;
+      } else if (R === legendRow1Idx) {
+        if (C === 0) {
+          cell.s = {
+            alignment: { horizontal: 'center', vertical: 'center' },
+            font: { name: 'Calibri', sz: 10, color: COLORS.alert, bold: true },
+            border: {
+              top: { style: 'thin', color: { auto: 1 } },
+              bottom: { style: 'thin', color: { auto: 1 } },
+              left: { style: 'thin', color: { auto: 1 } },
+              right: { style: 'thin', color: { auto: 1 } },
+            },
+          };
+        } else if (C === 1) {
+          cell.s = {
+            alignment: { horizontal: 'left', vertical: 'center' },
+            font: { name: 'Calibri', sz: 10, bold: false },
+          };
+        }
+      } else if (R === legendRow2Idx) {
+        if (C === 0) {
+          cell.s = {
+            fill: { fgColor: { rgb: 'FFF2CC' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+              top: { style: 'thin', color: { auto: 1 } },
+              bottom: { style: 'thin', color: { auto: 1 } },
+              left: { style: 'thin', color: { auto: 1 } },
+              right: { style: 'thin', color: { auto: 1 } },
+            },
+          };
+        } else if (C === 1) {
+          cell.s = {
+            alignment: { horizontal: 'left', vertical: 'center' },
+            font: { name: 'Calibri', sz: 10, bold: false },
+          };
+        }
       }
     }
   }
