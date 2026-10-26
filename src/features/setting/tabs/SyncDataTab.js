@@ -134,14 +134,19 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
         }
       }
 
-      if (syncScope.mode === 'global') {
-        await postDrivers([]);
-      } else {
-        await postDrivers([syncScope.hubId || activeHubId]);
-      }
+      const resolvedMatches = updates.map((u) => ({
+        id: u.id,
+        imei: u.imei,
+        vms_id: u.mcVehicleId,
+        vms_driver_id:
+          u.updatedDriverId !== undefined && u.updatedDriverId !== '-'
+            ? u.updatedDriverId
+            : u.vmsDriverId,
+      }));
 
-      if (matchedData.length > 0) {
-        await patchDriverMceasy(null, null, matchedData);
+      const allMatchesToSave = [...matchedData, ...resolvedMatches];
+      if (allMatchesToSave.length > 0) {
+        await patchDriverMceasy(null, null, allMatchesToSave);
       }
 
       setModalOpen(false);
@@ -158,12 +163,6 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
   const handleBypass = async () => {
     setSyncLoading(syncScope.mode === 'global' ? 'drivers-global' : 'drivers-active');
     try {
-      if (syncScope.mode === 'global') {
-        await postDrivers([]);
-      } else {
-        await postDrivers([syncScope.hubId || activeHubId]);
-      }
-
       if (matchedData.length > 0) {
         await patchDriverMceasy(null, null, matchedData);
       }
@@ -185,6 +184,8 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
     const cleanActiveHubName = (storedLocationName || '').replace(/^Hub\s+/i, '').trim();
     setSyncScope({ mode: 'active', hubId: activeHubId, hubName: cleanActiveHubName });
     try {
+      await postDrivers([activeHubId]);
+
       if (activeHasVms) {
         const result = await patchDriverMceasy(activeHubId, storedLocationName);
 
@@ -213,12 +214,9 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
           return;
         }
 
-        await postDrivers([activeHubId]);
         if (result.matched?.length > 0) {
           await patchDriverMceasy(null, null, result.matched);
         }
-      } else {
-        await postDrivers([activeHubId]);
       }
 
       toastSuccess(translate('common.toast.success'));

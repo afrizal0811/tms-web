@@ -173,6 +173,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
           if (!alreadyInMismatched) {
             mismatched.push({
               id: driverKey,
+              imei: mcMatch.imei,
               maName: ma.name,
               maNameClean: maCleanName,
               maPlat: ma.plat,
@@ -216,6 +217,7 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
         if (!alreadyInMismatched) {
           mismatched.push({
             id: driverKey,
+            imei: mcMatch.imei,
             maName: ma.name,
             maNameClean: maCleanName,
             maPlat: ma.plat,
