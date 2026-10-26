@@ -178,18 +178,25 @@ export function parseCustomerString(fullString) {
   return { name, id, location, fullCustomerName, invoiceNumber, isTruncated, truncateInvoice };
 }
 
-// Menentukan tipe penyimpanan
 export function getStorageType(input) {
+  if (!input) return '-';
   if (Array.isArray(input) || typeof input === 'string') {
     const text = (Array.isArray(input) ? input.join(' ') : input).toUpperCase();
     if (text.includes('FROZEN') || text.includes('FRZ')) return 'Frozen';
     if (text.includes('DRY')) return 'Dry';
     return '-';
   }
-  const typeStr = input?.type || '';
-  const nameStr = input?.name || input || '';
-  if (typeStr.toUpperCase().includes('FROZEN')) return 'Frozen';
+  const storageStr = input?.storage || input?.typeStorage || '';
+  if (storageStr.toUpperCase().includes('FROZEN') || storageStr.toUpperCase().includes('FRZ'))
+    return 'Frozen';
+  if (storageStr.toUpperCase().includes('DRY')) return 'Dry';
+
+  const typeStr = input?.type || input?.mappedType || '';
+  if (typeStr.toUpperCase().includes('FROZEN') || typeStr.toUpperCase().includes('FRZ'))
+    return 'Frozen';
   if (typeStr.toUpperCase().includes('DRY')) return 'Dry';
+
+  const nameStr = input?.name || input?.driverName || input?.description || '';
   if (nameStr.toUpperCase().includes("'FRZ'") || nameStr.toUpperCase().includes('FROZEN'))
     return 'Frozen';
   if (nameStr.toUpperCase().includes("'DRY'") || nameStr.toUpperCase().includes('DRY'))

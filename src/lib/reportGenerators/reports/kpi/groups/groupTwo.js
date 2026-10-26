@@ -1,6 +1,7 @@
 import { getBasePlate, getStorageType, normalizeEmail } from '@/lib/utils';
+import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
+export function calculateGroupTwo(resultsData, driverMap, driverData = [], tasksData = []) {
   const detailRows = [];
   const processedDrivers = new Set();
   const dataRoutingExists = true;
@@ -23,7 +24,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
             driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
           }
 
-          const category = getStorageType(driverName).toUpperCase();
+          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
 
           if (truckId) {
             const rawVisit = Number(route.totalVisitTime) || 0;
@@ -64,7 +65,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = []) {
           routing: '-',
           vehicle: dPlat,
           driver: dName,
-          category: getStorageType(dName),
+          category: getStorageType(d),
           visit: '',
           travel: '',
           wait: '',

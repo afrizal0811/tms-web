@@ -63,7 +63,7 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
   uniqueDrivers.forEach((driver) => {
     const email = normalizeEmail(driver.email);
     const driverHistories = historyMap[email] || [];
-    const category = getStorageType(driver.name).toUpperCase();
+    const category = getStorageType(driver).toUpperCase();
     const basePlate = getBasePlate(driver.basePlat || driver.plat || '');
 
     let totalActMinutes = 0;

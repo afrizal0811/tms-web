@@ -3,3 +3,4 @@ export * from './groupFour';
 export * from './groupOne';
 export * from './groupThree';
 export * from './groupTwo';
+export * from '../../../helper/resolveRouteCategory';

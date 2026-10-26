@@ -1,6 +1,13 @@
-import { getStorageType, normalizeEmail } from '@/lib/utils';
+import { normalizeEmail } from '@/lib/utils';
+import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupThree(resultsData, historiesData, driverMap) {
+export function calculateGroupThree(
+  resultsData,
+  historiesData,
+  driverMap,
+  driverData = [],
+  tasksData = []
+) {
   let totalActMinutes = 0;
 
   if (Array.isArray(historiesData)) {
@@ -28,7 +35,7 @@ export function calculateGroupThree(resultsData, historiesData, driverMap) {
                 : route.assignee;
             driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
           }
-          const category = getStorageType(driverName).toUpperCase();
+          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
 
           const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
           const activeWeight = Number(route.totalWeight || 0);

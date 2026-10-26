@@ -1,7 +1,8 @@
 import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { getStorageType, normalizeEmail } from '@/lib/utils';
+import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupOne(resultsData, tasksData, driverMap) {
+export function calculateGroupOne(resultsData, tasksData, driverMap, driverData = []) {
   const dryTrucks = new Set();
   const frzTrucks = new Set();
   let ttDry = 0;
@@ -25,7 +26,7 @@ export function calculateGroupOne(resultsData, tasksData, driverMap) {
             driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
           }
 
-          const category = getStorageType(driverName).toUpperCase();
+          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
           const truckId = route.basePlat || route.vehicleName || '-';
 
           if (truckId) {

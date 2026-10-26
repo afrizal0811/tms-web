@@ -1,15 +1,23 @@
 import { getStorageType, normalizeEmail } from '@/lib/utils';
+import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
 const safeAdd = (a, b) => Number(a || 0) + Number(b || 0);
 const safeNum = (n) => Number(n || 0);
 const fmt = (n) => (isNaN(Number(n)) ? 0 : Number(Number(n).toFixed(1)));
 
-export function calculateGroupFour(resultsData, historiesData, driverData) {
+export function calculateGroupFour(
+  resultsData,
+  historiesData,
+  driverData,
+  tasksData = [],
+  driverMap = {}
+) {
   const driverInfoMap = (Array.isArray(driverData) ? driverData : []).reduce((acc, d) => {
     const email = normalizeEmail(d.email);
     if (email) {
       acc[email] = {
         name: d.name || '',
+        category: getStorageType(d).toUpperCase(),
         maxWeight: safeNum(d.maxWeight),
         maxVolume: safeNum(d.maxVolume),
       };
@@ -24,7 +32,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
     historiesData.forEach((h) => {
       const email = normalizeEmail(h.email);
       const driverName = driverInfoMap[email]?.name || '';
-      const category = getStorageType(driverName).toUpperCase();
+      const category = driverInfoMap[email]?.category || getStorageType(driverName).toUpperCase();
       const dist = safeNum(h.finish?.totalDistance ?? h.totalDistance ?? 0);
 
       if (category === 'DRY') actDistDry = safeAdd(actDistDry, dist);
@@ -62,7 +70,7 @@ export function calculateGroupFour(resultsData, historiesData, driverData) {
             driverName = driverInfoMap[normalizeEmail(rawAssignee)]?.name || rawAssignee;
           }
 
-          const category = getStorageType(driverName).toUpperCase();
+          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
           const truckId = (route.basePlat || route.vehicleName || 'Unknown').toUpperCase().trim();
 
           const routeWeight = safeNum(route.totalWeight);
