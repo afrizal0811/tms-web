@@ -23,9 +23,10 @@ import {
   sortRows,
   toApiDateString,
   tomorrowDate,
+  getBasePlate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getHubs, getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
+import { getDrivers, getHubs, getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
 import { toastError, toastWarning } from '@/lib/toast';
 import CustomTable from './components/CustomTable';
 import {
@@ -280,7 +281,7 @@ export default function DeliveryPage() {
         const { timeFrom: historyFrom, timeTo: historyTo } =
           calculateStartFinishDates(selectedDate);
 
-        const [resultsData, historyData, tasksResponse] = await Promise.all([
+        const [resultsData, historyData, tasksResponse, rawDrivers] = await Promise.all([
           getResults({
             deliveryDate: dateStr,
           }),
@@ -293,8 +294,10 @@ export default function DeliveryPage() {
             timeTo: toApiDateString(endD),
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
+          getDrivers(),
         ]);
 
+        const driverData = Array.isArray(rawDrivers) ? rawDrivers : rawDrivers?.data || [];
         setRoutingResults(resultsData);
         const filteredTasks = tasksResponse.filter((t) => t?.assignee);
 
@@ -941,20 +944,12 @@ export default function DeliveryPage() {
         onClose={() => setIsRoutingModalOpen(false)}
         onPartial={(e) => {
           if (e) e.preventDefault();
-          runPartialDownload(
-            downloadType,
-            getStoragePrefix(storageFilter),
-            getBunExcludeList()
-          );
+          runPartialDownload(downloadType, getStoragePrefix(storageFilter), getBunExcludeList());
           setIsRoutingModalOpen(false);
         }}
         onFull={(e) => {
           if (e) e.preventDefault();
-          runFullDownload(
-            downloadType,
-            getStoragePrefix(storageFilter),
-            getBunExcludeList()
-          );
+          runFullDownload(downloadType, getStoragePrefix(storageFilter), getBunExcludeList());
           setIsRoutingModalOpen(false);
         }}
         translate={t}

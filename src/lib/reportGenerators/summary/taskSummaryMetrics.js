@@ -1,4 +1,3 @@
-import { getResultHistories } from '@/lib/api/mileapp';
 import {
   applyPendingDetailsToTasks,
   DELIVERY_STATUS_KEYS,
@@ -51,12 +50,42 @@ const isValidDriver = (driver) => {
   return true;
 };
 
+const parseHistories = (histories) => {
+  if (!histories) return null;
+  if (typeof histories === 'string') {
+    try {
+      return JSON.parse(histories);
+    } catch {
+      return null;
+    }
+  }
+  return histories;
+};
+
+const createMetricCategory = () => ({
+  dp: 0,
+  dt_total: 0,
+  dt_sum: 0,
+  dt_hist: 0,
+  ma_hist: 0,
+  rt: 0,
+  co: 0,
+  pr: 0,
+  tv: 0,
+  dp_tasks: [],
+  dt_tasks: [],
+  ma_tasks: [],
+  rt_tasks: [],
+  co_tasks: [],
+  pr_tasks: [],
+  tv_details: [],
+});
+
 export async function calculateTaskSummaryMetrics({
   allTasks,
   allResults,
   fetchedDrivers,
   hasPendingGR,
-  fetchWithTracker,
   t,
   isManualMode = false,
   pendingDetails,
@@ -64,166 +93,66 @@ export async function calculateTaskSummaryMetrics({
   const effectiveTasks = pendingDetails
     ? applyPendingDetailsToTasks(allTasks, pendingDetails)
     : allTasks;
-  const taskToRoutingDate = new Map();
-  const resultDateMap = new Map();
-  (allResults || []).forEach((res) => {
-    const rDate = getDeliveryDateFromRouting(res.createdTime);
-    if (rDate && (res.id || res._id)) {
-      resultDateMap.set(String(res.id || res._id), rDate);
-    }
-  });
-  (effectiveTasks || []).forEach((task) => {
-    if (task.routingResultId && resultDateMap.has(String(task.routingResultId))) {
-      const rDate = resultDateMap.get(String(task.routingResultId));
-      const tId = String(task._id || task.id || task.taskId);
-      taskToRoutingDate.set(tId, rDate);
-      if (task.orderId) taskToRoutingDate.set(task.orderId, rDate);
-    }
-  });
 
   const tempMetrics = {};
-  const uniqueVehicles = {};
 
   const initDate = (dateKey) => {
     if (!tempMetrics[dateKey]) {
       tempMetrics[dateKey] = {
         actual_tasks_count: 0,
         routingNames: new Set(),
-        dry: {
-          dp: 0,
-          dt_total: 0,
-          dt_sum: 0,
-          dt_hist: 0,
-          ma_hist: 0,
-          rt: 0,
-          co: 0,
-          pr: 0,
-          tv: 0,
-          dp_tasks: [],
-          dt_tasks: [],
-          ma_tasks: [],
-          rt_tasks: [],
-          co_tasks: [],
-          pr_tasks: [],
-          tv_details: [],
-        },
-        frozen: {
-          dp: 0,
-          dt_total: 0,
-          dt_sum: 0,
-          dt_hist: 0,
-          ma_hist: 0,
-          rt: 0,
-          co: 0,
-          pr: 0,
-          tv: 0,
-          dp_tasks: [],
-          dt_tasks: [],
-          ma_tasks: [],
-          rt_tasks: [],
-          co_tasks: [],
-          pr_tasks: [],
-          tv_details: [],
-        },
-        unknown: {
-          dp: 0,
-          dt_total: 0,
-          dt_sum: 0,
-          dt_hist: 0,
-          ma_hist: 0,
-          rt: 0,
-          co: 0,
-          pr: 0,
-          tv: 0,
-          dp_tasks: [],
-          dt_tasks: [],
-          ma_tasks: [],
-          rt_tasks: [],
-          co_tasks: [],
-          pr_tasks: [],
-          tv_details: [],
-        },
+        dry: createMetricCategory(),
+        frozen: createMetricCategory(),
+        unknown: createMetricCategory(),
       };
-      uniqueVehicles[dateKey] = { dry: new Map(), frozen: new Map() };
     }
   };
 
-  const getTaskDetails = (tripRaw) => {
-    const visitId = tripRaw?.visitId || '';
+  const tasksList = effectiveTasks || [];
+  const taskById = new Map();
+  (allTasks || []).forEach((task) => {
+    if (task._id) taskById.set(String(task._id), task);
+    if (task.id) taskById.set(String(task.id), task);
+    if (task.taskId) taskById.set(String(task.taskId), task);
+  });
 
-    if (!visitId || !visitId.includes('-')) {
-      const rawName = tripRaw?.visitName || tripRaw?.name || '';
+  const getTaskDetails = (tripRaw) => {
+    const rawName = tripRaw?.visitName || tripRaw?.name || '';
+    const fallback = () => {
       const parsed = parseCustomerString(rawName);
       return {
         customerOrder: rawName,
         customerName: parsed.name || t('common.no_data'),
         flow: 'DELIVERY',
       };
+    };
+
+    const visitId = tripRaw?.visitId || '';
+    if (!visitId || !visitId.includes('-')) {
+      return fallback();
     }
 
     const taskId = visitId.substring(visitId.indexOf('-') + 1);
-    const f = allTasks.find(
-      (t) =>
-        String(t._id) === String(taskId) ||
-        String(t.id) === String(taskId) ||
-        String(t.taskId) === String(taskId)
-    );
-
-    if (!f) {
-      const rawName = tripRaw?.visitName || tripRaw?.name || '';
-      const parsed = parseCustomerString(rawName);
-      return {
-        customerOrder: rawName,
-        customerName: parsed.name || t('common.no_data'),
-        flow: 'DELIVERY',
-      };
-    }
-
-    return f;
+    const found = taskById.get(String(taskId));
+    return found || fallback();
   };
 
-  const groupedByEmail = {};
+  const driverMapStorage = {};
+  const driverByEmail = new Map();
+  const driverByPlate = new Map();
   (fetchedDrivers || []).forEach((d) => {
     const email = (d.email || '').toLowerCase().trim();
     if (email) {
-      if (!groupedByEmail[email]) groupedByEmail[email] = [];
-      groupedByEmail[email].push(d);
+      driverMapStorage[email] = (d.storage || '').toUpperCase();
+      if (!driverByEmail.has(email)) driverByEmail.set(email, d);
     }
+    const p1 = cleanPlat(d.plat);
+    if (p1 && !driverByPlate.has(p1)) driverByPlate.set(p1, d);
+    const p2 = cleanPlat(d.basePlat);
+    if (p2 && !driverByPlate.has(p2)) driverByPlate.set(p2, d);
   });
 
-  const driverMapStorage = {};
-  const conditionalPlates = new Set();
-
-  if (Array.isArray(fetchedDrivers)) {
-    fetchedDrivers.forEach((d) => {
-      if (d.email) driverMapStorage[d.email.toLowerCase()] = (d.storage || '').toUpperCase();
-
-      const email = (d.email || '').toLowerCase().trim();
-      let isConditional = false;
-
-      if (email && groupedByEmail[email]) {
-        const group = groupedByEmail[email];
-        if (group.length > 1) {
-          const spaceCount = (d.plat || '').trim().split(' ').length - 1;
-          const minSpaces = Math.min(
-            ...group.map((v) => (v.plat || '').trim().split(' ').length - 1)
-          );
-
-          if (spaceCount > minSpaces && spaceCount > 2) {
-            isConditional = true;
-          }
-        }
-      }
-
-      if (isConditional) {
-        if (d.plat) {
-          conditionalPlates.add(cleanPlat(d.plat));
-        }
-      }
-    });
-  }
-
-  if (effectiveTasks && Array.isArray(effectiveTasks)) {
+  if (Array.isArray(effectiveTasks)) {
     effectiveTasks.forEach((task) => {
       const dateKey =
         formatDateUniversal(task.startTime, 'YYYY-MM-DD') ||
@@ -240,7 +169,7 @@ export async function calculateTaskSummaryMetrics({
         .trim();
       const storageFromDriver = driverMapStorage[rawEmail] || '';
       const typeRaw = (task.typeStorage || storageFromDriver || '').toUpperCase();
-      let type = typeRaw.includes('FROZEN') ? 'frozen' : 'dry';
+      const type = typeRaw.includes('FROZEN') ? 'frozen' : 'dry';
 
       const sDeliv = task.statusDelivery;
       const statusArr = Array.isArray(sDeliv) ? sDeliv : [sDeliv];
@@ -269,85 +198,64 @@ export async function calculateTaskSummaryMetrics({
     (item) => item.dispatchStatus?.toLowerCase() === 'done'
   );
 
-  const resultIdsToFetch = [];
-  const resultMap = new Map();
-
-  doneResults.forEach((res) => {
-    const dateKey = getDeliveryDateFromRouting(res.createdTime);
-    if (!dateKey || !res._id) return;
-
-    initDate(dateKey);
-    resultIdsToFetch.push(res._id);
-    resultMap.set(res._id, res);
-
-    const droppedCount = typeof res.dropped === 'number' ? res.dropped : 0;
-    tempMetrics[dateKey].dry.dt_sum += droppedCount;
-  });
-
-  try {
-    if (resultIdsToFetch.length > 0) {
-      const fetchCall = fetchWithTracker
-        ? () => fetchWithTracker(() => getResultHistories(resultIdsToFetch), 'Batch Histories')
-        : () => getResultHistories(resultIdsToFetch);
-      const batchData = await fetchCall();
-
-      (batchData || []).forEach((item) => {
-        const originalRes = resultMap.get(item.resultId);
-        if (!originalRes || !item.history || !item.history[0]) return;
-        const dateKey = getDeliveryDateFromRouting(originalRes.createdTime);
-        if (!dateKey) return;
-
-        const { manual } = item.history[0];
-        let histDry = 0;
-        let histFrozen = 0;
-        let histMaDry = 0;
-        let histMaFrozen = 0;
-
-        (manual?.data || []).forEach((h) => {
-          const vToClean = cleanPlat(h.vehicleTo);
-          const foundDriver = fetchedDrivers.find(
-            (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
-          );
-          const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
-          const isFrozen = storage.includes('FROZEN');
-
-          (h.visits || []).forEach((v) => {
-            const taskDetail = getTaskDetails(v);
-
-            if (isFrozen) {
-              histFrozen += 1;
-              histMaFrozen += 1;
-              if (tempMetrics[dateKey]) {
-                tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
-                tempMetrics[dateKey].frozen.ma_tasks.push(taskDetail);
-              }
-            } else {
-              histDry += 1;
-              histMaDry += 1;
-              if (tempMetrics[dateKey]) {
-                tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
-                tempMetrics[dateKey].dry.ma_tasks.push(taskDetail);
-              }
-            }
-          });
-        });
-
-        if (tempMetrics[dateKey]) {
-          tempMetrics[dateKey].dry.dt_hist += histDry;
-          tempMetrics[dateKey].frozen.dt_hist += histFrozen;
-          tempMetrics[dateKey].dry.ma_hist += histMaDry;
-          tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
-        }
-      });
-    }
-  } catch (e) {
-    console.error('Error fetching result histories', e);
-  }
-
   const routingDateVehicles = {};
   doneResults.forEach((res) => {
     const dateKey = getDeliveryDateFromRouting(res.createdTime);
     if (!dateKey) return;
+
+    initDate(dateKey);
+
+    const droppedCount = typeof res.dropped === 'number' ? res.dropped : 0;
+    tempMetrics[dateKey].dry.dt_sum += droppedCount;
+
+    const histData = parseHistories(res.histories);
+    const histObj = histData?.history;
+    if (histObj) {
+      const h = Array.isArray(histObj) ? histObj[0] : histObj;
+      const manualList = Array.isArray(h?.manual) ? h.manual : (h?.manual?.data || []);
+
+      let histDry = 0;
+      let histFrozen = 0;
+      let histMaDry = 0;
+      let histMaFrozen = 0;
+
+      manualList.forEach((item) => {
+        const vToClean = cleanPlat(item.vehicleTo);
+        const foundDriver = (fetchedDrivers || []).find(
+          (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
+        );
+        const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
+        const isFrozen = storage.includes('FROZEN');
+
+        (item.visits || []).forEach((v) => {
+          const taskDetail = getTaskDetails(v);
+
+          if (isFrozen) {
+            histFrozen += 1;
+            histMaFrozen += 1;
+            if (tempMetrics[dateKey]) {
+              tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
+              tempMetrics[dateKey].frozen.ma_tasks.push(taskDetail);
+            }
+          } else {
+            histDry += 1;
+            histMaDry += 1;
+            if (tempMetrics[dateKey]) {
+              tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
+              tempMetrics[dateKey].dry.ma_tasks.push(taskDetail);
+            }
+          }
+        });
+      });
+
+      if (tempMetrics[dateKey]) {
+        tempMetrics[dateKey].dry.dt_hist += histDry;
+        tempMetrics[dateKey].frozen.dt_hist += histFrozen;
+        tempMetrics[dateKey].dry.ma_hist += histMaDry;
+        tempMetrics[dateKey].frozen.ma_hist += histMaFrozen;
+      }
+    }
+
     if (!routingDateVehicles[dateKey]) routingDateVehicles[dateKey] = new Map();
 
     if (tempMetrics[dateKey] && res.name) {
@@ -366,12 +274,12 @@ export async function calculateTaskSummaryMetrics({
       const strictBasePlate = plat;
       const baseCanonical = cleanPlat(strictBasePlate);
 
-      const foundDriver = fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
+      const foundDriver = driverByPlate.get(baseCanonical);
       const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
       const driverName = foundDriver ? foundDriver.name : '-';
       const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
 
-      const routeTasks = (effectiveTasks || []).filter(
+      const routeTasks = tasksList.filter(
         (t) =>
           (String(t.routingResultId) === String(res.id) ||
             String(t.routingResultId) === String(res._id)) &&
@@ -442,7 +350,7 @@ export async function calculateTaskSummaryMetrics({
       tempMetrics[dateKey].unknown.tv_details = [];
 
       const isManual =
-        isManualMode || (Array.isArray(allTasks) && allTasks.some((t) => Boolean(t.typeStorage)));
+        isManualMode || allTasks.some((t) => Boolean(t.typeStorage));
 
       const dailyTaskVehicles = {
         dry: new Map(),
@@ -488,15 +396,9 @@ export async function calculateTaskSummaryMetrics({
           const baseCanonical = cleanPlat(strictBasePlate);
 
           const foundDriver =
-            (fetchedDrivers || []).find(
-              (d) => rawEmail && (d.email || '').toLowerCase().trim() === rawEmail
-            ) ||
-            (fetchedDrivers || []).find((d) => {
-              if (!baseCanonical) return false;
-              const dPlatClean = cleanPlat(d.plat);
-              const dBasePlatClean = cleanPlat(d.basePlat);
-              return dPlatClean === baseCanonical || dBasePlatClean === baseCanonical;
-            });
+            (rawEmail && driverByEmail.get(rawEmail)) ||
+            (baseCanonical && driverByPlate.get(baseCanonical)) ||
+            null;
 
           let type = 'dry';
           if (isManual) {

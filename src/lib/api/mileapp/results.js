@@ -29,14 +29,6 @@ export async function getResult(id) {
   );
 }
 
-export async function getResultHistories(resultIds) {
-  return await apiFetch('/api/mileapp/results/histories', 'Gagal mengambil data batch histories', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resultIds }),
-  });
-}
-
 export async function syncRoutingResults({ deliveryDate, hubId, force = false }) {
   return await apiFetch('/api/mileapp/results', 'Gagal sinkronisasi data routing', {
     method: 'POST',

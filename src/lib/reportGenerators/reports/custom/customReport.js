@@ -365,7 +365,7 @@ export const generateTaskManualDetailWorkbook = (
   groupedData,
   taskDetailHeaders,
   taskDetailKeyMapping,
-  historiesRes
+  routingResults = []
 ) => {
   const wb = XLSX.utils.book_new();
   const headerStyle = {
@@ -443,13 +443,30 @@ export const generateTaskManualDetailWorkbook = (
   ];
   const forcedData = [];
 
-  (historiesRes || []).forEach((res) => {
-    const h = res.history?.[0];
+  const parseHistories = (histories) => {
+    if (!histories) return null;
+    if (typeof histories === 'string') {
+      try {
+        return JSON.parse(histories);
+      } catch {
+        return null;
+      }
+    }
+    return histories;
+  };
+
+  (routingResults || []).forEach((res) => {
+    const histData = parseHistories(res.histories);
+    const historyObj = histData?.history || res.history;
+    const h = Array.isArray(historyObj) ? historyObj[0] : historyObj;
     if (!h) return;
+    const routingId = res.id || res._id || res.name || '-';
+
     ['change', 'dropped', 'manual', 'move', 'switch'].forEach((cat) => {
-      (h[cat]?.data || []).forEach((item) => {
+      const items = Array.isArray(h[cat]) ? h[cat] : (h[cat]?.data || []);
+      items.forEach((item) => {
         forcedData.push({
-          resultId: item.resultId || '-',
+          resultId: item.resultId || routingId,
           version: item.version || 0,
           action: cat === 'manual' ? 'manual' : item.action || '-',
           from: item.vehicleFrom || '-',

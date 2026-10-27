@@ -1,4 +1,4 @@
-import { getLocationHistories, getResult, getResultHistories, getTasks } from '@/lib/api/mileapp';
+import { getLocationHistories, getResult, getResults, getTasks } from '@/lib/api/mileapp';
 import { getCachedHubs } from '@/lib/localStorageHandler';
 import { convertLocationHistories } from '@/lib/reportGenerators/helper';
 import {
@@ -221,14 +221,38 @@ export const processTaskManualReport = async ({ datesToProcess, locationName, t 
       ...new Set(tasksData.map((task) => task.routingResultId).filter(Boolean)),
     ];
 
-    const historiesRes =
-      uniqueRoutingIds.length > 0 ? await getResultHistories(uniqueRoutingIds) : [];
+    const deliveryDateStr = formatDateUniversal(date, 'YYYY-MM-DD');
+    let routingResults = await getResults({ deliveryDate: deliveryDateStr });
+    if (isEmpty(routingResults) && uniqueRoutingIds.length > 0) {
+      routingResults = await Promise.all(
+        uniqueRoutingIds.map((id) => getResult(id).catch(() => null))
+      );
+      routingResults = routingResults.filter(Boolean);
+    }
+
+    const parseHistories = (histories) => {
+      if (!histories) return null;
+      if (typeof histories === 'string') {
+        try {
+          return JSON.parse(histories);
+        } catch {
+          return null;
+        }
+      }
+      return histories;
+    };
 
     const overrideTaskMap = new Map();
-    (historiesRes || []).forEach((item) => {
-      (item.history || []).forEach((h) => {
-        ['move', 'dropped', 'switch', 'change', 'manual'].forEach((key) => {
-          (h[key]?.data || []).forEach((m) => {
+    (routingResults || []).forEach((res) => {
+      const histData = parseHistories(res.histories);
+      const historyObj = histData?.history;
+      if (!historyObj) return;
+      const h = Array.isArray(historyObj) ? historyObj[0] : historyObj;
+      if (!h) return;
+
+      ['move', 'dropped', 'switch', 'change', 'manual'].forEach((key) => {
+        const items = Array.isArray(h[key]) ? h[key] : (h[key]?.data || []);
+        items.forEach((m) => {
             const ver = Number(m.version) || 0;
 
             let targetVisits = m.visits || [];
@@ -254,7 +278,6 @@ export const processTaskManualReport = async ({ datesToProcess, locationName, t 
           });
         });
       });
-    });
 
     tasksData.forEach((task) => {
       const taskId = String(task._id || task.id);
@@ -290,7 +313,7 @@ export const processTaskManualReport = async ({ datesToProcess, locationName, t 
       groupedData,
       taskManualHeaders,
       taskManualKeyMapping,
-      historiesRes
+      routingResults
     );
 
     const dateStr = formatDateUniversal(date, 'DD.MM.YYYY');

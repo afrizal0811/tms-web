@@ -215,7 +215,6 @@ function AddSuccessTaskModalContent({
             className="rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
           />
         ),
-        width: 'w-10',
         align: 'center',
         render: (row) => {
           const isChecked = activeSelectedMap.has(row._id);
@@ -233,12 +232,13 @@ function AddSuccessTaskModalContent({
       },
       {
         key: 'flow',
-        label: translate('common.flow') || 'Flow',
+        label: translate('common.flow'),
         render: (row) => <HighlightText text={row.flow || '-'} highlight={searchQuery} />,
       },
       {
         key: 'driverName',
-        label: translate('common.driver') || 'Driver',
+        width: 'w-[10%]',
+        label: translate('common.driver'),
         render: (row) => (
           <span className="font-medium text-slate-800 dark:text-slate-200">
             <HighlightText text={row.driverName || '-'} highlight={searchQuery} />
@@ -247,7 +247,9 @@ function AddSuccessTaskModalContent({
       },
       {
         key: 'invoiceNumber',
-        label: translate('common.invoice_number') || 'No. Faktur',
+        width: 'w-[40%]',
+        align: 'left',
+        label: translate('common.invoice_number'),
         render: (row) => {
           const textVal = row.truncateInvoice || row.invoiceNumber || '-';
           return row.isTruncated ? (
@@ -263,7 +265,9 @@ function AddSuccessTaskModalContent({
       },
       {
         key: 'customerName',
-        label: translate('common.customer_name') || 'Pelanggan',
+        width: 'w-[40%]',
+        align: 'left',
+        label: translate('common.customer_name'),
         render: (row) => <HighlightText text={row.customerName || '-'} highlight={searchQuery} />,
       },
     ],
@@ -300,7 +304,7 @@ function AddSuccessTaskModalContent({
       onClose={onClose}
       title={translate('summary.tabs.pending_reasons.modal_success_title')}
       subtitle={selectedDate ? formatLongDate(selectedDate, localeCode) : translate('common.all')}
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-3xl"
       maxHeight="max-h-[85vh]"
       footer={footer}
     >
