@@ -455,16 +455,17 @@ export function getBasePlate(plat) {
   return parts.length > 3 ? parts.slice(0, 3).join(' ') : platStr;
 }
 
-// Menghitung tanggal delivery berdasarkan tanggal routing
 export function getDeliveryDateFromRouting(isoString) {
   if (!isoString) return null;
+  const str = String(isoString).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   const date = new Date(isoString);
   const wibMs = date.getTime() + 7 * 60 * 60 * 1000;
   const wibDate = new Date(wibMs);
   const routingDay = wibDate.getUTCDay();
 
   let offsetDays = 1;
-  if (routingDay === 6) offsetDays = 2; // Sabtu -> Senin
+  if (routingDay === 6) offsetDays = 2;
 
   const deliveryMs = wibMs + offsetDays * 24 * 60 * 60 * 1000;
   return new Date(deliveryMs).toISOString().split('T')[0];

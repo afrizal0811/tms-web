@@ -10,36 +10,35 @@ export function calculateGroupOne(resultsData, tasksData, driverMap, driverData 
 
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
-      if (item.result && Array.isArray(item.result.routing)) {
-        item.result.routing.forEach((route) => {
-          const validTrips = Array.isArray(route.trips) ? route.trips.filter((t) => !t.isHub) : [];
-          const tripsCount = Number(route.totalVisits ?? validTrips.length);
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(item.totalDistance || {}),
+          ...Object.keys(item.time || {}),
+          ...Object.keys(item.hubTimes || {}),
+        ])
+      );
 
-          if (tripsCount === 0) return;
+      plates.forEach((plat) => {
+        const truckId = plat || '-';
+        const taskCount = Array.isArray(tasksData)
+          ? tasksData.filter((t) => (t.basePlat || t.vehicleName || t.plat) === truckId).length
+          : 0;
+        const tripsCount = taskCount || 1;
+        if (tripsCount === 0) return;
 
-          let driverName = route.driverName || '';
-          if (!driverName && route.assignee) {
-            const rawAssignee =
-              typeof route.assignee === 'string'
-                ? route.assignee.split(',')[0].trim()
-                : route.assignee;
-            driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
+        const route = { basePlat: plat, vehicleName: plat };
+        const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
+
+        if (truckId) {
+          if (category === 'DRY') {
+            dryTrucks.add(truckId);
+            ttDry += tripsCount;
+          } else if (category === 'FROZEN') {
+            frzTrucks.add(truckId);
+            ttFrz += tripsCount;
           }
-
-          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
-          const truckId = route.basePlat || route.vehicleName || '-';
-
-          if (truckId) {
-            if (category === 'DRY') {
-              dryTrucks.add(truckId);
-              ttDry += tripsCount;
-            } else if (category === 'FROZEN') {
-              frzTrucks.add(truckId);
-              ttFrz += tripsCount;
-            }
-          }
-        });
-      }
+        }
+      });
     });
   }
 

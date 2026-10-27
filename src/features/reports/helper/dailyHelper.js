@@ -22,34 +22,6 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { getPreviousRoutingDate } from './help';
-const detectRoutingDateFromTasks = (allTasks, fallbackBaseDate) => {
-  const dates = [];
-  allTasks.forEach((task) => {
-    if (task.createdFrom === 'API' && task.createdTime) {
-      const datePart = formatDateUniversal(task.createdTime);
-      if (datePart) {
-        dates.push(datePart);
-      }
-    }
-  });
-
-  if (dates.length > 0) {
-    const modeMap = {};
-    let maxEl = dates[0],
-      maxCount = 1;
-    for (const d of dates) {
-      modeMap[d] = (modeMap[d] || 0) + 1;
-      if (modeMap[d] > maxCount) {
-        maxEl = d;
-        maxCount = modeMap[d];
-      }
-    }
-    return maxEl;
-  }
-
-  return formatDateUniversal(getPreviousRoutingDate(fallbackBaseDate));
-};
 
 export const getManualDate = (headerName, deliveryBuffers, fallbackDate) => {
   try {
@@ -118,10 +90,13 @@ export const handleSingleDownload = async ({
   try {
     setIsLoading(true);
 
-    if (!selectedDateString) throw new Error(t('common.invalid_date'));
+    const dateStr = selectedDateString || (selectedDate ? formatDateUniversal(selectedDate) : null);
+    if (!dateStr) throw new Error(t('common.invalid_date'));
+    const routingDeliveryDate =
+      isCustomRouting && routingDate ? formatDateUniversal(new Date(routingDate)) : dateStr;
 
-    const timeFromTasks = new Date(`${selectedDateString}T00:00:00`).toISOString();
-    const timeToTasks = new Date(`${selectedDateString}T23:59:59`).toISOString();
+    const timeFromTasks = new Date(`${dateStr}T00:00:00`).toISOString();
+    const timeToTasks = new Date(`${dateStr}T23:59:59`).toISOString();
 
     const allTasks = await getTasks({
       status: 'DONE,ONGOING',
@@ -133,27 +108,18 @@ export const handleSingleDownload = async ({
       throw new Error(t('common.no_data'));
     }
 
-    let targetRoutingStr;
-    if (isCustomRouting) {
-      if (!routingDate) throw new Error(t('common.invalid_date'));
-      targetRoutingStr = formatDateUniversal(new Date(routingDate));
-    } else {
-      targetRoutingStr = detectRoutingDateFromTasks(allTasks, selectedDate);
-    }
-
-    const locStartObj = new Date(selectedDateString);
+    const locStartObj = new Date(dateStr);
     locStartObj.setDate(locStartObj.getDate() - 3);
     locStartObj.setHours(0, 0, 0, 0);
 
-    const locEndObj = new Date(selectedDateString);
+    const locEndObj = new Date(dateStr);
     locEndObj.setDate(locEndObj.getDate() + 2);
     locEndObj.setHours(23, 59, 59, 999);
 
     const { storedLocationAcronym } = getLocalStorage();
     const [filteredResults, hubsData, locationHistoriesRes] = await Promise.all([
       getResults({
-        dateFrom: `${targetRoutingStr} 00:00:00`,
-        dateTo: `${targetRoutingStr} 23:59:59`,
+        deliveryDate: routingDeliveryDate,
       }),
       getCachedHubs(),
       getLocationHistories({
@@ -163,7 +129,7 @@ export const handleSingleDownload = async ({
     ]);
 
     const singleDateHistories = (locationHistoriesRes || []).filter((item) => {
-      return item.startTime?.startsWith(selectedDateString);
+      return item.startTime?.startsWith(dateStr);
     });
     const { timeDataObjects } = convertLocationHistories(singleDateHistories, driverData);
     const filteredTimeData = timeDataObjects.filter(
@@ -178,7 +144,7 @@ export const handleSingleDownload = async ({
     const hubLabel = storedLocationAcronym || hubName;
 
     const [pendingDetails, masterTruckData] = await Promise.all([
-      getPendingDetails(selectedDateString, selectedDateString).catch(() => []),
+      getPendingDetails(dateStr, dateStr).catch(() => []),
       getVehicleTypes(),
     ]);
     const effectiveTasks = applyPendingDetailsToTasks(allTasks, pendingDetails);
@@ -195,8 +161,8 @@ export const handleSingleDownload = async ({
       effectiveTasks,
       filteredResults,
       singleDateHistories,
-      selectedDateString,
-      selectedDateString,
+      dateStr,
+      dateStr,
       taskSummaryMetrics,
       masterTruckData,
       t,
@@ -207,7 +173,7 @@ export const handleSingleDownload = async ({
     );
 
     const baseDailyReport = t('navbar.daily_report');
-    const formattedDate = formatDateUniversal(selectedDateString, 'DD.MM.YYYY');
+    const formattedDate = formatDateUniversal(dateStr, 'DD.MM.YYYY');
     const singleExcelFileName = `${baseDailyReport} - ${formattedDate} - ${hubLabel}.xlsx`;
 
     XLSX.writeFile(wb, singleExcelFileName);
@@ -243,13 +209,6 @@ export const handleBulkDownload = async ({
     taskEndObj.setDate(taskEndObj.getDate() + 4);
     taskEndObj.setHours(23, 59, 59, 999);
 
-    const routingStartObj = new Date(startDate);
-    routingStartObj.setDate(routingStartObj.getDate() - 4);
-    routingStartObj.setHours(0, 0, 0, 0);
-
-    const routingEndObj = new Date(endDate);
-    routingEndObj.setDate(routingEndObj.getDate() + 2);
-    routingEndObj.setHours(23, 59, 59, 999);
 
     const locStartObj = new Date(startDate);
     locStartObj.setDate(locStartObj.getDate() - 3);
@@ -276,7 +235,6 @@ export const handleBulkDownload = async ({
     };
 
     const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
-    const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
     const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
     const mergeResults = (resArray) => {
@@ -303,15 +261,11 @@ export const handleBulkDownload = async ({
     })();
 
     const pRouting = (async () => {
-      const rawResults = [];
-      for (const range of routingRanges) {
-        const res = await getResults({
-          routingDateObj: new Date(range.from),
-          deliveryDateObj: new Date(range.to),
-        });
-        rawResults.push(res);
-      }
-      return mergeResults(rawResults);
+      const res = await getResults({
+        dateFrom: startStr,
+        dateTo: endStr,
+      });
+      return Array.isArray(res) ? res : res?.data || [];
     })();
 
     const pHistory = (async () => {
@@ -428,8 +382,7 @@ export const handleManualDownload = async ({
     const allTasks = await parseDeliveryToTasks(deliveryBuffers);
     const filteredResults = await parseRoutingToResults(
       routingBuffers,
-      extractedStartDate,
-      allTasks
+      extractedStartDate
     );
     const hasPendingGR = hubsData.activeHub ? hubsData.activeHub.hasPendingGR : false;
 

@@ -177,7 +177,7 @@ export const processTaskRoutingReport = async ({ datesToProcess, locationName, t
     ];
 
     const routingResults = await Promise.all(uniqueRoutingIds.map((id) => getResult(id)));
-    const routingMap = buildRoutingMap(routingResults);
+    const routingMap = buildRoutingMap(routingResults, driverData);
 
     const timeMap = buildSyncTimeMap(locHistories, driverData, selectedDateString);
     const groupedData = groupTasksByDriver(tasksData);

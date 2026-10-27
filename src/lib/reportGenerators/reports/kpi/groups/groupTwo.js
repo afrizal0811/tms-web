@@ -1,4 +1,4 @@
-import { getBasePlate, getStorageType, normalizeEmail } from '@/lib/utils';
+import { getBasePlate, getStorageType } from '@/lib/utils';
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
 export function calculateGroupTwo(resultsData, driverMap, driverData = [], tasksData = []) {
@@ -9,46 +9,47 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = [], tasks
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
       const routingName = item.description || item.code || item.name || 'Unknown Routing';
-      if (item.result && Array.isArray(item.result.routing)) {
-        item.result.routing.forEach((route) => {
-          if (!Array.isArray(route.trips) || route.trips.length === 0) return;
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(item.totalDistance || {}),
+          ...Object.keys(item.time || {}),
+          ...Object.keys(item.hubTimes || {}),
+        ])
+      );
 
-          const truckId = route.basePlat || route.vehicleName || 'No Plat';
-          let driverName = route.driverName || '';
+      plates.forEach((plat) => {
+        const truckId = plat || 'No Plat';
+        const route = { basePlat: plat, vehicleName: plat };
+        const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
 
-          if (!driverName && route.assignee) {
-            const rawAssignee =
-              typeof route.assignee === 'string'
-                ? route.assignee.split(',')[0].trim()
-                : route.assignee;
-            driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
-          }
+        const foundDriver = (driverData || []).find(
+          (d) =>
+            d.plat &&
+            d.plat.replace(/\s+/g, '').toLowerCase() === plat.replace(/\s+/g, '').toLowerCase()
+        );
+        const driverName = foundDriver?.name || '';
 
-          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
+        const tObj = item.time?.[plat] || {};
+        const rawVisit = Number(tObj.visitTime) || 0;
+        const rawTravel = Number(tObj.travelTime) || 0;
+        const rawWait = Number(tObj.waitingTime) || 0;
+        const rawSpent = Number(tObj.spentTime) || (rawVisit + rawTravel + rawWait);
 
-          if (truckId) {
-            const rawVisit = Number(route.totalVisitTime) || 0;
-            const rawTravel = Number(route.totalTravelTime) || 0;
-            const rawWait = Number(route.totalWaitingTime) || 0;
-            const rawSpent = Number(route.totalSpentTime) || 0;
-
-            detailRows.push({
-              routing: routingName,
-              plat: truckId,
-              driver: driverName,
-              category,
-              visit: rawVisit,
-              travel: rawTravel,
-              wait: rawWait,
-              spent: rawSpent,
-            });
-
-            if (driverName) {
-              processedDrivers.add(driverName.toUpperCase().trim());
-            }
-          }
+        detailRows.push({
+          routing: routingName,
+          plat: truckId,
+          driver: driverName,
+          category,
+          visit: rawVisit,
+          travel: rawTravel,
+          wait: rawWait,
+          spent: rawSpent,
         });
-      }
+
+        if (driverName) {
+          processedDrivers.add(driverName.toUpperCase().trim());
+        }
+      });
     });
   }
 

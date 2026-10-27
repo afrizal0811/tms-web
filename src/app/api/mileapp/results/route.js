@@ -52,220 +52,87 @@ const formatRoutingHistories = (rawHistory) => {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const deliveryDate = searchParams.get('deliveryDate');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
-    const limit = searchParams.get('limit') || 500;
     const hubId = searchParams.get('hubId');
-    const fields = searchParams.get('fields');
 
-    if (!dateFrom || !dateTo || !hubId) {
-      return NextResponse.json(
-        { error: 'Parameter yang dibutuhkan tidak lengkap (dateFrom, dateTo, atau hubId)' },
-        { status: 400 }
-      );
+    const where = {};
+    if (deliveryDate) {
+      where.delivery_date = deliveryDate;
+    } else if (dateFrom && dateTo) {
+      const fromStr = dateFrom.split(' ')[0].split('T')[0];
+      const toStr = dateTo.split(' ')[0].split('T')[0];
+      where.delivery_date = { gte: fromStr, lte: toStr };
+    } else if (dateFrom) {
+      const fromStr = dateFrom.split(' ')[0].split('T')[0];
+      where.delivery_date = { gte: fromStr };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiToken = process.env.API_TOKEN;
-
-    if (!apiUrl || !apiToken) {
-      console.error(
-        'Konfigurasi server hilang: NEXT_PUBLIC_API_URL atau API_TOKEN tidak ditemukan.'
-      );
-      return NextResponse.json({ error: 'Kesalahan konfigurasi server internal' }, { status: 500 });
+    if (hubId && hubId !== 'all') {
+      where.hub_id = hubId;
     }
 
-    const externalUrl = new URL(`${apiUrl}/results`);
-
-    externalUrl.searchParams.append('dateFrom', dateFrom);
-    externalUrl.searchParams.append('dateTo', dateTo);
-    externalUrl.searchParams.append('limit', limit);
-    externalUrl.searchParams.append('hubId', hubId);
-    if (fields) {
-      externalUrl.searchParams.append('fields', fields);
-    }
-    const externalResponse = await fetch(externalUrl.toString(), {
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
+    const routingResults = await prisma.routingResult.findMany({
+      where,
+      include: {
+        hub: true,
       },
+      orderBy: { created_at: 'asc' },
     });
 
-    const data = await externalResponse.json();
-    const routingData = data?.data?.data;
-    if (!externalResponse.ok) {
-      console.error('API eksternal (/results) error:', data);
-      return NextResponse.json(
-        { error: 'Gagal mengambil data results dari API eksternal', details: data },
-        { status: externalResponse.status }
-      );
-    }
+    const formattedData = routingResults.map((item) => {
+      const hubTimes =
+        typeof item.hub_times === 'string'
+          ? JSON.parse(item.hub_times || '{}')
+          : item.hub_times || {};
+      const totalDistance =
+        typeof item.total_distance === 'string'
+          ? JSON.parse(item.total_distance || '{}')
+          : item.total_distance || {};
+      const timeData =
+        typeof item.time === 'string'
+          ? JSON.parse(item.time || '{}')
+          : item.time || {};
 
-    const filteredData = routingData.filter(
-      (item) => item?.dispatchStatus?.toLowerCase() === 'done'
-    );
-
-    const rawDrivers = await prisma.driver.findMany({
-      where: hubId ? { hubs: { some: { id: hubId } } } : {},
-    });
-
-    const driversMap = {};
-    rawDrivers.forEach((d) => {
-      const email = (d.email || '').toLowerCase().trim();
-      if (email && email !== '-') {
-        if (!driversMap[email]) {
-          driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
-        }
-      }
-    });
-
-    const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
-    const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));
-    const toHr = (mins) => {
-      const h = Math.floor((mins || 0) / 60);
-      const m = Math.floor((mins || 0) % 60);
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    };
-
-    const processedData = filteredData.map((item) => {
-      let gDist = 0,
-        gTravel = 0,
-        gVisit = 0,
-        gWait = 0,
-        gSpent = 0;
-
-      if (item?.result?.routing) {
-        item.result.routing = item.result.routing.map((r) => {
-          let tW = 0,
-            tV = 0,
-            tD = 0,
-            tTr = 0,
-            tVi = 0,
-            tWa = 0;
-
-          if (r.trips && r.trips.length > 0) {
-            const lastHubWait = Number(r.trips[r.trips.length - 1].waitingTime) || 0;
-
-            if ((Number(r.trips[0].waitingTime) || 0) <= 0) {
-              r.trips[0].waitingTime = lastHubWait;
-            }
-
-            r.trips = r.trips.map((t, i) => {
-              if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
-                t.visitId = t.visitId.replace('taskId-', '');
-              }
-
-              const tripTravel = Number(t.travelTime) || 0;
-              const tripVisit = Number(t.visitTime) || 0;
-              const tripWait = Number(t.waitingTime) || 0;
-
-              if (!t.isHub) {
-                tW += t.weight || 0;
-                tV += t.volume || 0;
-              }
-              tD += t.distance || 0;
-              tTr += tripTravel;
-              tVi += tripVisit;
-
-              if (i !== r.trips.length - 1) {
-                tWa += tripWait;
-              }
-
-              t.travelTime = toHr(tripTravel);
-              t.visitTime = toHr(tripVisit);
-              t.waitingTime = toHr(tripWait);
-              t.spentTime = toHr(tripTravel + tripVisit + tripWait);
-
-              delete t.etaStr;
-              delete t.etdStr;
-              delete t.allowOddEven;
-              delete t.timeWindow;
-              delete t.visitGroup;
-              delete t.visitGroupPriority;
-              delete t.tags;
-              return t;
-            });
-          }
-
-          const spent = tTr + tVi + tWa;
-          r.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
-          r.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
-          r.weightPercentage = toPct(tW, r.vehicleMaxWeight);
-          r.volumePercentage = toPct(tV, r.vehicleMaxVolume);
-          r.totalDistance = tD;
-          r.distanceKm = toKm(tD);
-          r.totalTravelTime = tTr;
-          r.travelHour = toHr(tTr);
-          r.totalVisitTime = tVi;
-          r.visitHour = toHr(tVi);
-          r.totalWaitingTime = tWa;
-          r.waitingHour = toHr(tWa);
-          r.totalSpentTime = spent;
-          r.spentHour = toHr(spent);
-
-          gDist += tD;
-          gTravel += tTr;
-          gVisit += tVi;
-          gWait += tWa;
-          gSpent += spent;
-
-          const email = (r.assignee || '').toLowerCase().trim();
-          r.driverName = driversMap[email]?.name || null;
-          
-          if (!r.basePlat && !r.vehicleName) {
-            r.basePlat = driversMap[email]?.plat || null;
-          } else {
-            r.basePlat = getBasePlate(r.basePlat || r.vehicleName);
-          }
-
-          delete r.workingTime;
-          delete r.breakTime;
-          delete r.vehicleTags;
-          delete r.oddEven;
-          delete r.isOddEven;
-          delete r.speed;
-          delete r.fixedCost;
-          delete r.totalNodes;
-          delete r.totalTrips;
-          delete r.finishTime;
-          return r;
-        });
+      const formattedTime = {};
+      for (const [p, t] of Object.entries(timeData)) {
+        formattedTime[p] = {
+          spentTime: Number(t.spentTime ?? t.spent_time) || 0,
+          visitTime: Number(t.visitTime ?? t.visit_time) || 0,
+          travelTime: Number(t.travelTime ?? t.travel_time) || 0,
+          waitingTime: Number(t.waitingTime ?? t.waiting_time) || 0,
+        };
       }
 
-      if (item?.summary) {
-        item.summary.totalDistance = gDist;
-        item.summary.distanceKm = toKm(gDist);
-        item.summary.totalTravelTime = gTravel;
-        item.summary.travelHour = toHr(gTravel);
-        item.summary.totalVisitTime = gVisit;
-        item.summary.visitHour = toHr(gVisit);
-        item.summary.totalWaitingTime = gWait;
-        item.summary.waitingHour = toHr(gWait);
-        item.summary.totalSpentTime = gSpent;
-        item.summary.spentHour = toHr(gSpent);
-
-        delete item.summary.capacityConstraint;
-        delete item.summary.avgSpeed;
-        delete item.summary.avgFinishTime;
-        delete item.summary.maxFinishTime;
-        delete item.summary.minFinishTime;
-        delete item.summary.totalVehicles;
-        delete item.summary.unusedVehicles;
-        delete item.summary.usedVehicles;
-      }
-
-      delete item.totalResultHistories;
-      return item;
+      return {
+        id: item.id,
+        _id: item.id,
+        hubId: item.hub_id,
+        name: item.name,
+        deliveryDate: item.delivery_date,
+        createdByUser: item.created_by_user,
+        createdTime: item.delivery_date,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        dispatchStatus: 'done',
+        dropped: item.dropped,
+        histories: item.histories,
+        totalDistance,
+        time: formattedTime,
+        hubTimes,
+        hub: item.hub,
+      };
     });
 
-    return NextResponse.json(processedData);
+    return NextResponse.json(formattedData);
   } catch (error) {
     console.error('Error Results:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
       {
-        error: 'Gagal mengambil atau memproses data results dari API eksternal',
+        error: 'Gagal mengambil data results dari database',
         detail: errorMessage,
       },
       { status: 500 }

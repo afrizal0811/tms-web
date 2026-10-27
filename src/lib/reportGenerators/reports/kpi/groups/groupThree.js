@@ -1,4 +1,3 @@
-import { normalizeEmail } from '@/lib/utils';
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
 export function calculateGroupThree(
@@ -25,32 +24,24 @@ export function calculateGroupThree(
 
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
-      if (item.result && Array.isArray(item.result.routing)) {
-        item.result.routing.forEach((route) => {
-          let driverName = route.driverName || '';
-          if (!driverName && route.assignee) {
-            const rawAssignee =
-              typeof route.assignee === 'string'
-                ? route.assignee.split(',')[0].trim()
-                : route.assignee;
-            driverName = driverMap[normalizeEmail(rawAssignee)] || rawAssignee;
-          }
-          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(item.totalDistance || {}),
+          ...Object.keys(item.time || {}),
+          ...Object.keys(item.hubTimes || {}),
+        ])
+      );
 
-          const hasTrips = Array.isArray(route.trips) && route.trips.length > 0;
-          const activeWeight = Number(route.totalWeight || 0);
-          const activeVolume = Number(route.totalVolume || 0);
-          const isVehicleActive =
-            hasTrips &&
-            (activeWeight > 0 || activeVolume > 0 || Number(route.totalVisits || 0) > 0);
+      plates.forEach((plat) => {
+        const route = { basePlat: plat, vehicleName: plat };
+        const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
+        const vehicleDistMeters = Number(item.totalDistance?.[plat] || 0);
 
-          if (isVehicleActive) {
-            const vehicleDistMeters = Number(route.totalDistance || 0);
-            if (category === 'DRY') rawDistDryMeters += vehicleDistMeters;
-            else if (category === 'FROZEN') rawDistFrzMeters += vehicleDistMeters;
-          }
-        });
-      }
+        if (vehicleDistMeters > 0) {
+          if (category === 'DRY') rawDistDryMeters += vehicleDistMeters;
+          else if (category === 'FROZEN') rawDistFrzMeters += vehicleDistMeters;
+        }
+      });
     });
   }
 

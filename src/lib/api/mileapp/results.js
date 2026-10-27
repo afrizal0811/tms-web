@@ -1,45 +1,16 @@
-// File: lib/api/results.js
-
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateUniversal } from '../../utils';
 import { apiFetch } from '../base';
-import { fields } from './fields';
-function getCutOffTime(dateObj, hasPartialRouting = false) {
-  const isSaturday = dateObj.getDay() === 6;
-  return {
-    startTime: hasPartialRouting ? '07:00:00' : isSaturday ? '04:00:00' : '08:00:00',
-    endTime: isSaturday ? '11:59:59' : '15:59:59',
-  };
-}
 
-export async function getResults({
-  dateFrom,
-  dateTo,
-  routingDateObj,
-  deliveryDateObj,
-  hasPartialRouting = false,
-}) {
-  let finalDateFrom = dateFrom;
-  let finalDateTo = dateTo;
-
-  if (routingDateObj && deliveryDateObj) {
-    const { startTime } = getCutOffTime(routingDateObj, hasPartialRouting);
-    const { endTime } = getCutOffTime(deliveryDateObj, hasPartialRouting);
-
-    const startStr = formatDateUniversal(routingDateObj, 'YYYY-MM-DD');
-    const endStr = formatDateUniversal(deliveryDateObj, 'YYYY-MM-DD');
-
-    finalDateFrom = `${startStr} ${startTime}`;
-    finalDateTo = `${endStr} ${endTime}`;
-  }
-  const resultsFields = fields.results.join(',');
+export async function getResults({ deliveryDate, dateFrom, dateTo, deliveryDateObj } = {}) {
+  const finalDeliveryDate =
+    deliveryDate || (deliveryDateObj ? formatDateUniversal(deliveryDateObj, 'YYYY-MM-DD') : null);
   const params = new URLSearchParams();
   const { storedLocation } = getLocalStorage();
-  params.append('limit', 10000);
-  if (finalDateFrom) params.append('dateFrom', finalDateFrom);
-  if (finalDateTo) params.append('dateTo', finalDateTo);
+  if (finalDeliveryDate) params.append('deliveryDate', finalDeliveryDate);
+  if (dateFrom) params.append('dateFrom', dateFrom);
+  if (dateTo) params.append('dateTo', dateTo);
   if (storedLocation) params.append('hubId', storedLocation);
-  if (resultsFields) params.append('fields', resultsFields);
 
   return await apiFetch(
     `/api/mileapp/results?${params.toString()}`,
@@ -52,12 +23,10 @@ export async function getResult(id) {
     throw new Error('ID result harus disertakan');
   }
 
-  const result = await apiFetch(
+  return await apiFetch(
     `/api/mileapp/results/${id}`,
     `Gagal mengambil data result dengan ID ${id}`
   );
-
-  return result;
 }
 
 export async function getResultHistories(resultIds) {

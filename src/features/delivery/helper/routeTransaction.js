@@ -1,5 +1,6 @@
 import {
   formatDateUniversal,
+  getBasePlate,
   isBypassSo,
   isEmpty,
   isValidSo,
@@ -307,8 +308,14 @@ export const handlePartialRouteTransDownload = async ({
     for (const routing of sortedRoutingResults) {
       const status = routing.status || routing.dispatchStatus || '';
       if (String(status).toLowerCase() !== 'done') continue;
-      const routes = routing.result?.routing || [];
-      if (routes.length === 0) continue;
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(routing.totalDistance || {}),
+          ...Object.keys(routing.time || {}),
+          ...Object.keys(routing.hubTimes || {}),
+        ])
+      );
+      if (plates.length === 0) continue;
 
       const cleanRoutingName = routing.name;
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
@@ -320,8 +327,14 @@ export const handlePartialRouteTransDownload = async ({
 
       const enrichedTripsMap = buildEnrichedTripsMap(filteredVehicleRoutes);
 
-      for (const route of routes) {
-        const plat = route.basePlat;
+      for (const rawPlat of plates) {
+        const plat = getBasePlate(rawPlat) || rawPlat;
+        const vRoute = (filteredVehicleRoutes || []).find(
+          (r) => getBasePlate(r.plat) === plat
+        );
+        const routeTrips = vRoute?.trips || [];
+        if (routeTrips.length === 0) continue;
+
         if (!globalSeenSOByVehicle.has(plat)) {
           globalSeenSOByVehicle.set(plat, new Set());
         }
@@ -329,7 +342,7 @@ export const handlePartialRouteTransDownload = async ({
 
         const seenSO = new Set();
 
-        const enrichedRouteTrips = (route.trips || [])
+        const enrichedRouteTrips = routeTrips
           .map((t) => resolveDedupedTrip(t, enrichedTripsMap, vehicleSeenSOs))
           .filter(Boolean);
 

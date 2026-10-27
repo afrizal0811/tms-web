@@ -182,34 +182,57 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
 
   const hubTimesMap = new Map();
   const hubTimesFallbackMap = new Map();
-  if (results) {
-    const filteredResults = results.filter((item) => item.dispatchStatus === 'done');
-    for (const result of filteredResults) {
-      if (result.result && Array.isArray(result.result.routing)) {
-        for (const route of result.result.routing) {
-          const driverName = route.driverName || 'N/A';
-          if (!driverName || !Array.isArray(route.trips) || isEmpty(route.trips)) continue;
 
-          const hubTrips = route.trips.filter((trip) => trip.isHub === true);
-          if (hubTrips.length > 0) {
-            const firstHub = hubTrips[0];
-            const lastHub = hubTrips[hubTrips.length - 1];
-            const routeBasePlat = route.basePlat || route.vehicleName || '';
-            const middleHubs = hubTrips.length > 2 ? hubTrips.slice(1, hubTrips.length - 1) : [];
-            const timesObj = {
-              hubETD: formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-',
-              hubETA: formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-',
-              hubLongLat: firstHub.coordinate || null,
-              middleHubs: middleHubs.map((h) => ({
-                order: h.order,
-                eta: formatDateUniversal(`${date} ${h.eta}`, 'HH:mm') || '-',
-                etd: formatDateUniversal(`${date} ${h.etd}`, 'HH:mm') || '-',
-                longlat: h.coordinate || null,
-              })),
-            };
+  const driverByPlat = new Map();
+  tasks.forEach((t) => {
+    const p = getBasePlate(t.basePlat || t.vehicleName || t.plat);
+    if (p && t.driverName) driverByPlat.set(p, t.driverName);
+  });
+  drivers.forEach((d) => {
+    const p = getBasePlate(d.plat);
+    if (p && d.name) driverByPlat.set(p, d.name);
+  });
+
+  if (results) {
+    for (const result of results) {
+      const rawHubTimes = result.hubTimes || result.hub_times;
+      if (rawHubTimes) {
+        const hubTimesData =
+          typeof rawHubTimes === 'string'
+            ? JSON.parse(rawHubTimes)
+            : rawHubTimes;
+        const hubLongLat =
+          result.hub?.lat && result.hub?.lng ? `${result.hub.lat},${result.hub.lng}` : null;
+
+        for (const [rawPlat, trips] of Object.entries(hubTimesData || {})) {
+          if (!Array.isArray(trips) || isEmpty(trips)) continue;
+          const basePlat = getBasePlate(rawPlat) || rawPlat;
+          const driverName = driverByPlat.get(basePlat) || 'N/A';
+
+          const firstHub = trips.find((t) => t.category === 'first') || trips[0];
+          const lastHub = trips.find((t) => t.category === 'last') || trips[trips.length - 1];
+          const middleHubs = trips.filter(
+            (t) => t.category === 'middle' || (t.category && t.category.startsWith('middle'))
+          );
+
+          const timesObj = {
+            hubETD: firstHub?.etd ? formatDateUniversal(`${date} ${firstHub.etd}`, 'HH:mm') || '-' : '-',
+            hubETA: lastHub?.eta ? formatDateUniversal(`${date} ${lastHub.eta}`, 'HH:mm') || '-' : '-',
+            hubLongLat,
+            middleHubs: middleHubs.map((h) => ({
+              order: h.order,
+              eta: h.eta ? formatDateUniversal(`${date} ${h.eta}`, 'HH:mm') || '-' : '-',
+              etd: h.etd ? formatDateUniversal(`${date} ${h.etd}`, 'HH:mm') || '-' : '-',
+              longlat: hubLongLat,
+            })),
+          };
+
+          if (driverName !== 'N/A') {
             hubTimesFallbackMap.set(driverName, timesObj);
-            if (routeBasePlat) hubTimesMap.set(`${driverName}_${routeBasePlat}`, timesObj);
+            hubTimesMap.set(`${driverName}_${basePlat}`, timesObj);
           }
+          hubTimesMap.set(basePlat, timesObj);
+          hubTimesMap.set(rawPlat, timesObj);
         }
       }
     }
@@ -242,9 +265,14 @@ export const processRoutingVsActualData = ({ tasks, results, drivers, searchQuer
   for (const driverRow of sortDrivers) {
     const driverName = driverRow.driver;
     const driverPlat = driverRow.plat;
+    const basePlat = getBasePlate(driverPlat);
     const driverTasks = tasksByGroupMap.get(driverRow.gKey) || [];
-    const hubTimes = hubTimesMap.get(driverRow.gKey) ||
-      hubTimesFallbackMap.get(driverName) || { hubETD: '-', hubETA: '-', hubLongLat: null };
+    const hubTimes =
+      hubTimesMap.get(driverRow.gKey) ||
+      hubTimesMap.get(basePlat) ||
+      hubTimesMap.get(driverPlat) ||
+      hubTimesFallbackMap.get(driverName) ||
+      { hubETD: '-', hubETA: '-', hubLongLat: null };
 
     const isDriverMatch =
       driverName.toLowerCase().includes(query) ||

@@ -71,23 +71,32 @@ const getVal = (obj, header, taskDetailKeyMapping) => {
   return sanitizeCell(val);
 };
 
-export const buildRoutingMap = (routingResults) => {
+export const buildRoutingMap = (routingResults, driverData = []) => {
   const routingMap = {};
+  const driverByPlat = new Map();
+  (driverData || []).forEach((d) => {
+    const p = (d.plat || '').replace(/\s+/g, '').toLowerCase();
+    if (p && d.email) driverByPlat.set(p, normalizeEmail(d.email));
+  });
+
   routingResults.forEach((res) => {
-    const routingData = res?.data?.result?.routing || res?.result?.routing || [];
-    routingData.forEach((route) => {
-      const assigneeEmail = normalizeEmail(route.assignee);
-      if (!assigneeEmail) return;
+    const hubTimes = res?.hubTimes || {};
+    for (const [rawPlat, trips] of Object.entries(hubTimes)) {
+      if (!Array.isArray(trips) || trips.length === 0) continue;
+      const startHub = trips.find((t) => t.category === 'first' || t.order === 0) || trips[0];
+      const endHub = trips.find((t) => t.category === 'last') || trips[trips.length - 1];
+      const normPlat = rawPlat.replace(/\s+/g, '').toLowerCase();
+      const email = driverByPlat.get(normPlat) || normPlat;
 
-      const hubTrips = (route.trips || []).filter((trip) => trip.isHub === true);
-
-      if (hubTrips.length > 0) {
-        routingMap[assigneeEmail] = {
-          startHub: hubTrips[0],
-          endHub: hubTrips[hubTrips.length - 1],
-        };
-      }
-    });
+      routingMap[email] = {
+        startHub,
+        endHub,
+      };
+      routingMap[normPlat] = {
+        startHub,
+        endHub,
+      };
+    }
   });
   return routingMap;
 };

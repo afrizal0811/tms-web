@@ -65,20 +65,20 @@ export async function calculateTaskSummaryMetrics({
     ? applyPendingDetailsToTasks(allTasks, pendingDetails)
     : allTasks;
   const taskToRoutingDate = new Map();
+  const resultDateMap = new Map();
   (allResults || []).forEach((res) => {
     const rDate = getDeliveryDateFromRouting(res.createdTime);
-    if (!rDate) return;
-    const mapTrips = (trips) => {
-      (trips || []).forEach((trip) => {
-        if (trip.visitId && trip.visitId.includes('-')) {
-          taskToRoutingDate.set(trip.visitId.substring(trip.visitId.indexOf('-') + 1), rDate);
-        } else if (trip.visitName) {
-          taskToRoutingDate.set(trip.visitName, rDate);
-        }
-      });
-    };
-    if (res.result?.routing) res.result.routing.forEach((r) => mapTrips(r.trips));
-    if (res.result?.dropped) mapTrips(res.result.dropped);
+    if (rDate && (res.id || res._id)) {
+      resultDateMap.set(String(res.id || res._id), rDate);
+    }
+  });
+  (effectiveTasks || []).forEach((task) => {
+    if (task.routingResultId && resultDateMap.has(String(task.routingResultId))) {
+      const rDate = resultDateMap.get(String(task.routingResultId));
+      const tId = String(task._id || task.id || task.taskId);
+      taskToRoutingDate.set(tId, rDate);
+      if (task.orderId) taskToRoutingDate.set(task.orderId, rDate);
+    }
   });
 
   const tempMetrics = {};
@@ -280,23 +280,8 @@ export async function calculateTaskSummaryMetrics({
     resultIdsToFetch.push(res._id);
     resultMap.set(res._id, res);
 
-    let routingDroppedDry = 0;
-    let routingDroppedFrozen = 0;
-    (res.result?.dropped || []).forEach((trip) => {
-      const tagStr = Array.isArray(trip.tags) ? trip.tags[0] : trip.tags;
-      const prefix = typeof tagStr === 'string' ? tagStr.split('-')[0].toUpperCase() : '';
-      const taskDetail = getTaskDetails(trip);
-
-      if (prefix === 'FRZ' || prefix === 'FROZEN') {
-        routingDroppedFrozen += 1;
-        tempMetrics[dateKey].frozen.dt_tasks.push(taskDetail);
-      } else {
-        routingDroppedDry += 1;
-        tempMetrics[dateKey].dry.dt_tasks.push(taskDetail);
-      }
-    });
-    tempMetrics[dateKey].dry.dt_sum += routingDroppedDry;
-    tempMetrics[dateKey].frozen.dt_sum += routingDroppedFrozen;
+    const droppedCount = typeof res.dropped === 'number' ? res.dropped : 0;
+    tempMetrics[dateKey].dry.dt_sum += droppedCount;
   });
 
   try {
@@ -369,44 +354,49 @@ export async function calculateTaskSummaryMetrics({
       tempMetrics[dateKey].routingNames.add(res.name);
     }
 
-    (res.result?.routing || []).forEach((route) => {
-      const validTrips = (route.trips || []).filter((t) => !t.isHub);
-      if (validTrips.length === 0) return;
+    const plates = Array.from(
+      new Set([
+        ...Object.keys(res.totalDistance || {}),
+        ...Object.keys(res.time || {}),
+        ...Object.keys(res.hubTimes || {}),
+      ])
+    );
 
-      const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-      const strictBasePlate = route.basePlat || route.vehicleName || '';
-      const baseCanonical =
-        strictBasePlate.replace(/\s+/g, '').toLowerCase() || `unknown-${Math.random()}`;
+    plates.forEach((plat) => {
+      const strictBasePlate = plat;
+      const baseCanonical = cleanPlat(strictBasePlate);
 
-      const foundDriver =
-        fetchedDrivers.find((d) => (d.email || '').toLowerCase() === rawEmail) ||
-        fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
-
+      const foundDriver = fetchedDrivers.find((d) => cleanPlat(d.plat) === baseCanonical);
       const storage = foundDriver ? (foundDriver.storage || 'DRY').toUpperCase() : 'DRY';
-      const driverName =
-        route.driverName || (foundDriver ? foundDriver.name : route.assignee || '-');
-
-      const finalPlate = strictBasePlate;
+      const driverName = foundDriver ? foundDriver.name : '-';
       const type = storage.includes('FROZEN') ? 'frozen' : 'dry';
 
+      const routeTasks = (effectiveTasks || []).filter(
+        (t) =>
+          (String(t.routingResultId) === String(res.id) ||
+            String(t.routingResultId) === String(res._id)) &&
+          cleanPlat(t.basePlat || t.vehicleName || t.plat) === baseCanonical
+      );
+
       if (tempMetrics[dateKey] && tempMetrics[dateKey][type]) {
-        validTrips.forEach((trip) => {
-          const taskDetail = getTaskDetails(trip);
+        routeTasks.forEach((t) => {
+          const taskDetail = getTaskDetails(t);
           tempMetrics[dateKey][type].dp_tasks.push(taskDetail);
         });
       }
 
-      if (!isValidPlate(finalPlate) || !isValidDriver(driverName)) return;
+      if (!isValidPlate(strictBasePlate) || !isValidDriver(driverName)) return;
 
+      const visitsCount = routeTasks.length || 1;
       if (!routingDateVehicles[dateKey].has(baseCanonical)) {
         routingDateVehicles[dateKey].set(baseCanonical, {
-          plate: finalPlate,
+          plate: strictBasePlate,
           driverName,
           storageType: type,
-          visits: validTrips.length,
+          visits: visitsCount,
         });
       } else {
-        routingDateVehicles[dateKey].get(baseCanonical).visits += validTrips.length;
+        routingDateVehicles[dateKey].get(baseCanonical).visits += visitsCount;
       }
     });
   });

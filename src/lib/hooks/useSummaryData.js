@@ -160,13 +160,6 @@ export default function useSummaryData() {
       taskEndObj.setDate(taskEndObj.getDate() + 4);
       taskEndObj.setHours(23, 59, 59, 999);
 
-      const routingStartObj = new Date(startDate);
-      routingStartObj.setDate(routingStartObj.getDate() - 4);
-      routingStartObj.setHours(0, 0, 0, 0);
-
-      const routingEndObj = new Date(endDate);
-      routingEndObj.setDate(routingEndObj.getDate() + 2);
-      routingEndObj.setHours(23, 59, 59, 999);
 
       const locStartObj = new Date(startDate);
       locStartObj.setDate(locStartObj.getDate() - 3);
@@ -177,7 +170,6 @@ export default function useSummaryData() {
       locEndObj.setHours(23, 59, 59, 999);
 
       const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
-      const routingRanges = createDateChunks(routingStartObj, routingEndObj, 7);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
       const pDrivers = fetchWithTracker(() => getDrivers());
@@ -196,16 +188,11 @@ export default function useSummaryData() {
       }, 'Tasks');
 
       const pRouting = fetchWithTracker(async () => {
-        const rawResults = [];
-        for (const range of routingRanges) {
-          const res = await getResults({
-            routingDateObj: new Date(range.from),
-            deliveryDateObj: new Date(range.to),
-          });
-
-          rawResults.push(res);
-        }
-        return mergeResults(rawResults);
+        const res = await getResults({
+          dateFrom: startStr,
+          dateTo: endStr,
+        });
+        return Array.isArray(res) ? res : res?.data || [];
       }, 'Routing');
 
       const pHistory = fetchWithTracker(async () => {

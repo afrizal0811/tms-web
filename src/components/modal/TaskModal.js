@@ -11,6 +11,7 @@ import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatMinutesToHHMM,
+  getBasePlate,
   isEmpty,
   parseCustomerString,
   ProperCaseText,
@@ -495,23 +496,17 @@ function RoutingTab({ taskData, resultData, translate }) {
   let rVisitTimeHour = 0;
   const rName = resultData?.name || '-';
 
-  if (resultData?.routing && taskData?.assignee) {
-    const vehicleMatch = resultData.routing.find(
-      (v) => String(v.assignee).toLowerCase() === String(taskData.assignee).toLowerCase()
-    );
-    if (vehicleMatch && vehicleMatch.trips) {
-      const tripMatch = vehicleMatch.trips.find((t) => t.visitId === taskData._id);
-      if (tripMatch) {
-        rTravelTime =
-          tripMatch.travelTime > 60 ? `${tripMatch.travelTime} ${translate('common.minute')}` : 0;
-        rWaitingTime =
-          tripMatch.waitingTime > 60 ? `${tripMatch.waitingTime} ${translate('common.minute')}` : 0;
-        rVisitTime =
-          tripMatch.visitTime > 60 ? `${tripMatch.visitTime} ${translate('common.minute')}` : 0;
-        rTravelTimeHour = tripMatch.travelTimeHour;
-        rWaitingTimeHour = tripMatch.waitingTimeHour;
-        rVisitTimeHour = tripMatch.visitTimeHour;
-      }
+  if (resultData?.time && (taskData?.basePlat || taskData?.vehicleName || taskData?.plat)) {
+    const rawPlat = taskData.basePlat || taskData.vehicleName || taskData.plat;
+    const plat = getBasePlate(rawPlat) || rawPlat;
+    const tObj = resultData.time[plat] || resultData.time[rawPlat];
+    if (tObj) {
+      rTravelTime = tObj.travelTime > 0 ? `${tObj.travelTime} ${translate('common.minute')}` : 0;
+      rWaitingTime = tObj.waitingTime > 0 ? `${tObj.waitingTime} ${translate('common.minute')}` : 0;
+      rVisitTime = tObj.visitTime > 0 ? `${tObj.visitTime} ${translate('common.minute')}` : 0;
+      rTravelTimeHour = formatMinutesToHHMM(tObj.travelTime);
+      rWaitingTimeHour = formatMinutesToHHMM(tObj.waitingTime);
+      rVisitTimeHour = formatMinutesToHHMM(tObj.visitTime);
     }
   }
 

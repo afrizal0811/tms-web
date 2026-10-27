@@ -10,7 +10,7 @@ import {
   toApiDateString,
 } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
-import { bulkZipDownloader, getPreviousRoutingDate } from './help';
+import { bulkZipDownloader } from './help';
 
 const cleanStr = (str) => String(str || '').trim();
 const normalizeStr = (str) =>
@@ -32,48 +32,11 @@ const getColIdx = (headers, keyword) => {
   return headers.findIndex((h) => h && normalizeStr(h).includes(kw));
 };
 
-const evaluateRoutingValidity = (results, taskMap) => {
+const evaluateRoutingValidity = (results) => {
   if (isEmpty(results)) return [];
-
   return results
-    .filter((item) => {
-      if (!item.name || item.name === '-') {
-        return false;
-      }
-      if (!Array.isArray(item.result?.routing)) {
-        return false;
-      }
-      let checked = 0,
-        valid = 0;
-
-      item.result.routing.forEach((route) => {
-        const validTrips = (route.trips || []).filter((t) => !t.isHub && t.visitId);
-        if (isEmpty(validTrips)) return;
-
-        [...validTrips]
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 5)
-          .forEach((trip) => {
-            let id = trip.visitId;
-            if (id.includes('taskId-')) {
-              id = id.split('taskId-')[1];
-            }
-            if (id) {
-              checked++;
-              const mapValue = taskMap.get(String(id));
-              const itemValue = String(item._id);
-              if (mapValue === itemValue) valid++;
-            }
-          });
-      });
-
-      if (checked === 0) {
-        return true;
-      }
-      const ratio = valid / checked;
-      return ratio >= 0.5;
-    })
-    .map((i) => i._id);
+    .filter((item) => item.name && item.name !== '-')
+    .map((i) => i._id || i.id);
 };
 const processSingleKpiDate = async (
   targetDateObj,
@@ -83,15 +46,14 @@ const processSingleKpiDate = async (
 ) => {
   const validDeliveryDate = new Date(targetDateObj);
   const dateString = formatDateUniversal(validDeliveryDate);
+  const routingDeliveryDate = customRoutingDateObj
+    ? formatDateUniversal(new Date(customRoutingDateObj))
+    : dateString;
   const startObj = new Date(validDeliveryDate);
   startObj.setHours(0, 0, 0, 0);
   const timeFrom = toApiDateString(startObj);
   const timeTo = toApiDateString(new Date(startObj.setHours(23, 59, 59)));
   const { timeFrom: histFrom, timeTo: histTo } = calculateStartFinishDates(dateString);
-
-  const targetRoutingDateObj = customRoutingDateObj
-    ? new Date(customRoutingDateObj)
-    : getPreviousRoutingDate(validDeliveryDate);
 
   const [tasks, rawResults, histories, pendingDetails] = await Promise.all([
     getTasks({
@@ -100,8 +62,7 @@ const processSingleKpiDate = async (
       timeTo,
     }),
     getResults({
-      routingDateObj: targetRoutingDateObj,
-      deliveryDateObj: validDeliveryDate,
+      deliveryDate: routingDeliveryDate,
     }),
     getLocationHistories({
       timeFrom: histFrom,
@@ -112,8 +73,7 @@ const processSingleKpiDate = async (
 
   const rawTaskList = tasks?.data || tasks?.tasks?.data || tasks || [];
   const taskList = applyPendingDetailsToTasks(rawTaskList, pendingDetails);
-  const taskMap = new Map(taskList.map((t) => [String(t._id || t.id), String(t.routingResultId)]));
-  const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || [], taskMap));
+  const validRoutingIds = new Set(evaluateRoutingValidity(rawResults || []));
   const filteredResults = (rawResults || []).filter((r) => validRoutingIds.has(r._id));
 
   const singleDateHistories = (histories || []).filter((item) => {

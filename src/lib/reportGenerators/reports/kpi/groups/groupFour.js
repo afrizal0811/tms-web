@@ -54,47 +54,52 @@ export function calculateGroupFour(
 
   if (Array.isArray(resultsData)) {
     resultsData.forEach((item) => {
-      if (item.result && Array.isArray(item.result.routing)) {
-        item.result.routing.forEach((route) => {
-          if (!Array.isArray(route.trips) || route.trips.length === 0) return;
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(item.totalDistance || {}),
+          ...Object.keys(item.time || {}),
+          ...Object.keys(item.hubTimes || {}),
+        ])
+      );
 
-          const email = normalizeEmail(route.assignee || '');
-          const info = driverInfoMap[email];
-          let driverName = route.driverName || '';
+      plates.forEach((plat) => {
+        const truckId = plat || '-';
+        const foundDriver = (driverData || []).find(
+          (d) =>
+            d.plat &&
+            d.plat.replace(/\s+/g, '').toLowerCase() === plat.replace(/\s+/g, '').toLowerCase()
+        );
+        const email = normalizeEmail(foundDriver?.email || '');
+        const info = driverInfoMap[email];
 
-          if (!driverName && route.assignee) {
-            const rawAssignee =
-              typeof route.assignee === 'string'
-                ? route.assignee.split(',')[0].trim()
-                : route.assignee;
-            driverName = driverInfoMap[normalizeEmail(rawAssignee)]?.name || rawAssignee;
-          }
+        const route = { basePlat: plat, vehicleName: plat };
+        const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
+        const routeTasks = (Array.isArray(tasksData) ? tasksData : []).filter(
+          (t) => (t.basePlat || t.vehicleName || t.plat) === truckId
+        );
+        const taskWeight = routeTasks.reduce((s, t) => s + (Number(t.weightKg) || 0), 0);
+        const taskVol = routeTasks.reduce((s, t) => s + (Number(t.volumeCbm) || 0), 0);
+        const routeWeight = safeNum(taskWeight);
+        const routeVolume = safeNum(taskVol);
 
-          const category = resolveRouteCategory(route, item, tasksData, driverData, driverMap);
-          const truckId = (route.basePlat || route.vehicleName || 'Unknown').toUpperCase().trim();
+        activeVehicles[truckId] = {
+          maxWeight: safeNum(foundDriver?.maxWeight ?? info?.maxWeight ?? 0),
+          maxVolume: safeNum(foundDriver?.maxVolume ?? info?.maxVolume ?? 0),
+          category,
+        };
 
-          const routeWeight = safeNum(route.totalWeight);
-          const routeVolume = safeNum(route.totalVolume);
+        const finalSpentTime = Number(item.time?.[plat]?.spentTime) || 0;
 
-          activeVehicles[truckId] = {
-            maxWeight: safeNum(route.vehicleMaxWeight ?? route.maxWeight ?? info?.maxWeight ?? 0),
-            maxVolume: safeNum(route.vehicleMaxVolume ?? route.maxVolume ?? info?.maxVolume ?? 0),
-            category,
-          };
-
-          const finalSpentTime = Number(route.totalSpentTime) || 0;
-
-          if (category === 'DRY') {
-            actWeightDry = safeAdd(actWeightDry, routeWeight);
-            actVolDry = safeAdd(actVolDry, routeVolume);
-            estTimeDry += finalSpentTime;
-          } else if (category === 'FROZEN') {
-            actWeightFrz = safeAdd(actWeightFrz, routeWeight);
-            actVolFrz = safeAdd(actVolFrz, routeVolume);
-            estTimeFrz += finalSpentTime;
-          }
-        });
-      }
+        if (category === 'DRY') {
+          actWeightDry = safeAdd(actWeightDry, routeWeight);
+          actVolDry = safeAdd(actVolDry, routeVolume);
+          estTimeDry += finalSpentTime;
+        } else if (category === 'FROZEN') {
+          actWeightFrz = safeAdd(actWeightFrz, routeWeight);
+          actVolFrz = safeAdd(actVolFrz, routeVolume);
+          estTimeFrz += finalSpentTime;
+        }
+      });
     });
   }
 

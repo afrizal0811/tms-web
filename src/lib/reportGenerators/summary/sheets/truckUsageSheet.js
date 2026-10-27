@@ -295,27 +295,23 @@ export async function calculateTruckUsageData(
         dateMap[dateKey].routingNames.add(res.name);
       }
 
-      (res.result?.routing || []).forEach((route) => {
-        const validTrips = (route.trips || []).filter((t) => !t.isHub);
-        if (validTrips.length === 0) return;
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(res.totalDistance || {}),
+          ...Object.keys(res.time || {}),
+          ...Object.keys(res.hubTimes || {}),
+        ])
+      );
 
+      plates.forEach((plat) => {
         if (!usedVehiclesPerDay.has(dateKey)) usedVehiclesPerDay.set(dateKey, new Map());
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
-        const rawEmail = (route.assignee || route.email || '').toLowerCase().trim();
-        const plat = route.basePlat || route.vehicleName || '';
+        const driverInfo =
+          findDriverInfoByPlate(masterDriversDB, plat) ||
+          findDriverInfoByPlate(allDriversDB, plat);
 
-        let driverInfo = null;
-        if (plat) {
-          driverInfo =
-            findDriverInfoByPlate(masterDriversDB, plat) ||
-            findDriverInfoByPlate(allDriversDB, plat);
-        }
-        if (!driverInfo && rawEmail) {
-          driverInfo = driverMapHash.get(rawEmail);
-        }
-
-        const canonicalPlate = plat || rawEmail || '-';
+        const canonicalPlate = plat || '-';
 
         if (!dailyVehicles.has(canonicalPlate)) {
           const rawSt = driverInfo ? getStorageType(driverInfo.name || driverInfo.rawType) : '-';
@@ -323,7 +319,7 @@ export async function calculateTruckUsageData(
             storageType: rawSt === 'Frozen' ? 'Frozen' : 'Dry',
             firstTag: driverInfo?.rawType || driverInfo?.storage,
             plate: plat || '-',
-            driverName: route.driverName || driverInfo?.name || rawEmail || '-',
+            driverName: driverInfo?.name || '-',
           });
         }
       });

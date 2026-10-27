@@ -107,9 +107,15 @@ export function calculateTruckDetailData(
   }
 
   if (resultsData && Array.isArray(resultsData)) {
+    const emailByPlat = new Map();
+    (driverData || []).forEach((d) => {
+      const p = getBasePlate(d.plat);
+      if (p && d.email) emailByPlat.set(p, d.email.toLowerCase().trim());
+    });
+
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
-      if (isDone && dispatch.result && Array.isArray(dispatch.result.routing)) {
+      if (isDone) {
         const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
 
         if (dateKey) {
@@ -120,8 +126,17 @@ export function calculateTruckDetailData(
             dkObj.routingNames.push(dispatch.name);
           }
 
-          dispatch.result.routing.forEach((route) => {
-            const email = route.assignee ? route.assignee.toLowerCase().trim() : null;
+          const plates = Array.from(
+            new Set([
+              ...Object.keys(dispatch.totalDistance || {}),
+              ...Object.keys(dispatch.time || {}),
+              ...Object.keys(dispatch.hubTimes || {}),
+            ])
+          );
+
+          plates.forEach((plat) => {
+            const basePlat = getBasePlate(plat) || plat;
+            const email = emailByPlat.get(basePlat);
             if (!email || !driverMap.has(email)) return;
             if (!dataMatrix[dateKey][email]) {
               const driverMasterInfo = driverMap.get(email);
@@ -133,8 +148,8 @@ export function calculateTruckDetailData(
                 hasDateDiffError: false,
                 hasManualError: false,
                 isDistFallback: false,
-                maxWeight: driverMasterInfo?.maxWeight || route.vehicleMaxWeight || 0,
-                maxVolume: driverMasterInfo?.maxVolume || route.vehicleMaxVolume || 0,
+                maxWeight: driverMasterInfo?.maxWeight || 0,
+                maxVolume: driverMasterInfo?.maxVolume || 0,
                 outlets: 0,
                 realVolume: 0,
                 realWeight: 0,
@@ -146,11 +161,9 @@ export function calculateTruckDetailData(
             }
             const entry = dataMatrix[dateKey][email];
 
-            const durationVal = Number(route.totalSpentTime) || 0;
-            const distVal = Number(route.totalDistance) || 0;
+            const durationVal = Number(dispatch.time?.[plat]?.spentTime) || 0;
+            const distVal = Number(dispatch.totalDistance?.[plat]) || 0;
 
-            entry.maxWeight = Math.max(entry.maxWeight, route.vehicleMaxWeight || 0);
-            entry.maxVolume = Math.max(entry.maxVolume, route.vehicleMaxVolume || 0);
             entry.duration = Math.max(entry.duration, durationVal);
             entry.dist = Number((Math.max(entry.dist, distVal) / 1000).toFixed(2));
           });

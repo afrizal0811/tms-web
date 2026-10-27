@@ -270,11 +270,7 @@ export default function DeliveryPage() {
           setHubsData(currentHubs);
         }
 
-        const activeHub = currentHubs.activeHub;
-        const currentHasPartialRouting = activeHub?.hasPartialRouting || false;
-
-        const routingDate = new Date(deliveryDateObj);
-        routingDate.setDate(deliveryDateObj.getDate() - (deliveryDateObj.getDay() === 1 ? 2 : 1));
+        const dateStr = formatDateUniversal(deliveryDateObj, 'YYYY-MM-DD');
 
         const startD = new Date(selectedDate);
         startD.setHours(0, 0, 0, 0);
@@ -286,9 +282,7 @@ export default function DeliveryPage() {
 
         const [resultsData, historyData, tasksResponse] = await Promise.all([
           getResults({
-            routingDateObj: routingDate,
-            deliveryDateObj,
-            hasPartialRouting: currentHasPartialRouting,
+            deliveryDate: dateStr,
           }),
           getLocationHistories({
             timeFrom: historyFrom,
@@ -348,27 +342,11 @@ export default function DeliveryPage() {
 
         const taskIdToRoutingInfo = new Map();
         const activePlatsByEmail = new Map();
-
-        resultsData.forEach((res) => {
-          if (res.result && Array.isArray(res.result.routing)) {
-            res.result.routing.forEach((route) => {
-              const routePlat = route.basePlat || route.vehicleName;
-              if (routePlat) {
-                const routeEmail = normalizeEmail(route.assignee);
-                if (routeEmail) activePlatsByEmail.set(routeEmail, routePlat);
-
-                (route.trips || []).forEach((trip) => {
-                  let tid = trip.visitId;
-                  if (tid) {
-                    if (tid.includes('taskId-')) tid = tid.split('taskId-')[1];
-                    taskIdToRoutingInfo.set(String(tid), {
-                      plat: routePlat,
-                      assignee: routeEmail,
-                    });
-                  }
-                });
-              }
-            });
+        (driverData || []).forEach((driver) => {
+          if (driver?.email && driver?.plat) {
+            const normalizedEmail = normalizeEmail(driver.email);
+            if (normalizedEmail)
+              activePlatsByEmail.set(normalizedEmail, getBasePlate(driver.plat) || driver.plat);
           }
         });
 
@@ -401,21 +379,24 @@ export default function DeliveryPage() {
         }, {});
 
         const resultHubsByPlat = new Map();
-        resultsData
-          .flatMap((i) => (i?.result && Array.isArray(i.result.routing) ? i.result.routing : []))
-          .forEach((route) => {
-            const plat = route.basePlat;
-            const email = normalizeEmail(route.assignee);
-            const hubs = (route.trips || []).filter((t) => t.isHub);
-            if (hubs.length > 0) {
-              const hubObj = {
-                startHub: hubs.find((t) => t.order === 0) || hubs[0],
-                endHub: hubs[hubs.length - 1],
-                middleHubs: hubs.length > 2 ? hubs.slice(1, hubs.length - 1) : [],
-              };
-              if (email && plat) resultHubsByPlat.set(`${email}_${plat}`, hubObj);
+        resultsData.forEach((res) => {
+          const hubTimes = res.hubTimes || {};
+          for (const [rawPlat, hubs] of Object.entries(hubTimes)) {
+            if (!Array.isArray(hubs) || hubs.length === 0) continue;
+            const basePlat = getBasePlate(rawPlat) || rawPlat;
+            const startHub = hubs.find((t) => t.category === 'first' || t.order === 0) || hubs[0];
+            const endHub = hubs.find((t) => t.category === 'last') || hubs[hubs.length - 1];
+            const middleHubs = hubs.filter(
+              (t) => t.category === 'middle' || (t.category && t.category.startsWith('middle'))
+            );
+            const hubObj = { startHub, endHub, middleHubs };
+            resultHubsByPlat.set(basePlat, hubObj);
+            const driver = (driverData || []).find((d) => getBasePlate(d.plat) === basePlat);
+            if (driver?.email) {
+              resultHubsByPlat.set(`${normalizeEmail(driver.email)}_${basePlat}`, hubObj);
             }
-          });
+          }
+        });
 
         const finalRoutes = Object.values(tasksByPlat).map(
           ({ vehicleId, plat, tasks, email, assigneeName, vehicleType }) => {

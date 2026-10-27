@@ -98,20 +98,21 @@ export async function parseDeliveryToTasks(deliveryBuffers) {
   return allTasks;
 }
 
-export async function parseRoutingToResults(routingBuffers, targetRoutingStr, allTasks) {
+export async function parseRoutingToResults(routingBuffers, targetRoutingStr) {
   let allResults = [];
 
   const mockApiResult = {
     _id: 'manual-' + Date.now(),
+    id: 'manual-' + Date.now(),
     createdTime: targetRoutingStr
       ? new Date(targetRoutingStr).toISOString()
       : new Date().toISOString(),
     dispatchStatus: 'done',
     name: 'Manual Routing',
-    result: {
-      routing: [],
-      dropped: [],
-    },
+    dropped: 0,
+    totalDistance: {},
+    time: {},
+    hubTimes: {},
   };
 
   for (const fileBuffer of routingBuffers) {
@@ -155,37 +156,18 @@ export async function parseRoutingToResults(routingBuffers, targetRoutingStr, al
       if (!vehicleId) continue;
 
       const vehicleName = getVal('vehicle name') || '';
-      const assigneeStr = getVal('assignee') || '';
-
-      const tasksForVehicle = (allTasks || []).filter(
-        (t) =>
-          (t.vehicleName && t.vehicleName === vehicleName) ||
-          (t.basePlat && t.basePlat === vehicleName) ||
-          (t.assignee && t.assignee === assigneeStr)
-      );
-
-      mockApiResult.result.routing.push({
-        assignedVehicleName: vehicleName,
-        assignee: assigneeStr,
-        firstCreatedTime: null,
-        lastAssignedTime: null,
-        startTime: getVal('start time'),
-        finishTime: getVal('end time') || getVal('finish time'),
-        totalDistance: parseToNum(getVal('total distance')),
-        totalVisit: parseToNum(getVal('total visit')),
-        totalTravelDuration: parseToNum(getVal('total travel duration')),
-        totalSpentTime: parseToNum(getVal('total spent time (min)')),
-        totalWait: parseToNum(getVal('total wait')),
-        basePlat: vehicleName,
-        trips: tasksForVehicle.map((t) => ({
-          visitName: t.customerOrder || t.title || t._id,
-          isHub: false,
-        })),
-      });
+      mockApiResult.totalDistance[vehicleName] = parseToNum(getVal('total distance'));
+      mockApiResult.time[vehicleName] = {
+        spentTime: parseToNum(getVal('total spent time (min)')),
+        visitTime: parseToNum(getVal('total visit')),
+        travelTime: parseToNum(getVal('total travel duration')),
+        waitingTime: parseToNum(getVal('total wait')),
+      };
+      mockApiResult.hubTimes[vehicleName] = [];
     }
   }
 
-  if (mockApiResult.result.routing.length > 0) {
+  if (Object.keys(mockApiResult.totalDistance).length > 0) {
     allResults.push(mockApiResult);
   }
 

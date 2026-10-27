@@ -3,6 +3,7 @@ import {
   checkInvalidSo,
   checkInvalidSoList,
   formatDateUniversal,
+  getBasePlate,
   isEmpty,
   parseCustomerString,
   sortRows,
@@ -351,12 +352,28 @@ export const handlePartialDeliveryListDownload = async ({
     for (const routing of sortedRoutingResults) {
       const status = routing.status || routing.dispatchStatus || '';
       if (String(status).toLowerCase() !== 'done') continue;
-      const routes = [...(routing.result?.routing || [])];
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(routing.totalDistance || {}),
+          ...Object.keys(routing.time || {}),
+          ...Object.keys(routing.hubTimes || {}),
+        ])
+      );
+      if (plates.length === 0) continue;
+
+      const routes = plates
+        .map((rawPlat) => {
+          const plat = getBasePlate(rawPlat) || rawPlat;
+          return (filteredVehicleRoutes || []).find(
+            (r) => (r.basePlat || getBasePlate(r.plat)) === plat
+          );
+        })
+        .filter(Boolean);
       if (routes.length === 0) continue;
 
       sortRows(routes, 'vehicleName', 'vehicleName');
 
-      const cleanRoutingName = routing.name.trim();
+      const cleanRoutingName = (routing.name || '').trim();
       const zipFolderName = `Routing ${routingIndex} (${cleanRoutingName})`;
       routingIndex++;
 
@@ -425,7 +442,7 @@ export const handlePartialDeliveryListDownload = async ({
 
         routingHasData = true;
         const nameFile = getUniqueFileName(plat, dateForFilename, '.xlsx', seenFileNames);
-        const driverName = route.driverName || '-';
+        const driverName = route.driverName || route.assigneeName || '-';
         const wb = XLSX.utils.book_new();
 
         appendDeliveryListSheet(wb, plat, driverName, processedTripsToRender, isDetailView, t);

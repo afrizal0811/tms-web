@@ -1,4 +1,4 @@
-import { formatDateUniversal, isEmpty } from '@/lib/utils';
+import { formatDateUniversal, getBasePlate, isEmpty } from '@/lib/utils';
 import { pdf, StyleSheet } from '@react-pdf/renderer';
 import JSZip from 'jszip';
 import { toastError, toastSuccess } from '../../../lib/toast';
@@ -358,7 +358,23 @@ export const handlePartialDeliveryFormDownload = async ({
     for (const routing of sortedRoutingResults) {
       const status = routing.status || routing.dispatchStatus || '';
       if (String(status).toLowerCase() !== 'done') continue;
-      const routes = routing.result?.routing || [];
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(routing.totalDistance || {}),
+          ...Object.keys(routing.time || {}),
+          ...Object.keys(routing.hubTimes || {}),
+        ])
+      );
+      if (plates.length === 0) continue;
+
+      const routes = plates
+        .map((rawPlat) => {
+          const plat = getBasePlate(rawPlat) || rawPlat;
+          return (filteredVehicleRoutes || []).find(
+            (r) => (r.basePlat || getBasePlate(r.plat)) === plat
+          );
+        })
+        .filter(Boolean);
       if (routes.length === 0) continue;
 
       const cleanRoutingName = (routing.name || routing._id || 'Routing')

@@ -108,13 +108,6 @@ export default function Dashboard({ driverData }) {
       setLoading(true);
       fetchStartTimeRef.current = Date.now();
 
-      const routingStart = new Date(localStart);
-      if (routingStart.getDay() === 1) {
-        routingStart.setDate(routingStart.getDate() - 2);
-      } else {
-        routingStart.setDate(routingStart.getDate() - 1);
-      }
-
       const dateStr = formatDateUniversal(localStart, 'YYYY-MM-DD');
 
       const [tasksData, resultsData, pendingDetailsData] = await Promise.all([
@@ -124,8 +117,7 @@ export default function Dashboard({ driverData }) {
           timeTo,
         }),
         getResults({
-          routingDateObj: routingStart,
-          deliveryDateObj: localStart,
+          deliveryDate: dateStr,
         }),
         getPendingDetails(dateStr, dateStr).catch(() => []),
       ]);

@@ -1,12 +1,10 @@
 import prisma from '@/lib/prisma';
-import { formatUTC7, getBasePlate, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { searchParams } = new URL(request.url);
     const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const id = resolvedParams?.id;
 
     if (!id) {
       return NextResponse.json(
@@ -15,243 +13,68 @@ export async function GET(request, { params }) {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiToken = process.env.API_TOKEN;
+    const item = await prisma.routingResult.findUnique({
+      where: { id },
+      include: { hub: true },
+    });
 
-    if (!apiUrl || !apiToken) {
-      console.error(
-        'Konfigurasi server hilang: NEXT_PUBLIC_API_URL atau API_TOKEN tidak ditemukan.'
+    if (!item) {
+      return NextResponse.json(
+        { error: `Data routing dengan ID ${id} tidak ditemukan di database` },
+        { status: 404 }
       );
-      return NextResponse.json({ error: 'Kesalahan konfigurasi server internal' }, { status: 500 });
     }
 
-    const externalUrl = new URL(`${apiUrl}/result/${id}`);
+    const hubTimes =
+      typeof item.hub_times === 'string'
+        ? JSON.parse(item.hub_times || '{}')
+        : item.hub_times || {};
+    const totalDistance =
+      typeof item.total_distance === 'string'
+        ? JSON.parse(item.total_distance || '{}')
+        : item.total_distance || {};
+    const timeData =
+      typeof item.time === 'string'
+        ? JSON.parse(item.time || '{}')
+        : item.time || {};
 
-    const externalResponse = await fetch(externalUrl.toString(), {
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const formattedTime = {};
+    for (const [p, t] of Object.entries(timeData)) {
+      formattedTime[p] = {
+        spentTime: Number(t.spentTime ?? t.spent_time) || 0,
+        visitTime: Number(t.visitTime ?? t.visit_time) || 0,
+        travelTime: Number(t.travelTime ?? t.travel_time) || 0,
+        waitingTime: Number(t.waitingTime ?? t.waiting_time) || 0,
+      };
+    }
 
-    const fetchdata = await externalResponse.json();
-    let data = fetchdata.data || fetchdata;
-
-    const hubId = searchParams?.get('hubId');
-    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-
-    const [rawDrivers, mappingsDB] = await Promise.all([
-      prisma.driver.findMany({ where }),
-      prisma.vehicleMapping.findMany(),
-    ]);
-
-    const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mappedType;
-      acc[getBasePlate(curr.plat)] = curr.mappedType;
-      return acc;
-    }, {});
-
-    const driversByEmail = {};
-    rawDrivers.forEach((d) => {
-      const basePlat = getBasePlate(d.plat);
-      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
-      let mappedTypeStr = d.type;
-      if (mappedType) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
-      }
-
-      const email = (d.email || '').toLowerCase().trim();
-      if (email && email !== '-') {
-        driversByEmail[email] = {
-          ...d,
-          type: mappedTypeStr,
-          basePlat,
-        };
-      }
-    });
-
-    if (data.finishTime) data.finishTime = formatUTC7(data.finishTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (data.createdTime) data.createdTime = formatUTC7(data.createdTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (data.updatedTime) data.updatedTime = formatUTC7(data.updatedTime, 'YYYY-MM-DDTHH:mm:ss');
-    if (data.user != null) data.user = data.user.name;
-    data.routing = data.result.routing;
-    data.droppedRouting = data.result.dropped;
-
-    delete data.result;
-    delete data.configuration;
-    delete data.visitHistories;
-    delete data.isDeleted;
-    delete data.organizationId;
-    delete data.isShown;
-    delete data.routingDate;
-    delete data.resultCode;
-    delete data.hubId;
-    delete data.status;
-    delete data.countryCode;
-    delete data.createdBy;
-    delete data.createdFrom;
-    delete data.totalResultHistories;
-
-    const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
-    const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));
-    const toHr = (mins) => {
-      const totalSec = Math.max(0, Math.round((mins || 0) * 60));
-      const h = Math.floor(totalSec / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      const s = totalSec % 60;
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const formatted = {
+      id: item.id,
+      _id: item.id,
+      hubId: item.hub_id,
+      name: item.name,
+      deliveryDate: item.delivery_date,
+      createdByUser: item.created_by_user,
+      createdTime: item.delivery_date,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      dispatchStatus: 'done',
+      dropped: item.dropped,
+      histories: item.histories,
+      totalDistance,
+      time: formattedTime,
+      hubTimes,
+      hub: item.hub,
     };
 
-    let gDist = 0,
-      gTravel = 0,
-      gVisit = 0,
-      gWait = 0,
-      gSpent = 0;
-
-    data.routing.forEach((route) => {
-      const assigneeEmail = route.assignee ? String(route.assignee).toLowerCase().trim() : null;
-      const driverData = assigneeEmail ? driversByEmail[assigneeEmail] : null;
-
-      if (driverData) {
-        route.driverName = driverData.name;
-        route.basePlat = driverData.basePlat;
-      } else {
-        route.driverName = assigneeEmail || '-';
-        route.basePlat = getBasePlate(route.vehicleName) || '-';
-      }
-
-      let tW = 0,
-        tV = 0,
-        tD = 0,
-        tTr = 0,
-        tVi = 0,
-        tWa = 0;
-
-      if (route.trips && route.trips.length > 0) {
-        const lastHubWait = Number(route.trips[route.trips.length - 1].waitingTime) || 0;
-
-        if ((Number(route.trips[0].waitingTime) || 0) <= 0) {
-          route.trips[0].waitingTime = lastHubWait;
-        }
-
-        route.trips = route.trips.map((t, i) => {
-          if (t.isHub === false && t.visitId?.startsWith('taskId-')) {
-            t.visitId = t.visitId.replace('taskId-', '');
-          }
-
-          const tripTravel = Number(t.travelTime) || 0;
-          const tripVisit = Number(t.visitTime) || 0;
-          const tripWait = Number(t.waitingTime) || 0;
-
-          if (!t.isHub) {
-            tW += t.weight || 0;
-            tV += t.volume || 0;
-          }
-          tD += t.distance || 0;
-          tTr += tripTravel;
-          tVi += tripVisit;
-
-          if (i !== route.trips.length - 1) {
-            tWa += tripWait;
-          }
-
-          t.travelTime = tripTravel;
-          t.visitTime = tripVisit;
-          t.waitingTime = tripWait;
-          t.spentTime = tripTravel + tripVisit + tripWait;
-
-          t.travelTimeHour = toHr(tripTravel);
-          t.visitTimeHour = toHr(tripVisit);
-          t.waitingTimeHour = toHr(tripWait);
-          t.spentTimeHour = toHr(tripTravel + tripVisit + tripWait);
-
-          delete t.etaStr;
-          delete t.etdStr;
-          delete t.allowOddEven;
-          delete t.timeWindow;
-          delete t.visitGroup;
-          delete t.visitGroupPriority;
-          delete t.tags;
-          return t;
-        });
-      }
-      const spent = tTr + tVi + tWa;
-      route.totalWeight = isEmpty(tW) ? 0 : Number(tW).toFixed(2);
-      route.totalVolume = isEmpty(tV) ? 0 : Number(tV).toFixed(2);
-      route.weightPercentage = toPct(tW, route.vehicleMaxWeight);
-      route.volumePercentage = toPct(tV, route.vehicleMaxVolume);
-      route.totalDistance = tD;
-      route.distanceKm = toKm(tD);
-      route.totalTravelTime = tTr;
-      route.travelHour = toHr(tTr);
-      route.totalVisitTime = tVi;
-      route.visitHour = toHr(tVi);
-      route.totalWaitingTime = tWa;
-      route.waitingHour = toHr(tWa);
-      route.totalSpentTime = spent;
-      route.spentHour = toHr(spent);
-
-      gDist += tD;
-      gTravel += tTr;
-      gVisit += tVi;
-      gWait += tWa;
-      gSpent += spent;
-
-      delete route.workingTime;
-      delete route.breakTime;
-      delete route.vehicleTags;
-      delete route.oddEven;
-      delete route.isOddEven;
-      delete route.speed;
-      delete route.fixedCost;
-      delete route.totalNodes;
-      delete route.totalTrips;
-      delete route.finishTime;
-    });
-
-    if (data.summary) {
-      data.summary.totalDistance = gDist;
-      data.summary.distanceKm = toKm(gDist);
-      data.summary.totalTravelTime = gTravel;
-      data.summary.travelHour = toHr(gTravel);
-      data.summary.totalVisitTime = gVisit;
-      data.summary.visitHour = toHr(gVisit);
-      data.summary.totalWaitingTime = gWait;
-      data.summary.waitingHour = toHr(gWait);
-      data.summary.totalSpentTime = gSpent;
-      data.summary.spentHour = toHr(gSpent);
-
-      delete data.summary.capacityConstraint;
-      delete data.summary.avgSpeed;
-      delete data.summary.avgFinishTime;
-      delete data.summary.maxFinishTime;
-      delete data.summary.minFinishTime;
-      delete data.summary.totalVehicles;
-      delete data.summary.unusedVehicles;
-      delete data.summary.usedVehicles;
-    }
-
-    if (!externalResponse.ok) {
-      console.error(`API eksternal (/result/${id}) error:`, data);
-      return NextResponse.json(
-        {
-          error: `Gagal mengambil data result dengan ID ${id}`,
-          details: data,
-        },
-        {
-          status: externalResponse.status,
-        }
-      );
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(formatted);
   } catch (error) {
     console.error('Error Single Result:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
       {
-        error: 'Gagal mengambil atau memproses data spesifik dari API eksternal',
+        error: 'Gagal mengambil data result dari database',
         detail: errorMessage,
       },
       { status: 500 }
