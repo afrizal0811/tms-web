@@ -17,12 +17,14 @@ model Hub {
   hasPendingGR Boolean  @default(false)
   hasPartialRouting Boolean  @default(false)
   has_vms      Boolean @default(false)
+  time_zone    TimeZone @default(WIB) @map("time_zone")
   lat          Float?
   lng          Float?  
   updateBy     String?
   updatedAt    DateTime @updatedAt
-  drivers      Driver[] 
-  is_active    Boolean @default(true)
+  drivers         Driver[] 
+  routing_results RoutingResult[]
+  is_active       Boolean @default(true)
 }
 
 model Driver {
@@ -127,3 +129,36 @@ model PendingDetail {
 
   @@map("pending_details")
 }
+
+model RoutingResult {
+  id                 String   @id
+  hub_id             String
+  name               String
+  delivery_date      String
+  created_by_user    String?
+
+  total_distance     Json?    @default("{}")
+  time               Json?    @default("{}")
+  hub_times          Json?    @default("{}")
+
+  dropped            Int      @default(0)
+  histories          Json?
+
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  hub                Hub      @relation(fields: [hub_id], references: [id])
+
+  @@index([hub_id, delivery_date])
+  @@index([delivery_date])
+  @@map("routing_results")
+}
+
+
+
+enum TimeZone {
+  WIB
+  WITA
+  WIT
+}
+

@@ -1,15 +1,30 @@
 'use client';
 
 import Button from '@/components/button/Button';
+import CustomDatePicker from '@/components/CustomDatePicker';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
-import { getDrivers, patchDriverMceasy, postDrivers, postHubs, postRoles } from '@/lib/api/mileapp';
+import {
+  getDrivers,
+  patchDriverMceasy,
+  postDrivers,
+  postHubs,
+  postRoles,
+  syncRoutingResults,
+} from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { useCallback, useEffect, useState } from 'react';
 import Card from '../components/Card';
 import SyncModal from '../components/SyncModal';
 
-export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefresh, isReadOnly, translate }) {
+export default function SyncDataTab({
+  hubs,
+  lastUpdated,
+  updatedBy = {},
+  onRefresh,
+  isReadOnly,
+  translate,
+}) {
   const [syncLoading, setSyncLoading] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mismatchedData, setMismatchedData] = useState([]);
@@ -17,6 +32,13 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
   const [mcEasyDrivers, setMcEasyDrivers] = useState([]);
   const [isDriverLoading, setIsDriverLoading] = useState(false);
   const [syncScope, setSyncScope] = useState({ mode: 'active' });
+  const [routingDateRange, setRoutingDateRange] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return [d, d];
+  });
+  const [isSyncingRouting, setIsSyncingRouting] = useState(false);
+  const [syncRoutingProgress, setSyncRoutingProgress] = useState('');
 
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
 
@@ -104,7 +126,10 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
           clearPayload.append('driver1Id', '-');
           await patchMceasyVehicle(vehicleId, clearPayload.toString());
         } catch (clearErr) {
-          console.warn(`[Unassign Driver] Gagal melepas driver pada vehicle ${vehicleId}:`, clearErr.message);
+          console.warn(
+            `[Unassign Driver] Gagal melepas driver pada vehicle ${vehicleId}:`,
+            clearErr.message
+          );
         }
       }
 
@@ -118,9 +143,7 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
         if (update.updatedDriverId !== undefined) {
           payload.append(
             'driver1Id',
-            update.updatedDriverId && update.updatedDriverId !== '-'
-              ? update.updatedDriverId
-              : '-'
+            update.updatedDriverId && update.updatedDriverId !== '-' ? update.updatedDriverId : '-'
           );
         }
         if (update.updatedPlat) {
@@ -475,6 +498,110 @@ export default function SyncDataTab({ hubs, lastUpdated, updatedBy = {}, onRefre
               {renderCardContent(item.type, item.label)}
             </div>
           ))}
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-200">
+                Sinkronisasi Routing Results
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Sinkronisasi data hasil routing MileApp berdasarkan rentang tanggal pengiriman
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <CustomDatePicker
+                selectsRange={true}
+                startDate={routingDateRange[0]}
+                endDate={routingDateRange[1]}
+                onChange={(dates) => setRoutingDateRange(dates)}
+                useCustomRangeFormat={true}
+                disabled={isSyncingRouting || isReadOnly}
+                className="w-full sm:w-[260px] cursor-pointer"
+                wrapperClassName="w-full sm:w-auto"
+                disableSunday={false}
+              />
+              <Button
+                onClick={async () => {
+                  const [startDate, endDate] = routingDateRange;
+                  if (!startDate) return;
+
+                  const start = new Date(startDate);
+                  const end = new Date(endDate || startDate);
+                  start.setHours(0, 0, 0, 0);
+                  end.setHours(0, 0, 0, 0);
+
+                  const datesToSync = [];
+                  const curr = new Date(start);
+                  while (curr <= end) {
+                    const y = curr.getFullYear();
+                    const m = String(curr.getMonth() + 1).padStart(2, '0');
+                    const d = String(curr.getDate()).padStart(2, '0');
+                    datesToSync.push(`${y}-${m}-${d}`);
+                    curr.setDate(curr.getDate() + 1);
+                  }
+
+                  if (datesToSync.length === 0) return;
+
+                  setIsSyncingRouting(true);
+                  let totalSynced = 0;
+                  let totalSkipped = 0;
+                  let failedCount = 0;
+
+                  try {
+                    for (let i = 0; i < datesToSync.length; i++) {
+                      const dStr = datesToSync[i];
+                      setSyncRoutingProgress(`${i + 1}/${datesToSync.length}`);
+                      try {
+                        const res = await syncRoutingResults({
+                          deliveryDate: dStr,
+                          hubId: activeHubId,
+                        });
+                        if (res?.skipped) {
+                          totalSkipped++;
+                        } else {
+                          totalSynced += res?.syncedCount || 1;
+                        }
+                      } catch (err) {
+                        failedCount++;
+                        console.error(`Sync error for ${dStr}:`, err);
+                      }
+                    }
+
+                    if (onRefresh) await onRefresh();
+
+                    if (totalSynced > 0) {
+                      toastSuccess(
+                        `Berhasil sinkronisasi ${totalSynced} data routing (${totalSkipped} dilewati).`
+                      );
+                    } else if (totalSkipped > 0) {
+                      toastSuccess(
+                        `Semua ${totalSkipped} tanggal sudah ada di database atau tidak ada routing baru (dilewati).`
+                      );
+                    } else if (failedCount > 0) {
+                      toastError('Gagal sinkronisasi data routing.');
+                    } else {
+                      toastSuccess('Sinkronisasi data routing selesai.');
+                    }
+                  } catch (e) {
+                    toastError(e.message || 'Terjadi kesalahan saat sinkronisasi routing.', e);
+                  } finally {
+                    setIsSyncingRouting(false);
+                    setSyncRoutingProgress('');
+                  }
+                }}
+                isLoading={isSyncingRouting}
+                disabled={isSyncingRouting || !routingDateRange[0] || isReadOnly}
+                text={
+                  isSyncingRouting
+                    ? `Sinkronisasi... ${syncRoutingProgress ? `(${syncRoutingProgress})` : ''}`
+                    : 'Sinkronisasi Routing'
+                }
+                size="md"
+              />
+            </div>
+          </div>
         </div>
       </Card>
 

@@ -143,8 +143,10 @@ export async function GET(request, { params }) {
           const tripVisit = Number(t.visitTime) || 0;
           const tripWait = Number(t.waitingTime) || 0;
 
-          tW += t.weight || 0;
-          tV += t.volume || 0;
+          if (!t.isHub) {
+            tW += t.weight || 0;
+            tV += t.volume || 0;
+          }
           tD += t.distance || 0;
           tTr += tripTravel;
           tVi += tripVisit;

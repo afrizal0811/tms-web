@@ -1,16 +1,27 @@
-// File: src/lib/prisma.js
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
   return new PrismaClient();
 };
 
-// Gunakan globalThis, bukan global biasa
 const globalForPrisma = globalThis;
+const SCHEMA_VERSION = '2026-10-27-v6';
 
-// Gunakan nullish coalescing (??) agar lebih aman dari falsy value
+if (
+  process.env.NODE_ENV !== 'production' &&
+  globalForPrisma._prismaSchemaVersion !== SCHEMA_VERSION
+) {
+  if (globalForPrisma.prisma) {
+    try {
+      globalForPrisma.prisma.$disconnect();
+    } catch {}
+  }
+  globalForPrisma.prisma = undefined;
+  globalForPrisma._prismaSchemaVersion = SCHEMA_VERSION;
+}
+
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-export default prisma;
-
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+export default prisma;

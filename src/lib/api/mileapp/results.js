@@ -67,3 +67,11 @@ export async function getResultHistories(resultIds) {
     body: JSON.stringify({ resultIds }),
   });
 }
+
+export async function syncRoutingResults({ deliveryDate, hubId, force = false }) {
+  return await apiFetch('/api/mileapp/results', 'Gagal sinkronisasi data routing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deliveryDate, hubId, force }),
+  });
+}
