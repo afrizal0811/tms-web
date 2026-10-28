@@ -205,8 +205,32 @@ export async function calculateTaskSummaryMetrics({
 
     initDate(dateKey);
 
+    const rName = (res.name || '').toUpperCase();
+    let routingType = 'dry';
+    if (rName.includes('FROZEN') || rName.includes('FRZ')) {
+      routingType = 'frozen';
+    } else if (rName.includes('DRY')) {
+      routingType = 'dry';
+    } else {
+      const plates = Array.from(
+        new Set([
+          ...Object.keys(res.totalDistance || {}),
+          ...Object.keys(res.time || {}),
+          ...Object.keys(res.hubTimes || {}),
+        ])
+      );
+      for (const plat of plates) {
+        const foundDriver = driverByPlate.get(cleanPlat(plat));
+        const storage = (foundDriver?.storage || '').toUpperCase();
+        if (storage.includes('FROZEN') || storage.includes('FRZ')) {
+          routingType = 'frozen';
+          break;
+        }
+      }
+    }
+
     const droppedCount = typeof res.dropped === 'number' ? res.dropped : 0;
-    tempMetrics[dateKey].dry.dt_sum += droppedCount;
+    tempMetrics[dateKey][routingType].dt_sum += droppedCount;
 
     const histData = parseHistories(res.histories);
     const histObj = histData?.history;
@@ -224,7 +248,9 @@ export async function calculateTaskSummaryMetrics({
         const foundDriver = (fetchedDrivers || []).find(
           (d) => cleanPlat(d.plat) && vToClean.includes(cleanPlat(d.plat))
         );
-        const storage = foundDriver ? (foundDriver.storage || '').toUpperCase() : 'DRY';
+        const storage = foundDriver
+          ? (foundDriver.storage || '').toUpperCase()
+          : routingType.toUpperCase();
         const isFrozen = storage.includes('FROZEN');
 
         (item.visits || []).forEach((v) => {
