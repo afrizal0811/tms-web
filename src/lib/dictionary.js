@@ -702,9 +702,14 @@ export const dictionary = {
           driver_vehicles: 'Data Sopir & Kendaraan',
           hubs: 'Data Cabang',
           roles: 'Data Peran',
+          routing_results: 'Data Hasil Routing',
           sync_title: 'Sinkronisasi Data Terpusat',
           subtitle: 'Penyelarasan data master tiap cabang dengan server MileApp',
           title: 'Sinkronisasi',
+          modal: {
+            title: 'Ubah Tanggal Pengiriman',
+            subtitle: 'Sesuaikan tanggal pengiriman untuk data ruting yang tersedia',
+          },
         },
         button: {
           btn_sync: 'Sinkronisasi',
@@ -1460,9 +1465,14 @@ export const dictionary = {
           driver_vehicles: 'Driver & Vehicle Data',
           hubs: 'Branch Data',
           roles: 'Role Data',
+          routing_results: 'Routing Results',
           sync_title: 'Centralized Data Synchronization',
           subtitle: 'Master data alignment for each branch with the MileApp server',
           title: 'Synchronize',
+          modal: {
+            title: 'Change Delivery Date',
+            subtitle: 'Adjust delivery dates for available routing data',
+          },
         },
         button: {
           btn_sync: 'Synchronize',

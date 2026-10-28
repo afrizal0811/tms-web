@@ -105,7 +105,7 @@ export function calculateDistanceSummaryData(
   if (resultsData && Array.isArray(resultsData)) {
     resultsData.forEach((res) => {
       if (res.dispatchStatus?.toLowerCase() !== 'done') return;
-      const dateKey = getDeliveryDateFromRouting(res.createdTime);
+      const dateKey = res.deliveryDate || getDeliveryDateFromRouting(res.createdTime);
       if (dateKey && dateMap[dateKey] && res.name) {
         dateMap[dateKey].routingNames.add(res.name);
       }

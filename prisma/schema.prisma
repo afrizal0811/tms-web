@@ -135,7 +135,7 @@ model RoutingResult {
   hub_id             String
   name               String
   delivery_date      String
-  created_by_user    String?
+  route_user         String?
 
   total_distance     Json?    @default("{}")
   time               Json?    @default("{}")
@@ -143,6 +143,9 @@ model RoutingResult {
 
   dropped            Int      @default(0)
   histories          Json?
+
+  created_by         String?
+  updated_by         String?
 
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt

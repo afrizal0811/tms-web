@@ -116,7 +116,7 @@ export function calculateTruckDetailData(
     resultsData.forEach((dispatch) => {
       const isDone = dispatch.dispatchStatus && dispatch.dispatchStatus.toLowerCase() === 'done';
       if (isDone) {
-        const dateKey = getDeliveryDateFromRouting(dispatch.createdTime);
+        const dateKey = dispatch.deliveryDate || getDeliveryDateFromRouting(dispatch.createdTime);
 
         if (dateKey) {
           if (!dataMatrix[dateKey]) dataMatrix[dateKey] = {};

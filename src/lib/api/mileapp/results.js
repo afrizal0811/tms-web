@@ -29,10 +29,31 @@ export async function getResult(id) {
   );
 }
 
-export async function syncRoutingResults({ deliveryDate, hubId, force = false }) {
+export async function syncRoutingResults({ deliveryDate, hubId, force = false, created_by, updated_by } = {}) {
+  const { storedUser } = getLocalStorage();
+  const userName = storedUser?.name || null;
   return await apiFetch('/api/mileapp/results', 'Gagal sinkronisasi data routing', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deliveryDate, hubId, force }),
+    body: JSON.stringify({
+      deliveryDate,
+      hubId,
+      force,
+      created_by: created_by || userName,
+      updated_by: updated_by || userName,
+    }),
+  });
+}
+
+export async function updateRoutingResult(id, { deliveryDate, updatedBy } = {}) {
+  if (!id) {
+    throw new Error('ID result harus disertakan');
+  }
+  const { storedUser } = getLocalStorage();
+  const userName = updatedBy || storedUser?.name || null;
+  return await apiFetch(`/api/mileapp/results/${id}`, 'Gagal memperbarui data routing', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deliveryDate, updatedBy: userName }),
   });
 }

@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { getBasePlate, getDeliveryDateFromRouting, isEmpty } from '@/lib/utils';
+import { formatUTC7, getBasePlate, getDeliveryDateFromRouting, isEmpty } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 const formatRoutingHistories = (rawHistory) => {
@@ -78,7 +78,7 @@ export async function GET(request) {
       include: {
         hub: true,
       },
-      orderBy: { created_at: 'asc' },
+      orderBy: [{ delivery_date: 'asc' }, { created_at: 'asc' }],
     });
 
     const formattedData = routingResults.map((item) => {
@@ -111,7 +111,9 @@ export async function GET(request) {
         hubId: item.hub_id,
         name: item.name,
         deliveryDate: item.delivery_date,
-        createdByUser: item.created_by_user,
+        routeUser: item.route_user,
+        createdBy: item.created_by,
+        updatedBy: item.updated_by,
         createdTime: item.delivery_date,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
@@ -140,10 +142,79 @@ export async function GET(request) {
   }
 }
 
+const getDeliveryDate = async (item, apiUrl, apiToken) => {
+  const customerTaskIds = [];
+  for (const r of item.result?.routing || []) {
+    for (const t of r.trips || []) {
+      if (!t.isHub && t.visitId) {
+        const id = String(t.visitId).replace(/^taskId-/, '').trim();
+        if (id) customerTaskIds.push(id);
+      }
+    }
+  }
+
+  if (customerTaskIds.length === 0) {
+    return getDeliveryDateFromRouting(item?.createdTime);
+  }
+
+  const sampleIds = [];
+  if (customerTaskIds.length <= 15) {
+    sampleIds.push(...customerTaskIds);
+  } else {
+    const step = customerTaskIds.length / 15;
+    for (let i = 0; i < 15; i++) {
+      sampleIds.push(customerTaskIds[Math.floor(i * step)]);
+    }
+  }
+
+  const taskDates = await Promise.all(
+    sampleIds.map(async (id) => {
+      try {
+        const res = await fetch(`${apiUrl}/task/${id}`, {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        const task = json?.task || json?.data || json;
+        const rawTime = task?.startTime || task?.taskDate || task?.date;
+        return rawTime ? formatUTC7(rawTime, 'YYYY-MM-DD') : null;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const validDates = taskDates.filter(Boolean);
+  if (validDates.length === 0) {
+    return getDeliveryDateFromRouting(item?.createdTime);
+  }
+
+  const counts = {};
+  for (const d of validDates) {
+    counts[d] = (counts[d] || 0) + 1;
+  }
+
+  let majorityDate = null;
+  let maxCount = -1;
+  for (const [dateStr, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      majorityDate = dateStr;
+    }
+  }
+
+  return majorityDate;
+};
+
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { deliveryDate, hubId, force = false } = body || {};
+    const { deliveryDate, hubId, force = false, created_by, updated_by, userName } = body || {};
+    const currentUser = updated_by || created_by || userName || null;
 
     if (!deliveryDate) {
       return NextResponse.json(
@@ -181,15 +252,8 @@ export async function POST(request) {
     }
 
     const deliveryDateObj = new Date(`${deliveryDate}T00:00:00Z`);
-    const deliveryDayOfWeek = deliveryDateObj.getUTCDay();
-    const daysBack = deliveryDayOfWeek === 1 ? 2 : 1;
-
-    const expectedRoutingObj = new Date(deliveryDateObj);
-    expectedRoutingObj.setUTCDate(expectedRoutingObj.getUTCDate() - daysBack);
-    const expectedRoutingDateStr = expectedRoutingObj.toISOString().split('T')[0];
-
-    const searchStartObj = new Date(expectedRoutingObj);
-    searchStartObj.setUTCDate(searchStartObj.getUTCDate() - 1);
+    const searchStartObj = new Date(deliveryDateObj);
+    searchStartObj.setUTCDate(searchStartObj.getUTCDate() - 7);
     const searchEndObj = new Date(deliveryDateObj);
 
     const pad = (n) => String(n).padStart(2, '0');
@@ -222,31 +286,32 @@ export async function POST(request) {
 
     const routingData = data?.data?.data || (Array.isArray(data?.data) ? data.data : []);
 
-    const getWibDate = (iso) => {
-      if (!iso) return null;
-      const d = new Date(iso);
-      const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-      return wib.toISOString().split('T')[0];
-    };
+    const candidateResults = routingData.filter((item) => {
+      const isDone = item?.dispatchStatus?.toLowerCase() === 'done';
+      const message = item?.dispatchMessage;
+      return isDone && !isEmpty(message);
+    });
 
-    const targetResults = routingData
-      .filter((item) => {
-        const isDone = item?.dispatchStatus?.toLowerCase() === 'done';
-        if (!isDone) return false;
+    const targetResultsWithDate = (
+      await Promise.all(
+        candidateResults.map(async (item) => {
+          const itemDeliveryDate = await getDeliveryDate(
+            item,
+            apiUrl,
+            apiToken
+          );
+          return itemDeliveryDate === deliveryDate ? item : null;
+        })
+      )
+    ).filter(Boolean);
 
-        const createdWibDate = getWibDate(item?.createdTime);
-        const calculatedDelivery = getDeliveryDateFromRouting(item?.createdTime);
-
-        return (
-          createdWibDate === expectedRoutingDateStr &&
-          calculatedDelivery === deliveryDate
-        );
-      })
-      .sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
+    const targetResults = targetResultsWithDate.sort(
+      (a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0)
+    );
 
     if (targetResults.length === 0) {
       return NextResponse.json({
-        message: `Tidak ditemukan routing berstatus done yang dibuat pada H-${daysBack} (${expectedRoutingDateStr}) untuk tanggal pengiriman ${deliveryDate}.`,
+        message: `Tidak ditemukan routing berstatus done untuk tanggal pengiriman ${deliveryDate}.`,
         syncedCount: 0,
       });
     }
@@ -393,7 +458,7 @@ export async function POST(request) {
 
 
 
-      const createdByUser = typeof item.user === 'object' ? item.user?.name : item.user || null;
+      const routeUser = typeof item.user === 'object' ? item.user?.name : item.user || null;
 
       const totalDistanceMap = {};
       const timeMap = {};
@@ -502,24 +567,27 @@ export async function POST(request) {
           hub_id: targetHubId,
           name: item.name || '',
           delivery_date: deliveryDate,
-          created_by_user: createdByUser,
+          route_user: routeUser,
           total_distance: totalDistanceMap,
           time: timeMap,
           hub_times: hubTimesMap,
           dropped: droppedCount,
           histories: historiesData,
+          updated_by: currentUser,
         },
         create: {
           id: String(item._id),
           hub_id: targetHubId,
           name: item.name || '',
           delivery_date: deliveryDate,
-          created_by_user: createdByUser,
+          route_user: routeUser,
           total_distance: totalDistanceMap,
           time: timeMap,
           hub_times: hubTimesMap,
           dropped: droppedCount,
           histories: historiesData,
+          created_by: currentUser,
+          updated_by: currentUser,
         },
       });
 

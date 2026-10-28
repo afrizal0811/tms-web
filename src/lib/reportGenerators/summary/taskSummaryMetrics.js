@@ -200,7 +200,7 @@ export async function calculateTaskSummaryMetrics({
 
   const routingDateVehicles = {};
   doneResults.forEach((res) => {
-    const dateKey = getDeliveryDateFromRouting(res.createdTime);
+    const dateKey = res.deliveryDate || getDeliveryDateFromRouting(res.createdTime);
     if (!dateKey) return;
 
     initDate(dateKey);

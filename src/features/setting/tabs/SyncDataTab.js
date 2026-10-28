@@ -13,8 +13,10 @@ import {
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { useCallback, useEffect, useState } from 'react';
+import { formatDateUniversal } from '@/lib/utils';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
+import RoutingDetailModal from '../components/RoutingDetailModal';
 import SyncModal from '../components/SyncModal';
 
 export default function SyncDataTab({
@@ -33,18 +35,27 @@ export default function SyncDataTab({
   const [isDriverLoading, setIsDriverLoading] = useState(false);
   const [syncScope, setSyncScope] = useState({ mode: 'active' });
   const [routingDateRange, setRoutingDateRange] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return [d, d];
+    const today = new Date();
+    return [today, today];
   });
-  const [isSyncingRouting, setIsSyncingRouting] = useState(false);
-  const [syncRoutingProgress, setSyncRoutingProgress] = useState('');
+  const [isRoutingDetailOpen, setIsRoutingDetailOpen] = useState(false);
+
+  const hasCompleteRoutingRange = Boolean(
+    routingDateRange?.[0] && routingDateRange?.[1]
+  );
 
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
 
   const allHubs = hubs?.allHub || [];
   const activeHub = hubs?.activeHub || allHubs.find((h) => String(h._id) === String(activeHubId));
   const activeHasVms = Boolean(activeHub?.hasVms);
+
+  const maxRoutingDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, []);
 
   const fetchMcEasyDrivers = useCallback(async () => {
     setIsDriverLoading(true);
@@ -96,8 +107,6 @@ export default function SyncDataTab({
     setSyncLoading(syncScope.mode === 'global' ? 'drivers-global' : 'drivers-active');
     try {
       const updates = mismatchedData.filter((m) => m.isUpdated);
-
-      // Kumpulkan ID driver yang akan dipasangkan
       const targetDriverIds = new Set(
         updates
           .map((u) => u.updatedDriverId)
@@ -105,8 +114,6 @@ export default function SyncDataTab({
           .map((id) => String(id))
       );
 
-      // Kumpulkan ID kendaraan yang perlu dilepas (unassign) driver-nya terlebih dahulu
-      // agar tidak terkena validasi "Driver is already assigned in another vehicle" dari McEasy
       const vehiclesToClear = new Set();
       updates.forEach((u) => {
         if (u.mcVehicleId && u.updatedDriverId !== undefined) {
@@ -119,7 +126,6 @@ export default function SyncDataTab({
         }
       });
 
-      // Tahap 1: Lepaskan driver sementara menggunakan '-' (format McEasy untuk unassign)
       for (const vehicleId of vehiclesToClear) {
         try {
           const clearPayload = new URLSearchParams();
@@ -133,7 +139,6 @@ export default function SyncDataTab({
         }
       }
 
-      // Tahap 2: Pasang driver baru dan/atau perbarui plat nomor
       const seenVehicleIds = new Set();
       for (const update of updates) {
         if (!update.mcVehicleId || seenVehicleIds.has(update.mcVehicleId)) continue;
@@ -257,10 +262,8 @@ export default function SyncDataTab({
     setSyncLoading('drivers-global');
     setSyncScope({ mode: 'global' });
     try {
-      // 1. Sync data drivers & vehicles dari MileApp untuk seluruh cabang
       await postDrivers([]);
 
-      // 2. Sync data VMS McEasy untuk cabang yang mengaktifkan VMS
       const vmsHubs = allHubs.filter((h) => h.hasVms);
       const allMismatches = [];
       const allMatches = [];
@@ -310,7 +313,6 @@ export default function SyncDataTab({
         }
       }
 
-      // Filter matches that might be present in mismatches
       const filteredMatches = allMatches.filter(
         (match) =>
           !allMismatches.some(
@@ -318,7 +320,6 @@ export default function SyncDataTab({
           )
       );
 
-      // 3. Tangani mismatch jika ada
       if (allMismatches.length > 0) {
         setMismatchedData(allMismatches);
         setMatchedData(filteredMatches);
@@ -327,7 +328,6 @@ export default function SyncDataTab({
         return;
       }
 
-      // 4. Update data yang cocok
       if (filteredMatches.length > 0) {
         await patchDriverMceasy(null, null, filteredMatches);
       }
@@ -359,11 +359,72 @@ export default function SyncDataTab({
     }
   };
 
+  const executeRoutingSync = async () => {
+    const [startDate, endDate] = routingDateRange || [];
+    if (isReadOnly || !startDate || !endDate) return;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate || startDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const datesToSync = [];
+    const curr = new Date(start);
+    while (curr <= end) {
+      datesToSync.push(formatDateUniversal(curr, 'YYYY-MM-DD'));
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    if (datesToSync.length === 0) return;
+
+    setSyncLoading('routing');
+    let hasError = false;
+    let lastError = null;
+
+    try {
+      for (let i = 0; i < datesToSync.length; i++) {
+        const dStr = datesToSync[i];
+        if (datesToSync.length > 1) {
+        }
+        try {
+          await syncRoutingResults({
+            deliveryDate: dStr,
+            hubId: activeHubId,
+          });
+        } catch (err) {
+          hasError = true;
+          lastError = err;
+        }
+      }
+
+      if (onRefresh) await onRefresh();
+
+      if (hasError) {
+        toastError(translate('common.toast.error', { err: lastError?.message }), lastError);
+      } else {
+        toastSuccess(translate('common.toast.success'));
+      }
+    } catch (e) {
+      toastError(translate('common.toast.error', { err: e.message }), e);
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
   const driverGlobalOptions = [
     {
       id: 'global',
       label: `${translate('common.all')} ${translate('common.branch')}`,
       onClick: executeDriverSyncGlobal,
+    },
+  ];
+
+  const routingOptions = [
+    {
+      id: 'detail',
+      label: translate('common.more'),
+      onClick: () => setIsRoutingDetailOpen(true),
+      disabled: !hasCompleteRoutingRange,
     },
   ];
 
@@ -380,24 +441,28 @@ export default function SyncDataTab({
       type: 'drivers',
       label: translate('setting.tab.sync_data.driver_vehicles'),
     },
+    {
+      type: 'routing',
+      label: translate('setting.tab.sync_data.routing_results'),
+    },
   ];
 
   const renderCardContent = (type, label) => {
-    if (type === 'drivers') {
-      const isDriverLoadingActive = syncLoading === 'drivers-active';
-      const isDriverLoadingGlobal = syncLoading === 'drivers-global';
-      const isDriverSyncing = isDriverLoadingActive || isDriverLoadingGlobal;
+    const isDriverType = type === 'drivers';
+    const isRoutingType = type === 'routing';
+    const isDriverSyncing = syncLoading === 'drivers-active' || syncLoading === 'drivers-global';
 
-      return (
-        <div
-          className={`flex h-full flex-col justify-between p-5 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 transition-colors ${
-            isReadOnly ? '' : 'min-h-40'
-          }`}
-        >
-          <div className="text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              <span className="font-bold text-slate-800 dark:text-slate-200">{label}</span>
-              {activeHasVms ? (
+    return (
+      <div
+        className={`flex h-full flex-col justify-between p-5 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 transition-colors ${
+          isReadOnly ? '' : 'min-h-40'
+        }`}
+      >
+        <div className="text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+            <span className="font-bold text-slate-800 dark:text-slate-200">{label}</span>
+            {isDriverType && (
+              activeHasVms ? (
                 <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/80">
                   VMS
                 </span>
@@ -405,26 +470,49 @@ export default function SyncDataTab({
                 <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-slate-200/70 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
                   Non-VMS
                 </span>
-              )}
-            </div>
-
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {translate('setting.last_updated')} <br />
-              <span className="font-medium text-slate-600 dark:text-slate-500">
-                {lastUpdated[type]}
-              </span>
-            </div>
-
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {translate('setting.updated_by')} <br />
-              <span className="font-medium text-slate-600 dark:text-slate-500">
-                {updatedBy[type] || '-'}
-              </span>
-            </div>
+              )
+            )}
           </div>
 
-          {!isReadOnly && (
-            <div className="mt-4">
+          {isRoutingType ? (
+            <div className="mt-2 text-left">
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
+                {translate('common.delivery_date')}
+              </label>
+              <CustomDatePicker
+                selectsRange={true}
+                startDate={routingDateRange[0]}
+                endDate={routingDateRange[1]}
+                onChange={(dates) => setRoutingDateRange(dates)}
+                useCustomRangeFormat={true}
+                maxDate={maxRoutingDate}
+                disableSunday={false}
+                className="w-full text-xs cursor-pointer"
+                wrapperClassName="w-full"
+                disabled={syncLoading !== null || isReadOnly}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                {translate('setting.last_updated')} <br />
+                <span className="font-medium text-slate-600 dark:text-slate-500">
+                  {lastUpdated?.[type]}
+                </span>
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                {translate('setting.updated_by')} <br />
+                <span className="font-medium text-slate-600 dark:text-slate-500">
+                  {updatedBy?.[type] || '-'}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {!isReadOnly && (
+          <div className="mt-4">
+            {isDriverType ? (
               <Button
                 type="split"
                 onClick={executeDriverSyncActive}
@@ -436,42 +524,25 @@ export default function SyncDataTab({
                 })}
                 size="md"
               />
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className={`flex h-full flex-col justify-between p-5 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-700/40 transition-colors ${
-          isReadOnly ? '' : 'min-h-40'
-        }`}
-      >
-        <div className="text-center md:text-left">
-          <span className="font-bold text-slate-800 dark:text-slate-200">{label}</span>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-            {translate('setting.last_updated')} <br />
-            <span className="font-medium text-slate-600 dark:text-slate-500">
-              {lastUpdated[type]}
-            </span>
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-            {translate('setting.updated_by')} <br />
-            <span className="font-medium text-slate-600 dark:text-slate-500">
-              {updatedBy[type] || '-'}
-            </span>
-          </div>
-        </div>
-        {!isReadOnly && (
-          <div className="mt-4">
-            <Button
-              onClick={() => executeSync(type)}
-              isLoading={syncLoading === type}
-              disabled={syncLoading !== null}
-              text={translate('setting.tab.button.btn_sync')}
-              size="md"
-            />
+            ) : isRoutingType ? (
+              <Button
+                type="split"
+                onClick={executeRoutingSync}
+                options={routingOptions}
+                isLoading={syncLoading === 'routing'}
+                disabled={syncLoading !== null || !hasCompleteRoutingRange}
+                text={translate('setting.tab.button.btn_sync')}
+                size="md"
+              />
+            ) : (
+              <Button
+                onClick={() => executeSync(type)}
+                isLoading={syncLoading === type}
+                disabled={syncLoading !== null}
+                text={translate('setting.tab.button.btn_sync')}
+                size="md"
+              />
+            )}
           </div>
         )}
       </div>
@@ -492,116 +563,12 @@ export default function SyncDataTab({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {syncData.map((item, index) => (
-            <div key={index} className="col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {syncData.map((item) => (
+            <div key={item.type} className="col-span-1">
               {renderCardContent(item.type, item.label)}
             </div>
           ))}
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-200">
-                Sinkronisasi Routing Results
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Sinkronisasi data hasil routing MileApp berdasarkan rentang tanggal pengiriman
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <CustomDatePicker
-                selectsRange={true}
-                startDate={routingDateRange[0]}
-                endDate={routingDateRange[1]}
-                onChange={(dates) => setRoutingDateRange(dates)}
-                useCustomRangeFormat={true}
-                disabled={isSyncingRouting || isReadOnly}
-                className="w-full sm:w-[260px] cursor-pointer"
-                wrapperClassName="w-full sm:w-auto"
-                disableSunday={false}
-              />
-              <Button
-                onClick={async () => {
-                  const [startDate, endDate] = routingDateRange;
-                  if (!startDate) return;
-
-                  const start = new Date(startDate);
-                  const end = new Date(endDate || startDate);
-                  start.setHours(0, 0, 0, 0);
-                  end.setHours(0, 0, 0, 0);
-
-                  const datesToSync = [];
-                  const curr = new Date(start);
-                  while (curr <= end) {
-                    const y = curr.getFullYear();
-                    const m = String(curr.getMonth() + 1).padStart(2, '0');
-                    const d = String(curr.getDate()).padStart(2, '0');
-                    datesToSync.push(`${y}-${m}-${d}`);
-                    curr.setDate(curr.getDate() + 1);
-                  }
-
-                  if (datesToSync.length === 0) return;
-
-                  setIsSyncingRouting(true);
-                  let totalSynced = 0;
-                  let totalSkipped = 0;
-                  let failedCount = 0;
-
-                  try {
-                    for (let i = 0; i < datesToSync.length; i++) {
-                      const dStr = datesToSync[i];
-                      setSyncRoutingProgress(`${i + 1}/${datesToSync.length}`);
-                      try {
-                        const res = await syncRoutingResults({
-                          deliveryDate: dStr,
-                          hubId: activeHubId,
-                        });
-                        if (res?.skipped) {
-                          totalSkipped++;
-                        } else {
-                          totalSynced += res?.syncedCount || 1;
-                        }
-                      } catch (err) {
-                        failedCount++;
-                        console.error(`Sync error for ${dStr}:`, err);
-                      }
-                    }
-
-                    if (onRefresh) await onRefresh();
-
-                    if (totalSynced > 0) {
-                      toastSuccess(
-                        `Berhasil sinkronisasi ${totalSynced} data routing (${totalSkipped} dilewati).`
-                      );
-                    } else if (totalSkipped > 0) {
-                      toastSuccess(
-                        `Semua ${totalSkipped} tanggal sudah ada di database atau tidak ada routing baru (dilewati).`
-                      );
-                    } else if (failedCount > 0) {
-                      toastError('Gagal sinkronisasi data routing.');
-                    } else {
-                      toastSuccess('Sinkronisasi data routing selesai.');
-                    }
-                  } catch (e) {
-                    toastError(e.message || 'Terjadi kesalahan saat sinkronisasi routing.', e);
-                  } finally {
-                    setIsSyncingRouting(false);
-                    setSyncRoutingProgress('');
-                  }
-                }}
-                isLoading={isSyncingRouting}
-                disabled={isSyncingRouting || !routingDateRange[0] || isReadOnly}
-                text={
-                  isSyncingRouting
-                    ? `Sinkronisasi... ${syncRoutingProgress ? `(${syncRoutingProgress})` : ''}`
-                    : 'Sinkronisasi Routing'
-                }
-                size="md"
-              />
-            </div>
-          </div>
         </div>
       </Card>
 
@@ -619,6 +586,16 @@ export default function SyncDataTab({
           syncLoading === 'drivers-global'
         }
         translate={translate}
+      />
+
+      <RoutingDetailModal
+        isOpen={isRoutingDetailOpen}
+        onClose={() => setIsRoutingDetailOpen(false)}
+        hubId={activeHubId}
+        hubName={storedLocationName}
+        dateRange={routingDateRange}
+        translate={translate}
+        onSaved={onRefresh}
       />
     </div>
   );
