@@ -21,7 +21,10 @@ import { handleDownloadExcel } from './help';
 
 export default function UpdateCoordinatePage() {
   const { t, localeCode } = useLanguage();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [dateRange, setDateRange] = useState([new Date(), new Date()]);
+  const [startDate, endDate] = dateRange;
+  const [tempDateRange, setTempDateRange] = useState([new Date(), new Date()]);
+  const [tempStart, tempEnd] = tempDateRange;
   const [loading, setLoading] = useState(true);
   const [tasksData, setTasksData] = useState([]);
   const [historyMap, setHistoryMap] = useState(new Map());
@@ -49,7 +52,7 @@ export default function UpdateCoordinatePage() {
       const distanceDiff = getDistance(task.longlat, task.klikLokasiClient);
 
       tempMap.get(name).push({
-        date: formatDateUniversal(task.doneTime, 'HH:mm'),
+        date: formatDateUniversal(task.doneTime, 'DD/MM/YYYY'),
         newLonglat: task.klikLokasiClient,
         oldLonglat: task.longlat,
         distanceDiff: distanceDiff,
@@ -62,20 +65,26 @@ export default function UpdateCoordinatePage() {
 
   const fetchData = useCallback(
     async (mountedContext) => {
+      if (!startDate || !endDate) return;
+
       setLoading(true);
       setTasksData([]);
       setHistoryMap(new Map());
 
-      if (selectedDate.getDay() === 0) {
+      if (
+        startDate.getDay() === 0 &&
+        endDate.getDay() === 0 &&
+        startDate.toDateString() === endDate.toDateString()
+      ) {
         setLoading(false);
         return;
       }
 
       try {
-        const localStart = new Date(selectedDate);
+        const localStart = new Date(startDate);
         localStart.setHours(0, 0, 0, 0);
 
-        const localEnd = new Date(selectedDate);
+        const localEnd = new Date(endDate);
         localEnd.setHours(23, 59, 59, 999);
 
         const timeFrom = toApiDateString(localStart);
@@ -113,7 +122,7 @@ export default function UpdateCoordinatePage() {
         setLoading(false);
       }
     },
-    [selectedDate, t]
+    [startDate, endDate, t]
   );
 
   useEffect(() => {
@@ -141,12 +150,20 @@ export default function UpdateCoordinatePage() {
         const isDataIncomplete = !custId || !locId;
 
         const { invoiceNumber } = parseCustomerString(task.customerOrder);
+        const rawDeliveryDate = task.startTime || task.doneTime || null;
+        const deliveryDate = rawDeliveryDate ? formatDateUniversal(rawDeliveryDate, 'YYYY-MM-DD') : '';
+        const deliveryDateDisplay = rawDeliveryDate
+          ? formatDateUniversal(rawDeliveryDate, 'DD/MM/YYYY')
+          : '-';
+
         updateList.push({
           customerData: customerName,
           customerName: custName,
           customerId: custId,
           locationId: locId,
           driverName: task.driverName || task.assignee || '-',
+          deliveryDate,
+          deliveryDateDisplay,
           updateTime: task.doneTime ? formatDateUniversal(task.doneTime, 'HH:mm') : '-',
           newLonglat: formatCoordinates(task.klikLokasiClient),
           distanceDiff: distanceDiff !== null ? distanceDiff : 0,
@@ -157,16 +174,28 @@ export default function UpdateCoordinatePage() {
       }
     }
 
-    updateList.sort((a, b) => a.distanceDiff - b.distanceDiff);
+    updateList.sort((a, b) => (a.distanceDiff ?? 0) - (b.distanceDiff ?? 0));
     return updateList;
   }, [tasksData, loading]);
+
+  const handleApplyDate = () => {
+    if (!tempStart || !tempEnd) return;
+    setDateRange(tempDateRange);
+  };
 
   const datePicker = (
     <CustomDatePicker
       isLoading={loading || isDownloading}
-      onChange={setSelectedDate}
-      selected={selectedDate}
+      startDate={tempStart}
+      endDate={tempEnd}
+      onChange={(update) => setTempDateRange(update)}
+      selectsRange={true}
+      useCustomRangeFormat={true}
+      showApplyButton={true}
+      onApply={handleApplyDate}
+      applyText={t('common.apply')}
       maxDate={tomorrowDate()}
+      onCalendarClose={() => setTempDateRange(dateRange)}
     />
   );
 
@@ -174,13 +203,13 @@ export default function UpdateCoordinatePage() {
     <Button
       disabled={loading || isDownloading || isEmpty(processedData)}
       isLoading={isDownloading}
-      onClick={() => handleDownloadExcel(processedData, setIsDownloading, selectedDate, t)}
+      onClick={() => handleDownloadExcel(processedData, setIsDownloading, dateRange, t)}
       text={t('common.download')}
     />
   );
 
   const headerItems = [
-    { label: t('common.delivery_date'), component: datePicker, hideLabel: false },
+    { label: t('common.range_delivery'), component: datePicker, hideLabel: false },
     { label: 'Export', component: downloadBtn, hideLabel: true },
   ];
 
@@ -206,7 +235,7 @@ export default function UpdateCoordinatePage() {
         <CustomTable
           data={processedData}
           historyMap={historyMap}
-          selectedDate={selectedDate}
+          selectedDate={dateRange}
           t={t}
           localeCode={localeCode}
         />

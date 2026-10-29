@@ -3,7 +3,7 @@
 import Modal from '@/components/modal/Modal';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
-import { formatLongDate } from '@/lib/utils';
+import { formatDateUniversal, formatLongDate } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
@@ -34,13 +34,25 @@ export default function CustomerHistoryModal({
     return data.filter((item) => item.newLonglat && item.oldLonglat);
   }, [data]);
 
+  const dateTitle = useMemo(() => {
+    if (Array.isArray(selectedDate)) {
+      const [start, end] = selectedDate;
+      if (!start) return '-';
+      if (!end || formatDateUniversal(start) === formatDateUniversal(end)) {
+        return formatLongDate(start, localeCode);
+      }
+      return `${formatLongDate(start, localeCode)} - ${formatLongDate(end, localeCode)}`;
+    }
+    return formatLongDate(selectedDate, localeCode);
+  }, [selectedDate, localeCode]);
+
   if (!isOpen) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${t('longlat.modal.title')} (${formatLongDate(selectedDate, localeCode)})`}
+      title={`${t('longlat.modal.title')} (${dateTitle})`}
       subtitle={customerData}
       maxWidth="max-w-5xl"
       contentClassName="h-[80vh] sm:h-[70vh]"

@@ -14,6 +14,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const wb = XLSX.utils.book_new();
     const headers = [
       'No',
+      t('common.delivery_date'),
       t('common.invoice_number'),
       t('common.customer_name'),
       t('common.customer_id'),
@@ -30,6 +31,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
       const displayLocId = row.isIncomplete ? '-' : row.locationId || '';
       sheetData.push([
         index + 1,
+        row.deliveryDateDisplay,
         row.soNumber,
         row.customerName,
         displayCustId,
@@ -51,6 +53,7 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
     const range = XLSX.utils.decode_range(ws['!ref']);
     ws['!cols'] = [
       { wch: 5 },
+      { wch: 15 },
       { wch: 30 },
       { wch: 30 },
       { wch: 25 },
@@ -78,16 +81,24 @@ export const handleDownloadExcel = (processedData, setIsDownloading, selectedDat
           };
         } else {
           ws[cellRef].s = rowData && rowData.isIncomplete ? { ...redFillStyle } : {};
-          const isLeftCol = C === 1 || C === 2 || C === 7;
+          const isLeftCol = C === 2 || C === 3 || C === 8;
           ws[cellRef].s.alignment = { horizontal: isLeftCol ? 'left' : 'center' };
         }
       }
     }
 
     XLSX.utils.book_append_sheet(wb, ws, t('longlat.title'));
-    const date = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    let dateStr = '';
+    if (Array.isArray(selectedDate)) {
+      const [start, end] = selectedDate;
+      const fStart = formatDateUniversal(start, 'DD.MM.YYYY');
+      const fEnd = formatDateUniversal(end, 'DD.MM.YYYY');
+      dateStr = fStart === fEnd ? fStart : `${fStart} - ${fEnd}`;
+    } else {
+      dateStr = formatDateUniversal(selectedDate, 'DD.MM.YYYY');
+    }
     const { storedLocationAcronym: locationName } = getLocalStorage() || '-';
-    const fileName = `${t('longlat.title')} - ${date} - ${locationName}.xlsx`;
+    const fileName = `${t('longlat.title')} - ${dateStr} - ${locationName}.xlsx`;
     XLSX.writeFile(wb, fileName);
     toastSuccess(t('common.toast.success'));
   } catch (e) {

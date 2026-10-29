@@ -1,7 +1,7 @@
 'use client';
 
 import TableData from '@/components/table/TableData';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import CustomerHistoryModal from '../modal/CustomerHistoryModal';
 
 export default function CustomTable({ data, historyMap, selectedDate, t, localeCode }) {
@@ -20,6 +20,33 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
 
   const [sortConfig, setSortConfig] = useState({ key: 'distanceDiff', direction: 'asc' });
 
+  const customSort = useCallback((items, currentSortConfig) => {
+    if (!currentSortConfig || !currentSortConfig.key) return items;
+    const { key, direction } = currentSortConfig;
+    const modifier = direction === 'asc' ? 1 : -1;
+
+    return [...items].sort((a, b) => {
+      if (key === 'distanceDiff') {
+        const distA = a.distanceDiff ?? 0;
+        const distB = b.distanceDiff ?? 0;
+        return (distA - distB) * modifier;
+      }
+
+      const aVal = a[key] ?? '';
+      const bVal = b[key] ?? '';
+      const cmp =
+        typeof aVal === 'string' && typeof bVal === 'string'
+          ? aVal.localeCompare(bVal)
+          : aVal < bVal
+            ? -1
+            : aVal > bVal
+              ? 1
+              : 0;
+
+      return cmp * modifier;
+    });
+  }, []);
+
   const currentHistory = selectedRow ? historyMap.get(selectedRow.customerData) || [] : [];
 
   const getRowClassName = (row) => {
@@ -31,15 +58,23 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
   const columns = [
     {
       key: 'no',
-      width: 'w-[5%]',
+      width: 'w-[4%]',
       sortable: false,
       label: 'No',
       align: 'center',
-      render: (row) => <div className="text-center w-full">{data.indexOf(row) + 1}</div>,
+      render: (row, index) => <div className="text-center w-full">{index + 1}</div>,
+    },
+    {
+      key: 'deliveryDate',
+      width: 'w-[7%]',
+      sortable: true,
+      align: 'center',
+      label: t('common.delivery_date'),
+      render: (row) => <div className="text-center w-full">{row.deliveryDateDisplay}</div>,
     },
     {
       key: 'soNumber',
-      width: 'w-[15%]',
+      width: 'w-[13%]',
       sortable: true,
       label: t('common.invoice_number'),
       render: (row) => <div className="text-left w-full">{row.soNumber}</div>,
@@ -53,7 +88,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
     },
     {
       key: 'customerId',
-      width: 'w-[10%]',
+      width: 'w-[9%]',
       sortable: true,
       align: 'center',
       label: t('common.customer_id'),
@@ -63,7 +98,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
     },
     {
       key: 'locationId',
-      width: 'w-[10%]',
+      width: 'w-[9%]',
       sortable: true,
       align: 'center',
       label: t('common.location_id'),
@@ -73,7 +108,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
     },
     {
       key: 'newLonglat',
-      width: 'w-[15%]',
+      width: 'w-[14%]',
       sortable: false,
       align: 'center',
       label: t('common.coord_new'),
@@ -91,14 +126,14 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
     },
     {
       key: 'driverName',
-      width: 'w-[15%]',
+      width: 'w-[13%]',
       sortable: true,
       label: t('common.driver'),
       render: (row) => <div className="text-left w-full">{row.driverName}</div>,
     },
     {
       key: 'updateTime',
-      width: 'w-[15%]',
+      width: 'w-[8%]',
       sortable: true,
       align: 'center',
       label: t('longlat.table.update_time'),
@@ -114,6 +149,7 @@ export default function CustomTable({ data, historyMap, selectedDate, t, localeC
             columns={columns}
             data={data}
             onRowClick={handleRowClick}
+            customSort={customSort}
             externalSortConfig={sortConfig}
             onExternalSort={setSortConfig}
             rowClassName={getRowClassName}
