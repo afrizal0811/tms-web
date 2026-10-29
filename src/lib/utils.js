@@ -284,7 +284,13 @@ export function calculateStartFinishDates(selectedDateStr) {
 // Mengubah timestamp UTC ke UTC+7
 export function parseAndShiftToUTC7(timestampStr) {
   if (!timestampStr) return null;
-  let utcTimestamp = timestampStr.replace(' ', 'T');
+  const str =
+    timestampStr instanceof Date
+      ? timestampStr.toISOString()
+      : typeof timestampStr === 'number'
+        ? new Date(timestampStr).toISOString()
+        : String(timestampStr);
+  let utcTimestamp = str.replace(' ', 'T');
   if (
     !utcTimestamp.endsWith('Z') &&
     !utcTimestamp.substring(10).includes('+') &&

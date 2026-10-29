@@ -6,7 +6,7 @@ export async function GET(request, { params }) {
   try {
     const { searchParams } = new URL(request.url);
     const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const id = resolvedParams?.id;
     const hubId = searchParams.get('hubId');
 
     if (!id) {
@@ -20,9 +20,6 @@ export async function GET(request, { params }) {
     const apiToken = process.env.API_TOKEN;
 
     if (!apiUrl || !apiToken) {
-      console.error(
-        'Konfigurasi server hilang: NEXT_PUBLIC_API_URL atau API_TOKEN tidak ditemukan.'
-      );
       return NextResponse.json({ error: 'Kesalahan konfigurasi server internal' }, { status: 500 });
     }
 
@@ -37,6 +34,25 @@ export async function GET(request, { params }) {
 
     const fetchData = await externalResponse.json();
     let data = fetchData ? fetchData.task : fetchData;
+
+    if (!externalResponse.ok) {
+      return NextResponse.json(
+        {
+          error: `Gagal mengambil data task dengan ID ${id}`,
+          details: data,
+        },
+        {
+          status: externalResponse.status,
+        }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: `Data task dengan ID ${id} tidak ditemukan` },
+        { status: 404 }
+      );
+    }
 
     try {
       const usersUrl = new URL(`${apiUrl}/users`);
@@ -72,7 +88,7 @@ export async function GET(request, { params }) {
       console.error('Gagal mengambil data users:', userErr);
     }
 
-    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
+    const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
     const [rawDrivers, mappingsDB] = await Promise.all([
       prisma.driver.findMany({ where }),
       prisma.vehicleMapping.findMany(),
@@ -202,22 +218,9 @@ export async function GET(request, { params }) {
     if (Array.isArray(data.statusDelivery)) data.statusDelivery = data.statusDelivery.join(', ');
     if (Array.isArray(data.assignee)) data.assignee = data.assignee.join(', ');
 
-    if (!externalResponse.ok) {
-      console.error(`API eksternal (/task/${id}) error:`, data);
-      return NextResponse.json(
-        {
-          error: `Gagal mengambil data task dengan ID ${id}`,
-          details: data,
-        },
-        {
-          status: externalResponse.status,
-        }
-      );
-    }
-
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error Single Result:', error);
+    console.error('Error Single Task:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(

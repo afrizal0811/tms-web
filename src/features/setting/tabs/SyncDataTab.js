@@ -10,12 +10,14 @@ import {
   postHubs,
   postRoles,
   syncRoutingResults,
+  syncTasks,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import RoutingDetailModal from '../components/RoutingDetailModal';
 import SyncModal from '../components/SyncModal';
 
@@ -39,10 +41,14 @@ export default function SyncDataTab({
     return [today, today];
   });
   const [isRoutingDetailOpen, setIsRoutingDetailOpen] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    action: null,
+  });
 
-  const hasCompleteRoutingRange = Boolean(
-    routingDateRange?.[0] && routingDateRange?.[1]
-  );
+  const hasCompleteRoutingRange = Boolean(routingDateRange?.[0] && routingDateRange?.[1]);
 
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
 
@@ -359,7 +365,7 @@ export default function SyncDataTab({
     }
   };
 
-  const executeRoutingSync = async () => {
+  const executeRoutingSync = async (mode = 'active') => {
     const [startDate, endDate] = routingDateRange || [];
     if (isReadOnly || !startDate || !endDate) return;
 
@@ -377,19 +383,23 @@ export default function SyncDataTab({
 
     if (datesToSync.length === 0) return;
 
-    setSyncLoading('routing');
+    const isGlobal = mode === 'global';
+    const targetHubId = isGlobal ? 'all' : activeHubId;
+    setSyncLoading(isGlobal ? 'routing-global' : 'routing-active');
     let hasError = false;
     let lastError = null;
 
     try {
       for (let i = 0; i < datesToSync.length; i++) {
         const dStr = datesToSync[i];
-        if (datesToSync.length > 1) {
-        }
         try {
           await syncRoutingResults({
             deliveryDate: dStr,
-            hubId: activeHubId,
+            hubId: targetHubId,
+          });
+          await syncTasks({
+            deliveryDate: dStr,
+            hubId: targetHubId,
           });
         } catch (err) {
           hasError = true;
@@ -411,6 +421,36 @@ export default function SyncDataTab({
     }
   };
 
+  const triggerRoutingSync = (mode = 'active') => {
+    const [startDate, endDate] = routingDateRange || [];
+    if (isReadOnly || !startDate || !endDate) return;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate || startDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const diffTime = Math.abs(end - start);
+    const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const isGlobal = mode === 'global';
+    const limitDays = isGlobal ? 7 : 14;
+
+    if (totalDays > limitDays) {
+      setConfirmModalConfig({
+        isOpen: true,
+        title: translate('common.modal.data_load_title') || 'Peringatan Beban Data',
+        message:
+          translate('common.modal.data_load_message', { days: limitDays }) ||
+          `Rentang data lebih dari ${limitDays} hari. Proses dapat memakan waktu lebih lama. Tetap lanjutkan?`,
+        action: () => executeRoutingSync(mode),
+      });
+      return;
+    }
+
+    executeRoutingSync(mode);
+  };
+
   const driverGlobalOptions = [
     {
       id: 'global',
@@ -421,8 +461,14 @@ export default function SyncDataTab({
 
   const routingOptions = [
     {
+      id: 'global',
+      label: `${translate('common.all')} ${translate('common.branch')}`,
+      onClick: () => triggerRoutingSync('global'),
+      disabled: !hasCompleteRoutingRange,
+    },
+    {
       id: 'detail',
-      label: translate('common.more'),
+      label: translate('setting.tab.sync_data.modal.title') || 'Detail Data Hasil Routing',
       onClick: () => setIsRoutingDetailOpen(true),
       disabled: !hasCompleteRoutingRange,
     },
@@ -443,7 +489,7 @@ export default function SyncDataTab({
     },
     {
       type: 'routing',
-      label: translate('setting.tab.sync_data.routing_results'),
+      label: translate('setting.tab.sync_data.routing_and_tasks'),
     },
   ];
 
@@ -461,8 +507,8 @@ export default function SyncDataTab({
         <div className="text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
             <span className="font-bold text-slate-800 dark:text-slate-200">{label}</span>
-            {isDriverType && (
-              activeHasVms ? (
+            {isDriverType &&
+              (activeHasVms ? (
                 <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/80">
                   VMS
                 </span>
@@ -470,8 +516,7 @@ export default function SyncDataTab({
                 <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-slate-200/70 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
                   Non-VMS
                 </span>
-              )
-            )}
+              ))}
           </div>
 
           {isRoutingType ? (
@@ -527,11 +572,13 @@ export default function SyncDataTab({
             ) : isRoutingType ? (
               <Button
                 type="split"
-                onClick={executeRoutingSync}
+                onClick={() => triggerRoutingSync('active')}
                 options={routingOptions}
-                isLoading={syncLoading === 'routing'}
+                isLoading={syncLoading === 'routing-active' || syncLoading === 'routing-global'}
                 disabled={syncLoading !== null || !hasCompleteRoutingRange}
-                text={translate('setting.tab.button.btn_sync')}
+                text={translate('setting.tab.button.btn_sync_hub', {
+                  hub: storedLocationName,
+                })}
                 size="md"
               />
             ) : (
@@ -595,7 +642,20 @@ export default function SyncDataTab({
         hubName={storedLocationName}
         dateRange={routingDateRange}
         translate={translate}
-        onSaved={onRefresh}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        onConfirm={() => {
+          const action = confirmModalConfig.action;
+          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false, action: null }));
+          if (action) action();
+        }}
+        onCancel={() => {
+          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false, action: null }));
+        }}
       />
     </div>
   );

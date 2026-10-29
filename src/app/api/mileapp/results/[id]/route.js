@@ -48,18 +48,30 @@ export async function GET(request, { params }) {
       };
     }
 
+    const syncUser =
+      typeof item.sync_user === 'string'
+        ? JSON.parse(item.sync_user || '{}')
+        : item.sync_user || {};
+    const routeUser =
+      typeof item.route_user === 'string'
+        ? JSON.parse(item.route_user || '{}')
+        : item.route_user || {};
+
     const formatted = {
       id: item.id,
       _id: item.id,
       hubId: item.hub_id,
       name: item.name,
       deliveryDate: item.delivery_date,
-      routeUser: item.route_user,
-      createdBy: item.created_by,
-      updatedBy: item.updated_by,
-      createdTime: item.delivery_date,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
+      routeUser,
+      route_user: routeUser,
+      syncUser,
+      sync_user: syncUser,
+      createdBy: syncUser.created_by || null,
+      createdAt: syncUser.created_at || null,
+      updatedBy: syncUser.updated_by || null,
+      updatedAt: syncUser.updated_at || null,
+      createdTime: routeUser.created_at || item.delivery_date,
       dispatchStatus: 'done',
       dropped: item.dropped,
       histories: item.histories,
@@ -106,13 +118,29 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const updateData = {
-      delivery_date: deliveryDate,
+    const existingRouting = await prisma.routingResult.findUnique({
+      where: { id },
+      select: { sync_user: true },
+    });
+
+    const existingSyncUser = existingRouting?.sync_user
+      ? typeof existingRouting.sync_user === 'string'
+        ? JSON.parse(existingRouting.sync_user)
+        : existingRouting.sync_user
+      : null;
+
+    const nowIso = new Date().toISOString();
+    const syncUser = {
+      created_by: existingSyncUser?.created_by || updatedBy || 'System',
+      created_at: existingSyncUser?.created_at || nowIso,
+      updated_by: updatedBy || 'System',
+      updated_at: nowIso,
     };
 
-    if (updatedBy) {
-      updateData.updated_by = updatedBy;
-    }
+    const updateData = {
+      delivery_date: deliveryDate,
+      sync_user: syncUser,
+    };
 
     const updated = await prisma.routingResult.update({
       where: { id },
@@ -125,8 +153,8 @@ export async function PATCH(request, { params }) {
         id: updated.id,
         name: updated.name,
         deliveryDate: updated.delivery_date,
-        updatedBy: updated.updated_by,
-        updatedAt: updated.updated_at,
+        syncUser,
+        sync_user: syncUser,
       },
     });
   } catch (error) {

@@ -24,6 +24,7 @@ model Hub {
   updatedAt    DateTime @updatedAt
   drivers         Driver[] 
   routing_results RoutingResult[]
+  tasks           Task[]
   is_active       Boolean @default(true)
 }
 
@@ -135,7 +136,7 @@ model RoutingResult {
   hub_id             String
   name               String
   delivery_date      String
-  route_user         String?
+  route_user         Json?
 
   total_distance     Json?    @default("{}")
   time               Json?    @default("{}")
@@ -144,11 +145,7 @@ model RoutingResult {
   dropped            Int      @default(0)
   histories          Json?
 
-  created_by         String?
-  updated_by         String?
-
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  sync_user          Json?
 
   hub                Hub      @relation(fields: [hub_id], references: [id])
 
@@ -157,11 +154,65 @@ model RoutingResult {
   @@map("routing_results")
 }
 
+model Task {
+  id                  String   @id
+  hub_id              String
+  routing_result_id   String?
 
+  customer_order      String?  @db.Text
+  address             String?  @db.Text
+  flow                String?
+  type_storage        String?
+
+  status              String?
+  status_delivery     String?
+  alasan              String?  @db.Text
+
+  delivery_date       String
+  start_time          String?
+  end_time            String?
+  assigned_time       String?
+  done_time           String?
+  arrival_time        String?
+
+  assigned_vehicle_id String?
+  assignee            String?
+  driver_name         String?
+  plat                String?
+  vehicle_type        String?
+  route_planned_order Int?
+
+  weight_kg           Float?
+  volume_cbm          Float?
+  distance            Float?
+  travel_distance     Float?
+  travel_duration     String?
+  eta                 String?
+  etd                 String?
+
+  expected_coordinate String?
+  done_coordinate     String?
+  new_coordinate      String?
+
+  list_product        Json?
+  others              Json?
+
+  created_from        String?
+  sync_user           Json?
+  task_user           Json?
+
+  hub                 Hub            @relation(fields: [hub_id], references: [id])
+
+  @@index([hub_id, delivery_date])
+  @@index([delivery_date])
+  @@index([routing_result_id])
+  @@index([status_delivery])
+  @@index([plat])
+  @@map("tasks")
+}
 
 enum TimeZone {
   WIB
   WITA
   WIT
 }
-

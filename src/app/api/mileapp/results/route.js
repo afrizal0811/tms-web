@@ -78,8 +78,34 @@ export async function GET(request) {
       include: {
         hub: true,
       },
-      orderBy: [{ delivery_date: 'asc' }, { created_at: 'asc' }],
+      orderBy: [{ delivery_date: 'asc' }, { id: 'asc' }],
     });
+
+    const deliveryDates = Array.from(
+      new Set(routingResults.map((r) => r.delivery_date).filter(Boolean))
+    );
+    const hubIds = Array.from(new Set(routingResults.map((r) => r.hub_id).filter(Boolean)));
+
+    const taskCountMap = new Map();
+
+    if (deliveryDates.length > 0) {
+      const taskCounts = await prisma.task.groupBy({
+        by: ['hub_id', 'delivery_date'],
+        where: {
+          delivery_date: { in: deliveryDates },
+          ...(hubIds.length > 0 ? { hub_id: { in: hubIds } } : {}),
+        },
+        _count: {
+          id: true,
+        },
+      });
+
+      taskCounts.forEach((tc) => {
+        taskCountMap.set(`${tc.hub_id}_${tc.delivery_date}`, tc._count.id);
+        const prev = taskCountMap.get(tc.delivery_date) || 0;
+        taskCountMap.set(tc.delivery_date, prev + tc._count.id);
+      });
+    }
 
     const formattedData = routingResults.map((item) => {
       const hubTimes =
@@ -91,9 +117,7 @@ export async function GET(request) {
           ? JSON.parse(item.total_distance || '{}')
           : item.total_distance || {};
       const timeData =
-        typeof item.time === 'string'
-          ? JSON.parse(item.time || '{}')
-          : item.time || {};
+        typeof item.time === 'string' ? JSON.parse(item.time || '{}') : item.time || {};
 
       const formattedTime = {};
       for (const [p, t] of Object.entries(timeData)) {
@@ -105,18 +129,36 @@ export async function GET(request) {
         };
       }
 
+      const taskCount =
+        taskCountMap.get(`${item.hub_id}_${item.delivery_date}`) ??
+        taskCountMap.get(item.delivery_date) ??
+        0;
+
+      const syncUser =
+        typeof item.sync_user === 'string'
+          ? JSON.parse(item.sync_user || '{}')
+          : item.sync_user || {};
+      const routeUser =
+        typeof item.route_user === 'string'
+          ? JSON.parse(item.route_user || '{}')
+          : item.route_user || {};
+
       return {
         id: item.id,
         _id: item.id,
         hubId: item.hub_id,
         name: item.name,
         deliveryDate: item.delivery_date,
-        routeUser: item.route_user,
-        createdBy: item.created_by,
-        updatedBy: item.updated_by,
-        createdTime: item.delivery_date,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
+        routeUser,
+        route_user: routeUser,
+        syncUser,
+        sync_user: syncUser,
+        createdBy: syncUser.created_by || null,
+        createdAt: syncUser.created_at || null,
+        updatedBy: syncUser.updated_by || null,
+        updatedAt: syncUser.updated_at || null,
+        createdTime: routeUser.created_at || item.delivery_date,
+        taskCount,
         dispatchStatus: 'done',
         dropped: item.dropped,
         histories: item.histories,
@@ -147,7 +189,9 @@ const getDeliveryDate = async (item, apiUrl, apiToken) => {
   for (const r of item.result?.routing || []) {
     for (const t of r.trips || []) {
       if (!t.isHub && t.visitId) {
-        const id = String(t.visitId).replace(/^taskId-/, '').trim();
+        const id = String(t.visitId)
+          .replace(/^taskId-/, '')
+          .trim();
         if (id) customerTaskIds.push(id);
       }
     }
@@ -227,7 +271,7 @@ export async function POST(request) {
       const existingRouting = await prisma.routingResult.findFirst({
         where: {
           delivery_date: deliveryDate,
-          ...(hubId ? { hub_id: String(hubId) } : {}),
+          ...(hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {}),
         },
         select: { id: true },
       });
@@ -246,7 +290,10 @@ export async function POST(request) {
 
     if (!apiUrl || !apiToken) {
       return NextResponse.json(
-        { error: 'Konfigurasi server API hilang: NEXT_PUBLIC_API_URL atau API_TOKEN tidak ditemukan.' },
+        {
+          error:
+            'Konfigurasi server API hilang: NEXT_PUBLIC_API_URL atau API_TOKEN tidak ditemukan.',
+        },
         { status: 500 }
       );
     }
@@ -264,7 +311,7 @@ export async function POST(request) {
     externalUrl.searchParams.append('dateFrom', dateFromStr);
     externalUrl.searchParams.append('dateTo', dateToStr);
     externalUrl.searchParams.append('limit', '1000');
-    if (hubId) {
+    if (hubId && hubId !== 'all') {
       externalUrl.searchParams.append('hubId', hubId);
     }
 
@@ -295,11 +342,7 @@ export async function POST(request) {
     const targetResultsWithDate = (
       await Promise.all(
         candidateResults.map(async (item) => {
-          const itemDeliveryDate = await getDeliveryDate(
-            item,
-            apiUrl,
-            apiToken
-          );
+          const itemDeliveryDate = await getDeliveryDate(item, apiUrl, apiToken);
           return itemDeliveryDate === deliveryDate ? item : null;
         })
       )
@@ -317,7 +360,7 @@ export async function POST(request) {
     }
 
     const rawDrivers = await prisma.driver.findMany({
-      where: hubId ? { hubs: { some: { id: hubId } } } : {},
+      where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {},
     });
 
     const driversMap = {};
@@ -343,7 +386,7 @@ export async function POST(request) {
       await prisma.routingResult.deleteMany({
         where: {
           delivery_date: deliveryDate,
-          ...(hubId ? { hub_id: String(hubId) } : {}),
+          ...(hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {}),
           id: { notIn: targetResultIds },
         },
       });
@@ -422,7 +465,6 @@ export async function POST(request) {
         r.totalSpentTime = spent;
         r.spentHour = toHr(spent);
 
-
         const email = (r.assignee || '').toLowerCase().trim();
         if (email) driverEmailsSet.add(email);
 
@@ -450,15 +492,17 @@ export async function POST(request) {
 
         return r;
       });
-      
+
       const activeVehicles = cleanedRouting.filter((r) => {
         const customerTrips = (r.trips || []).filter((t) => !t.isHub && t.visitId);
         return customerTrips.length > 0;
       });
 
-
-
-      const routeUser = typeof item.user === 'object' ? item.user?.name : item.user || null;
+      const rawUser = typeof item.user === 'object' ? item.user?.name : item.user || null;
+      const routeUser = {
+        created_by: rawUser || item.createdBy || null,
+        created_at: item.createdTime ? formatUTC7(item.createdTime, 'YYYY-MM-DDTHH:mm:ss') : null,
+      };
 
       const totalDistanceMap = {};
       const timeMap = {};
@@ -470,7 +514,9 @@ export async function POST(request) {
           .map((t) => String(t.visitId));
 
         const vehicleName = r.vehicleName || r.basePlat || '-';
-        const vehicleKey = (r.vehicleId ? String(r.vehicleId).trim() : vehicleName).toLowerCase().trim();
+        const vehicleKey = (r.vehicleId ? String(r.vehicleId).trim() : vehicleName)
+          .toLowerCase()
+          .trim();
         const tripSignature = [...taskIds].sort().join(',');
 
         const existingTrips = seenVehicles.get(vehicleKey);
@@ -533,9 +579,7 @@ export async function POST(request) {
         null;
 
       if (!targetHubId) {
-        throw new Error(
-          `Hub ID tidak ditemukan untuk data routing "${item.name || item._id}".`
-        );
+        throw new Error(`Hub ID tidak ditemukan untuk data routing "${item.name || item._id}".`);
       }
 
       let historiesData = {
@@ -561,6 +605,25 @@ export async function POST(request) {
 
       const droppedCount = Array.isArray(item.result?.dropped) ? item.result.dropped.length : 0;
 
+      const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
+      const existingRouting = await prisma.routingResult.findUnique({
+        where: { id: String(item._id) },
+        select: { sync_user: true },
+      });
+
+      const existingSyncUser = existingRouting?.sync_user
+        ? typeof existingRouting.sync_user === 'string'
+          ? JSON.parse(existingRouting.sync_user)
+          : existingRouting.sync_user
+        : null;
+
+      const syncUser = {
+        created_by: existingSyncUser?.created_by || currentUser,
+        created_at: existingSyncUser?.created_at || nowIso,
+        updated_by: currentUser,
+        updated_at: nowIso,
+      };
+
       await prisma.routingResult.upsert({
         where: { id: String(item._id) },
         update: {
@@ -573,7 +636,7 @@ export async function POST(request) {
           hub_times: hubTimesMap,
           dropped: droppedCount,
           histories: historiesData,
-          updated_by: currentUser,
+          sync_user: syncUser,
         },
         create: {
           id: String(item._id),
@@ -586,8 +649,7 @@ export async function POST(request) {
           hub_times: hubTimesMap,
           dropped: droppedCount,
           histories: historiesData,
-          created_by: currentUser,
-          updated_by: currentUser,
+          sync_user: syncUser,
         },
       });
 
@@ -609,4 +671,3 @@ export async function POST(request) {
     );
   }
 }
-

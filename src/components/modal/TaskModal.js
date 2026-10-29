@@ -387,11 +387,15 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
       : '';
   const actualVisitHour = formatMinutesToHHMM(actualVisitMins, true);
 
-  const correctCord =
-    {
-      YA: isIndonesian ? 'Ya' : 'Yes',
-      TIDAK: isIndonesian ? 'Tidak' : 'No',
-    }[taskData.gpsSesuai] ?? '-';
+  const newCoordVal =
+    taskData?.newCoordinate || taskData?.new_coordinate || taskData?.klikLokasiClient || null;
+  const correctCord = newCoordVal
+    ? isIndonesian
+      ? 'Tidak'
+      : 'No'
+    : isIndonesian
+      ? 'Ya'
+      : 'Yes';
 
   const activePendingDetail = pendingDetail || taskData?.pendingDetail || null;
   const originalDelivery = taskData.originalStatus || taskData.statusDelivery || taskData.status;
@@ -460,10 +464,10 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
         onValueClick={goToMapTab}
       />
       <Field label={translate('task_detail.modal.correct_coord')} value={correctCord} />
-      {(correctCord === 'Tidak' || correctCord === 'No') && (
+      {newCoordVal && (
         <Field
           label={translate('task_detail.modal.new_coord')}
-          value={renderCoordinate(taskData.klikLokasiClient)}
+          value={renderCoordinate(newCoordVal)}
           isCopy={true}
           onValueClick={goToMapTab}
         />
@@ -651,7 +655,7 @@ function HistoryTab({ histories, putDiffs, reassignSet, translate }) {
 function MapTab({ taskData, translate, isIndonesian }) {
   const expectedCoord = parseCoord(taskData.longlat);
   const doneCoord = parseCoord(taskData.doneCoordinate);
-  const newCoord = parseCoord(taskData.klikLokasiClient);
+  const newCoord = parseCoord(taskData.newCoordinate || taskData.new_coordinate || taskData.klikLokasiClient);
   const mapBounds = [expectedCoord, doneCoord, newCoord].filter(Boolean);
 
   return (

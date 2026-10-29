@@ -52,6 +52,8 @@ export const fields = {
     'travelDistance',
     'travelDuration',
     'typeStorage',
+    'updatedBy',
+    'updatedTime',
     'visitTime',
     'volumeCbm',
     'weightKg',

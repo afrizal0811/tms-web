@@ -1,5 +1,5 @@
 import PendingReasonNotifier from '@/components/PendingReasonNotifier';
-import RoutingSync from '@/components/RoutingSync';
+import DataSync from '@/components/DataSync';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
 import VehicleTagMappingModal from '@/components/modal/VehicleTagMappingModal';
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
           <LanguageProvider>
             <SystemUpdateModal />
             <PendingReasonNotifier />
-            <RoutingSync />
+            <DataSync />
             <TokenExpirationModal />
             <VehicleTagMappingModal />
             <Toaster

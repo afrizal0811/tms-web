@@ -11,14 +11,10 @@ export function calculateGroupFive(tasksData, driverData, historiesData, g2Detai
 
   if (Array.isArray(tasksData)) {
     tasksData.forEach((task) => {
-      let val = task.gpsSesuai;
-      if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
-
-      if (
-        String(val || '')
-          .trim()
-          .toUpperCase() === 'TIDAK'
-      ) {
+      const hasNewCoord = Boolean(
+        task.newCoordinate || task.new_coordinate || task.klikLokasiClient
+      );
+      if (hasNewCoord) {
         countMasterMaintenance++;
       }
     });

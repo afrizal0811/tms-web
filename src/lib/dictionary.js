@@ -703,12 +703,14 @@ export const dictionary = {
           hubs: 'Data Cabang',
           roles: 'Data Peran',
           routing_results: 'Data Hasil Routing',
+          routing_and_tasks: 'Data Routing & Tugas',
+          tasks: 'Data Tugas',
           sync_title: 'Sinkronisasi Data Terpusat',
           subtitle: 'Penyelarasan data master tiap cabang dengan server MileApp',
           title: 'Sinkronisasi',
           modal: {
-            title: 'Ubah Tanggal Pengiriman',
-            subtitle: 'Sesuaikan tanggal pengiriman untuk data ruting yang tersedia',
+            title: 'Detail Data Hasil Routing',
+            subtitle: 'Informasi data routing dan jumlah tugas pada tanggal pengiriman',
           },
         },
         button: {
@@ -1466,12 +1468,14 @@ export const dictionary = {
           hubs: 'Branch Data',
           roles: 'Role Data',
           routing_results: 'Routing Results',
+          routing_and_tasks: 'Routing & Tasks Data',
+          tasks: 'Task Data',
           sync_title: 'Centralized Data Synchronization',
           subtitle: 'Master data alignment for each branch with the MileApp server',
           title: 'Synchronize',
           modal: {
-            title: 'Change Delivery Date',
-            subtitle: 'Adjust delivery dates for available routing data',
+            title: 'Routing Result Details',
+            subtitle: 'Routing data information and task count for the delivery date',
           },
         },
         button: {

@@ -1,6 +1,6 @@
 import { DELIVERY_STATUS_KEYS, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import prisma from '@/lib/prisma';
-import { formatDateUniversal, normalizeEmail, toApiDateString } from '@/lib/utils';
+import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ const TARGET_STATUSES = [
 ];
 
 const checkCache = new Map();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function clearPendingCheckCache() {
   checkCache.clear();
@@ -26,24 +26,7 @@ function getActiveMonthDateRange() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
   return [start, end];
-}
-
-function createDateChunks(start, end, maxDays) {
-  const chunks = [];
-  let curr = new Date(start);
-  while (curr <= end) {
-    let next = new Date(curr);
-    next.setDate(next.getDate() + maxDays - 1);
-    next.setHours(23, 59, 59, 999);
-    if (next > end) next = new Date(end);
-    chunks.push({ from: toApiDateString(curr), to: toApiDateString(next) });
-    curr = new Date(next);
-    curr.setDate(curr.getDate() + 1);
-    curr.setHours(0, 0, 0, 0);
-  }
-  return chunks;
 }
 
 export async function GET(request) {
@@ -71,7 +54,7 @@ export async function GET(request) {
       return NextResponse.json({ count: cached.count }, { status: 200 });
     }
 
-    const driverWhere = hubId ? { hubs: { some: { id: hubId } } } : {};
+    const driverWhere = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
     const rawDrivers = await prisma.driver.findMany({ where: driverWhere });
 
     const validDriverEmails = new Set();
@@ -88,91 +71,38 @@ export async function GET(request) {
       return NextResponse.json({ count: 0 }, { status: 200 });
     }
 
-    const taskStartObj = new Date(startDate);
-    taskStartObj.setDate(taskStartObj.getDate() - 4);
-    taskStartObj.setHours(0, 0, 0, 0);
-
-    const taskEndObj = new Date(endDate);
-    taskEndObj.setDate(taskEndObj.getDate() + 4);
-    taskEndObj.setHours(23, 59, 59, 999);
-
-    const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiToken = process.env.API_TOKEN;
-
-    if (!apiUrl || !apiToken) {
-      return NextResponse.json({ error: 'Variabel API tidak diatur di server.' }, { status: 500 });
+    const taskWhere = {
+      delivery_date: {
+        gte: startStr,
+        lte: endStr,
+      },
+    };
+    if (hubId && hubId !== 'all') {
+      taskWhere.hub_id = hubId;
     }
 
-    const taskFields = 'assignee,statusDelivery,status,startTime,doneTime,_id';
-
-    const fetchChunk = async (range) => {
-      try {
-        const externalUrl = new URL(`${apiUrl}/tasks`);
-        if (hubId) externalUrl.searchParams.append('hubId', hubId);
-        externalUrl.searchParams.append('timeFrom', range.from);
-        externalUrl.searchParams.append('timeTo', range.to);
-        externalUrl.searchParams.append('status', 'ONGOING,DONE');
-        externalUrl.searchParams.append('timeBy', 'startTime');
-        externalUrl.searchParams.append('limit', '1000');
-        externalUrl.searchParams.append('fields', taskFields);
-
-        const res = await fetch(externalUrl.toString(), {
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) return [];
-        const json = await res.json();
-        return Array.isArray(json) ? json : json?.data || json?.tasks?.data || [];
-      } catch (err) {
-        console.error('Error fetching task chunk for pending check:', err);
-        return [];
-      }
-    };
-
-    const chunkResults = await Promise.all(taskRanges.map((range) => fetchChunk(range)));
-    const allTasks = chunkResults.flat();
+    const allTasks = await prisma.task.findMany({
+      where: taskWhere,
+      select: {
+        id: true,
+        delivery_date: true,
+        status: true,
+        status_delivery: true,
+        assignee: true,
+      },
+    });
 
     const targetTaskIds = [];
     allTasks.forEach((task) => {
-      const dObj = new Date(task.startTime || task.doneTime);
-      if (!isNaN(dObj.getTime())) {
-        const wibDate = formatDateUniversal(dObj, 'YYYY-MM-DD');
-        if (wibDate < startStr || wibDate > endStr) return;
-      }
-
-      let statusDeliveryRaw = '';
-      if (Array.isArray(task.statusDelivery)) {
-        statusDeliveryRaw = task.statusDelivery[0] || '';
-      } else if (typeof task.statusDelivery === 'string') {
-        statusDeliveryRaw = task.statusDelivery.split(',')[0];
-      } else if (task.statusDelivery) {
-        statusDeliveryRaw = String(task.statusDelivery);
-      } else if (typeof task.status === 'string') {
-        statusDeliveryRaw = task.status.split(',')[0];
-      } else if (task.status) {
-        statusDeliveryRaw = String(task.status);
-      }
-      const status = statusDeliveryRaw.trim().toUpperCase();
+      let statusDeliveryRaw = task.status_delivery || task.status || '';
+      const status = statusDeliveryRaw.split(',')[0].trim().toUpperCase();
 
       if (!TARGET_STATUSES.includes(status)) return;
 
-      let emailRaw = '';
-      if (Array.isArray(task.assignee)) {
-        emailRaw = task.assignee[0] || '';
-      } else if (typeof task.assignee === 'string') {
-        emailRaw = task.assignee.split(',')[0];
-      } else if (task.assignee) {
-        emailRaw = String(task.assignee);
-      }
-      const email = normalizeEmail(emailRaw);
+      const email = normalizeEmail((task.assignee || '').split(',')[0]);
       if (!validDriverEmails.has(email)) return;
 
-      targetTaskIds.push(task._id);
+      targetTaskIds.push(task.id);
     });
 
     if (targetTaskIds.length === 0) {
