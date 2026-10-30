@@ -11,14 +11,17 @@ import { toastError } from '@/lib/toast';
 import {
   formatDateUniversal,
   formatMinutesToHHMM,
-  getBasePlate,
   isEmpty,
   parseCustomerString,
   ProperCaseText,
 } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { getPendingDetailByTaskId } from '@/lib/api/mileapp/pendingDetails';
-import { DELIVERY_STATUS_KEYS, deliveryTooltip, normalizeDeliveryStatus } from '@/lib/deliveryStatus';
+import {
+  DELIVERY_STATUS_KEYS,
+  deliveryTooltip,
+  normalizeDeliveryStatus,
+} from '@/lib/deliveryStatus';
 import InformationButton from '../button/InformationButton';
 import CopyButton from '../button/CopyButton';
 import JsonTree from '../JsonTree';
@@ -389,13 +392,6 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
 
   const newCoordVal =
     taskData?.newCoordinate || taskData?.new_coordinate || taskData?.klikLokasiClient || null;
-  const correctCord = newCoordVal
-    ? isIndonesian
-      ? 'Tidak'
-      : 'No'
-    : isIndonesian
-      ? 'Ya'
-      : 'Yes';
 
   const activePendingDetail = pendingDetail || taskData?.pendingDetail || null;
   const originalDelivery = taskData.originalStatus || taskData.statusDelivery || taskData.status;
@@ -434,7 +430,12 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Field label={translate('common.task_id')} value={taskData._id} isCopy={true} />
+      <Field
+        label={translate('common.task_id')}
+        value={taskData._id}
+        isCopy={true}
+        isTruncated={true}
+      />
       <Field label={translate('common.open_time')} value={taskData.openTime} />
       <Field label={translate('common.close_time')} value={taskData.closeTime} />
       <Field label={translate('common.volume')} value={taskData.volumeCbm} needEmpty={true} />
@@ -463,7 +464,6 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
         isCopy={true}
         onValueClick={goToMapTab}
       />
-      <Field label={translate('task_detail.modal.correct_coord')} value={correctCord} />
       {newCoordVal && (
         <Field
           label={translate('task_detail.modal.new_coord')}
@@ -492,33 +492,47 @@ function DataTab({ taskData, pendingDetail, goToMapTab, translate, isIndonesian 
 }
 
 function RoutingTab({ taskData, resultData, translate }) {
-  let rTravelTime = 0;
-  let rWaitingTime = 0;
-  let rVisitTime = 0;
-  let rTravelTimeHour = 0;
-  let rWaitingTimeHour = 0;
-  let rVisitTimeHour = 0;
   const rName = resultData?.name || '-';
 
-  if (resultData?.time && (taskData?.basePlat || taskData?.vehicleName || taskData?.plat)) {
-    const rawPlat = taskData.basePlat || taskData.vehicleName || taskData.plat;
-    const plat = getBasePlate(rawPlat) || rawPlat;
-    const tObj = resultData.time[plat] || resultData.time[rawPlat];
-    if (tObj) {
-      rTravelTime = tObj.travelTime > 0 ? `${tObj.travelTime} ${translate('common.minute')}` : 0;
-      rWaitingTime = tObj.waitingTime > 0 ? `${tObj.waitingTime} ${translate('common.minute')}` : 0;
-      rVisitTime = tObj.visitTime > 0 ? `${tObj.visitTime} ${translate('common.minute')}` : 0;
-      rTravelTimeHour = formatMinutesToHHMM(tObj.travelTime);
-      rWaitingTimeHour = formatMinutesToHHMM(tObj.waitingTime);
-      rVisitTimeHour = formatMinutesToHHMM(tObj.visitTime);
+  let visitMins = Number(taskData?.visitTime ?? taskData?.others?.visitTime);
+  if (isNaN(visitMins) && taskData?.eta && taskData?.etd) {
+    const [etaH, etaM] = taskData.eta.split(':').map(Number);
+    const [etdH, etdM] = taskData.etd.split(':').map(Number);
+    if (!isNaN(etaH) && !isNaN(etdH)) {
+      let diff = etdH * 60 + etdM - (etaH * 60 + etaM);
+      if (diff < 0) diff += 24 * 60;
+      visitMins = diff;
     }
   }
+  const planVisitMins = !isNaN(visitMins) ? visitMins : 0;
+  const planVisitHour = formatMinutesToHHMM(planVisitMins);
+  const planVisitTooltip = planVisitMins > 0 ? `${planVisitMins} ${translate('common.minute')}` : '';
+
+  const waitingMins = Number(taskData?.waitingTime ?? taskData?.others?.waitingTime ?? 0) || 0;
+  const waitingHour = formatMinutesToHHMM(waitingMins);
+  const waitingTooltip = waitingMins > 0 ? `${waitingMins} ${translate('common.minute')}` : '';
+
+  let plannedTravelMins =
+    taskData?.plannedTravelDuration != null ? Number(taskData.plannedTravelDuration) : null;
+  let plannedTravelHour =
+    taskData?.plannedTravelDurationHour ||
+    (plannedTravelMins != null ? formatMinutesToHHMM(plannedTravelMins) : null);
+
+  if (!plannedTravelHour && taskData?.travelDuration != null) {
+    plannedTravelMins = Math.round(Number(taskData.travelDuration));
+    plannedTravelHour = formatMinutesToHHMM(plannedTravelMins);
+  }
+
+  const plannedTravelTooltip =
+    plannedTravelMins != null && plannedTravelMins > 0
+      ? `${plannedTravelMins} ${translate('common.minute')}`
+      : '';
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Field
         label={translate('common.routing_id')}
-        value={taskData.routingResultId}
+        value={taskData?.routingResultId}
         isCopy={true}
         isTruncated={true}
       />
@@ -528,20 +542,20 @@ function RoutingTab({ taskData, resultData, translate }) {
         isCopy={true}
         isTruncated={true}
       />
-      <Field label={translate('common.eta')} value={taskData.eta} />
-      <Field label={translate('common.etd')} value={taskData.etd} />
-      <Field label={translate('common.plan_visit')} tooltip={rVisitTime} value={rVisitTimeHour} />
-      <Field label={translate('common.plan_seq')} value={taskData.routePlannedOrder} />
+      <Field label={translate('common.eta')} value={taskData?.eta} />
+      <Field label={translate('common.etd')} value={taskData?.etd} />
+      <Field label={translate('common.plan_visit')} tooltip={planVisitTooltip} value={planVisitHour} />
+      <Field label={translate('common.plan_seq')} value={taskData?.routePlannedOrder} />
       <Field label={translate('common.plan_travel_distance')} value={taskData?.distance} />
       <Field
         label={translate('common.plan_travel_duration')}
-        tooltip={rTravelTime}
-        value={rTravelTimeHour}
+        tooltip={plannedTravelTooltip}
+        value={plannedTravelHour || '-'}
       />
       <Field
         label={translate('task_detail.modal.waiting_time')}
-        tooltip={rWaitingTime}
-        value={rWaitingTimeHour}
+        tooltip={waitingTooltip}
+        value={waitingHour}
       />
     </div>
   );
@@ -655,7 +669,9 @@ function HistoryTab({ histories, putDiffs, reassignSet, translate }) {
 function MapTab({ taskData, translate, isIndonesian }) {
   const expectedCoord = parseCoord(taskData.longlat);
   const doneCoord = parseCoord(taskData.doneCoordinate);
-  const newCoord = parseCoord(taskData.newCoordinate || taskData.new_coordinate || taskData.klikLokasiClient);
+  const newCoord = parseCoord(
+    taskData.newCoordinate || taskData.new_coordinate || taskData.klikLokasiClient
+  );
   const mapBounds = [expectedCoord, doneCoord, newCoord].filter(Boolean);
 
   return (

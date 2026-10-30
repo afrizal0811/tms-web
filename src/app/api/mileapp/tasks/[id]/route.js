@@ -2,6 +2,51 @@ import prisma from '@/lib/prisma';
 import { formatMinutesToHHMM, formatUTC7, getBasePlate } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
+let userCache = {
+  data: {},
+  expiresAt: 0,
+};
+
+async function getMileAppUserMap(apiUrl, apiToken) {
+  const now = Date.now();
+  if (userCache.expiresAt > now && Object.keys(userCache.data).length > 0) {
+    return userCache.data;
+  }
+
+  try {
+    const usersUrl = new URL(`${apiUrl}/users`);
+    usersUrl.searchParams.append('status', 'active');
+    usersUrl.searchParams.append('limit', '1000');
+
+    const res = await fetch(usersUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      const list = json?.data || [];
+      const map = {};
+      list.forEach((u) => {
+        if (u.email) {
+          map[u.email.toLowerCase().trim()] = u.name;
+        }
+      });
+      userCache = {
+        data: map,
+        expiresAt: now + 60 * 60 * 1000,
+      };
+      return map;
+    }
+  } catch (err) {
+    console.error('Gagal mengambil data users:', err);
+  }
+
+  return userCache.data || {};
+}
+
 export async function GET(request, { params }) {
   try {
     const { searchParams } = new URL(request.url);
@@ -24,13 +69,19 @@ export async function GET(request, { params }) {
     }
 
     const externalUrl = new URL(`${apiUrl}/task/${id}`);
+    const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
 
-    const externalResponse = await fetch(externalUrl.toString(), {
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const [externalResponse, userMap, rawDrivers, mappingsDB] = await Promise.all([
+      fetch(externalUrl.toString(), {
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+        },
+      }),
+      getMileAppUserMap(apiUrl, apiToken),
+      prisma.driver.findMany({ where }),
+      prisma.vehicleMapping.findMany(),
+    ]);
 
     const fetchData = await externalResponse.json();
     let data = fetchData ? fetchData.task : fetchData;
@@ -53,46 +104,6 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
-
-    try {
-      const usersUrl = new URL(`${apiUrl}/users`);
-      const usersResponse = await fetch(usersUrl.toString(), {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (usersResponse.ok) {
-        const usersFetchData = await usersResponse.json();
-        const usersList = usersFetchData?.data || [];
-        const userMap = {};
-        usersList.forEach((u) => {
-          if (u.email) {
-            userMap[u.email.toLowerCase().trim()] = u.name;
-          }
-        });
-
-        const mapUserName = (email) => {
-          if (!email) return null;
-          const cleanEmail = String(email).toLowerCase().trim();
-          return userMap[cleanEmail] || email;
-        };
-
-        data.createdByName = mapUserName(data.createdBy);
-        data.updatedByName = mapUserName(data.updatedBy);
-        data.assignedByName = mapUserName(data.assignedBy);
-        data.doneByName = mapUserName(data.doneBy);
-      }
-    } catch (userErr) {
-      console.error('Gagal mengambil data users:', userErr);
-    }
-
-    const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
-    const [rawDrivers, mappingsDB] = await Promise.all([
-      prisma.driver.findMany({ where }),
-      prisma.vehicleMapping.findMany(),
-    ]);
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
       acc[curr.plat] = curr.mappedType;
@@ -118,6 +129,17 @@ export async function GET(request, { params }) {
         };
       }
     });
+
+    const mapUserName = (email) => {
+      if (!email) return null;
+      const cleanEmail = String(email).toLowerCase().trim();
+      return driversByEmail[cleanEmail]?.name || userMap[cleanEmail] || email;
+    };
+
+    data.createdByName = mapUserName(data.createdBy);
+    data.updatedByName = mapUserName(data.updatedBy);
+    data.assignedByName = mapUserName(data.assignedBy);
+    data.doneByName = mapUserName(data.doneBy);
 
     if (data.startTime) data.startTime = formatUTC7(data.startTime, 'YYYY-MM-DDTHH:mm:ss');
     if (data.endTime) data.endTime = formatUTC7(data.endTime, 'YYYY-MM-DDTHH:mm:ss');
@@ -217,6 +239,56 @@ export async function GET(request, { params }) {
     if (Array.isArray(data.gpsSesuai)) data.gpsSesuai = data.gpsSesuai.join(', ');
     if (Array.isArray(data.statusDelivery)) data.statusDelivery = data.statusDelivery.join(', ');
     if (Array.isArray(data.assignee)) data.assignee = data.assignee.join(', ');
+
+    let plannedTravelDuration = null;
+    if (data.routingResultId && data.routePlannedOrder != null && data.eta) {
+      const plateKey = data.basePlat || getBasePlate(data.plat) || data.plat;
+      if (data.routePlannedOrder > 1) {
+        const prevTask = await prisma.task.findFirst({
+          where: {
+            routing_result_id: data.routingResultId,
+            route_planned_order: data.routePlannedOrder - 1,
+            ...(plateKey ? { plat: { contains: plateKey } } : {}),
+          },
+          select: { etd: true },
+        });
+        if (prevTask?.etd) {
+          const [pH, pM] = prevTask.etd.split(':').map(Number);
+          const [eH, eM] = data.eta.split(':').map(Number);
+          if (!isNaN(pH) && !isNaN(eH)) {
+            let diff = (eH * 60 + eM) - (pH * 60 + pM);
+            if (diff < 0) diff += 24 * 60;
+            plannedTravelDuration = diff;
+          }
+        }
+      } else if (data.routePlannedOrder === 1) {
+        const routingRes = await prisma.routingResult.findUnique({
+          where: { id: data.routingResultId },
+          select: { hub_times: true },
+        });
+        const hubTimes =
+          typeof routingRes?.hub_times === 'string'
+            ? JSON.parse(routingRes.hub_times)
+            : routingRes?.hub_times || {};
+        const firstHub = (hubTimes[plateKey] || []).find(
+          (h) => h.category === 'first' || h.order === 0
+        );
+        if (firstHub?.etd) {
+          const [hH, hM] = firstHub.etd.split(':').map(Number);
+          const [eH, eM] = data.eta.split(':').map(Number);
+          if (!isNaN(hH) && !isNaN(eH)) {
+            let diff = (eH * 60 + eM) - (hH * 60 + hM);
+            if (diff < 0) diff += 24 * 60;
+            plannedTravelDuration = diff;
+          }
+        }
+      }
+    }
+
+    if (plannedTravelDuration != null) {
+      data.plannedTravelDuration = plannedTravelDuration;
+      data.plannedTravelDurationHour = formatMinutesToHHMM(plannedTravelDuration);
+    }
 
     return NextResponse.json(data);
   } catch (error) {

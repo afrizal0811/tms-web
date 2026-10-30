@@ -159,7 +159,7 @@ export const dictionary = {
         info_tutorial: 'Informasi Panduan ada di menu Bantuan',
         login_failed: 'Gagal login: {err}',
         login_success: 'Login berhasil!',
-        no_email_inactive: 'Surel tidak ditemukan atau user tidak aktif',
+        no_email_inactive: 'Surel tidak ditemukan atau akun tidak aktif',
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
       },
     },

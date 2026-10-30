@@ -67,18 +67,16 @@ export default function TaskPage() {
   );
 
   useEffect(() => {
-    if (isSuperadmin) {
-      const fetchHubs = async () => {
-        try {
-          const res = await getHubs();
-          setHubsData(res?.allHub);
-        } catch (err) {
-          toastError(t('common.toast.error', { err: err.message }), err);
-        }
-      };
-      fetchHubs();
-    }
-  }, [isSuperadmin, t]);
+    const fetchHubs = async () => {
+      try {
+        const res = await getHubs();
+        setHubsData(res?.allHub || []);
+      } catch (err) {
+        toastError(t('common.toast.error', { err: err.message }), err);
+      }
+    };
+    fetchHubs();
+  }, [t]);
 
   const fetchTasksData = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -100,14 +98,16 @@ export default function TaskPage() {
 
     setLoading(true);
     try {
-      const isShowAll = isSuperadmin && isAllHub;
+      const isShowAll = isAllHub;
       const startDateStr = formatDateUniversal(localStart, 'YYYY-MM-DD');
       const endDateStr = formatDateUniversal(localEnd, 'YYYY-MM-DD');
 
       const [res, pendingDetailsData] = await Promise.all([
         getTasks({
-          isShowAll: isShowAll,
+          isShowAll,
           status: 'DONE,UNASSIGNED,ONGOING',
+          dateFrom: startDateStr,
+          dateTo: endDateStr,
           timeFrom: toApiDateString(localStart),
           timeTo: toApiDateString(localEnd),
         }),
@@ -129,7 +129,7 @@ export default function TaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, isAllHub, isSuperadmin, t]);
+  }, [startDate, endDate, isAllHub, t]);
 
   useEffect(() => {
     fetchTasksData();
@@ -154,10 +154,7 @@ export default function TaskPage() {
     };
   }, [fetchTasksData]);
 
-  const hubMap = useMemo(
-    () => new Map(hubsData?.map((hub) => [hub._id, hub.name])),
-    [hubsData]
-  );
+  const hubMap = useMemo(() => new Map(hubsData?.map((hub) => [hub._id, hub.name])), [hubsData]);
 
   const processedData = useMemo(() => {
     let result = tasks.map((task) => {
@@ -353,9 +350,7 @@ export default function TaskPage() {
 
             return (
               <div className="inline-flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-red-600 dark:text-red-400">
-                  {row._statusDel}
-                </span>
+                <span className="font-bold text-red-600 dark:text-red-400">{row._statusDel}</span>
                 <span onClick={(e) => e.stopPropagation()}>
                   <InformationButton infoText={tooltipContent} size="4" />
                 </span>

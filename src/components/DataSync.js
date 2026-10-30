@@ -1,7 +1,7 @@
 'use client';
 
 import { syncOperationalData } from '@/lib/api/mileapp';
-import { getLocalStorage } from '@/lib/localStorageHandler';
+import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
 import { formatDateUniversal } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
@@ -32,6 +32,12 @@ export default function DataSync() {
       const { storedUser, storedLocation } = getLocalStorage();
       if (!storedUser || !storedLocation) return;
 
+      const superadminId = getSuperadminRoleId();
+      const isSuper =
+        Boolean(superadminId && String(storedUser.roleId) === String(superadminId)) ||
+        ['superadmin', 'owner'].includes(String(storedUser.role?.name || '').toLowerCase());
+      const targetHubId = isSuper ? 'all' : storedLocation;
+
       isSyncingRef.current = true;
       try {
         const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
@@ -40,7 +46,7 @@ export default function DataSync() {
         try {
           const res = await syncOperationalData({
             deliveryDate: todayStr,
-            hubId: storedLocation,
+            hubId: targetHubId,
             entities: ['results', 'tasks'],
           });
 
@@ -61,7 +67,7 @@ export default function DataSync() {
           try {
             await syncOperationalData({
               deliveryDate: dStr,
-              hubId: storedLocation,
+              hubId: targetHubId,
               entities: ['location-histories'],
             });
           } catch (err) {
