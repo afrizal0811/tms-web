@@ -10,9 +10,9 @@ export async function GET(request) {
     const hubsWithDriverStatus = await prisma.hub.findMany({
       include: {
         drivers: {
-          orderBy: { updatedAt: 'desc' },
+          orderBy: { updated_at: 'desc' },
           take: 1,
-          select: { updatedAt: true, updateBy: true },
+          select: { updated_at: true, update_by: true },
         },
       },
     });
@@ -21,8 +21,8 @@ export async function GET(request) {
       return {
         hubId: hub.id,
         _max: {
-          updatedAt: hub.drivers.length > 0 ? hub.drivers[0].updatedAt : null,
-          updateBy: hub.drivers.length > 0 ? hub.drivers[0].updateBy : null,
+          updatedAt: hub.drivers.length > 0 ? (hub.drivers[0].updated_at ?? hub.drivers[0].updatedAt) : null,
+          updateBy: hub.drivers.length > 0 ? (hub.drivers[0].update_by ?? hub.drivers[0].updateBy) : null,
         },
       };
     });
@@ -30,15 +30,15 @@ export async function GET(request) {
     if (!selectedStatus || !selectedStatus._max?.updatedAt) {
       const latestDriver = await prisma.driver.findFirst({
         where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : undefined,
-        orderBy: { updatedAt: 'desc' },
-        select: { updatedAt: true, updateBy: true },
+        orderBy: { updated_at: 'desc' },
+        select: { updated_at: true, update_by: true },
       });
       if (latestDriver) {
         selectedStatus = {
           hubId: hubId || 'all',
           _max: {
-            updatedAt: latestDriver.updatedAt,
-            updateBy: latestDriver.updateBy,
+            updatedAt: latestDriver.updated_at ?? latestDriver.updatedAt,
+            updateBy: latestDriver.update_by ?? latestDriver.updateBy,
           },
         };
       }

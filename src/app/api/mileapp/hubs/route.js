@@ -13,12 +13,12 @@ export async function GET(request) {
       _id: hub.id,
       name: hub.name.replace('Hub ', ''),
       acronym: hub.acronym,
-      hasPendingGR: hub.hasPendingGR || false,
-      hasPartialRouting: hub.hasPartialRouting || false,
+      hasPendingGR: hub.has_pending_gr || false,
+      hasPartialRouting: hub.has_partial_routing || false,
       lat: hub.lat,
       lng: hub.lng,
-      updatedAt: hub.updatedAt,
-      updateBy: hub.updateBy,
+      updatedAt: hub.updated_at,
+      updateBy: hub.update_by,
       hasVms: hub.has_vms || false,
       isActive: hub.is_active || false,
     }));
@@ -68,7 +68,6 @@ export async function POST(request) {
 
     const responseData = await externalResponse.json();
 
-    // Pastikan kita mendapatkan array dari respons API Vendor
     const hubsArray = Array.isArray(responseData) ? responseData : responseData.data;
 
     if (!Array.isArray(hubsArray)) {
@@ -76,11 +75,9 @@ export async function POST(request) {
     }
 
     const upsertPromises = hubsArray.map((hub) => {
-      // Antisipasi letak data koordinat dari API Vendor
       const lat = hub.lat ?? hub.latitude ?? hub.location?.lat ?? null;
       const lng = hub.lng ?? hub.longitude ?? hub.location?.lng ?? hub.location?.lon ?? null;
 
-      // Gunakan pengecekan eksplisit agar nilai truthy float terbaca sempurna
       const parsedLat = lat !== null && lat !== undefined ? parseFloat(lat) : null;
       const parsedLng = lng !== null && lng !== undefined ? parseFloat(lng) : null;
 
@@ -90,14 +87,14 @@ export async function POST(request) {
           name: hub.name,
           lat: parsedLat,
           lng: parsedLng,
-          ...(updateBy ? { updateBy } : {}),
+          ...(updateBy ? { update_by: updateBy } : {}),
         },
         create: {
           id: String(hub._id),
           name: hub.name,
           lat: parsedLat,
           lng: parsedLng,
-          ...(updateBy ? { updateBy } : {}),
+          ...(updateBy ? { update_by: updateBy } : {}),
         },
       });
     });
@@ -129,10 +126,10 @@ export async function PATCH(req) {
       updateData.acronym = acronym && String(acronym).trim() !== '' ? String(acronym).trim() : null;
     }
     if (hasPendingGR !== undefined && hasPendingGR !== null) {
-      updateData.hasPendingGR = hasPendingGR === true || hasPendingGR === 'true';
+      updateData.has_pending_gr = hasPendingGR === true || hasPendingGR === 'true';
     }
     if (hasPartialRouting !== undefined && hasPartialRouting !== null) {
-      updateData.hasPartialRouting = hasPartialRouting === true || hasPartialRouting === 'true';
+      updateData.has_partial_routing = hasPartialRouting === true || hasPartialRouting === 'true';
     }
     if (hasVms !== undefined && hasVms !== null) {
       updateData.has_vms = hasVms === true || hasVms === 'true';
@@ -146,8 +143,22 @@ export async function PATCH(req) {
       data: updateData,
     });
 
+    const formattedUpdatedHub = {
+      _id: updatedHub.id,
+      name: updatedHub.name.replace('Hub ', ''),
+      acronym: updatedHub.acronym,
+      hasPendingGR: updatedHub.has_pending_gr || false,
+      hasPartialRouting: updatedHub.has_partial_routing || false,
+      lat: updatedHub.lat,
+      lng: updatedHub.lng,
+      updatedAt: updatedHub.updated_at,
+      updateBy: updatedHub.update_by,
+      hasVms: updatedHub.has_vms || false,
+      isActive: updatedHub.is_active || false,
+    };
+
     return NextResponse.json(
-      { message: 'Pengaturan cabang berhasil diperbarui', data: updatedHub },
+      { message: 'Pengaturan cabang berhasil diperbarui', data: formattedUpdatedHub },
       { status: 200 }
     );
   } catch (error) {

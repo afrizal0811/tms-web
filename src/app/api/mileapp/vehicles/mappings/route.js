@@ -19,11 +19,11 @@ export async function GET(request) {
       const basePlatsInHub = [...new Set(driversInHub.map((d) => getBasePlate(d.plat)).filter(Boolean))];
       mappings = await prisma.vehicleMapping.findMany({
         where: { plat: { in: basePlatsInHub } },
-        orderBy: [{ plat: 'asc' }, { mappedType: 'asc' }],
+        orderBy: [{ plat: 'asc' }, { mapped_type: 'asc' }],
       });
     } else {
       mappings = await prisma.vehicleMapping.findMany({
-        orderBy: [{ plat: 'asc' }, { mappedType: 'asc' }],
+        orderBy: [{ plat: 'asc' }, { mapped_type: 'asc' }],
       });
     }
 
@@ -34,7 +34,7 @@ export async function GET(request) {
       const base = getBasePlate(m.plat);
       if (!seen.has(base)) {
         seen.add(base);
-        dedupedMappings.push({ ...m, plat: base });
+        dedupedMappings.push({ ...m, mappedType: m.mapped_type ?? m.mappedType, plat: base });
       }
     }
 
@@ -70,8 +70,8 @@ export async function POST(request) {
     const transactions = Array.from(baseMap.entries()).map(([plat, mappedType]) =>
       prisma.vehicleMapping.upsert({
         where: { plat },
-        update: { mappedType },
-        create: { plat, mappedType },
+        update: { mapped_type: mappedType },
+        create: { plat, mapped_type: mappedType },
       })
     );
 
@@ -101,11 +101,11 @@ export async function PUT(request) {
     const basePlat = getBasePlate(body.plat);
     const updated = await prisma.vehicleMapping.upsert({
       where: { plat: basePlat },
-      update: { mappedType: body.mappedType },
-      create: { plat: basePlat, mappedType: body.mappedType },
+      update: { mapped_type: body.mappedType },
+      create: { plat: basePlat, mapped_type: body.mappedType },
     });
 
-    return NextResponse.json(updated, { status: 200 });
+    return NextResponse.json({ ...updated, mappedType: updated.mapped_type ?? updated.mappedType }, { status: 200 });
   } catch (error) {
     console.error('Error Update Vehicle Mapping:', error);
     const errorMessage =

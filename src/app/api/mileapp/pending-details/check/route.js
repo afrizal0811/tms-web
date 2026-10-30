@@ -111,12 +111,12 @@ export async function GET(request) {
     }
 
     const existingDetails = await prisma.pendingDetail.findMany({
-      where: { taskId: { in: targetTaskIds } },
+      where: { task_id: { in: targetTaskIds } },
     });
 
     const detailsMap = new Map();
     existingDetails.forEach((pd) => {
-      detailsMap.set(pd.taskId, pd);
+      detailsMap.set(pd.task_id || pd.taskId, pd);
     });
 
     let uncompletedCount = 0;
@@ -127,11 +127,11 @@ export async function GET(request) {
       const hasAnyData =
         pd &&
         Boolean(
-          (pd.groupReason && pd.groupReason.trim() !== '' && pd.groupReason !== '-') ||
-            (pd.detailReason && pd.detailReason.trim() !== '' && pd.detailReason !== '-') ||
-            (pd.internalExternal &&
-              pd.internalExternal.trim() !== '' &&
-              pd.internalExternal !== '-') ||
+          ((pd.group_reason ?? pd.groupReason) && (pd.group_reason ?? pd.groupReason).trim() !== '' && (pd.group_reason ?? pd.groupReason) !== '-') ||
+            ((pd.detail_reason ?? pd.detailReason) && (pd.detail_reason ?? pd.detailReason).trim() !== '' && (pd.detail_reason ?? pd.detailReason) !== '-') ||
+            ((pd.internal_external ?? pd.internalExternal) &&
+              (pd.internal_external ?? pd.internalExternal).trim() !== '' &&
+              (pd.internal_external ?? pd.internalExternal) !== '-') ||
             (pd.pic && pd.pic.trim() !== '' && pd.pic !== '-')
         );
 

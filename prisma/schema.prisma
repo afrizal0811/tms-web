@@ -11,96 +11,100 @@ datasource db {
 }
 
 model Hub {
-  id           String   @id
-  name         String
-  acronym      String?
-  hasPendingGR Boolean  @default(false)
-  hasPartialRouting Boolean  @default(false)
-  has_vms      Boolean @default(false)
-  time_zone    TimeZone @default(WIB) @map("time_zone")
-  lat          Float?
-  lng          Float?  
-  updateBy     String?
-  updatedAt    DateTime @updatedAt
-  drivers         Driver[] 
-  routing_results RoutingResult[]
-  tasks           Task[]
-  location_histories LocationHistory[]
-  is_active       Boolean @default(true)
+  id                  String            @id
+  name                String
+  acronym             String?
+  has_pending_gr      Boolean           @default(false)
+  has_partial_routing Boolean           @default(false)
+  has_vms             Boolean           @default(false)
+  time_zone           TimeZone          @default(WIB)
+  lat                 Float?
+  lng                 Float?
+  update_by           String?
+  updated_at          DateTime          @updatedAt
+  is_active           Boolean           @default(true)
+  drivers             Driver[]
+  routing_results     RoutingResult[]
+  tasks               Task[]
+  location_histories  LocationHistory[]
+
+  @@map("hubs")
 }
 
 model Driver {
-  id             String   @id
-  vehicle_id     String? 
-  vms_id         String?
-  imei           String?
-  vms_driver_id  String?
-  email          String
-  name           String
-  plat           String?
-  type           String?
-  startTime      String?
-  endTime        String?
-  startBreakTime String? 
-  endBreakTime   String?
-  multiday       Int?
-  speed          Float? 
-  costFactor     Float? 
-  tags           String? 
-  oddEven        String? 
-  minWeight      Float?  
-  maxWeight      Float?
-  minVolume      Float?
-  maxVolume      Float?
-  storage        String?
-  updateBy       String?
-  updatedAt      DateTime @updatedAt
+  id               String   @id
+  vehicle_id       String? 
+  vms_id           String?
+  imei             String?
+  vms_driver_id    String?
+  email            String
+  name             String
+  plat             String?
+  type             String?
+  start_time       String?
+  end_time         String?
+  start_break_time String? 
+  end_break_time   String?
+  multiday         Int?
+  speed            Float? 
+  cost_factor      Float? 
+  tags             String? 
+  odd_even         String? 
+  min_weight       Float?  
+  max_weight       Float?
+  min_volume       Float?
+  max_volume       Float?
+  storage          String?
+  update_by        String?
+  updated_at       DateTime @updatedAt
 
-  hubs           Hub[]    
+  hubs             Hub[]    
 
   @@map("drivers")
 }
 
 model Role {
-  id        String   @id
-  name      String
-  paths     String[] @default([])
-  updateBy  String?
-  updatedAt DateTime @updatedAt
+  id         String   @id
+  name       String
+  paths      String[] @default([])
+  update_by  String?
+  updated_at DateTime @updatedAt
+
+  @@map("roles")
 }
 
 model VehicleType {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("vehicle_type")
 }
 
 model VehicleMapping {
-  id         Int      @id @default(autoincrement())
-  plat       String   @unique
-  mappedType String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  plat        String   @unique
+  mapped_type String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@map("vehicle_mappings")
 }
 
 
 model TruckUsage {
-  id          Int      @id @default(autoincrement())
-  hubId       String
-  date        String  
-  storageType String   
-  vehicleType String 
-  count       Int      
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  hub_id       String
+  date         String  
+  storage_type String   
+  vehicle_type String 
+  count        Int      
+  description  String?  @db.Text
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  @@unique([hubId, date, storageType, vehicleType])
+  @@unique([hub_id, date, storage_type, vehicle_type])
   @@map("truck_usages")
 }
 
@@ -117,19 +121,19 @@ model Reason {
 
 model PendingDetail {
   id               String   @id @default(cuid())
-  taskId           String   @unique
+  task_id          String   @unique
   date             String  
   new_status       String?
-  internalExternal String?
-  detailReason     String?  @db.Text
-  groupReason      String?
+  internal_external String?
+  detail_reason    String?  @db.Text
+  group_reason     String?
   pic              String?
   created_by       String?
   updated_by       String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  @@map("pending_details")
+  @@map("pendings")
 }
 
 model RoutingResult {

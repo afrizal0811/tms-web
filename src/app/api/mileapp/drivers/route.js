@@ -16,8 +16,8 @@ export async function GET(request) {
     ]);
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mappedType;
-      acc[getBasePlate(curr.plat)] = curr.mappedType;
+      acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
+      acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
       return acc;
     }, {});
 
@@ -42,22 +42,22 @@ export async function GET(request) {
         type: mappedTypeStr,
         _rawType: d.type,
         tags: d.tags,
-        minWeight: d.minWeight,
-        maxWeight: d.maxWeight,
-        minVolume: d.minVolume,
-        maxVolume: d.maxVolume,
+        minWeight: d.min_weight ?? d.minWeight,
+        maxWeight: d.max_weight ?? d.maxWeight,
+        minVolume: d.min_volume ?? d.minVolume,
+        maxVolume: d.max_volume ?? d.maxVolume,
         storage: d.storage,
-        oddEven: d.oddEven,
+        oddEven: d.odd_even ?? d.oddEven,
         speed: d.speed,
-        costFactor: d.costFactor,
+        costFactor: d.cost_factor ?? d.costFactor,
         workingTime: {
-          startTime: d.startTime,
-          endTime: d.endTime,
+          startTime: d.start_time ?? d.startTime,
+          endTime: d.end_time ?? d.endTime,
           multiday: d.multiday,
         },
         breakTime: {
-          startTime: d.startBreakTime,
-          endTime: d.endBreakTime,
+          startTime: d.start_break_time ?? d.startBreakTime,
+          endTime: d.end_break_time ?? d.endBreakTime,
         },
       };
     });
@@ -209,22 +209,22 @@ export async function POST(request) {
             email: driverInfo ? driverInfo.email : '',
             plat: plat,
             type: type,
-            startTime: vehicle.workingTime?.startTime || null,
-            endTime: vehicle.workingTime?.endTime || null,
-            startBreakTime: vehicle.breakTime?.breakStartTime || null,
-            endBreakTime: vehicle.breakTime?.breakEndTime || null,
+            start_time: vehicle.workingTime?.startTime || null,
+            end_time: vehicle.workingTime?.endTime || null,
+            start_break_time: vehicle.breakTime?.breakStartTime || null,
+            end_break_time: vehicle.breakTime?.breakEndTime || null,
             multiday: mDay,
             speed: speedVal,
-            costFactor: costFactorVal,
+            cost_factor: costFactorVal,
             tags: tagsStr,
-            oddEven: vehicle.oddEven || null,
-            minWeight: wMin,
-            maxWeight: wMax,
-            minVolume: vMin,
-            maxVolume: vMax,
+            odd_even: vehicle.oddEven || null,
+            min_weight: wMin,
+            max_weight: wMax,
+            min_volume: vMin,
+            max_volume: vMax,
             storage: storage,
             vehicle_id: vehicle._id,
-            ...(updateBy ? { updateBy } : {}),
+            ...(updateBy ? { update_by: updateBy } : {}),
           };
 
           uniquePayloads.set(uniqueId, dataPayload);

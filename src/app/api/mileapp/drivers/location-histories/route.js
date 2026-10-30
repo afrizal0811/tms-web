@@ -60,8 +60,8 @@ export async function GET(request) {
           plat: true,
           vehicle_id: true,
           vms_id: true,
-          startTime: true,
-          endTime: true,
+          start_time: true,
+          end_time: true,
           multiday: true,
         },
       }),
@@ -76,8 +76,8 @@ export async function GET(request) {
           basePlat: getBasePlate(d.plat),
           vehicleId: d.vehicle_id || d.vms_id,
           workingTime: {
-            startTime: d.startTime,
-            endTime: d.endTime,
+            startTime: d.start_time ?? d.startTime,
+            endTime: d.end_time ?? d.endTime,
             multiday: d.multiday,
           },
         });

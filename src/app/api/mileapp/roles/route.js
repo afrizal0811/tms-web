@@ -13,8 +13,8 @@ export async function GET() {
       _id: role.id,
       name: role.name,
       paths: role.paths || [],
-      updatedAt: role.updatedAt,
-      updateBy: role.updateBy,
+      updatedAt: role.updated_at,
+      updateBy: role.update_by,
     }));
 
     return NextResponse.json(formattedRoles, { status: 200 });
@@ -58,8 +58,8 @@ export async function POST(request) {
       const upsertPromises = rolesArray.map((role) => {
         return prisma.role.upsert({
           where: { id: String(role._id) },
-          update: { name: role.name, ...(updateBy ? { updateBy } : {}) },
-          create: { id: String(role._id), name: role.name, ...(updateBy ? { updateBy } : {}) },
+          update: { name: role.name, ...(updateBy ? { update_by: updateBy } : {}) },
+          create: { id: String(role._id), name: role.name, ...(updateBy ? { update_by: updateBy } : {}) },
         });
       });
       await prisma.$transaction(upsertPromises);
@@ -86,8 +86,16 @@ export async function PATCH(request) {
       data: { paths: paths || [] },
     });
 
+    const formattedRole = {
+      _id: role.id,
+      name: role.name,
+      paths: role.paths || [],
+      updatedAt: role.updated_at,
+      updateBy: role.update_by,
+    };
+
     return NextResponse.json(
-      { message: 'Role akses berhasil diupdate', data: role },
+      { message: 'Role akses berhasil diupdate', data: formattedRole },
       { status: 200 }
     );
   } catch (error) {

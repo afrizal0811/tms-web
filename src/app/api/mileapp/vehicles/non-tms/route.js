@@ -10,11 +10,19 @@ export async function GET(request) {
   try {
     const data = await prisma.truckUsage.findMany({
       where: {
-        hubId,
+        hub_id: hubId,
         date: { gte: startDate, lte: endDate },
       },
     });
-    return NextResponse.json(data);
+    const formattedData = data.map((d) => ({
+      ...d,
+      hubId: d.hub_id,
+      storageType: d.storage_type,
+      vehicleType: d.vehicle_type,
+      createdAt: d.created_at,
+      updatedAt: d.updated_at,
+    }));
+    return NextResponse.json(formattedData);
   } catch (error) {
     console.error('Error Get Truck Usage:', error);
     const errorMessage =
@@ -29,16 +37,41 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { hubId, date, storageType, vehicleType, count, description } = body;
+    const hubId = body.hubId || body.hub_id;
+    const date = body.date;
+    const storageType = body.storageType || body.storage_type;
+    const vehicleType = body.vehicleType || body.vehicle_type;
+    const count = body.count;
+    const description = body.description;
 
     const upserted = await prisma.truckUsage.upsert({
       where: {
-        hubId_date_storageType_vehicleType: { hubId, date, storageType, vehicleType },
+        hub_id_date_storage_type_vehicle_type: {
+          hub_id: hubId,
+          date,
+          storage_type: storageType,
+          vehicle_type: vehicleType,
+        },
       },
       update: { count: parseInt(count), description },
-      create: { hubId, date, storageType, vehicleType, count: parseInt(count), description },
+      create: {
+        hub_id: hubId,
+        date,
+        storage_type: storageType,
+        vehicle_type: vehicleType,
+        count: parseInt(count),
+        description,
+      },
     });
-    return NextResponse.json({ message: 'Success', data: upserted });
+    const formatted = {
+      ...upserted,
+      hubId: upserted.hub_id,
+      storageType: upserted.storage_type,
+      vehicleType: upserted.vehicle_type,
+      createdAt: upserted.created_at,
+      updatedAt: upserted.updated_at,
+    };
+    return NextResponse.json({ message: 'Success', data: formatted });
   } catch (error) {
     console.error('Error Upsert Truck Usage:', error);
     const errorMessage =
@@ -53,15 +86,18 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const body = await request.json();
-    const { hubId, date, storageType, vehicleType } = body;
+    const hubId = body.hubId || body.hub_id;
+    const date = body.date;
+    const storageType = body.storageType || body.storage_type;
+    const vehicleType = body.vehicleType || body.vehicle_type;
 
     await prisma.truckUsage.delete({
       where: {
-        hubId_date_storageType_vehicleType: {
-          hubId,
+        hub_id_date_storage_type_vehicle_type: {
+          hub_id: hubId,
           date,
-          storageType,
-          vehicleType,
+          storage_type: storageType,
+          vehicle_type: vehicleType,
         },
       },
     });

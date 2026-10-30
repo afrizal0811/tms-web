@@ -106,8 +106,8 @@ export async function GET(request, { params }) {
     }
 
     const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mappedType;
-      acc[getBasePlate(curr.plat)] = curr.mappedType;
+      acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
+      acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
       return acc;
     }, {});
 
