@@ -127,7 +127,9 @@ export const groupTasksByDriver = (tasksData) => {
 
 export const buildSyncTimeMap = (locHistories, driverData, selectedDateStr) => {
   const apiDataMap = new Map();
-  const allApiData = locHistories?.tasks?.data || locHistories?.data || [];
+  const allApiData = Array.isArray(locHistories)
+    ? locHistories
+    : locHistories?.tasks?.data || locHistories?.data || [];
   if (!Array.isArray(allApiData) || allApiData.length === 0) return apiDataMap;
 
   const [y, m, d] = selectedDateStr.split('-');
@@ -463,7 +465,7 @@ export const generateTaskManualDetailWorkbook = (
     const routingId = res.id || res._id || res.name || '-';
 
     ['change', 'dropped', 'manual', 'move', 'switch'].forEach((cat) => {
-      const items = Array.isArray(h[cat]) ? h[cat] : (h[cat]?.data || []);
+      const items = Array.isArray(h[cat]) ? h[cat] : h[cat]?.data || [];
       items.forEach((item) => {
         forcedData.push({
           resultId: item.resultId || routingId,

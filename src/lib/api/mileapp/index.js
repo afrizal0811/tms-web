@@ -4,6 +4,7 @@ export * from './pendingDetails';
 export * from './reasons';
 export * from './results';
 export * from './roles';
+export * from './sync';
 export * from './tasks';
 export * from './trash';
 export * from './users';

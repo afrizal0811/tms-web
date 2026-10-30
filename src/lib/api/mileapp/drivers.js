@@ -1,8 +1,11 @@
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { getBasePlate } from '../../utils';
 import { apiFetch } from '../base';
-import { getVehiclesStatuses, getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '../mceasy';
-import { fields } from './fields';
+import {
+  getVehiclesStatuses,
+  getUsers as getMceasyUsers,
+  patchVehicle as patchMceasyVehicle,
+} from '../mceasy';
 
 export async function getDrivers(customHubId) {
   const { storedLocation } = getLocalStorage();
@@ -26,20 +29,59 @@ export async function getDriverStatus() {
   );
 }
 
-export async function getLocationHistories({ timeFrom, timeTo }) {
+export async function getLocationHistories({
+  timeFrom,
+  timeTo,
+  date,
+  dateFrom,
+  dateTo,
+  deliveryDate,
+  hubId,
+} = {}) {
   const { storedLocation } = getLocalStorage();
-  const locationsFields = fields.locations.join(',');
+  const targetHubId = hubId !== undefined ? hubId : storedLocation;
   const params = new URLSearchParams();
-  params.append('timeBy', 'createdTime');
-  params.append('limit', 10000);
-  params.append('startFinish', 'true');
+  if (date || deliveryDate) params.append('date', date || deliveryDate);
+  if (dateFrom) params.append('dateFrom', dateFrom);
+  if (dateTo) params.append('dateTo', dateTo);
   if (timeFrom) params.append('timeFrom', timeFrom);
   if (timeTo) params.append('timeTo', timeTo);
-  if (locationsFields) params.append('fields', locationsFields);
-  if (storedLocation) params.append('hubId', storedLocation);
+  if (targetHubId && targetHubId !== 'all') params.append('hubId', targetHubId);
   return await apiFetch(
     `/api/mileapp/drivers/location-histories?${params.toString()}`,
     'Gagal mengambil data location histories'
+  );
+}
+
+export async function syncLocationHistories({
+  deliveryDate,
+  hubId,
+  timeFrom,
+  timeTo,
+  items,
+  created_by,
+  updated_by,
+} = {}) {
+  const { storedLocation, storedUser } = getLocalStorage();
+  const targetHubId = hubId || storedLocation;
+  const userName = updated_by || created_by || storedUser?.name || null;
+
+  return await apiFetch(
+    '/api/mileapp/drivers/location-histories',
+    'Gagal sinkronisasi data riwayat lokasi pengemudi',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deliveryDate,
+        hubId: targetHubId,
+        timeFrom,
+        timeTo,
+        items,
+        created_by: userName,
+        updated_by: userName,
+      }),
+    }
   );
 }
 
@@ -277,7 +319,10 @@ export async function patchDriverMceasy(activeHubId, storedLocationName, explici
         }
         await patchMceasyVehicle(update.mcVehicleId, payload.toString());
       } catch (err) {
-        console.error(`[Auto-Sync McEasy] Gagal update kendaraan ${update.mcVehicleId}:`, err.message);
+        console.error(
+          `[Auto-Sync McEasy] Gagal update kendaraan ${update.mcVehicleId}:`,
+          err.message
+        );
       }
     }
   }

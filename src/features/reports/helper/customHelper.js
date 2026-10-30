@@ -164,6 +164,7 @@ export const processTaskRoutingReport = async ({ datesToProcess, locationName, t
         isNeedFields: false,
       }),
       getLocationHistories({
+        date: selectedDateString,
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
       }),
@@ -347,6 +348,8 @@ export const processServiceLevelReport = async ({
         timeTo: timeToUtc,
       }),
       getLocationHistories({
+        dateFrom: startString,
+        dateTo: endString,
         timeFrom: locTimeFrom,
         timeTo: locTimeTo,
       }),
@@ -476,9 +479,10 @@ export const processTripActivityReport = async ({ datesToProcess, locationName, 
     const { locTimeFrom, locTimeTo, selectedDateString } = getReportDates(date, date);
 
     const locHistories = await getLocationHistories({
-      timeFrom: locTimeFrom,
-      timeTo: locTimeTo,
-    });
+        date: selectedDateString,
+        timeFrom: locTimeFrom,
+        timeTo: locTimeTo,
+      });
 
     const trips = locHistories || [];
     if (isEmpty(trips)) continue;

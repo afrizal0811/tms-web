@@ -109,7 +109,9 @@ function formatDbTask(dbTask) {
 }
 
 async function saveTasks(tasks, targetHubId, currentUser = 'System') {
-  if (!Array.isArray(tasks) || tasks.length === 0) return 0;
+  if (!Array.isArray(tasks) || tasks.length === 0) {
+    return { savedCount: 0, insertedCount: 0, updatedCount: 0, skippedCount: 0 };
+  }
 
   const hubIds = Array.from(new Set(tasks.map((t) => t.hubId || targetHubId).filter(Boolean)));
   const taskIds = Array.from(new Set(tasks.map((t) => String(t._id || t.id)).filter(Boolean)));
@@ -124,7 +126,22 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
     taskIds.length > 0
       ? prisma.task.findMany({
           where: { id: { in: taskIds } },
-          select: { id: true, status: true, routing_result_id: true, sync_user: true },
+          select: {
+            id: true,
+            status: true,
+            status_delivery: true,
+            routing_result_id: true,
+            driver_name: true,
+            plat: true,
+            assigned_vehicle_id: true,
+            arrival_time: true,
+            done_time: true,
+            alasan: true,
+            new_coordinate: true,
+            done_coordinate: true,
+            task_user: true,
+            sync_user: true,
+          },
         })
       : [],
   ]);
@@ -133,24 +150,16 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
   const existingTaskMap = new Map(existingTasks.map((t) => [t.id, t]));
 
   const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
-  let affectedCount = 0;
+  let insertedCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
+
   const CHUNK_SIZE = 25;
   for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
     const chunk = tasks.slice(i, i + CHUNK_SIZE);
     const operations = chunk.map((t) => {
       const id = String(t._id || t.id);
       const existingTask = existingTaskMap.get(id);
-      const existingStatus = existingTask?.status;
-
-      if (existingStatus === 'DONE') {
-        if (!existingTask?.routing_result_id && t.routingResultId) {
-          return prisma.task.update({
-            where: { id },
-            data: { routing_result_id: t.routingResultId },
-          });
-        }
-        return Promise.resolve(null);
-      }
 
       const resolvedHubId = validHubSet.has(t.hubId)
         ? t.hubId
@@ -189,6 +198,55 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
         updated_by: t.updatedBy || null,
         updated_at: t.updatedTime || null,
       };
+
+      if (existingTask) {
+        const existingStatus = existingTask.status;
+
+        if (existingStatus === 'DONE') {
+          if (!existingTask.routing_result_id && routingResultId) {
+            return prisma.task
+              .update({
+                where: { id },
+                data: { routing_result_id: routingResultId },
+              })
+              .then(() => ({ type: 'update' }));
+          }
+          return Promise.resolve({ type: 'skip' });
+        }
+
+        const existingTaskUser =
+          typeof existingTask.task_user === 'string'
+            ? JSON.parse(existingTask.task_user)
+            : existingTask.task_user || {};
+
+        const sameUpdatedTime =
+          taskUser.updated_at &&
+          existingTaskUser.updated_at &&
+          taskUser.updated_at === existingTaskUser.updated_at;
+
+        const sameRouting = routingResultId === (existingTask.routing_result_id || null);
+
+        if (sameUpdatedTime && sameRouting) {
+          return Promise.resolve({ type: 'skip' });
+        }
+
+        const isFieldChanged =
+          (t.status || null) !== (existingTask.status || null) ||
+          (t.statusDelivery || null) !== (existingTask.status_delivery || null) ||
+          !sameRouting ||
+          (t.driverName || null) !== (existingTask.driver_name || null) ||
+          (t.plat || null) !== (existingTask.plat || null) ||
+          (t.assignedVehicleId || null) !== (existingTask.assigned_vehicle_id || null) ||
+          (t.klikJikaSudahSampai || null) !== (existingTask.arrival_time || null) ||
+          (t.doneTime || null) !== (existingTask.done_time || null) ||
+          (t.alasan || null) !== (existingTask.alasan || null) ||
+          (t.klikLokasiClient || null) !== (existingTask.new_coordinate || null) ||
+          (t.doneCoordinate || null) !== (existingTask.done_coordinate || null);
+
+        if (!isFieldChanged && existingTaskUser.updated_at) {
+          return Promise.resolve({ type: 'skip' });
+        }
+      }
 
       const existingSyncUser = existingTask?.sync_user
         ? typeof existingTask.sync_user === 'string'
@@ -242,11 +300,11 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
         task_user: taskUser,
       };
 
-      if (existingStatus) {
+      if (existingTask) {
         return prisma.task.update({
           where: { id },
           data,
-        });
+        }).then(() => ({ type: 'update' }));
       }
 
       return prisma.task.create({
@@ -254,14 +312,21 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
           id,
           ...data,
         },
-      });
+      }).then(() => ({ type: 'insert' }));
     });
 
     const results = await Promise.all(operations);
-    affectedCount += results.filter(Boolean).length;
+    insertedCount += results.filter((r) => r?.type === 'insert').length;
+    updatedCount += results.filter((r) => r?.type === 'update').length;
+    skippedCount += results.filter((r) => r?.type === 'skip').length;
   }
 
-  return affectedCount;
+  return {
+    savedCount: insertedCount + updatedCount,
+    insertedCount,
+    updatedCount,
+    skippedCount,
+  };
 }
 
 async function fetchAndEnrichTasks({
@@ -605,11 +670,18 @@ export async function POST(request) {
       timeBy,
     });
 
-    const savedCount = await saveTasks(allTasks, hubId, user);
+    const stats = await saveTasks(allTasks, hubId, user);
+    const savedCount = typeof stats === 'object' ? stats.savedCount : stats;
+    const insertedCount = stats?.insertedCount || 0;
+    const updatedCount = stats?.updatedCount || 0;
+    const skippedCount = stats?.skippedCount || 0;
 
     return NextResponse.json({
-      message: `Berhasil sinkronisasi ${savedCount} data tasks.`,
+      message: `Berhasil sinkronisasi tasks: ${insertedCount} baru, ${updatedCount} diperbarui, ${skippedCount} dilewati (tidak berubah).`,
       syncedCount: savedCount,
+      insertedCount,
+      updatedCount,
+      skippedCount,
       deliveryDate: targetDate,
     });
   } catch (error) {

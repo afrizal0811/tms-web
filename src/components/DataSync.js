@@ -1,60 +1,71 @@
 'use client';
 
-import {
-  autoUpdateTasks,
-  getResults,
-  syncRoutingResults,
-  syncTasks,
-} from '@/lib/api/mileapp';
+import { syncOperationalData } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal, tomorrowDate } from '@/lib/utils';
+import { formatDateUniversal } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
+function getActiveWeekDays(baseDate = new Date()) {
+  const d = new Date(baseDate);
+  const day = d.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const days = [];
+  for (let i = 0; i < 6; i++) {
+    const curr = new Date(monday);
+    curr.setDate(monday.getDate() + i);
+    days.push(formatDateUniversal(curr, 'YYYY-MM-DD'));
+  }
+  return days;
+}
+
 export default function DataSync() {
-  const isSyncingTasksRef = useRef(false);
-  const isSyncingRoutingRef = useRef(false);
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
-    const syncRoutingIfMissing = async () => {
-      if (typeof window === 'undefined' || isSyncingRoutingRef.current) return;
+    const runAutoSync = async () => {
+      if (typeof window === 'undefined' || isSyncingRef.current) return;
 
       const { storedUser, storedLocation } = getLocalStorage();
       if (!storedUser || !storedLocation) return;
 
-      isSyncingRoutingRef.current = true;
+      isSyncingRef.current = true;
       try {
         const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
-        const tomorrowStr = formatDateUniversal(tomorrowDate(true), 'YYYY-MM-DD');
-        const datesToSync = Array.from(new Set([todayStr, tomorrowStr]));
-
         let shouldReload = false;
 
-        for (const dStr of datesToSync) {
+        try {
+          const res = await syncOperationalData({
+            deliveryDate: todayStr,
+            hubId: storedLocation,
+            entities: ['results', 'tasks'],
+          });
+
+          const reloadKey = `tms_auto_reloaded_${todayStr}`;
+          const hasInserted =
+            (res?.results?.insertedCount || 0) > 0 || (res?.tasks?.insertedCount || 0) > 0;
+
+          if (hasInserted && !sessionStorage.getItem(reloadKey)) {
+            sessionStorage.setItem(reloadKey, 'true');
+            shouldReload = true;
+          }
+        } catch (err) {
+          console.warn('[DataSync] Routing & tasks auto-sync error:', err.message);
+        }
+
+        const activeWeekDays = getActiveWeekDays(new Date());
+        for (const dStr of activeWeekDays) {
           try {
-            const existingData = await getResults({ deliveryDate: dStr });
-            const hasDataInDb = Array.isArray(existingData) && existingData.length > 0;
-
-            if (hasDataInDb) {
-              continue;
-            }
-
-            const routingRes = await syncRoutingResults({
+            await syncOperationalData({
               deliveryDate: dStr,
               hubId: storedLocation,
+              entities: ['location-histories'],
             });
-            await syncTasks({
-              deliveryDate: dStr,
-              hubId: storedLocation,
-            });
-
-            const reloadKey = `tms_auto_reloaded_${dStr}`;
-            const hasSyncedData = (routingRes?.syncedCount || 0) > 0;
-            if (hasSyncedData && dStr === todayStr && !sessionStorage.getItem(reloadKey)) {
-              sessionStorage.setItem(reloadKey, 'true');
-              shouldReload = true;
-            }
           } catch (err) {
-            console.warn('[DataSync] Routing sync error:', err.message);
+            console.warn(`[DataSync] Location history auto-sync error for ${dStr}:`, err.message);
           }
         }
 
@@ -62,32 +73,14 @@ export default function DataSync() {
           window.location.reload();
         }
       } finally {
-        isSyncingRoutingRef.current = false;
+        isSyncingRef.current = false;
       }
     };
 
-    const runTaskAutoUpdate = async () => {
-      if (typeof window === 'undefined' || isSyncingTasksRef.current) return;
-
-      const { storedUser, storedLocation } = getLocalStorage();
-      if (!storedUser || !storedLocation) return;
-
-      isSyncingTasksRef.current = true;
-      try {
-        await autoUpdateTasks({ hubId: storedLocation });
-      } catch (err) {
-        console.warn('[DataSync] Task auto-update error:', err.message);
-      } finally {
-        isSyncingTasksRef.current = false;
-      }
-    };
-
-    runTaskAutoUpdate();
-    syncRoutingIfMissing();
+    runAutoSync();
 
     const handleSessionUpdate = () => {
-      syncRoutingIfMissing();
-      runTaskAutoUpdate();
+      runAutoSync();
     };
 
     window.addEventListener('session_update', handleSessionUpdate);

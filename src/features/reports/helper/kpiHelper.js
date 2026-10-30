@@ -65,6 +65,7 @@ const processSingleKpiDate = async (
       deliveryDate: routingDeliveryDate,
     }),
     getLocationHistories({
+      date: dateString,
       timeFrom: histFrom,
       timeTo: histTo,
     }),
@@ -261,6 +262,7 @@ const executeManualKpiDownload = async ({ routingFiles, taskFiles, hubAcronym, d
 
   const [histories, pendingDetails] = await Promise.all([
     getLocationHistories({
+      date: formattedDate,
       timeFrom,
       timeTo,
     }),

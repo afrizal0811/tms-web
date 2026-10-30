@@ -123,6 +123,7 @@ export const handleSingleDownload = async ({
       }),
       getCachedHubs(),
       getLocationHistories({
+        date: routingDeliveryDate,
         timeFrom: toApiDateString(locStartObj),
         timeTo: toApiDateString(locEndObj),
       }).catch(() => []),
@@ -369,6 +370,7 @@ export const handleManualDownload = async ({
       Promise.all([
         getCachedHubs(),
         getLocationHistories({
+          date: extractedStartDate,
           timeFrom,
           timeTo,
         }),

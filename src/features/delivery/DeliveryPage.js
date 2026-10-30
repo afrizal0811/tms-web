@@ -286,6 +286,7 @@ export default function DeliveryPage() {
             deliveryDate: dateStr,
           }),
           getLocationHistories({
+            date: dateStr,
             timeFrom: historyFrom,
             timeTo: historyTo,
           }),

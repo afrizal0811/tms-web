@@ -25,6 +25,7 @@ model Hub {
   drivers         Driver[] 
   routing_results RoutingResult[]
   tasks           Task[]
+  location_histories LocationHistory[]
   is_active       Boolean @default(true)
 }
 
@@ -215,4 +216,35 @@ enum TimeZone {
   WIB
   WITA
   WIT
+}
+
+
+model LocationHistory {
+  id             String   @id
+  hub_id         String?
+  email          String
+  driver_name    String?
+
+  date           String
+  start_time     String
+  finish_time    String?
+
+  total_duration Int?
+  total_distance Float?
+  tracked_time   Float?
+
+  start_lat      Float?
+  start_lon      Float?
+  finish_lat     Float?
+  finish_lon     Float?
+
+  sync_user      Json?
+
+  hub            Hub?     @relation(fields: [hub_id], references: [id])
+
+  @@index([hub_id, date])
+  @@index([date])
+  @@index([email, date])
+  @@index([driver_name, date])
+  @@map("location_histories")
 }

@@ -147,7 +147,10 @@ export function calculateTimeDriverData(
         const realStartTime = item.startTime;
         const realFinishTime = item.finish?.finishTime;
 
-        const startLocation = item.lat && item.lon ? `${item.lat}, ${item.lon}` : null;
+        const startLocation =
+          (item.lat || item.startLat) && (item.lon || item.startLon)
+            ? `${item.lat || item.startLat}, ${item.lon || item.startLon}`
+            : null;
         const finishLocation =
           item.finish?.lat && item.finish?.lon ? `${item.finish?.lat}, ${item.finish?.lon}` : null;
 
@@ -162,8 +165,8 @@ export function calculateTimeDriverData(
           finishTimeISO: item.finish?.finishTime,
           hasData: true,
           startDisplay: startStr,
-          startLat: item.lat,
-          startLon: item.lon,
+          startLat: item.lat || item.startLat || null,
+          startLon: item.lon || item.startLon || null,
           startTime: realStartTime,
           startTimeISO: item.startTime,
           trackedTime: trackedTime,

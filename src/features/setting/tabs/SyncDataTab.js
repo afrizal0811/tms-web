@@ -2,6 +2,7 @@
 
 import Button from '@/components/button/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
+import ConfirmModal from '@/components/modal/ConfirmModal';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
 import {
   getDrivers,
@@ -9,17 +10,42 @@ import {
   postDrivers,
   postHubs,
   postRoles,
-  syncRoutingResults,
-  syncTasks,
+  syncOperationalData,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
-import ConfirmModal from '@/components/modal/ConfirmModal';
 import RoutingDetailModal from '../components/RoutingDetailModal';
 import SyncModal from '../components/SyncModal';
+
+const isSameMismatch = (a, b) =>
+  a.id === b.id ||
+  (a.mcVehicleId && a.mcVehicleId === b.mcVehicleId) ||
+  (a.maPlatBase && b.maPlatBase && a.maPlatBase === b.maPlatBase);
+
+const isMatchSame = (a, b) => a.id === b.id || (a.vms_id && a.vms_id === b.vms_id);
+
+function getDatesInRange(startDate, endDate) {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  const diffTime = Math.abs(end - start);
+  const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  const dates = [];
+  const curr = new Date(start);
+  while (curr <= end) {
+    dates.push(formatDateUniversal(curr, 'YYYY-MM-DD'));
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  return { totalDays, dates };
+}
 
 export default function SyncDataTab({
   hubs,
@@ -49,7 +75,6 @@ export default function SyncDataTab({
   });
 
   const hasCompleteRoutingRange = Boolean(routingDateRange?.[0] && routingDateRange?.[1]);
-
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
 
   const allHubs = hubs?.allHub || [];
@@ -62,6 +87,22 @@ export default function SyncDataTab({
     d.setHours(23, 59, 59, 999);
     return d;
   }, []);
+
+  const handleSuccessReload = async () => {
+    toastSuccess(translate('common.toast.success'));
+    await onRefresh();
+    window.location.reload();
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModalConfig((prev) => ({ ...prev, isOpen: false, action: null }));
+  };
+
+  const handleConfirmAction = () => {
+    const action = confirmModalConfig.action;
+    closeConfirmModal();
+    if (action) action();
+  };
 
   const fetchMcEasyDrivers = useCallback(async () => {
     setIsDriverLoading(true);
@@ -184,9 +225,7 @@ export default function SyncDataTab({
       }
 
       setModalOpen(false);
-      toastSuccess(translate('common.toast.success'));
-      await onRefresh();
-      window.location.reload();
+      await handleSuccessReload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -202,9 +241,7 @@ export default function SyncDataTab({
       }
 
       setModalOpen(false);
-      toastSuccess(translate('common.toast.success'));
-      await onRefresh();
-      window.location.reload();
+      await handleSuccessReload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -226,12 +263,7 @@ export default function SyncDataTab({
         if (!result.success && result.mismatched?.length > 0) {
           const dedupedMismatches = [];
           for (const m of result.mismatched) {
-            const existing = dedupedMismatches.find(
-              (x) =>
-                x.id === m.id ||
-                (x.mcVehicleId && x.mcVehicleId === m.mcVehicleId) ||
-                (x.maPlatBase && m.maPlatBase && x.maPlatBase === m.maPlatBase)
-            );
+            const existing = dedupedMismatches.find((x) => isSameMismatch(x, m));
             if (!existing) {
               dedupedMismatches.push({
                 ...m,
@@ -253,9 +285,7 @@ export default function SyncDataTab({
         }
       }
 
-      toastSuccess(translate('common.toast.success'));
-      await onRefresh();
-      window.location.reload();
+      await handleSuccessReload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -280,12 +310,7 @@ export default function SyncDataTab({
           const result = await patchDriverMceasy(hub._id, hubNameClean);
           if (result.mismatched?.length > 0) {
             for (const m of result.mismatched) {
-              const existing = allMismatches.find(
-                (x) =>
-                  x.id === m.id ||
-                  (x.mcVehicleId && x.mcVehicleId === m.mcVehicleId) ||
-                  (x.maPlatBase && m.maPlatBase && x.maPlatBase === m.maPlatBase)
-              );
+              const existing = allMismatches.find((x) => isSameMismatch(x, m));
               if (existing) {
                 const currentHubs = (existing.hubName || '')
                   .split(',')
@@ -306,9 +331,7 @@ export default function SyncDataTab({
           }
           if (result.matched?.length > 0) {
             for (const match of result.matched) {
-              const alreadyMatched = allMatches.some(
-                (x) => x.id === match.id || (x.vms_id && x.vms_id === match.vms_id)
-              );
+              const alreadyMatched = allMatches.some((x) => isMatchSame(x, match));
               if (!alreadyMatched) {
                 allMatches.push(match);
               }
@@ -338,9 +361,7 @@ export default function SyncDataTab({
         await patchDriverMceasy(null, null, filteredMatches);
       }
 
-      toastSuccess(translate('common.toast.success'));
-      await onRefresh();
-      window.location.reload();
+      await handleSuccessReload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -355,9 +376,7 @@ export default function SyncDataTab({
       if (type === 'hubs') await postHubs();
       else if (type === 'roles') await postRoles();
 
-      toastSuccess(translate('common.toast.success'));
-      await onRefresh();
-      window.location.reload();
+      await handleSuccessReload();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -365,23 +384,11 @@ export default function SyncDataTab({
     }
   };
 
-  const executeRoutingSync = async (mode = 'active') => {
-    const [startDate, endDate] = routingDateRange || [];
-    if (isReadOnly || !startDate || !endDate) return;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate || startDate);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    const datesToSync = [];
-    const curr = new Date(start);
-    while (curr <= end) {
-      datesToSync.push(formatDateUniversal(curr, 'YYYY-MM-DD'));
-      curr.setDate(curr.getDate() + 1);
-    }
-
-    if (datesToSync.length === 0) return;
+  const executeRoutingSync = async (mode = 'active', customDates = null) => {
+    if (isReadOnly) return;
+    const datesToSync =
+      customDates || getDatesInRange(routingDateRange?.[0], routingDateRange?.[1])?.dates;
+    if (!datesToSync || datesToSync.length === 0) return;
 
     const isGlobal = mode === 'global';
     const targetHubId = isGlobal ? 'all' : activeHubId;
@@ -393,14 +400,14 @@ export default function SyncDataTab({
       for (let i = 0; i < datesToSync.length; i++) {
         const dStr = datesToSync[i];
         try {
-          await syncRoutingResults({
+          const res = await syncOperationalData({
             deliveryDate: dStr,
             hubId: targetHubId,
           });
-          await syncTasks({
-            deliveryDate: dStr,
-            hubId: targetHubId,
-          });
+          if (res?.partial) {
+            hasError = true;
+            lastError = new Error(`Sebagian data gagal disinkronkan untuk tanggal ${dStr}`);
+          }
         } catch (err) {
           hasError = true;
           lastError = err;
@@ -422,33 +429,26 @@ export default function SyncDataTab({
   };
 
   const triggerRoutingSync = (mode = 'active') => {
-    const [startDate, endDate] = routingDateRange || [];
-    if (isReadOnly || !startDate || !endDate) return;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate || startDate);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    const diffTime = Math.abs(end - start);
-    const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if (isReadOnly) return;
+    const range = getDatesInRange(routingDateRange?.[0], routingDateRange?.[1]);
+    if (!range) return;
 
     const isGlobal = mode === 'global';
     const limitDays = isGlobal ? 7 : 14;
 
-    if (totalDays > limitDays) {
+    if (range.totalDays > limitDays) {
       setConfirmModalConfig({
         isOpen: true,
         title: translate('common.modal.data_load_title') || 'Peringatan Beban Data',
         message:
           translate('common.modal.data_load_message', { days: limitDays }) ||
           `Rentang data lebih dari ${limitDays} hari. Proses dapat memakan waktu lebih lama. Tetap lanjutkan?`,
-        action: () => executeRoutingSync(mode),
+        action: () => executeRoutingSync(mode, range.dates),
       });
       return;
     }
 
-    executeRoutingSync(mode);
+    executeRoutingSync(mode, range.dates);
   };
 
   const driverGlobalOptions = [
@@ -489,14 +489,59 @@ export default function SyncDataTab({
     },
     {
       type: 'routing',
-      label: translate('setting.tab.sync_data.routing_and_tasks'),
+      label: translate('setting.tab.sync_data.main_data'),
     },
   ];
+
+  const renderCardAction = (type) => {
+    if (isReadOnly) return null;
+
+    if (type === 'drivers') {
+      return (
+        <Button
+          type="split"
+          onClick={executeDriverSyncActive}
+          options={driverGlobalOptions}
+          isLoading={syncLoading === 'drivers-active' || syncLoading === 'drivers-global'}
+          disabled={syncLoading !== null}
+          text={translate('setting.tab.button.btn_sync_hub', {
+            hub: storedLocationName,
+          })}
+          size="md"
+        />
+      );
+    }
+
+    if (type === 'routing') {
+      return (
+        <Button
+          type="split"
+          onClick={() => triggerRoutingSync('active')}
+          options={routingOptions}
+          isLoading={syncLoading === 'routing-active' || syncLoading === 'routing-global'}
+          disabled={syncLoading !== null || !hasCompleteRoutingRange}
+          text={translate('setting.tab.button.btn_sync_hub', {
+            hub: storedLocationName,
+          })}
+          size="md"
+        />
+      );
+    }
+
+    return (
+      <Button
+        onClick={() => executeSync(type)}
+        isLoading={syncLoading === type}
+        disabled={syncLoading !== null}
+        text={translate('setting.tab.button.btn_sync')}
+        size="md"
+      />
+    );
+  };
 
   const renderCardContent = (type, label) => {
     const isDriverType = type === 'drivers';
     const isRoutingType = type === 'routing';
-    const isDriverSyncing = syncLoading === 'drivers-active' || syncLoading === 'drivers-global';
 
     return (
       <div
@@ -555,43 +600,7 @@ export default function SyncDataTab({
           )}
         </div>
 
-        {!isReadOnly && (
-          <div className="mt-4">
-            {isDriverType ? (
-              <Button
-                type="split"
-                onClick={executeDriverSyncActive}
-                options={driverGlobalOptions}
-                isLoading={isDriverSyncing}
-                disabled={syncLoading !== null}
-                text={translate('setting.tab.button.btn_sync_hub', {
-                  hub: storedLocationName,
-                })}
-                size="md"
-              />
-            ) : isRoutingType ? (
-              <Button
-                type="split"
-                onClick={() => triggerRoutingSync('active')}
-                options={routingOptions}
-                isLoading={syncLoading === 'routing-active' || syncLoading === 'routing-global'}
-                disabled={syncLoading !== null || !hasCompleteRoutingRange}
-                text={translate('setting.tab.button.btn_sync_hub', {
-                  hub: storedLocationName,
-                })}
-                size="md"
-              />
-            ) : (
-              <Button
-                onClick={() => executeSync(type)}
-                isLoading={syncLoading === type}
-                disabled={syncLoading !== null}
-                text={translate('setting.tab.button.btn_sync')}
-                size="md"
-              />
-            )}
-          </div>
-        )}
+        {!isReadOnly && <div className="mt-4">{renderCardAction(type)}</div>}
       </div>
     );
   };
@@ -602,7 +611,7 @@ export default function SyncDataTab({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 dark:border-slate-800 pb-4 gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
-              {translate('setting.tab.sync_data.sync_title')}
+              {translate('setting.tab.sync_data.sync_title') || 'Master Data Sync'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {translate('setting.tab.sync_data.subtitle')}
@@ -628,7 +637,6 @@ export default function SyncDataTab({
         mcEasyDrivers={mcEasyDrivers}
         isDriverLoading={isDriverLoading}
         isSaving={
-          syncLoading === 'drivers' ||
           syncLoading === 'drivers-active' ||
           syncLoading === 'drivers-global'
         }
@@ -648,14 +656,8 @@ export default function SyncDataTab({
         isOpen={confirmModalConfig.isOpen}
         title={confirmModalConfig.title}
         message={confirmModalConfig.message}
-        onConfirm={() => {
-          const action = confirmModalConfig.action;
-          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false, action: null }));
-          if (action) action();
-        }}
-        onCancel={() => {
-          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false, action: null }));
-        }}
+        onConfirm={handleConfirmAction}
+        onCancel={closeConfirmModal}
       />
     </div>
   );

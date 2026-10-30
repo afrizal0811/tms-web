@@ -394,6 +394,8 @@ export async function POST(request) {
 
     const seenVehicles = new Map();
     const savedRecords = [];
+    const updatedRecords = [];
+    const skippedRecords = [];
 
     for (const item of targetResults) {
       const vehiclePlatesSet = new Set();
@@ -608,8 +610,33 @@ export async function POST(request) {
       const nowIso = formatUTC7(new Date(), 'YYYY-MM-DDTHH:mm:ss');
       const existingRouting = await prisma.routingResult.findUnique({
         where: { id: String(item._id) },
-        select: { sync_user: true },
+        select: {
+          id: true,
+          hub_id: true,
+          name: true,
+          dropped: true,
+          total_distance: true,
+          time: true,
+          hub_times: true,
+          histories: true,
+          sync_user: true,
+        },
       });
+
+      const isSame =
+        existingRouting &&
+        existingRouting.hub_id === targetHubId &&
+        existingRouting.name === (item.name || '') &&
+        existingRouting.dropped === droppedCount &&
+        JSON.stringify(existingRouting.total_distance) === JSON.stringify(totalDistanceMap) &&
+        JSON.stringify(existingRouting.time) === JSON.stringify(timeMap) &&
+        JSON.stringify(existingRouting.hub_times) === JSON.stringify(hubTimesMap) &&
+        JSON.stringify(existingRouting.histories) === JSON.stringify(historiesData);
+
+      if (isSame) {
+        skippedRecords.push(item._id);
+        continue;
+      }
 
       const existingSyncUser = existingRouting?.sync_user
         ? typeof existingRouting.sync_user === 'string'
@@ -624,42 +651,43 @@ export async function POST(request) {
         updated_at: nowIso,
       };
 
-      await prisma.routingResult.upsert({
-        where: { id: String(item._id) },
-        update: {
-          hub_id: targetHubId,
-          name: item.name || '',
-          delivery_date: deliveryDate,
-          route_user: routeUser,
-          total_distance: totalDistanceMap,
-          time: timeMap,
-          hub_times: hubTimesMap,
-          dropped: droppedCount,
-          histories: historiesData,
-          sync_user: syncUser,
-        },
-        create: {
-          id: String(item._id),
-          hub_id: targetHubId,
-          name: item.name || '',
-          delivery_date: deliveryDate,
-          route_user: routeUser,
-          total_distance: totalDistanceMap,
-          time: timeMap,
-          hub_times: hubTimesMap,
-          dropped: droppedCount,
-          histories: historiesData,
-          sync_user: syncUser,
-        },
-      });
+      const routingData = {
+        hub_id: targetHubId,
+        name: item.name || '',
+        delivery_date: deliveryDate,
+        route_user: routeUser,
+        total_distance: totalDistanceMap,
+        time: timeMap,
+        hub_times: hubTimesMap,
+        dropped: droppedCount,
+        histories: historiesData,
+        sync_user: syncUser,
+      };
 
-      savedRecords.push(item._id);
+      if (existingRouting) {
+        await prisma.routingResult.update({
+          where: { id: String(item._id) },
+          data: routingData,
+        });
+        updatedRecords.push(item._id);
+      } else {
+        await prisma.routingResult.create({
+          data: {
+            id: String(item._id),
+            ...routingData,
+          },
+        });
+        savedRecords.push(item._id);
+      }
     }
 
     return NextResponse.json({
-      message: `Berhasil sinkronisasi ${savedRecords.length} data routing.`,
-      syncedCount: savedRecords.length,
-      ids: savedRecords,
+      message: `Berhasil sinkronisasi routing: ${savedRecords.length} baru, ${updatedRecords.length} diperbarui, ${skippedRecords.length} dilewati (tidak berubah).`,
+      syncedCount: savedRecords.length + updatedRecords.length,
+      insertedCount: savedRecords.length,
+      updatedCount: updatedRecords.length,
+      skippedCount: skippedRecords.length,
+      ids: [...savedRecords, ...updatedRecords],
     });
   } catch (error) {
     console.error('Error Sync Routing Results:', error);
