@@ -30,7 +30,6 @@ export default function ReportTemplate({
   endDate,
   onDateRangeChange,
   isLoading,
-  isActionDisabled,
   onAction,
   actionText,
   extraContent,

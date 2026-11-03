@@ -44,6 +44,15 @@ export async function POST(request) {
     const count = body.count;
     const description = body.description;
 
+    if (!hubId || !date || !storageType || !vehicleType) {
+      return NextResponse.json(
+        { error: 'Field hubId, date, storageType, dan vehicleType wajib diisi' },
+        { status: 400 }
+      );
+    }
+
+    const parsedCount = parseInt(count, 10) || 0;
+
     const upserted = await prisma.truckUsage.upsert({
       where: {
         hub_id_date_storage_type_vehicle_type: {
@@ -53,13 +62,13 @@ export async function POST(request) {
           vehicle_type: vehicleType,
         },
       },
-      update: { count: parseInt(count), description },
+      update: { count: parsedCount, description },
       create: {
         hub_id: hubId,
         date,
         storage_type: storageType,
         vehicle_type: vehicleType,
-        count: parseInt(count),
+        count: parsedCount,
         description,
       },
     });
@@ -90,6 +99,13 @@ export async function DELETE(request) {
     const date = body.date;
     const storageType = body.storageType || body.storage_type;
     const vehicleType = body.vehicleType || body.vehicle_type;
+
+    if (!hubId || !date || !storageType || !vehicleType) {
+      return NextResponse.json(
+        { error: 'Field hubId, date, storageType, dan vehicleType wajib diisi' },
+        { status: 400 }
+      );
+    }
 
     await prisma.truckUsage.delete({
       where: {

@@ -179,6 +179,9 @@ export async function POST(request) {
       externalUrl.searchParams.append('timeFrom', timeFrom);
       externalUrl.searchParams.append('timeTo', timeTo);
       externalUrl.searchParams.append('timeBy', 'createdTime');
+      if (hubId && hubId !== 'all') {
+        externalUrl.searchParams.append('hubId', hubId);
+      }
 
       const externalResponse = await fetch(externalUrl.toString(), {
         headers: {
@@ -227,7 +230,7 @@ export async function POST(request) {
       if (hubId && hubId !== 'all') {
         const driverInfo = driverMap.get(email);
         const matchHub = driverInfo?.allHubIds?.includes(hubId) || driverInfo?.hubId === hubId;
-        if (!matchHub && driverInfo) return false;
+        if (!matchHub) return false;
       }
 
       return true;
@@ -312,7 +315,7 @@ export async function POST(request) {
         }
 
         const resolvedHubId =
-          driverInfo?.hubId || (hubId && hubId !== 'all' ? hubId : null);
+          hubId && hubId !== 'all' ? hubId : driverInfo?.hubId || null;
 
         const existingSync =
           typeof existing?.sync_user === 'string'

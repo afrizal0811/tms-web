@@ -1,10 +1,12 @@
 'use client';
 
+import SelectionLayout from '@/components/page/SelectionLayout';
+import Spinner from '@/components/Spinner';
 import { syncOperationalData } from '@/lib/api/mileapp';
-import { getLocalStorage, getSuperadminRoleId } from '@/lib/localStorageHandler';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { formatDateUniversal } from '@/lib/utils';
-import { useEffect, useRef } from 'react';
-
+import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 function getActiveWeekDays(baseDate = new Date()) {
   const d = new Date(baseDate);
   const day = d.getDay();
@@ -22,63 +24,94 @@ function getActiveWeekDays(baseDate = new Date()) {
   return days;
 }
 
-export default function DataSync() {
+function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+export default function DataSync({ children }) {
+  const { t } = useLanguage();
   const isSyncingRef = useRef(false);
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [syncStartTime, setSyncStartTime] = useState(null);
 
   useEffect(() => {
-    const runAutoSync = async () => {
+    const runAutoSync = async (forceSync = false) => {
       if (typeof window === 'undefined' || isSyncingRef.current) return;
 
       const { storedUser, storedLocation } = getLocalStorage();
       if (!storedUser || !storedLocation) return;
 
-      const superadminId = getSuperadminRoleId();
-      const isSuper =
-        Boolean(superadminId && String(storedUser.roleId) === String(superadminId)) ||
-        ['superadmin', 'owner'].includes(String(storedUser.role?.name || '').toLowerCase());
-      const targetHubId = isSuper ? 'all' : storedLocation;
+      const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
+      const targetHubId = storedLocation;
+      const syncKey = `tms_last_sync_date_${targetHubId}`;
+
+      if (!forceSync && localStorage.getItem(syncKey) === todayStr) {
+        return;
+      }
 
       isSyncingRef.current = true;
+      setSyncStartTime(Date.now());
+
       try {
-        const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
-        let shouldReload = false;
+        try {
+          setSyncStatus(`${t('common.sync')} ${t('common.task')}`);
+          await withTimeout(
+            syncOperationalData({
+              deliveryDate: todayStr,
+              hubId: targetHubId,
+              entities: ['tasks'],
+            }),
+            20000
+          );
+        } catch (err) {
+          console.warn('[DataSync] Task auto-sync error:', err.message);
+        }
 
         try {
-          const res = await syncOperationalData({
-            deliveryDate: todayStr,
-            hubId: targetHubId,
-            entities: ['results', 'tasks'],
-          });
-
-          const reloadKey = `tms_auto_reloaded_${todayStr}`;
-          const hasInserted =
-            (res?.results?.insertedCount || 0) > 0 || (res?.tasks?.insertedCount || 0) > 0;
-
-          if (hasInserted && !sessionStorage.getItem(reloadKey)) {
-            sessionStorage.setItem(reloadKey, 'true');
-            shouldReload = true;
-          }
-        } catch (err) {
-          console.warn('[DataSync] Routing & tasks auto-sync error:', err.message);
-        }
-
-        const activeWeekDays = getActiveWeekDays(new Date());
-        for (const dStr of activeWeekDays) {
-          try {
-            await syncOperationalData({
-              deliveryDate: dStr,
+          setSyncStatus(`${t('common.sync')} ${t('common.routing')}`);
+          await withTimeout(
+            syncOperationalData({
+              deliveryDate: todayStr,
               hubId: targetHubId,
-              entities: ['location-histories'],
-            });
-          } catch (err) {
-            console.warn(`[DataSync] Location history auto-sync error for ${dStr}:`, err.message);
-          }
+              entities: ['results'],
+            }),
+            15000
+          );
+        } catch (err) {
+          console.warn('[DataSync] Routing auto-sync error:', err.message);
         }
 
-        if (shouldReload) {
-          window.location.reload();
+        try {
+          setSyncStatus(`${t('common.sync')} ${t('common.driver_location')}`);
+          const activeWeekDays = getActiveWeekDays(new Date());
+          await Promise.allSettled(
+            activeWeekDays.map((dStr) =>
+              withTimeout(
+                syncOperationalData({
+                  deliveryDate: dStr,
+                  hubId: targetHubId,
+                  entities: ['location-histories'],
+                }),
+                10000
+              )
+            )
+          );
+        } catch (err) {
+          console.warn('[DataSync] Location histories auto-sync error:', err.message);
         }
+
+        localStorage.setItem(syncKey, todayStr);
+        localStorage.setItem('tms_last_sync_date', todayStr);
+      } catch (err) {
+        console.warn('[DataSync] Auto-sync unexpected error:', err.message);
       } finally {
+        setSyncStatus(null);
+        setSyncStartTime(null);
         isSyncingRef.current = false;
       }
     };
@@ -89,12 +122,31 @@ export default function DataSync() {
       runAutoSync();
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runAutoSync();
+      }
+    };
+
     window.addEventListener('session_update', handleSessionUpdate);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('session_update', handleSessionUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [t]);
 
-  return null;
+  if (syncStatus) {
+    return (
+      <SelectionLayout>
+        <div className="flex flex-col items-center justify-center gap-4 py-16 select-none animate-in fade-in duration-200">
+          <Spinner size="w-16 h-16" showTimer={true} startTime={syncStartTime} />
+          <p className="text-sm font-semibold text-slate-400 dark:text-slate-200 italic">{syncStatus}</p>
+        </div>
+      </SelectionLayout>
+    );
+  }
+
+  return children || null;
 }

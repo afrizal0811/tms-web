@@ -113,8 +113,22 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
     return { savedCount: 0, insertedCount: 0, updatedCount: 0, skippedCount: 0 };
   }
 
-  const hubIds = Array.from(new Set(tasks.map((t) => t.hubId || targetHubId).filter(Boolean)));
-  const taskIds = Array.from(new Set(tasks.map((t) => String(t._id || t.id)).filter(Boolean)));
+  const uniqueTasksMap = new Map();
+  for (const t of tasks) {
+    const id = String(t._id || t.id || '');
+    if (id) {
+      uniqueTasksMap.set(id, t);
+    }
+  }
+  const uniqueTasks = Array.from(uniqueTasksMap.values());
+  const tasksToProcess =
+    targetHubId && targetHubId !== 'all'
+      ? uniqueTasks.filter((t) => !t.hubId || String(t.hubId) === String(targetHubId))
+      : uniqueTasks;
+  const hubIds = Array.from(
+    new Set(tasksToProcess.map((t) => t.hubId || targetHubId).filter(Boolean))
+  );
+  const taskIds = tasksToProcess.map((t) => String(t._id || t.id)).filter(Boolean);
 
   const [existingHubs, existingTasks] = await Promise.all([
     hubIds.length > 0
@@ -155,17 +169,18 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
   let skippedCount = 0;
 
   const CHUNK_SIZE = 25;
-  for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
-    const chunk = tasks.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < tasksToProcess.length; i += CHUNK_SIZE) {
+    const chunk = tasksToProcess.slice(i, i + CHUNK_SIZE);
     const operations = chunk.map((t) => {
       const id = String(t._id || t.id);
       const existingTask = existingTaskMap.get(id);
 
-      const resolvedHubId = validHubSet.has(t.hubId)
-        ? t.hubId
-        : validHubSet.has(targetHubId)
+      const resolvedHubId =
+        targetHubId && targetHubId !== 'all'
           ? targetHubId
-          : existingHubs[0]?.id;
+          : validHubSet.has(t.hubId)
+            ? t.hubId
+            : existingHubs[0]?.id;
 
       if (!resolvedHubId) return Promise.resolve(null);
 
@@ -301,18 +316,24 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       };
 
       if (existingTask) {
-        return prisma.task.update({
-          where: { id },
-          data,
-        }).then(() => ({ type: 'update' }));
+        return prisma.task
+          .update({
+            where: { id },
+            data,
+          })
+          .then(() => ({ type: 'update' }));
       }
 
-      return prisma.task.create({
-        data: {
-          id,
-          ...data,
-        },
-      }).then(() => ({ type: 'insert' }));
+      return prisma.task
+        .upsert({
+          where: { id },
+          update: data,
+          create: {
+            id,
+            ...data,
+          },
+        })
+        .then(() => ({ type: 'insert' }));
     });
 
     const results = await Promise.all(operations);
@@ -628,7 +649,8 @@ export async function POST(request) {
           });
 
           if (tasks.length > 0) {
-            const count = await saveTasks(tasks, hubId, user);
+            const stats = await saveTasks(tasks, hubId, user);
+            const count = typeof stats === 'object' ? stats.savedCount || 0 : stats || 0;
             totalUpdated += count;
           }
         } catch (err) {

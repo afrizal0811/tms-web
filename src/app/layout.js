@@ -32,7 +32,6 @@ export default function RootLayout({ children }) {
           <LanguageProvider>
             <SystemUpdateModal />
             <PendingReasonNotifier />
-            <DataSync />
             <TokenExpirationModal />
             <VehicleTagMappingModal />
             <Toaster
@@ -44,9 +43,11 @@ export default function RootLayout({ children }) {
                 right: 20,
               }}
             />
-            <SessionGuard>
-              <main className="p-0">{children}</main>
-            </SessionGuard>
+            <DataSync>
+              <SessionGuard>
+                <main className="p-0">{children}</main>
+              </SessionGuard>
+            </DataSync>
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />
