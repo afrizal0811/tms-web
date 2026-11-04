@@ -1,18 +1,18 @@
 import { useLanguage } from '@/context/LanguageContext';
 import {
-  getDrivers,
   getHubs,
   getLocationHistories,
   getResults,
   getTasks,
+  getVehicles,
   getVehicleTypes,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { generateSummaryDataPreview } from '@/lib/reportGenerators/summary/summaryReport';
+import { calculateTaskSummaryMetrics } from '@/lib/reportGenerators/summary/taskSummaryMetrics';
 import { toastError } from '@/lib/toast';
 import { formatDateUniversal, toApiDateString } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { calculateTaskSummaryMetrics } from '@/lib/reportGenerators/summary/taskSummaryMetrics';
 
 export const getInitialDateRange = () => {
   const now = new Date();
@@ -52,10 +52,8 @@ export default function useSummaryData() {
 
   useEffect(() => {
     const { storedLocation, storedLocationName } = getLocalStorage();
-    if (typeof window !== 'undefined') {
-      if (storedLocation) setSelectedLocation(storedLocation);
-      if (storedLocationName) setSelectedLocationName(storedLocationName);
-    }
+    if (storedLocation) setSelectedLocation(storedLocation);
+    if (storedLocationName) setSelectedLocationName(storedLocationName);
   }, []);
 
   useEffect(() => {
@@ -75,11 +73,11 @@ export default function useSummaryData() {
   }, [isLoading]);
 
   const fetchWithTracker = useCallback(async (promiseOrFn, label) => {
-    setPendingEndpoints((prev) => [...prev, label]);
+    if (label) setPendingEndpoints((prev) => [...prev, label]);
     try {
       return typeof promiseOrFn === 'function' ? await promiseOrFn() : await promiseOrFn;
     } finally {
-      setPendingEndpoints((prev) => prev.filter((item) => item !== label));
+      if (label) setPendingEndpoints((prev) => prev.filter((item) => item !== label));
     }
   }, []);
 
@@ -142,15 +140,13 @@ export default function useSummaryData() {
         return chunks;
       };
 
-      const mergeResults = (resArray) => {
-        let merged = [];
-        resArray.forEach((res) => {
-          if (Array.isArray(res)) merged = [...merged, ...res];
-          else if (res?.data) merged = [...merged, ...res.data];
-          else if (res?.tasks?.data) merged = [...merged, ...res.tasks.data];
+      const mergeResults = (resArray) =>
+        resArray.flatMap((res) => {
+          if (Array.isArray(res)) return res;
+          if (Array.isArray(res?.data)) return res.data;
+          if (Array.isArray(res?.tasks?.data)) return res.tasks.data;
+          return [];
         });
-        return merged;
-      };
 
       const taskStartObj = new Date(startDate);
       taskStartObj.setDate(taskStartObj.getDate() - 4);
@@ -159,7 +155,6 @@ export default function useSummaryData() {
       const taskEndObj = new Date(endDate);
       taskEndObj.setDate(taskEndObj.getDate() + 4);
       taskEndObj.setHours(23, 59, 59, 999);
-
 
       const locStartObj = new Date(startDate);
       locStartObj.setDate(locStartObj.getDate() - 3);
@@ -172,7 +167,7 @@ export default function useSummaryData() {
       const taskRanges = createDateChunks(taskStartObj, taskEndObj, 5);
       const historyRanges = createDateChunks(locStartObj, locEndObj, 7);
 
-      const pDrivers = fetchWithTracker(() => getDrivers());
+      const pDrivers = fetchWithTracker(() => getVehicles(), 'Vehicles');
 
       const pTasks = fetchWithTracker(async () => {
         const rawResults = [];
@@ -218,7 +213,6 @@ export default function useSummaryData() {
 
       let hasPendingGRValue = false;
       let hubCoordsString = null;
-
       let currentMasterData = { Dry: { Total: 0 }, Frozen: { Total: 0 } };
 
       try {
@@ -230,11 +224,12 @@ export default function useSummaryData() {
         const activeHub = hubsDB?.activeHub;
         hasPendingGRValue = activeHub?.hasPendingGR || false;
 
-        if (activeHub && activeHub.lat && (activeHub.lng || activeHub.lon)) {
-          hubCoordsString = `${activeHub.lat},${activeHub.lng || activeHub.lon}`;
+        const hubLng = activeHub?.lng || activeHub?.lon;
+        if (activeHub && activeHub.lat && hubLng) {
+          hubCoordsString = `${activeHub.lat},${hubLng}`;
           setActiveHubLocation({
             lat: parseFloat(activeHub.lat),
-            lng: parseFloat(activeHub.lng || activeHub.lon),
+            lng: parseFloat(hubLng),
             name: activeHub.name || selectedLocationName,
           });
         } else {

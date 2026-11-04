@@ -7,6 +7,25 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const hubId = searchParams.get('hubId');
   try {
+    const latestDriverList = await prisma.driverList.findFirst({
+      where: hubId && hubId !== 'all' ? { hub_id: hubId } : undefined,
+      orderBy: { updated_time: 'desc' },
+      select: { updated_time: true, updated_by: true },
+    });
+
+    if (latestDriverList) {
+      return NextResponse.json(
+        {
+          hubId: hubId || 'all',
+          _max: {
+            updatedAt: latestDriverList.updated_time,
+            updateBy: latestDriverList.updated_by,
+          },
+        },
+        { status: 200 }
+      );
+    }
+
     const hubsWithDriverStatus = await prisma.hub.findMany({
       include: {
         drivers: {

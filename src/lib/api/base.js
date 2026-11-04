@@ -26,6 +26,10 @@ export async function apiFetch(url, errorMessage, options = {}) {
       throw err;
     }
 
+    if (data === null) {
+      return null;
+    }
+
     if (data && data.message) {
       return data;
     }
@@ -42,7 +46,7 @@ export async function apiFetch(url, errorMessage, options = {}) {
       return [];
     }
 
-    if (data && typeof data === 'object') {
+    if (data !== undefined) {
       return data;
     }
 

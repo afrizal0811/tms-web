@@ -1,4 +1,4 @@
-import { getDrivers, getTruckNonTms } from '@/lib/api/mileapp';
+import { getVehicles, getTruckNonTms } from '@/lib/api/mileapp';
 import {
   formatLongDate,
   formatDateUniversal,
@@ -99,13 +99,20 @@ export function calculateUsageSummary(dateMap, dateKeys, hubMasterData, vehicleT
 }
 
 function findDriverInfoByPlate(masterDriversDB, canonicalPlate) {
-  const platMatch = masterDriversDB.find((d) => d.plat && d.basePlat === canonicalPlate);
+  if (!canonicalPlate || !Array.isArray(masterDriversDB)) return undefined;
+  const targetNorm = normalizePlate(canonicalPlate);
+  const platMatch = masterDriversDB.find((d) => {
+    if (!d) return false;
+    const baseNorm = normalizePlate(d.basePlat);
+    const platNorm = normalizePlate(d.plat);
+    return (baseNorm && baseNorm === targetNorm) || (platNorm && platNorm === targetNorm);
+  });
   if (!platMatch) return undefined;
   return {
     name: platMatch.name,
-    storage: platMatch.storage.toUpperCase(),
-    rawType: platMatch.type,
-    plat: platMatch.basePlat,
+    storage: (platMatch.storage || '').toUpperCase(),
+    rawType: platMatch._rawType || platMatch.type,
+    plat: platMatch.basePlat || platMatch.plat,
   };
 }
 
@@ -124,7 +131,7 @@ export async function calculateTruckUsageData(
     });
   }
   const [allDriversDB, manualUsageDB] = await Promise.all([
-    getDrivers(),
+    getVehicles(),
     getTruckNonTms({ startDate: startDateStr, endDate: endDateStr }),
   ]);
 
@@ -308,8 +315,7 @@ export async function calculateTruckUsageData(
         const dailyVehicles = usedVehiclesPerDay.get(dateKey);
 
         const driverInfo =
-          findDriverInfoByPlate(masterDriversDB, plat) ||
-          findDriverInfoByPlate(allDriversDB, plat);
+          findDriverInfoByPlate(masterDriversDB, plat) || findDriverInfoByPlate(allDriversDB, plat);
 
         const canonicalPlate = plat || '-';
 
@@ -980,7 +986,9 @@ export async function generateTruckUsageSheet(
       }
 
       if (relR !== -1) {
-        const currentMasterTotals = isTable1 ? table1.rowMasterTotals : table2?.rowMasterTotals || {};
+        const currentMasterTotals = isTable1
+          ? table1.rowMasterTotals
+          : table2?.rowMasterTotals || {};
         const startDry = 2;
         const dryInter = startDry + activeTypes.length;
         const dryTot = dryInter + 1;

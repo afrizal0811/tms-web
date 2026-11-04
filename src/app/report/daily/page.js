@@ -4,7 +4,7 @@ import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import DailyReport from '@/features/reports/DailyReport';
-import { getDrivers } from '@/lib/api/mileapp';
+import { getVehicles } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ export default function DailyReportPage() {
     async function fetchData() {
       try {
         const { storedLocationName } = getLocalStorage();
-        const drivers = await getDrivers();
+        const drivers = await getVehicles();
         setData({
           storedLocationName,
           driverData: drivers || [],

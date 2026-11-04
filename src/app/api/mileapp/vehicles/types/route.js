@@ -8,30 +8,56 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const hubId = searchParams.get('hubId');
 
-    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-    const [rawDrivers, mappingsDB, rawVehiclesType] = await Promise.all([
-      prisma.driver.findMany({ where }),
-      prisma.vehicleMapping.findMany(),
+    const vehicleWhere = hubId && hubId !== 'all' ? { hubs_id: hubId } : {};
+    const driverWhere = hubId && hubId !== 'all' ? { hub_id: hubId } : {};
+
+    const [dbVehicles, driverList, rawVehiclesType] = await Promise.all([
+      prisma.vehicle.findMany({ where: vehicleWhere }),
+      prisma.driverList.findMany({ where: driverWhere }),
       prisma.vehicleType.findMany(),
     ]);
 
     const allowedTypes = new Set(rawVehiclesType.map((v) => v.name.toUpperCase()));
 
-    const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
-      acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
-      return acc;
-    }, {});
+    let parsedDrivers = [];
+    if (dbVehicles.length > 0) {
+      const driverMap = new Map(driverList.map((d) => [d.id, d]));
+      parsedDrivers = dbVehicles.map((v) => {
+        const driver = v.driver_id ? driverMap.get(v.driver_id) : null;
+        return {
+          id: v.id,
+          vehicle_id: v.vehicle_id,
+          plat: v.license_number,
+          basePlat: getBasePlate(v.license_number),
+          storage: v.storage,
+          type: v.type ? (v.storage ? `${v.storage}-${v.type}` : v.type) : null,
+          email: driver ? driver.email : '',
+          name: driver ? driver.name : '-',
+        };
+      });
+    } else {
+      const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
+      const [rawDrivers, mappingsDB] = await Promise.all([
+        prisma.driver.findMany({ where }),
+        prisma.vehicleMapping.findMany(),
+      ]);
 
-    const parsedDrivers = rawDrivers.map((d) => {
-      const basePlat = getBasePlate(d.plat);
-      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
-      let mappedTypeStr = d.type;
-      if (mappedType) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
-      }
-      return { ...d, type: mappedTypeStr, basePlat };
-    });
+      const mappingsObj = mappingsDB.reduce((acc, curr) => {
+        acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
+        acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
+        return acc;
+      }, {});
+
+      parsedDrivers = rawDrivers.map((d) => {
+        const basePlat = getBasePlate(d.plat);
+        const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
+        let mappedTypeStr = d.type;
+        if (mappedType) {
+          mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
+        }
+        return { ...d, type: mappedTypeStr, basePlat };
+      });
+    }
 
     const groupedByEmail = {};
     parsedDrivers.forEach((d) => {

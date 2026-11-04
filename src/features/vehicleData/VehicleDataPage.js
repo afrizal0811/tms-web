@@ -7,7 +7,7 @@ import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getOdometer } from '@/lib/api/mceasy/odometer';
-import { getDrivers } from '@/lib/api/mileapp';
+import { getVehicles } from '@/lib/api/mileapp';
 import { formatDateUniversal, getBaseVehicleType, isEmpty } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toastError } from '@/lib/toast';
@@ -36,6 +36,12 @@ const processVehicleData = (rawDriversData, odometer) => {
       odoValue = odoMap.get(String(v.vmsVehicleId));
     }
 
+    const hasPrefix =
+      v.storage && v.type && v.type.toLowerCase().startsWith(`${v.storage.toLowerCase()}-`);
+    const rawFormattedType =
+      v.storage && v.type ? (hasPrefix ? v.type : `${v.storage}-${v.type}`) : v.type || '-';
+    const formattedType = rawFormattedType !== '-' ? rawFormattedType.toUpperCase() : '-';
+
     let parsedTags = [];
     if (v.tags) {
       try {
@@ -43,14 +49,15 @@ const processVehicleData = (rawDriversData, odometer) => {
       } catch {
         parsedTags = [v.tags];
       }
-    } else if (v.type) {
-      parsedTags = [v.type];
+    } else if (formattedType) {
+      parsedTags = [formattedType];
     }
 
     const isIncomplete = !v.email || !v.type;
 
     return {
       ...v,
+      type: formattedType,
       odometer: odoValue,
       parsedTags,
       isIncomplete,
@@ -141,7 +148,7 @@ export default function VehicleData() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const rawDriversData = await getDrivers();
+        const rawDriversData = await getVehicles();
 
         if (!rawDriversData || isEmpty(rawDriversData)) {
           throw new Error(t('common.toast.error', { err: t('common.no_driver') }));
@@ -178,7 +185,8 @@ export default function VehicleData() {
       return list.filter((item) => {
         if (storageFilter.length === 2) return true;
         if (storageFilter.length === 0) return false;
-        return storageFilter.includes(item.storage);
+        const s = (item.storage || '').toUpperCase();
+        return storageFilter.includes(s);
       });
     },
     [storageFilter]

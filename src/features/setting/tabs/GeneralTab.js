@@ -3,7 +3,7 @@
 import BranchManager from '../components/BranchManager';
 import ReasonManager from '../components/ReasonManager';
 import StandardTypeManager from '../components/StandardTypeManager';
-import VehicleMappingManager from '../components/VehicleMappingManager';
+import VehicleManager from '../components/VehicleManager';
 
 export default function GeneralTab({
   vehicleTypes,
@@ -27,11 +27,7 @@ export default function GeneralTab({
         isReadOnly={isReadOnly}
         translate={translate}
       />
-      <VehicleMappingManager
-        vehicleTypes={vehicleTypes}
-        isReadOnly={isReadOnly}
-        translate={translate}
-      />
+      <VehicleManager vehicleTypes={vehicleTypes} isReadOnly={isReadOnly} translate={translate} />
       <ReasonManager
         reasons={reasons}
         onRefresh={onRefresh}

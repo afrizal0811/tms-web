@@ -54,13 +54,15 @@ export async function GET(request) {
       return NextResponse.json({ count: cached.count }, { status: 200 });
     }
 
-    const driverWhere = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
-    const rawDrivers = await prisma.driver.findMany({ where: driverWhere });
+    const driverListWhere = hubId && hubId !== 'all' ? { hub_id: hubId } : {};
+    let rawDrivers = await prisma.driverList.findMany({ where: driverListWhere });
+    if (rawDrivers.length === 0) {
+      const oldDriverWhere = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
+      rawDrivers = await prisma.driver.findMany({ where: oldDriverWhere });
+    }
 
     const validDriverEmails = new Set();
     rawDrivers.forEach((d) => {
-      const plat = d.plat || '';
-      if (!plat || plat.trim() === '' || plat.toUpperCase().includes('DEMO')) return;
       if (d.email) {
         validDriverEmails.add(normalizeEmail(d.email));
       }
@@ -127,8 +129,12 @@ export async function GET(request) {
       const hasAnyData =
         pd &&
         Boolean(
-          ((pd.group_reason ?? pd.groupReason) && (pd.group_reason ?? pd.groupReason).trim() !== '' && (pd.group_reason ?? pd.groupReason) !== '-') ||
-            ((pd.detail_reason ?? pd.detailReason) && (pd.detail_reason ?? pd.detailReason).trim() !== '' && (pd.detail_reason ?? pd.detailReason) !== '-') ||
+          ((pd.group_reason ?? pd.groupReason) &&
+            (pd.group_reason ?? pd.groupReason).trim() !== '' &&
+            (pd.group_reason ?? pd.groupReason) !== '-') ||
+            ((pd.detail_reason ?? pd.detailReason) &&
+              (pd.detail_reason ?? pd.detailReason).trim() !== '' &&
+              (pd.detail_reason ?? pd.detailReason) !== '-') ||
             ((pd.internal_external ?? pd.internalExternal) &&
               (pd.internal_external ?? pd.internalExternal).trim() !== '' &&
               (pd.internal_external ?? pd.internalExternal) !== '-') ||

@@ -6,7 +6,7 @@ import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import Dashboard from '@/features/dashboard/Dashboard';
 import UserLoginPage from '@/features/userLogin/UserLoginPage';
-import { getDrivers } from '@/lib/api/mileapp';
+import { getVehicles } from '@/lib/api/mileapp';
 import { getLocalStorage, getSyncHubs, setLocalStorage } from '@/lib/localStorageHandler';
 import { isEmpty } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -86,7 +86,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchDriverData() {
       try {
-        const data = await getDrivers();
+        const data = await getVehicles();
         setDriverData({ data: data });
       } catch (e) {
         toastError(t('common.toast.error', { err: e.message }), e);
@@ -94,16 +94,7 @@ export default function Home() {
     }
     if (selectedLocation) {
       fetchDriverData();
-      window.dispatchEvent(new CustomEvent('tms-check-vehicle-tags'));
     }
-
-    const handleMappingCompleted = () => {
-      fetchDriverData();
-    };
-    window.addEventListener('tms-vehicle-mapping-completed', handleMappingCompleted);
-    return () => {
-      window.removeEventListener('tms-vehicle-mapping-completed', handleMappingCompleted);
-    };
   }, [selectedLocation, t]);
 
   const handleUserSelect = (user) => {

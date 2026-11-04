@@ -333,7 +333,14 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
             ...data,
           },
         })
-        .then(() => ({ type: 'insert' }));
+        .then(() => ({ type: 'insert' }))
+        .catch(async (err) => {
+          if (err?.code === 'P2002') {
+            await prisma.task.update({ where: { id }, data });
+            return { type: 'update' };
+          }
+          throw err;
+        });
     });
 
     const results = await Promise.all(operations);
@@ -416,36 +423,66 @@ async function fetchAndEnrichTasks({
     });
   }
 
-  const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
-  const [rawDrivers, mappingsDB] = await Promise.all([
-    prisma.driver.findMany({ where }),
-    prisma.vehicleMapping.findMany(),
+  const driverWhere = hubId && hubId !== 'all' ? { hub_id: hubId } : {};
+  const vehicleWhere = hubId && hubId !== 'all' ? { hubs_id: hubId } : {};
+  const [driverList, vehicleList] = await Promise.all([
+    prisma.driverList.findMany({ where: driverWhere }),
+    prisma.vehicle.findMany({ where: vehicleWhere }),
   ]);
 
-  const mappingsObj = mappingsDB.reduce((acc, curr) => {
-    acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
-    acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
-    return acc;
-  }, {});
+  const vehiclesByDriverId = new Map(
+    vehicleList.filter((v) => v.driver_id).map((v) => [v.driver_id, v])
+  );
 
   const driversByEmail = {};
-  rawDrivers.forEach((d) => {
-    const basePlat = getBasePlate(d.plat);
-    const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
-    let mappedTypeStr = d.type;
-    if (mappedType) {
-      mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
-    }
-
+  driverList.forEach((d) => {
     const email = (d.email || '').toLowerCase().trim();
     if (email && email !== '-') {
+      const v = vehiclesByDriverId.get(d.id);
+      const mappedTypeStr = v?.type ? (v.storage ? `${v.storage}-${v.type}` : v.type) : null;
       driversByEmail[email] = {
-        ...d,
+        id: d.id,
+        name: d.name,
+        email: d.email,
+        plat: v?.license_number || null,
+        basePlat: v ? getBasePlate(v.license_number) : null,
         type: mappedTypeStr,
-        basePlat,
+        assignedVehicleId: v?.vehicle_id || null,
       };
     }
   });
+
+  if (driverList.length === 0 && vehicleList.length === 0) {
+    const where = hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {};
+    const [rawDrivers, mappingsDB] = await Promise.all([
+      prisma.driver.findMany({ where }),
+      prisma.vehicleMapping.findMany(),
+    ]);
+
+    const mappingsObj = mappingsDB.reduce((acc, curr) => {
+      acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
+      acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
+      return acc;
+    }, {});
+
+    rawDrivers.forEach((d) => {
+      const basePlat = getBasePlate(d.plat);
+      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
+      let mappedTypeStr = d.type;
+      if (mappedType) {
+        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
+      }
+
+      const email = (d.email || '').toLowerCase().trim();
+      if (email && email !== '-' && !driversByEmail[email]) {
+        driversByEmail[email] = {
+          ...d,
+          type: mappedTypeStr,
+          basePlat,
+        };
+      }
+    });
+  }
 
   allTasks.sort((a, b) => new Date(a.createdTime || 0) - new Date(b.createdTime || 0));
 

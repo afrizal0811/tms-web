@@ -2,10 +2,19 @@
 
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
+import VehicleModal from '@/components/modal/VehicleModal';
 import { useLanguage } from '@/context/LanguageContext';
-import { syncOperationalData } from '@/lib/api/mileapp';
+import {
+  getHubs,
+  getVehicles,
+  patchDriverMceasy,
+  patchVehicleMceasy,
+  postDriverList,
+  postVehicles,
+  syncOperationalData,
+} from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { formatDateUniversal } from '@/lib/utils';
+import { formatDateUniversal, getBasePlate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 function getActiveWeekDays(baseDate = new Date()) {
@@ -39,12 +48,57 @@ export default function DataSync({ children }) {
   const hasRunRef = useRef(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncStartTime, setSyncStartTime] = useState(null);
+  const [unmappedVehicles, setUnmappedVehicles] = useState([]);
+
+  const checkUncompletedVehicles = async (hubId) => {
+    if (!hubId || hubId === 'all') return;
+    try {
+      const vehicles = await getVehicles(hubId);
+      if (!Array.isArray(vehicles)) return;
+
+      const unmappedMap = new Map();
+      vehicles.forEach((v) => {
+        const hasStorage = Boolean(v.storage && String(v.storage).trim() !== '');
+        const rawType = v._rawType || (v.type ? v.type.replace(/^(Dry|Frozen)-/i, '') : '');
+        const hasType = Boolean(rawType && String(rawType).trim() !== '');
+
+        if (hasStorage && hasType) return;
+
+        const base = v.base_plate || getBasePlate(v.license_number || v.plat);
+        if (!base) return;
+
+        const existing = unmappedMap.get(base);
+        if (!existing) {
+          unmappedMap.set(base, {
+            base_plate: base,
+            license_number: base,
+            vehicle_ids: v.vehicle_id ? [v.vehicle_id] : [],
+            storage: v.storage || '',
+            type: rawType || '',
+          });
+        } else if (v.vehicle_id && !existing.vehicle_ids.includes(v.vehicle_id)) {
+          existing.vehicle_ids.push(v.vehicle_id);
+        }
+      });
+
+      setUnmappedVehicles(Array.from(unmappedMap.values()));
+    } catch (err) {
+      console.warn('[DataSync] Check uncompleted vehicles error:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    const { storedLocation } = getLocalStorage();
+    if (storedLocation && storedLocation !== 'all') {
+      checkUncompletedVehicles(storedLocation);
+    }
+  }, []);
 
   useEffect(() => {
     const runSync = async () => {
       if (typeof window === 'undefined' || isSyncingRef.current || hasRunRef.current) return;
 
-      const { storedUser, storedLocation } = getLocalStorage();
+      const { storedUser, storedLocation, storedLocationName } = getLocalStorage();
       if (!storedUser || !storedLocation) return;
 
       hasRunRef.current = true;
@@ -85,6 +139,29 @@ export default function DataSync({ children }) {
           await sync(['results'], todayStr, 15000).catch((err) =>
             console.warn('[DataSync] Routing sync error:', err.message)
           );
+
+          setStatus('common.driver');
+          await postDriverList([targetHubId]).catch((err) =>
+            console.warn('[DataSync] Driver sync error:', err.message)
+          );
+
+          setStatus('common.vehicle');
+          await postVehicles([targetHubId]).catch((err) =>
+            console.warn('[DataSync] Vehicle sync error:', err.message)
+          );
+
+          try {
+            const hubsRes = await getHubs();
+            const currentHub = hubsRes?.allHub?.find((h) => String(h._id) === String(targetHubId));
+            if (currentHub?.hasVms) {
+              await Promise.allSettled([
+                patchVehicleMceasy(targetHubId, storedLocationName),
+                patchDriverMceasy(targetHubId, storedLocationName),
+              ]);
+            }
+          } catch (err) {
+            console.warn('[DataSync] Hub/VMS check error:', err.message);
+          }
         }
 
         setStatus('common.driver_location');
@@ -106,6 +183,7 @@ export default function DataSync({ children }) {
           setSyncStartTime(null);
         }
         isSyncingRef.current = false;
+        await checkUncompletedVehicles(targetHubId);
       }
     };
 
@@ -119,10 +197,17 @@ export default function DataSync({ children }) {
       }
     };
 
+    const handleSyncVehiclesCompleted = () => {
+      const { storedLocation } = getLocalStorage();
+      if (storedLocation) checkUncompletedVehicles(storedLocation);
+    };
+
     window.addEventListener('session_update', handleSessionUpdate);
+    window.addEventListener('tms-sync-vehicles-completed', handleSyncVehiclesCompleted);
 
     return () => {
       window.removeEventListener('session_update', handleSessionUpdate);
+      window.removeEventListener('tms-sync-vehicles-completed', handleSyncVehiclesCompleted);
     };
   }, []);
 
@@ -139,5 +224,21 @@ export default function DataSync({ children }) {
     );
   }
 
-  return children || null;
+  return (
+    <>
+      {unmappedVehicles.length > 0 && (
+        <VehicleModal
+          isOpen={true}
+          unmappedData={unmappedVehicles}
+          onCompleted={async () => {
+            const { storedLocation } = getLocalStorage();
+            await checkUncompletedVehicles(storedLocation);
+            window.dispatchEvent(new CustomEvent('tms-vehicle-configured'));
+          }}
+          t={t}
+        />
+      )}
+      {children || null}
+    </>
+  );
 }

@@ -48,12 +48,38 @@ export async function GET(request) {
       where.date = { gte: dFrom };
     }
 
-    const [locationHistories, rawDrivers] = await Promise.all([
+    const [locationHistories, driverList, vehicleList] = await Promise.all([
       prisma.locationHistory.findMany({
         where,
         orderBy: [{ start_time: 'asc' }, { id: 'asc' }],
       }),
-      prisma.driver.findMany({
+      prisma.driverList.findMany(),
+      prisma.vehicle.findMany(),
+    ]);
+
+    const vehiclesByDriverId = new Map(
+      vehicleList.filter((v) => v.driver_id).map((v) => [v.driver_id, v])
+    );
+    const driverMap = new Map();
+    driverList.forEach((d) => {
+      const email = normalizeEmail(d.email);
+      if (email) {
+        const v = vehiclesByDriverId.get(d.id);
+        driverMap.set(email, {
+          name: d.name,
+          basePlat: v ? getBasePlate(v.license_number) : '',
+          vehicleId: v?.vehicle_id || v?.vms_id,
+          workingTime: {
+            startTime: v?.start_time,
+            endTime: v?.end_time,
+            multiday: v?.multiday,
+          },
+        });
+      }
+    });
+
+    if (driverList.length === 0) {
+      const rawDrivers = await prisma.driver.findMany({
         select: {
           email: true,
           name: true,
@@ -64,25 +90,23 @@ export async function GET(request) {
           end_time: true,
           multiday: true,
         },
-      }),
-    ]);
-
-    const driverMap = new Map();
-    rawDrivers.forEach((d) => {
-      const email = normalizeEmail(d.email);
-      if (email) {
-        driverMap.set(email, {
-          name: d.name,
-          basePlat: getBasePlate(d.plat),
-          vehicleId: d.vehicle_id || d.vms_id,
-          workingTime: {
-            startTime: d.start_time ?? d.startTime,
-            endTime: d.end_time ?? d.endTime,
-            multiday: d.multiday,
-          },
-        });
-      }
-    });
+      });
+      rawDrivers.forEach((d) => {
+        const email = normalizeEmail(d.email);
+        if (email && !driverMap.has(email)) {
+          driverMap.set(email, {
+            name: d.name,
+            basePlat: getBasePlate(d.plat),
+            vehicleId: d.vehicle_id || d.vms_id,
+            workingTime: {
+              startTime: d.start_time ?? d.startTime,
+              endTime: d.end_time ?? d.endTime,
+              multiday: d.multiday,
+            },
+          });
+        }
+      });
+    }
 
     const formatted = locationHistories.map((h) => {
       const email = normalizeEmail(h.email);
@@ -201,21 +225,34 @@ export async function POST(request) {
       rawItems = data.tasks?.data || [];
     }
 
-    const rawDrivers = await prisma.driver.findMany({
-      include: { hubs: true },
-    });
-
+    let rawDriversList = await prisma.driverList.findMany();
     const driverMap = new Map();
-    rawDrivers.forEach((d) => {
+    rawDriversList.forEach((d) => {
       const email = normalizeEmail(d.email);
       if (email) {
         driverMap.set(email, {
           name: d.name,
-          hubId: d.hubs?.[0]?.id || null,
-          allHubIds: d.hubs?.map((h) => h.id) || [],
+          hubId: d.hub_id,
+          allHubIds: [d.hub_id],
         });
       }
     });
+
+    if (rawDriversList.length === 0) {
+      const rawDrivers = await prisma.driver.findMany({
+        include: { hubs: true },
+      });
+      rawDrivers.forEach((d) => {
+        const email = normalizeEmail(d.email);
+        if (email && !driverMap.has(email)) {
+          driverMap.set(email, {
+            name: d.name,
+            hubId: d.hubs?.[0]?.id || null,
+            allHubIds: d.hubs?.map((h) => h.id) || [],
+          });
+        }
+      });
+    }
 
     const currentUser = updated_by || created_by || 'System';
     const nowIso = new Date().toISOString();

@@ -7,9 +7,11 @@ import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '
 import {
   getDrivers,
   patchDriverMceasy,
-  postDrivers,
+  patchVehicleMceasy,
+  postDriverList,
   postHubs,
   postRoles,
+  postVehicles,
   syncOperationalData,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
@@ -221,7 +223,7 @@ export default function SyncDataTab({
 
       const allMatchesToSave = [...matchedData, ...resolvedMatches];
       if (allMatchesToSave.length > 0) {
-        await patchDriverMceasy(null, null, allMatchesToSave);
+        await patchVehicleMceasy(null, null, allMatchesToSave);
       }
 
       setModalOpen(false);
@@ -234,10 +236,10 @@ export default function SyncDataTab({
   };
 
   const handleBypass = async () => {
-    setSyncLoading(syncScope.mode === 'global' ? 'drivers-global' : 'drivers-active');
+    setSyncLoading(syncScope.mode === 'global' ? 'vehicles-global' : 'vehicles-active');
     try {
       if (matchedData.length > 0) {
-        await patchDriverMceasy(null, null, matchedData);
+        await patchVehicleMceasy(null, null, matchedData);
       }
 
       setModalOpen(false);
@@ -255,10 +257,13 @@ export default function SyncDataTab({
     const cleanActiveHubName = (storedLocationName || '').replace(/^Hub\s+/i, '').trim();
     setSyncScope({ mode: 'active', hubId: activeHubId, hubName: cleanActiveHubName });
     try {
-      await postDrivers([activeHubId]);
+      await Promise.all([postDriverList([activeHubId]), postVehicles([activeHubId])]);
 
       if (activeHasVms) {
-        const result = await patchDriverMceasy(activeHubId, storedLocationName);
+        const result = await patchVehicleMceasy(activeHubId, storedLocationName);
+        await patchDriverMceasy(activeHubId, storedLocationName).catch((err) =>
+          console.warn('[Driver VMS Sync] Active hub error:', err.message)
+        );
 
         if (!result.success && result.mismatched?.length > 0) {
           const dedupedMismatches = [];
@@ -281,7 +286,7 @@ export default function SyncDataTab({
         }
 
         if (result.matched?.length > 0) {
-          await patchDriverMceasy(null, null, result.matched);
+          await patchVehicleMceasy(null, null, result.matched);
         }
       }
 
@@ -298,7 +303,7 @@ export default function SyncDataTab({
     setSyncLoading('drivers-global');
     setSyncScope({ mode: 'global' });
     try {
-      await postDrivers([]);
+      await Promise.all([postDriverList([]), postVehicles([])]);
 
       const vmsHubs = allHubs.filter((h) => h.hasVms);
       const allMismatches = [];
@@ -307,7 +312,8 @@ export default function SyncDataTab({
       for (const hub of vmsHubs) {
         const hubNameClean = (hub.name || '').replace(/^Hub\s+/i, '').trim();
         try {
-          const result = await patchDriverMceasy(hub._id, hubNameClean);
+          const result = await patchVehicleMceasy(hub._id, hubNameClean);
+          await patchDriverMceasy(hub._id, hubNameClean).catch(() => {});
           if (result.mismatched?.length > 0) {
             for (const m of result.mismatched) {
               const existing = allMismatches.find((x) => isSameMismatch(x, m));
@@ -358,7 +364,7 @@ export default function SyncDataTab({
       }
 
       if (filteredMatches.length > 0) {
-        await patchDriverMceasy(null, null, filteredMatches);
+        await patchVehicleMceasy(null, null, filteredMatches);
       }
 
       await handleSuccessReload();
@@ -439,10 +445,8 @@ export default function SyncDataTab({
     if (range.totalDays > limitDays) {
       setConfirmModalConfig({
         isOpen: true,
-        title: translate('common.modal.data_load_title') || 'Peringatan Beban Data',
-        message:
-          translate('common.modal.data_load_message', { days: limitDays }) ||
-          `Rentang data lebih dari ${limitDays} hari. Proses dapat memakan waktu lebih lama. Tetap lanjutkan?`,
+        title: translate('common.modal.data_load_title'),
+        message: translate('common.modal.data_load_message', { days: limitDays }),
         action: () => executeRoutingSync(mode, range.dates),
       });
       return;
@@ -468,7 +472,7 @@ export default function SyncDataTab({
     },
     {
       id: 'detail',
-      label: translate('setting.tab.sync_data.modal.title') || 'Detail Data Hasil Routing',
+      label: translate('setting.tab.sync_data.modal.title'),
       onClick: () => setIsRoutingDetailOpen(true),
       disabled: !hasCompleteRoutingRange,
     },
@@ -611,7 +615,7 @@ export default function SyncDataTab({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-100 dark:border-slate-800 pb-4 gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-slate-200">
-              {translate('setting.tab.sync_data.sync_title') || 'Master Data Sync'}
+              {translate('setting.tab.sync_data.sync_title')}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {translate('setting.tab.sync_data.subtitle')}
@@ -636,10 +640,7 @@ export default function SyncDataTab({
         onBypass={handleBypass}
         mcEasyDrivers={mcEasyDrivers}
         isDriverLoading={isDriverLoading}
-        isSaving={
-          syncLoading === 'drivers-active' ||
-          syncLoading === 'drivers-global'
-        }
+        isSaving={syncLoading === 'drivers-active' || syncLoading === 'drivers-global'}
         translate={translate}
       />
 

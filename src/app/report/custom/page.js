@@ -4,7 +4,7 @@ import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import { useLanguage } from '@/context/LanguageContext';
 import CustomReport from '@/features/reports/CustomReport';
-import { getDrivers } from '@/lib/api/mileapp';
+import { getVehicles } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ export default function BreadReportPage() {
     async function fetchData() {
       try {
         const { storedLocationName, storedLocationAcronym } = getLocalStorage();
-        const drivers = await getDrivers();
+        const drivers = await getVehicles();
         setData({
           storedLocationName,
           storedLocationAcronym,

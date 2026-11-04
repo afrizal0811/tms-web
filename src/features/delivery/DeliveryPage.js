@@ -26,7 +26,7 @@ import {
   getBasePlate,
 } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getDrivers, getHubs, getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
+import { getVehicles, getHubs, getLocationHistories, getResults, getTasks } from '@/lib/api/mileapp';
 import { toastError, toastWarning } from '@/lib/toast';
 import CustomTable from './components/CustomTable';
 import {
@@ -295,7 +295,7 @@ export default function DeliveryPage() {
             timeTo: toApiDateString(endD),
             status: 'DONE,ONGOING,UNASSIGNED',
           }),
-          getDrivers(),
+          getVehicles(),
         ]);
 
         const driverData = Array.isArray(rawDrivers) ? rawDrivers : rawDrivers?.data || [];

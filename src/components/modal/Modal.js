@@ -10,6 +10,7 @@ export default function Modal({
   isOpen,
   maxWidth = 'max-w-4xl',
   maxHeight = 'max-h-[90vh]',
+  minHeight = '',
   noClose = false,
   onClose,
   title,
@@ -23,7 +24,7 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${maxHeight} ${contentClassName}`}
+        className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors ${maxWidth} ${maxHeight} ${minHeight} ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

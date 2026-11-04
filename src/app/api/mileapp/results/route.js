@@ -359,19 +359,38 @@ export async function POST(request) {
       });
     }
 
-    const rawDrivers = await prisma.driver.findMany({
-      where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {},
-    });
+    const [rawDrivers, vehiclesList] = await Promise.all([
+      prisma.driverList.findMany({
+        where: hubId && hubId !== 'all' ? { hub_id: String(hubId) } : {},
+      }),
+      prisma.vehicle.findMany({
+        where: hubId && hubId !== 'all' ? { hubs_id: String(hubId) } : {},
+      }),
+    ]);
 
+    const vehicleByDriverId = new Map(
+      vehiclesList.filter((v) => v.driver_id).map((v) => [v.driver_id, v])
+    );
     const driversMap = {};
     rawDrivers.forEach((d) => {
       const email = (d.email || '').toLowerCase().trim();
       if (email && email !== '-') {
-        if (!driversMap[email]) {
-          driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
-        }
+        const v = vehicleByDriverId.get(d.id);
+        driversMap[email] = { name: d.name, plat: v ? getBasePlate(v.license_number) : null };
       }
     });
+
+    if (rawDrivers.length === 0) {
+      const fallbackDrivers = await prisma.driver.findMany({
+        where: hubId && hubId !== 'all' ? { hubs: { some: { id: hubId } } } : {},
+      });
+      fallbackDrivers.forEach((d) => {
+        const email = (d.email || '').toLowerCase().trim();
+        if (email && email !== '-' && !driversMap[email]) {
+          driversMap[email] = { name: d.name, plat: getBasePlate(d.plat) };
+        }
+      });
+    }
 
     const toKm = (m) => parseFloat(((m || 0) / 1000).toFixed(2));
     const toPct = (val, max) => parseFloat((max ? ((val || 0) / max) * 100 : 0).toFixed(2));

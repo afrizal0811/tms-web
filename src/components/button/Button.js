@@ -15,11 +15,14 @@ export default function Button({
   className = 'bg-sky-600 text-white border border-sky-800/60 hover:bg-sky-700 dark:bg-sky-500 dark:border-sky-400/40 dark:hover:bg-sky-400',
   size = 'lg',
   options = [],
+  menuPlacement = 'bottom',
+  menuAlign = 'right',
   ...rest
 }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [prevLoading, setPrevLoading] = useState(isLoading);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const menuRef = useRef(null);
   const isSplit = type === 'split';
 
@@ -77,8 +80,28 @@ export default function Button({
 
   const isDisabled = disabled || isLoading;
 
+  const toggleMenu = () => {
+    if (isDisabled) return;
+    if (!isMenuOpen && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const modalEl = menuRef.current.closest('.overflow-hidden');
+      let spaceInContainer = spaceBelow;
+      if (modalEl) {
+        const modalRect = modalEl.getBoundingClientRect();
+        spaceInContainer = modalRect.bottom - rect.bottom;
+      }
+      const shouldOpenUp = menuPlacement === 'top' || spaceBelow < 180 || spaceInContainer < 120;
+      setOpenUpward(shouldOpenUp);
+    }
+    setIsMenuOpen((prev) => !prev);
+  };
+
   // Render Split Button
   if (isSplit) {
+    const isUp = openUpward || menuPlacement === 'top';
+    const isLeft = menuAlign === 'left';
+
     return (
       <div ref={menuRef} className={`relative inline-flex ${width} max-w-full rounded-md shadow-sm`}>
         <button
@@ -113,7 +136,7 @@ export default function Button({
         {/* Tombol Chevron Dropdown */}
         <button
           type="button"
-          onClick={() => !isDisabled && setIsMenuOpen((prev) => !prev)}
+          onClick={toggleMenu}
           disabled={isDisabled}
           aria-expanded={isMenuOpen}
           aria-haspopup="true"
@@ -137,7 +160,13 @@ export default function Button({
 
         {/* Menu Dropdown */}
         {isMenuOpen && options.length > 0 && (
-          <div className="absolute right-0 top-full mt-1.5 z-50 w-max max-w-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden py-1 transition-all animate-in fade-in zoom-in-95 duration-150">
+          <div
+            className={`absolute ${
+              isUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+            } ${
+              isLeft ? 'left-0' : 'right-0'
+            } z-50 w-max max-w-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden py-1 transition-all animate-in fade-in zoom-in-95 duration-150`}
+          >
             {options.map((option, idx) => (
               <button
                 key={option.id || idx}

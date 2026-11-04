@@ -63,6 +63,57 @@ model Driver {
   @@map("drivers")
 }
 
+model DriverList {
+  id           String   @id @default(cuid())
+  vms_id       String?
+  hub_id       String
+  email        String
+  name         String
+  created_by   String?
+  created_time DateTime @default(now())
+  updated_by   String?
+  updated_time DateTime @updatedAt
+
+  @@index([hub_id])
+  @@index([email])
+  @@map("driver_list")
+}
+
+model Vehicle {
+  id             String   @id @default(cuid())
+  vehicle_id     String   @unique
+  vms_id         String?
+  imei           String?
+  driver_id      String?
+  hubs_id        String
+  license_number String
+  base_plate     String?
+  type           String?
+  storage        String?
+  start_time     String?
+  end_time       String?
+  start_break    String?
+  end_break      String?
+  multiday       Int?
+  speed          Float?
+  cost_factor    Float?
+  tags           String?  @db.Text
+  odd_even       String?
+  min_weight     Float?
+  max_weight     Float?
+  min_volume     Float?
+  max_volume     Float?
+  created_by     String?
+  created_time   DateTime @default(now())
+  updated_by     String?
+  updated_time   DateTime @updatedAt
+
+  @@index([hubs_id])
+  @@index([license_number])
+  @@index([base_plate])
+  @@map("vehicles")
+}
+
 model Role {
   id         String   @id
   name       String

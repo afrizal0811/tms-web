@@ -139,6 +139,7 @@ export const dictionary = {
         delete_title: 'Hapus {text}',
         reset_message: 'Apakah Anda yakin ingin mengatur ulang {text}?',
         reset_title: 'Atur Ulang {text}',
+        vehicle_subtitle: 'Lengkapi data kendaraan ini!',
       },
     },
     home: {
@@ -164,12 +165,6 @@ export const dictionary = {
         no_email_inactive: 'Surel tidak ditemukan atau akun tidak aktif',
         no_session: 'Harap pilih user dan lokasi terlebih dahulu',
       },
-    },
-    vehicle_tag: {
-      description: 'Beberapa kendaraan punya tipe yang tidak sesuai standar. Harap perbaiki!',
-      message_choose: 'Pilih Tipe Standar',
-      tag: 'Tag Terdeteksi',
-      title: 'Peringatan',
     },
     navbar: {
       bread_report: 'Laporan Barang Roti',
@@ -679,8 +674,8 @@ export const dictionary = {
           branch_title: 'Manajemen Cabang',
           category: 'Kategori',
           dropdown_title: 'Pilih Tipe Kendaraan',
-          mapping_subtitle: 'Sesuaikan tipe kendaraan sesuai standar yang digunakan',
-          mapping_title: 'Pemetaan Tipe Kendaraan',
+          vehicle_subtitle: 'Daftar kendaraan yang telah digunakan dalam aktivitas operasional',
+          vehicle_title: 'Data Kendaraan',
           partial_routing_title: 'Ruting Sebagian',
           reasons_subtitle: 'Kategori alasan untuk pengiriman yang tidak berhasil.',
           reasons_title: 'Alasan Penolakan',
@@ -907,6 +902,7 @@ export const dictionary = {
         delete_title: 'Delete {text}',
         reset_message: 'Are you sure to reset {text}?',
         reset_title: 'Reset {text}',
+        vehicle_subtitle: 'Complete these vehicle information!'
       },
     },
     home: {
@@ -932,12 +928,6 @@ export const dictionary = {
         no_email_inactive: 'Email not found or user is inactive',
         no_session: 'Please select user and location first',
       },
-    },
-    vehicle_tag: {
-      description: 'Some vehicles have non-standard types. Please change them!',
-      message_choose: 'Choose Standard Type',
-      tag: 'Detected Tag',
-      title: 'Warning',
     },
     navbar: {
       bread_report: 'Bread Item Report',
@@ -1445,8 +1435,8 @@ export const dictionary = {
           branch_title: 'Branch Management',
           category: 'Category',
           dropdown_title: 'Select Vehicle Type',
-          mapping_subtitle: 'Adjust vehicle types according to the standard used',
-          mapping_title: 'Vehicle Type Mapping',
+          vehicle_subtitle: 'List of vehicles that have been used in operational activities',
+          vehicle_title: 'Vehicle Data',
           partial_routing_title: 'Partial Routing',
           reasons_subtitle: 'Reason categories for unsuccessful deliveries.',
           reasons_title: 'Rejection Reasons',

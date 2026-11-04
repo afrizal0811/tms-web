@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { getBasePlate, isEmpty } from '@/lib/utils';
+import { resolveUserName } from '../help';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -9,88 +9,14 @@ export async function GET(request) {
   const hubId = searchParams.get('hubId');
 
   try {
-    const where = hubId ? { hubs: { some: { id: hubId } } } : {};
-    const [rawDrivers, mappingsDB] = await Promise.all([
-      prisma.driver.findMany({ where }),
-      prisma.vehicleMapping.findMany(), 
-    ]);
-
-    const mappingsObj = mappingsDB.reduce((acc, curr) => {
-      acc[curr.plat] = curr.mapped_type ?? curr.mappedType;
-      acc[getBasePlate(curr.plat)] = curr.mapped_type ?? curr.mappedType;
-      return acc;
-    }, {});
-
-    const parsed = rawDrivers.map((d) => {
-      const basePlat = getBasePlate(d.plat);
-      const mappedType = mappingsObj[basePlat] || mappingsObj[d.plat];
-      let mappedTypeStr = d.type;
-      if (mappedType) {
-        mappedTypeStr = d.storage ? `${d.storage}-${mappedType}` : mappedType;
-      }
-
-      return {
-        _id: d.id,
-        vehicleId: d.vehicle_id,
-        vmsVehicleId: d.vms_id,
-        imei: d.imei,
-        vmsDriverId: d.vms_driver_id,
-        email: d.email,
-        name: d.name,
-        plat: d.plat,
-        basePlat: getBasePlate(d.plat),
-        type: mappedTypeStr,
-        _rawType: d.type,
-        tags: d.tags,
-        minWeight: d.min_weight ?? d.minWeight,
-        maxWeight: d.max_weight ?? d.maxWeight,
-        minVolume: d.min_volume ?? d.minVolume,
-        maxVolume: d.max_volume ?? d.maxVolume,
-        storage: d.storage,
-        oddEven: d.odd_even ?? d.oddEven,
-        speed: d.speed,
-        costFactor: d.cost_factor ?? d.costFactor,
-        workingTime: {
-          startTime: d.start_time ?? d.startTime,
-          endTime: d.end_time ?? d.endTime,
-          multiday: d.multiday,
-        },
-        breakTime: {
-          startTime: d.start_break_time ?? d.startBreakTime,
-          endTime: d.end_break_time ?? d.endBreakTime,
-        },
-      };
+    const where = hubId && hubId !== 'all' ? { hub_id: hubId } : {};
+    const drivers = await prisma.driverList.findMany({
+      where,
+      orderBy: { name: 'asc' },
     });
-
-    const baseMap = new Map();
-    parsed.forEach((d) => {
-      if (d.plat === d.basePlat && d.type) {
-        baseMap.set(d.basePlat, {
-          type: d.type,
-          tags: d.tags,
-          storage: d.storage,
-          _rawType: d._rawType,
-        });
-      }
-    });
-
-    const drivers = parsed.map((d) => {
-      if (d.plat !== d.basePlat && baseMap.has(d.basePlat)) {
-        const m = baseMap.get(d.basePlat);
-        return {
-          ...d,
-          type: m.type,
-          tags: m.tags,
-          storage: d.storage || m.storage,
-          _rawType: m._rawType,
-        };
-      }
-      return d;
-    });
-
     return NextResponse.json(drivers, { status: 200 });
   } catch (error) {
-    console.error('Error Driver:', error);
+    console.error('Error Get Driver List:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
@@ -108,6 +34,7 @@ export async function POST(request) {
     const body = await request.json().catch(() => ({}));
     let hubIds = body.hubIds || [];
     const updateBy = body?.updateBy || null;
+    const authorName = await resolveUserName(updateBy);
 
     if (hubIds.length === 0) {
       const hubs = await prisma.hub.findMany();
@@ -119,19 +46,10 @@ export async function POST(request) {
       .filter((r) => r.name.toLowerCase().includes('driver'))
       .map((r) => r.id);
 
-    let allTransactions = [];
-
-    for (const hId of hubIds) {
-      allTransactions.push(
-        prisma.hub.update({
-          where: { id: hId },
-          data: { drivers: { set: [] } },
-        })
-      );
-    }
+    let totalSynced = 0;
 
     for (const hubId of hubIds) {
-      let rawDrivers = [];
+      const rawDrivers = [];
       for (const roleId of driverRoleIds) {
         const userRes = await fetch(
           `${apiUrl}/users?hubId=${hubId}&roleId=${roleId}&status=active`,
@@ -146,138 +64,54 @@ export async function POST(request) {
         }
       }
 
-      const driverMapByEmail = new Map();
+      const uniqueEmailDrivers = new Map();
       rawDrivers.forEach((d) => {
-        if (d.email) {
-          driverMapByEmail.set(d.email.toLowerCase(), d);
+        const email = (d.email || '').toLowerCase().trim();
+        if (email) {
+          uniqueEmailDrivers.set(email, d);
         }
       });
 
-      const vehRes = await fetch(`${apiUrl}/vehicles?hubId=${hubId}&limit=10000`, {
-        headers: { Authorization: `Bearer ${apiToken}` },
-        cache: 'no-store',
-      });
+      for (const [email, d] of uniqueEmailDrivers.entries()) {
+        const existing = await prisma.driverList.findFirst({
+          where: { hub_id: hubId, email },
+        });
 
-      let vehicles = [];
-      if (vehRes.ok) {
-        const vehData = await vehRes.json();
-        vehicles = vehData.data || [];
-      }
-
-      const uniquePayloads = new Map();
-
-      for (const vehicle of vehicles) {
-        const assigneeEmail = (vehicle.assignee || '').toLowerCase();
-        const driverInfo = driverMapByEmail.get(assigneeEmail);
-        const plat = vehicle.name || vehicle.plateNumber;
-        if (plat && plat.trim() !== '') {
-          if (String(plat).toUpperCase().includes('DM')) continue;
-          const type = vehicle.tags && vehicle.tags.length > 0 ? vehicle.tags[0] : null;
-          const storage = type ? type.split('-')[0] : null;
-
-          const cleanPlate = plat.replace(/\s+/g, '').toUpperCase();
-          const driverId = driverInfo ? driverInfo._id : '-';
-          const uniqueId = `${driverId}-${cleanPlate}`;
-
-          let wMax = vehicle.capacity?.weight?.max ? parseFloat(vehicle.capacity.weight.max) : null;
-          if (isNaN(wMax)) wMax = null;
-          let wMin = vehicle.capacity?.weight?.min ? parseFloat(vehicle.capacity.weight.min) : null;
-          if (isNaN(wMin)) wMin = null;
-          else if (isEmpty(wMin)) wMin = 0;
-
-          let vMax = vehicle.capacity?.volume?.max ? parseFloat(vehicle.capacity.volume.max) : null;
-          if (isNaN(vMax)) vMax = null;
-          let vMin = vehicle.capacity?.volume?.min ? parseFloat(vehicle.capacity.volume.min) : null;
-          if (isNaN(vMin)) vMin = null;
-          else if (isEmpty(vMin)) vMin = 0;
-
-          let mDay = vehicle.workingTime?.multiday;
-          if (mDay !== null && mDay !== undefined) {
-            mDay = parseInt(mDay, 10);
-            if (isNaN(mDay)) mDay = null;
-          } else {
-            mDay = 0;
-          }
-
-          let speedVal = vehicle.speed ? parseFloat(vehicle.speed) : null;
-          let costFactorVal = vehicle.fixedCost ? parseFloat(vehicle.fixedCost) : null;
-          let tagsStr =
-            vehicle.tags && vehicle.tags.length > 0 ? JSON.stringify(vehicle.tags) : null;
-
-          const dataPayload = {
-            name: driverInfo ? driverInfo.name : '-',
-            email: driverInfo ? driverInfo.email : '',
-            plat: plat,
-            type: type,
-            start_time: vehicle.workingTime?.startTime || null,
-            end_time: vehicle.workingTime?.endTime || null,
-            start_break_time: vehicle.breakTime?.breakStartTime || null,
-            end_break_time: vehicle.breakTime?.breakEndTime || null,
-            multiday: mDay,
-            speed: speedVal,
-            cost_factor: costFactorVal,
-            tags: tagsStr,
-            odd_even: vehicle.oddEven || null,
-            min_weight: wMin,
-            max_weight: wMax,
-            min_volume: vMin,
-            max_volume: vMax,
-            storage: storage,
-            vehicle_id: vehicle._id,
-            ...(updateBy ? { update_by: updateBy } : {}),
-          };
-
-          uniquePayloads.set(uniqueId, dataPayload);
+        if (existing) {
+          await prisma.driverList.update({
+            where: { id: existing.id },
+            data: {
+              name: d.name || existing.name,
+              updated_by: authorName,
+              updated_time: new Date(),
+            },
+          });
+        } else {
+          await prisma.driverList.create({
+            data: {
+              hub_id: hubId,
+              email,
+              name: d.name || '-',
+              vms_id: null,
+              created_by: authorName,
+              updated_by: authorName,
+            },
+          });
         }
-      }
-      for (const [uniqueId, payload] of uniquePayloads.entries()) {
-        allTransactions.push(
-          prisma.driver.upsert({
-            where: { id: uniqueId },
-            update: {
-              ...payload,
-              hubs: { connect: [{ id: hubId }] },
-            },
-            create: {
-              id: uniqueId,
-              ...payload,
-              hubs: { connect: [{ id: hubId }] },
-            },
-          })
-        );
+        totalSynced++;
       }
     }
 
-    allTransactions.push(
-      prisma.driver.deleteMany({
-        where: { OR: [{ plat: null }, { plat: '' }] },
-      })
+    return NextResponse.json(
+      { message: `Sync Driver Berhasil (${totalSynced} driver)` },
+      { status: 200 }
     );
-
-    allTransactions.push(
-      prisma.driver.deleteMany({
-        where: { NOT: { id: { contains: '-' } } },
-      })
-    );
-
-    allTransactions.push(
-      prisma.driver.deleteMany({
-        where: {
-          hubs: {
-            none: {},
-          },
-        },
-      })
-    );
-
-    await prisma.$transaction(allTransactions);
-    return NextResponse.json({ message: 'Sync Drivers Berhasil' }, { status: 200 });
   } catch (error) {
     console.error('Error Sync Driver:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Kesalahan sistem tidak diketahui';
     return NextResponse.json(
-      { error: 'Gagal melakukan proses sinkronisasi data driver', detail: errorMessage },
+      { error: 'Gagal melakukan proses sinkronisasi driver', detail: errorMessage },
       { status: 500 }
     );
   }
@@ -286,27 +120,47 @@ export async function POST(request) {
 export async function PATCH(request) {
   try {
     const body = await request.json();
-    const { updates } = body;
+    const { updates, updateBy } = body;
 
     if (!updates || !Array.isArray(updates)) {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+      return NextResponse.json({ error: 'Payload tidak valid' }, { status: 400 });
     }
 
-    const transactions = updates.map((u) =>
-      prisma.driver.update({
-        where: { id: u.id },
-        data: {
-          imei: u.imei ? String(u.imei) : null,
-          vms_id: u.vms_id ? String(u.vms_id) : null,
-          vms_driver_id: u.vms_driver_id ? String(u.vms_driver_id) : null,
-        },
-      })
-    );
+    const authorName = await resolveUserName(updateBy);
 
-    await prisma.$transaction(transactions);
-    return NextResponse.json({ message: 'Update MCEasy Berhasil' }, { status: 200 });
+    for (const u of updates) {
+      if (u.id) {
+        await prisma.driverList.update({
+          where: { id: u.id },
+          data: {
+            vms_id: u.vms_id !== undefined ? (u.vms_id ? String(u.vms_id) : null) : undefined,
+            name: u.name || undefined,
+            updated_by: authorName,
+            updated_time: new Date(),
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ message: 'Update Driver Berhasil' }, { status: 200 });
   } catch (error) {
     console.error('Error Patch Driver:', error);
-    return NextResponse.json({ error: 'Gagal update MCEasy' }, { status: 500 });
+    return NextResponse.json({ error: 'Gagal update driver' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Parameter id diperlukan' }, { status: 400 });
+    }
+
+    await prisma.driverList.delete({ where: { id } });
+    return NextResponse.json({ message: 'Driver berhasil dihapus' }, { status: 200 });
+  } catch (error) {
+    console.error('Error Delete Driver:', error);
+    return NextResponse.json({ error: 'Gagal menghapus driver' }, { status: 500 });
   }
 }

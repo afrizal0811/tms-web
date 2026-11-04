@@ -6,7 +6,7 @@ import PageTemplate from '@/components/page/PageTemplate';
 import SearchBar from '@/components/SearchBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTrackingData } from '@/lib/api/mceasy';
-import { getDrivers } from '@/lib/api/mileapp';
+import { getVehicles } from '@/lib/api/mileapp';
 import { getCachedHubs, getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
 import { getBasePlate, getDistance, getStorageType } from '@/lib/utils';
@@ -40,9 +40,9 @@ export default function TrackingPage() {
       hasFetched.current = true;
 
       try {
-        const drivers = await getDrivers();
-        if (drivers && Array.isArray(drivers)) {
-          setAllVehiclesMaster(drivers);
+        const vehicles = await getVehicles();
+        if (vehicles && Array.isArray(vehicles)) {
+          setAllVehiclesMaster(vehicles);
         }
         const cachedHubs = getCachedHubs() || [];
         const activeHubData = cachedHubs.activeHub;

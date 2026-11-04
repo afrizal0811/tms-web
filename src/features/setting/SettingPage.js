@@ -3,7 +3,14 @@
 import Spinner from '@/components/Spinner';
 import TabButton from '@/components/table/TabButton';
 import { useLanguage } from '@/context/LanguageContext';
-import { getDriverStatus, getHubs, getReasons, getRoles, getVehicleTypes } from '@/lib/api/mileapp';
+import {
+  getDriverStatus,
+  getHubs,
+  getReasons,
+  getRoles,
+  getVehicleStatus,
+  getVehicleTypes,
+} from '@/lib/api/mileapp';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError } from '@/lib/toast';
@@ -17,8 +24,18 @@ export default function SettingPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
-  const [lastUpdated, setLastUpdated] = useState({ hubs: '-', roles: '-', drivers: '-' });
-  const [updatedBy, setUpdatedBy] = useState({ hubs: '-', roles: '-', drivers: '-' });
+  const [lastUpdated, setLastUpdated] = useState({
+    hubs: '-',
+    roles: '-',
+    drivers: '-',
+    vehicles: '-',
+  });
+  const [updatedBy, setUpdatedBy] = useState({
+    hubs: '-',
+    roles: '-',
+    drivers: '-',
+    vehicles: '-',
+  });
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [hubs, setHubs] = useState([]);
   const [reasons, setReasons] = useState([]);
@@ -42,10 +59,11 @@ export default function SettingPage() {
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [hubsDb, rolesDb, dStatus, vTypes, reasonsDb] = await Promise.all([
+      const [hubsDb, rolesDb, dStatus, vStatus, vTypes, reasonsDb] = await Promise.all([
         getHubs(),
         getRoles(),
         getDriverStatus(),
+        getVehicleStatus(),
         getVehicleTypes(),
         getReasons(),
       ]);
@@ -57,9 +75,32 @@ export default function SettingPage() {
         driverUpdateBy = dStatus._max.updateBy || '-';
       }
 
-      const latestDriverSync = maxDriverDate
-        ? formatDateUniversal(maxDriverDate, 'DD/MM/YYYY HH:mm:ss')
+      let maxVehicleDate = null;
+      let vehicleUpdateBy = '-';
+      if (vStatus?._max?.updatedAt) {
+        maxVehicleDate = new Date(vStatus._max.updatedAt);
+        vehicleUpdateBy = vStatus._max.updateBy || '-';
+      }
+
+      const maxOverallDate =
+        maxDriverDate && maxVehicleDate
+          ? maxDriverDate > maxVehicleDate
+            ? maxDriverDate
+            : maxVehicleDate
+          : maxDriverDate || maxVehicleDate;
+
+      const latestDriverSync = maxOverallDate
+        ? formatDateUniversal(maxOverallDate, 'DD/MM/YYYY HH:mm:ss')
         : '-';
+
+      const driverOrVehicleUpdateBy =
+        maxVehicleDate && maxDriverDate
+          ? maxVehicleDate > maxDriverDate
+            ? vehicleUpdateBy
+            : driverUpdateBy
+          : driverUpdateBy !== '-'
+            ? driverUpdateBy
+            : vehicleUpdateBy;
 
       const filteredRoles = (rolesDb || []).filter((r) => !r.name.toLowerCase().includes('driver'));
 
@@ -77,7 +118,7 @@ export default function SettingPage() {
       setUpdatedBy({
         hubs: hubsDb?.activeHub?.updateBy || '-',
         roles: rolesDb?.[0]?.updateBy || '-',
-        drivers: driverUpdateBy,
+        drivers: driverOrVehicleUpdateBy,
       });
 
       setVehicleTypes(vTypes?.allTypes || []);

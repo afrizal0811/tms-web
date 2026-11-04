@@ -1,9 +1,12 @@
 import ConfirmModal from '@/components/modal/ConfirmModal';
 import Modal from '@/components/modal/Modal';
 import { deleteTruckNonTms, postTruckNonTms } from '@/lib/api/mileapp';
+import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { formatLongDate, getBasePlate } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
+
+const normalizePlate = (plate) => (plate || '').replace(/\s+/g, '').toLowerCase();
 
 const EmptyState = ({ translate }) => (
   <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-6 italic border border-dashed border-gray-300 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50">
@@ -66,16 +69,13 @@ export default function TruckUsageModal({
   const sortedMasterVehicles = useMemo(() => {
     if (!data?.isMaster) return [];
     const vehicles = masterVehicleList?.[data.storage]?.[data.type] || [];
-
     const seenCombos = new Set();
-    const uniqueVehicles = vehicles.reduce((acc, vh) => {
-      const plateRaw = (vh.plate || vh.plat || '').toLowerCase().replace(/\s+/g, '');
-      if (!seenCombos.has(plateRaw)) {
-        seenCombos.add(plateRaw);
-        acc.push(vh);
-      }
-      return acc;
-    }, []);
+    const uniqueVehicles = vehicles.filter((vh) => {
+      const plateRaw = normalizePlate(vh.plate || vh.plat);
+      if (seenCombos.has(plateRaw)) return false;
+      seenCombos.add(plateRaw);
+      return true;
+    });
 
     return sortVehicles(uniqueVehicles);
   }, [data, masterVehicleList]);
@@ -89,12 +89,10 @@ export default function TruckUsageModal({
     });
 
     const seenCombos = new Set();
-
     let details = (data.tmsDetails || []).reduce((acc, vh) => {
       const emailToMatch = (vh.driver || '').toLowerCase().trim();
       const driverName = driverLookup.get(emailToMatch) || vh.driver;
       const plateRaw = vh.plate || vh.plat || '';
-
       const comboKey = `${emailToMatch}_${plateRaw}`;
       if (!seenCombos.has(comboKey)) {
         seenCombos.add(comboKey);
@@ -105,12 +103,9 @@ export default function TruckUsageModal({
 
     if (showAll && masterVehicleList) {
       const masterCat = masterVehicleList[data.storage]?.[data.type] || [];
-      const usedPlates = new Set(
-        details.map((v) => (v.plate || '').toLowerCase().replace(/\s+/g, ''))
-      );
-
+      const usedPlates = new Set(details.map((v) => normalizePlate(v.plate)));
       const unusedVehicles = masterCat
-        .filter((v) => !usedPlates.has((v.plate || '').toLowerCase().replace(/\s+/g, '')))
+        .filter((v) => !usedPlates.has(normalizePlate(v.plate)))
         .map((v) => ({ ...v, isUnused: true, driverName: v.driver }));
 
       details = [...details, ...unusedVehicles];
@@ -121,11 +116,24 @@ export default function TruckUsageModal({
 
   if (!data) return null;
 
+  const getActiveHub = () => {
+    const active =
+      hubId || (typeof window !== 'undefined' ? getLocalStorage()?.storedLocation : null);
+    if (!active || active === 'all') {
+      toastError(translate('common.toast.error', { err: 'Hub belum dipilih atau tidak valid' }));
+      return null;
+    }
+    return active;
+  };
+
   const handleSave = async () => {
+    const activeHub = getActiveHub();
+    if (!activeHub) return;
+
     setIsLoading(true);
     try {
       const resData = await postTruckNonTms({
-        hubId,
+        hubId: activeHub,
         date: data.date,
         storageType: data.storage,
         vehicleType: data.type,
@@ -145,11 +153,14 @@ export default function TruckUsageModal({
 
   const handleDelete = async () => {
     if (!data?.id) return;
+    const activeHub = getActiveHub();
+    if (!activeHub) return;
+
     setIsConfirmOpen(false);
     setIsLoading(true);
     try {
       await deleteTruckNonTms({
-        hubId,
+        hubId: activeHub,
         date: data.date,
         storageType: data.storage,
         vehicleType: data.type,
@@ -292,7 +303,7 @@ export default function TruckUsageModal({
   };
 
   const renderManualForm = () => {
-    const totalInput = (parseInt(count) || 0) + (data?.tmsCount || 0);
+    const totalInput = (parseInt(count, 10) || 0) + (data?.tmsCount || 0);
     const masterCapacity = data?.masterTotal || 0;
     const isOverLimit = data?.type !== 'Interbranch' && totalInput > masterCapacity;
     const isChanged = count !== initialCount || desc !== initialDesc;
