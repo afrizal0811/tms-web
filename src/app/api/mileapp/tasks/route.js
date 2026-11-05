@@ -7,6 +7,7 @@ import {
   parseCustomerString,
   tomorrowDate,
 } from '@/lib/utils';
+import { resolveUserName } from '../help';
 import { NextResponse } from 'next/server';
 
 function getUtcRange(dateStr, offsetHours = 7) {
@@ -168,6 +169,34 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
   let updatedCount = 0;
   let skippedCount = 0;
 
+  const uniqueEmails = new Set();
+  if (currentUser && currentUser.includes('@')) uniqueEmails.add(currentUser);
+  tasksToProcess.forEach((t) => {
+    if (t.createdBy && t.createdBy.includes('@')) uniqueEmails.add(t.createdBy);
+    if (t.updatedBy && t.updatedBy.includes('@')) uniqueEmails.add(t.updatedBy);
+  });
+  existingTasks.forEach((et) => {
+    const su =
+      typeof et.sync_user === 'string' ? JSON.parse(et.sync_user || '{}') : et.sync_user || {};
+    if (su.created_by && su.created_by.includes('@')) uniqueEmails.add(su.created_by);
+    if (su.updated_by && su.updated_by.includes('@')) uniqueEmails.add(su.updated_by);
+  });
+
+  const userNameMap = new Map();
+  await Promise.all(
+    Array.from(uniqueEmails).map(async (email) => {
+      const name = await resolveUserName(email);
+      userNameMap.set(email.toLowerCase().trim(), name);
+    })
+  );
+
+  const resolveName = (val) => {
+    if (!val) return val;
+    return userNameMap.get(String(val).toLowerCase().trim()) || val;
+  };
+
+  const resolvedCurrentUser = resolveName(currentUser) || 'System';
+
   const CHUNK_SIZE = 25;
   for (let i = 0; i < tasksToProcess.length; i += CHUNK_SIZE) {
     const chunk = tasksToProcess.slice(i, i + CHUNK_SIZE);
@@ -208,9 +237,9 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       };
 
       const taskUser = {
-        created_by: t.createdBy || null,
+        created_by: resolveName(t.createdBy) || null,
         created_at: t.createdTime || null,
-        updated_by: t.updatedBy || null,
+        updated_by: resolveName(t.updatedBy) || null,
         updated_at: t.updatedTime || null,
       };
 
@@ -247,9 +276,9 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
         : null;
 
       const syncUser = {
-        created_by: existingSyncUser?.created_by || currentUser,
+        created_by: resolveName(existingSyncUser?.created_by) || resolvedCurrentUser,
         created_at: existingSyncUser?.created_at || nowIso,
-        updated_by: currentUser,
+        updated_by: resolvedCurrentUser,
         updated_at: nowIso,
       };
 
