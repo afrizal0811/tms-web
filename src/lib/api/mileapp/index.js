@@ -9,3 +9,4 @@ export * from './tasks';
 export * from './trash';
 export * from './users';
 export * from './vehicles';
+export * from './kpi';

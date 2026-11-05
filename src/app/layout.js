@@ -1,4 +1,3 @@
-import PendingReasonNotifier from '@/components/PendingReasonNotifier';
 import DataSync from '@/components/DataSync';
 import SystemUpdateModal from '@/components/modal/SystemUpdateModal';
 import TokenExpirationModal from '@/components/modal/TokenExpirationModal';
@@ -30,7 +29,6 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <LanguageProvider>
             <SystemUpdateModal />
-            <PendingReasonNotifier />
             <TokenExpirationModal />
             <Toaster
               position="top-right"

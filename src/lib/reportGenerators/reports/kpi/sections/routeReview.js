@@ -6,7 +6,7 @@ import {
   normalizeEmail,
 } from '@/lib/utils';
 
-export function calculateGroupFive(tasksData, driverData, historiesData, g2DetailRows = []) {
+export function calculateRouteReview(tasksData, driverData, historiesData, g2DetailRows = []) {
   let countMasterMaintenance = 0;
 
   if (Array.isArray(tasksData)) {

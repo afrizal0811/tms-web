@@ -1,7 +1,7 @@
 import { getBasePlate, getStorageType } from '@/lib/utils';
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupTwo(resultsData, driverMap, driverData = [], tasksData = []) {
+export function calculateRoutingTime(resultsData, driverMap, driverData = [], tasksData = []) {
   const detailRows = [];
   const processedDrivers = new Set();
   const dataRoutingExists = true;
@@ -33,7 +33,7 @@ export function calculateGroupTwo(resultsData, driverMap, driverData = [], tasks
         const rawVisit = Number(tObj.visitTime) || 0;
         const rawTravel = Number(tObj.travelTime) || 0;
         const rawWait = Number(tObj.waitingTime) || 0;
-        const rawSpent = Number(tObj.spentTime) || (rawVisit + rawTravel + rawWait);
+        const rawSpent = Number(tObj.spentTime) || rawVisit + rawTravel + rawWait;
 
         detailRows.push({
           routing: routingName,

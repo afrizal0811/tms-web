@@ -3,17 +3,21 @@
 import SelectionLayout from '@/components/page/SelectionLayout';
 import Spinner from '@/components/Spinner';
 import VehicleModal from '@/components/modal/VehicleModal';
+import PendingReasonModal from '@/features/summary/tabs/modals/PendingReasonModal';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   getHubs,
+  getReasons,
   getVehicles,
   patchDriverMceasy,
   patchVehicleMceasy,
   postDriverList,
   postVehicles,
+  processKpiData,
   syncOperationalData,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
+import { toastWarning } from '@/lib/toast';
 import { formatDateUniversal, getBasePlate } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
@@ -49,6 +53,33 @@ export default function DataSync({ children }) {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncStartTime, setSyncStartTime] = useState(null);
   const [unmappedVehicles, setUnmappedVehicles] = useState([]);
+  const [uncompletedPendingTasks, setUncompletedPendingTasks] = useState([]);
+  const [pendingReasonsList, setPendingReasonsList] = useState([]);
+  const pendingDateRef = useRef(null);
+
+  const handleKpiProcess = async (hubId, dateStr, user) => {
+    if (!hubId || hubId === 'all' || !dateStr) return;
+    try {
+      const res = await processKpiData({
+        hubId,
+        deliveryDate: dateStr,
+        userName: user?.name || 'system',
+      });
+      if (res?.status === 'MISSING_PENDING_REASONS' && res?.missingTasks?.length > 0) {
+        pendingDateRef.current = dateStr;
+        setUncompletedPendingTasks(res.missingTasks);
+        const reasons = await getReasons().catch(() => []);
+        setPendingReasonsList(Array.isArray(reasons) ? reasons : []);
+        const template =
+          tRef.current?.('summary.tabs.pending_reasons.toast_uncompleted', {
+            count: res.missingTasks.length,
+          }) || `Terdapat ${res.missingTasks.length} data pending yang belum memiliki alasan!`;
+        toastWarning(template.replace('{count}', res.missingTasks.length));
+      }
+    } catch (err) {
+      console.warn('[DataSync] KPI process error:', err.message);
+    }
+  };
 
   const checkUncompletedVehicles = async (hubId) => {
     if (!hubId || hubId === 'all') return;
@@ -172,9 +203,10 @@ export default function DataSync({ children }) {
         localStorage.setItem(syncKey, todayStr);
         localStorage.setItem('tms_last_sync_date', todayStr);
 
-        if (!isInitialSync) {
-          window.dispatchEvent(new CustomEvent('tms-pending-details-updated'));
-        }
+        await handleKpiProcess(targetHubId, yesterdayStr, storedUser);
+
+        window.dispatchEvent(new CustomEvent('tms-pending-details-updated'));
+        localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
       } catch (err) {
         console.warn('[DataSync] Sync unexpected error:', err.message);
       } finally {
@@ -236,6 +268,27 @@ export default function DataSync({ children }) {
             window.dispatchEvent(new CustomEvent('tms-vehicle-configured'));
           }}
           t={t}
+        />
+      )}
+      {uncompletedPendingTasks.length > 0 && (
+        <PendingReasonModal
+          isOpen={true}
+          noClose={true}
+          data={uncompletedPendingTasks}
+          reasons={pendingReasonsList}
+          onClose={() => setUncompletedPendingTasks([])}
+          onSuccess={() => {
+            setUncompletedPendingTasks([]);
+            const { storedLocation, storedUser } = getLocalStorage();
+            const targetDate = pendingDateRef.current;
+            if (storedLocation && targetDate) {
+              processKpiData({
+                hubId: storedLocation,
+                deliveryDate: targetDate,
+                userName: storedUser?.name || 'system',
+              }).catch((err) => console.warn('[DataSync] Async KPI retry error:', err.message));
+            }
+          }}
         />
       )}
       {children || null}

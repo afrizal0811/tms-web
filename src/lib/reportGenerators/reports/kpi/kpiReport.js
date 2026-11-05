@@ -1,12 +1,12 @@
 import { formatDateUniversal, normalizeEmail } from '@/lib/utils';
 import * as XLSX from 'xlsx-js-style';
 import {
-  calculateGroupFive,
-  calculateGroupFour,
-  calculateGroupOne,
-  calculateGroupThree,
-  calculateGroupTwo,
-} from './groups';
+  calculateDistanceSummary,
+  calculateLoadingCapacity,
+  calculateRouteReview,
+  calculateRoutingTime,
+  calculateVolumeSummary,
+} from './sections';
 import {
   generateSheetDataKPI,
   generateSheetDataRouting,
@@ -36,32 +36,57 @@ export function generateKpiWorkbook(
     });
   }
 
-  const g1 = calculateGroupOne(resultsData, tasksData, driverMap, driverData);
-  const g2 = calculateGroupTwo(resultsData, driverMap, driverData, tasksData);
-  const g3 = calculateGroupThree(resultsData, historiesData, driverMap, driverData, tasksData);
-  const g4 = calculateGroupFour(resultsData, historiesData, driverData, tasksData, driverMap);
-  const g5 = calculateGroupFive(tasksData, driverData, historiesData, g2.detailRows);
+  const volumeSummary = calculateVolumeSummary(resultsData, tasksData, driverMap, driverData);
+  const routingTime = calculateRoutingTime(resultsData, driverMap, driverData, tasksData);
+  const distanceSummary = calculateDistanceSummary(
+    resultsData,
+    historiesData,
+    driverMap,
+    driverData,
+    tasksData
+  );
+  const loadingCapacity = calculateLoadingCapacity(
+    resultsData,
+    historiesData,
+    driverData,
+    tasksData,
+    driverMap
+  );
+  const routeReview = calculateRouteReview(
+    tasksData,
+    driverData,
+    historiesData,
+    routingTime.detailRows
+  );
 
   const wb = XLSX.utils.book_new();
 
   const { wsRR, sumOvertime } = generateSheetRouteReview(
-    g5.routeReviewRows,
-    g5.startFinishRows,
-    g2.detailRows
+    routeReview.routeReviewRows,
+    routeReview.startFinishRows,
+    routingTime.detailRows
   );
 
-  const wsKPI = generateSheetDataKPI(formattedDate, g1, g2, g3, g4, g5, sumOvertime);
+  const wsKPI = generateSheetDataKPI(
+    formattedDate,
+    volumeSummary,
+    routingTime,
+    distanceSummary,
+    loadingCapacity,
+    routeReview,
+    sumOvertime
+  );
   XLSX.utils.book_append_sheet(wb, wsKPI, 'Data KPI');
 
   const wsPendingSO = generateSheetPendingSO(tasksData, driverData);
   XLSX.utils.book_append_sheet(wb, wsPendingSO, 'Faktur Pending');
 
-  if (g2.dataRoutingExists) {
-    const wsRouting = generateSheetDataRouting(g2);
+  if (routingTime.dataRoutingExists) {
+    const wsRouting = generateSheetDataRouting(routingTime);
     XLSX.utils.book_append_sheet(wb, wsRouting, 'Data Routing');
   }
 
-  const wsSF = generateSheetStartFinish(g5.startFinishRows, g5.routeReviewRows);
+  const wsSF = generateSheetStartFinish(routeReview.startFinishRows, routeReview.routeReviewRows);
   XLSX.utils.book_append_sheet(wb, wsSF, 'Start & Finish');
 
   XLSX.utils.book_append_sheet(wb, wsRR, 'Route Review');

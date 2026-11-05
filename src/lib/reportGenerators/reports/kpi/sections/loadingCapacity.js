@@ -5,7 +5,7 @@ const safeAdd = (a, b) => Number(a || 0) + Number(b || 0);
 const safeNum = (n) => Number(n || 0);
 const fmt = (n) => (isNaN(Number(n)) ? 0 : Number(Number(n).toFixed(1)));
 
-export function calculateGroupFour(
+export function calculateLoadingCapacity(
   resultsData,
   historiesData,
   driverData,

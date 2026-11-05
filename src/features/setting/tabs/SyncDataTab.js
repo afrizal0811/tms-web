@@ -3,19 +3,22 @@
 import Button from '@/components/button/Button';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import ConfirmModal from '@/components/modal/ConfirmModal';
+import PendingReasonModal from '@/features/summary/tabs/modals/PendingReasonModal';
 import { getUsers as getMceasyUsers, patchVehicle as patchMceasyVehicle } from '@/lib/api/mceasy';
 import {
   getDrivers,
+  getReasons,
   patchDriverMceasy,
   patchVehicleMceasy,
   postDriverList,
   postHubs,
   postRoles,
   postVehicles,
+  processKpiData,
   syncOperationalData,
 } from '@/lib/api/mileapp';
 import { getLocalStorage } from '@/lib/localStorageHandler';
-import { toastError, toastSuccess } from '@/lib/toast';
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 import { formatDateUniversal } from '@/lib/utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
@@ -75,6 +78,9 @@ export default function SyncDataTab({
     message: '',
     action: null,
   });
+  const [pendingKpiTasks, setPendingKpiTasks] = useState([]);
+  const [pendingKpiTarget, setPendingKpiTarget] = useState(null);
+  const [kpiReasonsList, setKpiReasonsList] = useState([]);
 
   const hasCompleteRoutingRange = Boolean(routingDateRange?.[0] && routingDateRange?.[1]);
   const { storedLocation: activeHubId, storedLocationName } = getLocalStorage();
@@ -422,10 +428,39 @@ export default function SyncDataTab({
 
       if (onRefresh) await onRefresh();
 
+      window.dispatchEvent(new CustomEvent('tms-pending-details-updated'));
+      localStorage.setItem('tms_pending_details_last_update', Date.now().toString());
+
       if (hasError) {
         toastError(translate('common.toast.error', { err: lastError?.message }), lastError);
       } else {
         toastSuccess(translate('common.toast.success'));
+      }
+
+      const todayStr = formatDateUniversal(new Date(), 'YYYY-MM-DD');
+      const hPlusOneDates = (datesToSync || []).filter((d) => d < todayStr);
+      if (hPlusOneDates.length > 0) {
+        try {
+          const { storedUser } = getLocalStorage();
+          const kpiRes = await processKpiData({
+            hubId: targetHubId,
+            deliveryDates: hPlusOneDates,
+            userName: storedUser?.name || 'system',
+          });
+          if (kpiRes?.status === 'MISSING_PENDING_REASONS' && kpiRes?.missingTasks?.length > 0) {
+            setPendingKpiTasks(kpiRes.missingTasks);
+            setPendingKpiTarget({ hubId: targetHubId, dates: hPlusOneDates });
+            const reasons = await getReasons().catch(() => []);
+            setKpiReasonsList(Array.isArray(reasons) ? reasons : []);
+            const template =
+              translate('summary.tabs.pending_reasons.toast_uncompleted', {
+                count: kpiRes.missingTasks.length,
+              }) || `Terdapat ${kpiRes.missingTasks.length} data pending yang perlu dilengkapi!`;
+            toastWarning(template.replace('{count}', kpiRes.missingTasks.length));
+          }
+        } catch (err) {
+          console.warn('[SyncDataTab] KPI processing error:', err.message);
+        }
       }
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
@@ -660,6 +695,30 @@ export default function SyncDataTab({
         onConfirm={handleConfirmAction}
         onCancel={closeConfirmModal}
       />
+
+      {pendingKpiTasks.length > 0 && (
+        <PendingReasonModal
+          isOpen={true}
+          data={pendingKpiTasks}
+          reasons={kpiReasonsList}
+          onClose={() => {
+            setPendingKpiTasks([]);
+            setPendingKpiTarget(null);
+          }}
+          onSuccess={() => {
+            setPendingKpiTasks([]);
+            if (pendingKpiTarget) {
+              const { storedUser } = getLocalStorage();
+              processKpiData({
+                hubId: pendingKpiTarget.hubId,
+                deliveryDates: pendingKpiTarget.dates,
+                userName: storedUser?.name || 'system',
+              }).catch((err) => console.warn('[SyncDataTab] Async KPI retry error:', err.message));
+              setPendingKpiTarget(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

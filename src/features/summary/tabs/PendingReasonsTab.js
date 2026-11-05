@@ -577,7 +577,6 @@ export default function PendingReasonsTab({
             setSelectedSuccessTasksMap(new Map());
             onUpdatePendingDetail(res);
           }}
-          translate={translate}
           hasPendingGR={hasPendingGR}
           onBack={
             hasConversionModalData
@@ -674,6 +673,7 @@ export default function PendingReasonsTab({
               const openModal = () =>
                 setModalData({
                   ...item,
+                  originalStatus: origStatus,
                   pendingDetail: pd,
                   customer: customerName,
                 });

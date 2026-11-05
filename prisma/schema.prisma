@@ -27,6 +27,7 @@ model Hub {
   routing_results     RoutingResult[]
   tasks               Task[]
   location_histories  LocationHistory[]
+  kpi_data            KpiData[]
 
   @@map("hubs")
 }
@@ -302,4 +303,52 @@ model LocationHistory {
   @@index([email, date])
   @@index([driver_name, date])
   @@map("location_histories")
+}
+
+model KpiData {
+  id               String   @id @default(cuid())
+  hub_id           String
+  date             String
+  truck_dry        Int      @default(0)
+  truck_frz        Int      @default(0)
+  total_truck      Int      @default(0)
+  task_dry         Int      @default(0)
+  task_frz         Int      @default(0)
+  pending_dry      Int      @default(0)
+  pending_frz      Int      @default(0)
+  pending_routing  Int      @default(0)
+  pending_driver   Int      @default(0)
+  pending_sales    Int      @default(0)
+  pending_customer Int      @default(0)
+  pending_other    Int      @default(0)
+  est_hour_dry     Float    @default(0)
+  est_hour_frz     Float    @default(0)
+  act_hour_dry     Float    @default(0)
+  act_hour_frz     Float    @default(0)
+  est_dist_dry     Float    @default(0)
+  est_dist_frz     Float    @default(0)
+  act_dist_dry     Float    @default(0)
+  act_dist_frz     Float    @default(0)
+  capacity_kg_dry  Float    @default(0)
+  total_kg_dry     Float    @default(0)
+  capacity_cbm_dry Float    @default(0)
+  total_cbm_dry    Float    @default(0)
+  capacity_kg_frz  Float    @default(0)
+  total_kg_frz     Float    @default(0)
+  capacity_cbm_frz Float    @default(0)
+  total_cbm_frz    Float    @default(0)
+  updated_master   Int      @default(0)
+  route_review     Float    @default(0)
+  created_by       String?
+  created_time     DateTime @default(now())
+  updated_by       String?
+  updated_time     DateTime @updatedAt
+
+  hub              Hub      @relation(fields: [hub_id], references: [id])
+
+  @@unique([hub_id, date])
+  @@index([hub_id, date])
+  @@index([hub_id])
+  @@index([date])
+  @@map("kpi_data")
 }

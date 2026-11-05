@@ -2,7 +2,7 @@ import { normalizeDeliveryStatus } from '@/lib/deliveryStatus';
 import { getStorageType, normalizeEmail } from '@/lib/utils';
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupOne(resultsData, tasksData, driverMap, driverData = []) {
+export function calculateVolumeSummary(resultsData, tasksData, driverMap, driverData = []) {
   const dryTrucks = new Set();
   const frzTrucks = new Set();
   let ttDry = 0;

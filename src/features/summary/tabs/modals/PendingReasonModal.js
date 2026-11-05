@@ -11,8 +11,9 @@ import { useDeliveryStatus } from '@/lib/hooks/useDeliveryStatus';
 import { useSuperadmin } from '@/lib/hooks/useSuperadmin';
 import { getLocalStorage } from '@/lib/localStorageHandler';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { capitalizeText, formatDateUniversal } from '@/lib/utils';
+import { capitalizeText, formatDateUniversal, parseCustomerString } from '@/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 function getReasonValue(r) {
   return `${r.reasons || ''}|${r.pic || ''}|${r.category || r.internalExternal || ''}`;
@@ -35,18 +36,23 @@ function isConversionItem(item) {
   return Boolean(item?.isSuccessConversion);
 }
 
+function getItemKey(item) {
+  return String(item?.id || item?.taskId || item?._id || '');
+}
+
 export default function PendingReasonModal({
   isOpen,
-  onClose,
+  onClose = () => {},
   data,
   reasons,
-  onSuccess,
-  translate,
+  onSuccess = () => {},
   hasPendingGR = false,
   onBack,
+  noClose = false,
 }) {
-  const { formatStatus, isPendingGr } = useDeliveryStatus();
+  const { formatStatus, isPendingGr, normalizeStatus } = useDeliveryStatus();
   const { isSuperadmin } = useSuperadmin();
+  const { t: translate } = useLanguage();
 
   const items = useMemo(() => {
     if (!data) return [];
@@ -72,8 +78,9 @@ export default function PendingReasonModal({
     for (const item of items) {
       const isConversion = isConversionItem(item);
       const pd = item.pendingDetail || {};
-      const initStatus = pd.new_status || (isConversion ? '' : item.status || '');
-      initialForms[item._id] = {
+      const initStatus =
+        pd.new_status || (isConversion ? '' : item.statusDelivery || item.status || '');
+      initialForms[getItemKey(item)] = {
         statusDelivery: initStatus,
         intExt: pd.internalExternal || '',
         detail: pd.detailReason || '',
@@ -90,7 +97,8 @@ export default function PendingReasonModal({
   }, [items]);
 
   const currentItem = items[currentIndex] || items[0] || null;
-  const currentForm = (currentItem && forms[currentItem._id]) || {};
+  const currentKey = getItemKey(currentItem);
+  const currentForm = (currentItem && forms[currentKey]) || {};
 
   const isSuccessConversion = isConversionItem(currentItem);
 
@@ -98,8 +106,8 @@ export default function PendingReasonModal({
     if (!currentItem) return;
     setForms((prev) => ({
       ...prev,
-      [currentItem._id]: {
-        ...prev[currentItem._id],
+      [currentKey]: {
+        ...prev[currentKey],
         ...fieldObj,
       },
     }));
@@ -218,7 +226,7 @@ export default function PendingReasonModal({
     if (isLoading.save || items.length === 0) return true;
 
     const allFilled = items.every((item) => {
-      const f = forms[item._id];
+      const f = forms[getItemKey(item)];
       if (!f) return false;
       if (isConversionItem(item) && !f.statusDelivery) return false;
       return Boolean(f.groupReason && f.pic && f.detail?.trim());
@@ -227,7 +235,7 @@ export default function PendingReasonModal({
     if (!allFilled) return true;
 
     if (items.length === 1 && !isSuccessConversion) {
-      const f = forms[currentItem?._id];
+      const f = forms[currentKey];
       if (!f) return true;
       const isUnchanged =
         f.intExt === f.initialIntExt &&
@@ -239,7 +247,7 @@ export default function PendingReasonModal({
     }
 
     return false;
-  }, [isLoading.save, items, forms, currentItem, isSuccessConversion]);
+  }, [isLoading.save, items, forms, currentKey, isSuccessConversion]);
 
   const handleSave = async () => {
     if (isSaveDisabled) return;
@@ -248,15 +256,15 @@ export default function PendingReasonModal({
       const userName = getUserName();
 
       for (const item of items) {
-        const f = forms[item._id];
+        const f = forms[getItemKey(item)];
         const isConversion = isConversionItem(item);
         const newStatusVal = isConversion
           ? f.statusDelivery
           : (item?.pendingDetail?.new_status ?? null);
 
         const payload = {
-          taskId: item._id || item.id || item.taskId,
-          date: formatDateUniversal(item.dateStr),
+          taskId: getItemKey(item),
+          date: formatDateUniversal(item.deliveryDate || item.dateStr),
           new_status: newStatusVal,
           internalExternal: f.intExt,
           detailReason: f.detail.trim(),
@@ -269,12 +277,12 @@ export default function PendingReasonModal({
 
         const res = await postPendingDetail(payload);
         const savedData = res.data || res;
-        onSuccess(savedData);
+        onSuccess?.(savedData);
         emitPendingUpdate(savedData);
       }
 
       toastSuccess(translate('common.toast.success'));
-      onClose();
+      onClose?.();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -286,13 +294,13 @@ export default function PendingReasonModal({
     setIsConfirmOpen(false);
     setIsLoading((prev) => ({ ...prev, delete: true }));
     try {
-      const targetTaskId = currentItem._id || currentItem.id || currentItem.taskId;
+      const targetTaskId = currentKey;
       let resultData;
       if (currentItem?.pendingDetail?.new_status) {
         const userName = getUserName();
-        const [d, m, y] = (currentItem.dateStr || '').split('-');
-        const dbDate =
-          y && y.length === 4 ? `${y}-${m}-${d}` : formatDateUniversal(currentItem.dateStr);
+        const rawDate = currentItem.deliveryDate || currentItem.dateStr || '';
+        const [d, m, y] = rawDate.split('-');
+        const dbDate = y && y.length === 4 ? `${y}-${m}-${d}` : formatDateUniversal(rawDate);
 
         const payload = {
           taskId: targetTaskId,
@@ -315,9 +323,9 @@ export default function PendingReasonModal({
       }
 
       toastSuccess(translate('common.toast.success'));
-      onSuccess(resultData);
+      onSuccess?.(resultData);
       emitPendingUpdate(resultData);
-      onClose();
+      onClose?.();
     } catch (e) {
       toastError(translate('common.toast.error', { err: e.message }), e);
     } finally {
@@ -334,15 +342,6 @@ export default function PendingReasonModal({
         currentItem.pendingDetail.pic ||
         currentItem.pendingDetail.detailReason)
   );
-
-  const statusText =
-    currentForm.statusDelivery ||
-    currentItem?.pendingDetail?.new_status ||
-    currentItem.statusDelivery ||
-    currentItem.status;
-
-  const customerText = currentItem.customer || currentItem.customerName || '-';
-  const subtitleText = `${capitalizeText(formatStatus(statusText))} | ${customerText}`;
 
   const msgParts = translate('common.modal.delete_message', { text: '|||' }).split('|||');
   const pd = currentItem?.pendingDetail;
@@ -362,10 +361,37 @@ export default function PendingReasonModal({
       </div>
     </div>
   ) : null;
+  const formattedDeliveryDate = formatDateUniversal(
+    currentItem?.dateStr || currentItem?.delivery_date || currentItem?.deliveryDate,
+    'DD/MM/YYYY'
+  );
+  const statusText =
+    currentForm.statusDelivery ||
+    currentItem?.pendingDetail?.new_status ||
+    currentItem.statusDelivery ||
+    currentItem.status;
+
+  const { name, truncateInvoice } =
+    parseCustomerString(
+      currentItem.customerOrder || currentItem.customer || currentItem.customerName || ''
+    ) || '-';
+  const subtitleText = `${formattedDeliveryDate} | ${name} | ${truncateInvoice}`;
+
+  const baseOrigStatus =
+    currentItem?.originalStatus || currentItem?.statusDelivery || currentItem?.status;
+  const isStatusChanged = Boolean(
+    statusText && baseOrigStatus && normalizeStatus(statusText) !== normalizeStatus(baseOrigStatus)
+  );
 
   const modalTitle = (
     <div className="flex items-center gap-2">
-      <span>{translate('summary.tabs.pending_reasons.modal_title')}</span>
+      <span>
+        {translate('summary.tabs.pending_reasons.modal_title')} (
+        <span className={isStatusChanged ? 'text-red-600 dark:text-red-400 font-bold' : ''}>
+          {capitalizeText(formatStatus(statusText))}
+        </span>
+        )
+      </span>
       {hasAuditData && <InformationButton infoText={auditInfoContent} size="4" />}
     </div>
   );
@@ -377,7 +403,7 @@ export default function PendingReasonModal({
           <Button
             onClick={onBack}
             size="md"
-            text={translate('common.button.btn_back') || 'Kembali'}
+            text={translate('common.button.btn_back')}
             className="bg-gray-600! hover:bg-gray-700! border-gray-700! text-slate-100"
           />
         )}
@@ -467,9 +493,10 @@ export default function PendingReasonModal({
       />
       <Modal
         isOpen={isOpen && !isConfirmOpen}
-        onClose={onClose}
+        onClose={noClose ? undefined : onClose}
+        noClose={noClose}
         maxWidth="max-w-2xl"
-        maxHeight="min-h-[500px] max-h-[100vh]"
+        minHeight="min-h-[65vh]"
         title={modalTitle}
         subtitle={subtitleText}
         footer={footer}

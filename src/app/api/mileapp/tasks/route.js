@@ -215,35 +215,12 @@ async function saveTasks(tasks, targetHubId, currentUser = 'System') {
       };
 
       if (existingTask) {
-        const existingStatus = existingTask.status;
-
-        if (existingStatus === 'DONE') {
-          if (!existingTask.routing_result_id && routingResultId) {
-            return prisma.task
-              .update({
-                where: { id },
-                data: { routing_result_id: routingResultId },
-              })
-              .then(() => ({ type: 'update' }));
-          }
-          return Promise.resolve({ type: 'skip' });
-        }
-
         const existingTaskUser =
           typeof existingTask.task_user === 'string'
             ? JSON.parse(existingTask.task_user)
             : existingTask.task_user || {};
 
-        const sameUpdatedTime =
-          taskUser.updated_at &&
-          existingTaskUser.updated_at &&
-          taskUser.updated_at === existingTaskUser.updated_at;
-
         const sameRouting = routingResultId === (existingTask.routing_result_id || null);
-
-        if (sameUpdatedTime && sameRouting) {
-          return Promise.resolve({ type: 'skip' });
-        }
 
         const isFieldChanged =
           (t.status || null) !== (existingTask.status || null) ||

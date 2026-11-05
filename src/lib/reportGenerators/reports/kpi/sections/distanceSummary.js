@@ -1,6 +1,6 @@
 import { resolveRouteCategory } from '../../../helper/resolveRouteCategory';
 
-export function calculateGroupThree(
+export function calculateDistanceSummary(
   resultsData,
   historiesData,
   driverMap,
